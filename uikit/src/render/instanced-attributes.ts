@@ -1,6 +1,8 @@
 import { DynamicDrawUsage, InstancedBufferAttribute, InstancedInterleavedBuffer, InterleavedBufferAttribute } from 'three'
 import type { TypedArray } from 'three'
 
+const columnInterleavedBufferKey = Symbol('columnInterleavedBuffer')
+
 export function createDynamicFloat32InstancedAttribute(
   itemSize: number,
   elementCount: number,
@@ -27,9 +29,9 @@ export function copyWithinInstancedAttribute(
   const target = targetIndex * itemSize
   attribute.array.copyWithin(target, start, end)
   const count = end - start
-  attribute.addUpdateRange(start, count)
-  attribute.addUpdateRange(target, count)
-  attribute.needsUpdate = true
+  addInstancedAttributeUpdateRange(attribute, start, count)
+  addInstancedAttributeUpdateRange(attribute, target, count)
+  markInstancedAttributeNeedsUpdate(attribute)
 }
 
 export function copyInstancedArrayRange(
@@ -55,7 +57,29 @@ export function setInstancedMatrixColumns(
   attribute: InstancedBufferAttribute,
 ) {
   const interleaved = new InstancedInterleavedBuffer(attribute.array, 16, attribute.meshPerAttribute)
+  ;(attribute as InstancedBufferAttribute & { [columnInterleavedBufferKey]?: InstancedInterleavedBuffer })[
+    columnInterleavedBufferKey
+  ] = interleaved
   for (let i = 0; i < 4; i++) {
     target[`${prefix}${i}`] = new InterleavedBufferAttribute(interleaved, 4, i * 4, attribute.normalized)
   }
+}
+
+export function addInstancedAttributeUpdateRange(attribute: InstancedBufferAttribute, start: number, count: number) {
+  attribute.addUpdateRange(start, count)
+  getColumnInterleavedBuffer(attribute)?.addUpdateRange(start, count)
+}
+
+export function markInstancedAttributeNeedsUpdate(attribute: InstancedBufferAttribute) {
+  attribute.needsUpdate = true
+  const interleaved = getColumnInterleavedBuffer(attribute)
+  if (interleaved != null) {
+    interleaved.needsUpdate = true
+  }
+}
+
+function getColumnInterleavedBuffer(attribute: InstancedBufferAttribute) {
+  return (attribute as InstancedBufferAttribute & { [columnInterleavedBufferKey]?: InstancedInterleavedBuffer })[
+    columnInterleavedBufferKey
+  ]
 }

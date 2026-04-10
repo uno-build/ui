@@ -5,6 +5,7 @@ import { ClippingRect, defaultClippingData } from '../../clipping.js'
 import { Font, GlyphInfo, glyphIntoToUV } from '../font.js'
 import { Signal, computed } from '@preact/signals-core'
 import { writeColor } from '../../panel/index.js'
+import { addInstancedAttributeUpdateRange, markInstancedAttributeNeedsUpdate } from '../../render/instanced-attributes.js'
 
 const helperMatrix1 = new Matrix4()
 const helperMatrix2 = new Matrix4()
@@ -84,8 +85,8 @@ export class InstancedGlyph {
     } else {
       this.clippingRect.toArray(instanceClipping.array, offset)
     }
-    instanceClipping.addUpdateRange(offset, 16)
-    instanceClipping.needsUpdate = true
+    addInstancedAttributeUpdateRange(instanceClipping, offset, 16)
+    markInstancedAttributeNeedsUpdate(instanceClipping)
     root.requestRender?.()
   }
 
@@ -98,8 +99,8 @@ export class InstancedGlyph {
     const { instanceRGBA, root } = this.group
     const offset = instanceRGBA.itemSize * this.index
     writeColor(instanceRGBA.array, offset, color, opacity)
-    instanceRGBA.addUpdateRange(offset, 4)
-    instanceRGBA.needsUpdate = true
+    addInstancedAttributeUpdateRange(instanceRGBA, offset, 4)
+    markInstancedAttributeNeedsUpdate(instanceRGBA)
     root.requestRender?.()
   }
 
@@ -140,8 +141,8 @@ export class InstancedGlyph {
     const offset = this.index * 4
     const { instanceUV, root } = this.group
     glyphIntoToUV(this.glyphInfo, instanceUV.array, offset)
-    instanceUV.addUpdateRange(offset, 4)
-    instanceUV.needsUpdate = true
+    addInstancedAttributeUpdateRange(instanceUV, offset, 4)
+    markInstancedAttributeNeedsUpdate(instanceUV)
     root.requestRender?.()
   }
 
@@ -152,8 +153,8 @@ export class InstancedGlyph {
     const { instanceRenderSolid, root } = this.group
     const offset = this.index * 1
     instanceRenderSolid.array[offset] = this.glyphInfo.renderSolid ? 1.0 : 0.0
-    instanceRenderSolid.addUpdateRange(offset, 1)
-    instanceRenderSolid.needsUpdate = true
+    addInstancedAttributeUpdateRange(instanceRenderSolid, offset, 1)
+    markInstancedAttributeNeedsUpdate(instanceRenderSolid)
     root.requestRender?.()
   }
 
@@ -163,7 +164,7 @@ export class InstancedGlyph {
     }
     const offset = this.index * 16
     const { instanceMatrix, root } = this.group
-    instanceMatrix.addUpdateRange(offset, 16)
+    addInstancedAttributeUpdateRange(instanceMatrix, offset, 16)
     helperMatrix1
       .makeTranslation(this.x * this.pixelSize, this.y * this.pixelSize, 0)
       .multiply(
@@ -175,7 +176,7 @@ export class InstancedGlyph {
       )
       .premultiply(this.baseMatrix)
     helperMatrix1.toArray(instanceMatrix.array, offset)
-    instanceMatrix.needsUpdate = true
+    markInstancedAttributeNeedsUpdate(instanceMatrix)
     root.requestRender?.()
   }
 }

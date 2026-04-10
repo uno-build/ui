@@ -9,6 +9,7 @@ import { OrderInfo } from '../order.js'
 import { PanelMaterialConfig } from './panel-material.js'
 import { BaseOutProperties, Properties } from '../properties/index.js'
 import type { RootContext } from '../context.js'
+import { addInstancedAttributeUpdateRange, markInstancedAttributeNeedsUpdate } from '../render/instanced-attributes.js'
 
 export type PanelProperties = {
   borderTopLeftRadius?: number | string
@@ -168,8 +169,8 @@ export class InstancedPanel {
       const arrayIndex = index * 16
       const { instanceMatrix, root } = this.group
       this.matrix.value.toArray(instanceMatrix.array, arrayIndex)
-      instanceMatrix.addUpdateRange(arrayIndex, 16)
-      instanceMatrix.needsUpdate = true
+      addInstancedAttributeUpdateRange(instanceMatrix, arrayIndex, 16)
+      markInstancedAttributeNeedsUpdate(instanceMatrix)
       root.requestRender?.()
     }, this.abortController.signal)
     abortableEffect(() => {
@@ -183,8 +184,8 @@ export class InstancedPanel {
       const bufferIndex = index * 16 + 14
       array[bufferIndex] = width
       array[bufferIndex + 1] = height
-      instanceData.addUpdateRange(bufferIndex, 2)
-      instanceData.needsUpdate = true
+      addInstancedAttributeUpdateRange(instanceData, bufferIndex, 2)
+      markInstancedAttributeNeedsUpdate(instanceData)
       root.requestRender?.()
     }, this.abortController.signal)
     abortableEffect(() => {
@@ -195,8 +196,8 @@ export class InstancedPanel {
       const { instanceData, root } = this.group
       const offset = index * 16 + 0
       instanceData.array.set(this.borderInset.value, offset)
-      instanceData.addUpdateRange(offset, 4)
-      instanceData.needsUpdate = true
+      addInstancedAttributeUpdateRange(instanceData, offset, 4)
+      markInstancedAttributeNeedsUpdate(instanceData)
       root.requestRender?.()
     }, this.abortController.signal),
       abortableEffect(() => {
@@ -212,8 +213,8 @@ export class InstancedPanel {
         } else {
           instanceClipping.array.set(defaultClippingData, offset)
         }
-        instanceClipping.addUpdateRange(offset, 16)
-        instanceClipping.needsUpdate = true
+        addInstancedAttributeUpdateRange(instanceClipping, offset, 16)
+        markInstancedAttributeNeedsUpdate(instanceClipping)
         root.requestRender?.()
       }, this.abortController.signal)
   }

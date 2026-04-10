@@ -52,10 +52,7 @@ async function main() {
     requestFrame: () => {},
   }
 
-  const demoScene =
-    backend === 'webgpu'
-      ? createWebGPUPanelScene(renderContext)
-      : createWebGLBaselineScene(renderContext)
+  const demoScene = createWebGLBaselineScene(renderContext)
 
   scene.add(demoScene.root)
 
@@ -102,7 +99,7 @@ async function createRenderer(canvas: HTMLCanvasElement, requestedBackend: Rende
       await renderer.init?.()
       return {
         backend: 'webgpu',
-        hudDescription: 'Panels-only prototype. UI text and images still stay on the WebGL reference path.',
+        hudDescription: 'Complex baseline scene rendered through the experimental WebGPU backend.',
         renderer,
       }
     } catch (error) {
@@ -507,7 +504,11 @@ function createWebGPUPanelScene(renderContext: RenderContext): DemoScene {
     }),
   )
 
-  for (const color of ['#e4572e', '#17bebb', '#ffc914']) {
+  for (const [label, value, tone] of [
+    ['Backend', 'WebGPU prototype', '#e4572e'],
+    ['Scroll', 'Animated feed offset', '#17bebb'],
+    ['Text', 'MSDF node material', '#ffc914'],
+  ] as const) {
     const stat = new Container({
       flexDirection: 'column',
       backgroundColor: 'rgba(255,255,255,0.08)',
@@ -515,11 +516,24 @@ function createWebGPUPanelScene(renderContext: RenderContext): DemoScene {
       borderWidth: 1,
       borderRadius: 18,
       padding: 14,
-      gap: 10,
+      gap: 8,
     })
-    stat.add(makePanelBar(80, 10, 'rgba(255,247,230,0.45)', 1))
-    stat.add(makePanelBar(150, 24, color, 1))
-    stat.add(makePanelBar(118, 12, 'rgba(255,247,230,0.28)', 1))
+    stat.add(
+      new Text({
+        text: label,
+        color: 'rgba(255,247,230,0.62)',
+        fontSize: 12,
+        fontWeight: 'semi-bold',
+      }),
+    )
+    stat.add(
+      new Text({
+        text: value,
+        color: tone,
+        fontSize: 20,
+        fontWeight: 'bold',
+      }),
+    )
     sidebar.add(stat)
   }
 
@@ -599,39 +613,33 @@ function createWebGPUPanelScene(renderContext: RenderContext): DemoScene {
       gap: 10,
     })
 
-    if (i < 4) {
-      card.add(
-        new Text({
-          text: `WebGPU text card ${i + 1}`,
-          color: '#13202b',
-          fontSize: 18,
-          fontWeight: 'bold',
-        }),
-      )
-      card.add(
-        new Text({
-          text:
-            'This paragraph is real MSDF text rendered through the experimental WebGPU glyph material. It should wrap cleanly, stay crisp and clip correctly while the feed scrolls.',
-          color: 'rgba(19,32,43,0.78)',
-          fontSize: 14,
-          lineHeight: '148%',
-          width: 500,
-        }),
-      )
-    } else {
-      card.add(makePanelBar(180 + (i % 4) * 28, 20, '#13202b', 1))
-      card.add(makePanelBar(476, 12, 'rgba(19,32,43,0.18)', 1))
-      card.add(makePanelBar(500, 12, 'rgba(19,32,43,0.12)', 1))
-      card.add(makePanelBar(448, 12, 'rgba(19,32,43,0.12)', 1))
-      card.add(makePanelBar(388, 12, 'rgba(19,32,43,0.08)', 1))
-    }
+    card.add(
+      new Text({
+        text: `WebGPU text card ${i + 1}`,
+        color: '#13202b',
+        fontSize: 18,
+        fontWeight: 'bold',
+      }),
+    )
+    card.add(
+      new Text({
+        text:
+          i < 4
+            ? 'This paragraph is real MSDF text rendered through the experimental WebGPU glyph material. It should wrap cleanly, stay crisp and clip correctly while the feed scrolls.'
+            : 'This card intentionally keeps the same density as the WebGL baseline so we can compare wrapping, line height and clipping behaviour deeper in the scrolling stack.',
+        color: 'rgba(19,32,43,0.78)',
+        fontSize: 14,
+        lineHeight: '148%',
+        width: 500,
+      }),
+    )
 
     const badgeRow = new Container({
       flexDirection: 'row',
       gap: 8,
     })
-    badgeRow.add(makePanelPill(i % 2 === 0 ? '#17bebb' : '#e4572e'))
-    badgeRow.add(makePanelPill(i % 3 === 0 ? '#ffc914' : '#4f5d75'))
+    badgeRow.add(makeTextBadge(i % 2 === 0 ? 'clip' : 'wrap', i % 2 === 0 ? '#17bebb' : '#e4572e'))
+    badgeRow.add(makeTextBadge(i % 3 === 0 ? 'alpha' : 'stack', i % 3 === 0 ? '#ffc914' : '#4f5d75'))
     card.add(badgeRow)
 
     if (i % 4 === 1) {
@@ -645,24 +653,18 @@ function createWebGPUPanelScene(renderContext: RenderContext): DemoScene {
         padding: 12,
         gap: 8,
       })
-      if (i < 4) {
-        nestedViewport.add(
-          new Text({
-            text:
-              'Nested clipping sample. This inner text block is deliberately taller than its viewport so we can inspect clipping against rounded parent bounds in the WebGPU text path.',
-            color: '#13202b',
-            fontSize: 13,
-            lineHeight: '145%',
-            width: 476,
-          }),
-        )
-      } else {
-        nestedViewport.add(makePanelBar(420, 12, 'rgba(19,32,43,0.18)', 1))
-        nestedViewport.add(makePanelBar(456, 12, 'rgba(19,32,43,0.12)', 1))
-        nestedViewport.add(makePanelBar(434, 12, 'rgba(19,32,43,0.12)', 1))
-        nestedViewport.add(makePanelBar(392, 12, 'rgba(19,32,43,0.1)', 1))
-        nestedViewport.add(makePanelBar(446, 12, 'rgba(19,32,43,0.08)', 1))
-      }
+      nestedViewport.add(
+        new Text({
+          text:
+            i < 4
+              ? 'Nested clipping sample. This inner text block is deliberately taller than its viewport so we can inspect clipping against rounded parent bounds in the WebGPU text path.'
+              : 'This secondary text block exists to check that nested clipping still behaves correctly farther down the feed, once many glyph batches and panel layers have already been submitted.',
+          color: '#13202b',
+          fontSize: 13,
+          lineHeight: '145%',
+          width: 476,
+        }),
+      )
       card.add(nestedViewport)
     }
 
@@ -689,7 +691,15 @@ function createWebGPUPanelScene(renderContext: RenderContext): DemoScene {
     padding: 10,
   })
   mediaRail.add(heroFrame)
-  heroFrame.add(createPosterSkeleton())
+  heroFrame.add(
+    new Image({
+      src: createDiagnosticPosterDataUrl(),
+      width: 270,
+      height: 420,
+      objectFit: 'cover',
+      borderRadius: 18,
+    }),
+  )
 
   const note = new Container({
     width: 290,
@@ -712,7 +722,7 @@ function createWebGPUPanelScene(renderContext: RenderContext): DemoScene {
   note.add(
     new Text({
       text:
-        'The image stays as a panel skeleton for now, but this note already exercises real text rendering on the experimental backend.',
+        'This rail now uses a real image texture with object-fit and rounded clipping on the experimental backend.',
       color: 'rgba(19,32,43,0.75)',
       fontSize: 14,
       lineHeight: '145%',
@@ -783,65 +793,6 @@ function makePanelBar(width: number, height: number, color: string, opacity: num
     borderRadius: Math.min(height / 2, 999),
     opacity,
   })
-}
-
-function makePanelPill(color: string) {
-  return new Container({
-    width: 64,
-    height: 24,
-    backgroundColor: color,
-    borderRadius: 999,
-  })
-}
-
-function createPosterSkeleton() {
-  const poster = new Container({
-    width: 270,
-    height: 420,
-    flexDirection: 'column',
-    backgroundColor: '#21435c',
-    borderRadius: 18,
-    padding: 22,
-    gap: 14,
-  })
-
-  poster.add(
-    new Container({
-      width: 92,
-      height: 92,
-      backgroundColor: 'rgba(255,255,255,0.12)',
-      borderRadius: 999,
-    }),
-  )
-
-  poster.add(makePanelBar(120, 14, '#fff3dd', 1))
-  poster.add(makePanelBar(178, 38, '#fff3dd', 1))
-  poster.add(makePanelBar(148, 14, 'rgba(255,243,221,0.72)', 1))
-
-  const content = new Container({
-    width: 226,
-    height: 188,
-    flexDirection: 'column',
-    backgroundColor: 'rgba(11,19,27,0.28)',
-    borderRadius: 22,
-    padding: 18,
-    gap: 12,
-  })
-  content.add(makePanelBar(150, 18, '#fff3dd', 1))
-  content.add(makePanelBar(184, 12, 'rgba(255,243,221,0.72)', 1))
-  content.add(makePanelBar(166, 12, 'rgba(255,243,221,0.58)', 1))
-  content.add(makePanelBar(182, 12, 'rgba(255,243,221,0.44)', 1))
-  content.add(
-    new Container({
-      width: 94,
-      height: 32,
-      backgroundColor: '#17bebb',
-      borderRadius: 16,
-    }),
-  )
-  poster.add(content)
-
-  return poster
 }
 
 function createDiagnosticPosterDataUrl() {

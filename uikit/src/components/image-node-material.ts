@@ -1,36 +1,29 @@
-import {
-  FrontSide,
-  Material,
-  MeshBasicMaterial,
-  MeshPhongMaterial,
-  MeshPhysicalMaterial,
-} from 'three'
-import {
-  MeshBasicNodeMaterial,
-  MeshPhongNodeMaterial,
-  MeshPhysicalNodeMaterial,
-  NodeMaterial,
-} from 'three/webgpu'
+import { Material, Texture, Vector4 } from 'three'
+import { NodeMaterial } from 'three/webgpu'
 import {
   Fn,
   abs,
-  attribute,
-  dot,
   float,
   fwidth,
   length,
   max,
   min,
-  modelViewProjection,
-  positionLocal,
   smoothstep,
+  texture,
+  uniform,
   uv,
-  varyingProperty,
   vec2,
-  vec3,
   vec4,
 } from 'three/tsl'
-import type { MaterialClass, PanelMaterialInfo } from './panel-material.js'
+import type { MaterialClass } from '../panel/panel-material.js'
+import { createWebGPUBaseNodeMaterial } from '../panel/panel-node-material.js'
+
+type PanelDataRows = [Vector4, Vector4, Vector4, Vector4]
+
+export type WebGPUImageMaterial = Material & {
+  setTexture: (value: Texture | null | undefined) => void
+  syncData: (data: ArrayLike<number>) => void
+}
 
 function unpackRadius(packed: ReturnType<typeof float>, divisor: number) {
   return packed.div(float(divisor)).floor().mod(50).mul(0.01)
@@ -53,48 +46,43 @@ function roundedBoxSdf(point: ReturnType<typeof vec2>, halfSize: ReturnType<type
   return length(max(q, vec2(0))).add(min(max(q.x, q.y), float(0))).sub(radius)
 }
 
-function applyClipPlane(
-  plane: ReturnType<typeof vec4>,
-  localPosition: ReturnType<typeof vec3>,
-  clipOpacity: ReturnType<typeof float>,
-) {
-  const planeLengthSq = dot(plane.xyz, plane.xyz)
-  const planeDistance = dot(localPosition, plane.xyz).add(plane.w).toVar()
-  const planeGradient = max(fwidth(planeDistance).mul(0.5), float(0.0001))
-  const planeOpacity = smoothstep(planeGradient.negate(), planeGradient, planeDistance)
-  clipOpacity.mulAssign(planeLengthSq.greaterThan(float(0.000001)).select(planeOpacity, float(1.0)))
+function syncPanelDataRows(rows: PanelDataRows, data: ArrayLike<number>) {
+  for (let i = 0; i < 4; i++) {
+    rows[i]!.fromArray(data as ArrayLike<number>, i * 4)
+  }
 }
 
-function configureInstancedPanelNodes(material: NodeMaterial) {
-  const panelData0 = attribute('aData0', 'vec4')
-  const panelData1 = attribute('aData1', 'vec4')
-  const panelData2 = attribute('aData2', 'vec4')
-  const panelData3 = attribute('aData3', 'vec4')
-  const clipping0 = attribute('aClipping0', 'vec4')
-  const clipping1 = attribute('aClipping1', 'vec4')
-  const clipping2 = attribute('aClipping2', 'vec4')
-  const clipping3 = attribute('aClipping3', 'vec4')
+export function createWebGPUImageMaterial(
+  materialClass: MaterialClass,
+  data: ArrayLike<number>,
+  initialTexture?: Texture,
+): WebGPUImageMaterial {
+  const material = createWebGPUBaseNodeMaterial(materialClass) as NodeMaterial & WebGPUImageMaterial
 
-  material.vertexNode = Fn(() => {
-    varyingProperty('vec3', 'panelLocalPosition').assign(positionLocal.xyz)
-    return modelViewProjection
-  })()
+  const dataRows: PanelDataRows = [new Vector4(), new Vector4(), new Vector4(), new Vector4()]
+  syncPanelDataRows(dataRows, data)
 
-  const panelSurface = Fn(() => {
-    const panelLocalPosition = varyingProperty('vec3', 'panelLocalPosition')
+  const data0 = uniform(dataRows[0])
+  const data1 = uniform(dataRows[1])
+  const data2 = uniform(dataRows[2])
+  const data3 = uniform(dataRows[3])
+  const imageTexture = texture(initialTexture ?? new Texture())
+
+  const imageSurface = Fn(() => {
     const panelUv = uv()
+    const sampled = imageTexture.sample().rgba.toVar()
 
-    const borderSizes = panelData0.toVar()
-    const background = panelData1.toVar()
-    const border = panelData2.toVar()
-    const panelMeta = panelData3.toVar()
+    const borderSizes = data0.toVar()
+    const background = data1.toVar()
+    const border = data2.toVar()
+    const panelMeta = data3.toVar()
 
     const dimensions = panelMeta.zw.toVar()
     const height = max(dimensions.y, float(0.0001))
     const aspectRatio = dimensions.x.div(height).toVar()
     const normalizedBorderSizes = borderSizes.div(height).toVar()
 
-    const packedRadius = panelData2.x.toVar()
+    const packedRadius = data2.x.toVar()
     const bottomLeftRadius = unpackRadius(packedRadius, 125000)
     const bottomRightRadius = unpackRadius(packedRadius, 2500)
     const topRightRadius = unpackRadius(packedRadius, 50)
@@ -126,11 +114,7 @@ function configureInstancedPanelNodes(material: NodeMaterial) {
       innerTopRightRadius,
       innerTopLeftRadius,
     )
-    const innerDistance = roundedBoxSdf(
-      innerPoint,
-      max(innerHalfSize, vec2(0.0001)),
-      innerRadius,
-    ).toVar()
+    const innerDistance = roundedBoxSdf(innerPoint, max(innerHalfSize, vec2(0.0001)), innerRadius).toVar()
 
     const outerGradient = max(fwidth(outerDistance), float(0.0001))
     const innerGradient = max(fwidth(innerDistance), float(0.0001))
@@ -138,58 +122,33 @@ function configureInstancedPanelNodes(material: NodeMaterial) {
     const innerAlpha = smoothstep(innerGradient, innerGradient.negate(), innerDistance).toVar()
     const borderAlpha = max(outerAlpha.sub(innerAlpha), float(0)).toVar()
 
-    const clipOpacity = float(1).toVar()
-    applyClipPlane(clipping0, panelLocalPosition, clipOpacity)
-    applyClipPlane(clipping1, panelLocalPosition, clipOpacity)
-    applyClipPlane(clipping2, panelLocalPosition, clipOpacity)
-    applyClipPlane(clipping3, panelLocalPosition, clipOpacity)
-
-    const backgroundWeight = background.w.mul(innerAlpha).toVar()
+    const backgroundWeight = background.w.mul(sampled.a).mul(innerAlpha).toVar()
     const borderWeight = panelMeta.x.mul(borderAlpha).toVar()
     const totalWeight = backgroundWeight.add(borderWeight).toVar()
-    const alpha = clipOpacity.mul(totalWeight).toVar()
 
-    const color = background.xyz
+    const imageColor = sampled.rgb.mul(background.xyz)
+    const color = imageColor
       .mul(backgroundWeight)
       .add(border.yzw.mul(borderWeight))
       .div(max(totalWeight, float(0.0001)))
 
-    return vec4(color, alpha)
+    return vec4(color, totalWeight)
   })
 
-  const panelSurfaceNode = panelSurface()
-  material.colorNode = panelSurfaceNode.rgb
-  material.opacityNode = panelSurfaceNode.a
-  material.maskNode = panelSurfaceNode.a.greaterThan(float(0.01))
-  material.side = FrontSide
+  const imageSurfaceNode = imageSurface()
+  material.colorNode = imageSurfaceNode.rgb
+  material.opacityNode = imageSurfaceNode.a
+  material.maskNode = imageSurfaceNode.a.greaterThan(float(0.01))
   material.transparent = true
   material.toneMapped = false
-  material.fog = false
-  material.clipShadows = true
-}
 
-export function createWebGPUBaseNodeMaterial(materialClass: MaterialClass): NodeMaterial {
-  const baseMaterial = new materialClass()
-
-  if (baseMaterial instanceof MeshPhysicalMaterial) {
-    return new MeshPhysicalNodeMaterial(baseMaterial as unknown as Record<string, unknown>)
+  material.setTexture = (value) => {
+    imageTexture.value = value ?? new Texture()
+    material.needsUpdate = true
+  }
+  material.syncData = (nextData) => {
+    syncPanelDataRows(dataRows, nextData)
   }
 
-  if (baseMaterial instanceof MeshPhongMaterial) {
-    return new MeshPhongNodeMaterial(baseMaterial as unknown as Record<string, unknown>)
-  }
-
-  return new MeshBasicNodeMaterial(
-    (baseMaterial instanceof MeshBasicMaterial ? baseMaterial : new MeshBasicMaterial()) as unknown as Record<string, unknown>,
-  )
-}
-
-export function createWebGPUPanelMaterial(materialClass: MaterialClass, info: PanelMaterialInfo): Material {
-  if (info.type !== 'instanced') {
-    throw new Error('WebGPU panel material currently supports only instanced panels.')
-  }
-
-  const material = createWebGPUBaseNodeMaterial(materialClass)
-  configureInstancedPanelNodes(material)
   return material
 }

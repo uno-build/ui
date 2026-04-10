@@ -16,6 +16,7 @@ import { ElementType, setupOrderInfo, setupRenderOrder } from '../order.js'
 import { componentDefaults } from '../properties/defaults.js'
 import { RenderContext } from '../context.js'
 import { resolvePanelMaterialClassProperty } from '../panel/instanced-panel-group.js'
+import { createWebGPUImageMaterial, type WebGPUImageMaterial } from './image-node-material.js'
 
 export type ImageFit = 'cover' | 'fill'
 
@@ -35,6 +36,10 @@ export class Image<
   OutProperties extends ImageOutProperties<unknown> = ImageOutProperties<string | Texture>,
 > extends Component<OutProperties> {
   readonly texture = signal<Texture | undefined>(undefined)
+
+  private syncWebGPUImageMaterialData(data: Float32Array) {
+    ;(this.material as Partial<WebGPUImageMaterial>).syncData?.(data)
+  }
 
   constructor(
     inputProperties?: InProperties<OutProperties>,
@@ -87,10 +92,12 @@ export class Image<
 
     const data = new Float32Array(16)
     const info = { data: data, type: 'normal' } as const
-    this.customDepthMaterial = new PanelDepthMaterial(info)
-    this.customDistanceMaterial = new PanelDistanceMaterial(info)
-    this.customDepthMaterial.clippingPlanes = clippingPlanes
-    this.customDistanceMaterial.clippingPlanes = clippingPlanes
+    if (this.root.peek().backendCapabilities.supportsCustomDepthMaterials) {
+      this.customDepthMaterial = new PanelDepthMaterial(info)
+      this.customDistanceMaterial = new PanelDistanceMaterial(info)
+      this.customDepthMaterial.clippingPlanes = clippingPlanes
+      this.customDistanceMaterial.clippingPlanes = clippingPlanes
+    }
 
     abortableEffect(() => {
       this.material.depthTest = this.properties.value.depthTest
@@ -101,19 +108,22 @@ export class Image<
       this.root.peek().requestRender?.()
     }, this.abortSignal)
     abortableEffect(() => {
+      ;(this.material as Partial<WebGPUImageMaterial>).setTexture?.(this.texture.value)
       ;(this.material as any).map = this.texture.value ?? null
       this.material.needsUpdate = true
       this.root.peek().requestRender?.()
     }, this.abortSignal)
     abortableEffect(() => {
-      const material = createPanelMaterial(
-        resolvePanelMaterialClassProperty(this.properties.value.panelMaterialClass),
-        info,
-      )
+      const materialClass = resolvePanelMaterialClassProperty(this.properties.value.panelMaterialClass)
+      const material =
+        this.root.value.backend === 'webgpu'
+          ? createWebGPUImageMaterial(materialClass, data, this.texture.value)
+          : createPanelMaterial(materialClass, info)
       material.clippingPlanes = clippingPlanes
       ;(material as any).map = (this.material as any).map
       material.depthWrite = this.material.depthWrite
       material.depthTest = this.material.depthTest
+      ;(material as Partial<WebGPUImageMaterial>).syncData?.(data)
       this.material = material
       return () => material.dispose()
     }, this.abortSignal)
@@ -140,10 +150,18 @@ export class Image<
 
       data.set(imageMaterialConfig.defaultData)
 
-      const cleanupSizeEffect = effect(() => void (this.size.value != null && data.set(this.size.value, 14)))
-      const cleanupBorderEffect = effect(
-        () => void (this.borderInset.value != null && data.set(this.borderInset.value, 0)),
-      )
+      const cleanupSizeEffect = effect(() => {
+        if (this.size.value != null) {
+          data.set(this.size.value, 14)
+          this.syncWebGPUImageMaterialData(data)
+        }
+      })
+      const cleanupBorderEffect = effect(() => {
+        if (this.borderInset.value != null) {
+          data.set(this.borderInset.value, 0)
+          this.syncWebGPUImageMaterialData(data)
+        }
+      })
       this.root.peek().requestRender?.()
       return () => {
         cleanupSizeEffect()
@@ -168,6 +186,7 @@ export class Image<
             this.properties.signal.opacity,
             undefined,
           )
+          this.syncWebGPUImageMaterialData(data)
           this.root.peek().requestRender?.()
         }, this.abortSignal)
       })

@@ -6,7 +6,12 @@ import { ElementType, OrderInfo, setupRenderOrder } from '../../order.js'
 import type { RootContext } from '../../context.js'
 import type { Component } from '../../components/component.js'
 import { getTextRenderBackend } from '../../render/backends.js'
-import { copyInstancedArrayRange, createDynamicFloat32InstancedAttribute } from '../../render/instanced-attributes.js'
+import {
+  addInstancedAttributeUpdateRange,
+  copyInstancedArrayRange,
+  createDynamicFloat32InstancedAttribute,
+  markInstancedAttributeNeedsUpdate,
+} from '../../render/instanced-attributes.js'
 
 export class GlyphGroupManager {
   private map = new Map<Font, Map<string, InstancedGlyphGroup>>()
@@ -159,8 +164,8 @@ export class InstancedGlyphGroup {
     //hiding the glyph by writing a 0 matrix (0 scale ...)
     const bufferOffset = glyph.index * 16
     this.instanceMatrix.array.fill(0, bufferOffset, bufferOffset + 16)
-    this.instanceMatrix.addUpdateRange(bufferOffset, 16)
-    this.instanceMatrix.needsUpdate = true
+    addInstancedAttributeUpdateRange(this.instanceMatrix, bufferOffset, 16)
+    markInstancedAttributeNeedsUpdate(this.instanceMatrix)
     this.holeIndicies.push(glyph.index)
     this.glyphs[glyph.index] = undefined
     glyph.index = undefined

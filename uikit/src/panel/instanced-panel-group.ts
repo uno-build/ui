@@ -20,7 +20,12 @@ import { Properties } from '../properties/index.js'
 import type { RootContext } from '../context.js'
 import type { Component } from '../components/component.js'
 import { getPanelRenderBackend } from '../render/backends.js'
-import { copyWithinInstancedAttribute, createDynamicFloat32InstancedAttribute } from '../render/instanced-attributes.js'
+import {
+  addInstancedAttributeUpdateRange,
+  copyWithinInstancedAttribute,
+  createDynamicFloat32InstancedAttribute,
+  markInstancedAttributeNeedsUpdate,
+} from '../render/instanced-attributes.js'
 
 export type ShadowProperties = {
   receiveShadow?: boolean
@@ -177,8 +182,8 @@ export class InstancedPanelGroup {
   private activateElement = (element: InstancedPanel, bucket: Bucket<InstancedPanel>, indexInBucket: number) => {
     const index = bucket.offset + indexInBucket
     this.instanceData.set(element.materialConfig.defaultData, 16 * index)
-    this.instanceData.addUpdateRange(16 * index, 16)
-    this.instanceData.needsUpdate = true
+    addInstancedAttributeUpdateRange(this.instanceData, 16 * index, 16)
+    markInstancedAttributeNeedsUpdate(this.instanceData)
     element.activate(bucket, indexInBucket)
   }
 
@@ -196,8 +201,8 @@ export class InstancedPanelGroup {
     //hiding the element by writing a 0 matrix (0 scale ...)
     const bufferOffset = index * 16
     this.instanceMatrix.array.fill(0, bufferOffset, bufferOffset + 16)
-    this.instanceMatrix.addUpdateRange(bufferOffset, 16)
-    this.instanceMatrix.needsUpdate = true
+    addInstancedAttributeUpdateRange(this.instanceMatrix, bufferOffset, 16)
+    markInstancedAttributeNeedsUpdate(this.instanceMatrix)
   }
 
   constructor(
@@ -322,8 +327,8 @@ export class InstancedPanelGroup {
     this.instanceMatrix = createDynamicFloat32InstancedAttribute(16, this.bufferElementSize, this.instanceMatrix)
     this.instanceData = createDynamicFloat32InstancedAttribute(16, this.bufferElementSize, this.instanceData)
     this.instanceDataOnUpdate = (start, count) => {
-      this.instanceData.addUpdateRange(start, count)
-      this.instanceData.needsUpdate = true
+      addInstancedAttributeUpdateRange(this.instanceData, start, count)
+      markInstancedAttributeNeedsUpdate(this.instanceData)
     }
     this.instanceClipping = createDynamicFloat32InstancedAttribute(16, this.bufferElementSize, this.instanceClipping)
     this.mesh = new InstancedPanelMesh(this.root, this.instanceMatrix, this.instanceData, this.instanceClipping)
