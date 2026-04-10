@@ -1,6 +1,8 @@
 import type { Material } from 'three'
+import { createWebGPUPanelMaterial } from '../panel/panel-node-material.js'
 import { createPanelMaterial, type MaterialClass, type PanelMaterialInfo } from '../panel/panel-material.js'
 import type { Font } from '../text/font.js'
+import { createWebGPUInstancedGlyphMaterial } from '../text/render/instanced-glyph-node-material.js'
 import { InstancedGlyphMaterial } from '../text/render/instanced-gylph-material.js'
 import type { BackendCapabilities, RendererBackend, RendererLike } from './types.js'
 
@@ -48,19 +50,20 @@ const webglTextRenderBackend: TextRenderBackend = {
 const experimentalWebGPUPanelRenderBackend: PanelRenderBackend = {
   backend: 'webgpu',
   capabilities: webgpuCapabilities,
-  // Keep the visual baseline wired through the existing panel material path until the
-  // NodeMaterial/TSL rewrite lands. The backend split is the contract we can build on.
-  createPanelMaterial: (materialClass, info) => createPanelMaterial(materialClass, info),
+  createPanelMaterial: (materialClass, info) => {
+    if (info.type !== 'instanced') {
+      return createPanelMaterial(materialClass, info)
+    }
+    return createWebGPUPanelMaterial(materialClass, info)
+  },
 }
 
 const experimentalWebGPUTextRenderBackend: TextRenderBackend = {
   backend: 'webgpu',
   capabilities: webgpuCapabilities,
-  // Text stays on the existing material path for now so the backend registry can be
-  // integrated without regressing the WebGL reference implementation.
   createGlyphMaterial: (font, renderer) => {
     font.page.anisotropy = getMaxRendererAnisotropy(renderer)
-    return new InstancedGlyphMaterial(font)
+    return createWebGPUInstancedGlyphMaterial(font)
   },
 }
 
@@ -77,5 +80,5 @@ export function getTextRenderBackend(backend: RendererBackend): TextRenderBacken
 }
 
 export function getMaxRendererAnisotropy(renderer?: RendererLike): number {
-  return renderer?.capabilities?.getMaxAnisotropy?.() ?? 0
+  return Math.max(1, renderer?.capabilities?.getMaxAnisotropy?.() ?? 1)
 }

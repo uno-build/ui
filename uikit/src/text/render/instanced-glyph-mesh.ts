@@ -1,11 +1,12 @@
 import { Box3, InstancedBufferAttribute, Material, Mesh, Object3DEventMap, PlaneGeometry, Sphere } from 'three'
 import type { RootContext } from '../../context.js'
 import { computeWorldToGlobalMatrix } from '../../utils.js'
+import { setInstancedMatrixColumns } from '../../render/instanced-attributes.js'
 
 export class InstancedGlyphMesh extends Mesh {
   public count = 0
 
-  protected readonly isInstancedMesh = true
+  protected isInstancedMesh = true
   public readonly instanceColor = null
   public readonly morphTexture = null
   public readonly boundingBox = new Box3()
@@ -25,10 +26,20 @@ export class InstancedGlyphMesh extends Mesh {
     const planeGeometry = new PlaneGeometry()
     planeGeometry.translate(0.5, -0.5, 0)
     super(planeGeometry, material)
+    if (root.backend === 'webgpu') {
+      this.isInstancedMesh = false
+    }
     this.pointerEvents = 'none'
+    if (root.backend === 'webgpu') {
+      setInstancedMatrixColumns(planeGeometry.attributes, 'instanceMatrix', instanceMatrix)
+    }
     planeGeometry.attributes.instanceUVOffset = instanceUV
     planeGeometry.attributes.instanceRGBA = instanceRGBA
-    planeGeometry.attributes.instanceClipping = instanceClipping
+    if (root.backend === 'webgpu') {
+      setInstancedMatrixColumns(planeGeometry.attributes, 'instanceClipping', instanceClipping)
+    } else {
+      planeGeometry.attributes.instanceClipping = instanceClipping
+    }
     planeGeometry.attributes.instanceRenderSolid = instanceRenderSolid
     this.frustumCulled = false
     root.onUpdateMatrixWorldSet.add(this.customUpdateMatrixWorld)

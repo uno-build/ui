@@ -1,8 +1,15 @@
-import { Box3, InstancedBufferAttribute, Mesh, Object3DEventMap, Sphere } from 'three'
+import {
+  Box3,
+  InstancedBufferAttribute,
+  Mesh,
+  Object3DEventMap,
+  Sphere,
+} from 'three'
 import { createPanelGeometry } from './utils.js'
 import { instancedPanelDepthMaterial, instancedPanelDistanceMaterial } from './panel-material.js'
 import type { RootContext } from '../context.js'
 import { computeWorldToGlobalMatrix } from '../utils.js'
+import { setInstancedMatrixColumns } from '../render/instanced-attributes.js'
 
 export class InstancedPanelMesh extends Mesh {
   public count = 0
@@ -12,6 +19,8 @@ export class InstancedPanelMesh extends Mesh {
   public readonly morphTexture = null
   public readonly boundingBox = new Box3()
   public readonly boundingSphere = new Sphere()
+  private readonly instanceDataSource: InstancedBufferAttribute
+  private readonly instanceClippingSource: InstancedBufferAttribute
 
   private readonly customUpdateMatrixWorld = () => computeWorldToGlobalMatrix(this.root, this.matrixWorld)
 
@@ -23,11 +32,20 @@ export class InstancedPanelMesh extends Mesh {
   ) {
     const panelGeometry = createPanelGeometry()
     super(panelGeometry)
+    this.instanceDataSource = instanceData
+    this.instanceClippingSource = instanceClipping
     this.pointerEvents = 'none'
-    panelGeometry.attributes.aData = instanceData
-    panelGeometry.attributes.aClipping = instanceClipping
-    this.customDepthMaterial = instancedPanelDepthMaterial
-    this.customDistanceMaterial = instancedPanelDistanceMaterial
+    if (root.backend === 'webgpu') {
+      setInstancedMatrixColumns(panelGeometry.attributes, 'aData', instanceData)
+      setInstancedMatrixColumns(panelGeometry.attributes, 'aClipping', instanceClipping)
+    } else {
+      panelGeometry.attributes.aData = instanceData
+      panelGeometry.attributes.aClipping = instanceClipping
+    }
+    if (root.backendCapabilities.supportsCustomDepthMaterials) {
+      this.customDepthMaterial = instancedPanelDepthMaterial
+      this.customDistanceMaterial = instancedPanelDistanceMaterial
+    }
     this.frustumCulled = false
     root.onUpdateMatrixWorldSet.add(this.customUpdateMatrixWorld)
   }
@@ -42,8 +60,8 @@ export class InstancedPanelMesh extends Mesh {
     const cloned = new InstancedPanelMesh(
       this.root,
       this.instanceMatrix,
-      this.geometry.attributes.aData as InstancedBufferAttribute,
-      this.geometry.attributes.aClipping as InstancedBufferAttribute,
+      this.instanceDataSource,
+      this.instanceClippingSource,
     ) as this
     cloned.count = this.count
     cloned.material = this.material

@@ -1,4 +1,4 @@
-import { DynamicDrawUsage, InstancedBufferAttribute } from 'three'
+import { DynamicDrawUsage, InstancedBufferAttribute, InstancedInterleavedBuffer, InterleavedBufferAttribute } from 'three'
 import type { TypedArray } from 'three'
 
 export function createDynamicFloat32InstancedAttribute(
@@ -47,4 +47,15 @@ export function copyInstancedArrayRange(
   const startIndex = start * itemSize
   const endIndex = end * itemSize
   to.set(from.subarray(startIndex, endIndex), targetIndex)
+}
+
+export function setInstancedMatrixColumns(
+  target: Record<string, InstancedBufferAttribute | InterleavedBufferAttribute>,
+  prefix: string,
+  attribute: InstancedBufferAttribute,
+) {
+  const interleaved = new InstancedInterleavedBuffer(attribute.array, 16, attribute.meshPerAttribute)
+  for (let i = 0; i < 4; i++) {
+    target[`${prefix}${i}`] = new InterleavedBufferAttribute(interleaved, 4, i * 4, attribute.normalized)
+  }
 }
