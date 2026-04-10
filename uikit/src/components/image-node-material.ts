@@ -1,28 +1,33 @@
-import { Material, Texture, Vector4 } from 'three'
+import { FrontSide, Material, Texture, Vector4 } from 'three'
 import { NodeMaterial } from 'three/webgpu'
 import {
   Fn,
   abs,
+  dot,
   float,
   fwidth,
   length,
   max,
   min,
+  positionWorld,
   smoothstep,
   texture,
   uniform,
   uv,
   vec2,
+  vec3,
   vec4,
 } from 'three/tsl'
 import type { MaterialClass } from '../panel/panel-material.js'
 import { createWebGPUBaseNodeMaterial } from '../panel/panel-node-material.js'
 
 type PanelDataRows = [Vector4, Vector4, Vector4, Vector4]
+type ClippingRows = [Vector4, Vector4, Vector4, Vector4]
 
 export type WebGPUImageMaterial = Material & {
   setTexture: (value: Texture | null | undefined) => void
   syncData: (data: ArrayLike<number>) => void
+  syncClipping: (data: ArrayLike<number>) => void
 }
 
 function unpackRadius(packed: ReturnType<typeof float>, divisor: number) {
@@ -52,6 +57,24 @@ function syncPanelDataRows(rows: PanelDataRows, data: ArrayLike<number>) {
   }
 }
 
+function syncClippingRows(rows: ClippingRows, data: ArrayLike<number>) {
+  for (let i = 0; i < 4; i++) {
+    rows[i]!.fromArray(data as ArrayLike<number>, i * 4)
+  }
+}
+
+function applyClipPlane(
+  plane: ReturnType<typeof vec4>,
+  worldPosition: ReturnType<typeof vec3>,
+  clipOpacity: ReturnType<typeof float>,
+) {
+  const planeLengthSq = dot(plane.xyz, plane.xyz)
+  const planeDistance = dot(worldPosition, plane.xyz).add(plane.w).toVar()
+  const planeGradient = max(fwidth(planeDistance).mul(0.5), float(0.0001))
+  const planeOpacity = smoothstep(planeGradient.negate(), planeGradient, planeDistance)
+  clipOpacity.mulAssign(planeLengthSq.greaterThan(float(0.000001)).select(planeOpacity, float(1.0)))
+}
+
 export function createWebGPUImageMaterial(
   materialClass: MaterialClass,
   data: ArrayLike<number>,
@@ -61,16 +84,22 @@ export function createWebGPUImageMaterial(
 
   const dataRows: PanelDataRows = [new Vector4(), new Vector4(), new Vector4(), new Vector4()]
   syncPanelDataRows(dataRows, data)
+  const clippingRows: ClippingRows = [new Vector4(), new Vector4(), new Vector4(), new Vector4()]
 
   const data0 = uniform(dataRows[0])
   const data1 = uniform(dataRows[1])
   const data2 = uniform(dataRows[2])
   const data3 = uniform(dataRows[3])
+  const clipping0 = uniform(clippingRows[0])
+  const clipping1 = uniform(clippingRows[1])
+  const clipping2 = uniform(clippingRows[2])
+  const clipping3 = uniform(clippingRows[3])
   const imageTexture = texture(initialTexture ?? new Texture())
 
   const imageSurface = Fn(() => {
     const panelUv = uv()
     const sampled = imageTexture.sample().rgba.toVar()
+    const imageWorldPosition = positionWorld
 
     const borderSizes = data0.toVar()
     const background = data1.toVar()
@@ -121,10 +150,15 @@ export function createWebGPUImageMaterial(
     const outerAlpha = smoothstep(outerGradient, outerGradient.negate(), outerDistance).toVar()
     const innerAlpha = smoothstep(innerGradient, innerGradient.negate(), innerDistance).toVar()
     const borderAlpha = max(outerAlpha.sub(innerAlpha), float(0)).toVar()
+    const clipOpacity = float(1).toVar()
+    applyClipPlane(clipping0, imageWorldPosition, clipOpacity)
+    applyClipPlane(clipping1, imageWorldPosition, clipOpacity)
+    applyClipPlane(clipping2, imageWorldPosition, clipOpacity)
+    applyClipPlane(clipping3, imageWorldPosition, clipOpacity)
 
     const backgroundWeight = background.w.mul(sampled.a).mul(innerAlpha).toVar()
     const borderWeight = panelMeta.x.mul(borderAlpha).toVar()
-    const totalWeight = backgroundWeight.add(borderWeight).toVar()
+    const totalWeight = backgroundWeight.add(borderWeight).mul(clipOpacity).toVar()
 
     const imageColor = sampled.rgb.mul(background.xyz)
     const color = imageColor
@@ -139,8 +173,11 @@ export function createWebGPUImageMaterial(
   material.colorNode = imageSurfaceNode.rgb
   material.opacityNode = imageSurfaceNode.a
   material.maskNode = imageSurfaceNode.a.greaterThan(float(0.01))
+  material.side = FrontSide
   material.transparent = true
   material.toneMapped = false
+  material.fog = false
+  material.clipShadows = true
 
   material.setTexture = (value) => {
     imageTexture.value = value ?? new Texture()
@@ -148,6 +185,9 @@ export function createWebGPUImageMaterial(
   }
   material.syncData = (nextData) => {
     syncPanelDataRows(dataRows, nextData)
+  }
+  material.syncClipping = (nextData) => {
+    syncClippingRows(clippingRows, nextData)
   }
 
   return material

@@ -4,19 +4,19 @@ import { Component } from './component.js'
 import { SRGBColorSpace, Texture, TextureLoader, Vector2Tuple } from 'three'
 import { abortableEffect, loadResourceWithParams, setupMatrixWorldUpdate } from '../utils.js'
 import {
-  createPanelMaterial,
   createPanelMaterialConfig,
   PanelDepthMaterial,
   PanelDistanceMaterial,
   PanelMaterialConfig,
 } from '../panel/panel-material.js'
-import { createGlobalClippingPlanes } from '../clipping.js'
+import { createGlobalClippingPlanes, defaultClippingData } from '../clipping.js'
 import { Inset } from '../flex/index.js'
 import { ElementType, setupOrderInfo, setupRenderOrder } from '../order.js'
 import { componentDefaults } from '../properties/defaults.js'
 import { RenderContext } from '../context.js'
 import { resolvePanelMaterialClassProperty } from '../panel/instanced-panel-group.js'
-import { createWebGPUImageMaterial, type WebGPUImageMaterial } from './image-node-material.js'
+import type { WebGPUImageMaterial } from './image-node-material.js'
+import { getImageRenderBackend } from '../render/backends.js'
 
 export type ImageFit = 'cover' | 'fill'
 
@@ -83,6 +83,7 @@ export class Image<
     }
 
     const clippingPlanes = createGlobalClippingPlanes(this)
+    const clippingData = new Float32Array(defaultClippingData)
     const isMeshVisible = getImageMaterialConfig().computedIsVisibile(
       this.properties,
       this.borderInset,
@@ -115,15 +116,17 @@ export class Image<
     }, this.abortSignal)
     abortableEffect(() => {
       const materialClass = resolvePanelMaterialClassProperty(this.properties.value.panelMaterialClass)
-      const material =
-        this.root.value.backend === 'webgpu'
-          ? createWebGPUImageMaterial(materialClass, data, this.texture.value)
-          : createPanelMaterial(materialClass, info)
+      const material = getImageRenderBackend(this.root.value.backend).createImageMaterial(
+        materialClass,
+        data,
+        this.texture.value,
+      )
       material.clippingPlanes = clippingPlanes
       ;(material as any).map = (this.material as any).map
       material.depthWrite = this.material.depthWrite
       material.depthTest = this.material.depthTest
       ;(material as Partial<WebGPUImageMaterial>).syncData?.(data)
+      ;(material as Partial<WebGPUImageMaterial>).syncClipping?.(clippingData)
       this.material = material
       return () => material.dispose()
     }, this.abortSignal)
@@ -224,6 +227,21 @@ export class Image<
       transformInsideBorder(this.borderInset, this.size, texture)
     }, this.abortSignal)
     abortableEffect(() => {
+      const clippingRect = this.parentContainer.value?.clippingRect.value
+      if (clippingRect == null) {
+        clippingData.set(defaultClippingData)
+      } else {
+        for (let i = 0; i < clippingPlanes.length; i++) {
+          const plane = clippingPlanes[i]!
+          plane.normal.toArray(clippingData, i * 4)
+          clippingData[i * 4 + 3] = plane.constant
+        }
+      }
+      ;(this.material as Partial<WebGPUImageMaterial>).syncClipping?.(clippingData)
+      this.root.peek().requestRender?.()
+    }, this.abortSignal)
+
+    abortableEffect(() => {
       this.visible = isMeshVisible.value
       this.root.peek().requestRender?.()
     }, this.abortSignal)
@@ -289,6 +307,7 @@ async function loadTextureImpl(src?: string | Texture): Promise<(Texture & { dis
     return Promise.resolve(undefined)
   }
   if (src instanceof Texture) {
+    src.matrixAutoUpdate = false
     return Promise.resolve(src)
   }
   try {

@@ -385,7 +385,7 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
 
   heroFrame.add(
     new Image({
-      src: createDiagnosticPosterDataUrl(),
+      src: '/texture.png',
       width: 270,
       height: 420,
       objectFit: 'cover',
@@ -693,7 +693,7 @@ function createWebGPUPanelScene(renderContext: RenderContext): DemoScene {
   mediaRail.add(heroFrame)
   heroFrame.add(
     new Image({
-      src: createDiagnosticPosterDataUrl(),
+      src: '/texture.png',
       width: 270,
       height: 420,
       objectFit: 'cover',
@@ -793,32 +793,4 @@ function makePanelBar(width: number, height: number, color: string, opacity: num
     borderRadius: Math.min(height / 2, 999),
     opacity,
   })
-}
-
-function createDiagnosticPosterDataUrl() {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 840">
-      <defs>
-        <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stop-color="#17324d"/>
-          <stop offset="50%" stop-color="#1d5c63"/>
-          <stop offset="100%" stop-color="#f4a259"/>
-        </linearGradient>
-      </defs>
-      <rect width="540" height="840" rx="32" fill="url(#bg)"/>
-      <circle cx="420" cy="130" r="98" fill="rgba(255,255,255,0.18)"/>
-      <circle cx="126" cy="248" r="72" fill="rgba(255,255,255,0.12)"/>
-      <rect x="64" y="408" width="412" height="240" rx="30" fill="rgba(11,19,27,0.28)"/>
-      <rect x="96" y="112" width="150" height="18" rx="9" fill="#fff4db"/>
-      <rect x="96" y="146" width="232" height="52" rx="18" fill="#fff4db"/>
-      <rect x="96" y="224" width="180" height="18" rx="9" fill="rgba(255,244,219,0.72)"/>
-      <rect x="96" y="446" width="240" height="24" rx="12" fill="#fff4db"/>
-      <rect x="96" y="486" width="344" height="16" rx="8" fill="rgba(255,244,219,0.78)"/>
-      <rect x="96" y="514" width="306" height="16" rx="8" fill="rgba(255,244,219,0.6)"/>
-      <rect x="96" y="542" width="326" height="16" rx="8" fill="rgba(255,244,219,0.5)"/>
-      <rect x="96" y="604" width="122" height="34" rx="17" fill="#17bebb"/>
-    </svg>
-  `
-
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }

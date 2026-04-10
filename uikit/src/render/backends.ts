@@ -1,10 +1,12 @@
 import type { Material } from 'three'
+import { createWebGPUImageMaterial } from '../components/image-node-material.js'
 import { createWebGPUPanelMaterial } from '../panel/panel-node-material.js'
 import { createPanelMaterial, type MaterialClass, type PanelMaterialInfo } from '../panel/panel-material.js'
 import type { Font } from '../text/font.js'
 import { createWebGPUInstancedGlyphMaterial } from '../text/render/instanced-glyph-node-material.js'
 import { InstancedGlyphMaterial } from '../text/render/instanced-gylph-material.js'
 import type { BackendCapabilities, RendererBackend, RendererLike } from './types.js'
+import type { Texture } from 'three'
 
 export type PanelRenderBackend = {
   backend: RendererBackend
@@ -16,6 +18,12 @@ export type TextRenderBackend = {
   backend: RendererBackend
   capabilities: BackendCapabilities
   createGlyphMaterial: (font: Font, renderer?: RendererLike) => Material
+}
+
+export type ImageRenderBackend = {
+  backend: RendererBackend
+  capabilities: BackendCapabilities
+  createImageMaterial: (materialClass: MaterialClass, data: Float32Array, texture?: Texture) => Material
 }
 
 const webglCapabilities: BackendCapabilities = {
@@ -47,6 +55,12 @@ const webglTextRenderBackend: TextRenderBackend = {
   },
 }
 
+const webglImageRenderBackend: ImageRenderBackend = {
+  backend: 'webgl',
+  capabilities: webglCapabilities,
+  createImageMaterial: (materialClass, data) => createPanelMaterial(materialClass, { type: 'normal', data }),
+}
+
 const experimentalWebGPUPanelRenderBackend: PanelRenderBackend = {
   backend: 'webgpu',
   capabilities: webgpuCapabilities,
@@ -67,6 +81,12 @@ const experimentalWebGPUTextRenderBackend: TextRenderBackend = {
   },
 }
 
+const experimentalWebGPUImageRenderBackend: ImageRenderBackend = {
+  backend: 'webgpu',
+  capabilities: webgpuCapabilities,
+  createImageMaterial: (materialClass, data, texture) => createWebGPUImageMaterial(materialClass, data, texture),
+}
+
 export function getDefaultBackendCapabilities(backend: RendererBackend): BackendCapabilities {
   return backend === 'webgpu' ? webgpuCapabilities : webglCapabilities
 }
@@ -77,6 +97,10 @@ export function getPanelRenderBackend(backend: RendererBackend): PanelRenderBack
 
 export function getTextRenderBackend(backend: RendererBackend): TextRenderBackend {
   return backend === 'webgpu' ? experimentalWebGPUTextRenderBackend : webglTextRenderBackend
+}
+
+export function getImageRenderBackend(backend: RendererBackend): ImageRenderBackend {
+  return backend === 'webgpu' ? experimentalWebGPUImageRenderBackend : webglImageRenderBackend
 }
 
 export function getMaxRendererAnisotropy(renderer?: RendererLike): number {

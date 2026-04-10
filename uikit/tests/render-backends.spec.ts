@@ -1,6 +1,11 @@
 import { expect } from 'chai'
-import { MeshBasicMaterial, MeshPhysicalMaterial } from 'three'
-import { getDefaultBackendCapabilities, getPanelRenderBackend, getTextRenderBackend } from '../src/render/backends.js'
+import { MeshBasicMaterial, MeshPhysicalMaterial, Texture } from 'three'
+import {
+  getDefaultBackendCapabilities,
+  getImageRenderBackend,
+  getPanelRenderBackend,
+  getTextRenderBackend,
+} from '../src/render/backends.js'
 import { Font } from '../src/text/font.js'
 
 describe('render backends', () => {
@@ -80,5 +85,16 @@ describe('render backends', () => {
     )
     const material = getTextRenderBackend('webgpu').createGlyphMaterial(font)
     expect((material as { isNodeMaterial?: boolean }).isNodeMaterial).to.equal(true)
+  })
+
+  it('creates a node-material image path for experimental WebGPU images', () => {
+    const material = getImageRenderBackend('webgpu').createImageMaterial(
+      MeshBasicMaterial,
+      new Float32Array(16),
+      new Texture(),
+    )
+    expect((material as { isNodeMaterial?: boolean }).isNodeMaterial).to.equal(true)
+    expect(typeof (material as { setTexture?: unknown }).setTexture).to.equal('function')
+    expect(typeof (material as { syncData?: unknown }).syncData).to.equal('function')
   })
 })
