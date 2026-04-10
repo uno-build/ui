@@ -8,7 +8,7 @@ import { abortableEffect, ColorRepresentation } from '../utils.js'
 import { OrderInfo } from '../order.js'
 import { PanelMaterialConfig } from './panel-material.js'
 import { BaseOutProperties, Properties } from '../properties/index.js'
-import { RootContext } from '../context.js'
+import type { RootContext } from '../context.js'
 
 export type PanelProperties = {
   borderTopLeftRadius?: number | string

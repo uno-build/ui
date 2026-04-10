@@ -8,7 +8,7 @@ export {
   isDarkMode,
   type PreferredColorScheme,
 } from './preferred-color-scheme.js'
-export type { RenderContext } from './context.js'
+export type { BackendCapabilities, RenderContext, RendererBackend, RendererLike } from './context.js'
 export type { MaterialClass, GlassMaterial, MetalMaterial, PlasticMaterial } from './panel/index.js'
 export type { ListenersProperties as Listeners, ScrollListenersProperties as ScrollListeners } from './listeners.js'
 export * from './components/index.js'

@@ -6,14 +6,24 @@ import { Matrix4, Vector2Tuple } from 'three'
 import { GlyphGroupManager } from './text/render/instanced-glyph-group.js'
 import { Component } from './components/component.js'
 import { Properties } from './properties/index.js'
+import { getDefaultBackendCapabilities } from './render/backends.js'
+import { type BackendCapabilities, type RendererBackend, type RendererLike } from './render/types.js'
+
+export type { BackendCapabilities, RendererBackend, RendererLike } from './render/types.js'
 
 export type RenderContext = {
   requestFrame: () => void
+  backend?: RendererBackend
+  renderer?: RendererLike
+  capabilities?: Partial<BackendCapabilities>
 }
 
 export type RootContext = WithReversePainterSortStableCache & {
   requestCalculateLayout: () => void
   requestRender: () => void
+  backend: RendererBackend
+  backendCapabilities: BackendCapabilities
+  renderer?: RendererLike
   component: Component
   glyphGroupManager: GlyphGroupManager
   panelGroupManager: PanelGroupManager
@@ -53,10 +63,14 @@ export function buildRootContext(
 }
 
 function createRootContext(component: Component, renderContext: RenderContext | undefined) {
+  const backend = renderContext?.backend ?? 'webgl'
   const ctx: Omit<RootContext, 'glyphGroupManager' | 'panelGroupManager'> = {
+    backend,
+    backendCapabilities: { ...getDefaultBackendCapabilities(backend), ...renderContext?.capabilities },
     isUpdateRunning: false,
     onFrameSet: new Set<(delta: number) => void>(),
     requestFrame: renderContext?.requestFrame,
+    renderer: renderContext?.renderer,
     requestRender() {
       if (ctx.isUpdateRunning) {
         //request render unnecassary -> while render after updates ran

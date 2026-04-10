@@ -1,11 +1,12 @@
-import { DynamicDrawUsage, InstancedBufferAttribute, Material, Object3D, TypedArray } from 'three'
+import { InstancedBufferAttribute, Material } from 'three'
 import { InstancedGlyph } from './instanced-glyph.js'
 import { InstancedGlyphMesh } from './instanced-glyph-mesh.js'
-import { InstancedGlyphMaterial } from './instanced-gylph-material.js'
 import { Font } from '../font.js'
 import { ElementType, OrderInfo, setupRenderOrder } from '../../order.js'
-import { RootContext } from '../../context.js'
+import type { RootContext } from '../../context.js'
 import type { Component } from '../../components/component.js'
+import { getTextRenderBackend } from '../../render/backends.js'
+import { copyInstancedArrayRange, createDynamicFloat32InstancedAttribute } from '../../render/instanced-attributes.js'
 
 export class GlyphGroupManager {
   private map = new Map<Font, Map<string, InstancedGlyphGroup>>()
@@ -92,7 +93,7 @@ export class InstancedGlyphGroup {
     depthWrite: boolean,
     private renderOrder: number,
   ) {
-    this.instanceMaterial = new InstancedGlyphMaterial(font)
+    this.instanceMaterial = getTextRenderBackend(root.backend).createGlyphMaterial(font, root.renderer)
     this.instanceMaterial.depthTest = depthTest
     this.instanceMaterial.depthWrite = depthWrite
   }
@@ -207,21 +208,11 @@ export class InstancedGlyphGroup {
 
   private resize(neededSize: number): void {
     const newSize = Math.ceil(neededSize * 1.5)
-    const matrixArray = new Float32Array(newSize * 16)
-    const uvArray = new Float32Array(newSize * 4)
-    const rgbaArray = new Float32Array(newSize * 4)
-    const clippingArray = new Float32Array(newSize * 16)
-    const renderSolidArray = new Float32Array(newSize * 1)
-    this.instanceMatrix = new InstancedBufferAttribute(matrixArray, 16, false)
-    this.instanceMatrix.setUsage(DynamicDrawUsage)
-    this.instanceUV = new InstancedBufferAttribute(uvArray, 4, false)
-    this.instanceUV.setUsage(DynamicDrawUsage)
-    this.instanceRGBA = new InstancedBufferAttribute(rgbaArray, 4, false)
-    this.instanceRGBA.setUsage(DynamicDrawUsage)
-    this.instanceClipping = new InstancedBufferAttribute(clippingArray, 16, false)
-    this.instanceClipping.setUsage(DynamicDrawUsage)
-    this.instanceRenderSolid = new InstancedBufferAttribute(renderSolidArray, 1, false)
-    this.instanceRenderSolid.setUsage(DynamicDrawUsage)
+    this.instanceMatrix = createDynamicFloat32InstancedAttribute(16, newSize)
+    this.instanceUV = createDynamicFloat32InstancedAttribute(4, newSize)
+    this.instanceRGBA = createDynamicFloat32InstancedAttribute(4, newSize)
+    this.instanceClipping = createDynamicFloat32InstancedAttribute(16, newSize)
+    this.instanceRenderSolid = createDynamicFloat32InstancedAttribute(1, newSize)
     const oldMesh = this.mesh
     this.mesh = new InstancedGlyphMesh(
       this.root,
@@ -284,19 +275,9 @@ function copyBuffer(
   oldMesh: InstancedGlyphMesh,
   newMesh: InstancedGlyphMesh,
 ) {
-  copy(target, start, end, oldMesh.instanceMatrix.array, newMesh.instanceMatrix.array, 16)
-  copy(target, start, end, oldMesh.instanceUV.array, newMesh.instanceUV.array, 4)
-  copy(target, start, end, oldMesh.instanceRGBA.array, newMesh.instanceRGBA.array, 4)
-  copy(target, start, end, oldMesh.instanceClipping.array, newMesh.instanceClipping.array, 16)
-  copy(target, start, end, oldMesh.instanceRenderSolid.array, newMesh.instanceRenderSolid.array, 1)
-}
-
-function copy(target: number, start: number, end: number, from: TypedArray, to: TypedArray, itemSize: number): void {
-  if (start === end) {
-    return
-  }
-  const targetIndex = target * itemSize
-  const startIndex = start * itemSize
-  const endIndex = end * itemSize
-  to.set(from.subarray(startIndex, endIndex), targetIndex)
+  copyInstancedArrayRange(target, start, end, oldMesh.instanceMatrix.array, newMesh.instanceMatrix.array, 16)
+  copyInstancedArrayRange(target, start, end, oldMesh.instanceUV.array, newMesh.instanceUV.array, 4)
+  copyInstancedArrayRange(target, start, end, oldMesh.instanceRGBA.array, newMesh.instanceRGBA.array, 4)
+  copyInstancedArrayRange(target, start, end, oldMesh.instanceClipping.array, newMesh.instanceClipping.array, 16)
+  copyInstancedArrayRange(target, start, end, oldMesh.instanceRenderSolid.array, newMesh.instanceRenderSolid.array, 1)
 }

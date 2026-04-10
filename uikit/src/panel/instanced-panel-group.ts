@@ -1,8 +1,6 @@
 import {
   InstancedBufferAttribute,
   Material,
-  DynamicDrawUsage,
-  Object3D,
   MeshPhongMaterial,
   MeshPhysicalMaterial,
 } from 'three'
@@ -13,14 +11,16 @@ import {
   updateSortedBucketsAllocation,
   resizeSortedBucketsSpace,
 } from '../allocation/sorted-buckets.js'
-import { MaterialClass, createPanelMaterial } from './panel-material.js'
+import { MaterialClass } from './panel-material.js'
 import { InstancedPanel } from './instanced-panel.js'
 import { InstancedPanelMesh } from './instanced-panel-mesh.js'
 import { ElementType, OrderInfo, setupRenderOrder } from '../order.js'
 import { computed } from '@preact/signals-core'
 import { Properties } from '../properties/index.js'
-import { RootContext } from '../context.js'
+import type { RootContext } from '../context.js'
 import type { Component } from '../components/component.js'
+import { getPanelRenderBackend } from '../render/backends.js'
+import { copyWithinInstancedAttribute, createDynamicFloat32InstancedAttribute } from '../render/instanced-attributes.js'
 
 export type ShadowProperties = {
   receiveShadow?: boolean
@@ -187,9 +187,9 @@ export class InstancedPanelGroup {
   }
 
   private bufferCopyWithin = (targetIndex: number, startIndex: number, endIndex: number) => {
-    copyWithinAttribute(this.instanceMatrix, targetIndex, startIndex, endIndex)
-    copyWithinAttribute(this.instanceData, targetIndex, startIndex, endIndex)
-    copyWithinAttribute(this.instanceClipping, targetIndex, startIndex, endIndex)
+    copyWithinInstancedAttribute(this.instanceMatrix, targetIndex, startIndex, endIndex)
+    copyWithinInstancedAttribute(this.instanceData, targetIndex, startIndex, endIndex)
+    copyWithinInstancedAttribute(this.instanceClipping, targetIndex, startIndex, endIndex)
   }
 
   private clearBufferAt = (index: number) => {
@@ -207,7 +207,8 @@ export class InstancedPanelGroup {
     private readonly panelGroupProperties: Required<PanelGroupProperties>,
   ) {
     const materialClass = resolvePanelMaterialClassProperty(panelGroupProperties.panelMaterialClass)
-    this.instanceMaterial = createPanelMaterial(materialClass, { type: 'instanced' })
+    const renderBackend = getPanelRenderBackend(root.backend)
+    this.instanceMaterial = renderBackend.createPanelMaterial(materialClass, { type: 'instanced' })
     this.instanceMaterial.depthTest = panelGroupProperties.depthTest
     this.instanceMaterial.depthWrite = panelGroupProperties.depthWrite
   }
@@ -318,28 +319,13 @@ export class InstancedPanelGroup {
       this.object.remove(this.mesh)
     }
     resizeSortedBucketsSpace(this.buckets, oldBufferSize, this.bufferElementSize)
-    const matrixArray = new Float32Array(this.bufferElementSize * 16)
-    if (this.instanceMatrix != null) {
-      matrixArray.set(this.instanceMatrix.array.subarray(0, matrixArray.length))
-    }
-    this.instanceMatrix = new InstancedBufferAttribute(matrixArray, 16, false)
-    this.instanceMatrix.setUsage(DynamicDrawUsage)
-    const dataArray = new Float32Array(this.bufferElementSize * 16)
-    if (this.instanceData != null) {
-      dataArray.set(this.instanceData.array.subarray(0, dataArray.length))
-    }
-    this.instanceData = new InstancedBufferAttribute(dataArray, 16, false)
+    this.instanceMatrix = createDynamicFloat32InstancedAttribute(16, this.bufferElementSize, this.instanceMatrix)
+    this.instanceData = createDynamicFloat32InstancedAttribute(16, this.bufferElementSize, this.instanceData)
     this.instanceDataOnUpdate = (start, count) => {
       this.instanceData.addUpdateRange(start, count)
       this.instanceData.needsUpdate = true
     }
-    this.instanceData.setUsage(DynamicDrawUsage)
-    const clippingArray = new Float32Array(this.bufferElementSize * 16)
-    if (this.instanceClipping != null) {
-      clippingArray.set(this.instanceClipping.array.subarray(0, clippingArray.length))
-    }
-    this.instanceClipping = new InstancedBufferAttribute(clippingArray, 16, false)
-    this.instanceClipping.setUsage(DynamicDrawUsage)
+    this.instanceClipping = createDynamicFloat32InstancedAttribute(16, this.bufferElementSize, this.instanceClipping)
     this.mesh = new InstancedPanelMesh(this.root, this.instanceMatrix, this.instanceData, this.instanceClipping)
     this.mesh.renderOrder = this.panelGroupProperties.renderOrder
     setupRenderOrder(this.mesh, { peek: () => this.root }, { value: this.orderInfo })
@@ -358,21 +344,4 @@ export class InstancedPanelGroup {
     this.mesh?.dispose()
     this.instanceMaterial.dispose()
   }
-}
-
-function copyWithinAttribute(
-  attribute: InstancedBufferAttribute,
-  targetIndex: number,
-  startIndex: number,
-  endIndex: number,
-) {
-  const itemSize = attribute.itemSize
-  const start = startIndex * itemSize
-  const end = endIndex * itemSize
-  const target = targetIndex * itemSize
-  attribute.array.copyWithin(target, start, end)
-  const count = end - start
-  attribute.addUpdateRange(start, count)
-  attribute.addUpdateRange(target, count)
-  attribute.needsUpdate = true
 }
