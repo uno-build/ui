@@ -1,4 +1,4 @@
-import { PerspectiveCamera, Scene, WebGLRenderer } from 'three'
+import { PerspectiveCamera, Scene, SRGBColorSpace, WebGLRenderer } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { WebGPURenderer } from 'three/webgpu'
 import {
@@ -15,6 +15,7 @@ import {
 type DemoRenderer = RendererLike & {
     init?: () => Promise<void>
     localClippingEnabled?: boolean
+    outputColorSpace?: string
     render: (scene: Scene, camera: PerspectiveCamera) => void
     setAnimationLoop: (callback: (time: number) => void) => void
     setClearColor: (color: number, alpha?: number) => void
@@ -34,6 +35,9 @@ type CreatedRenderer = {
     backend: RendererBackend
     renderer: DemoRenderer
 }
+
+const urlParams = new URLSearchParams(window.location.search)
+const solidColorMode = urlParams.get('solid') === '1'
 
 const camera = new PerspectiveCamera(70, 1, 0.01, 100)
 camera.position.z = 7
@@ -97,10 +101,7 @@ async function main() {
 }
 
 function readRequestedBackend(): RendererBackend {
-    return new URLSearchParams(window.location.search).get('backend') ===
-        'webgpu'
-        ? 'webgpu'
-        : 'webgl'
+    return urlParams.get('backend') === 'webgpu' ? 'webgpu' : 'webgl'
 }
 
 async function createRenderer(
@@ -119,6 +120,7 @@ async function createRenderer(
                 canvas,
             }) as DemoRenderer
             await renderer.init?.()
+            renderer.outputColorSpace = SRGBColorSpace
             return {
                 backend: 'webgpu',
                 renderer,
@@ -128,12 +130,15 @@ async function createRenderer(
         }
     }
 
+    const renderer = new WebGLRenderer({
+        antialias: true,
+        canvas,
+    }) as DemoRenderer
+    renderer.outputColorSpace = SRGBColorSpace
+
     return {
         backend: 'webgl',
-        renderer: new WebGLRenderer({
-            antialias: true,
-            canvas,
-        }) as DemoRenderer,
+        renderer,
     }
 }
 
@@ -187,7 +192,7 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
         width: 250,
         height: 664,
         flexDirection: 'column',
-        backgroundColor: 'rgba(20,34,45,0.94)',
+        backgroundColor: solidColorMode ? '#14222d' : 'rgba(20,34,45,0.94)',
         borderRadius: 24,
         padding: 18,
         gap: 14,
@@ -206,7 +211,7 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
     sidebar.add(
         new Text({
             text: 'Sidebar cards, feed scroll, clipping, image masking and long MSDF text in the same scene.',
-            color: 'rgba(255,247,230,0.72)',
+            color: solidColorMode ? '#fff7e6' : 'rgba(255,247,230,0.72)',
             fontSize: 15,
             lineHeight: '145%',
         }),
@@ -215,7 +220,7 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
     sidebar.add(
         new Text({
             text: backendDescription,
-            color: 'rgba(255,247,230,0.56)',
+            color: solidColorMode ? '#f3ddbf' : 'rgba(255,247,230,0.56)',
             fontSize: 12,
             lineHeight: '140%',
         }),
@@ -228,8 +233,8 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
     ] as const) {
         const stat = new Container({
             flexDirection: 'column',
-            backgroundColor: 'rgba(255,255,255,0.08)',
-            borderColor: 'rgba(255,255,255,0.16)',
+            backgroundColor: solidColorMode ? '#2a3a46' : 'rgba(255,255,255,0.08)',
+            borderColor: solidColorMode ? '#ffffff' : 'rgba(255,255,255,0.16)',
             borderWidth: 1,
             borderRadius: 18,
             padding: 14,
@@ -238,7 +243,7 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
         stat.add(
             new Text({
                 text: label,
-                color: 'rgba(255,247,230,0.62)',
+                color: solidColorMode ? '#fff7e6' : 'rgba(255,247,230,0.62)',
                 fontSize: 12,
                 fontWeight: 'semi-bold',
             }),
@@ -258,9 +263,9 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
         new Container({
             flexGrow: 1,
             flexDirection: 'column',
-            backgroundColor: 'rgba(0,0,0,0.18)',
+            backgroundColor: solidColorMode ? '#0f161c' : 'rgba(0,0,0,0.18)',
             borderRadius: 18,
-            borderColor: 'rgba(255,255,255,0.14)',
+            borderColor: solidColorMode ? '#ffffff' : 'rgba(255,255,255,0.14)',
             borderWidth: 1,
             padding: 14,
             gap: 10,
@@ -278,8 +283,8 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
     const header = new Container({
         height: 92,
         flexDirection: 'column',
-        backgroundColor: 'rgba(255,255,255,0.82)',
-        borderColor: 'rgba(18,32,43,0.18)',
+        backgroundColor: solidColorMode ? '#ffffff' : 'rgba(255,255,255,0.82)',
+        borderColor: solidColorMode ? '#12202b' : 'rgba(18,32,43,0.18)',
         borderWidth: 1,
         borderRadius: 22,
         padding: 18,
@@ -296,7 +301,7 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
     header.add(
         new Text({
             text: 'This feed auto-scrolls so clipping and layering stay visible even without pointer event wiring in the local playground.',
-            color: 'rgba(19,32,43,0.72)',
+            color: solidColorMode ? '#000000' : 'rgba(19,32,43,0.72)',
             fontSize: 14,
             lineHeight: '140%',
         }),
@@ -308,8 +313,8 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
         height: 556,
         overflow: 'scroll',
         flexDirection: 'column',
-        backgroundColor: 'rgba(255,255,255,0.5)',
-        borderColor: 'rgba(18,32,43,0.12)',
+        backgroundColor: solidColorMode ? '#f4f1ea' : 'rgba(255,255,255,0.5)',
+        borderColor: solidColorMode ? '#12202b' : 'rgba(18,32,43,0.12)',
         borderWidth: 1,
         borderRadius: 24,
         padding: 14,
@@ -321,12 +326,20 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
         const card = new Container({
             width: 532,
             flexDirection: 'column',
-            backgroundColor:
-                i % 3 === 0
-                    ? 'rgba(255,255,255,0.96)'
-                    : 'rgba(250,246,240,0.92)',
-            borderColor:
-                i % 2 === 0 ? 'rgba(228,87,46,0.35)' : 'rgba(23,190,187,0.28)',
+            backgroundColor: solidColorMode
+                ? i % 3 === 0
+                    ? '#ffffff'
+                    : '#faf6f0'
+                : i % 3 === 0
+                  ? 'rgba(255,255,255,0.96)'
+                  : 'rgba(250,246,240,0.92)',
+            borderColor: solidColorMode
+                ? i % 2 === 0
+                    ? '#e4572e'
+                    : '#17bebb'
+                : i % 2 === 0
+                  ? 'rgba(228,87,46,0.35)'
+                  : 'rgba(23,190,187,0.28)',
             borderWidth: 1,
             borderRadius: 20,
             padding: 16,
@@ -345,7 +358,7 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
         card.add(
             new Text({
                 text: 'UIKit is drawing nested panels, clipped children and multiline MSDF text here. This paragraph is intentionally long so wrapping, line height and glyph batching are always visible while the scroll position changes.',
-                color: 'rgba(19,32,43,0.78)',
+                color: solidColorMode ? '#000000' : 'rgba(19,32,43,0.78)',
                 fontSize: 14,
                 lineHeight: '148%',
                 width: 500,
@@ -376,7 +389,7 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
                 height: 84,
                 overflow: 'scroll',
                 flexDirection: 'column',
-                backgroundColor: 'rgba(19,32,43,0.06)',
+                backgroundColor: solidColorMode ? '#dbe4ea' : 'rgba(19,32,43,0.06)',
                 borderRadius: 16,
                 padding: 12,
             })
@@ -409,7 +422,7 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
         overflow: 'scroll',
         flexDirection: 'column',
         backgroundColor: '#d8e2dc',
-        borderColor: 'rgba(19,32,43,0.12)',
+        borderColor: solidColorMode ? '#13202b' : 'rgba(19,32,43,0.12)',
         borderWidth: 1,
         borderRadius: 24,
         padding: 10,
@@ -430,8 +443,8 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
         width: 290,
         height: 150,
         flexDirection: 'column',
-        backgroundColor: 'rgba(255,255,255,0.78)',
-        borderColor: 'rgba(19,32,43,0.12)',
+        backgroundColor: solidColorMode ? '#ffffff' : 'rgba(255,255,255,0.78)',
+        borderColor: solidColorMode ? '#13202b' : 'rgba(19,32,43,0.12)',
         borderWidth: 1,
         borderRadius: 20,
         padding: 10,
@@ -459,8 +472,8 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
     const note = new Container({
         width: 290,
         flexDirection: 'column',
-        backgroundColor: 'rgba(255,255,255,0.75)',
-        borderColor: 'rgba(19,32,43,0.12)',
+        backgroundColor: solidColorMode ? '#ffffff' : 'rgba(255,255,255,0.75)',
+        borderColor: solidColorMode ? '#13202b' : 'rgba(19,32,43,0.12)',
         borderWidth: 1,
         borderRadius: 20,
         padding: 16,
@@ -477,7 +490,7 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
     note.add(
         new Text({
             text: 'The poster is taller than its viewport, so the container clips it continuously while the rail stays static. This gives us a compact clipping reference next to the scrolling feed.',
-            color: 'rgba(19,32,43,0.75)',
+            color: solidColorMode ? '#000000' : 'rgba(19,32,43,0.75)',
             fontSize: 14,
             lineHeight: '145%',
             width: 258,
@@ -489,13 +502,13 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
         width: 290,
         flexGrow: 1,
         flexDirection: 'column',
-        backgroundColor: 'rgba(20,34,45,0.78)',
-        borderColor: 'rgba(255,255,255,0.14)',
+        backgroundColor: solidColorMode ? '#14222d' : 'rgba(20,34,45,0.78)',
+        borderColor: solidColorMode ? '#fff7e6' : 'rgba(255,255,255,0.14)',
         borderWidth: 1,
         borderRadius: 22,
         padding: 16,
         gap: 10,
-        opacity: 0.92,
+        opacity: solidColorMode ? 1 : 0.92,
     })
     translucentPanel.add(
         new Text({
@@ -508,7 +521,7 @@ function createWebGLBaselineScene(renderContext: RenderContext): DemoScene {
     translucentPanel.add(
         new Text({
             text: 'This panel stays semi-transparent to make ordering artifacts easier to spot once a second backend starts rendering the same tree.',
-            color: 'rgba(255,247,230,0.72)',
+            color: solidColorMode ? '#fff7e6' : 'rgba(255,247,230,0.72)',
             fontSize: 14,
             lineHeight: '145%',
             width: 258,
@@ -856,6 +869,9 @@ function createFullscreenOverlay(renderContext: RenderContext) {
             paddingTop: 28,
             paddingLeft: 28,
             paddingRight: 28,
+            depthTest: false,
+            depthWrite: false,
+            renderOrder: 1000,
             pointerEvents: 'none',
         },
         undefined,
@@ -865,18 +881,18 @@ function createFullscreenOverlay(renderContext: RenderContext) {
     const overlayCard = new Container({
         width: 420,
         flexDirection: 'column',
-        backgroundColor: 'rgba(255,255,255,0.78)',
-        borderColor: 'rgba(16,32,45,0.12)',
+        backgroundColor: solidColorMode ? '#ffffff' : 'rgba(255,255,255,0.78)',
+        borderColor: solidColorMode ? '#000000' : 'rgba(16,32,45,0.12)',
         borderWidth: 1,
         borderRadius: 20,
         padding: 14,
         gap: 6,
-        opacity: 0.96,
+        opacity: solidColorMode ? 1 : 0.96,
     })
     overlayCard.add(
         new Text({
             text: `Fullscreen overlay reference · ${backendLabel}`,
-            color: '#10202d',
+            color: solidColorMode ? '#000000' : '#10202d',
             fontSize: 16,
             fontWeight: 'bold',
         }),
@@ -884,7 +900,7 @@ function createFullscreenOverlay(renderContext: RenderContext) {
     overlayCard.add(
         new Text({
             text: 'This card is attached to the camera through Fullscreen so we can validate screen-space sizing in both renderers.',
-            color: 'rgba(16,32,45,0.72)',
+            color: solidColorMode ? '#000000' : 'rgba(16,32,45,0.72)',
             fontSize: 12,
             lineHeight: '140%',
             width: 392,

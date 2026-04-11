@@ -136,7 +136,9 @@ function configureInstancedPanelNodes(material: NodeMaterial) {
     const innerGradient = max(fwidth(innerDistance), float(0.0001))
     const outerAlpha = smoothstep(outerGradient, outerGradient.negate(), outerDistance).toVar()
     const innerAlpha = smoothstep(innerGradient, innerGradient.negate(), innerDistance).toVar()
-    const borderAlpha = max(outerAlpha.sub(innerAlpha), float(0)).toVar()
+    const transition = float(1.0)
+      .sub(outerAlpha.sub(innerAlpha).greaterThan(float(0.1)).select(float(1.0).sub(innerAlpha), float(0.0)))
+      .toVar()
 
     const clipOpacity = float(1).toVar()
     applyClipPlane(clipping0, panelLocalPosition, clipOpacity)
@@ -144,15 +146,20 @@ function configureInstancedPanelNodes(material: NodeMaterial) {
     applyClipPlane(clipping2, panelLocalPosition, clipOpacity)
     applyClipPlane(clipping3, panelLocalPosition, clipOpacity)
 
-    const backgroundWeight = background.w.mul(innerAlpha).toVar()
-    const borderWeight = panelMeta.x.mul(borderAlpha).toVar()
-    const totalWeight = backgroundWeight.add(borderWeight).toVar()
-    const alpha = clipOpacity.mul(totalWeight).toVar()
-
-    const color = background.xyz
-      .mul(backgroundWeight)
-      .add(border.yzw.mul(borderWeight))
-      .div(max(totalWeight, float(0.0001)))
+    const fullBackgroundOpacity = background.w.toVar()
+    const fullBorderOpacity = min(float(1.0), panelMeta.x.add(fullBackgroundOpacity)).toVar()
+    const alpha = clipOpacity
+      .mul(outerAlpha)
+      .mul(fullBorderOpacity.mul(float(1.0).sub(transition)).add(fullBackgroundOpacity.mul(transition)))
+      .toVar()
+    const borderMix = panelMeta.x.div(max(fullBorderOpacity, float(0.001))).toVar()
+    const mainColor = background.xyz.toVar()
+    const borderColor = border.yzw.toVar()
+    const color = mainColor
+      .mul(float(1.0).sub(borderMix))
+      .add(borderColor.mul(borderMix))
+      .mul(float(1.0).sub(transition))
+      .add(mainColor.mul(transition))
 
     return vec4(color, alpha)
   })

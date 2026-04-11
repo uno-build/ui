@@ -96,11 +96,11 @@ export class WebGPUInstancedGlyphMaterial extends MeshBasicNodeMaterial {
       applyClipPlane(clipping3, glyphLocalPosition, clipOpacity)
 
       const dist = median(msdf.r, msdf.g, msdf.b).sub(0.5).mul(distanceRange).toVar()
-      const aaDist = clamp(length(fwidth(fontUv.mul(pageSize))).mul(0.5), float(0.0), distanceRange.mul(0.5)).toVar()
+      const aaDist = clamp(length(fwidth(fontUv.mul(pageSize))).mul(0.35), float(0.0), distanceRange.mul(0.5)).toVar()
       const alphaBase = smoothstep(aaDist.negate(), aaDist, dist).toVar()
       const alpha = instanceRenderSolid
         .greaterThan(float(0.5))
-        .select(float(1.0), pow(alphaBase, float(1 / 1.3)))
+        .select(float(1.0), pow(alphaBase, float(1 / 1.2)))
         .mul(clipOpacity)
         .mul(instanceRGBA.w)
         .toVar()
