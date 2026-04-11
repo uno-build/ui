@@ -158,7 +158,8 @@ export function createWebGPUImageMaterial(
 
     const backgroundWeight = background.w.mul(sampled.a).mul(innerAlpha).toVar()
     const borderWeight = panelMeta.x.mul(borderAlpha).toVar()
-    const totalWeight = backgroundWeight.add(borderWeight).mul(clipOpacity).toVar()
+    const totalWeight = backgroundWeight.add(borderWeight).toVar()
+    const alpha = totalWeight.mul(clipOpacity).toVar()
 
     const imageColor = sampled.rgb.mul(background.xyz)
     const color = imageColor
@@ -166,7 +167,7 @@ export function createWebGPUImageMaterial(
       .add(border.yzw.mul(borderWeight))
       .div(max(totalWeight, float(0.0001)))
 
-    return vec4(color, totalWeight)
+    return vec4(color, alpha)
   })
 
   const imageSurfaceNode = imageSurface()

@@ -66,16 +66,21 @@ export function setInstancedMatrixColumns(
 }
 
 export function addInstancedAttributeUpdateRange(attribute: InstancedBufferAttribute, start: number, count: number) {
+  const interleaved = getColumnInterleavedBuffer(attribute)
+  if (interleaved != null) {
+    interleaved.addUpdateRange(start, count)
+    return
+  }
   attribute.addUpdateRange(start, count)
-  getColumnInterleavedBuffer(attribute)?.addUpdateRange(start, count)
 }
 
 export function markInstancedAttributeNeedsUpdate(attribute: InstancedBufferAttribute) {
-  attribute.needsUpdate = true
   const interleaved = getColumnInterleavedBuffer(attribute)
   if (interleaved != null) {
     interleaved.needsUpdate = true
+    return
   }
+  attribute.needsUpdate = true
 }
 
 function getColumnInterleavedBuffer(attribute: InstancedBufferAttribute) {
