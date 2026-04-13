@@ -1,3 +1,6 @@
 node_modules/
-package-lock.json
 dist/
+examples/
+
+.DS_Store
+package-lock.json

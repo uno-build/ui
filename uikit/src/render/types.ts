@@ -1,24 +1,24 @@
-import { Vector2 } from 'three'
+import { Vector2 } from 'three/webgpu'
 
 export type RendererBackend = 'webgl' | 'webgpu'
 
 export type XRSessionLike = {
-  interactionMode?: string
+    interactionMode?: string
 }
 
 export type RendererLike = {
-  getSize(target: Vector2): Vector2
-  xr: {
-    getSession(): XRSessionLike | null | undefined
-  }
-  capabilities?: {
-    getMaxAnisotropy?: () => number
-  }
+    getSize(target: Vector2): Vector2
+    xr: {
+        getSession(): XRSessionLike | null | undefined
+    }
+    capabilities?: {
+        getMaxAnisotropy?: () => number
+    }
 }
 
 export type BackendCapabilities = {
-  experimental: boolean
-  usesNodeMaterials: boolean
-  supportsCustomDepthMaterials: boolean
-  supportsMaterialOnBeforeCompile: boolean
+    experimental: boolean
+    usesNodeMaterials: boolean
+    supportsCustomDepthMaterials: boolean
+    supportsMaterialOnBeforeCompile: boolean
 }

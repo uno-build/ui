@@ -1,4 +1,4 @@
-import { LinearFilter, NoColorSpace, TextureLoader } from 'three'
+import { LinearFilter, NoColorSpace, TextureLoader } from 'three/webgpu'
 import { Font, FontInfo } from './font.js'
 
 const fontCache = new Map<string | FontInfo, Set<(font: Font) => void> | Font>()
