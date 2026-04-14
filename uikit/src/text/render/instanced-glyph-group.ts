@@ -192,6 +192,19 @@ export class InstancedGlyphGroup {
             this.holeIndicies.length +
             this.requestedGlyphs.length
 
+        if (requiredSize > 0) {
+            console.log(
+                '[UIKit][Text] glyph group frame ' +
+                    JSON.stringify({
+                        requiredSize,
+                        meshCount: this.mesh?.count ?? 0,
+                        capacity: this.instanceMatrix?.count ?? 0,
+                        requested: this.requestedGlyphs.length,
+                        holes: this.holeIndicies.length,
+                    }),
+            )
+        }
+
         if (this.mesh != null) {
             this.mesh.visible = requiredSize > 0
         }

@@ -29,7 +29,7 @@ import {
     panelGeometry,
     setupBoundingSphere,
 } from '../panel/index.js'
-import { Overflow } from 'yoga-layout/load'
+import { Overflow } from 'yoga-layout/sync'
 import { computedIsClipped } from '../clipping.js'
 import { FlexNode, Inset } from '../flex/node.js'
 import { OrderInfo } from '../order.js'

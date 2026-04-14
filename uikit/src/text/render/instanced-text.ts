@@ -90,6 +90,15 @@ export function createInstancedText(
         if (font == null || text.orderInfo.value == null) {
             return
         }
+        console.log(
+            '[UIKit][Text] create instanced text ' +
+                JSON.stringify({
+                    text: String(text.properties.value.text ?? ''),
+                    hasFont: font != null,
+                    orderMajor: text.orderInfo.value.majorIndex,
+                    orderMinor: text.orderInfo.value.minorIndex,
+                }),
+        )
         const instancedText = new InstancedText(
             text.root.value.glyphGroupManager.getGroup(
                 text.orderInfo.value,

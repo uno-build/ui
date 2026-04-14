@@ -4,9 +4,12 @@ import {
     Fn,
     attribute,
     clamp,
+    dFdx,
+    dFdy,
     dot,
     float,
     fwidth,
+    inverseSqrt,
     length,
     max,
     min,
@@ -111,19 +114,26 @@ export class WebGPUInstancedGlyphMaterial extends MeshBasicNodeMaterial {
             applyClipPlane(clipping2, glyphLocalPosition, clipOpacity)
             applyClipPlane(clipping3, glyphLocalPosition, clipOpacity)
 
-            const dist = median(msdf.r, msdf.g, msdf.b)
-                .sub(0.5)
-                .mul(distanceRange)
+            const sigDist = median(msdf.r, msdf.g, msdf.b).sub(0.5).toVar()
+            const dx = pageSize.x
+                .mul(length(vec2(dFdx(fontUv.x), dFdy(fontUv.x))))
                 .toVar()
-            const aaDist = clamp(
-                length(fwidth(fontUv.mul(pageSize))).mul(0.35),
-                float(0.0),
-                distanceRange.mul(0.5),
+            const dy = pageSize.y
+                .mul(length(vec2(dFdx(fontUv.y), dFdy(fontUv.y))))
+                .toVar()
+            const toPixels = distanceRange
+                .mul(inverseSqrt(dx.mul(dx).add(dy.mul(dy))))
+                .toVar()
+            const pxDist = sigDist.mul(toPixels).toVar()
+            const edgeWidth = float(0.5)
+            const alphaBase = smoothstep(
+                edgeWidth.negate(),
+                edgeWidth,
+                pxDist,
             ).toVar()
-            const alphaBase = smoothstep(aaDist.negate(), aaDist, dist).toVar()
             const alpha = instanceRenderSolid
                 .greaterThan(float(0.5))
-                .select(float(1.0), pow(alphaBase, float(1 / 1.2)))
+                .select(float(1.0), clamp(alphaBase, float(0.0), float(1.0)))
                 .mul(clipOpacity)
                 .mul(instanceRGBA.w)
                 .toVar()

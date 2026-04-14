@@ -1,4 +1,20 @@
+function normalizeInput(input) {
+    if (input == null) {
+        return input;
+    }
+    if (typeof input === 'object') {
+        if ('value' in input) {
+            return input.value;
+        }
+        const primitive = input.valueOf?.();
+        if (primitive !== input) {
+            return primitive;
+        }
+    }
+    return input;
+}
 function convertEnum(lut, input, defaultValue) {
+    input = normalizeInput(input);
     if (input == null) {
         return defaultValue;
     }
@@ -9,7 +25,11 @@ function convertEnum(lut, input, defaultValue) {
     return resolvedValue;
 }
 function convertPoint(input, root) {
-    if (input == null || typeof input != 'string') {
+    input = normalizeInput(input);
+    if (input == null) {
+        return NaN;
+    }
+    if (typeof input != 'string') {
         return input;
     }
     if (input.endsWith('vw')) {
@@ -182,6 +202,9 @@ export const setter = { positionType: (root, node, input) => {
         node.setMaxHeight(convertPoint(input, root));
     },
     boxSizing: (root, node, input) => {
+        if (typeof node.setBoxSizing !== 'function') {
+            return;
+        }
         node.setBoxSizing(input ?? 0);
     },
     aspectRatio: (root, node, input) => {

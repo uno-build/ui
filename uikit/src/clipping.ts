@@ -1,7 +1,7 @@
 import { Signal, computed } from '@preact/signals-core'
 import { Matrix4, Plane, Vector3 } from 'three/webgpu'
 import type { Box3, Line3, Matrix3, Sphere, Vector2Tuple } from 'three/webgpu'
-import { Overflow } from 'yoga-layout/load'
+import { Overflow } from 'yoga-layout/sync'
 import { Container } from './components/container.js'
 import { Component } from './components/component.js'
 import { Fix_TS_56_Float32Array } from './utils.js'

@@ -86,7 +86,22 @@ export function computedFont(
         }
         const url = getMatchingFontUrl(fontFamilyWeightMap, fontWeight)
         let aborted = false
-        loadCachedFont(url, (font) => !aborted && (result.value = font))
+        loadCachedFont(url, (font) => {
+            if (aborted) {
+                return
+            }
+            console.log(
+                '[UIKit][Text] font loaded ' +
+                    JSON.stringify({
+                        family: fontFamily,
+                        weight: fontWeight,
+                        pageWidth: font.pageWidth,
+                        pageHeight: font.pageHeight,
+                        distanceRange: font.distanceRange,
+                    }),
+            )
+            result.value = font
+        })
         return () => (aborted = true)
     })
     return result

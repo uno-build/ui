@@ -7,7 +7,7 @@ import {
     MeasureFunction,
     Node,
     Overflow,
-} from 'yoga-layout/load'
+} from 'yoga-layout/sync'
 import { setter } from './setter.js'
 import { PointScaleFactor, createYogaNode } from './yoga.js'
 import { abortableEffect } from '../utils.js'
@@ -42,6 +42,25 @@ export class FlexNode {
 
     private active = signal(false)
 
+    private applyImmediateProperties() {
+        if (this.yogaNode == null) {
+            return
+        }
+        for (const key in setter) {
+            const value =
+                this.component.properties.value[key as keyof BaseOutProperties]
+            if (value === undefined) {
+                continue
+            }
+            setter[key as keyof typeof setter](
+                this.component.root.value,
+                this.yogaNode,
+                value as any,
+            )
+        }
+        this.component.root.peek().requestCalculateLayout()
+    }
+
     constructor(private component: Component) {
         abortableEffect(() => {
             const yogaNode = createYogaNode()
@@ -61,20 +80,14 @@ export class FlexNode {
                 return
             }
             const internalAbort = new AbortController()
+            this.applyImmediateProperties()
             const unsubscribe = component.properties.subscribePropertyKeys(
                 (key) => {
                     if (!hasImmediateProperty(key as string)) {
                         return
                     }
                     abortableEffect(() => {
-                        setter[key as keyof typeof setter](
-                            component.root.value,
-                            this.yogaNode!,
-                            component.properties.value[
-                                key as keyof BaseOutProperties
-                            ] as any,
-                        )
-                        this.component.root.peek().requestCalculateLayout()
+                        this.applyImmediateProperties()
                     }, internalAbort.signal)
                 },
             )
@@ -83,6 +96,12 @@ export class FlexNode {
                 internalAbort.abort()
             }
         }, component.abortSignal)
+
+        const onAdded = () => this.applyImmediateProperties()
+        component.addEventListener('added', onAdded)
+        component.abortSignal.addEventListener('abort', () => {
+            component.removeEventListener('added', onAdded)
+        })
 
         abortableEffect(() => {
             const parentContainer = component.parentContainer.value
@@ -413,5 +432,14 @@ function assertNodeNotNull<T>(val: T | undefined): T {
 }
 
 function yogaNodeEqual(n1: Node, n2: Node): boolean {
-    return (n1 as any)['M']['O'] === (n2 as any)['M']['O']
+    const getStableNodeId = (node: Node) => {
+        const anyNode = node as any
+        return (
+            anyNode?.L?.N ??
+            anyNode?.M?.O ??
+            anyNode?.__ptr ??
+            anyNode?._ptr
+        )
+    }
+    return getStableNodeId(n1) === getStableNodeId(n2)
 }

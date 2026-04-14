@@ -14,7 +14,7 @@ import { setInstancedMatrixColumns } from '../../render/instanced-attributes.js'
 export class InstancedGlyphMesh extends Mesh {
     public count = 0
 
-    protected isInstancedMesh = true
+    protected readonly isInstancedMesh = true
     public readonly instanceColor = null
     public readonly morphTexture = null
     public readonly boundingBox = new Box3()
@@ -38,9 +38,6 @@ export class InstancedGlyphMesh extends Mesh {
         const planeGeometry = new PlaneGeometry()
         planeGeometry.translate(0.5, -0.5, 0)
         super(planeGeometry, material)
-        if (root.backend === 'webgpu') {
-            this.isInstancedMesh = false
-        }
         this.pointerEvents = 'none'
         if (root.backend === 'webgpu') {
             setInstancedMatrixColumns(
