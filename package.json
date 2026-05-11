@@ -1,5 +1,5 @@
 {
-    "dependencies": {
+    "devDependencies": {
         "@pmndrs/handle": "^6.6.29",
         "@pmndrs/pointer-events": "^6.6.29",
         "@pmndrs/uikit": "^1.0.64",
@@ -23,6 +23,9 @@
         "zustand": "^5.0.12"
     },
     "scripts": {
-        "dev": "vite"
+        "dev": "vite examples/basic"
+    },
+    "dependencies": {
+        "wgpu-matrix": "^3.4.2"
     }
 }

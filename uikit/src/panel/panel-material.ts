@@ -53,6 +53,23 @@ export function getDefaultPanelMaterialConfig() {
 
 const colorArrayHelper = [0, 0, 0, 0]
 
+type MaterialSetter = (
+    data: TypedArray,
+    offset: number,
+    value: any,
+    size: Signal<Vector2Tuple | undefined>,
+    opacity: Signal<number | `${number}%`>,
+    onUpdate: ((start: number, count: number) => void) | undefined,
+) => void
+
+function createMaterialSetter(
+    fn: MaterialSetter,
+    defaultValue: unknown,
+): MaterialSetter {
+    return (data, offset, value, size, opacity, onUpdate) =>
+        fn(data, offset, value ?? defaultValue, size, opacity, onUpdate)
+}
+
 export function createPanelMaterialConfig(
     keys: { [Key in keyof typeof materialSetters]?: string },
     providedDefaults?: {
@@ -68,34 +85,13 @@ export function createPanelMaterialConfig(
     const defaults = { ...defaultDefaults, ...providedDefaults }
 
     const setters: {
-        [Key in string]: (
-            data: TypedArray,
-            offset: number,
-            value: unknown,
-            size: Signal<Vector2Tuple | undefined>,
-            opacity: Signal<number | `${number}%`>,
-            onUpdate: ((start: number, count: number) => void) | undefined,
-        ) => void
+        [Key in string]: MaterialSetter
     } = {}
     for (const key in keys) {
         const fn = materialSetters[key as keyof typeof materialSetters]
         const defaultValue = defaults[key as keyof typeof materialSetters]
-        setters[keys[key as keyof typeof materialSetters]!] = (
-            data,
-            offset,
-            value,
-            size,
-            opacity,
-            onUpdate,
-        ) =>
-            fn(
-                data,
-                offset,
-                (value ?? defaultValue) as any,
-                size,
-                opacity,
-                onUpdate,
-            )
+        setters[keys[key as keyof typeof materialSetters]!] =
+            createMaterialSetter(fn, defaultValue)
     }
 
     const defaultData: Fix_TS_56_Float32Array = new Float32Array(16) //filled with 0s by default

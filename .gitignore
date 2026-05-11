@@ -1,6 +1,7 @@
 node_modules/
-dist/
-examples/
-
 .DS_Store
 package-lock.json
+dist/
+/examples/*
+!/examples/basic/
+
