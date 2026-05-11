@@ -1,31 +1,9 @@
 {
-    "devDependencies": {
-        "@pmndrs/handle": "^6.6.29",
-        "@pmndrs/pointer-events": "^6.6.29",
-        "@pmndrs/uikit": "^1.0.64",
-        "@pmndrs/uikit-horizon": "^1.0.64",
-        "@pmndrs/uikit-lucide": "^1.0.64",
-        "@react-three/drei": "^10.7.7",
-        "@react-three/fiber": "^9.5.0",
-        "@react-three/rapier": "^2.2.0",
-        "@react-three/uikit": "^1.0.64",
-        "@react-three/uikit-default": "^1.0.64",
-        "@react-three/uikit-horizon": "^1.0.64",
-        "@react-three/uikit-lucide": "^1.0.64",
-        "@react-three/xr": "^6.6.29",
-        "chai": "^6.2.2",
-        "mocha": "^11.7.5",
-        "react": "^19.2.5",
-        "react-dom": "^19.2.5",
-        "three": "^0.183.2",
-        "tsc": "^2.0.4",
-        "vite": "^8.0.8",
-        "zustand": "^5.0.12"
-    },
     "scripts": {
-        "dev": "vite examples/basic"
+        "start": "vite ./examples"
     },
-    "dependencies": {
+    "devDependencies": {
+        "vite": "^8.0.12",
         "wgpu-matrix": "^3.4.2"
     }
 }
