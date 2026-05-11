@@ -1,7 +1,7 @@
 import { BackendHTML } from '../src/index.ts'
 
 const HTML = BackendHTML({ canvas: document.getElementById('html') })
-console.log('HTML', HTML)
+
 const root = HTML.create({
     flexDirection: 'row',
     width: '100%',

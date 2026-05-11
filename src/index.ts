@@ -1,11 +1,11 @@
 export function BackendHTML({ canvas }) {
     const ctx = canvas.getContext('2d')
-    let container = null
 
-    canvas.onpaint = () => {
+    canvas.onpaint = (e) => {
         ctx.reset()
-        const transform = ctx.drawElementImage(container, 0, 0)
-        container.style.transform = transform.toString()
+        for (const el of e.changedElements) {
+            ctx.drawElementImage(el, 0, 0)
+        }
     }
 
     // Size the canvas grid to match the device scale factor to prevent blurriness.
@@ -15,17 +15,7 @@ export function BackendHTML({ canvas }) {
     })
     observer.observe(canvas, { box: 'device-pixel-content-box' })
 
-    const { create, add } = nodeConstructor(canvas)
-    return {
-        add,
-        create: (...args) => {
-            const node = create(...args)
-            if (container === null) {
-                container = node.element
-            }
-            return node
-        },
-    }
+    return nodeConstructor(canvas)
 }
 
 function nodeConstructor(element) {
@@ -35,7 +25,9 @@ function nodeConstructor(element) {
         Object.keys(props).forEach((key) => {
             element.style[key] = props[key]
         })
-        return nodeConstructor(element)
+        const node = nodeConstructor(element)
+        delete node.create
+        return node
     }
     function add(node) {
         element.appendChild(node.element)
