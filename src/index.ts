@@ -32,5 +32,8 @@ function nodeConstructor(element) {
     function add(node) {
         element.appendChild(node.element)
     }
-    return { create, add, element }
+    function remove(node) {
+        element.removeChild(node.element)
+    }
+    return { create, add, remove, element }
 }
