@@ -15,25 +15,15 @@ export function BackendHTML({ canvas }) {
     })
     observer.observe(canvas, { box: 'device-pixel-content-box' })
 
-    return nodeConstructor(canvas)
+    return { create, canvas }
 }
 
-function nodeConstructor(element) {
-    function create(props) {
-        const element = document.createElement('div')
-        element.style.display = 'flex'
-        Object.keys(props).forEach((key) => {
-            element.style[key] = props[key]
-        })
-        const node = nodeConstructor(element)
-        delete node.create
-        return node
-    }
-    function add(node) {
-        element.appendChild(node.element)
-    }
-    function remove(node) {
-        element.removeChild(node.element)
-    }
-    return { create, add, remove, element }
+// function nodeConstructor(element) {
+function create(props) {
+    const element = document.createElement('div')
+    element.style.display = 'flex'
+    Object.keys(props).forEach((key) => {
+        element.style[key] = props[key]
+    })
+    return element
 }
