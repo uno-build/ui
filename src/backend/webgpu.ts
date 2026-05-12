@@ -1,89 +1,53 @@
-import { loadYoga } from 'yoga-layout/load'
+import { loadYoga, ExperimentalFeature } from 'yoga-layout/load'
 import { setYogaProperty, isYogaProperty } from '../yoga.ts'
 
 export default async function createWebGPUBackend({ canvas }) {
     const Yoga = await loadYoga()
     const config = Yoga.Config.create()
     config.setUseWebDefaults(true)
-    // config.setPointScaleFactor(PointScaleFactor)
-    // config.setExperimentalFeatureEnabled(ExperimentalFeature.WebFlexBasis, true)
+    // config.setPointScaleFactor(200)
+    config.setExperimentalFeatureEnabled(ExperimentalFeature.WebFlexBasis, true)
 
-    const nodes = new WeakMap()
+    const nodes = new Map()
     const root = create(
         { width: canvas.clientWidth, height: canvas.clientHeight },
         config,
     )
 
-    function calculateLayout() {
-        root.yogaNode.calculateLayout()
-    }
-
     function create(props, config) {
-        const yogaNode = Yoga.Node.create(config)
+        const yoga = Yoga.Node.create(config)
         const add = (child) => {
-            const paintIndex = yogaNode.getChildCount()
-            const data = nodes.get(child) ?? {}
-            nodes.set(child, {
-                ...data,
-                parent: node,
-                paintIndex,
-            })
-            yogaNode.insertChild(child.yogaNode, paintIndex)
+            if (nodes.has(child)) {
+                throw new Error('child already added')
+            }
+            const paintIndex = yoga.getChildCount()
+            child.parent = node
+            nodes.set(child, {})
+            yoga.insertChild(child.yoga, paintIndex)
         }
         const remove = (child) => {
             nodes.delete(child)
-            yogaNode.removeChild(child.yogaNode)
+            yoga.removeChild(child.yoga)
         }
         const setProperty = (key, value) => {
-            const data = nodes.get(node) ?? {}
-            nodes.set(node, { ...data, value })
-
+            props[key] = value
             if (isYogaProperty(key)) {
-                setYogaProperty(yogaNode, key, value)
+                setYogaProperty(yoga, key, value)
             } else {
                 // console.warn(`unsupported property ${key}`)
-            }
-        }
-        const getParent = () => {
-            return nodes.get(node)?.parent
-        }
-        const getPaintIndex = () => {
-            return nodes.get(node)?.paintIndex ?? 0
-        }
-        const getZIndex = () => {
-            return nodes.get(node)?.zIndex ?? 0
-        }
-        const getComputedLayout = () => {
-            const layout = yogaNode.getComputedLayout()
-            const parent = getParent()
-            if (parent === undefined) {
-                return {
-                    left: layout.left,
-                    top: layout.top,
-                    width: layout.width,
-                    height: layout.height,
-                }
-            }
-            const parentLayout = parent.yogaNode.getComputedLayout()
-            return {
-                left: parentLayout.left + layout.left,
-                top: parentLayout.top + layout.top,
-                width: layout.width,
-                height: layout.height,
             }
         }
         const on = (type, listener) => {}
         const off = (type, listener) => {}
 
         const node = {
-            yogaNode,
+            yoga,
+            parent: undefined,
+            props,
+            layout: {},
             add,
             remove,
             setProperty,
-            getParent,
-            getPaintIndex,
-            getZIndex,
-            getComputedLayout,
             on,
             off,
         }
@@ -95,11 +59,58 @@ export default async function createWebGPUBackend({ canvas }) {
         return node
     }
 
+    function getComputedLayout(node) {
+        return node.yoga.getComputedLayout()
+        // const layout = node.yoga.getComputedLayout()
+        // if (node.parent === undefined) {
+        //     return {
+        //         left: layout.left,
+        //         top: layout.top,
+        //         width: layout.width,
+        //         height: layout.height,
+        //     }
+        // }
+        // const parentLayout = getComputedLayout(node.parent)
+        // return {
+        //     left: layout.left + parentLayout.left,
+        //     top: layout.top + parentLayout.top,
+        //     width: layout.width,
+        //     height: layout.height,
+        // }
+    }
+
+    function calculateLayout() {
+        const dirtyNodes = []
+        for (const node of nodes.keys()) {
+            if (node.yoga.isDirty()) {
+                dirtyNodes.push(node)
+            }
+        }
+        root.yoga.calculateLayout()
+
+        console.log(dirtyNodes.length, 'dirty nodes')
+        return dirtyNodes.filter((node) => {
+            const layout = getComputedLayout(node)
+            const updated = !deepEqual(layout, node.layout)
+            node.layout = layout
+            return updated
+        })
+    }
+
     return {
         root,
         create,
         calculateLayout,
     }
+}
+
+function deepEqual(obj1, obj2) {
+    for (const key in obj1) {
+        if (obj1[key] !== obj2[key]) {
+            return false
+        }
+    }
+    return true
 }
 
 // async function main(canvas) {

@@ -8,7 +8,7 @@ window.WEBGPU = await createWebGPUBackend({
     canvas: document.getElementById('webgpu'),
 })
 
-makeLayout(window.HTML, 'HTML')
+// makeLayout(window.HTML, 'HTML')
 makeLayout(window.WEBGPU, 'WebGPU')
 
 function makeLayout(ui, name) {
@@ -19,6 +19,7 @@ function makeLayout(ui, name) {
         height: '50%',
         padding: '10px',
         gap: '10px',
+        backgroundColor: 'lightgray',
     })
     ui.root.add(container)
 
@@ -75,37 +76,17 @@ function makeLayout(ui, name) {
     })
     c3.add(c3b)
 
-    ui.calculateLayout()
+    console.log(ui.calculateLayout().length, 'updated nodes')
 
     // Logs
-    console.log(
-        'root',
-        JSON.stringify(ui.root.getComputedLayout()),
-        ui.root.getPaintIndex(),
-    )
-    console.log(
-        'c1',
-        JSON.stringify(c1.getComputedLayout()),
-        c1.getPaintIndex(),
-    )
-    console.log(
-        'c2',
-        JSON.stringify(c2.getComputedLayout()),
-        c2.getPaintIndex(),
-    )
-    console.log(
-        'c2b',
-        JSON.stringify(c2b.getComputedLayout()),
-        c2b.getPaintIndex(),
-    )
-    console.log(
-        'c3',
-        JSON.stringify(c3.getComputedLayout()),
-        c3.getPaintIndex(),
-    )
-    console.log(
-        'c3b',
-        JSON.stringify(c3b.getComputedLayout()),
-        c3b.getPaintIndex(),
-    )
+    console.log('root', ui.root.parent)
+    console.log('c1', c1.parent)
+    console.log('c2', c2.parent)
+    console.log('c2b', c2b.parent)
+    console.log('c3', c3.parent)
+    console.log('c3b', c3b.parent)
+
+    c2b.setProperty('width', '50px')
+
+    console.log(ui.calculateLayout().length, 'updated nodes')
 }

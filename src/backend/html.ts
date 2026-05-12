@@ -69,5 +69,8 @@ function wrapNode(element) {
         off: (type, listener) => {
             element.removeEventListener(type, listener)
         },
+        setProperty: (key, value) => {
+            element.style[key] = value
+        },
     }
 }
