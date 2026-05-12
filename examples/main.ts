@@ -74,21 +74,17 @@ function makeLayout(ui, name) {
     })
     c3.add(c3b)
 
-    if (name === 'WebGPU') {
-        ui.calculateLayout()
-        console.log(
-            'root',
-            JSON.stringify(ui.root.getComputedLayout()),
-            ui.root.getParent(),
-        )
-        console.log('c1', JSON.stringify(c1.getComputedLayout()))
-        console.log('c2', JSON.stringify(c2.getComputedLayout()))
-        console.log('c2b', JSON.stringify(c2b.getComputedLayout()))
-        console.log('c3', JSON.stringify(c3.getComputedLayout()))
-        console.log(
-            'c3b',
-            JSON.stringify(c3b.getComputedLayout()),
-            c3b.getParent() === c3,
-        )
-    }
+    ui.calculateLayout()
+
+    // Logs
+    console.log(
+        'root',
+        JSON.stringify(ui.root.getComputedLayout()),
+        ui.root.getParent(),
+    )
+    console.log('c1', JSON.stringify(c1.getComputedLayout()))
+    console.log('c2', JSON.stringify(c2.getComputedLayout()))
+    console.log('c2b', JSON.stringify(c2b.getComputedLayout()))
+    console.log('c3', JSON.stringify(c3.getComputedLayout()))
+    console.log('c3b', JSON.stringify(c3b.getComputedLayout()), c3b.getParent())
 }

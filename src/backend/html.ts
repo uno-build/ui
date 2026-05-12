@@ -18,7 +18,7 @@ export default async function createHtmlBackend({ canvas }) {
     return {
         create,
         root: wrapNode(canvas),
-        getTreeLayout: () => {},
+        calculateLayout: () => {},
     }
 }
 
@@ -42,6 +42,24 @@ function wrapNode(element) {
         },
         on: (type, listener) => {
             element.addEventListener(type, listener)
+        },
+        getParent: () => {
+            if (element.parentElement) {
+                return wrapNode(element.parentElement)
+            }
+            return null
+        },
+        getComputedLayout: () => {
+            const rect = element.getBoundingClientRect()
+            return {
+                left: Math.round(rect.left),
+                top: Math.round(rect.top),
+                width: Math.round(rect.width),
+                height: Math.round(rect.height),
+            }
+        },
+        off: (type, listener) => {
+            element.removeEventListener(type, listener)
         },
     }
 }
