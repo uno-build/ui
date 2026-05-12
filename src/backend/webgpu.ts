@@ -8,17 +8,12 @@ export default async function createWebGPUBackend({ canvas }) {
     // config.setPointScaleFactor(PointScaleFactor)
     // config.setExperimentalFeatureEnabled(ExperimentalFeature.WebFlexBasis, true)
 
-    let initialized = false
-    const root = create(
-        {
-            width: canvas.clientWidth,
-            height: canvas.clientHeight,
-        },
+    const root = createNode(
+        { width: canvas.clientWidth, height: canvas.clientHeight },
         config,
     )
-    initialized = true
 
-    function create(props, config) {
+    function createNode(props, config) {
         const node = Yoga.Node.create(config)
         const wrappedNode = wrapNode(node)
         Object.keys(props).forEach((key) => {
@@ -39,14 +34,14 @@ export default async function createWebGPUBackend({ canvas }) {
                 // root.node.calculateLayout()
             },
             set: (key, value) => {
-                setProperty(node, key, value, initialized ? root.node : node)
+                setProperty(node, key, value)
             },
             on: (type, listener) => {},
             off: (type, listener) => {},
         }
     }
 
-    return { create, root }
+    return { create: createNode, root }
 }
 
 // async function main(canvas) {

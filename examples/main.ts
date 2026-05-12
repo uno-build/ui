@@ -41,29 +41,45 @@ function makeLayout(ui, name) {
         flex: 1,
         opacity: 0.5,
         backgroundColor: 'blue',
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'flex-end',
+        alignItems: 'flex-end',
+        borderWidth: '100px',
+        borderColor: 'black',
+        borderStyle: 'solid',
     })
     c3.on('click', () => container.remove(c3))
     container.add(c3)
 
-    const c4 = ui.create({
+    const c2b = ui.create({
+        width: '50%',
+        height: '50%',
+        opacity: 1,
+        backgroundColor: 'yellow',
+    })
+    c2b.on('click', (e) => {
+        c2.remove(c2b)
+        e.stopPropagation()
+    })
+    c2.add(c2b)
+
+    const c3b = ui.create({
         width: '50px',
         height: '50px',
         opacity: 1,
         backgroundColor: 'yellow',
     })
-    c4.on('click', (e) => {
-        c3.remove(c4)
+    c3b.on('click', (e) => {
+        c3.remove(c3b)
         e.stopPropagation()
     })
-    c3.add(c4)
+    c3.add(c3b)
 
     if (name === 'WebGPU') {
-        console.log(JSON.stringify(ui.root.node.getComputedLayout()))
-        console.log(JSON.stringify(c1.node.getComputedLayout()))
-        console.log(JSON.stringify(c2.node.getComputedLayout()))
-        console.log(JSON.stringify(c3.node.getComputedLayout()))
-        console.log(JSON.stringify(c4.node.getComputedLayout()))
+        console.log('root', JSON.stringify(ui.root.node.getComputedLayout()))
+        console.log('c1', JSON.stringify(c1.node.getComputedLayout()))
+        console.log('c2', JSON.stringify(c2.node.getComputedLayout()))
+        console.log('c2b', JSON.stringify(c2b.node.getComputedLayout()))
+        console.log('c3', JSON.stringify(c3.node.getComputedLayout()))
+        console.log('c3b', JSON.stringify(c3b.node.getComputedLayout()))
     }
 }

@@ -73,9 +73,9 @@ const GUTTER = {
     all: 2,
 }
 
-export function setProperty(node, key, value, root = node) {
+export function setProperty(node, key, value) {
     if (setter.hasOwnProperty(key)) {
-        setter[key](root, node, value)
+        setter[key](node, value)
     } else {
         console.warn(`unsupported property ${key}`)
     }
@@ -83,13 +83,13 @@ export function setProperty(node, key, value, root = node) {
 }
 
 const setter = {
-    positionType: (root, node, input) => {
+    positionType: (node, input) => {
         node.setPositionType(convertEnum(POSITION_TYPE_LUT, input, 1))
     },
-    position: (root, node, input) => {
+    position: (node, input) => {
         node.setPositionType(convertEnum(POSITION_TYPE_LUT, input, 1))
     },
-    positionTop: (root, node, input) => {
+    positionTop: (node, input) => {
         setEdgeUnit(
             node,
             'setPosition',
@@ -100,7 +100,7 @@ const setter = {
             root,
         )
     },
-    positionLeft: (root, node, input) => {
+    positionLeft: (node, input) => {
         setEdgeUnit(
             node,
             'setPosition',
@@ -111,7 +111,7 @@ const setter = {
             root,
         )
     },
-    positionRight: (root, node, input) => {
+    positionRight: (node, input) => {
         setEdgeUnit(
             node,
             'setPosition',
@@ -122,7 +122,7 @@ const setter = {
             root,
         )
     },
-    positionBottom: (root, node, input) => {
+    positionBottom: (node, input) => {
         setEdgeUnit(
             node,
             'setPosition',
@@ -133,25 +133,25 @@ const setter = {
             root,
         )
     },
-    alignContent: (root, node, input) => {
+    alignContent: (node, input) => {
         node.setAlignContent(convertEnum(ALIGN_LUT, input, 4))
     },
-    alignItems: (root, node, input) => {
+    alignItems: (node, input) => {
         node.setAlignItems(convertEnum(ALIGN_LUT, input, 4))
     },
-    alignSelf: (root, node, input) => {
+    alignSelf: (node, input) => {
         node.setAlignSelf(convertEnum(ALIGN_LUT, input, 0))
     },
-    flexDirection: (root, node, input) => {
+    flexDirection: (node, input) => {
         node.setFlexDirection(convertEnum(FLEX_DIRECTION_LUT, input, 2))
     },
-    flexWrap: (root, node, input) => {
+    flexWrap: (node, input) => {
         node.setFlexWrap(convertEnum(WRAP_LUT, input, 0))
     },
-    justifyContent: (root, node, input) => {
+    justifyContent: (node, input) => {
         node.setJustifyContent(convertEnum(JUSTIFY_LUT, input, 0))
     },
-    marginTop: (root, node, input) => {
+    marginTop: (node, input) => {
         setEdgeUnit(
             node,
             'setMargin',
@@ -162,7 +162,7 @@ const setter = {
             root,
         )
     },
-    marginLeft: (root, node, input) => {
+    marginLeft: (node, input) => {
         setEdgeUnit(
             node,
             'setMargin',
@@ -173,7 +173,7 @@ const setter = {
             root,
         )
     },
-    marginRight: (root, node, input) => {
+    marginRight: (node, input) => {
         setEdgeUnit(
             node,
             'setMargin',
@@ -184,7 +184,7 @@ const setter = {
             root,
         )
     },
-    marginBottom: (root, node, input) => {
+    marginBottom: (node, input) => {
         setEdgeUnit(
             node,
             'setMargin',
@@ -195,7 +195,7 @@ const setter = {
             root,
         )
     },
-    margin: (root, node, input) => {
+    margin: (node, input) => {
         setEdgeUnit(
             node,
             'setMargin',
@@ -206,7 +206,7 @@ const setter = {
             root,
         )
     },
-    marginHorizontal: (root, node, input) => {
+    marginHorizontal: (node, input) => {
         setEdgeUnit(
             node,
             'setMargin',
@@ -217,7 +217,7 @@ const setter = {
             root,
         )
     },
-    marginVertical: (root, node, input) => {
+    marginVertical: (node, input) => {
         setEdgeUnit(
             node,
             'setMargin',
@@ -228,7 +228,7 @@ const setter = {
             root,
         )
     },
-    flexBasis: (root, node, input) => {
+    flexBasis: (node, input) => {
         setUnit(
             node,
             'setFlexBasis',
@@ -239,22 +239,22 @@ const setter = {
             NaN,
         )
     },
-    flexBasisPercent: (root, node, input) => {
+    flexBasisPercent: (node, input) => {
         node.setFlexBasisPercent(convertPercent(input))
     },
-    flexBasisAuto: (root, node) => {
+    flexBasisAuto: (node) => {
         node.setFlexBasisAuto()
     },
-    flex: (root, node, input) => {
+    flex: (node, input) => {
         node.setFlex(input)
     },
-    flexGrow: (root, node, input) => {
+    flexGrow: (node, input) => {
         node.setFlexGrow(input)
     },
-    flexShrink: (root, node, input) => {
+    flexShrink: (node, input) => {
         node.setFlexShrink(input)
     },
-    width: (root, node, input) => {
+    width: (node, input) => {
         setUnit(
             node,
             'setWidth',
@@ -265,13 +265,13 @@ const setter = {
             NaN,
         )
     },
-    widthAuto: (root, node) => {
+    widthAuto: (node) => {
         node.setWidthAuto()
     },
-    widthPercent: (root, node, input) => {
+    widthPercent: (node, input) => {
         node.setWidthPercent(convertPercent(input))
     },
-    height: (root, node, input) => {
+    height: (node, input) => {
         setUnit(
             node,
             'setHeight',
@@ -282,73 +282,73 @@ const setter = {
             NaN,
         )
     },
-    heightAuto: (root, node) => {
+    heightAuto: (node) => {
         node.setHeightAuto()
     },
-    heightPercent: (root, node, input) => {
+    heightPercent: (node, input) => {
         node.setHeightPercent(convertPercent(input))
     },
-    minWidth: (root, node, input) => {
+    minWidth: (node, input) => {
         setUnit(node, 'setMinWidth', 'setMinWidthPercent', null, input, root)
     },
-    minWidthPercent: (root, node, input) => {
+    minWidthPercent: (node, input) => {
         node.setMinWidthPercent(convertPercent(input))
     },
-    minHeight: (root, node, input) => {
+    minHeight: (node, input) => {
         setUnit(node, 'setMinHeight', 'setMinHeightPercent', null, input, root)
     },
-    minHeightPercent: (root, node, input) => {
+    minHeightPercent: (node, input) => {
         node.setMinHeightPercent(convertPercent(input))
     },
-    maxWidth: (root, node, input) => {
+    maxWidth: (node, input) => {
         setUnit(node, 'setMaxWidth', 'setMaxWidthPercent', null, input, root)
     },
-    maxWidthPercent: (root, node, input) => {
+    maxWidthPercent: (node, input) => {
         node.setMaxWidthPercent(convertPercent(input))
     },
-    maxHeight: (root, node, input) => {
+    maxHeight: (node, input) => {
         setUnit(node, 'setMaxHeight', 'setMaxHeightPercent', null, input, root)
     },
-    maxHeightPercent: (root, node, input) => {
+    maxHeightPercent: (node, input) => {
         node.setMaxHeightPercent(convertPercent(input))
     },
-    boxSizing: (root, node, input) => {
+    boxSizing: (node, input) => {
         node.setBoxSizing(convertEnum(BOX_SIZING_LUT, input, 0))
     },
-    aspectRatio: (root, node, input) => {
+    aspectRatio: (node, input) => {
         node.setAspectRatio(input)
     },
-    isReferenceBaseline: (root, node, input) => {
+    isReferenceBaseline: (node, input) => {
         node.setIsReferenceBaseline(Boolean(input))
     },
-    referenceBaseline: (root, node, input) => {
+    referenceBaseline: (node, input) => {
         node.setIsReferenceBaseline(Boolean(input))
     },
-    borderTopWidth: (root, node, input) => {
-        node.setBorder(EDGE.top, input)
+    borderTopWidth: (node, input) => {
+        node.setBorder(EDGE.top, convertBorderWidth(input, root))
     },
-    borderLeftWidth: (root, node, input) => {
-        node.setBorder(EDGE.left, input)
+    borderLeftWidth: (node, input) => {
+        node.setBorder(EDGE.left, convertBorderWidth(input, root))
     },
-    borderRightWidth: (root, node, input) => {
-        node.setBorder(EDGE.right, input)
+    borderRightWidth: (node, input) => {
+        node.setBorder(EDGE.right, convertBorderWidth(input, root))
     },
-    borderBottomWidth: (root, node, input) => {
-        node.setBorder(EDGE.bottom, input)
+    borderBottomWidth: (node, input) => {
+        node.setBorder(EDGE.bottom, convertBorderWidth(input, root))
     },
-    borderWidth: (root, node, input) => {
-        node.setBorder(EDGE.all, input)
+    borderWidth: (node, input) => {
+        node.setBorder(EDGE.all, convertBorderWidth(input, root))
     },
-    border: (root, node, input) => {
-        node.setBorder(EDGE.all, input)
+    border: (node, input) => {
+        node.setBorder(EDGE.all, convertBorderWidth(input, root))
     },
-    overflow: (root, node, input) => {
+    overflow: (node, input) => {
         node.setOverflow(convertEnum(OVERFLOW_LUT, input, 0))
     },
-    display: (root, node, input) => {
+    display: (node, input) => {
         node.setDisplay(convertEnum(DISPLAY_LUT, input, 0))
     },
-    paddingTop: (root, node, input) => {
+    paddingTop: (node, input) => {
         setEdgeUnit(
             node,
             'setPadding',
@@ -359,7 +359,7 @@ const setter = {
             root,
         )
     },
-    paddingLeft: (root, node, input) => {
+    paddingLeft: (node, input) => {
         setEdgeUnit(
             node,
             'setPadding',
@@ -370,7 +370,7 @@ const setter = {
             root,
         )
     },
-    paddingRight: (root, node, input) => {
+    paddingRight: (node, input) => {
         setEdgeUnit(
             node,
             'setPadding',
@@ -381,7 +381,7 @@ const setter = {
             root,
         )
     },
-    paddingBottom: (root, node, input) => {
+    paddingBottom: (node, input) => {
         setEdgeUnit(
             node,
             'setPadding',
@@ -392,7 +392,7 @@ const setter = {
             root,
         )
     },
-    padding: (root, node, input) => {
+    padding: (node, input) => {
         setEdgeUnit(
             node,
             'setPadding',
@@ -403,7 +403,7 @@ const setter = {
             root,
         )
     },
-    paddingHorizontal: (root, node, input) => {
+    paddingHorizontal: (node, input) => {
         setEdgeUnit(
             node,
             'setPadding',
@@ -414,7 +414,7 @@ const setter = {
             root,
         )
     },
-    paddingVertical: (root, node, input) => {
+    paddingVertical: (node, input) => {
         setEdgeUnit(
             node,
             'setPadding',
@@ -425,35 +425,35 @@ const setter = {
             root,
         )
     },
-    gapRow: (root, node, input) => {
+    gapRow: (node, input) => {
         setGap(node, GUTTER.row, input, root)
     },
-    gapColumn: (root, node, input) => {
+    gapColumn: (node, input) => {
         setGap(node, GUTTER.column, input, root)
     },
-    rowGap: (root, node, input) => {
+    rowGap: (node, input) => {
         setGap(node, GUTTER.row, input, root)
     },
-    columnGap: (root, node, input) => {
+    columnGap: (node, input) => {
         setGap(node, GUTTER.column, input, root)
     },
-    gap: (root, node, input) => {
+    gap: (node, input) => {
         setGap(node, GUTTER.all, input, root)
     },
-    gapPercent: (root, node, input) => {
+    gapPercent: (node, input) => {
         node.setGapPercent(GUTTER.all, convertPercent(input))
     },
-    dirtiedFunc: (root, node, input) => {
+    dirtiedFunc: (node, input) => {
         if (input == null && node.unsetDirtiedFunc) {
             node.unsetDirtiedFunc()
             return
         }
         node.setDirtiedFunc(input)
     },
-    measureFunc: (root, node, input) => {
+    measureFunc: (node, input) => {
         node.setMeasureFunc(input)
     },
-    direction: (root, node, input) => {
+    direction: (node, input) => {
         node.setDirection(convertEnum(DIRECTION_LUT, input, 0))
     },
 }
@@ -539,19 +539,27 @@ function convertPercent(input) {
     return parseFloat(input)
 }
 
+function convertBorderWidth(input, root) {
+    const value = convertPoint(input, root)
+    if (value == null || typeof value !== 'string') {
+        return value
+    }
+    return parseFloat(value)
+}
+
 function convertPoint(input, root) {
     if (input == null || typeof input != 'string') {
         return input
     }
-    if (input.endsWith('vw')) {
-        return (
-            ((root.component?.size.value?.[0] ?? 0) * parseFloat(input)) / 100
-        )
-    }
-    if (input.endsWith('vh')) {
-        return (
-            ((root.component?.size.value?.[1] ?? 0) * parseFloat(input)) / 100
-        )
-    }
+    // if (input.endsWith('vw')) {
+    //     return (
+    //         ((root.component?.size.value?.[0] ?? 0) * parseFloat(input)) / 100
+    //     )
+    // }
+    // if (input.endsWith('vh')) {
+    //     return (
+    //         ((root.component?.size.value?.[1] ?? 0) * parseFloat(input)) / 100
+    //     )
+    // }
     return input
 }
