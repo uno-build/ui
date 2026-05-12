@@ -1,52 +1,59 @@
-import { BackendHTML } from '../src/index.ts'
+import createHtmlBackend from '../src/backend/html.ts'
+import createWebGPUBackend from '../src/backend/webgpu.ts'
 
-const HTML = BackendHTML({ canvas: document.getElementById('html') })
+const HTML = await createHtmlBackend({
+    canvas: document.getElementById('html'),
+})
+const WEBGPU = await createWebGPUBackend({
+    canvas: document.getElementById('webgpu'),
+})
 
-const container = HTML.create({
-    flexDirection: 'row',
-    width: '100%',
-    height: '25%',
-    padding: '10px',
-    gap: '10px',
-})
-HTML.canvas.appendChild(container)
+makeLayout(HTML)
+makeLayout(WEBGPU)
 
-const c1 = HTML.create({
-    flexGrow: 1,
-    opacity: 0.5,
-    backgroundColor: 'red',
-})
-c1.addEventListener('click', () => container.removeChild(c1))
-container.appendChild(c1)
+function makeLayout(ui) {
+    const container = ui.create({
+        flexDirection: 'row',
+        width: '100%',
+        height: '50%',
+        padding: '10px',
+        gap: '10px',
+    })
+    ui.root.add(container)
 
-const c2 = HTML.create({
-    flexGrow: 1,
-    opacity: 0.5,
-    backgroundColor: 'green',
-})
-c2.addEventListener('click', () => container.removeChild(c2))
-container.appendChild(c2)
+    const c1 = ui.create({
+        flex: 1,
+        opacity: 0.5,
+        backgroundColor: 'red',
+    })
+    c1.on('click', () => container.remove(c1))
+    container.add(c1)
 
-const c3 = HTML.create({
-    flexGrow: 1,
-    opacity: 0.5,
-    backgroundColor: 'blue',
-})
-c3.addEventListener('click', () => {
-    console.log('blue')
-    container.removeChild(c3)
-})
-container.appendChild(c3)
+    const c2 = ui.create({
+        flex: 1,
+        opacity: 0.5,
+        backgroundColor: 'green',
+    })
+    c2.on('click', () => container.remove(c2))
+    container.add(c2)
 
-const c4 = HTML.create({
-    width: '50%',
-    height: '50%',
-    opacity: 1,
-    backgroundColor: 'yellow',
-})
-c4.addEventListener('click', (e) => {
-    console.log('yellow')
-    c3.removeChild(c4)
-    e.stopPropagation()
-})
-c3.appendChild(c4)
+    const c3 = ui.create({
+        flex: 1,
+        opacity: 0.5,
+        backgroundColor: 'blue',
+    })
+    c3.on('click', () => container.remove(c3))
+    container.add(c3)
+
+    const c4 = ui.create({
+        width: '50px',
+        height: '50px',
+        opacity: 1,
+        backgroundColor: 'yellow',
+    })
+    c4.on('click', (e) => {
+        c3.remove(c4)
+        e.stopPropagation()
+    })
+    c3.add(c4)
+}

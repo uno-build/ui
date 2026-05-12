@@ -1,4 +1,4 @@
-export function BackendHTML({ canvas }) {
+export default async function createHtmlBackend({ canvas }) {
     const ctx = canvas.getContext('2d')
 
     canvas.onpaint = (e) => {
@@ -15,15 +15,32 @@ export function BackendHTML({ canvas }) {
     })
     observer.observe(canvas, { box: 'device-pixel-content-box' })
 
-    return { create, canvas }
+    return {
+        create,
+        root: wrapNode(canvas),
+    }
 }
 
-// function nodeConstructor(element) {
 function create(props) {
     const element = document.createElement('div')
     element.style.display = 'flex'
     Object.keys(props).forEach((key) => {
         element.style[key] = props[key]
     })
-    return element
+    return wrapNode(element)
+}
+
+function wrapNode(element) {
+    return {
+        element,
+        add: (child) => {
+            element.appendChild(child.element)
+        },
+        remove: (child) => {
+            element.removeChild(child.element)
+        },
+        on: (type, listener) => {
+            element.addEventListener(type, listener)
+        },
+    }
 }
