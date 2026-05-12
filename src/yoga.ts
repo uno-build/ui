@@ -73,7 +73,7 @@ const GUTTER = {
     all: 2,
 }
 
-export function setProperty(node, key, value) {
+export function setYogaProperty(node, key, value) {
     if (setter.hasOwnProperty(key)) {
         setter[key](node, value)
     } else {

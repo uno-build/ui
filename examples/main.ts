@@ -1,15 +1,15 @@
 import createHtmlBackend from '../src/backend/html.ts'
 import createWebGPUBackend from '../src/backend/webgpu.ts'
 
-const HTML = await createHtmlBackend({
+window.HTML = await createHtmlBackend({
     canvas: document.getElementById('html'),
 })
-const WEBGPU = await createWebGPUBackend({
+window.WEBGPU = await createWebGPUBackend({
     canvas: document.getElementById('webgpu'),
 })
 
-makeLayout(HTML, 'HTML')
-makeLayout(WEBGPU, 'WebGPU')
+makeLayout(window.HTML, 'HTML')
+makeLayout(window.WEBGPU, 'WebGPU')
 
 function makeLayout(ui, name) {
     const container = ui.create({
@@ -75,11 +75,20 @@ function makeLayout(ui, name) {
     c3.add(c3b)
 
     if (name === 'WebGPU') {
-        console.log('root', JSON.stringify(ui.root.node.getComputedLayout()))
-        console.log('c1', JSON.stringify(c1.node.getComputedLayout()))
-        console.log('c2', JSON.stringify(c2.node.getComputedLayout()))
-        console.log('c2b', JSON.stringify(c2b.node.getComputedLayout()))
-        console.log('c3', JSON.stringify(c3.node.getComputedLayout()))
-        console.log('c3b', JSON.stringify(c3b.node.getComputedLayout()))
+        ui.calculateLayout()
+        console.log(
+            'root',
+            JSON.stringify(ui.root.getComputedLayout()),
+            ui.root.getParent(),
+        )
+        console.log('c1', JSON.stringify(c1.getComputedLayout()))
+        console.log('c2', JSON.stringify(c2.getComputedLayout()))
+        console.log('c2b', JSON.stringify(c2b.getComputedLayout()))
+        console.log('c3', JSON.stringify(c3.getComputedLayout()))
+        console.log(
+            'c3b',
+            JSON.stringify(c3b.getComputedLayout()),
+            c3b.getParent() === c3,
+        )
     }
 }

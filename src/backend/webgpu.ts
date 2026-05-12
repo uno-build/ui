@@ -1,5 +1,5 @@
-import { loadYoga, Edge, FlexDirection, Direction } from 'yoga-layout/load'
-import { setProperty } from '../yoga.ts'
+import { loadYoga } from 'yoga-layout/load'
+import { setYogaProperty } from '../yoga.ts'
 
 export default async function createWebGPUBackend({ canvas }) {
     const Yoga = await loadYoga()
@@ -8,40 +8,77 @@ export default async function createWebGPUBackend({ canvas }) {
     // config.setPointScaleFactor(PointScaleFactor)
     // config.setExperimentalFeatureEnabled(ExperimentalFeature.WebFlexBasis, true)
 
-    const root = createNode(
+    const nodes = new WeakMap()
+    const root = create(
         { width: canvas.clientWidth, height: canvas.clientHeight },
         config,
     )
 
-    function createNode(props, config) {
-        const node = Yoga.Node.create(config)
-        const wrappedNode = wrapNode(node)
-        Object.keys(props).forEach((key) => {
-            wrappedNode.set(key, props[key])
-        })
-        return wrappedNode
+    function calculateLayout() {
+        root.yogaNode.calculateLayout()
     }
 
-    function wrapNode(node) {
-        return {
-            node,
-            add: (child) => {
-                node.insertChild(child.node, node.getChildCount())
-                root.node.calculateLayout()
-            },
-            remove: (child) => {
-                // node.removeChild(child.node)
-                // root.node.calculateLayout()
-            },
-            set: (key, value) => {
-                setProperty(node, key, value)
-            },
-            on: (type, listener) => {},
-            off: (type, listener) => {},
+    function create(props, config) {
+        const yogaNode = Yoga.Node.create(config)
+        const add = (child) => {
+            nodes.set(child, { parent: node })
+            yogaNode.insertChild(child.yogaNode, yogaNode.getChildCount())
         }
+        const remove = (child) => {
+            nodes.delete(child)
+            yogaNode.removeChild(child.yogaNode)
+        }
+        const setProperty = (key, value) => {
+            setYogaProperty(yogaNode, key, value)
+        }
+        const getParent = () => {
+            return nodes.get(node)?.parent
+        }
+        const getComputedLayout = () => {
+            const layout = yogaNode.getComputedLayout()
+            const parent = getParent()
+            if (parent === undefined) {
+                return {
+                    left: layout.left,
+                    top: layout.top,
+                    width: layout.width,
+                    height: layout.height,
+                }
+            }
+            const parentLayout = parent.yogaNode.getComputedLayout()
+            return {
+                left: parentLayout.left + layout.left,
+                top: parentLayout.top + layout.top,
+                width: layout.width,
+                height: layout.height,
+            }
+        }
+        const on = (type, listener) => {}
+        const off = (type, listener) => {}
+
+        Object.keys(props).forEach((key) => {
+            setProperty(key, props[key])
+        })
+
+        const node = {
+            yogaNode,
+            add,
+            remove,
+            setProperty,
+            getParent,
+            getComputedLayout,
+            on,
+            off,
+        }
+
+        return node
     }
 
-    return { create: createNode, root }
+    return {
+        root,
+        create,
+        calculateLayout,
+    }
 }
 
 // async function main(canvas) {
