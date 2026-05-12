@@ -3,15 +3,23 @@ import { setProperty } from '../yoga.ts'
 
 export default async function createWebGPUBackend({ canvas }) {
     const Yoga = await loadYoga()
+    const config = Yoga.Config.create()
+    config.setUseWebDefaults(true)
+    // config.setPointScaleFactor(PointScaleFactor)
+    // config.setExperimentalFeatureEnabled(ExperimentalFeature.WebFlexBasis, true)
+
     let initialized = false
-    const root = create({
-        width: canvas.clientWidth,
-        height: canvas.clientHeight,
-    })
+    const root = create(
+        {
+            width: canvas.clientWidth,
+            height: canvas.clientHeight,
+        },
+        config,
+    )
     initialized = true
 
-    function create(props) {
-        const node = Yoga.Node.create()
+    function create(props, config) {
+        const node = Yoga.Node.create(config)
         const wrappedNode = wrapNode(node)
         Object.keys(props).forEach((key) => {
             wrappedNode.set(key, props[key])
@@ -23,14 +31,12 @@ export default async function createWebGPUBackend({ canvas }) {
         return {
             node,
             add: (child) => {
-                node.insertChild(child.node, 0)
+                node.insertChild(child.node, node.getChildCount())
                 root.node.calculateLayout()
-                console.log('WebGPU node:', node.getComputedLayout())
             },
             remove: (child) => {
                 // node.removeChild(child.node)
                 // root.node.calculateLayout()
-                // console.log('WebGPU node:', node.getComputedLayout())
             },
             set: (key, value) => {
                 setProperty(node, key, value, initialized ? root.node : node)

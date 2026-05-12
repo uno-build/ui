@@ -18,6 +18,7 @@ export default async function createHtmlBackend({ canvas }) {
     return {
         create,
         root: wrapNode(canvas),
+        getTreeLayout: () => {},
     }
 }
 

@@ -8,10 +8,10 @@ const WEBGPU = await createWebGPUBackend({
     canvas: document.getElementById('webgpu'),
 })
 
-makeLayout(HTML)
-makeLayout(WEBGPU)
+makeLayout(HTML, 'HTML')
+makeLayout(WEBGPU, 'WebGPU')
 
-function makeLayout(ui) {
+function makeLayout(ui, name) {
     const container = ui.create({
         flexDirection: 'row',
         width: '100%',
@@ -41,6 +41,8 @@ function makeLayout(ui) {
         flex: 1,
         opacity: 0.5,
         backgroundColor: 'blue',
+        justifyContent: 'center',
+        alignItems: 'center',
     })
     c3.on('click', () => container.remove(c3))
     container.add(c3)
@@ -56,4 +58,12 @@ function makeLayout(ui) {
         e.stopPropagation()
     })
     c3.add(c4)
+
+    if (name === 'WebGPU') {
+        console.log(JSON.stringify(ui.root.node.getComputedLayout()))
+        console.log(JSON.stringify(c1.node.getComputedLayout()))
+        console.log(JSON.stringify(c2.node.getComputedLayout()))
+        console.log(JSON.stringify(c3.node.getComputedLayout()))
+        console.log(JSON.stringify(c4.node.getComputedLayout()))
+    }
 }
