@@ -74,12 +74,11 @@ const GUTTER = {
 }
 
 export function setYogaProperty(node, key, value) {
-    if (setter.hasOwnProperty(key)) {
-        setter[key](node, value)
-    } else {
-        console.warn(`unsupported property ${key}`)
-    }
-    return node
+    setter[key](node, value)
+}
+
+export function isYogaProperty(key) {
+    return setter.hasOwnProperty(key)
 }
 
 const setter = {

@@ -1,5 +1,5 @@
 import { loadYoga } from 'yoga-layout/load'
-import { setYogaProperty } from '../yoga.ts'
+import { setYogaProperty, isYogaProperty } from '../yoga.ts'
 
 export default async function createWebGPUBackend({ canvas }) {
     const Yoga = await loadYoga()
@@ -21,18 +21,37 @@ export default async function createWebGPUBackend({ canvas }) {
     function create(props, config) {
         const yogaNode = Yoga.Node.create(config)
         const add = (child) => {
-            nodes.set(child, { parent: node })
-            yogaNode.insertChild(child.yogaNode, yogaNode.getChildCount())
+            const paintIndex = yogaNode.getChildCount()
+            const data = nodes.get(child) ?? {}
+            nodes.set(child, {
+                ...data,
+                parent: node,
+                paintIndex,
+            })
+            yogaNode.insertChild(child.yogaNode, paintIndex)
         }
         const remove = (child) => {
             nodes.delete(child)
             yogaNode.removeChild(child.yogaNode)
         }
         const setProperty = (key, value) => {
-            setYogaProperty(yogaNode, key, value)
+            const data = nodes.get(node) ?? {}
+            nodes.set(node, { ...data, value })
+
+            if (isYogaProperty(key)) {
+                setYogaProperty(yogaNode, key, value)
+            } else {
+                // console.warn(`unsupported property ${key}`)
+            }
         }
         const getParent = () => {
             return nodes.get(node)?.parent
+        }
+        const getPaintIndex = () => {
+            return nodes.get(node)?.paintIndex ?? 0
+        }
+        const getZIndex = () => {
+            return nodes.get(node)?.zIndex ?? 0
         }
         const getComputedLayout = () => {
             const layout = yogaNode.getComputedLayout()
@@ -56,20 +75,22 @@ export default async function createWebGPUBackend({ canvas }) {
         const on = (type, listener) => {}
         const off = (type, listener) => {}
 
-        Object.keys(props).forEach((key) => {
-            setProperty(key, props[key])
-        })
-
         const node = {
             yogaNode,
             add,
             remove,
             setProperty,
             getParent,
+            getPaintIndex,
+            getZIndex,
             getComputedLayout,
             on,
             off,
         }
+
+        Object.keys(props).forEach((key) => {
+            setProperty(key, props[key])
+        })
 
         return node
     }

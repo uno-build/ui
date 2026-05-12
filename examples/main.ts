@@ -12,6 +12,7 @@ makeLayout(window.HTML, 'HTML')
 makeLayout(window.WEBGPU, 'WebGPU')
 
 function makeLayout(ui, name) {
+    console.log(`--- ${name} ---`)
     const container = ui.create({
         flexDirection: 'row',
         width: '100%',
@@ -80,11 +81,31 @@ function makeLayout(ui, name) {
     console.log(
         'root',
         JSON.stringify(ui.root.getComputedLayout()),
-        ui.root.getParent(),
+        ui.root.getPaintIndex(),
     )
-    console.log('c1', JSON.stringify(c1.getComputedLayout()))
-    console.log('c2', JSON.stringify(c2.getComputedLayout()))
-    console.log('c2b', JSON.stringify(c2b.getComputedLayout()))
-    console.log('c3', JSON.stringify(c3.getComputedLayout()))
-    console.log('c3b', JSON.stringify(c3b.getComputedLayout()), c3b.getParent())
+    console.log(
+        'c1',
+        JSON.stringify(c1.getComputedLayout()),
+        c1.getPaintIndex(),
+    )
+    console.log(
+        'c2',
+        JSON.stringify(c2.getComputedLayout()),
+        c2.getPaintIndex(),
+    )
+    console.log(
+        'c2b',
+        JSON.stringify(c2b.getComputedLayout()),
+        c2b.getPaintIndex(),
+    )
+    console.log(
+        'c3',
+        JSON.stringify(c3.getComputedLayout()),
+        c3.getPaintIndex(),
+    )
+    console.log(
+        'c3b',
+        JSON.stringify(c3b.getComputedLayout()),
+        c3b.getPaintIndex(),
+    )
 }

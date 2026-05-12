@@ -58,6 +58,14 @@ function wrapNode(element) {
                 height: Math.round(rect.height),
             }
         },
+        getPaintIndex: () => {
+            if (element.parentElement) {
+                return Array.from(element.parentElement.children).indexOf(
+                    element,
+                )
+            }
+            return 0
+        },
         off: (type, listener) => {
             element.removeEventListener(type, listener)
         },
