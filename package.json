@@ -3,8 +3,8 @@
         "start": "vite ./examples"
     },
     "devDependencies": {
-        "yoga-layout": "^3.2.1",
         "vite": "^8.0.12",
-        "wgpu-matrix": "^3.4.2"
+        "wgpu-matrix": "^3.4.2",
+        "yoga-layout": "^3.2.1"
     }
 }

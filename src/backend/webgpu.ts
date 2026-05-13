@@ -3,39 +3,51 @@ import { setYogaProperty, isYogaProperty } from '../yoga.ts'
 
 export default async function createWebGPUBackend({ canvas }) {
     const Yoga = await loadYoga()
-    const config = Yoga.Config.create()
-    config.setUseWebDefaults(true)
-    // config.setPointScaleFactor(200)
-    config.setExperimentalFeatureEnabled(ExperimentalFeature.WebFlexBasis, true)
-
-    const nodes = new Map()
-    const root = create(
-        { width: canvas.clientWidth, height: canvas.clientHeight },
-        config,
+    const yoga_config = Yoga.Config.create()
+    yoga_config.setUseWebDefaults(true)
+    // yoga_config.setPointScaleFactor(200)
+    yoga_config.setExperimentalFeatureEnabled(
+        ExperimentalFeature.WebFlexBasis,
+        true,
     )
 
-    function create(props, config) {
-        const yoga = Yoga.Node.create(config)
+    const state = {
+        nodes: new Set(),
+        root: null,
+    }
+    state.root = create({
+        width: canvas.clientWidth,
+        height: canvas.clientHeight,
+    })
+
+    function create(props) {
+        const yoga = Yoga.Node.create(
+            state.root === null ? yoga_config : undefined,
+        )
         const add = (child) => {
-            if (nodes.has(child)) {
+            if (state.nodes.has(child)) {
                 throw new Error('child already added')
             }
-            const paintIndex = yoga.getChildCount()
+            child.depth = node.depth + 1
+            child.child = yoga.getChildCount()
             child.parent = node
-            nodes.set(child, {})
-            yoga.insertChild(child.yoga, paintIndex)
+            state.nodes.add(child)
+            yoga.insertChild(child.yoga, child.child)
         }
         const remove = (child) => {
-            nodes.delete(child)
+            state.nodes.delete(child)
             yoga.removeChild(child.yoga)
         }
         const setProperty = (key, value) => {
-            props[key] = value
             if (isYogaProperty(key)) {
+                props[key] = value
                 setYogaProperty(yoga, key, value)
-            } else {
-                // console.warn(`unsupported property ${key}`)
+                return
+            } else if (isUnoProperty(key)) {
+                props[key] = value
+                return
             }
+            console.warn(`unsupported property ${key}`)
         }
         const on = (type, listener) => {}
         const off = (type, listener) => {}
@@ -43,8 +55,10 @@ export default async function createWebGPUBackend({ canvas }) {
         const node = {
             yoga,
             parent: undefined,
-            props,
+            depth: 0,
+            child: 0,
             layout: {},
+            props,
             add,
             remove,
             setProperty,
@@ -80,28 +94,28 @@ export default async function createWebGPUBackend({ canvas }) {
     }
 
     function calculateLayout() {
-        const dirtyNodes = []
-        for (const node of nodes.keys()) {
-            if (node.yoga.isDirty()) {
-                dirtyNodes.push(node)
-            }
-        }
-        root.yoga.calculateLayout()
-
-        console.log(dirtyNodes.length, 'dirty nodes')
-        return dirtyNodes.filter((node) => {
+        state.root.yoga.calculateLayout()
+        const dirty_nodes = []
+        for (const node of state.nodes) {
             const layout = getComputedLayout(node)
-            const updated = !deepEqual(layout, node.layout)
+            if (!deepEqual(layout, node.layout)) {
+                dirty_nodes.push(node)
+            }
             node.layout = layout
-            return updated
-        })
+        }
+        return dirty_nodes
     }
 
     return {
-        root,
+        root: state.root,
         create,
         calculateLayout,
     }
+}
+
+const cssUnoProperties = new Set(['zIndex'])
+function isUnoProperty(key) {
+    return cssUnoProperties.has(key)
 }
 
 function deepEqual(obj1, obj2) {
@@ -112,6 +126,9 @@ function deepEqual(obj1, obj2) {
     }
     return true
 }
+
+// https://github.com/Rich-Harris/stacking-order/blob/main/index.js
+// https://github.com/pmndrs/uikit/blob/main/packages/uikit/src/order.ts
 
 // async function main(canvas) {
 //     // const canvas = Canvas.init()
