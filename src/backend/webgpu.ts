@@ -1,4 +1,5 @@
 import { loadYoga, ExperimentalFeature } from 'yoga-layout/load'
+import { sortNodesForCanvasPaint } from '../order.ts'
 import { setYogaProperty, isYogaProperty } from '../yoga.ts'
 
 export default async function createWebGPUBackend({ canvas }) {
@@ -28,11 +29,11 @@ export default async function createWebGPUBackend({ canvas }) {
             if (state.nodes.has(child)) {
                 throw new Error('child already added')
             }
-            child.depth = node.depth + 1
-            child.child = yoga.getChildCount()
+            const child_index = yoga.getChildCount()
             child.parent = node
+            child.path = [...(node.path || []), child_index]
             state.nodes.add(child)
-            yoga.insertChild(child.yoga, child.child)
+            yoga.insertChild(child.yoga, child_index)
         }
         const remove = (child) => {
             state.nodes.delete(child)
@@ -55,8 +56,8 @@ export default async function createWebGPUBackend({ canvas }) {
         const node = {
             yoga,
             parent: undefined,
-            depth: 0,
-            child: 0,
+            // depth: 0,
+            // child: 0,
             layout: {},
             props,
             add,
@@ -110,6 +111,22 @@ export default async function createWebGPUBackend({ canvas }) {
         root: state.root,
         create,
         calculateLayout,
+        getPaintOrder: () => {
+            return sortNodesForCanvasPaint(
+                Array.from(state.nodes).filter(isAttachedToRoot),
+            )
+        },
+    }
+
+    function isAttachedToRoot(node) {
+        let current = node
+        while (current != null) {
+            if (current === state.root) {
+                return true
+            }
+            current = current.parent
+        }
+        return false
     }
 }
 
@@ -126,9 +143,6 @@ function deepEqual(obj1, obj2) {
     }
     return true
 }
-
-// https://github.com/Rich-Harris/stacking-order/blob/main/index.js
-// https://github.com/pmndrs/uikit/blob/main/packages/uikit/src/order.ts
 
 // async function main(canvas) {
 //     // const canvas = Canvas.init()

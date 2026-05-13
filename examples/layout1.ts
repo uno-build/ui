@@ -66,13 +66,13 @@ export default function createLayout(ui, name) {
     console.log(ui.calculateLayout().length, 'updated nodes', name)
 
     // Logs
-    console.log('root', ui.root)
-    console.log('container', container)
-    console.log('col1', col1, col1.parent === container)
-    console.log('col2', col2)
-    console.log('col2b', col2b)
-    console.log('col3', col3)
-    console.log('col3b', col3b)
+    console.log('root', ui.root.path)
+    console.log('container', container.path)
+    console.log('col1', col1.path)
+    console.log('col2', col2.path)
+    console.log('col2b', col2b.path)
+    console.log('col3', col3.path)
+    console.log('col3b', col3b.path)
 
     setTimeout(() => {
         col2b.setProperty('zIndex', 1)
