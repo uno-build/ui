@@ -1,33 +1,45 @@
-// import UnoRendererWebGPU from '../src/renderer/webgpu'
-import UnoUI from '../src/engine/yoga'
+import UnoUI from '../src/engine/dom'
+import UnoRendererWebGPU from '../src/renderer/dom'
 
-const canvas = document.getElementById('webgpu') as HTMLCanvasElement
+const canvas = document.getElementById('html')
 // const renderer = new UnoRendererWebGPU({ canvasElement: canvas })
-const ui = await UnoUI({})
-ui.root.setProperty('width', canvas.clientWidth)
-ui.root.setProperty('height', canvas.clientHeight)
+const ui = await UnoUI({ canvas })
+// ui.root.setProperty('width', canvas.clientWidth)
+// ui.root.setProperty('height', canvas.clientHeight)
+
 const container = ui.create({
+    flexDirection: 'column',
     width: '100%',
     height: '100%',
-    backgroundColor: 'grey',
-})
-const redBox = ui.create({
-    width: '50%',
-    height: '50%',
-    backgroundColor: 'red',
-})
-const greenBox = ui.create({
-    width: '50%',
-    height: '50%',
-    backgroundColor: 'green',
+    padding: '10px',
+    gap: '10px',
+    backgroundColor: 'lightgray',
 })
 ui.root.add(container)
-container.add(redBox)
-container.add(greenBox)
 
-const nodes = ui.update()
+container.add(
+    ui.create({
+        flex: '1',
+        backgroundColor: 'red',
+    }),
+)
+container.add(
+    ui.create({
+        flex: '1',
+        backgroundColor: 'green',
+    }),
+)
+container.add(
+    ui.create({
+        flex: '1',
+        backgroundColor: 'blue',
+    }),
+)
+
+const nodes_changed = ui.update()
 console.table(
-    nodes.map((node) => ({
+    nodes_changed.map((node) => ({
+        color: node.props.backgroundColor,
         width: node.layout.width,
         height: node.layout.height,
         top: node.layout.top,

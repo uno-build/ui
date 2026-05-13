@@ -12,8 +12,11 @@ export default async function UnoUI({ width, height }) {
         true,
     )
 
-    const state = { nodes: new Set(), root: null }
-    state.root = create({ width: '100%', height: '100%' })
+    const state = {
+        nodes: new Set(),
+        root: null,
+    }
+    state.root = create({})
 
     function create(props) {
         const yoga = Yoga.Node.create(
