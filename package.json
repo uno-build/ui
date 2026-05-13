@@ -1,9 +1,12 @@
 {
     "scripts": {
-        "start": "vite ./examples"
+        "start": "vite ./examples",
+        "test": "vitest run",
+        "test:watch": "vitest watch"
     },
     "devDependencies": {
         "vite": "^8.0.12",
+        "vitest": "^4.1.6",
         "wgpu-matrix": "^3.4.2",
         "yoga-layout": "^3.2.1"
     }

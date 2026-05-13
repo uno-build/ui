@@ -1,14 +1,38 @@
-import createHtmlBackend from '../src/backend/html.ts'
-import createWebGPUBackend from '../src/backend/webgpu.ts'
-import createLayout from './layout1.js'
-// import createLayout from './zindex.ts'
+// import UnoRendererWebGPU from '../src/renderer/webgpu'
+import UnoUI from '../src/engine/yoga'
 
-window.HTML = await createHtmlBackend({
-    canvas: document.getElementById('html'),
+const canvas = document.getElementById('webgpu') as HTMLCanvasElement
+// const renderer = new UnoRendererWebGPU({ canvasElement: canvas })
+const ui = await UnoUI({})
+ui.root.setProperty('width', canvas.clientWidth)
+ui.root.setProperty('height', canvas.clientHeight)
+const container = ui.create({
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'grey',
 })
-window.WEBGPU = await createWebGPUBackend({
-    canvas: document.getElementById('webgpu'),
+const redBox = ui.create({
+    width: '50%',
+    height: '50%',
+    backgroundColor: 'red',
 })
+const greenBox = ui.create({
+    width: '50%',
+    height: '50%',
+    backgroundColor: 'green',
+})
+ui.root.add(container)
+container.add(redBox)
+container.add(greenBox)
 
-createLayout(window.HTML, 'HTML')
-createLayout(window.WEBGPU, 'WebGPU')
+const nodes = ui.update()
+console.table(
+    nodes.map((node) => ({
+        width: node.layout.width,
+        height: node.layout.height,
+        top: node.layout.top,
+        left: node.layout.left,
+        path: node.path.join(','),
+        zIndex: node.zIndex,
+    })),
+)
