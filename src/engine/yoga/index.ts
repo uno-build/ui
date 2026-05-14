@@ -2,39 +2,37 @@ import { loadYoga, ExperimentalFeature } from 'yoga-layout/load'
 import { setYogaProperty, isYogaProperty } from './properties.ts'
 // import { sortNodesForCanvasPaint } from '../order.ts'
 
-export default function UI({}) {
-    let Yoga
-    this.nodes = new Set()
+export default async function UI({}) {
+    const self = {}
+    const Yoga = await loadYoga()
+    const yoga_config = Yoga.Config.create()
+    yoga_config.setUseWebDefaults(true)
+    // yoga_config.setPointScaleFactor(200)
+    yoga_config.setExperimentalFeatureEnabled(
+        ExperimentalFeature.WebFlexBasis,
+        true,
+    )
 
-    this.init = async () => {
-        Yoga = await loadYoga()
-        const yoga_config = Yoga.Config.create()
-        yoga_config.setUseWebDefaults(true)
-        // yoga_config.setPointScaleFactor(200)
-        yoga_config.setExperimentalFeatureEnabled(
-            ExperimentalFeature.WebFlexBasis,
-            true,
-        )
-        this.root = new Node({
-            yoga: Yoga.Node.create(yoga_config),
-            props: {},
-            nodes: this.nodes,
-        })
-    }
+    self.nodes = new Set()
+    self.root = new Node({
+        yoga: Yoga.Node.create(yoga_config),
+        props: {},
+        nodes: self.nodes,
+    })
 
-    this.create = (props) => {
+    self.create = (props) => {
         const yoga = Yoga.Node.create()
-        return new Node({
+        return Node({
             yoga,
             props,
-            nodes: this.nodes,
+            nodes: self.nodes,
         })
     }
 
-    this.update = () => {
-        this.root.yoga.calculateLayout()
+    self.update = () => {
+        self.root.yoga.calculateLayout()
         const nodes = []
-        for (const node of this.nodes) {
+        for (const node of self.nodes) {
             const layout = node.yoga.getComputedLayout()
             if (!deepEqual(layout, node.layout)) {
                 nodes.push(node)
@@ -44,31 +42,34 @@ export default function UI({}) {
         return nodes
     }
 
-    this.render = () => {}
+    self.render = () => {}
+
+    return self
 }
 
 function Node({ yoga, props, nodes }) {
-    this.yoga = yoga
-    this.parent = undefined
-    this.path = []
-    this.layout = {}
-    this.props = props
+    const self = {}
+    self.yoga = yoga
+    self.parent = undefined
+    self.path = []
+    self.layout = {}
+    self.props = props
 
-    this.add = (child) => {
+    self.add = (child) => {
         if (nodes.has(child)) {
             throw new Error('child already added')
         }
         const child_index = yoga.getChildCount()
-        child.parent = this
-        child.path = [...(this.path || []), child_index]
+        child.parent = self
+        child.path = [...(self.path || []), child_index]
         nodes.add(child)
         yoga.insertChild(child.yoga, child_index)
     }
-    this.remove = (child) => {
+    self.remove = (child) => {
         nodes.delete(child)
         yoga.removeChild(child.yoga)
     }
-    this.setProperty = (key, value) => {
+    self.setProperty = (key, value) => {
         if (isYogaProperty(key)) {
             props[key] = value
             setYogaProperty(yoga, key, value)
@@ -79,16 +80,18 @@ function Node({ yoga, props, nodes }) {
         }
         // console.warn(`unsupported property ${key}`)
     }
-    this.on = (type, listener) => {
+    self.on = (type, listener) => {
         // no-op
     }
-    this.off = (type, listener) => {
+    self.off = (type, listener) => {
         // no-op
     }
 
     Object.keys(props).forEach((key) => {
-        this.setProperty(key, props[key])
+        self.setProperty(key, props[key])
     })
+
+    return self
 }
 
 const cssUnoProperties = new Set(['zIndex'])

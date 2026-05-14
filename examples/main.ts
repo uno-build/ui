@@ -12,14 +12,13 @@ const LAYOUTS = {
     zindex: layoutZIndex,
 }
 const params = new URLSearchParams(window.location.search)
-const engines = params.get('engines') || Object.keys(ENGINE)
+const engines = params.get('engines')?.split(',') || Object.keys(ENGINE)
 const layout = params.get('layout') || 'basic'
 
 engines.forEach(async (engine) => {
     const UI = ENGINE[engine]
     const canvas = document.getElementById(engine)
-    const ui = new UI({ canvas })
-    await ui.init()
+    const ui = await UI({ canvas })
     canvas.width = canvas.clientWidth
     canvas.height = canvas.clientHeight
     ui.root.setProperty('width', canvas.clientWidth)

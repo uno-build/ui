@@ -1,4 +1,5 @@
 export default function UI({ canvas }) {
+    const self = {}
     const ctx = canvas.getContext('2d')
     // const draws = new Set()
 
@@ -9,29 +10,29 @@ export default function UI({ canvas }) {
         }
     }
 
-    this.nodes = new Set()
+    self.nodes = new Set()
 
-    this.root = new Node({
+    self.root = new Node({
         element: canvas,
         props: {},
-        nodes: this.nodes,
+        nodes: self.nodes,
     })
 
-    this.init = async () => {}
+    self.init = async () => {}
 
-    this.create = (props) => {
+    self.create = (props) => {
         const element = document.createElement('div')
         element.style.display = 'flex'
-        return new Node({
+        return Node({
             element,
             props,
-            nodes: this.nodes,
+            nodes: self.nodes,
         })
     }
 
-    this.update = () => {
+    self.update = () => {
         const updatedNodes = []
-        for (const node of this.nodes) {
+        for (const node of self.nodes) {
             const layout = getComputedLayout(node.element)
             if (!deepEqual(layout, node.layout)) {
                 updatedNodes.push(node)
@@ -41,56 +42,61 @@ export default function UI({ canvas }) {
         return updatedNodes
     }
 
-    this.render = () => {
+    self.render = () => {
         // for (const element of draws) {
         //     console.log('drawing', element)
         //     ctx.drawElementImage(element, 0, 0)
         // }
         // draws.clear()
     }
+
+    return self
 }
 
 function Node({ element, props, nodes }) {
-    this.element = element
-    this.parent = undefined
-    this.path = []
-    this.layout = {}
-    this.props = props
+    const self = {}
+    self.element = element
+    self.parent = undefined
+    self.path = []
+    self.layout = {}
+    self.props = props
 
-    this.add = (child) => {
+    self.add = (child) => {
         if (nodes.has(child)) {
             throw new Error('child already added')
         }
 
-        const childIndex = this.element.children.length
+        const childIndex = self.element.children.length
         child.parent = this
-        child.path = [...(this.path || []), childIndex]
+        child.path = [...(self.path || []), childIndex]
         nodes.add(child)
-        this.element.appendChild(child.element)
+        self.element.appendChild(child.element)
     }
 
-    this.remove = (child) => {
+    self.remove = (child) => {
         nodes.delete(child)
         child.parent = undefined
-        this.element.removeChild(child.element)
+        self.element.removeChild(child.element)
     }
 
-    this.setProperty = (key, value) => {
-        this.props[key] = value
-        this.element.style[key] = value
+    self.setProperty = (key, value) => {
+        self.props[key] = value
+        self.element.style[key] = value
     }
 
-    this.on = (type, listener) => {
-        this.element.addEventListener(type, listener)
+    self.on = (type, listener) => {
+        self.element.addEventListener(type, listener)
     }
 
-    this.off = (type, listener) => {
-        this.element.removeEventListener(type, listener)
+    self.off = (type, listener) => {
+        self.element.removeEventListener(type, listener)
     }
 
     Object.keys(props).forEach((key) => {
-        this.setProperty(key, props[key])
+        self.setProperty(key, props[key])
     })
+
+    return self
 }
 
 function getComputedLayout(element) {
