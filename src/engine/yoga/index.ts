@@ -1,15 +1,13 @@
-import { loadYoga, ExperimentalFeature } from 'yoga-layout/load'
 import { setYogaProperty, isYogaProperty } from './properties.ts'
 // import { sortNodesForCanvasPaint } from '../order.ts'
 
-export default async function UI({}) {
+export default function UI({ Yoga }) {
     const self = {}
-    const Yoga = await loadYoga()
     const yoga_config = Yoga.Config.create()
     yoga_config.setUseWebDefaults(true)
     // yoga_config.setPointScaleFactor(200)
     yoga_config.setExperimentalFeatureEnabled(
-        ExperimentalFeature.WebFlexBasis,
+        0, // ExperimentalFeature.WebFlexBasis
         true,
     )
 

@@ -1,3 +1,4 @@
+import { loadYoga } from 'yoga-layout/load'
 import UIDom from '../../src/engine/dom'
 import UIYoga from '../../src/engine/yoga'
 import layoutBasic from './layouts/basic'
@@ -26,6 +27,7 @@ const LAYOUTS = {
     basic: layoutBasic,
     zindex: layoutZIndex,
 }
+const Yoga = await loadYoga()
 const params = new URLSearchParams(window.location.search)
 const layout = params.get('layout') || 'basic'
 const renderers_params =
@@ -47,10 +49,10 @@ const renderers = renderers_params.filter((renderer) => {
 console.log(
     `Running: ${window.location.origin}/?layout=${layout}&renderers=${renderers.join(',')}`,
 )
-renderers.forEach(async (renderer) => {
+renderers.forEach((renderer) => {
     const canvas = document.createElement(RENDERER[renderer].type)
     const UI = RENDERER[renderer].engine
-    const ui = await UI({ canvas })
+    const ui = UI({ canvas, Yoga })
     document.getElementById('root').appendChild(canvas)
     canvas.id = renderer
     canvas.width = canvas.clientWidth
