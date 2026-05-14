@@ -1,23 +1,29 @@
-import UI from '../src/engine/dom'
+import UIDom from '../src/engine/dom'
+import UIYoga from '../src/engine/yoga'
 import layoutBasic from './layout-basic'
 import layoutZIndex from './layout-zindex'
 
+const ENGINE = {
+    dom: UIDom,
+    yoga: UIYoga,
+}
 const LAYOUTS = {
     basic: layoutBasic,
     zindex: layoutZIndex,
 }
-
 const params = new URLSearchParams(window.location.search)
+const engines = params.get('engines') || Object.keys(ENGINE)
 const layout = params.get('layout') || 'basic'
 
-const createLayout = LAYOUTS[layout]
+engines.forEach(async (engine) => {
+    const UI = ENGINE[engine]
+    const canvas = document.getElementById(engine)
+    const ui = new UI({ canvas })
+    await ui.init()
+    canvas.width = canvas.clientWidth
+    canvas.height = canvas.clientHeight
+    ui.root.setProperty('width', canvas.clientWidth)
+    ui.root.setProperty('height', canvas.clientHeight)
 
-const canvas = document.getElementById('html')
-const ui = await new UI({ canvas })
-canvas.width = canvas.clientWidth
-canvas.height = canvas.clientHeight
-ui.root.setProperty('width', canvas.clientWidth)
-ui.root.setProperty('height', canvas.clientHeight)
-
-console.log(`LAYOUT: ${layout}`)
-LAYOUTS[layout]({ ui, engine: 'DOM', layout })
+    LAYOUTS[layout]({ ui, engine, layout })
+})

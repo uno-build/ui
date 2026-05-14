@@ -17,6 +17,8 @@ export default function UI({ canvas }) {
         nodes: this.nodes,
     })
 
+    this.init = async () => {}
+
     this.create = (props) => {
         const element = document.createElement('div')
         element.style.display = 'flex'

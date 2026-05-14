@@ -2,83 +2,39 @@ import { loadYoga, ExperimentalFeature } from 'yoga-layout/load'
 import { setYogaProperty, isYogaProperty } from './properties.ts'
 // import { sortNodesForCanvasPaint } from '../order.ts'
 
-export default async function UnoUI({ width, height }) {
-    const Yoga = await loadYoga()
-    const yoga_config = Yoga.Config.create()
-    yoga_config.setUseWebDefaults(true)
-    // yoga_config.setPointScaleFactor(200)
-    yoga_config.setExperimentalFeatureEnabled(
-        ExperimentalFeature.WebFlexBasis,
-        true,
-    )
+export default function UI({}) {
+    let Yoga
+    this.nodes = new Set()
 
-    const state = {
-        nodes: new Set(),
-        root: null,
-    }
-    state.root = create({})
-
-    function create(props) {
-        const yoga = Yoga.Node.create(
-            state.root === null ? yoga_config : undefined,
+    this.init = async () => {
+        Yoga = await loadYoga()
+        const yoga_config = Yoga.Config.create()
+        yoga_config.setUseWebDefaults(true)
+        // yoga_config.setPointScaleFactor(200)
+        yoga_config.setExperimentalFeatureEnabled(
+            ExperimentalFeature.WebFlexBasis,
+            true,
         )
-        const add = (child) => {
-            if (state.nodes.has(child)) {
-                throw new Error('child already added')
-            }
-            const child_index = yoga.getChildCount()
-            child.parent = node
-            child.path = [...(node.path || []), child_index]
-            state.nodes.add(child)
-            yoga.insertChild(child.yoga, child_index)
-        }
-        const remove = (child) => {
-            state.nodes.delete(child)
-            yoga.removeChild(child.yoga)
-        }
-        const setProperty = (key, value) => {
-            if (isYogaProperty(key)) {
-                props[key] = value
-                setYogaProperty(yoga, key, value)
-                return
-            } else if (isUnoProperty(key)) {
-                props[key] = value
-                return
-            }
-            console.warn(`unsupported property ${key}`)
-        }
-        const on = (type, listener) => {
-            // no-op
-        }
-        const off = (type, listener) => {
-            // no-op
-        }
-
-        const node = {
-            yoga,
-            parent: undefined,
-            zIndex: props.zIndex || 0,
-            path: [],
-            layout: {},
-            props,
-            add,
-            remove,
-            setProperty,
-            on,
-            off,
-        }
-
-        Object.keys(props).forEach((key) => {
-            setProperty(key, props[key])
+        this.root = new Node({
+            yoga: Yoga.Node.create(yoga_config),
+            props: {},
+            nodes: this.nodes,
         })
-
-        return node
     }
 
-    function update() {
-        state.root.yoga.calculateLayout()
+    this.create = (props) => {
+        const yoga = Yoga.Node.create()
+        return new Node({
+            yoga,
+            props,
+            nodes: this.nodes,
+        })
+    }
+
+    this.update = () => {
+        this.root.yoga.calculateLayout()
         const nodes = []
-        for (const node of state.nodes) {
+        for (const node of this.nodes) {
             const layout = node.yoga.getComputedLayout()
             if (!deepEqual(layout, node.layout)) {
                 nodes.push(node)
@@ -88,11 +44,51 @@ export default async function UnoUI({ width, height }) {
         return nodes
     }
 
-    return {
-        root: state.root,
-        create,
-        update,
+    this.render = () => {}
+}
+
+function Node({ yoga, props, nodes }) {
+    this.yoga = yoga
+    this.parent = undefined
+    this.path = []
+    this.layout = {}
+    this.props = props
+
+    this.add = (child) => {
+        if (nodes.has(child)) {
+            throw new Error('child already added')
+        }
+        const child_index = yoga.getChildCount()
+        child.parent = this
+        child.path = [...(this.path || []), child_index]
+        nodes.add(child)
+        yoga.insertChild(child.yoga, child_index)
     }
+    this.remove = (child) => {
+        nodes.delete(child)
+        yoga.removeChild(child.yoga)
+    }
+    this.setProperty = (key, value) => {
+        if (isYogaProperty(key)) {
+            props[key] = value
+            setYogaProperty(yoga, key, value)
+            return
+        } else if (isUnoProperty(key)) {
+            props[key] = value
+            return
+        }
+        // console.warn(`unsupported property ${key}`)
+    }
+    this.on = (type, listener) => {
+        // no-op
+    }
+    this.off = (type, listener) => {
+        // no-op
+    }
+
+    Object.keys(props).forEach((key) => {
+        this.setProperty(key, props[key])
+    })
 }
 
 const cssUnoProperties = new Set(['zIndex'])
