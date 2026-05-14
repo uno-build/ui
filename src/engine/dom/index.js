@@ -1,93 +1,94 @@
-export default class UnoUI {
-    constructor({ canvas }) {
-        const ctx = canvas.getContext('2d')
+export default function UI({ canvas }) {
+    const ctx = canvas.getContext('2d')
+    // const draws = new Set()
 
-        this.nodes = new Set()
-        this.root = new UnoNode({
-            element: canvas,
-            props: {},
-            ui: this,
-        })
-
-        canvas.onpaint = (event) => {
-            ctx.reset()
-            for (const element of event.changedElements) {
-                ctx.drawElementImage(element, 0, 0)
-            }
+    canvas.onpaint = (event) => {
+        ctx.reset()
+        for (const element of event.changedElements) {
+            ctx.drawElementImage(element, 0, 0)
         }
     }
 
-    create(props) {
+    this.nodes = new Set()
+
+    this.root = new Node({
+        element: canvas,
+        props: {},
+        nodes: this.nodes,
+    })
+
+    this.create = (props) => {
         const element = document.createElement('div')
         element.style.display = 'flex'
-        return new UnoNode({
+        return new Node({
             element,
             props,
-            ui: this,
+            nodes: this.nodes,
         })
     }
 
-    update() {
-        const nodes = []
+    this.update = () => {
+        const updatedNodes = []
         for (const node of this.nodes) {
             const layout = getComputedLayout(node.element)
             if (!deepEqual(layout, node.layout)) {
-                nodes.push(node)
+                updatedNodes.push(node)
             }
             node.layout = layout
         }
-        return nodes
+        return updatedNodes
+    }
+
+    this.render = () => {
+        // for (const element of draws) {
+        //     console.log('drawing', element)
+        //     ctx.drawElementImage(element, 0, 0)
+        // }
+        // draws.clear()
     }
 }
 
-class UnoNode {
-    constructor({ element, props, ui }) {
-        this.element = element
-        this.parent = undefined
-        this.path = []
-        this.layout = {}
-        this.props = props
-        this.zIndex = props.zIndex || 0
-        this.ui = ui
+function Node({ element, props, nodes }) {
+    this.element = element
+    this.parent = undefined
+    this.path = []
+    this.layout = {}
+    this.props = props
 
-        Object.keys(props).forEach((key) => {
-            this.setProperty(key, props[key])
-        })
-    }
-
-    add(child) {
-        if (this.ui.nodes.has(child)) {
+    this.add = (child) => {
+        if (nodes.has(child)) {
             throw new Error('child already added')
         }
 
         const childIndex = this.element.children.length
         child.parent = this
         child.path = [...(this.path || []), childIndex]
-        this.ui.nodes.add(child)
+        nodes.add(child)
         this.element.appendChild(child.element)
     }
 
-    remove(child) {
-        this.ui.nodes.delete(child)
+    this.remove = (child) => {
+        nodes.delete(child)
         child.parent = undefined
         this.element.removeChild(child.element)
     }
 
-    setProperty(key, value) {
+    this.setProperty = (key, value) => {
         this.props[key] = value
         this.element.style[key] = value
-        if (key === 'zIndex') {
-            this.zIndex = value
-        }
     }
 
-    on(type, listener) {
+    this.on = (type, listener) => {
         this.element.addEventListener(type, listener)
     }
 
-    off(type, listener) {
+    this.off = (type, listener) => {
         this.element.removeEventListener(type, listener)
     }
+
+    Object.keys(props).forEach((key) => {
+        this.setProperty(key, props[key])
+    })
 }
 
 function getComputedLayout(element) {

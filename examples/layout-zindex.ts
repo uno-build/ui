@@ -1,5 +1,5 @@
-export default function createZIndexLayout(ui, name) {
-    console.log(`--- ${name} z-index ---`)
+export default function createZIndexLayout({ ui, engine, layout }) {
+    console.log(`--- ${engine} ---`)
 
     const root = ui.create({
         flexDirection: 'column',
@@ -46,7 +46,18 @@ export default function createZIndexLayout(ui, name) {
         }),
     )
 
-    console.log(ui.calculateLayout().length, 'updated nodes', name)
+    ui.update()
+    ui.render()
+    console.table(
+        [...ui.nodes].map((node) => ({
+            width: node.layout.width,
+            height: node.layout.height,
+            top: node.layout.top,
+            left: node.layout.left,
+            path: node.path.join(','),
+            zIndex: node.zIndex,
+        })),
+    )
 }
 
 function createRow(ui) {
