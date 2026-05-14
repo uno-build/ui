@@ -1,11 +1,16 @@
 import UnoUI from '../src/engine/dom'
-import UnoRendererWebGPU from '../src/renderer/dom'
+// import UnoRendererWebGPU from '../src/renderer/dom'
 
 const canvas = document.getElementById('html')
 // const renderer = new UnoRendererWebGPU({ canvasElement: canvas })
-const ui = await UnoUI({ canvas })
-// ui.root.setProperty('width', canvas.clientWidth)
-// ui.root.setProperty('height', canvas.clientHeight)
+const ui = await new UnoUI({ canvas })
+canvas.width = canvas.clientWidth
+canvas.height = canvas.clientHeight
+ui.root.setProperty('width', canvas.clientWidth)
+ui.root.setProperty('height', canvas.clientHeight)
+
+console.log(ui)
+window.ui = ui
 
 const container = ui.create({
     flexDirection: 'column',
