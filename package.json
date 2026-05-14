@@ -1,8 +1,6 @@
 {
     "scripts": {
-        "start": "vite ./examples",
-        "test": "vitest run",
-        "test:watch": "vitest watch"
+        "dev": "vite ./examples/dev/"
     },
     "devDependencies": {
         "vite": "^8.0.12",

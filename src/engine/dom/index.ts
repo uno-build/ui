@@ -1,12 +1,13 @@
 export default function UI({ canvas }) {
     const self = {}
-    const ctx = canvas.getContext('2d')
-    // const draws = new Set()
 
-    canvas.onpaint = (event) => {
-        ctx.reset()
-        for (const element of event.changedElements) {
-            ctx.drawElementImage(element, 0, 0)
+    if (typeof canvas.getContext === 'function') {
+        const ctx = canvas.getContext('2d')
+        canvas.onpaint = (event) => {
+            ctx.reset()
+            for (const element of event.changedElements) {
+                ctx.drawElementImage(element, 0, 0)
+            }
         }
     }
 

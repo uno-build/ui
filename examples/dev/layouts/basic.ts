@@ -1,5 +1,5 @@
-export default function createLayout({ ui, engine, layout }) {
-    console.log(`--- ${engine} ---`)
+export default function createLayout({ ui, renderer }) {
+    console.log(`--- ${renderer} ---`)
 
     const container = ui.create({
         flexDirection: 'column',
