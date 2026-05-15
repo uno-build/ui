@@ -1,13 +1,10 @@
+import BaseNode from '../node.ts'
+
 export default class UI {
     public nodes = new Set()
     public root
 
     constructor({ canvas }) {
-        this.root = new Node({
-            element: canvas,
-            props: {},
-            nodes: this.nodes,
-        })
         if (typeof canvas.getContext === 'function') {
             const ctx = canvas.getContext('2d')
             canvas.onpaint = (event) => {
@@ -17,12 +14,18 @@ export default class UI {
                 }
             }
         }
+
+        this.root = new Node({
+            element: canvas,
+            props: {},
+            nodes: this.nodes,
+        })
     }
 
     create(props) {
         const element = document.createElement('div')
         element.style.display = 'flex'
-        return Node({
+        return new Node({
             element,
             props,
             nodes: this.nodes,
@@ -42,50 +45,39 @@ export default class UI {
     }
 }
 
-function Node({ element, props, nodes }) {
-    const self = {}
-    self.element = element
-    self.parent = undefined
-    self.path = []
-    self.layout = {}
-    self.props = props
+class Node extends BaseNode {
+    public element
 
-    self.add = (child) => {
-        if (nodes.has(child)) {
-            throw new Error('child already added')
-        }
-
-        const childIndex = self.element.children.length
-        child.parent = this
-        child.path = [...(self.path || []), childIndex]
-        nodes.add(child)
-        self.element.appendChild(child.element)
+    constructor({ element, props, nodes }) {
+        super({ props, nodes })
+        this.element = element
+        this.applyProperties()
     }
 
-    self.remove = (child) => {
-        nodes.delete(child)
-        child.parent = undefined
-        self.element.removeChild(child.element)
+    protected getChildIndex() {
+        return this.element.children.length
     }
 
-    self.setProperty = (key, value) => {
-        self.props[key] = value
-        self.element.style[key] = value
+    protected attachChild(child) {
+        this.element.appendChild(child.element)
     }
 
-    self.on = (type, listener) => {
-        self.element.addEventListener(type, listener)
+    protected detachChild(child) {
+        this.element.removeChild(child.element)
     }
 
-    self.off = (type, listener) => {
-        self.element.removeEventListener(type, listener)
+    setProperty(key, value) {
+        this.props[key] = value
+        this.element.style[key] = value
     }
 
-    Object.keys(props).forEach((key) => {
-        self.setProperty(key, props[key])
-    })
+    on(type, listener) {
+        this.element.addEventListener(type, listener)
+    }
 
-    return self
+    off(type, listener) {
+        this.element.removeEventListener(type, listener)
+    }
 }
 
 function getComputedLayout(element) {

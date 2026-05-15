@@ -1,4 +1,5 @@
 import { setYogaProperty, isYogaProperty } from './properties.ts'
+import BaseNode from '../node.ts'
 // import { sortNodesForCanvasPaint } from '../order.ts'
 
 export default class UI {
@@ -25,7 +26,7 @@ export default class UI {
 
     create(props) {
         const yoga = this.Yoga.Node.create()
-        return Node({
+        return new Node({
             yoga,
             props,
             nodes: this.nodes,
@@ -46,51 +47,46 @@ export default class UI {
     }
 }
 
-function Node({ yoga, props, nodes }) {
-    const self = {}
-    self.yoga = yoga
-    self.parent = undefined
-    self.path = []
-    self.layout = {}
-    self.props = props
+class Node extends BaseNode {
+    public yoga
 
-    self.add = (child) => {
-        if (nodes.has(child)) {
-            throw new Error('child already added')
-        }
-        const child_index = yoga.getChildCount()
-        child.parent = self
-        child.path = [...(self.path || []), child_index]
-        nodes.add(child)
-        yoga.insertChild(child.yoga, child_index)
+    constructor({ yoga, props, nodes }) {
+        super({ props, nodes })
+        this.yoga = yoga
+        this.applyProperties()
     }
-    self.remove = (child) => {
-        nodes.delete(child)
-        yoga.removeChild(child.yoga)
+
+    protected getChildIndex() {
+        return this.yoga.getChildCount()
     }
-    self.setProperty = (key, value) => {
+
+    protected attachChild(child, child_index) {
+        this.yoga.insertChild(child.yoga, child_index)
+    }
+
+    protected detachChild(child) {
+        this.yoga.removeChild(child.yoga)
+    }
+
+    setProperty(key, value) {
         if (isYogaProperty(key)) {
-            props[key] = value
-            setYogaProperty(yoga, key, value)
+            this.props[key] = value
+            setYogaProperty(this.yoga, key, value)
             return
         } else if (isUnoProperty(key)) {
-            props[key] = value
+            this.props[key] = value
             return
         }
         // console.warn(`unsupported property ${key}`)
     }
-    self.on = (type, listener) => {
-        // no-op
-    }
-    self.off = (type, listener) => {
+
+    on(type, listener) {
         // no-op
     }
 
-    Object.keys(props).forEach((key) => {
-        self.setProperty(key, props[key])
-    })
-
-    return self
+    off(type, listener) {
+        // no-op
+    }
 }
 
 const cssUnoProperties = new Set(['zIndex'])
