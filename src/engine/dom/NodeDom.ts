@@ -13,11 +13,11 @@ export default class DOMNode extends Node {
         return this.element.children.length
     }
 
-    protected attachChild(child) {
+    protected appendChild(child) {
         this.element.appendChild(child.element)
     }
 
-    protected detachChild(child) {
+    protected removeChild(child) {
         this.element.removeChild(child.element)
     }
 

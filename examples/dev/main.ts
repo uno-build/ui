@@ -67,7 +67,7 @@ renderers.forEach(async (renderer_name) => {
     const UI = RENDERER[renderer_name].engine
     const Yoga = await loadYoga()
     const ui = new UI({ canvas, Yoga })
-    ui.root.setProperty('width', canvas.clientWidth)
-    ui.root.setProperty('height', canvas.clientHeight)
+    // ui.root.setProperty('width', canvas.clientWidth)
+    // ui.root.setProperty('height', canvas.clientHeight)
     createLayout({ ui, renderer: renderer_name })
 })

@@ -1,6 +1,12 @@
 // Credits to pmndrs/uikit for this code:
 // https://github.com/pmndrs/uikit/blob/main/packages/uikit/scripts/flex-generate-setter.ts
 
+const cssUnoProperties = new Set(['zIndex'])
+function isUnoProperty(key) {
+    return cssUnoProperties.has(key)
+}
+
+// Yoga
 const POSITION_TYPE_LUT = {
     static: 0,
     relative: 1,

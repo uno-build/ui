@@ -21,13 +21,13 @@ export default abstract class Node {
         child.parent = this
         child.path = [...this.path, childIndex]
         this.nodes.add(child)
-        this.attachChild(child, childIndex)
+        this.appendChild(child, childIndex)
     }
 
     remove(child: any) {
         this.nodes.delete(child)
         child.parent = undefined
-        this.detachChild(child)
+        this.removeChild(child)
     }
 
     protected applyProperties(props) {
@@ -47,6 +47,6 @@ export default abstract class Node {
     }
 
     protected abstract getChildIndex(): number
-    protected abstract attachChild(child: any, index: number): void
-    protected abstract detachChild(child: any): void
+    protected abstract appendChild(child: any, index: number): void
+    protected abstract removeChild(child: any): void
 }

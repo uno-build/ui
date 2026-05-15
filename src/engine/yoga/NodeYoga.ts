@@ -14,11 +14,11 @@ export default class YogaNode extends Node {
         return this.yoga.getChildCount()
     }
 
-    protected attachChild(child, child_index) {
+    protected appendChild(child, child_index) {
         this.yoga.insertChild(child.yoga, child_index)
     }
 
-    protected detachChild(child) {
+    protected removeChild(child) {
         this.yoga.removeChild(child.yoga)
     }
 
@@ -27,11 +27,7 @@ export default class YogaNode extends Node {
             this.props[key] = value
             setYogaProperty(this.yoga, key, value)
             return
-        } else if (isUnoProperty(key)) {
-            this.props[key] = value
-            return
         }
-        // console.warn(`unsupported property ${key}`)
     }
 
     on(type, listener) {
@@ -41,9 +37,4 @@ export default class YogaNode extends Node {
     off(type, listener) {
         // no-op
     }
-}
-
-const cssUnoProperties = new Set(['zIndex'])
-function isUnoProperty(key) {
-    return cssUnoProperties.has(key)
 }
