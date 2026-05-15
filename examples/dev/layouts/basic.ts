@@ -31,7 +31,6 @@ export default function createLayout({ ui, renderer }) {
     )
 
     ui.update()
-    ui.render()
 
     console.table(
         [...ui.nodes].map((node) => ({

@@ -47,7 +47,6 @@ export default function createZIndexLayout({ ui, renderer }) {
     )
 
     ui.update()
-    ui.render()
     console.table(
         [...ui.nodes].map((node) => ({
             width: node.layout.width,

@@ -1,39 +1,37 @@
-export default function UI({ canvas }) {
-    const self = {}
+export default class UI {
+    public nodes = new Set()
+    public root
 
-    if (typeof canvas.getContext === 'function') {
-        const ctx = canvas.getContext('2d')
-        canvas.onpaint = (event) => {
-            ctx.reset()
-            for (const element of event.changedElements) {
-                ctx.drawElementImage(element, 0, 0)
+    constructor({ canvas }) {
+        this.root = new Node({
+            element: canvas,
+            props: {},
+            nodes: this.nodes,
+        })
+        if (typeof canvas.getContext === 'function') {
+            const ctx = canvas.getContext('2d')
+            canvas.onpaint = (event) => {
+                ctx.reset()
+                for (const element of event.changedElements) {
+                    ctx.drawElementImage(element, 0, 0)
+                }
             }
         }
     }
 
-    self.nodes = new Set()
-
-    self.root = new Node({
-        element: canvas,
-        props: {},
-        nodes: self.nodes,
-    })
-
-    self.init = async () => {}
-
-    self.create = (props) => {
+    create(props) {
         const element = document.createElement('div')
         element.style.display = 'flex'
         return Node({
             element,
             props,
-            nodes: self.nodes,
+            nodes: this.nodes,
         })
     }
 
-    self.update = () => {
+    update() {
         const updatedNodes = []
-        for (const node of self.nodes) {
+        for (const node of this.nodes) {
             const layout = getComputedLayout(node.element)
             if (!deepEqual(layout, node.layout)) {
                 updatedNodes.push(node)
@@ -42,16 +40,6 @@ export default function UI({ canvas }) {
         }
         return updatedNodes
     }
-
-    self.render = () => {
-        // for (const element of draws) {
-        //     console.log('drawing', element)
-        //     ctx.drawElementImage(element, 0, 0)
-        // }
-        // draws.clear()
-    }
-
-    return self
 }
 
 function Node({ element, props, nodes }) {

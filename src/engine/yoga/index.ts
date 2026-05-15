@@ -1,36 +1,41 @@
 import { setYogaProperty, isYogaProperty } from './properties.ts'
 // import { sortNodesForCanvasPaint } from '../order.ts'
 
-export default function UI({ Yoga }) {
-    const self = {}
-    const yoga_config = Yoga.Config.create()
-    yoga_config.setUseWebDefaults(true)
-    // yoga_config.setPointScaleFactor(200)
-    yoga_config.setExperimentalFeatureEnabled(
-        0, // ExperimentalFeature.WebFlexBasis
-        true,
-    )
+export default class UI {
+    public nodes = new Set()
+    public root
+    private Yoga
 
-    self.nodes = new Set()
-    self.root = new Node({
-        yoga: Yoga.Node.create(yoga_config),
-        props: {},
-        nodes: self.nodes,
-    })
+    constructor({ Yoga }) {
+        this.Yoga = Yoga
+        const yoga_config = Yoga.Config.create()
+        yoga_config.setUseWebDefaults(true)
+        // yoga_config.setPointScaleFactor(200)
+        yoga_config.setExperimentalFeatureEnabled(
+            0, // ExperimentalFeature.WebFlexBasis
+            true,
+        )
 
-    self.create = (props) => {
-        const yoga = Yoga.Node.create()
-        return Node({
-            yoga,
-            props,
-            nodes: self.nodes,
+        this.root = new Node({
+            yoga: this.Yoga.Node.create(yoga_config),
+            props: {},
+            nodes: this.nodes,
         })
     }
 
-    self.update = () => {
-        self.root.yoga.calculateLayout()
+    create(props) {
+        const yoga = this.Yoga.Node.create()
+        return Node({
+            yoga,
+            props,
+            nodes: this.nodes,
+        })
+    }
+
+    update() {
+        this.root.yoga.calculateLayout()
         const nodes = []
-        for (const node of self.nodes) {
+        for (const node of this.nodes) {
             const layout = node.yoga.getComputedLayout()
             if (!deepEqual(layout, node.layout)) {
                 nodes.push(node)
@@ -39,10 +44,6 @@ export default function UI({ Yoga }) {
         }
         return nodes
     }
-
-    self.render = () => {}
-
-    return self
 }
 
 function Node({ yoga, props, nodes }) {
