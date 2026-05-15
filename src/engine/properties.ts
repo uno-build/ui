@@ -1,3 +1,4 @@
+// Credits to pmndrs/uikit for this code:
 // https://github.com/pmndrs/uikit/blob/main/packages/uikit/scripts/flex-generate-setter.ts
 
 const POSITION_TYPE_LUT = {

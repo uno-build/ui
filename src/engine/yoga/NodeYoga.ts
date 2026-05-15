@@ -1,5 +1,5 @@
 import Node from '../Node.js'
-import { setYogaProperty, isYogaProperty } from './properties.js'
+import { setYogaProperty, isYogaProperty } from '../properties.js'
 
 export default class YogaNode extends Node {
     public yoga

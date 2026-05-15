@@ -1,12 +1,13 @@
 // import { sortNodesForCanvasPaint } from '../order.ts'
 import Node from './NodeYoga.js'
+import UI from '../UI.js'
 
-export default class UI {
-    public nodes = new Set()
-    public root
+export default class UIYoga extends UI<Node> {
     private Yoga
 
     constructor({ Yoga }) {
+        super()
+
         this.Yoga = Yoga
         const yoga_config = Yoga.Config.create()
         yoga_config.setUseWebDefaults(true)
@@ -23,7 +24,7 @@ export default class UI {
         })
     }
 
-    create(props) {
+    protected createNode(props) {
         const yoga = this.Yoga.Node.create()
         return new Node({
             yoga,
@@ -32,27 +33,13 @@ export default class UI {
         })
     }
 
-    update() {
+    protected beforeUpdate() {
         this.root.yoga.calculateLayout()
-        const nodes = []
-        for (const node of this.nodes) {
-            const layout = node.yoga.getComputedLayout()
-            if (!deepEqual(layout, node.layout)) {
-                nodes.push(node)
-            }
-            node.layout = layout
-        }
-        return nodes
     }
-}
 
-function deepEqual(obj1, obj2) {
-    for (const key in obj1) {
-        if (obj1[key] !== obj2[key]) {
-            return false
-        }
+    protected getLayout(node) {
+        return node.yoga.getComputedLayout()
     }
-    return true
 }
 
 // function getPaintOrder(nodes) {

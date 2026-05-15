@@ -1,10 +1,10 @@
 import Node from './NodeDom.js'
+import UI from '../UI.js'
 
-export default class UI {
-    public nodes = new Set()
-    public root
-
+export default class UIDom extends UI<Node> {
     constructor({ canvas }) {
+        super()
+
         if (typeof canvas.getContext === 'function') {
             const ctx = canvas.getContext('2d')
             canvas.onpaint = (event) => {
@@ -22,7 +22,7 @@ export default class UI {
         })
     }
 
-    create(props) {
+    protected createNode(props) {
         const element = document.createElement('div')
         element.style.display = 'flex'
         return new Node({
@@ -32,16 +32,8 @@ export default class UI {
         })
     }
 
-    update() {
-        const updatedNodes = []
-        for (const node of this.nodes) {
-            const layout = getComputedLayout(node.element)
-            if (!deepEqual(layout, node.layout)) {
-                updatedNodes.push(node)
-            }
-            node.layout = layout
-        }
-        return updatedNodes
+    protected getLayout(node) {
+        return getComputedLayout(node.element)
     }
 }
 
@@ -53,13 +45,4 @@ function getComputedLayout(element) {
         width: Math.round(rect.width),
         height: Math.round(rect.height),
     }
-}
-
-function deepEqual(obj1, obj2) {
-    for (const key in obj1) {
-        if (obj1[key] !== obj2[key]) {
-            return false
-        }
-    }
-    return true
 }

@@ -1,6 +1,6 @@
 type NodeProps = Record<string, any>
 
-export default abstract class BaseNode {
+export default abstract class Node {
     public parent: any = undefined
     public path: number[] = []
     public layout: Record<string, any> = {}
