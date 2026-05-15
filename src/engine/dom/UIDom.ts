@@ -1,4 +1,4 @@
-import BaseNode from '../node.ts'
+import Node from './NodeDom.js'
 
 export default class UI {
     public nodes = new Set()
@@ -42,41 +42,6 @@ export default class UI {
             node.layout = layout
         }
         return updatedNodes
-    }
-}
-
-class Node extends BaseNode {
-    public element
-
-    constructor({ element, props, nodes }) {
-        super({ props, nodes })
-        this.element = element
-        this.applyProperties()
-    }
-
-    protected getChildIndex() {
-        return this.element.children.length
-    }
-
-    protected attachChild(child) {
-        this.element.appendChild(child.element)
-    }
-
-    protected detachChild(child) {
-        this.element.removeChild(child.element)
-    }
-
-    setProperty(key, value) {
-        this.props[key] = value
-        this.element.style[key] = value
-    }
-
-    on(type, listener) {
-        this.element.addEventListener(type, listener)
-    }
-
-    off(type, listener) {
-        this.element.removeEventListener(type, listener)
     }
 }
 

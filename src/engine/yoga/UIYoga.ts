@@ -1,6 +1,5 @@
-import { setYogaProperty, isYogaProperty } from './properties.ts'
-import BaseNode from '../node.ts'
 // import { sortNodesForCanvasPaint } from '../order.ts'
+import Node from './NodeYoga.js'
 
 export default class UI {
     public nodes = new Set()
@@ -45,53 +44,6 @@ export default class UI {
         }
         return nodes
     }
-}
-
-class Node extends BaseNode {
-    public yoga
-
-    constructor({ yoga, props, nodes }) {
-        super({ props, nodes })
-        this.yoga = yoga
-        this.applyProperties()
-    }
-
-    protected getChildIndex() {
-        return this.yoga.getChildCount()
-    }
-
-    protected attachChild(child, child_index) {
-        this.yoga.insertChild(child.yoga, child_index)
-    }
-
-    protected detachChild(child) {
-        this.yoga.removeChild(child.yoga)
-    }
-
-    setProperty(key, value) {
-        if (isYogaProperty(key)) {
-            this.props[key] = value
-            setYogaProperty(this.yoga, key, value)
-            return
-        } else if (isUnoProperty(key)) {
-            this.props[key] = value
-            return
-        }
-        // console.warn(`unsupported property ${key}`)
-    }
-
-    on(type, listener) {
-        // no-op
-    }
-
-    off(type, listener) {
-        // no-op
-    }
-}
-
-const cssUnoProperties = new Set(['zIndex'])
-function isUnoProperty(key) {
-    return cssUnoProperties.has(key)
 }
 
 function deepEqual(obj1, obj2) {

@@ -1,6 +1,6 @@
 import { loadYoga } from 'yoga-layout/load'
-import UIDom from '../../src/engine/dom'
-import UIYoga from '../../src/engine/yoga'
+import UIDom from '../../src/engine/dom/UIDom'
+import UIYoga from '../../src/engine/yoga/UIYoga'
 import layoutBasic from './layouts/basic'
 import layoutZIndex from './layouts/zindex'
 
@@ -49,21 +49,25 @@ const renderers = renderers_params.filter((renderer) => {
 console.log(
     `Running: ${window.location.origin}/?layout=${layout}&renderers=${renderers.join(',')}`,
 )
-renderers.forEach(async (renderer) => {
-    const canvas = document.createElement(RENDERER[renderer].element_type)
-    const UI = RENDERER[renderer].engine
-    const Yoga = await loadYoga()
-    const ui = new UI({ canvas, Yoga })
-    console.log(ui.Yoga)
-    canvas.id = renderer
+renderers.forEach(async (renderer_name) => {
+    // Create canvas element
+    const canvas = document.createElement(RENDERER[renderer_name].element_type)
+    document.getElementById('root').appendChild(canvas)
+    canvas.id = renderer_name
     canvas.style.opacity = '1'
     canvas.width = canvas.clientWidth
     canvas.height = canvas.clientHeight
-    Object.entries(RENDERER[renderer].attributes).forEach(([key, value]) => {
-        canvas.setAttribute(key, value)
-    })
-    document.getElementById('root').appendChild(canvas)
+    Object.entries(RENDERER[renderer_name].attributes).forEach(
+        ([key, value]) => {
+            canvas.setAttribute(key, value)
+        },
+    )
+
+    // Create UI engine
+    const UI = RENDERER[renderer_name].engine
+    const Yoga = await loadYoga()
+    const ui = new UI({ canvas, Yoga })
     ui.root.setProperty('width', canvas.clientWidth)
     ui.root.setProperty('height', canvas.clientHeight)
-    createLayout({ ui, renderer })
+    createLayout({ ui, renderer: renderer_name })
 })

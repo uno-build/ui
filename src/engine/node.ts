@@ -30,8 +30,8 @@ export default abstract class BaseNode {
         this.detachChild(child)
     }
 
-    protected applyProperties() {
-        Object.keys(this.props).forEach((key) => {
+    protected applyProperties(props) {
+        Object.keys(props).forEach((key) => {
             this.setProperty(key, this.props[key])
         })
     }
