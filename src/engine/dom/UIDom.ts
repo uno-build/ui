@@ -24,7 +24,21 @@ export default class UIDom extends UI<Node> {
 
     protected createNode(props) {
         const element = document.createElement('div')
-        element.style.display = 'flex'
+        Object.assign(element.style, {
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'stretch',
+            alignContent: 'stretch',
+            justifyContent: 'flex-start',
+            flexWrap: 'nowrap',
+            flexShrink: '1',
+            flexGrow: '0',
+            position: 'relative',
+            overflow: 'visible',
+            minWidth: '0',
+            minHeight: '0',
+        })
         return new Node({
             element,
             props,

@@ -30,48 +30,16 @@ const YOGA_SETTER = {
         node.setPositionType(convertEnum(POSITION_TYPE_LUT, input, 1))
     },
     positionTop: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setPosition',
-            'setPositionPercent',
-            'setPositionAuto',
-            EDGE.top,
-            input,
-            root,
-        )
+        node.setPosition(EDGE.top, formatEdgeUnit(node, input, root))
     },
     positionLeft: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setPosition',
-            'setPositionPercent',
-            'setPositionAuto',
-            EDGE.left,
-            input,
-            root,
-        )
+        node.setPosition(EDGE.left, formatEdgeUnit(node, input, root))
     },
     positionRight: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setPosition',
-            'setPositionPercent',
-            'setPositionAuto',
-            EDGE.right,
-            input,
-            root,
-        )
+        node.setPosition(EDGE.right, formatEdgeUnit(node, input, root))
     },
     positionBottom: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setPosition',
-            'setPositionPercent',
-            'setPositionAuto',
-            EDGE.bottom,
-            input,
-            root,
-        )
+        node.setPosition(EDGE.bottom, formatEdgeUnit(node, input, root))
     },
     alignContent: (node, input) => {
         node.setAlignContent(convertEnum(ALIGN_LUT, input, 4))
@@ -92,92 +60,28 @@ const YOGA_SETTER = {
         node.setJustifyContent(convertEnum(JUSTIFY_LUT, input, 0))
     },
     marginTop: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setMargin',
-            'setMarginPercent',
-            'setMarginAuto',
-            EDGE.top,
-            input,
-            root,
-        )
+        node.setMargin(EDGE.top, formatEdgeUnit(node, input, root))
     },
     marginLeft: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setMargin',
-            'setMarginPercent',
-            'setMarginAuto',
-            EDGE.left,
-            input,
-            root,
-        )
+        node.setMargin(EDGE.left, formatEdgeUnit(node, input, root))
     },
     marginRight: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setMargin',
-            'setMarginPercent',
-            'setMarginAuto',
-            EDGE.right,
-            input,
-            root,
-        )
+        node.setMargin(EDGE.right, formatEdgeUnit(node, input, root))
     },
     marginBottom: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setMargin',
-            'setMarginPercent',
-            'setMarginAuto',
-            EDGE.bottom,
-            input,
-            root,
-        )
+        node.setMargin(EDGE.bottom, formatEdgeUnit(node, input, root))
     },
     margin: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setMargin',
-            'setMarginPercent',
-            'setMarginAuto',
-            EDGE.all,
-            input,
-            root,
-        )
+        node.setMargin(EDGE.all, formatEdgeUnit(node, input, root))
     },
     marginHorizontal: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setMargin',
-            'setMarginPercent',
-            'setMarginAuto',
-            EDGE.horizontal,
-            input,
-            root,
-        )
+        node.setMargin(EDGE.horizontal, formatEdgeUnit(node, input, root))
     },
     marginVertical: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setMargin',
-            'setMarginPercent',
-            'setMarginAuto',
-            EDGE.vertical,
-            input,
-            root,
-        )
+        node.setMargin(EDGE.vertical, formatEdgeUnit(node, input, root))
     },
     flexBasis: (node, input) => {
-        setUnit(
-            node,
-            'setFlexBasis',
-            'setFlexBasisPercent',
-            'setFlexBasisAuto',
-            input,
-            root,
-            NaN,
-        )
+        node.setFlexBasis(formatUnit(node, input, root, NaN))
     },
     flexBasisPercent: (node, input) => {
         node.setFlexBasisPercent(convertPercent(input))
@@ -195,15 +99,7 @@ const YOGA_SETTER = {
         node.setFlexShrink(input)
     },
     width: (node, input) => {
-        setUnit(
-            node,
-            'setWidth',
-            'setWidthPercent',
-            'setWidthAuto',
-            input,
-            root,
-            NaN,
-        )
+        node.setWidth(formatUnit(node, input, root, NaN))
     },
     widthAuto: (node) => {
         node.setWidthAuto()
@@ -212,15 +108,7 @@ const YOGA_SETTER = {
         node.setWidthPercent(convertPercent(input))
     },
     height: (node, input) => {
-        setUnit(
-            node,
-            'setHeight',
-            'setHeightPercent',
-            'setHeightAuto',
-            input,
-            root,
-            NaN,
-        )
+        node.setHeight(formatUnit(node, input, root, NaN))
     },
     heightAuto: (node) => {
         node.setHeightAuto()
@@ -229,25 +117,25 @@ const YOGA_SETTER = {
         node.setHeightPercent(convertPercent(input))
     },
     minWidth: (node, input) => {
-        setUnit(node, 'setMinWidth', 'setMinWidthPercent', null, input, root)
+        node.setMinWidth(formatUnit(node, input, root))
     },
     minWidthPercent: (node, input) => {
         node.setMinWidthPercent(convertPercent(input))
     },
     minHeight: (node, input) => {
-        setUnit(node, 'setMinHeight', 'setMinHeightPercent', null, input, root)
+        node.setMinHeight(formatUnit(node, input, root))
     },
     minHeightPercent: (node, input) => {
         node.setMinHeightPercent(convertPercent(input))
     },
     maxWidth: (node, input) => {
-        setUnit(node, 'setMaxWidth', 'setMaxWidthPercent', null, input, root)
+        node.setMaxWidth(formatUnit(node, input, root))
     },
     maxWidthPercent: (node, input) => {
         node.setMaxWidthPercent(convertPercent(input))
     },
     maxHeight: (node, input) => {
-        setUnit(node, 'setMaxHeight', 'setMaxHeightPercent', null, input, root)
+        node.setMaxHeight(formatUnit(node, input, root))
     },
     maxHeightPercent: (node, input) => {
         node.setMaxHeightPercent(convertPercent(input))
@@ -289,96 +177,40 @@ const YOGA_SETTER = {
         node.setDisplay(convertEnum(DISPLAY_LUT, input, 0))
     },
     paddingTop: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setPadding',
-            'setPaddingPercent',
-            null,
-            EDGE.top,
-            input,
-            root,
-        )
+        node.setPadding(EDGE.top, formatEdgeUnit(node, input, root))
     },
     paddingLeft: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setPadding',
-            'setPaddingPercent',
-            null,
-            EDGE.left,
-            input,
-            root,
-        )
+        node.setPadding(EDGE.left, formatEdgeUnit(node, input, root))
     },
     paddingRight: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setPadding',
-            'setPaddingPercent',
-            null,
-            EDGE.right,
-            input,
-            root,
-        )
+        node.setPadding(EDGE.right, formatEdgeUnit(node, input, root))
     },
     paddingBottom: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setPadding',
-            'setPaddingPercent',
-            null,
-            EDGE.bottom,
-            input,
-            root,
-        )
+        node.setPadding(EDGE.bottom, formatEdgeUnit(node, input, root))
     },
     padding: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setPadding',
-            'setPaddingPercent',
-            null,
-            EDGE.all,
-            input,
-            root,
-        )
+        node.setPadding(EDGE.all, formatEdgeUnit(node, input, root))
     },
     paddingHorizontal: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setPadding',
-            'setPaddingPercent',
-            null,
-            EDGE.horizontal,
-            input,
-            root,
-        )
+        node.setPadding(EDGE.horizontal, formatEdgeUnit(node, input, root))
     },
     paddingVertical: (node, input) => {
-        setEdgeUnit(
-            node,
-            'setPadding',
-            'setPaddingPercent',
-            null,
-            EDGE.vertical,
-            input,
-            root,
-        )
+        node.setPadding(EDGE.vertical, formatEdgeUnit(node, input, root))
     },
     gapRow: (node, input) => {
-        setGap(node, GUTTER.row, input, root)
+        node.setGap(GUTTER.row, formatGap(node, input, root))
     },
     gapColumn: (node, input) => {
-        setGap(node, GUTTER.column, input, root)
+        node.setGap(GUTTER.column, formatGap(node, input, root))
     },
     rowGap: (node, input) => {
-        setGap(node, GUTTER.row, input, root)
+        node.setGap(GUTTER.row, formatGap(node, input, root))
     },
     columnGap: (node, input) => {
-        setGap(node, GUTTER.column, input, root)
+        node.setGap(GUTTER.column, formatGap(node, input, root))
     },
     gap: (node, input) => {
-        setGap(node, GUTTER.all, input, root)
+        node.setGap(GUTTER.all, formatGap(node, input, root))
     },
     gapPercent: (node, input) => {
         node.setGapPercent(GUTTER.all, convertPercent(input))
@@ -414,62 +246,17 @@ function convertEnum(lut, input, defaultValue) {
     return resolvedValue
 }
 
-function setUnit(
-    node,
-    pointMethod,
-    percentMethod,
-    autoMethod,
-    input,
-    root,
-    defaultValue,
-) {
-    if (input === 'auto' && autoMethod != null) {
-        node[autoMethod]()
-        return
-    }
-
+function formatUnit(node, input, root, defaultValue) {
     const value = convertPoint(input, root)
-    if (isPercent(value) && percentMethod != null) {
-        node[percentMethod](convertPercent(value))
-        return
-    }
-
-    node[pointMethod](value ?? defaultValue)
+    return value ?? defaultValue
 }
 
-function setEdgeUnit(
-    node,
-    pointMethod,
-    percentMethod,
-    autoMethod,
-    edge,
-    input,
-    root,
-) {
-    if (input === 'auto' && autoMethod != null) {
-        node[autoMethod](edge)
-        return
-    }
-
-    const value = convertPoint(input, root)
-    if (isPercent(value) && percentMethod != null) {
-        node[percentMethod](edge, convertPercent(value))
-        return
-    }
-
-    node[pointMethod](edge, value)
+function formatEdgeUnit(node, input, root) {
+    return convertPoint(input, root)
 }
 
-function setGap(node, gutter, input, root) {
-    const value = convertPoint(input, root)
-    if (isPercent(value)) {
-        return node.setGapPercent(gutter, convertPercent(value))
-    }
-    return node.setGap(gutter, value)
-}
-
-function isPercent(input) {
-    return typeof input === 'string' && input.endsWith('%')
+function formatGap(node, input, root) {
+    return convertPoint(input, root)
 }
 
 function convertPercent(input) {

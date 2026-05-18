@@ -1,100 +1,72 @@
 export default function createZIndexLayout({ ui, renderer }) {
     console.log(`--- ${renderer} ---`)
 
-    const root = ui.create({
-        flexDirection: 'column',
-        padding: '10px',
-    })
-    ui.root.add(root)
+    const PADDING = 100
+    const OFFSET = 10
 
-    const row1 = createRow(ui)
-    const row2 = createRow(ui)
-    root.add(row1)
-    root.add(row2)
-
-    row1.add(
-        createPanel(ui, {
-            text: 'Panel A',
-            backgroundColor: '#f6c6c6',
-            marginRight: '-10px',
-            marginBottom: '-10px',
-            zIndex: 2,
-        }),
-    )
-    row1.add(
-        createPanel(ui, {
-            text: 'Panel B',
-            backgroundColor: '#c5ff9e',
-            marginLeft: '-10px',
-            marginBottom: '-10px',
-        }),
-    )
-    row2.add(
-        createPanel(ui, {
-            text: 'Panel C',
-            backgroundColor: '#9ec5ff',
-            marginRight: '-10px',
-            marginTop: '-10px',
-        }),
-    )
-    row2.add(
-        createPanel(ui, {
-            text: 'Panel D',
-            backgroundColor: '#ffffc5',
-            marginLeft: '-10px',
-            marginTop: '-10px',
-        }),
-    )
-
-    ui.update()
-    console.table(
-        [...ui.nodes].map((node) => ({
-            width: node.layout.width,
-            height: node.layout.height,
-            top: node.layout.top,
-            left: node.layout.left,
-            path: node.path.join(','),
-            zIndex: node.zIndex,
-        })),
-    )
-}
-
-function createRow(ui) {
-    return ui.create({
+    const Container = ui.create({
         flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignContent: 'flex-start',
+        flex: '1',
+        // gap: '10px',
+        padding: `${PADDING}px`,
     })
+    ui.root.add(Container)
+
+    const Cell1 = ui.create(
+        createCell({
+            backgroundColor: '#f6c6c6',
+            // right: `-${OFFSET}px`,
+            // bottom: `-${OFFSET}px`,
+        }),
+    )
+    Container.add(Cell1)
+
+    const Cell2 = ui.create(
+        createCell({
+            backgroundColor: '#c6f6c6',
+            // left: `-${OFFSET}px`,
+            // bottom: `-${OFFSET}px`,
+        }),
+    )
+    Container.add(Cell2)
+
+    const Cell3 = ui.create(
+        createCell({
+            backgroundColor: '#c6c6f6',
+            // right: `-${OFFSET}px`,
+            // top: `-${OFFSET}px`,
+        }),
+    )
+    Container.add(Cell3)
+
+    const Cell4 = ui.create(
+        createCell({
+            backgroundColor: '#f6f6c6',
+            // left: `-${OFFSET}px`,
+            // top: `-${OFFSET}px`,
+        }),
+    )
+    Container.add(Cell4)
 }
 
-function createPanel(ui, props) {
-    const panel = ui.create({
-        zIndex: props.zIndex ?? '0',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        width: '220px',
-        height: '160px',
+function createCell({ ...props }) {
+    return {
+        width: '50%',
+        height: '200px',
         borderRadius: '8px',
-        backgroundColor: props.backgroundColor,
-        marginLeft: props.marginLeft,
-        marginTop: props.marginTop,
-        marginRight: props.marginRight,
-        marginBottom: props.marginBottom,
-    })
-
-    const label = ui.create({
         position: 'relative',
-        width: '50px',
-        padding: '16px',
-        font: '12px sans-serif',
-        backgroundColor: 'rgba(0, 0, 0, 1)',
-        color: 'white',
-        zIndex: 2,
-    })
-    if (label.element) {
-        label.element.textContent = props.text
+        ...props,
     }
-    panel.add(label)
-
-    return panel
 }
+
+// {
+//         position: 'relative',
+//         width: '50px',
+//         padding: '16px',
+//         font: '12px sans-serif',
+//         backgroundColor: 'rgba(0, 0, 0, 1)',
+//         color: 'white',
+//         zIndex: 2,
+//     }

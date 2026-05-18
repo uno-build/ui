@@ -5,23 +5,23 @@ import layoutBasic from './layouts/basic'
 import layoutZIndex from './layouts/zindex'
 
 const RENDERER = {
-    html_dom: {
-        element_type: 'div',
-        engine: UIDom,
-        attributes: {},
-    },
-    html_in_canvas: {
-        element_type: 'canvas',
-        engine: UIDom,
-        attributes: {
-            layoutsubtree: '',
-        },
-    },
     absolute_divs: {
         element_type: 'div',
         engine: UIYoga,
         attributes: {},
     },
+    html_dom: {
+        element_type: 'div',
+        engine: UIDom,
+        attributes: {},
+    },
+    // html_in_canvas: {
+    //     element_type: 'canvas',
+    //     engine: UIDom,
+    //     attributes: {
+    //         layoutsubtree: '',
+    //     },
+    // },
 }
 const LAYOUTS = {
     basic: layoutBasic,
@@ -49,7 +49,8 @@ const renderers = renderers_params.filter((renderer) => {
 console.log(
     `Running: ${window.location.origin}/?layout=${layout}&renderers=${renderers.join(',')}`,
 )
-renderers.forEach(async (renderer_name) => {
+
+for (const renderer_name of renderers) {
     // Create canvas element
     const canvas = document.createElement(RENDERER[renderer_name].element_type)
     document.getElementById('root').appendChild(canvas)
@@ -67,7 +68,20 @@ renderers.forEach(async (renderer_name) => {
     const UI = RENDERER[renderer_name].engine
     const Yoga = await loadYoga()
     const ui = new UI({ canvas, Yoga })
-    // ui.root.setProperty('width', canvas.clientWidth)
-    // ui.root.setProperty('height', canvas.clientHeight)
+    ui.root.setProperty('width', canvas.clientWidth)
+    ui.root.setProperty('height', canvas.clientHeight)
     createLayout({ ui, renderer: renderer_name })
-})
+
+    ui.update()
+
+    const result = [...ui.nodes].map((node) => ({
+        width: node.layout.width,
+        height: node.layout.height,
+        top: node.layout.top,
+        left: node.layout.left,
+        path: node.path.join(','),
+        zIndex: node.zIndex,
+    }))
+    console.table(result)
+    console.log(JSON.stringify(result))
+}
