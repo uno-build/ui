@@ -3,7 +3,7 @@ type NodeProps = Record<string, any>
 export default abstract class Node {
     public parent: any = undefined
     public path: number[] = []
-    public layout: Record<string, any> = {}
+    public paintLayout: Record<string, any> = {}
     public props: NodeProps
     protected nodes: Set<any>
 

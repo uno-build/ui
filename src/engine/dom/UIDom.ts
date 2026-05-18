@@ -46,17 +46,16 @@ export default class UIDom extends UI<Node> {
         })
     }
 
-    protected getLayout(node) {
-        return getComputedLayout(node.element)
-    }
-}
-
-function getComputedLayout(element) {
-    const rect = element.getBoundingClientRect()
-    return {
-        width: Math.round(rect.width),
-        height: Math.round(rect.height),
-        x: Math.round(rect.left),
-        y: Math.round(rect.top),
+    protected getPaintLayout(node) {
+        const element = node.element
+        const rootElement = this.root.element
+        const rect = element.getBoundingClientRect()
+        const rootRect = rootElement?.getBoundingClientRect()
+        return {
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+            x: Math.round(rect.left - (rootRect?.left ?? 0)),
+            y: Math.round(rect.top - (rootRect?.top ?? 0)),
+        }
     }
 }

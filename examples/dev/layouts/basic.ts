@@ -35,10 +35,10 @@ export default function createLayout({ ui, renderer }) {
     console.table(
         [...ui.nodes].map((node) => ({
             color: node.props.backgroundColor,
-            width: node.layout.width,
-            height: node.layout.height,
-            top: node.layout.top,
-            left: node.layout.left,
+            width: node.paintLayout.width,
+            height: node.paintLayout.height,
+            x: node.paintLayout.x,
+            y: node.paintLayout.y,
             path: node.path.join(','),
             zIndex: node.zIndex,
         })),

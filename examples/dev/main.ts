@@ -75,10 +75,10 @@ for (const renderer_name of renderers) {
     ui.update()
 
     const result = [...ui.nodes].map((node) => ({
-        width: node.layout.width,
-        height: node.layout.height,
-        x: node.layout.x,
-        y: node.layout.y,
+        width: node.paintLayout.width,
+        height: node.paintLayout.height,
+        x: node.paintLayout.x,
+        y: node.paintLayout.y,
         path: node.path.join(','),
         zIndex: node.zIndex,
     }))
