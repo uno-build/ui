@@ -1,6 +1,7 @@
 import Node from '../Node.js'
+// import { isProperty, setProperty } from '../properties.js'
 
-export default class DOMNode extends Node {
+export default class NodeDom extends Node {
     public element
 
     constructor({ element, props, nodes }) {
@@ -21,7 +22,7 @@ export default class DOMNode extends Node {
         this.element.removeChild(child.element)
     }
 
-    setProperty(key, value) {
+    protected setProperty(key, value) {
         this.props[key] = value
         this.element.style[key] = value
     }

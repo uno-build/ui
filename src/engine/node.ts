@@ -16,7 +16,6 @@ export default abstract class Node {
         if (this.nodes.has(child)) {
             throw new Error('child already added')
         }
-
         const childIndex = this.getChildIndex()
         child.parent = this
         child.path = [...this.path, childIndex]
@@ -30,14 +29,6 @@ export default abstract class Node {
         this.removeChild(child)
     }
 
-    protected applyProperties(props) {
-        Object.keys(props).forEach((key) => {
-            this.setProperty(key, this.props[key])
-        })
-    }
-
-    abstract setProperty(key: string, value: any): void
-
     on(type: string, listener: EventListener) {
         // no-op
     }
@@ -46,6 +37,13 @@ export default abstract class Node {
         // no-op
     }
 
+    protected applyProperties(props) {
+        Object.keys(props).forEach((key) => {
+            this.setProperty(key, this.props[key])
+        })
+    }
+
+    protected abstract setProperty(key: string, value: any): void
     protected abstract getChildIndex(): number
     protected abstract appendChild(child: any, index: number): void
     protected abstract removeChild(child: any): void

@@ -1,7 +1,7 @@
 import Node from '../Node.js'
-import { setYogaProperty, isYogaProperty } from '../properties.js'
+import { isLayoutProperty, setLayoutProperty } from '../properties.js'
 
-export default class YogaNode extends Node {
+export default class NodeYoga extends Node {
     public yoga
 
     constructor({ yoga, props, nodes }) {
@@ -22,11 +22,10 @@ export default class YogaNode extends Node {
         this.yoga.removeChild(child.yoga)
     }
 
-    setProperty(key, value) {
-        if (isYogaProperty(key)) {
-            this.props[key] = value
-            setYogaProperty(this.yoga, key, value)
-            return
+    protected setProperty(key, value) {
+        this.props[key] = value
+        if (isLayoutProperty(key)) {
+            setLayoutProperty(this.yoga, key, value)
         }
     }
 
