@@ -77,8 +77,8 @@ for (const renderer_name of renderers) {
     const result = [...ui.nodes].map((node) => ({
         width: node.layout.width,
         height: node.layout.height,
-        top: node.layout.top,
-        left: node.layout.left,
+        x: node.layout.x,
+        y: node.layout.y,
         path: node.path.join(','),
         zIndex: node.zIndex,
     }))

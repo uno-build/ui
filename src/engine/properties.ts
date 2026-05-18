@@ -29,16 +29,16 @@ const YOGA_SETTER = {
     position: (node, input) => {
         node.setPositionType(convertEnum(POSITION_TYPE_LUT, input, 1))
     },
-    positionTop: (node, input) => {
+    top: (node, input) => {
         node.setPosition(EDGE.top, formatEdgeUnit(node, input, root))
     },
-    positionLeft: (node, input) => {
+    left: (node, input) => {
         node.setPosition(EDGE.left, formatEdgeUnit(node, input, root))
     },
-    positionRight: (node, input) => {
+    right: (node, input) => {
         node.setPosition(EDGE.right, formatEdgeUnit(node, input, root))
     },
-    positionBottom: (node, input) => {
+    bottom: (node, input) => {
         node.setPosition(EDGE.bottom, formatEdgeUnit(node, input, root))
     },
     alignContent: (node, input) => {

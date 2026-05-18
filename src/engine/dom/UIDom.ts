@@ -54,9 +54,9 @@ export default class UIDom extends UI<Node> {
 function getComputedLayout(element) {
     const rect = element.getBoundingClientRect()
     return {
-        left: Math.round(rect.left),
-        top: Math.round(rect.top),
         width: Math.round(rect.width),
         height: Math.round(rect.height),
+        x: Math.round(rect.left),
+        y: Math.round(rect.top),
     }
 }

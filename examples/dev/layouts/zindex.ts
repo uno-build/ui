@@ -9,16 +9,16 @@ export default function createZIndexLayout({ ui, renderer }) {
         flexWrap: 'wrap',
         alignContent: 'flex-start',
         flex: '1',
-        // gap: '10px',
         padding: `${PADDING}px`,
+        // gap: '10px',
     })
     ui.root.add(Container)
 
     const Cell1 = ui.create(
         createCell({
             backgroundColor: '#f6c6c6',
-            // right: `-${OFFSET}px`,
-            // bottom: `-${OFFSET}px`,
+            left: `-${OFFSET * 2}px`,
+            top: `-${OFFSET * 2}px`,
         }),
     )
     Container.add(Cell1)
@@ -26,8 +26,8 @@ export default function createZIndexLayout({ ui, renderer }) {
     const Cell2 = ui.create(
         createCell({
             backgroundColor: '#c6f6c6',
-            // left: `-${OFFSET}px`,
-            // bottom: `-${OFFSET}px`,
+            left: `-${OFFSET}px`,
+            bottom: `-${OFFSET}px`,
         }),
     )
     Container.add(Cell2)
@@ -35,8 +35,8 @@ export default function createZIndexLayout({ ui, renderer }) {
     const Cell3 = ui.create(
         createCell({
             backgroundColor: '#c6c6f6',
-            // right: `-${OFFSET}px`,
-            // top: `-${OFFSET}px`,
+            right: `-${OFFSET}px`,
+            top: `-${OFFSET}px`,
         }),
     )
     Container.add(Cell3)
@@ -44,8 +44,8 @@ export default function createZIndexLayout({ ui, renderer }) {
     const Cell4 = ui.create(
         createCell({
             backgroundColor: '#f6f6c6',
-            // left: `-${OFFSET}px`,
-            // top: `-${OFFSET}px`,
+            left: `-${OFFSET}px`,
+            top: `-${OFFSET}px`,
         }),
     )
     Container.add(Cell4)
