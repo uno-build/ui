@@ -55,17 +55,42 @@ export default class UIDom extends UI<Node> {
                 : (node.parent?.paintLayout ?? { x: 0, y: 0 })
         const width = Math.round(rect.width)
         const height = Math.round(rect.height)
-        const x = Math.round(parentLayout.x + rect.left - parentRect.left)
-        const y = Math.round(parentLayout.y + rect.top - parentRect.top)
+        const parentWidth = Math.round(parentRect.width)
+        const parentHeight = Math.round(parentRect.height)
+
+        // left/top: DOM layout coordinates inside the immediate parent,
+        // matching Yoga's local layout position fields.
+        const left = Math.round(rect.left - parentRect.left)
+        const top = Math.round(rect.top - parentRect.top)
+
+        // right/bottom: positioned inset values when present. These mirror
+        // Yoga's raw layout field names, not the accumulated box edge.
+        const right = parseInset(node.element.style.right)
+        const bottom = parseInset(node.element.style.bottom)
+
+        // x/y: accumulated 2D coordinates from the root.
+        const x = Math.round(parentLayout.x + left)
+        const y = Math.round(parentLayout.y + top)
+
+        // relativeCenter*: local center coordinates relative to the parent's center,
+        // with Y flipped for GPU/3D-style coordinate systems.
+        const centerX = left + width / 2 - parentWidth / 2
+        const centerY = -(top + height / 2 - parentHeight / 2)
         return {
             width,
             height,
+            left,
+            top,
+            right,
+            bottom,
             x,
             y,
-            left: x,
-            top: y,
-            right: x + width,
-            bottom: y + height,
+            centerX,
+            centerY,
         }
     }
+}
+
+function parseInset(value) {
+    return value === '' || value === 'auto' ? 0 : Math.round(parseFloat(value))
 }

@@ -29,18 +29,4 @@ export default function createLayout({ ui, renderer }) {
             backgroundColor: 'blue',
         }),
     )
-
-    ui.update()
-
-    console.table(
-        [...ui.nodes].map((node) => ({
-            color: node.props.backgroundColor,
-            width: node.paintLayout.width,
-            height: node.paintLayout.height,
-            x: node.paintLayout.x,
-            y: node.paintLayout.y,
-            path: node.path.join(','),
-            zIndex: node.zIndex,
-        })),
-    )
 }

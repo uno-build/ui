@@ -42,91 +42,44 @@ export default class UIYoga extends UI<Node> {
         const layout = node.yoga.getComputedLayout()
         const parentLayout =
             node.parent === this.root
-                ? { left: 0, top: 0, ...this.root.yoga.getComputedLayout() }
+                ? { x: 0, y: 0, ...this.root.yoga.getComputedLayout() }
                 : (node.parent?.paintLayout ?? {
-                      left: 0,
-                      top: 0,
+                      x: 0,
+                      y: 0,
                       width: 0,
                       height: 0,
                   })
-        const relativeOffset = getRelativePaintOffset(
-            node,
-            node.parent,
-            parentLayout,
-        )
-        const left = parentLayout.left + layout.left + relativeOffset.x
-        const top = parentLayout.top + layout.top + relativeOffset.y
-        const right = left + layout.width
-        const bottom = top + layout.height
+
+        // local*: Yoga raw layout values relative to the parent, without accumulated offsets from ancestors.
+        const width = layout.width
+        const height = layout.height
+        const left = layout.left
+        const top = layout.top
+        const right = layout.right
+        const bottom = layout.bottom
+
+        // x/y and left/top/right/bottom: accumulated 2D coordinates from the root.
+        const x = parentLayout.x + left
+        const y = parentLayout.y + top
+
+        // Local center coordinates relative to the parent's center,
+        // with Y flipped for GPU/3D-style coordinate systems.
+        const centerX = left + width / 2 - parentLayout.width / 2
+        const centerY = -(top + height / 2 - parentLayout.height / 2)
+
         return {
-            width: layout.width,
-            height: layout.height,
-            x: left,
-            y: top,
+            width,
+            height,
             left,
             top,
             right,
             bottom,
+            x,
+            y,
+            centerX,
+            centerY,
         }
     }
-}
-
-function getRelativePaintOffset(node, parent, parentLayout) {
-    if (node.props.position !== 'relative') {
-        return { x: 0, y: 0 }
-    }
-    const contentSize = getContentSize(parent, parentLayout)
-    return {
-        x: getAxisOffset(node.props.left, node.props.right, contentSize.width),
-        y: getAxisOffset(node.props.top, node.props.bottom, contentSize.height),
-    }
-}
-
-function getAxisOffset(start, end, size) {
-    if (start != null) {
-        return resolvePoint(start, size)
-    }
-    if (end != null) {
-        return -resolvePoint(end, size)
-    }
-    return 0
-}
-
-function getContentSize(node, layout) {
-    return {
-        width:
-            layout.width -
-            getComputedPadding(node, EDGE.left) -
-            getComputedPadding(node, EDGE.right),
-        height:
-            layout.height -
-            getComputedPadding(node, EDGE.top) -
-            getComputedPadding(node, EDGE.bottom),
-    }
-}
-
-function getComputedPadding(node, edge) {
-    return node?.yoga.getComputedPadding(edge) ?? 0
-}
-
-function resolvePoint(value, size) {
-    if (typeof value === 'number') {
-        return value
-    }
-    if (typeof value !== 'string') {
-        return 0
-    }
-    if (value.endsWith('%')) {
-        return (size * Number.parseFloat(value)) / 100
-    }
-    return Number.parseFloat(value) || 0
-}
-
-const EDGE = {
-    left: 0,
-    top: 1,
-    right: 2,
-    bottom: 3,
 }
 
 // function getPaintOrder(nodes) {

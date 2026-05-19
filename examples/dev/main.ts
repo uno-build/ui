@@ -6,17 +6,17 @@ import layoutRelative from './layouts/relative'
 import layoutZIndex from './layouts/zindex'
 
 const RENDERER = {
-    absolute_divs: {
+    'yoga.divs': {
         element_type: 'div',
         engine: UIYoga,
         attributes: {},
     },
-    html_dom: {
+    'dom.html': {
         element_type: 'div',
         engine: UIDom,
         attributes: {},
     },
-    // html_in_canvas: {
+    // "dom.htmlincanvas": {
     //     element_type: 'canvas',
     //     engine: UIDom,
     //     attributes: {
@@ -78,14 +78,6 @@ for (const renderer_name of renderers) {
 
     const result = [...ui.nodes].map((node) => ({
         ...node.paintLayout,
-        // width: node.paintLayout.width,
-        // height: node.paintLayout.height,
-        // x: node.paintLayout.x,
-        // y: node.paintLayout.y,
-        // bottom: node.paintLayout.bottom,
-        // right: node.paintLayout.right,
-        // path: node.path.join(','),
-        // zIndex: node.zIndex,
     }))
     console.table(result)
 }
