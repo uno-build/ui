@@ -3,8 +3,8 @@ export default function createRelativeLayout({ ui, renderer }) {
 
     const container = ui.create({
         // flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignContent: 'flex-start',
+        // flexWrap: 'wrap',
+        // alignContent: 'flex-start',
         flex: '1',
         padding: '100px',
     })
