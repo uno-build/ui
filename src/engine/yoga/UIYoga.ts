@@ -21,8 +21,10 @@ export default class UIYoga extends UI<Node> {
         this.root = new Node({
             yoga: this.Yoga.Node.create(this.yoga_config),
             props: {},
-            nodes: this.nodes,
+            ui: this,
         })
+
+        // this.nodes.add(this.root)
     }
 
     protected createNode(props) {
@@ -30,7 +32,7 @@ export default class UIYoga extends UI<Node> {
         return new Node({
             yoga,
             props,
-            nodes: this.nodes,
+            ui: this,
         })
     }
 

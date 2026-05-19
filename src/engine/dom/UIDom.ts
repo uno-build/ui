@@ -5,21 +5,24 @@ export default class UIDom extends UI<Node> {
     constructor({ canvas }) {
         super()
 
-        if (typeof canvas.getContext === 'function') {
-            const ctx = canvas.getContext('2d')
-            canvas.onpaint = (event) => {
-                ctx.reset()
-                for (const element of event.changedElements) {
-                    ctx.drawElementImage(element, 0, 0)
-                }
-            }
-        }
+        // html-in-canvas
+        // if (typeof canvas.getContext === 'function') {
+        //     const ctx = canvas.getContext('2d')
+        //     canvas.onpaint = (event) => {
+        //         ctx.reset()
+        //         for (const element of event.changedElements) {
+        //             ctx.drawElementImage(element, 0, 0)
+        //         }
+        //     }
+        // }
 
         this.root = new Node({
             element: canvas,
             props: {},
-            nodes: this.nodes,
+            ui: this,
         })
+
+        // this.nodes.add(this.root)
     }
 
     protected createNode(props) {
@@ -42,7 +45,7 @@ export default class UIDom extends UI<Node> {
         return new Node({
             element,
             props,
-            nodes: this.nodes,
+            ui: this,
         })
     }
 

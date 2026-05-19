@@ -4,8 +4,8 @@ import { isLayoutProperty, setLayoutProperty } from '../properties.js'
 export default class NodeYoga extends Node {
     public yoga
 
-    constructor({ yoga, props, nodes }) {
-        super({ props, nodes })
+    constructor({ yoga, props, ui }) {
+        super({ props, ui })
         this.yoga = yoga
         this.applyProperties(props)
     }

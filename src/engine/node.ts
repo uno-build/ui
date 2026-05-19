@@ -5,26 +5,29 @@ export default abstract class Node {
     public path: number[] = []
     public paintLayout: Record<string, any> = {}
     public props: NodeProps
-    protected nodes: Set<any>
+    protected ui: any
 
-    constructor({ props, nodes }: { props: NodeProps; nodes: Set<any> }) {
+    constructor({ props, ui }: { props: NodeProps; ui: any }) {
         this.props = props
-        this.nodes = nodes
+        this.ui = ui
     }
 
     add(child: any) {
-        if (this.nodes.has(child)) {
+        if (this.ui.nodes.has(child)) {
             throw new Error('child already added')
+        }
+        if (this !== this.ui.root && this.ui.nodes.has(this) === false) {
+            throw new Error('cannot add child before adding parent')
         }
         const childIndex = this.getChildIndex()
         child.parent = this
         child.path = [...this.path, childIndex]
-        this.nodes.add(child)
+        this.ui.nodes.add(child)
         this.appendChild(child, childIndex)
     }
 
     remove(child: any) {
-        this.nodes.delete(child)
+        this.ui.nodes.delete(child)
         child.parent = undefined
         this.removeChild(child)
     }

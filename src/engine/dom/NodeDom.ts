@@ -4,8 +4,8 @@ import Node from '../Node.js'
 export default class NodeDom extends Node {
     public element
 
-    constructor({ element, props, nodes }) {
-        super({ props, nodes })
+    constructor({ element, props, ui }) {
+        super({ props, ui })
         this.element = element
         this.applyProperties(props)
     }
