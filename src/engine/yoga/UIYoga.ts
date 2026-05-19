@@ -5,8 +5,6 @@ import UI from '../UI.js'
 export default class UIYoga extends UI<Node> {
     private Yoga
     private yoga_config
-    private baseLayouts = new Map<Node, Record<string, any>>()
-    private relativePaintOffsets = new Map<Node, { x: number; y: number }>()
 
     constructor({ Yoga }) {
         super()
@@ -38,54 +36,24 @@ export default class UIYoga extends UI<Node> {
 
     protected beforeUpdate() {
         this.root.yoga.calculateLayout()
-
-        const relativeNodes = [...this.nodes].filter(isRelativeNode)
-        const snapshots = relativeNodes.map((node) => ({
-            node,
-            positions: EDGES.map((edge) => [edge, node.yoga.getPosition(edge)]),
-        }))
-
-        this.relativePaintOffsets.clear()
-        for (const node of relativeNodes) {
-            const layout = node.yoga.getComputedLayout()
-            this.relativePaintOffsets.set(node, {
-                x: layout.right,
-                y: layout.bottom,
-            })
-            for (const edge of EDGES) {
-                node.yoga.setPosition(edge, undefined)
-            }
-        }
-
-        this.root.yoga.calculateLayout()
-
-        this.baseLayouts.clear()
-        for (const node of this.nodes) {
-            this.baseLayouts.set(node, node.yoga.getComputedLayout())
-        }
-
-        for (const snapshot of snapshots) {
-            snapshot.positions.forEach(([edge, position]) => {
-                restorePosition(snapshot.node.yoga, edge, position)
-            })
-        }
     }
 
     protected getPaintLayout(node) {
-        const layout = this.baseLayouts.get(node) ?? node.yoga.getComputedLayout()
-        const relativeOffset = this.relativePaintOffsets.get(node) ?? {
-            x: 0,
-            y: 0,
-        }
+        const layout = node.yoga.getComputedLayout()
         const parentLayout =
             node.parent === this.root
-                ? { left: 0, top: 0, right: 0, bottom: 0 }
+                ? { left: 0, top: 0, ...this.root.yoga.getComputedLayout() }
                 : (node.parent?.paintLayout ?? {
                       left: 0,
                       top: 0,
-                      right: 0,
-                      bottom: 0,
+                      width: 0,
+                      height: 0,
                   })
+        const relativeOffset = getRelativePaintOffset(
+            node,
+            node.parent,
+            parentLayout,
+        )
         const left = parentLayout.left + layout.left + relativeOffset.x
         const top = parentLayout.top + layout.top + relativeOffset.y
         const right = left + layout.width
@@ -103,31 +71,62 @@ export default class UIYoga extends UI<Node> {
     }
 }
 
-const EDGES = [0, 1, 2, 3] as const
-const UNIT = {
-    Undefined: 0,
-    Percent: 2,
-    Auto: 3,
+function getRelativePaintOffset(node, parent, parentLayout) {
+    if (node.props.position !== 'relative') {
+        return { x: 0, y: 0 }
+    }
+    const contentSize = getContentSize(parent, parentLayout)
+    return {
+        x: getAxisOffset(node.props.left, node.props.right, contentSize.width),
+        y: getAxisOffset(node.props.top, node.props.bottom, contentSize.height),
+    }
 }
 
-function isRelativeNode(node) {
-    return node.props.position === 'relative'
+function getAxisOffset(start, end, size) {
+    if (start != null) {
+        return resolvePoint(start, size)
+    }
+    if (end != null) {
+        return -resolvePoint(end, size)
+    }
+    return 0
 }
 
-function restorePosition(yoga, edge, position) {
-    if (position.unit === UNIT.Undefined) {
-        yoga.setPosition(edge, undefined)
-        return
+function getContentSize(node, layout) {
+    return {
+        width:
+            layout.width -
+            getComputedPadding(node, EDGE.left) -
+            getComputedPadding(node, EDGE.right),
+        height:
+            layout.height -
+            getComputedPadding(node, EDGE.top) -
+            getComputedPadding(node, EDGE.bottom),
     }
-    if (position.unit === UNIT.Auto) {
-        yoga.setPositionAuto(edge)
-        return
+}
+
+function getComputedPadding(node, edge) {
+    return node?.yoga.getComputedPadding(edge) ?? 0
+}
+
+function resolvePoint(value, size) {
+    if (typeof value === 'number') {
+        return value
     }
-    if (position.unit === UNIT.Percent) {
-        yoga.setPosition(edge, `${position.value}%`)
-        return
+    if (typeof value !== 'string') {
+        return 0
     }
-    yoga.setPosition(edge, position.value)
+    if (value.endsWith('%')) {
+        return (size * Number.parseFloat(value)) / 100
+    }
+    return Number.parseFloat(value) || 0
+}
+
+const EDGE = {
+    left: 0,
+    top: 1,
+    right: 2,
+    bottom: 3,
 }
 
 // function getPaintOrder(nodes) {

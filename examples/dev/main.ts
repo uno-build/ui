@@ -88,5 +88,4 @@ for (const renderer_name of renderers) {
         // zIndex: node.zIndex,
     }))
     console.table(result)
-    console.log(JSON.stringify(result))
 }
