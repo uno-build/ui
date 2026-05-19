@@ -1,6 +1,6 @@
-import layoutBasic from './basic'
-import layoutRelative from './relative'
-import layoutZIndex from './zindex'
+import layoutBasic from './examples/basic'
+import layoutRelative from './examples/relative'
+import layoutZIndex from './examples/zindex'
 
 export type LayoutContext = {
     ui: any

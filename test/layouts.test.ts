@@ -7,15 +7,13 @@ import {
     layoutComparisonTolerance,
     layoutNames,
     type LayoutRunResult,
-} from './layout-runner'
+} from './layouts/layout-runner'
 
-const layoutRunnerUrl = `/@fs${path.resolve('test/layout-runner.ts')}`
-const layoutHarnessUrl = `/@fs${path.resolve('test/layout-harness.html')}`
+const layoutRunnerUrl = `/@fs${path.resolve('test/layouts/layout-runner.ts')}`
+const layoutHarnessUrl = `/@fs${path.resolve('test/layouts/layout-harness.html')}`
 
 for (const layout of layoutNames) {
-    test(`paint layout matches renderers for ${layout}`, async ({
-        page,
-    }) => {
+    test(`paint layout matches renderers for ${layout}`, async ({ page }) => {
         const results = await renderLayout(page, layout)
         const [baseline, ...comparisons] = results
 

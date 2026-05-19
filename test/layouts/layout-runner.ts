@@ -1,7 +1,7 @@
 import { loadYoga } from 'yoga-layout/load'
-import UIDom from '../src/engine/dom/UIDom'
-import UIYoga from '../src/engine/yoga/UIYoga'
-import { getLayout, layoutNames, type LayoutName } from './layouts/index'
+import UIDom from '../../src/engine/dom/UIDom'
+import UIYoga from '../../src/engine/yoga/UIYoga'
+import { getLayout, layoutNames, type LayoutName } from './index'
 
 type Logger = Pick<Console, 'error' | 'log' | 'table' | 'warn'>
 
