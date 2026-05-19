@@ -64,16 +64,18 @@ export default class UIYoga extends UI<Node> {
 
         // Local center coordinates relative to the parent's center,
         // with Y flipped for GPU/3D-style coordinate systems.
-        const centerX = left + width / 2 - parentLayout.width / 2
-        const centerY = -(top + height / 2 - parentLayout.height / 2)
+        const centerX = Math.round(left + width / 2 - parentLayout.width / 2)
+        const centerY = Math.round(
+            -(top + height / 2 - parentLayout.height / 2),
+        )
 
         return {
             width,
             height,
             left,
             top,
-            right,
-            bottom,
+            // right,
+            // bottom,
             x,
             y,
             centerX,

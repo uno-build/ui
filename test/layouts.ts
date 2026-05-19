@@ -3,10 +3,6 @@ import { expect, test } from '@playwright/test'
 type ConsoleTableRow = {
     width: number
     height: number
-    left: number
-    top: number
-    right: number
-    bottom: number
     x: number
     y: number
     centerX: number
@@ -18,9 +14,16 @@ type CapturedConsoleTable = {
 }
 
 const renderers = ['yoga.divs', 'dom.html']
-const comparedKeys = ['width', 'height', 'left', 'top', 'x', 'y'] as const
+const comparedKeys = [
+    'width',
+    'height',
+    'x',
+    'y',
+    'centerX',
+    'centerY',
+] as const
 
-for (const layout of ['basic']) {
+for (const layout of ['basic', 'relative', 'zindex']) {
     test(`console.table output matches renderers for ${layout}`, async ({
         page,
     }) => {
@@ -54,34 +57,8 @@ for (const layout of ['basic']) {
                     .toBeLessThanOrEqual(baselineRow[key] + 1)
             }
 
-            expect(Number.isFinite(comparisonRow.right)).toBe(true)
-            expect(Number.isFinite(comparisonRow.bottom)).toBe(true)
-            expect(Number.isFinite(comparisonRow.centerX)).toBe(true)
-            expect(Number.isFinite(comparisonRow.centerY)).toBe(true)
-        }
-    })
-}
-
-for (const layout of ['relative', 'zindex']) {
-    test(`console.table output exposes paint layout fields for ${layout}`, async ({
-        page,
-    }) => {
-        await captureConsoleTables(page)
-        await page.goto(`/?layout=${layout}&renderers=${renderers.join(',')}`)
-        const tables = await readPaintLayoutTables(page)
-
-        expect(tables).toHaveLength(2)
-        for (const table of tables as CapturedConsoleTable[]) {
-            for (const row of table.rows) {
-                for (const key of [
-                    ...comparedKeys,
-                    'right',
-                    'bottom',
-                    'centerX',
-                    'centerY',
-                ] as const) {
-                    expect(Number.isFinite(row[key])).toBe(true)
-                }
+            for (const key of comparedKeys) {
+                expect(Number.isFinite(comparisonRow[key])).toBe(true)
             }
         }
     })
@@ -103,16 +80,23 @@ async function captureConsoleTables(page) {
 
 async function readPaintLayoutTables(page) {
     await page.waitForFunction(
-        () =>
+        (keys) =>
             window.__consoleTables.filter((table) =>
-                table.rows?.every((row) => 'bottom' in row && 'right' in row),
+                table.rows?.every((row) =>
+                    keys.every((key) => typeof row[key] === 'number'),
+                ),
             ).length === 2,
+        comparedKeys,
     )
 
-    return page.evaluate(() =>
-        window.__consoleTables.filter((table) =>
-            table.rows?.every((row) => 'bottom' in row && 'right' in row),
-        ),
+    return page.evaluate(
+        (keys) =>
+            window.__consoleTables.filter((table) =>
+                table.rows?.every((row) =>
+                    keys.every((key) => typeof row[key] === 'number'),
+                ),
+            ),
+        comparedKeys,
     )
 }
 

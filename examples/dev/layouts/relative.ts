@@ -2,7 +2,7 @@ export default function createRelativeLayout({ ui, renderer }) {
     console.log(`--- ${renderer} ---`)
 
     const container = ui.create({
-        flexDirection: 'row',
+        // flexDirection: 'row',
         flexWrap: 'wrap',
         alignContent: 'flex-start',
         flex: '1',

@@ -1,34 +1,36 @@
 import { loadYoga } from 'yoga-layout/load'
+import deepEqual from 'fast-deep-equal'
 import UIDom from '../../src/engine/dom/UIDom'
 import UIYoga from '../../src/engine/yoga/UIYoga'
 import layoutBasic from './layouts/basic'
 import layoutRelative from './layouts/relative'
 import layoutZIndex from './layouts/zindex'
 
+const LAYOUTS = {
+    basic: layoutBasic,
+    relative: layoutRelative,
+    zindex: layoutZIndex,
+}
 const RENDERER = {
     'yoga.divs': {
         element_type: 'div',
         engine: UIYoga,
         attributes: {},
     },
-    'dom.html': {
-        element_type: 'div',
-        engine: UIDom,
-        attributes: {},
-    },
-    // "dom.htmlincanvas": {
+    // 'dom.htmlincanvas': {
     //     element_type: 'canvas',
     //     engine: UIDom,
     //     attributes: {
     //         layoutsubtree: '',
     //     },
     // },
+    'dom.html': {
+        element_type: 'div',
+        engine: UIDom,
+        attributes: {},
+    },
 }
-const LAYOUTS = {
-    basic: layoutBasic,
-    relative: layoutRelative,
-    zindex: layoutZIndex,
-}
+
 const params = new URLSearchParams(window.location.search)
 const layout = params.get('layout') || 'basic'
 const createLayout = LAYOUTS[layout]
@@ -52,6 +54,7 @@ console.log(
     `Running: ${window.location.origin}/?layout=${layout}&renderers=${renderers.join(',')}`,
 )
 
+const ui_instances = []
 for (const renderer_name of renderers) {
     // Create canvas element
     const canvas = document.createElement(RENDERER[renderer_name].element_type)
@@ -78,6 +81,24 @@ for (const renderer_name of renderers) {
 
     const result = [...ui.nodes].map((node) => ({
         ...node.paintLayout,
+        path: node.path.join('.'),
     }))
     console.table(result)
+
+    // Store results for comparison
+    ui_instances.push({ ui, result, renderer_name })
+}
+
+for (let i = 0; i < ui_instances.length - 1; i++) {
+    const a = ui_instances[i]
+    const b = ui_instances[i + 1]
+    if (deepEqual(a.result, b.result)) {
+        console.log(
+            `✅ Layout results match between '${a.renderer_name}' and '${b.renderer_name}'`,
+        )
+    } else {
+        console.error(
+            `❌ Layout results differ between '${a.renderer_name}' and '${b.renderer_name}'`,
+        )
+    }
 }
