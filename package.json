@@ -1,8 +1,10 @@
 {
     "scripts": {
-        "dev": "vite ./examples/dev/"
+        "dev": "vite ./examples/dev/",
+        "test": "playwright test"
     },
     "devDependencies": {
+        "@playwright/test": "^1.52.0",
         "vite": "^8.0.12",
         "vitest": "^4.1.6",
         "wgpu-matrix": "^3.4.2",

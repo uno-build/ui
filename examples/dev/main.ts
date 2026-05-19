@@ -79,8 +79,10 @@ for (const renderer_name of renderers) {
         height: node.paintLayout.height,
         x: node.paintLayout.x,
         y: node.paintLayout.y,
-        path: node.path.join(','),
-        zIndex: node.zIndex,
+        bottom: node.paintLayout.bottom,
+        right: node.paintLayout.right,
+        // path: node.path.join(','),
+        // zIndex: node.zIndex,
     }))
     console.table(result)
     console.log(JSON.stringify(result))
