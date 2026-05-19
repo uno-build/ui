@@ -1,4 +1,3 @@
-// import { sortNodesForCanvasPaint } from '../order.ts'
 import Node from './NodeYoga.js'
 import UI from '../UI.js'
 
@@ -40,12 +39,12 @@ export default class UIYoga extends UI<Node> {
         this.root.yoga.calculateLayout()
     }
 
-    protected getPaintLayout(node) {
+    protected getLayout(node) {
         const layout = node.yoga.getComputedLayout()
         const parentLayout =
             node.parent === this.root
                 ? { x: 0, y: 0, ...this.root.yoga.getComputedLayout() }
-                : (node.parent?.paintLayout ?? {
+                : (node.parent?.layout ?? {
                       x: 0,
                       y: 0,
                       width: 0,
@@ -85,18 +84,3 @@ export default class UIYoga extends UI<Node> {
         }
     }
 }
-
-// function getPaintOrder(nodes) {
-//     return sortNodesForCanvasPaint(Array.from(nodes).filter(isAttachedToRoot))
-// }
-
-// function isAttachedToRoot(node) {
-//     let current = node
-//     while (current != null) {
-//         if (current === state.root) {
-//             return true
-//         }
-//         current = current.parent
-//     }
-//     return false
-// }

@@ -49,13 +49,13 @@ export default class UIDom extends UI<Node> {
         })
     }
 
-    protected getPaintLayout(node) {
+    protected getLayout(node) {
         const rect = node.element.getBoundingClientRect()
         const parentRect = node.parent.element.getBoundingClientRect()
         const parentLayout =
             node.parent === this.root
                 ? { x: 0, y: 0 }
-                : (node.parent?.paintLayout ?? { x: 0, y: 0 })
+                : (node.parent?.layout ?? { x: 0, y: 0 })
         const width = Math.round(rect.width)
         const height = Math.round(rect.height)
         const parentWidth = Math.round(parentRect.width)

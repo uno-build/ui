@@ -22,36 +22,76 @@ export default function createZIndexLayout({ ui, renderer }) {
             backgroundColor: '#f6c6c6',
             right: `-${OFFSET}px`,
             bottom: `-${OFFSET}px`,
+            alignItems: 'flex-end',
+            justifyContent: 'flex-end',
         }),
     )
     Row1.add(Cell1)
+
+    const Label1 = ui.create({
+        width: '50px',
+        height: '50px',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        borderRadius: '5px',
+    })
+    Cell1.add(Label1)
 
     const Cell2 = ui.create(
         createCell({
             backgroundColor: '#c6f6c6',
             left: `-${OFFSET}px`,
             bottom: `-${OFFSET}px`,
+            alignItems: 'flex-end',
+            justifyContent: 'flex-start',
         }),
     )
     Row1.add(Cell2)
+
+    const Label2 = ui.create({
+        width: '50px',
+        height: '50px',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        borderRadius: '5px',
+    })
+    Cell2.add(Label2)
 
     const Cell3 = ui.create(
         createCell({
             backgroundColor: '#c6c6f6',
             right: `-${OFFSET}px`,
             top: `-${OFFSET}px`,
+            alignItems: 'flex-start',
+            justifyContent: 'flex-end',
         }),
     )
     Row2.add(Cell3)
+
+    const Label3 = ui.create({
+        width: '50px',
+        height: '50px',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        borderRadius: '5px',
+    })
+    Cell3.add(Label3)
 
     const Cell4 = ui.create(
         createCell({
             backgroundColor: '#f6f6c6',
             left: `-${OFFSET}px`,
             top: `-${OFFSET}px`,
+            alignItems: 'flex-start',
+            justifyContent: 'flex-start',
         }),
     )
     Row2.add(Cell4)
+
+    const Label4 = ui.create({
+        width: '50px',
+        height: '50px',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        borderRadius: '5px',
+    })
+    Cell4.add(Label4)
 }
 
 function createCell({ ...props }) {

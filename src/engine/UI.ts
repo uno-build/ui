@@ -13,11 +13,11 @@ export default abstract class UI<TNode extends Node = Node> {
 
         const updatedNodes = []
         for (const node of this.nodes) {
-            const paintLayout = this.getPaintLayout(node)
-            if (!deepEqual(paintLayout, node.paintLayout)) {
+            const layout = this.getLayout(node)
+            if (!deepEqual(layout, node.layout)) {
                 updatedNodes.push(node)
             }
-            node.paintLayout = paintLayout
+            node.layout = layout
         }
         return updatedNodes
     }
@@ -27,7 +27,7 @@ export default abstract class UI<TNode extends Node = Node> {
     }
 
     protected abstract createNode(props): TNode
-    protected abstract getPaintLayout(node: TNode): Record<string, any>
+    protected abstract getLayout(node: TNode): Record<string, any>
 }
 
 function deepEqual(obj1, obj2) {
@@ -38,6 +38,21 @@ function deepEqual(obj1, obj2) {
     }
     return true
 }
+
+// function getPaintOrder(nodes) {
+//     return sortNodesForCanvasPaint(Array.from(nodes).filter(isAttachedToRoot))
+// }
+
+// function isAttachedToRoot(node) {
+//     let current = node
+//     while (current != null) {
+//         if (current === state.root) {
+//             return true
+//         }
+//         current = current.parent
+//     }
+//     return false
+// }
 
 // export function sortNodesForCanvasPaint(nodes) {
 //     const map = new Map()
