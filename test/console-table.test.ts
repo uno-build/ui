@@ -16,7 +16,7 @@ type CapturedConsoleTable = {
 const renderers = ['absolute_divs', 'html_dom']
 const comparedKeys = ['width', 'height', 'x', 'y', 'bottom', 'right'] as const
 
-for (const layout of ['basic', 'zindex']) {
+for (const layout of ['basic', 'relative', 'zindex']) {
     test(`console.table output matches renderers for ${layout}`, async ({
         page,
     }) => {

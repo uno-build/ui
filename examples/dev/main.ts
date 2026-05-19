@@ -2,6 +2,7 @@ import { loadYoga } from 'yoga-layout/load'
 import UIDom from '../../src/engine/dom/UIDom'
 import UIYoga from '../../src/engine/yoga/UIYoga'
 import layoutBasic from './layouts/basic'
+import layoutRelative from './layouts/relative'
 import layoutZIndex from './layouts/zindex'
 
 const RENDERER = {
@@ -25,6 +26,7 @@ const RENDERER = {
 }
 const LAYOUTS = {
     basic: layoutBasic,
+    relative: layoutRelative,
     zindex: layoutZIndex,
 }
 const params = new URLSearchParams(window.location.search)
@@ -75,12 +77,13 @@ for (const renderer_name of renderers) {
     ui.update()
 
     const result = [...ui.nodes].map((node) => ({
-        width: node.paintLayout.width,
-        height: node.paintLayout.height,
-        x: node.paintLayout.x,
-        y: node.paintLayout.y,
-        bottom: node.paintLayout.bottom,
-        right: node.paintLayout.right,
+        ...node.paintLayout,
+        // width: node.paintLayout.width,
+        // height: node.paintLayout.height,
+        // x: node.paintLayout.x,
+        // y: node.paintLayout.y,
+        // bottom: node.paintLayout.bottom,
+        // right: node.paintLayout.right,
         // path: node.path.join(','),
         // zIndex: node.zIndex,
     }))
