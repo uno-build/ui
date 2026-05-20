@@ -28,12 +28,11 @@ export default function createZIndexLayout({ ui, renderer }) {
     )
     Row1.add(Cell1)
 
-    const Label1 = ui.create({
-        width: '50px',
-        height: '50px',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        borderRadius: '5px',
-    })
+    const Label1 = ui.create(
+        createLabel({
+            backgroundColor: 'red',
+        }),
+    )
     Cell1.add(Label1)
 
     const Cell2 = ui.create(
@@ -47,12 +46,11 @@ export default function createZIndexLayout({ ui, renderer }) {
     )
     Row1.add(Cell2)
 
-    const Label2 = ui.create({
-        width: '50px',
-        height: '50px',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        borderRadius: '5px',
-    })
+    const Label2 = ui.create(
+        createLabel({
+            backgroundColor: 'green',
+        }),
+    )
     Cell2.add(Label2)
 
     const Cell3 = ui.create(
@@ -66,12 +64,11 @@ export default function createZIndexLayout({ ui, renderer }) {
     )
     Row2.add(Cell3)
 
-    const Label3 = ui.create({
-        width: '50px',
-        height: '50px',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        borderRadius: '5px',
-    })
+    const Label3 = ui.create(
+        createLabel({
+            backgroundColor: 'blue',
+        }),
+    )
     Cell3.add(Label3)
 
     const Cell4 = ui.create(
@@ -85,12 +82,11 @@ export default function createZIndexLayout({ ui, renderer }) {
     )
     Row2.add(Cell4)
 
-    const Label4 = ui.create({
-        width: '50px',
-        height: '50px',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        borderRadius: '5px',
-    })
+    const Label4 = ui.create(
+        createLabel({
+            backgroundColor: 'yellow',
+        }),
+    )
     Cell4.add(Label4)
 }
 
@@ -100,6 +96,14 @@ function createCell({ ...props }) {
         height: '200px',
         borderRadius: '8px',
         position: 'relative',
+        ...props,
+    }
+}
+
+function createLabel({ ...props }) {
+    return {
+        width: '50px',
+        height: '50px',
         ...props,
     }
 }

@@ -1,4 +1,4 @@
-import { runLayoutFromSearchParams } from '../../test/layouts/layout-runner'
+import { runLayoutFromSearchParams } from '../../tests/layouts/layout-runner'
 
 const params = new URLSearchParams(window.location.search)
 const root = document.getElementById('root')
