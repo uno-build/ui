@@ -23,9 +23,10 @@ export default class NodeDom extends Node {
 
     protected setStyle(name, value) {
         const style = super.setStyle(name, value)
-        if (style !== undefined) {
-            this.element.style[style.name] = style.value
-        }
+        // if (style !== undefined) {
+        //     this.element.style[style.name] = style.value
+        // }
+        this.element.style[name] = value
     }
 
     on(type, listener) {

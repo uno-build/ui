@@ -28,7 +28,9 @@ export function resolveStyle(name: string, value: any) {
         )
     }
     try {
-        const result = style.parser(value)
+        const normalized = style.normalize(value)
+        style.validate(normalized)
+        const result = style.parser(normalized)
         return {
             name: style.name,
             ...result,
@@ -63,55 +65,64 @@ function normalizeStyleKey(name: string) {
     return name.trim().replace(/-/g, '').toUpperCase()
 }
 
-function parseString(value: any) {
-    return {
-        value: String(value).trim().toLowerCase(),
-    }
+function normalizeString(value: any) {
+    return String(value).trim().toLowerCase()
 }
 
-function parseColor(value: any) {
-    value = parseString(value).value
+function normalizeUnit(value: any) {
+    return typeof value === 'number' ? value : normalizeString(value)
+}
+
+function validateColor(value: string) {
     if (!/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) {
         throw new Error('expected hex color')
     }
+}
+
+function parseColor(value: string) {
     return { value, parsed: { rgba: parseRgba(value) } }
 }
 
-function parseEnum(value, values: Record<string, any>) {
-    value = parseString(value).value
-    if (!values.hasOwnProperty(value)) {
+function validateEnum(value: string, values: Record<string, any>) {
+    if (!Object.prototype.hasOwnProperty.call(values, value)) {
         throw new Error(`expected one of ${Object.keys(values).join(', ')}`)
     }
+}
+
+function parseEnum(value: string, values: Record<string, any>) {
     return { value, parsed: { enum: values[value] } }
 }
 
-function parseUnit(value: any) {
+function validateUnit(value: string | number) {
+    if (readUnit(value) === undefined) {
+        throw new Error('expected px or % unit')
+    }
+}
+
+function parseUnit(value: string | number) {
+    const unit = readUnit(value)!
+    return {
+        value: `${String(unit.value)}${unit.unit}`,
+        parsed: unit,
+    }
+}
+
+function readUnit(value: string | number) {
     if (typeof value === 'number') {
-        if (!Number.isFinite(value)) {
-            throw new Error('expected px or % unit')
-        }
-        return {
-            value: `${String(value)}px`,
-            parsed: { value, unit: 'px' },
-        }
+        return Number.isFinite(value) ? { value, unit: 'px' } : undefined
     }
 
-    const input = parseString(value).value
-    const match = input.match(/^(-?(?:\d+|\d*\.\d+))(px|%)?$/)
+    const match = value.match(/^(-?(?:\d+|\d*\.\d+))(px|%)?$/)
     if (!match) {
-        throw new Error('expected px or % unit')
+        return undefined
     }
 
     const number = Number(match[1])
     if (!Number.isFinite(number)) {
-        throw new Error('expected px or % unit')
+        return undefined
     }
 
-    const unit = match[2] ?? 'px'
-    return {
-        value: `${String(number)}${unit}`,
-        parsed: { value: number, unit },
-    }
+    return { value: number, unit: match[2] ?? 'px' }
 }
 
 function parseRgba(value: string) {
@@ -127,61 +138,6 @@ function parseRgba(value: string) {
         channels[2] / 255,
         channels[3] == null ? 1 : channels[3] / 255,
     ]
-}
-
-type StyleParseResult = {
-    value: any
-    parsed?: Record<string, any>
-}
-
-const STYLE: Record<
-    string,
-    { name: string; parser: (value: any) => StyleParseResult }
-> = {
-    BACKGROUNDCOLOR: {
-        name: 'backgroundColor',
-        parser: parseColor,
-    },
-    ALIGNITEMS: {
-        name: 'alignItems',
-        parser: (value) => parseEnum(value, OPTION_ALIGN),
-    },
-    FLEXDIRECTION: {
-        name: 'flexDirection',
-        parser: (value) => parseEnum(value, OPTION_FLEX_DIRECTION),
-    },
-    GAP: {
-        name: 'gap',
-        parser: parseUnit,
-    },
-    JUSTIFYCONTENT: {
-        name: 'justifyContent',
-        parser: (value) => parseEnum(value, OPTION_JUSTIFY),
-    },
-    POSITION: {
-        name: 'position',
-        parser: (value) => parseEnum(value, OPTION_POSITION),
-    },
-    OVERFLOW: {
-        name: 'overflow',
-        parser: (value) => parseEnum(value, OPTION_OVERFLOW),
-    },
-    DISPLAY: {
-        name: 'display',
-        parser: (value) => parseEnum(value, OPTION_DISPLAY),
-    },
-    DIRECTION: {
-        name: 'direction',
-        parser: (value) => parseEnum(value, OPTION_DIRECTION),
-    },
-    BOXSIZING: {
-        name: 'boxSizing',
-        parser: (value) => parseEnum(value, OPTION_BOX_SIZING),
-    },
-    FLEXWRAP: {
-        name: 'flexWrap',
-        parser: (value) => parseEnum(value, OPTION_WRAP),
-    },
 }
 
 const OPTION_POSITION = {
@@ -253,4 +209,85 @@ const OPTION_GUTTER = {
     column: 0,
     row: 1,
     all: 2,
+}
+
+type StyleParseResult = {
+    value: any
+    parsed?: Record<string, any>
+}
+
+type StyleDefinition<T = any> = {
+    name: string
+    normalize: (value: any) => T
+    validate: (value: T) => void
+    parser: (value: T) => StyleParseResult
+}
+
+const STYLE: Record<string, StyleDefinition> = {
+    BACKGROUNDCOLOR: {
+        name: 'backgroundColor',
+        normalize: normalizeString,
+        validate: validateColor,
+        parser: parseColor,
+    },
+    ALIGNITEMS: {
+        name: 'alignItems',
+        normalize: normalizeString,
+        validate: (value) => validateEnum(value, OPTION_ALIGN),
+        parser: (value) => parseEnum(value, OPTION_ALIGN),
+    },
+    FLEXDIRECTION: {
+        name: 'flexDirection',
+        normalize: normalizeString,
+        validate: (value) => validateEnum(value, OPTION_FLEX_DIRECTION),
+        parser: (value) => parseEnum(value, OPTION_FLEX_DIRECTION),
+    },
+    GAP: {
+        name: 'gap',
+        normalize: normalizeUnit,
+        validate: validateUnit,
+        parser: parseUnit,
+    },
+    JUSTIFYCONTENT: {
+        name: 'justifyContent',
+        normalize: normalizeString,
+        validate: (value) => validateEnum(value, OPTION_JUSTIFY),
+        parser: (value) => parseEnum(value, OPTION_JUSTIFY),
+    },
+    POSITION: {
+        name: 'position',
+        normalize: normalizeString,
+        validate: (value) => validateEnum(value, OPTION_POSITION),
+        parser: (value) => parseEnum(value, OPTION_POSITION),
+    },
+    OVERFLOW: {
+        name: 'overflow',
+        normalize: normalizeString,
+        validate: (value) => validateEnum(value, OPTION_OVERFLOW),
+        parser: (value) => parseEnum(value, OPTION_OVERFLOW),
+    },
+    DISPLAY: {
+        name: 'display',
+        normalize: normalizeString,
+        validate: (value) => validateEnum(value, OPTION_DISPLAY),
+        parser: (value) => parseEnum(value, OPTION_DISPLAY),
+    },
+    DIRECTION: {
+        name: 'direction',
+        normalize: normalizeString,
+        validate: (value) => validateEnum(value, OPTION_DIRECTION),
+        parser: (value) => parseEnum(value, OPTION_DIRECTION),
+    },
+    BOXSIZING: {
+        name: 'boxSizing',
+        normalize: normalizeString,
+        validate: (value) => validateEnum(value, OPTION_BOX_SIZING),
+        parser: (value) => parseEnum(value, OPTION_BOX_SIZING),
+    },
+    FLEXWRAP: {
+        name: 'flexWrap',
+        normalize: normalizeString,
+        validate: (value) => validateEnum(value, OPTION_WRAP),
+        parser: (value) => parseEnum(value, OPTION_WRAP),
+    },
 }
