@@ -1,3 +1,5 @@
+import Style from './Style.ts'
+
 export default abstract class Node {
     public parent: any = undefined
     public path: number[] = []
@@ -40,11 +42,24 @@ export default abstract class Node {
 
     protected applyStyles(styles) {
         Object.keys(styles).forEach((key) => {
-            this.setStyle(key, this.styles[key])
+            this.setStyle(key, styles[key])
         })
     }
 
-    protected abstract setStyle(key: string, value: any): void
+    protected setStyle(key: string, value: any): void {
+        try {
+            const style = Style.resolveStyle(key, value)
+            if (this.styles[style.key]?.value !== style.value) {
+                this.styles[style.key] = {
+                    value: style.value,
+                    parsed: style.parsed,
+                }
+            }
+        } catch (err) {
+            console.warn(err.message)
+        }
+    }
+
     protected abstract getChildIndex(): number
     protected abstract appendChild(child: any, index: number): void
     protected abstract removeChild(child: any): void

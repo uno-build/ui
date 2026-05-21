@@ -23,7 +23,6 @@ export default function createZIndexLayout({ ui, renderer }) {
             right: `-${OFFSET}px`,
             bottom: `-${OFFSET}px`,
             alignItems: 'flex-end',
-            justifyContent: 'flex-end',
         }),
     )
     Row1.add(Cell1)
@@ -41,7 +40,6 @@ export default function createZIndexLayout({ ui, renderer }) {
             left: `-${OFFSET}px`,
             bottom: `-${OFFSET}px`,
             alignItems: 'flex-end',
-            justifyContent: 'flex-start',
         }),
     )
     Row1.add(Cell2)
@@ -77,7 +75,6 @@ export default function createZIndexLayout({ ui, renderer }) {
             left: `-${OFFSET}px`,
             top: `-${OFFSET}px`,
             alignItems: 'flex-start',
-            justifyContent: 'flex-start',
         }),
     )
     Row2.add(Cell4)

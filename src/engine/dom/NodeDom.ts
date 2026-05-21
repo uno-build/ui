@@ -1,5 +1,4 @@
 import Node from '../Node.ts'
-// import { isProperty, setStyle } from '../properties.ts'
 
 export default class NodeDom extends Node {
     public element
@@ -22,9 +21,11 @@ export default class NodeDom extends Node {
         this.element.removeChild(child.element)
     }
 
-    protected setStyle(key, value) {
-        this.styles[key] = value
-        this.element.style[key] = value
+    protected setStyle(name, value) {
+        const style = super.setStyle(name, value)
+        if (style !== undefined) {
+            this.element.style[style.name] = style.value
+        }
     }
 
     on(type, listener) {
