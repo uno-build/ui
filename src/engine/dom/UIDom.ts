@@ -1,5 +1,5 @@
-import Node from './NodeDom.js'
-import UI from '../UI.js'
+import Node from './NodeDom.ts'
+import UI from '../UI.ts'
 
 export default class UIDom extends UI<Node> {
     constructor({ canvas }) {
@@ -18,14 +18,14 @@ export default class UIDom extends UI<Node> {
 
         this.root = new Node({
             element: canvas,
-            props: {},
+            styles: {},
             ui: this,
         })
 
         // this.nodes.add(this.root)
     }
 
-    protected createNode(props) {
+    protected createNode(styles) {
         const element = document.createElement('div')
         Object.assign(element.style, {
             boxSizing: 'border-box',
@@ -44,7 +44,7 @@ export default class UIDom extends UI<Node> {
         })
         return new Node({
             element,
-            props,
+            styles,
             ui: this,
         })
     }

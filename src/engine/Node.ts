@@ -1,14 +1,12 @@
-type NodeProps = Record<string, any>
-
 export default abstract class Node {
     public parent: any = undefined
     public path: number[] = []
     public layout: Record<string, any> = {}
-    public props: NodeProps
+    public styles: Record<string, any>
     protected ui: any
 
-    constructor({ props, ui }: { props: NodeProps; ui: any }) {
-        this.props = props
+    constructor({ styles, ui }: { styles: Record<string, any>; ui: any }) {
+        this.styles = styles
         this.ui = ui
     }
 
@@ -40,13 +38,13 @@ export default abstract class Node {
         // no-op
     }
 
-    protected applyProperties(props) {
-        Object.keys(props).forEach((key) => {
-            this.setProperty(key, this.props[key])
+    protected applyStyles(styles) {
+        Object.keys(styles).forEach((key) => {
+            this.setStyle(key, this.styles[key])
         })
     }
 
-    protected abstract setProperty(key: string, value: any): void
+    protected abstract setStyle(key: string, value: any): void
     protected abstract getChildIndex(): number
     protected abstract appendChild(child: any, index: number): void
     protected abstract removeChild(child: any): void

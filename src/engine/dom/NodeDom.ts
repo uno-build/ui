@@ -1,13 +1,13 @@
-import Node from '../Node.js'
-// import { isProperty, setProperty } from '../properties.js'
+import Node from '../Node.ts'
+// import { isProperty, setStyle } from '../properties.ts'
 
 export default class NodeDom extends Node {
     public element
 
-    constructor({ element, props, ui }) {
-        super({ props, ui })
+    constructor({ element, styles, ui }) {
+        super({ styles, ui })
         this.element = element
-        this.applyProperties(props)
+        this.applyStyles(styles)
     }
 
     protected getChildIndex() {
@@ -22,8 +22,8 @@ export default class NodeDom extends Node {
         this.element.removeChild(child.element)
     }
 
-    protected setProperty(key, value) {
-        this.props[key] = value
+    protected setStyle(key, value) {
+        this.styles[key] = value
         this.element.style[key] = value
     }
 

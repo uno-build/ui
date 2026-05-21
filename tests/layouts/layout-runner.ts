@@ -90,8 +90,8 @@ export async function runLayout({
         const UI = renderer.engine
         const ui = new UI({ canvas, Yoga })
 
-        ui.root.setProperty('width', canvas.clientWidth)
-        ui.root.setProperty('height', canvas.clientHeight)
+        ui.root.setStyle('width', canvas.clientWidth)
+        ui.root.setStyle('height', canvas.clientHeight)
         createLayout({ ui, renderer: rendererName })
 
         ui.update()

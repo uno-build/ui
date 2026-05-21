@@ -1,5 +1,5 @@
-import Node from './NodeYoga.js'
-import UI from '../UI.js'
+import Node from './NodeYoga.ts'
+import UI from '../UI.ts'
 
 export default class UIYoga extends UI<Node> {
     private Yoga
@@ -19,18 +19,18 @@ export default class UIYoga extends UI<Node> {
 
         this.root = new Node({
             yoga: this.Yoga.Node.create(this.yoga_config),
-            props: {},
+            styles: {},
             ui: this,
         })
 
         // this.nodes.add(this.root)
     }
 
-    protected createNode(props) {
+    protected createNode(styles) {
         const yoga = this.Yoga.Node.create(this.yoga_config)
         return new Node({
             yoga,
-            props,
+            styles,
             ui: this,
         })
     }

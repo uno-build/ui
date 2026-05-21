@@ -1,11 +1,11 @@
-import Node from './Node.js'
+import Node from './Node.ts'
 
 export default abstract class UI<TNode extends Node = Node> {
     public nodes = new Set<TNode>()
     public root!: TNode
 
-    create(props) {
-        return this.createNode(props)
+    create(styles) {
+        return this.createNode(styles)
     }
 
     update() {
@@ -25,7 +25,7 @@ export default abstract class UI<TNode extends Node = Node> {
         // no-op
     }
 
-    protected abstract createNode(props): TNode
+    protected abstract createNode(styles): TNode
     protected abstract getLayout(node: TNode): Record<string, any>
 }
 
@@ -103,7 +103,7 @@ function deepEqual(obj1, obj2) {
 // }
 
 // function zIndex(node) {
-//     const value = node?.zIndex ?? node?.props?.zIndex
+//     const value = node?.zIndex ?? node?.styles?.zIndex
 //     const number = Number(value)
 //     return value == null || value === 'auto' || !Number.isFinite(number)
 //         ? 0

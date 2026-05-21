@@ -1,20 +1,46 @@
-export function validateProperty(name: string, value: any) {
-    name = formatPropertyName(name)
-    value = formatPropertyValue(value)
-
-    if (PROPERTIES.hasOwnProperty(name) === false) {
-        throw new Error(`unsupported property ${name}`)
-    }
-
-    const _value = PROPERTIES[name](value)
-    // if (PROPERTIES[name](value) === false) {
-    //     throw new Error(`invalid value ${value} for property ${name}`)
-    // }
-
-    return { name, value, _value }
+export default {
+    validateStyle,
+    parseStyleName,
+    parseStyleValue,
 }
 
-export function formatPropertyName(name: string) {
+if (typeof window !== 'undefined') {
+    console.log('style module loaded')
+    window.validateStyle = validateStyle
+}
+
+export function validateStyle(name: string, value: any) {
+    // Validating name
+    if (typeof name !== 'string') {
+        throw new Error(`style name must be a string, got '${typeof name}'`)
+    }
+    name = parseStyleName(name)
+    if (STYLE.hasOwnProperty(name) === false) {
+        throw new Error(`unsupported property '${name}'`)
+    }
+
+    // Validating value
+    if (typeof value === 'undefined') {
+        throw new Error(
+            `style value for property '${name}' cannot be undefined`,
+        )
+    }
+    try {
+        value = parseStyleValue(value)
+        const result = { name, value }
+        const _value = STYLE[name](value)
+        if (typeof _value !== 'undefined') {
+            result.value = _value
+        }
+        return result
+    } catch (err) {
+        let message = `invalid value '${value}' for property '${name}'`
+        if (err !== '') message += `: ${err}`
+        throw new Error(message)
+    }
+}
+
+export function parseStyleName(name: string) {
     name = name.trim()
     if (name.includes('-')) {
         return name
@@ -24,26 +50,30 @@ export function formatPropertyName(name: string) {
     return name.charAt(0).toLowerCase() + name.slice(1)
 }
 
-export function formatPropertyValue(value: any) {
+export function parseStyleValue(value: any) {
     return String(value).trim().toLowerCase()
 }
 
-const PROPERTIES = {
+const STYLE = {
     backgroundColor: (value: string) => {
-        return value
+        if (!validateColor(value)) {
+            throw ``
+        }
     },
     position: (value: string) => {
         if (!POSITION_TYPE.hasOwnProperty(value)) {
-            throw new Error(
-                `invalid position value ${value}, expected one of ${Object.keys(
-                    POSITION_TYPE,
-                ).join(', ')}`,
-            )
+            throw `expected one of ${Object.keys(POSITION_TYPE).join(', ')}`
         }
-        return value
     },
 }
 
+function validateColor(value: string) {
+    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/i.test(
+        value,
+    )
+}
+
+///
 const YOGA_SETTER = {
     position: (node, input) => {
         // const value = convertEnum(POSITION_TYPE, input, 1)

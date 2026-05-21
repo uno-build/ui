@@ -1,13 +1,13 @@
-import Node from '../Node.js'
-import { isLayoutProperty, setLayoutProperty } from '../properties.js'
+import Node from '../Node.ts'
+import Style from '../Style.ts'
 
 export default class NodeYoga extends Node {
     public yoga
 
-    constructor({ yoga, props, ui }) {
-        super({ props, ui })
+    constructor({ yoga, styles, ui }) {
+        super({ styles, ui })
         this.yoga = yoga
-        this.applyProperties(props)
+        this.applyStyles(styles)
     }
 
     protected getChildIndex() {
@@ -22,12 +22,11 @@ export default class NodeYoga extends Node {
         this.yoga.removeChild(child.yoga)
     }
 
-    protected setProperty(key, value) {
-        this.props[key] = value
-        if (isLayoutProperty(key)) {
-            const result = setLayoutProperty(this.yoga, key, value)
-            console.log([key, value, result])
-        }
+    protected setStyle(key, value) {
+        this.styles[key] = value
+        const style = Style.validateStyle(key, value)
+        // const result = setLayoutProperty(this.yoga, key, value)
+        // console.log([key, value, result])
     }
 
     on(type, listener) {
