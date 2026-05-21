@@ -253,9 +253,9 @@ function validateNonNegativeNumber(value: any) {
     }
 }
 
-function validateBorderWidth(value: string | number) {
-    if (readBorderWidth(value) === undefined) {
-        throw new Error('expected px border width')
+function validateUnitPixel(value: string | number) {
+    if (readUnitPixel(value) === undefined) {
+        throw new Error('expected px unit')
     }
 }
 
@@ -274,8 +274,8 @@ function parseNumber(value: number) {
     return { value, parsed: { value } }
 }
 
-function parseBorderWidth(value: string | number) {
-    const unit = readBorderWidth(value)!
+function parseUnitPixel(value: string | number) {
+    const unit = readUnitPixel(value)!
     return {
         value: `${String(unit.value)}px`,
         parsed: unit,
@@ -300,42 +300,15 @@ function readNumber(value: any) {
     return Number.isFinite(number) ? number : undefined
 }
 
-function readBorderWidth(value: string | number) {
+function readUnitPixel(value: string | number) {
     if (typeof value === 'number') {
-        return Number.isFinite(value) ? { value, unit: 'px' } : undefined
+        return Number.isFinite(value) && value >= 0
+            ? { value, unit: 'px' }
+            : undefined
     }
 
-    const normalized = normalizeString(value)
-    const keywordWidth = readBorderKeywordWidth(normalized)
-    if (keywordWidth !== undefined) {
-        return { value: keywordWidth, unit: 'px' }
-    }
-
-    for (const token of normalized.split(/\s+/)) {
-        const unit = readUnit(token)
-        if (unit?.unit === 'px') {
-            return unit
-        }
-
-        const tokenKeywordWidth = readBorderKeywordWidth(token)
-        if (tokenKeywordWidth !== undefined) {
-            return { value: tokenKeywordWidth, unit: 'px' }
-        }
-    }
-
-    return undefined
-}
-
-function readBorderKeywordWidth(value: string) {
-    if (value === 'thin') {
-        return 1
-    }
-    if (value === 'medium') {
-        return 3
-    }
-    if (value === 'thick') {
-        return 5
-    }
+    const unit = readUnit(value)
+    return unit?.unit === 'px' && unit.value >= 0 ? unit : undefined
 }
 
 function colorStyle(name: string): StyleDefinition<string> {
@@ -389,12 +362,12 @@ function numberStyle(
     }
 }
 
-function borderWidthStyle(name: string): StyleDefinition<string | number> {
+function unitPixelStyle(name: string): StyleDefinition<string | number> {
     return {
         name,
         normalize: normalizeUnit,
-        validate: validateBorderWidth,
-        parser: parseBorderWidth,
+        validate: validateUnitPixel,
+        parser: parseUnitPixel,
     }
 }
 
@@ -434,12 +407,11 @@ const STYLE: Record<string, StyleDefinition> = {
     BOXSIZING: enumStyle('boxSizing', OPTION_BOX_SIZING),
     ASPECTRATIO: numberStyle('aspectRatio', validateNonNegativeNumber),
 
-    BORDERTOPWIDTH: borderWidthStyle('borderTopWidth'),
-    BORDERLEFTWIDTH: borderWidthStyle('borderLeftWidth'),
-    BORDERRIGHTWIDTH: borderWidthStyle('borderRightWidth'),
-    BORDERBOTTOMWIDTH: borderWidthStyle('borderBottomWidth'),
-    BORDERWIDTH: borderWidthStyle('borderWidth'),
-    BORDER: borderWidthStyle('border'),
+    BORDERTOPWIDTH: unitPixelStyle('borderTopWidth'),
+    BORDERLEFTWIDTH: unitPixelStyle('borderLeftWidth'),
+    BORDERRIGHTWIDTH: unitPixelStyle('borderRightWidth'),
+    BORDERBOTTOMWIDTH: unitPixelStyle('borderBottomWidth'),
+    BORDERWIDTH: unitPixelStyle('borderWidth'),
 
     OVERFLOW: enumStyle('overflow', OPTION_OVERFLOW),
     DISPLAY: enumStyle('display', OPTION_DISPLAY),
