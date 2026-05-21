@@ -24,7 +24,7 @@ export default class NodeYoga extends Node {
 
     protected setStyle(key, value) {
         this.styles[key] = value
-        const style = Style.validateStyle(key, value)
+        const style = Style.resolveStyle(key, value)
         // const result = setLayoutProperty(this.yoga, key, value)
         // console.log([key, value, result])
     }
