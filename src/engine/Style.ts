@@ -103,7 +103,7 @@ function parseUnit(value: string | number) {
     const unit = readUnit(value)!
     return {
         value: `${String(unit.value)}${unit.unit}`,
-        parsed: unit,
+        parsed: { ...unit, value: Math.abs(unit.value) },
     }
 }
 
@@ -145,8 +145,7 @@ const OPTION_POSITION = {
     relative: 1,
     absolute: 2,
 }
-const OPTION_ALIGN = {
-    auto: 0,
+const OPTION_ALIGN_CONTENT = {
     'flex-start': 1,
     center: 2,
     'flex-end': 3,
@@ -156,6 +155,23 @@ const OPTION_ALIGN = {
     'space-around': 7,
     'space-evenly': 8,
 }
+const OPTION_ALIGN_ITEMS = {
+    normal: 0,
+    'flex-start': 1,
+    center: 2,
+    'flex-end': 3,
+    stretch: 4,
+    baseline: 5,
+}
+const OPTION_ALIGN_SELF = {
+    auto: 0,
+    normal: 0,
+    'flex-start': 1,
+    center: 2,
+    'flex-end': 3,
+    stretch: 4,
+    baseline: 5,
+}
 const OPTION_FLEX_DIRECTION = {
     column: 0,
     'column-reverse': 1,
@@ -163,7 +179,7 @@ const OPTION_FLEX_DIRECTION = {
     'row-reverse': 3,
 }
 const OPTION_WRAP = {
-    'no-wrap': 0,
+    nowrap: 0,
     wrap: 1,
     'wrap-reverse': 2,
 }
@@ -194,22 +210,6 @@ const OPTION_BOX_SIZING = {
     'border-box': 0,
     'content-box': 1,
 }
-const OPTION_EDGE = {
-    left: 0,
-    top: 1,
-    right: 2,
-    bottom: 3,
-    start: 4,
-    end: 5,
-    horizontal: 6,
-    vertical: 7,
-    all: 8,
-}
-const OPTION_GUTTER = {
-    column: 0,
-    row: 1,
-    all: 2,
-}
 
 type StyleParseResult = {
     value: any
@@ -223,71 +223,235 @@ type StyleDefinition<T = any> = {
     parser: (value: T) => StyleParseResult
 }
 
-const STYLE: Record<string, StyleDefinition> = {
-    BACKGROUNDCOLOR: {
-        name: 'backgroundColor',
+function normalizeUnitOrAuto(value: any) {
+    return normalizeUnit(value)
+}
+
+function normalizeNumber(value: any) {
+    const number = readNumber(value)
+    return number === undefined ? value : number
+}
+
+function validateUnitOrAuto(value: string | number) {
+    if (value === 'auto') {
+        return
+    }
+
+    validateUnit(value)
+}
+
+function validateNumber(value: any) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+        throw new Error('expected number')
+    }
+}
+
+function validateNonNegativeNumber(value: any) {
+    validateNumber(value)
+    if (value < 0) {
+        throw new Error('expected non-negative number')
+    }
+}
+
+function validateBorderWidth(value: string | number) {
+    if (readBorderWidth(value) === undefined) {
+        throw new Error('expected px border width')
+    }
+}
+
+function parseUnitOrAuto(value: string | number) {
+    if (value === 'auto') {
+        return {
+            value,
+            parsed: { unit: 'auto' },
+        }
+    }
+
+    return parseUnit(value)
+}
+
+function parseNumber(value: number) {
+    return { value, parsed: { value } }
+}
+
+function parseBorderWidth(value: string | number) {
+    const unit = readBorderWidth(value)!
+    return {
+        value: `${String(unit.value)}px`,
+        parsed: unit,
+    }
+}
+
+function readNumber(value: any) {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : undefined
+    }
+
+    if (typeof value !== 'string') {
+        return undefined
+    }
+
+    const normalized = normalizeString(value)
+    if (!/^-?(?:\d+|\d*\.\d+)$/.test(normalized)) {
+        return undefined
+    }
+
+    const number = Number(normalized)
+    return Number.isFinite(number) ? number : undefined
+}
+
+function readBorderWidth(value: string | number) {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? { value, unit: 'px' } : undefined
+    }
+
+    const normalized = normalizeString(value)
+    const keywordWidth = readBorderKeywordWidth(normalized)
+    if (keywordWidth !== undefined) {
+        return { value: keywordWidth, unit: 'px' }
+    }
+
+    for (const token of normalized.split(/\s+/)) {
+        const unit = readUnit(token)
+        if (unit?.unit === 'px') {
+            return unit
+        }
+
+        const tokenKeywordWidth = readBorderKeywordWidth(token)
+        if (tokenKeywordWidth !== undefined) {
+            return { value: tokenKeywordWidth, unit: 'px' }
+        }
+    }
+
+    return undefined
+}
+
+function readBorderKeywordWidth(value: string) {
+    if (value === 'thin') {
+        return 1
+    }
+    if (value === 'medium') {
+        return 3
+    }
+    if (value === 'thick') {
+        return 5
+    }
+}
+
+function colorStyle(name: string): StyleDefinition<string> {
+    return {
+        name,
         normalize: normalizeString,
         validate: validateColor,
         parser: parseColor,
-    },
-    ALIGNITEMS: {
-        name: 'alignItems',
+    }
+}
+
+function enumStyle(
+    name: string,
+    values: Record<string, any>,
+): StyleDefinition<string> {
+    return {
+        name,
         normalize: normalizeString,
-        validate: (value) => validateEnum(value, OPTION_ALIGN),
-        parser: (value) => parseEnum(value, OPTION_ALIGN),
-    },
-    FLEXDIRECTION: {
-        name: 'flexDirection',
-        normalize: normalizeString,
-        validate: (value) => validateEnum(value, OPTION_FLEX_DIRECTION),
-        parser: (value) => parseEnum(value, OPTION_FLEX_DIRECTION),
-    },
-    GAP: {
-        name: 'gap',
+        validate: (value) => validateEnum(value, values),
+        parser: (value) => parseEnum(value, values),
+    }
+}
+
+function unitStyle(name: string): StyleDefinition<string | number> {
+    return {
+        name,
         normalize: normalizeUnit,
         validate: validateUnit,
         parser: parseUnit,
-    },
-    JUSTIFYCONTENT: {
-        name: 'justifyContent',
-        normalize: normalizeString,
-        validate: (value) => validateEnum(value, OPTION_JUSTIFY),
-        parser: (value) => parseEnum(value, OPTION_JUSTIFY),
-    },
-    POSITION: {
-        name: 'position',
-        normalize: normalizeString,
-        validate: (value) => validateEnum(value, OPTION_POSITION),
-        parser: (value) => parseEnum(value, OPTION_POSITION),
-    },
-    OVERFLOW: {
-        name: 'overflow',
-        normalize: normalizeString,
-        validate: (value) => validateEnum(value, OPTION_OVERFLOW),
-        parser: (value) => parseEnum(value, OPTION_OVERFLOW),
-    },
-    DISPLAY: {
-        name: 'display',
-        normalize: normalizeString,
-        validate: (value) => validateEnum(value, OPTION_DISPLAY),
-        parser: (value) => parseEnum(value, OPTION_DISPLAY),
-    },
-    DIRECTION: {
-        name: 'direction',
-        normalize: normalizeString,
-        validate: (value) => validateEnum(value, OPTION_DIRECTION),
-        parser: (value) => parseEnum(value, OPTION_DIRECTION),
-    },
-    BOXSIZING: {
-        name: 'boxSizing',
-        normalize: normalizeString,
-        validate: (value) => validateEnum(value, OPTION_BOX_SIZING),
-        parser: (value) => parseEnum(value, OPTION_BOX_SIZING),
-    },
-    FLEXWRAP: {
-        name: 'flexWrap',
-        normalize: normalizeString,
-        validate: (value) => validateEnum(value, OPTION_WRAP),
-        parser: (value) => parseEnum(value, OPTION_WRAP),
-    },
+    }
+}
+
+function unitOrAutoStyle(name: string): StyleDefinition<string | number> {
+    return {
+        name,
+        normalize: normalizeUnitOrAuto,
+        validate: validateUnitOrAuto,
+        parser: parseUnitOrAuto,
+    }
+}
+
+function numberStyle(
+    name: string,
+    validate = validateNumber,
+): StyleDefinition<number> {
+    return {
+        name,
+        normalize: normalizeNumber,
+        validate,
+        parser: parseNumber,
+    }
+}
+
+function borderWidthStyle(name: string): StyleDefinition<string | number> {
+    return {
+        name,
+        normalize: normalizeUnit,
+        validate: validateBorderWidth,
+        parser: parseBorderWidth,
+    }
+}
+
+const STYLE: Record<string, StyleDefinition> = {
+    BACKGROUNDCOLOR: colorStyle('backgroundColor'),
+
+    POSITION: enumStyle('position', OPTION_POSITION),
+    TOP: unitOrAutoStyle('top'),
+    LEFT: unitOrAutoStyle('left'),
+    RIGHT: unitOrAutoStyle('right'),
+    BOTTOM: unitOrAutoStyle('bottom'),
+
+    ALIGNCONTENT: enumStyle('alignContent', OPTION_ALIGN_CONTENT),
+    ALIGNITEMS: enumStyle('alignItems', OPTION_ALIGN_ITEMS),
+    ALIGNSELF: enumStyle('alignSelf', OPTION_ALIGN_SELF),
+    FLEXDIRECTION: enumStyle('flexDirection', OPTION_FLEX_DIRECTION),
+    FLEXWRAP: enumStyle('flexWrap', OPTION_WRAP),
+    JUSTIFYCONTENT: enumStyle('justifyContent', OPTION_JUSTIFY),
+
+    MARGINTOP: unitOrAutoStyle('marginTop'),
+    MARGINLEFT: unitOrAutoStyle('marginLeft'),
+    MARGINRIGHT: unitOrAutoStyle('marginRight'),
+    MARGINBOTTOM: unitOrAutoStyle('marginBottom'),
+    MARGIN: unitOrAutoStyle('margin'),
+
+    FLEXBASIS: unitOrAutoStyle('flexBasis'),
+    FLEX: numberStyle('flex'),
+    FLEXGROW: numberStyle('flexGrow', validateNonNegativeNumber),
+    FLEXSHRINK: numberStyle('flexShrink', validateNonNegativeNumber),
+
+    WIDTH: unitOrAutoStyle('width'),
+    HEIGHT: unitOrAutoStyle('height'),
+    MINWIDTH: unitStyle('minWidth'),
+    MINHEIGHT: unitStyle('minHeight'),
+    MAXWIDTH: unitStyle('maxWidth'),
+    MAXHEIGHT: unitStyle('maxHeight'),
+    BOXSIZING: enumStyle('boxSizing', OPTION_BOX_SIZING),
+    ASPECTRATIO: numberStyle('aspectRatio', validateNonNegativeNumber),
+
+    BORDERTOPWIDTH: borderWidthStyle('borderTopWidth'),
+    BORDERLEFTWIDTH: borderWidthStyle('borderLeftWidth'),
+    BORDERRIGHTWIDTH: borderWidthStyle('borderRightWidth'),
+    BORDERBOTTOMWIDTH: borderWidthStyle('borderBottomWidth'),
+    BORDERWIDTH: borderWidthStyle('borderWidth'),
+    BORDER: borderWidthStyle('border'),
+
+    OVERFLOW: enumStyle('overflow', OPTION_OVERFLOW),
+    DISPLAY: enumStyle('display', OPTION_DISPLAY),
+    DIRECTION: enumStyle('direction', OPTION_DIRECTION),
+
+    PADDINGTOP: unitStyle('paddingTop'),
+    PADDINGLEFT: unitStyle('paddingLeft'),
+    PADDINGRIGHT: unitStyle('paddingRight'),
+    PADDINGBOTTOM: unitStyle('paddingBottom'),
+    PADDING: unitStyle('padding'),
+
+    ROWGAP: unitStyle('rowGap'),
+    COLUMNGAP: unitStyle('columnGap'),
+    GAP: unitStyle('gap'),
 }

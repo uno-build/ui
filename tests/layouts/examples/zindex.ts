@@ -29,7 +29,7 @@ export default function createZIndexLayout({ ui, renderer }) {
 
     const Label1 = ui.create(
         createLabel({
-            backgroundColor: 'red',
+            backgroundColor: '#f00',
         }),
     )
     Cell1.add(Label1)
@@ -46,7 +46,7 @@ export default function createZIndexLayout({ ui, renderer }) {
 
     const Label2 = ui.create(
         createLabel({
-            backgroundColor: 'green',
+            backgroundColor: '#0f0',
         }),
     )
     Cell2.add(Label2)
@@ -64,7 +64,7 @@ export default function createZIndexLayout({ ui, renderer }) {
 
     const Label3 = ui.create(
         createLabel({
-            backgroundColor: 'blue',
+            backgroundColor: '#00f',
         }),
     )
     Cell3.add(Label3)
@@ -81,7 +81,7 @@ export default function createZIndexLayout({ ui, renderer }) {
 
     const Label4 = ui.create(
         createLabel({
-            backgroundColor: 'yellow',
+            backgroundColor: '#ff0',
         }),
     )
     Cell4.add(Label4)

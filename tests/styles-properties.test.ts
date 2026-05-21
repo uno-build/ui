@@ -111,9 +111,24 @@ test('gap', () => {
         value: '11px',
         parsed: { value: 11, unit: 'px' },
     })
+    expect(Style.resolveStyle('gap', -11)).toEqual({
+        name: 'gap',
+        value: '-11px',
+        parsed: { value: 11, unit: 'px' },
+    })
+    expect(Style.resolveStyle('gap', '-11pX')).toEqual({
+        name: 'gap',
+        value: '-11px',
+        parsed: { value: 11, unit: 'px' },
+    })
     expect(Style.resolveStyle('gap', '10%')).toEqual({
         name: 'gap',
         value: '10%',
+        parsed: { value: 10, unit: '%' },
+    })
+    expect(Style.resolveStyle('gap', '-10%')).toEqual({
+        name: 'gap',
+        value: '-10%',
         parsed: { value: 10, unit: '%' },
     })
 })
