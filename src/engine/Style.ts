@@ -311,7 +311,7 @@ function readUnitPixel(value: string | number) {
     return unit?.unit === 'px' && unit.value >= 0 ? unit : undefined
 }
 
-function colorStyle(name: string): StyleDefinition<string> {
+function createColorStyle(name: string): StyleDefinition<string> {
     return {
         name,
         normalize: normalizeString,
@@ -320,7 +320,7 @@ function colorStyle(name: string): StyleDefinition<string> {
     }
 }
 
-function enumStyle(
+function createEnumStyle(
     name: string,
     values: Record<string, any>,
 ): StyleDefinition<string> {
@@ -332,7 +332,7 @@ function enumStyle(
     }
 }
 
-function unitStyle(name: string): StyleDefinition<string | number> {
+function createUnitStyle(name: string): StyleDefinition<string | number> {
     return {
         name,
         normalize: normalizeUnit,
@@ -341,7 +341,7 @@ function unitStyle(name: string): StyleDefinition<string | number> {
     }
 }
 
-function unitOrAutoStyle(name: string): StyleDefinition<string | number> {
+function createUnitOrAutoStyle(name: string): StyleDefinition<string | number> {
     return {
         name,
         normalize: normalizeUnitOrAuto,
@@ -350,7 +350,7 @@ function unitOrAutoStyle(name: string): StyleDefinition<string | number> {
     }
 }
 
-function numberStyle(
+function createNumberStyle(
     name: string,
     validate = validateNumber,
 ): StyleDefinition<number> {
@@ -362,7 +362,7 @@ function numberStyle(
     }
 }
 
-function unitPixelStyle(name: string): StyleDefinition<string | number> {
+function createUnitPixelStyle(name: string): StyleDefinition<string | number> {
     return {
         name,
         normalize: normalizeUnit,
@@ -372,58 +372,58 @@ function unitPixelStyle(name: string): StyleDefinition<string | number> {
 }
 
 const STYLE: Record<string, StyleDefinition> = {
-    BACKGROUNDCOLOR: colorStyle('backgroundColor'),
+    BACKGROUNDCOLOR: createColorStyle('backgroundColor'),
 
-    POSITION: enumStyle('position', OPTION_POSITION),
-    TOP: unitOrAutoStyle('top'),
-    LEFT: unitOrAutoStyle('left'),
-    RIGHT: unitOrAutoStyle('right'),
-    BOTTOM: unitOrAutoStyle('bottom'),
+    POSITION: createEnumStyle('position', OPTION_POSITION),
+    TOP: createUnitOrAutoStyle('top'),
+    LEFT: createUnitOrAutoStyle('left'),
+    RIGHT: createUnitOrAutoStyle('right'),
+    BOTTOM: createUnitOrAutoStyle('bottom'),
 
-    ALIGNCONTENT: enumStyle('alignContent', OPTION_ALIGN_CONTENT),
-    ALIGNITEMS: enumStyle('alignItems', OPTION_ALIGN_ITEMS),
-    ALIGNSELF: enumStyle('alignSelf', OPTION_ALIGN_SELF),
-    FLEXDIRECTION: enumStyle('flexDirection', OPTION_FLEX_DIRECTION),
-    FLEXWRAP: enumStyle('flexWrap', OPTION_WRAP),
-    JUSTIFYCONTENT: enumStyle('justifyContent', OPTION_JUSTIFY),
+    ALIGNCONTENT: createEnumStyle('alignContent', OPTION_ALIGN_CONTENT),
+    ALIGNITEMS: createEnumStyle('alignItems', OPTION_ALIGN_ITEMS),
+    ALIGNSELF: createEnumStyle('alignSelf', OPTION_ALIGN_SELF),
+    FLEXDIRECTION: createEnumStyle('flexDirection', OPTION_FLEX_DIRECTION),
+    FLEXWRAP: createEnumStyle('flexWrap', OPTION_WRAP),
+    JUSTIFYCONTENT: createEnumStyle('justifyContent', OPTION_JUSTIFY),
 
-    MARGINTOP: unitOrAutoStyle('marginTop'),
-    MARGINLEFT: unitOrAutoStyle('marginLeft'),
-    MARGINRIGHT: unitOrAutoStyle('marginRight'),
-    MARGINBOTTOM: unitOrAutoStyle('marginBottom'),
-    MARGIN: unitOrAutoStyle('margin'),
+    MARGINTOP: createUnitOrAutoStyle('marginTop'),
+    MARGINLEFT: createUnitOrAutoStyle('marginLeft'),
+    MARGINRIGHT: createUnitOrAutoStyle('marginRight'),
+    MARGINBOTTOM: createUnitOrAutoStyle('marginBottom'),
+    MARGIN: createUnitOrAutoStyle('margin'),
 
-    FLEXBASIS: unitOrAutoStyle('flexBasis'),
-    FLEX: numberStyle('flex'),
-    FLEXGROW: numberStyle('flexGrow', validateNonNegativeNumber),
-    FLEXSHRINK: numberStyle('flexShrink', validateNonNegativeNumber),
+    FLEXBASIS: createUnitOrAutoStyle('flexBasis'),
+    FLEX: createNumberStyle('flex'),
+    FLEXGROW: createNumberStyle('flexGrow', validateNonNegativeNumber),
+    FLEXSHRINK: createNumberStyle('flexShrink', validateNonNegativeNumber),
 
-    WIDTH: unitOrAutoStyle('width'),
-    HEIGHT: unitOrAutoStyle('height'),
-    MINWIDTH: unitStyle('minWidth'),
-    MINHEIGHT: unitStyle('minHeight'),
-    MAXWIDTH: unitStyle('maxWidth'),
-    MAXHEIGHT: unitStyle('maxHeight'),
-    BOXSIZING: enumStyle('boxSizing', OPTION_BOX_SIZING),
-    ASPECTRATIO: numberStyle('aspectRatio', validateNonNegativeNumber),
+    WIDTH: createUnitOrAutoStyle('width'),
+    HEIGHT: createUnitOrAutoStyle('height'),
+    MINWIDTH: createUnitStyle('minWidth'),
+    MINHEIGHT: createUnitStyle('minHeight'),
+    MAXWIDTH: createUnitStyle('maxWidth'),
+    MAXHEIGHT: createUnitStyle('maxHeight'),
+    BOXSIZING: createEnumStyle('boxSizing', OPTION_BOX_SIZING),
+    ASPECTRATIO: createNumberStyle('aspectRatio', validateNonNegativeNumber),
 
-    BORDERTOPWIDTH: unitPixelStyle('borderTopWidth'),
-    BORDERLEFTWIDTH: unitPixelStyle('borderLeftWidth'),
-    BORDERRIGHTWIDTH: unitPixelStyle('borderRightWidth'),
-    BORDERBOTTOMWIDTH: unitPixelStyle('borderBottomWidth'),
-    BORDERWIDTH: unitPixelStyle('borderWidth'),
+    BORDERTOPWIDTH: createUnitPixelStyle('borderTopWidth'),
+    BORDERLEFTWIDTH: createUnitPixelStyle('borderLeftWidth'),
+    BORDERRIGHTWIDTH: createUnitPixelStyle('borderRightWidth'),
+    BORDERBOTTOMWIDTH: createUnitPixelStyle('borderBottomWidth'),
+    BORDERWIDTH: createUnitPixelStyle('borderWidth'),
 
-    OVERFLOW: enumStyle('overflow', OPTION_OVERFLOW),
-    DISPLAY: enumStyle('display', OPTION_DISPLAY),
-    DIRECTION: enumStyle('direction', OPTION_DIRECTION),
+    OVERFLOW: createEnumStyle('overflow', OPTION_OVERFLOW),
+    DISPLAY: createEnumStyle('display', OPTION_DISPLAY),
+    DIRECTION: createEnumStyle('direction', OPTION_DIRECTION),
 
-    PADDINGTOP: unitStyle('paddingTop'),
-    PADDINGLEFT: unitStyle('paddingLeft'),
-    PADDINGRIGHT: unitStyle('paddingRight'),
-    PADDINGBOTTOM: unitStyle('paddingBottom'),
-    PADDING: unitStyle('padding'),
+    PADDINGTOP: createUnitStyle('paddingTop'),
+    PADDINGLEFT: createUnitStyle('paddingLeft'),
+    PADDINGRIGHT: createUnitStyle('paddingRight'),
+    PADDINGBOTTOM: createUnitStyle('paddingBottom'),
+    PADDING: createUnitStyle('padding'),
 
-    ROWGAP: unitStyle('rowGap'),
-    COLUMNGAP: unitStyle('columnGap'),
-    GAP: unitStyle('gap'),
+    ROWGAP: createUnitStyle('rowGap'),
+    COLUMNGAP: createUnitStyle('columnGap'),
+    GAP: createUnitStyle('gap'),
 }
