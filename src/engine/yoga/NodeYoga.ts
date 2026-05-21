@@ -25,7 +25,8 @@ export default class NodeYoga extends Node {
     protected setProperty(key, value) {
         this.props[key] = value
         if (isLayoutProperty(key)) {
-            setLayoutProperty(this.yoga, key, value)
+            const result = setLayoutProperty(this.yoga, key, value)
+            console.log([key, value, result])
         }
     }
 

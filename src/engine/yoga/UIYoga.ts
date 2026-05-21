@@ -35,7 +35,7 @@ export default class UIYoga extends UI<Node> {
         })
     }
 
-    protected beforeUpdate() {
+    protected calculateLayout() {
         this.root.yoga.calculateLayout()
     }
 

@@ -9,20 +9,19 @@ export default abstract class UI<TNode extends Node = Node> {
     }
 
     update() {
-        this.beforeUpdate()
-
-        const updatedNodes = []
+        this.calculateLayout()
+        // const updatedNodes = []
         for (const node of this.nodes) {
             const layout = this.getLayout(node)
-            if (!deepEqual(layout, node.layout)) {
-                updatedNodes.push(node)
-            }
+            // if (!deepEqual(layout, node.layout)) {
+            //     updatedNodes.push(node)
+            // }
             node.layout = layout
         }
-        return updatedNodes
+        // return updatedNodes
     }
 
-    protected beforeUpdate() {
+    protected calculateLayout() {
         // no-op
     }
 
