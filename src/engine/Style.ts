@@ -65,16 +65,13 @@ function normalizeStyleKey(name: string) {
 
 function parseString(value: any) {
     return {
-        value: typeof value === 'string' ? value.trim().toLowerCase() : value,
+        value: String(value).trim().toLowerCase(),
     }
 }
 
 function parseColor(value: any) {
     value = parseString(value).value
-    if (
-        typeof value !== 'string' ||
-        !/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)
-    ) {
+    if (!/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) {
         throw new Error('expected hex color')
     }
     return { value, parsed: { rgba: parseRgba(value) } }
@@ -85,7 +82,36 @@ function parseEnum(value, values: Record<string, any>) {
     if (!values.hasOwnProperty(value)) {
         throw new Error(`expected one of ${Object.keys(values).join(', ')}`)
     }
-    return { value }
+    return { value, parsed: { enum: values[value] } }
+}
+
+function parseUnit(value: any) {
+    if (typeof value === 'number') {
+        if (!Number.isFinite(value)) {
+            throw new Error('expected px or % unit')
+        }
+        return {
+            value: `${String(value)}px`,
+            parsed: { value, unit: 'px' },
+        }
+    }
+
+    const input = parseString(value).value
+    const match = input.match(/^(-?(?:\d+|\d*\.\d+))(px|%)?$/)
+    if (!match) {
+        throw new Error('expected px or % unit')
+    }
+
+    const number = Number(match[1])
+    if (!Number.isFinite(number)) {
+        throw new Error('expected px or % unit')
+    }
+
+    const unit = match[2] ?? 'px'
+    return {
+        value: `${String(number)}${unit}`,
+        parsed: { value: number, unit },
+    }
 }
 
 function parseRgba(value: string) {
@@ -126,7 +152,7 @@ const STYLE: Record<
     },
     GAP: {
         name: 'gap',
-        parser: parseString,
+        parser: parseUnit,
     },
     JUSTIFYCONTENT: {
         name: 'justifyContent',
