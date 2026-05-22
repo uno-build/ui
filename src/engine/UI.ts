@@ -3,6 +3,7 @@ import Node from './Node.ts'
 export default abstract class UI<TNode extends Node = Node> {
     public nodes = new Set<TNode>()
     public root!: TNode
+    public mutations = new Set()
     private node_id = 0
 
     create(styles) {
@@ -10,7 +11,15 @@ export default abstract class UI<TNode extends Node = Node> {
         return this.createNode(styles, this.node_id)
     }
 
+    pushMutation(node, mutation) {
+        this.mutations.add({ node, mutation })
+    }
+
     update() {
+        this.mutations.forEach(({ node, mutation }) => {
+            console.log(node.id, mutation)
+        })
+
         this.calculateLayout()
         // const updatedNodes = []
         for (const node of this.nodes) {
@@ -21,6 +30,8 @@ export default abstract class UI<TNode extends Node = Node> {
             node.layout = layout
         }
         // return updatedNodes
+
+        this.mutations.clear()
     }
 
     protected calculateLayout() {

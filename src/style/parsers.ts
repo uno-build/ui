@@ -37,6 +37,6 @@ export function parseUnit(value: string | number) {
     const unit = readUnit(value)!
     return {
         value: `${String(unit.value)}${unit.unit}`,
-        parsed: { ...unit, value: Math.abs(unit.value) },
+        parsed: unit,
     }
 }

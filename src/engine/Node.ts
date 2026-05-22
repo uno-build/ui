@@ -56,7 +56,7 @@ export default abstract class Node {
                     value: style.value,
                     parsed: style.parsed,
                 }
-                console.log(this.id, `${style.name}: ${style.value}`)
+                this.ui.pushMutation(this, style)
             }
         } catch (err) {
             console.warn(err.message)

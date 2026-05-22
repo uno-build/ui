@@ -44,12 +44,6 @@ import {
     runParsePipeline,
 } from './utils.ts'
 
-if (typeof window !== 'undefined') {
-    window.Style = {
-        resolveStyle,
-    }
-}
-
 export function resolveStyle(name: string, value: any) {
     // Validating name
     if (typeof name !== 'string') {
@@ -426,19 +420,19 @@ export const STYLE = {
 
     ROWGAP: createStyle('rowGap', {
         normalize: [normalizeUnit],
-        validate: [validateUnit],
+        validate: [validateUnit, validateNonNegativeUnit],
         parse: [parseUnit],
     }),
 
     COLUMNGAP: createStyle('columnGap', {
         normalize: [normalizeUnit],
-        validate: [validateUnit],
+        validate: [validateUnit, validateNonNegativeUnit],
         parse: [parseUnit],
     }),
 
     GAP: createStyle('gap', {
         normalize: [normalizeUnit],
-        validate: [validateUnit],
+        validate: [validateUnit, validateNonNegativeUnit],
         parse: [parseUnit],
     }),
 }
