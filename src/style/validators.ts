@@ -28,17 +28,17 @@ export function validateNumber(value: any) {
     }
 }
 
-export function validateNonNegativeNumber(value: any) {
-    validateNumber(value)
-    if (value < 0) {
-        throw new Error('expected non-negative number')
-    }
-}
-
 export function validatePx(value: string | number) {
     const unit = readUnit(value)
     if (unit === undefined || unit.unit !== 'px' || unit.value < 0) {
         throw new Error('expected px unit')
+    }
+}
+
+export function validateNonNegativeNumber(value: any) {
+    validateNumber(value)
+    if (value < 0) {
+        throw new Error('expected non-negative number')
     }
 }
 

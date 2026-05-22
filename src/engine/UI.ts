@@ -3,9 +3,11 @@ import Node from './Node.ts'
 export default abstract class UI<TNode extends Node = Node> {
     public nodes = new Set<TNode>()
     public root!: TNode
+    private node_id = 0
 
     create(styles) {
-        return this.createNode(styles)
+        this.node_id += 1
+        return this.createNode(styles, this.node_id)
     }
 
     update() {
@@ -25,7 +27,7 @@ export default abstract class UI<TNode extends Node = Node> {
         // no-op
     }
 
-    protected abstract createNode(styles): TNode
+    protected abstract createNode(styles, id: number): TNode
     protected abstract getLayout(node: TNode): Record<string, any>
 }
 

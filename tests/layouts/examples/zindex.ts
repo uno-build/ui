@@ -23,6 +23,7 @@ export default function createZIndexLayout({ ui, renderer }) {
             right: `-${OFFSET}px`,
             bottom: `-${OFFSET}px`,
             alignItems: 'flex-end',
+            justifyContent: 'flex-end',
         }),
     )
     Row1.add(Cell1)

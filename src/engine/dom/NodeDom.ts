@@ -3,8 +3,8 @@ import Node from '../Node.ts'
 export default class NodeDom extends Node {
     public element
 
-    constructor({ element, styles, ui }) {
-        super({ styles, ui })
+    constructor({ id, element, styles, ui }) {
+        super({ id, styles, ui })
         this.element = element
         this.applyStyles(styles)
     }

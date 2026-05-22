@@ -88,6 +88,11 @@ export const STYLE = {
         validate: [validateColor],
         parse: [parseColor],
     }),
+    BORDERRADIUS: createStyle('borderRadius', {
+        normalize: [normalizeUnit],
+        validate: [validateNonNegativeUnit],
+        parse: [parseUnit],
+    }),
 
     POSITION: createStyle('position', {
         normalize: [normalizeString],

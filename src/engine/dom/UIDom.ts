@@ -25,7 +25,7 @@ export default class UIDom extends UI<Node> {
         // this.nodes.add(this.root)
     }
 
-    protected createNode(styles) {
+    protected createNode(styles, id: number) {
         const element = document.createElement('div')
         Object.assign(element.style, {
             boxSizing: 'border-box',
@@ -43,6 +43,7 @@ export default class UIDom extends UI<Node> {
             minHeight: '0',
         })
         return new Node({
+            id,
             element,
             styles,
             ui: this,

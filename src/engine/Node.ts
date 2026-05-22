@@ -5,9 +5,11 @@ export default abstract class Node {
     public path: number[] = []
     public layout: Record<string, any> = {}
     public styles: Record<string, any>
+    public id: number
     protected ui: any
 
-    constructor({ styles, ui }: { styles: Record<string, any>; ui: any }) {
+    constructor({ id, styles, ui }) {
+        this.id = id
         this.styles = styles
         this.ui = ui
     }
@@ -54,6 +56,7 @@ export default abstract class Node {
                     value: style.value,
                     parsed: style.parsed,
                 }
+                console.log(this.id, `${style.name}: ${style.value}`)
             }
         } catch (err) {
             console.warn(err.message)

@@ -3,8 +3,8 @@ import Node from '../Node.ts'
 export default class NodeYoga extends Node {
     public yoga
 
-    constructor({ yoga, styles, ui }) {
-        super({ styles, ui })
+    constructor({ id, yoga, styles, ui }) {
+        super({ id, styles, ui })
         this.yoga = yoga
         this.applyStyles(styles)
     }
