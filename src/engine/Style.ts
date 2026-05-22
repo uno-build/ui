@@ -28,9 +28,7 @@ export function resolveStyle(name: string, value: any) {
         )
     }
     try {
-        const normalized = style.normalize(value)
-        style.validate(normalized)
-        const result = style.parser(normalized)
+        const result = style.resolve(value)
         return {
             name: style.name,
             ...result,
@@ -216,15 +214,18 @@ type StyleParseResult = {
     parsed?: Record<string, any>
 }
 
-type StyleDefinition<T = any> = {
-    name: string
-    normalize: (value: any) => T
-    validate: (value: T) => void
-    parser: (value: T) => StyleParseResult
+type NormalizeFn = (value: any) => any
+type ValidateFn = (value: any) => void
+type ParseFn = (value: any) => any
+
+type StyleAlternative = {
+    normalize?: NormalizeFn[]
+    validate?: ValidateFn[]
+    parse: ParseFn[]
 }
 
-function normalizeUnitOrAuto(value: any) {
-    return normalizeUnit(value)
+function runNormalizePipeline(fns: NormalizeFn[] = [], value: any) {
+    return fns.reduce((current, fn) => fn(current), value)
 }
 
 function normalizeNumber(value: any) {
@@ -232,12 +233,51 @@ function normalizeNumber(value: any) {
     return number === undefined ? value : number
 }
 
-function validateUnitOrAuto(value: string | number) {
-    if (value === 'auto') {
-        return
+function runValidators(fns: ValidateFn[] = [], value: any) {
+    for (const fn of fns) {
+        fn(value)
     }
+}
 
-    validateUnit(value)
+function runParsePipeline(fns: ParseFn[], value: any) {
+    return fns.reduce((current, fn) => fn(current), value) as StyleParseResult
+}
+
+function createStyle(name: string, alternatives: any) {
+    return {
+        name,
+        resolve(value: any) {
+            let firstError: unknown
+
+            if (!Array.isArray(alternatives)) {
+                alternatives = [alternatives]
+            }
+
+            for (const alternative of alternatives) {
+                const normalized = runNormalizePipeline(
+                    alternative.normalize,
+                    value,
+                )
+
+                try {
+                    runValidators(alternative.validate, normalized)
+                } catch (err) {
+                    firstError ??= err
+                    continue
+                }
+
+                return runParsePipeline(alternative.parse, normalized)
+            }
+
+            throw firstError ?? new Error('expected valid style value')
+        },
+    }
+}
+
+function validateAuto(value: any) {
+    if (value !== 'auto') {
+        throw new Error('expected auto')
+    }
 }
 
 function validateNumber(value: any) {
@@ -253,33 +293,34 @@ function validateNonNegativeNumber(value: any) {
     }
 }
 
-function validateUnitPixel(value: string | number) {
-    if (readUnitPixel(value) === undefined) {
+function validatePx(value: string | number) {
+    const unit = readUnit(value)
+    if (unit === undefined || unit.unit !== 'px' || unit.value < 0) {
         throw new Error('expected px unit')
     }
 }
 
-function parseUnitOrAuto(value: string | number) {
-    if (value === 'auto') {
-        return {
-            value,
-            parsed: { unit: 'auto' },
-        }
+function validateNonNegativeUnit(value: string | number) {
+    const unit = readUnit(value)
+    if (unit === undefined) {
+        validateUnit(value)
+        return
     }
 
-    return parseUnit(value)
+    if (unit.value < 0) {
+        throw new Error('expected non-negative unit')
+    }
+}
+
+function parseAuto(value: string) {
+    return {
+        value,
+        parsed: { unit: 'auto' },
+    }
 }
 
 function parseNumber(value: number) {
     return { value, parsed: { value } }
-}
-
-function parseUnitPixel(value: string | number) {
-    const unit = readUnitPixel(value)!
-    return {
-        value: `${String(unit.value)}px`,
-        parsed: unit,
-    }
 }
 
 function readNumber(value: any) {
@@ -300,130 +341,366 @@ function readNumber(value: any) {
     return Number.isFinite(number) ? number : undefined
 }
 
-function readUnitPixel(value: string | number) {
-    if (typeof value === 'number') {
-        return Number.isFinite(value) && value >= 0
-            ? { value, unit: 'px' }
-            : undefined
-    }
-
-    const unit = readUnit(value)
-    return unit?.unit === 'px' && unit.value >= 0 ? unit : undefined
+function createEnumValidator(values: Record<string, any>) {
+    return (value: string) => validateEnum(value, values)
 }
 
-function createColorStyle(name: string): StyleDefinition<string> {
-    return {
-        name,
-        normalize: normalizeString,
-        validate: validateColor,
-        parser: parseColor,
-    }
+function createEnumParser(values: Record<string, any>) {
+    return (value: string) => parseEnum(value, values)
 }
 
-function createEnumStyle(
-    name: string,
-    values: Record<string, any>,
-): StyleDefinition<string> {
-    return {
-        name,
-        normalize: normalizeString,
-        validate: (value) => validateEnum(value, values),
-        parser: (value) => parseEnum(value, values),
-    }
-}
+const STYLE = {
+    BACKGROUNDCOLOR: createStyle('backgroundColor', {
+        normalize: [normalizeString],
+        validate: [validateColor],
+        parse: [parseColor],
+    }),
 
-function createUnitStyle(name: string): StyleDefinition<string | number> {
-    return {
-        name,
-        normalize: normalizeUnit,
-        validate: validateUnit,
-        parser: parseUnit,
-    }
-}
+    POSITION: createStyle('position', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(OPTION_POSITION)],
+        parse: [createEnumParser(OPTION_POSITION)],
+    }),
 
-function createUnitOrAutoStyle(name: string): StyleDefinition<string | number> {
-    return {
-        name,
-        normalize: normalizeUnitOrAuto,
-        validate: validateUnitOrAuto,
-        parser: parseUnitOrAuto,
-    }
-}
+    TOP: createStyle('top', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
 
-function createNumberStyle(
-    name: string,
-    validate = validateNumber,
-): StyleDefinition<number> {
-    return {
-        name,
-        normalize: normalizeNumber,
-        validate,
-        parser: parseNumber,
-    }
-}
+    LEFT: createStyle('left', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
 
-function createUnitPixelStyle(name: string): StyleDefinition<string | number> {
-    return {
-        name,
-        normalize: normalizeUnit,
-        validate: validateUnitPixel,
-        parser: parseUnitPixel,
-    }
-}
+    RIGHT: createStyle('right', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
 
-const STYLE: Record<string, StyleDefinition> = {
-    BACKGROUNDCOLOR: createColorStyle('backgroundColor'),
+    BOTTOM: createStyle('bottom', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
 
-    POSITION: createEnumStyle('position', OPTION_POSITION),
-    TOP: createUnitOrAutoStyle('top'),
-    LEFT: createUnitOrAutoStyle('left'),
-    RIGHT: createUnitOrAutoStyle('right'),
-    BOTTOM: createUnitOrAutoStyle('bottom'),
+    ALIGNCONTENT: createStyle('alignContent', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(OPTION_ALIGN_CONTENT)],
+        parse: [createEnumParser(OPTION_ALIGN_CONTENT)],
+    }),
 
-    ALIGNCONTENT: createEnumStyle('alignContent', OPTION_ALIGN_CONTENT),
-    ALIGNITEMS: createEnumStyle('alignItems', OPTION_ALIGN_ITEMS),
-    ALIGNSELF: createEnumStyle('alignSelf', OPTION_ALIGN_SELF),
-    FLEXDIRECTION: createEnumStyle('flexDirection', OPTION_FLEX_DIRECTION),
-    FLEXWRAP: createEnumStyle('flexWrap', OPTION_WRAP),
-    JUSTIFYCONTENT: createEnumStyle('justifyContent', OPTION_JUSTIFY),
+    ALIGNITEMS: createStyle('alignItems', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(OPTION_ALIGN_ITEMS)],
+        parse: [createEnumParser(OPTION_ALIGN_ITEMS)],
+    }),
 
-    MARGINTOP: createUnitOrAutoStyle('marginTop'),
-    MARGINLEFT: createUnitOrAutoStyle('marginLeft'),
-    MARGINRIGHT: createUnitOrAutoStyle('marginRight'),
-    MARGINBOTTOM: createUnitOrAutoStyle('marginBottom'),
-    MARGIN: createUnitOrAutoStyle('margin'),
+    ALIGNSELF: createStyle('alignSelf', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(OPTION_ALIGN_SELF)],
+        parse: [createEnumParser(OPTION_ALIGN_SELF)],
+    }),
 
-    FLEXBASIS: createUnitOrAutoStyle('flexBasis'),
-    FLEX: createNumberStyle('flex'),
-    FLEXGROW: createNumberStyle('flexGrow', validateNonNegativeNumber),
-    FLEXSHRINK: createNumberStyle('flexShrink', validateNonNegativeNumber),
+    FLEXDIRECTION: createStyle('flexDirection', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(OPTION_FLEX_DIRECTION)],
+        parse: [createEnumParser(OPTION_FLEX_DIRECTION)],
+    }),
 
-    WIDTH: createUnitOrAutoStyle('width'),
-    HEIGHT: createUnitOrAutoStyle('height'),
-    MINWIDTH: createUnitStyle('minWidth'),
-    MINHEIGHT: createUnitStyle('minHeight'),
-    MAXWIDTH: createUnitStyle('maxWidth'),
-    MAXHEIGHT: createUnitStyle('maxHeight'),
-    BOXSIZING: createEnumStyle('boxSizing', OPTION_BOX_SIZING),
-    ASPECTRATIO: createNumberStyle('aspectRatio', validateNonNegativeNumber),
+    FLEXWRAP: createStyle('flexWrap', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(OPTION_WRAP)],
+        parse: [createEnumParser(OPTION_WRAP)],
+    }),
 
-    BORDERTOPWIDTH: createUnitPixelStyle('borderTopWidth'),
-    BORDERLEFTWIDTH: createUnitPixelStyle('borderLeftWidth'),
-    BORDERRIGHTWIDTH: createUnitPixelStyle('borderRightWidth'),
-    BORDERBOTTOMWIDTH: createUnitPixelStyle('borderBottomWidth'),
-    BORDERWIDTH: createUnitPixelStyle('borderWidth'),
+    JUSTIFYCONTENT: createStyle('justifyContent', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(OPTION_JUSTIFY)],
+        parse: [createEnumParser(OPTION_JUSTIFY)],
+    }),
 
-    OVERFLOW: createEnumStyle('overflow', OPTION_OVERFLOW),
-    DISPLAY: createEnumStyle('display', OPTION_DISPLAY),
-    DIRECTION: createEnumStyle('direction', OPTION_DIRECTION),
+    MARGINTOP: createStyle('marginTop', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
 
-    PADDINGTOP: createUnitStyle('paddingTop'),
-    PADDINGLEFT: createUnitStyle('paddingLeft'),
-    PADDINGRIGHT: createUnitStyle('paddingRight'),
-    PADDINGBOTTOM: createUnitStyle('paddingBottom'),
-    PADDING: createUnitStyle('padding'),
+    MARGINLEFT: createStyle('marginLeft', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
 
-    ROWGAP: createUnitStyle('rowGap'),
-    COLUMNGAP: createUnitStyle('columnGap'),
-    GAP: createUnitStyle('gap'),
+    MARGINRIGHT: createStyle('marginRight', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
+
+    MARGINBOTTOM: createStyle('marginBottom', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
+
+    MARGIN: createStyle('margin', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
+
+    FLEXBASIS: createStyle('flexBasis', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
+
+    FLEX: createStyle('flex', {
+        normalize: [normalizeNumber],
+        validate: [validateNumber],
+        parse: [parseNumber],
+    }),
+
+    FLEXGROW: createStyle('flexGrow', {
+        normalize: [normalizeNumber],
+        validate: [validateNumber, validateNonNegativeNumber],
+        parse: [parseNumber],
+    }),
+
+    FLEXSHRINK: createStyle('flexShrink', {
+        normalize: [normalizeNumber],
+        validate: [validateNumber, validateNonNegativeNumber],
+        parse: [parseNumber],
+    }),
+
+    WIDTH: createStyle('width', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
+
+    HEIGHT: createStyle('height', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
+
+    MINWIDTH: createStyle('minWidth', {
+        normalize: [normalizeUnit],
+        validate: [validateUnit],
+        parse: [parseUnit],
+    }),
+
+    MINHEIGHT: createStyle('minHeight', {
+        normalize: [normalizeUnit],
+        validate: [validateUnit],
+        parse: [parseUnit],
+    }),
+
+    MAXWIDTH: createStyle('maxWidth', {
+        normalize: [normalizeUnit],
+        validate: [validateUnit],
+        parse: [parseUnit],
+    }),
+
+    MAXHEIGHT: createStyle('maxHeight', {
+        normalize: [normalizeUnit],
+        validate: [validateUnit],
+        parse: [parseUnit],
+    }),
+
+    BOXSIZING: createStyle('boxSizing', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(OPTION_BOX_SIZING)],
+        parse: [createEnumParser(OPTION_BOX_SIZING)],
+    }),
+
+    ASPECTRATIO: createStyle('aspectRatio', {
+        normalize: [normalizeNumber],
+        validate: [validateNumber, validateNonNegativeNumber],
+        parse: [parseNumber],
+    }),
+
+    BORDERTOPWIDTH: createStyle('borderTopWidth', {
+        normalize: [normalizeUnit],
+        validate: [validatePx, validateNonNegativeUnit],
+        parse: [parseUnit],
+    }),
+
+    BORDERLEFTWIDTH: createStyle('borderLeftWidth', {
+        normalize: [normalizeUnit],
+        validate: [validatePx, validateNonNegativeUnit],
+        parse: [parseUnit],
+    }),
+
+    BORDERRIGHTWIDTH: createStyle('borderRightWidth', {
+        normalize: [normalizeUnit],
+        validate: [validatePx, validateNonNegativeUnit],
+        parse: [parseUnit],
+    }),
+
+    BORDERBOTTOMWIDTH: createStyle('borderBottomWidth', {
+        normalize: [normalizeUnit],
+        validate: [validatePx, validateNonNegativeUnit],
+        parse: [parseUnit],
+    }),
+
+    BORDERWIDTH: createStyle('borderWidth', {
+        normalize: [normalizeUnit],
+        validate: [validatePx, validateNonNegativeUnit],
+        parse: [parseUnit],
+    }),
+
+    OVERFLOW: createStyle('overflow', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(OPTION_OVERFLOW)],
+        parse: [createEnumParser(OPTION_OVERFLOW)],
+    }),
+
+    DISPLAY: createStyle('display', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(OPTION_DISPLAY)],
+        parse: [createEnumParser(OPTION_DISPLAY)],
+    }),
+
+    DIRECTION: createStyle('direction', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(OPTION_DIRECTION)],
+        parse: [createEnumParser(OPTION_DIRECTION)],
+    }),
+
+    PADDINGTOP: createStyle('paddingTop', {
+        normalize: [normalizeUnit],
+        validate: [validateUnit],
+        parse: [parseUnit],
+    }),
+
+    PADDINGLEFT: createStyle('paddingLeft', {
+        normalize: [normalizeUnit],
+        validate: [validateUnit],
+        parse: [parseUnit],
+    }),
+
+    PADDINGRIGHT: createStyle('paddingRight', {
+        normalize: [normalizeUnit],
+        validate: [validateUnit],
+        parse: [parseUnit],
+    }),
+
+    PADDINGBOTTOM: createStyle('paddingBottom', {
+        normalize: [normalizeUnit],
+        validate: [validateUnit],
+        parse: [parseUnit],
+    }),
+
+    PADDING: createStyle('padding', {
+        normalize: [normalizeUnit],
+        validate: [validateUnit],
+        parse: [parseUnit],
+    }),
+
+    ROWGAP: createStyle('rowGap', {
+        normalize: [normalizeUnit],
+        validate: [validateUnit],
+        parse: [parseUnit],
+    }),
+
+    COLUMNGAP: createStyle('columnGap', {
+        normalize: [normalizeUnit],
+        validate: [validateUnit],
+        parse: [parseUnit],
+    }),
+
+    GAP: createStyle('gap', {
+        normalize: [normalizeUnit],
+        validate: [validateUnit],
+        parse: [parseUnit],
+    }),
 }

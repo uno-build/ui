@@ -34,6 +34,9 @@ test('unitPixelStyle', () => {
         Style.resolveStyle('borderWidth', -1)
     }).toThrow(/expected px unit/)
     expect(() => {
+        Style.resolveStyle('borderWidth', 'thin')
+    }).toThrow(/expected px unit/)
+    expect(() => {
         Style.resolveStyle('borderTopWidth', 'thin')
     }).toThrow(/expected px unit/)
     expect(() => {
@@ -53,6 +56,11 @@ test('unitPixelStyle', () => {
         name: 'borderWidth',
         value: '2px',
         parsed: { value: 2, unit: 'px' },
+    })
+    expect(Style.resolveStyle('borderWidth', '1px')).toEqual({
+        name: 'borderWidth',
+        value: '1px',
+        parsed: { value: 1, unit: 'px' },
     })
     expect(Style.resolveStyle('borderTopWidth', ' 1PX ')).toEqual({
         name: 'borderTopWidth',
@@ -93,6 +101,16 @@ test('unitOrAutoStyle', () => {
         name: 'width',
         value: 'auto',
         parsed: { unit: 'auto' },
+    })
+    expect(Style.resolveStyle('width', '10px')).toEqual({
+        name: 'width',
+        value: '10px',
+        parsed: { value: 10, unit: 'px' },
+    })
+    expect(Style.resolveStyle('width', '10%')).toEqual({
+        name: 'width',
+        value: '10%',
+        parsed: { value: 10, unit: '%' },
     })
     expect(Style.resolveStyle('height', ' 10PX ')).toEqual({
         name: 'height',
