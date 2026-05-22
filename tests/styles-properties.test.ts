@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import Style from '../src/engine/Style'
+import Style from '../src/style'
 
 test('backgroundColor', () => {
     expect(() => {

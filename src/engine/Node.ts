@@ -1,4 +1,4 @@
-import Style from './Style.ts'
+import Style from '../style'
 
 export default abstract class Node {
     public parent: any = undefined

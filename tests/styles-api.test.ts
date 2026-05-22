@@ -1,17 +1,5 @@
 import { test, expect } from '@playwright/test'
-import Style from '../src/engine/Style'
-
-// prettier-ignore
-test('normalizeStyleName', () => {
-    expect(Style.normalizeStyleName('backgroundColor')).toBe('backgroundColor')
-    expect(Style.normalizeStyleName(' backgroundColor ')).toBe('backgroundColor')
-    expect(Style.normalizeStyleName('  background-color  ')).toBe('backgroundColor')
-    expect(Style.normalizeStyleName('BACKGROUND-COLOR')).toBe('backgroundColor')
-    expect(Style.normalizeStyleName('Background-Color')).toBe('backgroundColor')
-    expect(Style.normalizeStyleName('Background-Color')).toBe('backgroundColor')
-    expect(Style.normalizeStyleName('POSITION')).toBe('position')
-    expect(Style.normalizeStyleName('BACKGROUNDCOLOR')).toBe('backgroundColor')
-})
+import Style from '../src/style'
 
 test('resolveStyle', () => {
     expect(() => {
@@ -24,6 +12,22 @@ test('resolveStyle', () => {
     expect(() => {
         Style.resolveStyle('backgroundColor')
     }).toThrow(/style value for property 'backgroundColor' cannot be undefined/)
+})
+
+test('resolveStyle normalize name', () => {
+    const red = '#f00'
+    const toBe = {
+        name: 'backgroundColor',
+        value: red,
+        parsed: { rgba: [1, 0, 0, 1] },
+    }
+    expect(Style.resolveStyle('backgroundColor', red)).toEqual(toBe)
+    expect(Style.resolveStyle(' backgroundColor ', red)).toEqual(toBe)
+    expect(Style.resolveStyle('  background-color  ', red)).toEqual(toBe)
+    expect(Style.resolveStyle('BACKGROUND-COLOR', red)).toEqual(toBe)
+    expect(Style.resolveStyle('Background-Color', red)).toEqual(toBe)
+    expect(Style.resolveStyle('Background-Color', red)).toEqual(toBe)
+    expect(Style.resolveStyle('BACKGROUNDCOLOR', red)).toEqual(toBe)
 })
 
 test('unitPixelStyle', () => {
@@ -87,6 +91,21 @@ test('numberStyle', () => {
         value: 2,
         parsed: { value: 2 },
     })
+})
+
+test('non-negative number styles reject negative values', () => {
+    const styles = ['flexGrow', 'flexShrink', 'aspectRatio']
+
+    for (const name of styles) {
+        expect(() => {
+            Style.resolveStyle(name, -1)
+        }).toThrow(/expected non-negative number/)
+        expect(Style.resolveStyle(name, 1)).toEqual({
+            name,
+            value: 1,
+            parsed: { value: 1 },
+        })
+    }
 })
 
 test('unitOrAutoStyle', () => {
@@ -166,4 +185,89 @@ test('colorStyle', () => {
         value: '#0a1b2c',
         parsed: { rgba: [10 / 255, 27 / 255, 44 / 255, 1] },
     })
+})
+
+test('border width styles are px-only and non-negative', () => {
+    const styles = [
+        'borderTopWidth',
+        'borderLeftWidth',
+        'borderRightWidth',
+        'borderBottomWidth',
+        'borderWidth',
+    ]
+
+    for (const name of styles) {
+        expect(Style.resolveStyle(name, 1)).toEqual({
+            name,
+            value: '1px',
+            parsed: { value: 1, unit: 'px' },
+        })
+        expect(Style.resolveStyle(name, '1px')).toEqual({
+            name,
+            value: '1px',
+            parsed: { value: 1, unit: 'px' },
+        })
+        expect(() => {
+            Style.resolveStyle(name, '10%')
+        }).toThrow(/expected px unit/)
+        expect(() => {
+            Style.resolveStyle(name, -1)
+        }).toThrow(/expected px unit/)
+        expect(() => {
+            Style.resolveStyle(name, 'thin')
+        }).toThrow(/expected px unit/)
+        expect(() => {
+            Style.resolveStyle(name, '1px solid #333')
+        }).toThrow(/expected px unit/)
+    }
+})
+test('unitOrAutoStyle accepts auto across all auto-capable styles', () => {
+    const styles = [
+        'top',
+        'left',
+        'right',
+        'bottom',
+        'marginTop',
+        'marginLeft',
+        'marginRight',
+        'marginBottom',
+        'margin',
+        'flexBasis',
+        'width',
+        'height',
+    ]
+
+    for (const name of styles) {
+        expect(Style.resolveStyle(name, ' Auto ')).toEqual({
+            name,
+            value: 'auto',
+            parsed: { unit: 'auto' },
+        })
+    }
+})
+test('enumStyle maps all enum properties', () => {
+    const styles: Array<[string, string, number]> = [
+        ['position', 'absolute', 2],
+        ['alignContent', 'space-evenly', 8],
+        ['alignItems', 'baseline', 5],
+        ['alignSelf', 'auto', 0],
+        ['flexDirection', 'row-reverse', 3],
+        ['flexWrap', 'wrap-reverse', 2],
+        ['justifyContent', 'space-around', 4],
+        ['boxSizing', 'content-box', 1],
+        ['overflow', 'scroll', 2],
+        ['display', 'contents', 2],
+        ['direction', 'rtl', 2],
+    ]
+
+    for (const [name, value, parsed] of styles) {
+        expect(Style.resolveStyle(name, value)).toEqual({
+            name,
+            value,
+            parsed: { enum: parsed },
+        })
+        expect(() => {
+            Style.resolveStyle(name, 'invalid-value')
+        }).toThrow(/expected one of/)
+    }
 })
