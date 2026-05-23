@@ -7,6 +7,13 @@ export function parseAuto(value: string) {
     }
 }
 
+export function parseNone(value: string) {
+    return {
+        value,
+        parsed: { unit: 'none' },
+    }
+}
+
 export function parseNumber(value: number) {
     return { value, parsed: { value } }
 }

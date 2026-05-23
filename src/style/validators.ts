@@ -22,6 +22,12 @@ export function validateAuto(value: any) {
     }
 }
 
+export function validateNone(value: any) {
+    if (value !== 'none') {
+        throw new Error('expected none')
+    }
+}
+
 export function validateNumber(value: any) {
     if (typeof value !== 'number' || !Number.isFinite(value)) {
         throw new Error('expected number')

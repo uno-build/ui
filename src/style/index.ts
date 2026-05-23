@@ -23,6 +23,7 @@ import {
     validateEnum,
     validateUnit,
     validateAuto,
+    validateNone,
     validateNumber,
     validateNonNegativeNumber,
     validatePx,
@@ -33,6 +34,7 @@ import {
     parseEnum,
     parseUnit,
     parseAuto,
+    parseNone,
     parseNumber,
 } from './parsers.ts'
 import {
@@ -255,7 +257,7 @@ export const STYLE = {
 
     FLEX: createStyle('flex', {
         normalize: [normalizeNumber],
-        validate: [validateNumber],
+        validate: [validateNumber, validateNonNegativeNumber],
         parse: [parseNumber],
     }),
 
@@ -322,17 +324,31 @@ export const STYLE = {
         parse: [parseUnit],
     }),
 
-    MAXWIDTH: createStyle('maxWidth', {
-        normalize: [normalizeUnit],
-        validate: [validateUnit, validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    MAXWIDTH: createStyle('maxWidth', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit, validateNonNegativeUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateNone],
+            parse: [parseNone],
+        },
+    ]),
 
-    MAXHEIGHT: createStyle('maxHeight', {
-        normalize: [normalizeUnit],
-        validate: [validateUnit, validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    MAXHEIGHT: createStyle('maxHeight', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit, validateNonNegativeUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateNone],
+            parse: [parseNone],
+        },
+    ]),
 
     BOXSIZING: createStyle('boxSizing', {
         normalize: [normalizeString],

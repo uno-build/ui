@@ -2,248 +2,95 @@ import { test, expect } from '@playwright/test'
 import Style from '../src/style'
 
 test('backgroundColor', () => {
-    expect(() => {
-        Style.resolveStyle('backgroundColor', 'invalidcolor')
-    }).toThrow(
-        /invalid value 'invalidcolor' for property 'backgroundColor': expected hex color/,
-    )
-    expect(() => {
-        Style.resolveStyle('backgroundColor', '#')
-    }).toThrow(/expected hex color/)
-    expect(() => {
-        Style.resolveStyle('backgroundColor', '#1')
-    }).toThrow(/expected hex color/)
-    expect(() => {
-        Style.resolveStyle('backgroundColor', '#12')
-    }).toThrow(/expected hex color/)
-    expect(() => {
-        Style.resolveStyle('backgroundColor', '#12345')
-    }).toThrow(/expected hex color/)
-    expect(() => {
-        Style.resolveStyle('backgroundColor', ' LightGray ')
-    }).toThrow(/expected hex color/)
-    expect(() => {
-        Style.resolveStyle('backgroundColor', 'red')
-    }).toThrow(/expected hex color/)
+    const styles = ['backgroundColor']
+    const validCases = [
+        ['#123', '#123', [17 / 255, 34 / 255, 51 / 255, 1]],
+        [' #ABC ', '#abc', [170 / 255, 187 / 255, 204 / 255, 1]],
+        ['#1234', '#1234', [17 / 255, 34 / 255, 51 / 255, 68 / 255]],
+        ['#123456', '#123456', [18 / 255, 52 / 255, 86 / 255, 1]],
+        ['#12345678', '#12345678', [18 / 255, 52 / 255, 86 / 255, 120 / 255]],
+    ] as const
+    const invalidValues = [
+        'invalidcolor',
+        'rgb(255, 0, 0)',
+        '#',
+        '#1',
+        '#12',
+        '#12345',
+        '#1234567',
+        ' LightGray ',
+        'red',
+        true,
+    ]
 
-    expect(Style.resolveStyle('backgroundColor', '#123')).toEqual({
-        name: 'backgroundColor',
-        value: '#123',
-        parsed: { rgba: [17 / 255, 34 / 255, 51 / 255, 1] },
-    })
-    expect(Style.resolveStyle(' background-color ', ' #ABC ')).toEqual({
-        name: 'backgroundColor',
-        value: '#abc',
-        parsed: { rgba: [170 / 255, 187 / 255, 204 / 255, 1] },
-    })
-    expect(Style.resolveStyle('backgroundColor', '#1234')).toEqual({
-        name: 'backgroundColor',
-        value: '#1234',
-        parsed: { rgba: [17 / 255, 34 / 255, 51 / 255, 68 / 255] },
-    })
-    expect(Style.resolveStyle('backgroundColor', '#123456')).toEqual({
-        name: 'backgroundColor',
-        value: '#123456',
-        parsed: { rgba: [18 / 255, 52 / 255, 86 / 255, 1] },
-    })
-    expect(Style.resolveStyle('backgroundColor', '#12345678')).toEqual({
-        name: 'backgroundColor',
-        value: '#12345678',
-        parsed: { rgba: [18 / 255, 52 / 255, 86 / 255, 120 / 255] },
-    })
+    for (const name of styles) {
+        for (const [value, expectedValue, rgba] of validCases) {
+            expectResolved(name, value, expectedValue, { rgba })
+        }
+
+        for (const value of invalidValues) {
+            expectInvalid(name, value, /expected hex color/)
+        }
+    }
+})
+
+test('borderRadius', () => {
+    const styles = ['borderRadius']
+    const validCases = [
+        [0, '0px', 0, 'px'],
+        ['4', '4px', 4, 'px'],
+        [' 4PX ', '4px', 4, 'px'],
+        ['12.5px', '12.5px', 12.5, 'px'],
+        ['50%', '50%', 50, '%'],
+    ] as const
+    const invalidCases = [
+        [-1, /expected non-negative unit/],
+        ['-1px', /expected non-negative unit/],
+        ['-1%', /expected non-negative unit/],
+        ['auto', /expected px or % unit/],
+        ['none', /expected px or % unit/],
+        ['4em', /expected px or % unit/],
+        [true, /expected px or % unit/],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue, unit] of validCases) {
+            expectUnit(name, value, expectedValue, parsedValue, unit)
+        }
+
+        for (const [value, message] of invalidCases) {
+            expectInvalid(name, value, message)
+        }
+    }
 })
 
 test('position', () => {
-    expect(() => {
-        Style.resolveStyle('position', 'fixed')
-    }).toThrow(/expected one of static, relative, absolute/)
-
-    expect(Style.resolveStyle('position', 'static')).toEqual({
-        name: 'position',
-        value: 'static',
-        parsed: { enum: 0 },
-    })
-    expect(Style.resolveStyle('POSITION', 'relative')).toEqual({
-        name: 'position',
-        value: 'relative',
-        parsed: { enum: 1 },
-    })
-    expect(Style.resolveStyle('pOsItIoN', 'rElAtIvE')).toEqual({
-        name: 'position',
-        value: 'relative',
-        parsed: { enum: 1 },
-    })
-    expect(Style.resolveStyle('Position', ' Absolute ')).toEqual({
-        name: 'position',
-        value: 'absolute',
-        parsed: { enum: 2 },
-    })
-})
-
-test('gap', () => {
-    expect(() => {
-        Style.resolveStyle('gap', true)
-    }).toThrow(/expected px or % unit/)
-    expect(() => {
-        Style.resolveStyle('gap', '12em')
-    }).toThrow(/expected px or % unit/)
-    expect(() => {
-        Style.resolveStyle('gap', 'auto')
-    }).toThrow(/expected px or % unit/)
-    expect(() => {
-        Style.resolveStyle('gap', -11)
-    }).toThrow(/expected non-negative unit/)
-    expect(() => {
-        Style.resolveStyle('gap', '-11pX')
-    }).toThrow(/expected non-negative unit/)
-
-    expect(Style.resolveStyle('gap', 11)).toEqual({
-        name: 'gap',
-        value: '11px',
-        parsed: { value: 11, unit: 'px' },
-    })
-    expect(Style.resolveStyle('gap', '11')).toEqual({
-        name: 'gap',
-        value: '11px',
-        parsed: { value: 11, unit: 'px' },
-    })
-    expect(Style.resolveStyle('gap', ' 11px ')).toEqual({
-        name: 'gap',
-        value: '11px',
-        parsed: { value: 11, unit: 'px' },
-    })
-    expect(Style.resolveStyle('gap', ' 11PX ')).toEqual({
-        name: 'gap',
-        value: '11px',
-        parsed: { value: 11, unit: 'px' },
-    })
-    expect(Style.resolveStyle('gap', '10%')).toEqual({
-        name: 'gap',
-        value: '10%',
-        parsed: { value: 10, unit: '%' },
-    })
-    expect(() => {
-        Style.resolveStyle('gap', '-10%')
-    }).toThrow(/expected non-negative unit/)
-})
-
-test('flex', () => {
-    expect(() => {
-        Style.resolveStyle('flex', true)
-    }).toThrow(/expected number/)
-    expect(() => {
-        Style.resolveStyle('flexGrow', -1)
-    }).toThrow(/expected non-negative number/)
-    expect(() => {
-        Style.resolveStyle('flex', '1 2 50%')
-    }).toThrow(/expected number/)
-
-    expect(Style.resolveStyle('flex', 1.5)).toEqual({
-        name: 'flex',
-        value: '1.5',
-        parsed: { value: 1.5 },
-    })
-    expect(Style.resolveStyle('flex', ' 1.5 ')).toEqual({
-        name: 'flex',
-        value: '1.5',
-        parsed: { value: 1.5 },
-    })
-    expect(Style.resolveStyle('flexGrow', 2)).toEqual({
-        name: 'flexGrow',
-        value: '2',
-        parsed: { value: 2 },
-    })
-})
-
-test('non-negative number styles reject negative values', () => {
-    const styles = ['flexGrow', 'flexShrink', 'aspectRatio']
+    const styles = ['position']
+    const validCases = [
+        ['static', 'static', 0],
+        [' Relative ', 'relative', 1],
+        ['ABSOLUTE', 'absolute', 2],
+    ] as const
 
     for (const name of styles) {
-        expect(() => {
-            Style.resolveStyle(name, -1)
-        }).toThrow(/expected non-negative number/)
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
 
-        expect(Style.resolveStyle(name, 1)).toEqual({
+        expectInvalid(
             name,
-            value: '1',
-            parsed: { value: 1 },
-        })
+            'fixed',
+            /expected one of static, relative, absolute/,
+        )
+        expectInvalid(
+            name,
+            'sticky',
+            /expected one of static, relative, absolute/,
+        )
     }
 })
 
-test('non-negative unit styles reject negative values', () => {
-    const styles = [
-        'borderRadius',
-        'flexBasis',
-        'width',
-        'height',
-        'minWidth',
-        'minHeight',
-        'maxWidth',
-        'maxHeight',
-        'paddingTop',
-        'paddingLeft',
-        'paddingRight',
-        'paddingBottom',
-        'padding',
-        'rowGap',
-        'columnGap',
-        'gap',
-    ]
-
-    for (const name of styles) {
-        expect(() => {
-            Style.resolveStyle(name, -1)
-        }).toThrow(/expected non-negative unit/)
-        expect(() => {
-            Style.resolveStyle(name, '-1px')
-        }).toThrow(/expected non-negative unit/)
-        expect(() => {
-            Style.resolveStyle(name, '-1%')
-        }).toThrow(/expected non-negative unit/)
-        expect(Style.resolveStyle(name, 1)).toEqual({
-            name,
-            value: '1px',
-            parsed: { value: 1, unit: 'px' },
-        })
-    }
-})
-
-test('border width styles are px-only and non-negative', () => {
-    const styles = [
-        'borderTopWidth',
-        'borderLeftWidth',
-        'borderRightWidth',
-        'borderBottomWidth',
-        'borderWidth',
-    ]
-
-    for (const name of styles) {
-        expect(Style.resolveStyle(name, 1)).toEqual({
-            name,
-            value: '1px',
-            parsed: { value: 1, unit: 'px' },
-        })
-        expect(Style.resolveStyle(name, '1px')).toEqual({
-            name,
-            value: '1px',
-            parsed: { value: 1, unit: 'px' },
-        })
-        expect(() => {
-            Style.resolveStyle(name, '10%')
-        }).toThrow(/expected px unit/)
-        expect(() => {
-            Style.resolveStyle(name, -1)
-        }).toThrow(/expected px unit/)
-        expect(() => {
-            Style.resolveStyle(name, 'thin')
-        }).toThrow(/expected px unit/)
-        expect(() => {
-            Style.resolveStyle(name, '1px solid #333')
-        }).toThrow(/expected px unit/)
-    }
-})
-test('unitOrAutoStyle accepts auto across all auto-capable styles', () => {
+test('top, left, right, bottom, marginTop, marginLeft, marginRight, marginBottom, margin', () => {
     const styles = [
         'top',
         'left',
@@ -254,42 +101,462 @@ test('unitOrAutoStyle accepts auto across all auto-capable styles', () => {
         'marginRight',
         'marginBottom',
         'margin',
-        'flexBasis',
-        'width',
-        'height',
+    ]
+    const validUnitCases = [
+        [8, '8px', 8, 'px'],
+        ['8', '8px', 8, 'px'],
+        [' 8PX ', '8px', 8, 'px'],
+        ['12.5%', '12.5%', 12.5, '%'],
+        [-3, '-3px', -3, 'px'],
+        ['-4px', '-4px', -4, 'px'],
+        ['-5%', '-5%', -5, '%'],
+    ] as const
+    const invalidValues = [true, '12em', 'none', 'inherit']
+
+    for (const name of styles) {
+        expectKeywordUnit(name, ' Auto ', 'auto')
+
+        for (const [
+            value,
+            expectedValue,
+            parsedValue,
+            unit,
+        ] of validUnitCases) {
+            expectUnit(name, value, expectedValue, parsedValue, unit)
+        }
+
+        for (const value of invalidValues) {
+            expectInvalid(name, value, /expected px or % unit/)
+        }
+    }
+})
+
+test('alignContent', () => {
+    const styles = ['alignContent']
+    const validCases = [
+        ['flex-start', 'flex-start', 1],
+        [' Center ', 'center', 2],
+        ['flex-end', 'flex-end', 3],
+        ['stretch', 'stretch', 4],
+        ['baseline', 'baseline', 5],
+        ['space-between', 'space-between', 6],
+        ['space-around', 'space-around', 7],
+        ['SPACE-EVENLY', 'space-evenly', 8],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'normal', /expected one of/)
+        expectInvalid(name, 'auto', /expected one of/)
+    }
+})
+
+test('alignItems', () => {
+    const styles = ['alignItems']
+    const validCases = [
+        ['normal', 'normal', 0],
+        ['flex-start', 'flex-start', 1],
+        [' Center ', 'center', 2],
+        ['flex-end', 'flex-end', 3],
+        ['stretch', 'stretch', 4],
+        ['BASELINE', 'baseline', 5],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'auto', /expected one of/)
+        expectInvalid(name, 'space-between', /expected one of/)
+    }
+})
+
+test('alignSelf', () => {
+    const styles = ['alignSelf']
+    const validCases = [
+        ['auto', 'auto', 0],
+        ['normal', 'normal', 0],
+        ['flex-start', 'flex-start', 1],
+        [' Center ', 'center', 2],
+        ['flex-end', 'flex-end', 3],
+        ['stretch', 'stretch', 4],
+        ['BASELINE', 'baseline', 5],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'space-between', /expected one of/)
+        expectInvalid(name, 'space-evenly', /expected one of/)
+    }
+})
+
+test('flexDirection', () => {
+    const styles = ['flexDirection']
+    const validCases = [
+        ['column', 'column', 0],
+        ['column-reverse', 'column-reverse', 1],
+        [' Row ', 'row', 2],
+        ['ROW-REVERSE', 'row-reverse', 3],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'nowrap', /expected one of/)
+        expectInvalid(name, 'horizontal', /expected one of/)
+    }
+})
+
+test('flexWrap', () => {
+    const styles = ['flexWrap']
+    const validCases = [
+        ['nowrap', 'nowrap', 0],
+        [' Wrap ', 'wrap', 1],
+        ['WRAP-REVERSE', 'wrap-reverse', 2],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(
+            name,
+            'no-wrap',
+            /expected one of nowrap, wrap, wrap-reverse/,
+        )
+        expectInvalid(name, 'row', /expected one of nowrap, wrap, wrap-reverse/)
+    }
+})
+
+test('justifyContent', () => {
+    const styles = ['justifyContent']
+    const validCases = [
+        ['flex-start', 'flex-start', 0],
+        [' Center ', 'center', 1],
+        ['flex-end', 'flex-end', 2],
+        ['space-between', 'space-between', 3],
+        ['space-around', 'space-around', 4],
+        ['SPACE-EVENLY', 'space-evenly', 5],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'baseline', /expected one of/)
+        expectInvalid(name, 'stretch', /expected one of/)
+    }
+})
+
+test('flex, flexGrow, flexShrink, aspectRatio', () => {
+    const styles = ['flex', 'flexGrow', 'flexShrink', 'aspectRatio']
+    const validCases = [
+        [0, '0', 0],
+        [1.5, '1.5', 1.5],
+        [' 2.25 ', '2.25', 2.25],
+    ] as const
+    const expectedNumberFailures = [
+        true,
+        '1 2',
+        'auto',
+        Number.POSITIVE_INFINITY,
+        NaN,
+    ]
+    const expectedNonNegativeFailures = [-1, '-1']
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectNumber(name, value, expectedValue, parsedValue)
+        }
+
+        for (const value of expectedNumberFailures) {
+            expectInvalid(name, value, /expected number/)
+        }
+
+        for (const value of expectedNonNegativeFailures) {
+            expectInvalid(name, value, /expected non-negative number/)
+        }
+    }
+})
+
+test('flexBasis, width, height', () => {
+    const styles = ['flexBasis', 'width', 'height']
+    const validUnitCases = [
+        [0, '0px', 0, 'px'],
+        ['10', '10px', 10, 'px'],
+        [' 10PX ', '10px', 10, 'px'],
+        ['33.3%', '33.3%', 33.3, '%'],
+    ] as const
+    const invalidCases = [
+        [-1, /expected non-negative unit/],
+        ['-1px', /expected non-negative unit/],
+        ['-1%', /expected non-negative unit/],
+        [true, /expected px or % unit/],
+        ['12em', /expected px or % unit/],
+        ['none', /expected px or % unit/],
+    ] as const
+
+    for (const name of styles) {
+        expectKeywordUnit(name, ' Auto ', 'auto')
+
+        for (const [
+            value,
+            expectedValue,
+            parsedValue,
+            unit,
+        ] of validUnitCases) {
+            expectUnit(name, value, expectedValue, parsedValue, unit)
+        }
+
+        for (const [value, message] of invalidCases) {
+            expectInvalid(name, value, message)
+        }
+    }
+})
+
+test('minWidth, minHeight, paddingTop, paddingLeft, paddingRight, paddingBottom, padding, rowGap, columnGap, gap', () => {
+    const styles = [
+        'minWidth',
+        'minHeight',
+        'paddingTop',
+        'paddingLeft',
+        'paddingRight',
+        'paddingBottom',
+        'padding',
+        'rowGap',
+        'columnGap',
+        'gap',
+    ]
+    const validCases = [
+        [0, '0px', 0, 'px'],
+        ['6', '6px', 6, 'px'],
+        [' 6PX ', '6px', 6, 'px'],
+        ['12.5%', '12.5%', 12.5, '%'],
+    ] as const
+    const invalidCases = [
+        [-1, /expected non-negative unit/],
+        ['-1px', /expected non-negative unit/],
+        ['-1%', /expected non-negative unit/],
+        ['auto', /expected px or % unit/],
+        ['none', /expected px or % unit/],
+        ['6em', /expected px or % unit/],
+        [false, /expected px or % unit/],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue, unit] of validCases) {
+            expectUnit(name, value, expectedValue, parsedValue, unit)
+        }
+
+        for (const [value, message] of invalidCases) {
+            expectInvalid(name, value, message)
+        }
+    }
+})
+
+test('maxWidth, maxHeight', () => {
+    const styles = ['maxWidth', 'maxHeight']
+    const validUnitCases = [
+        [0, '0px', 0, 'px'],
+        ['20', '20px', 20, 'px'],
+        [' 20PX ', '20px', 20, 'px'],
+        ['75%', '75%', 75, '%'],
+    ] as const
+    const invalidCases = [
+        [-1, /expected non-negative unit/],
+        ['-1px', /expected non-negative unit/],
+        ['-1%', /expected non-negative unit/],
+        ['auto', /expected px or % unit/],
+        ['20em', /expected px or % unit/],
+    ] as const
+
+    for (const name of styles) {
+        expectKeywordUnit(name, ' None ', 'none')
+
+        for (const [
+            value,
+            expectedValue,
+            parsedValue,
+            unit,
+        ] of validUnitCases) {
+            expectUnit(name, value, expectedValue, parsedValue, unit)
+        }
+
+        for (const [value, message] of invalidCases) {
+            expectInvalid(name, value, message)
+        }
+    }
+})
+
+test('boxSizing', () => {
+    const styles = ['boxSizing']
+    const validCases = [
+        ['border-box', 'border-box', 0],
+        [' CONTENT-BOX ', 'content-box', 1],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'borderBox', /expected one of/)
+        expectInvalid(name, 'padding-box', /expected one of/)
+    }
+})
+
+test('borderTopWidth, borderLeftWidth, borderRightWidth, borderBottomWidth, borderWidth', () => {
+    const styles = [
+        'borderTopWidth',
+        'borderLeftWidth',
+        'borderRightWidth',
+        'borderBottomWidth',
+        'borderWidth',
+    ]
+    const validCases = [
+        [0, '0px', 0, 'px'],
+        ['1', '1px', 1, 'px'],
+        [' 1PX ', '1px', 1, 'px'],
+        ['2.5px', '2.5px', 2.5, 'px'],
+    ] as const
+    const invalidValues = [
+        -1,
+        '-1px',
+        '10%',
+        '-10%',
+        'thin',
+        '1px solid #333',
+        '1em',
     ]
 
     for (const name of styles) {
-        expect(Style.resolveStyle(name, ' Auto ')).toEqual({
-            name,
-            value: 'auto',
-            parsed: { unit: 'auto' },
-        })
-    }
-})
-test('enumStyle maps all enum properties', () => {
-    const styles: Array<[string, string, number]> = [
-        ['position', 'absolute', 2],
-        ['alignContent', 'space-evenly', 8],
-        ['alignItems', 'baseline', 5],
-        ['alignSelf', 'auto', 0],
-        ['flexDirection', 'row-reverse', 3],
-        ['flexWrap', 'wrap-reverse', 2],
-        ['justifyContent', 'space-around', 4],
-        ['boxSizing', 'content-box', 1],
-        ['overflow', 'scroll', 2],
-        ['display', 'contents', 2],
-        ['direction', 'rtl', 2],
-    ]
+        for (const [value, expectedValue, parsedValue, unit] of validCases) {
+            expectUnit(name, value, expectedValue, parsedValue, unit)
+        }
 
-    for (const [name, value, parsed] of styles) {
-        expect(Style.resolveStyle(name, value)).toEqual({
-            name,
-            value,
-            parsed: { enum: parsed },
-        })
-        expect(() => {
-            Style.resolveStyle(name, 'invalid-value')
-        }).toThrow(/expected one of/)
+        for (const value of invalidValues) {
+            expectInvalid(name, value, /expected px unit/)
+        }
     }
 })
+
+test('overflow', () => {
+    const styles = ['overflow']
+    const validCases = [
+        ['visible', 'visible', 0],
+        [' Hidden ', 'hidden', 1],
+        ['SCROLL', 'scroll', 2],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'auto', /expected one of visible, hidden, scroll/)
+        expectInvalid(name, 'clip', /expected one of visible, hidden, scroll/)
+    }
+})
+
+test('display', () => {
+    const styles = ['display']
+    const validCases = [
+        ['flex', 'flex', 0],
+        [' None ', 'none', 1],
+        ['CONTENTS', 'contents', 2],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'block', /expected one of flex, none, contents/)
+        expectInvalid(
+            name,
+            'inline-flex',
+            /expected one of flex, none, contents/,
+        )
+    }
+})
+
+test('direction', () => {
+    const styles = ['direction']
+    const validCases = [
+        ['inherit', 'inherit', 0],
+        [' LTR ', 'ltr', 1],
+        ['RTL', 'rtl', 2],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'auto', /expected one of inherit, ltr, rtl/)
+        expectInvalid(name, 'initial', /expected one of inherit, ltr, rtl/)
+    }
+})
+
+function expectResolved(
+    name: string,
+    value: unknown,
+    expectedValue: string,
+    parsed: Record<string, unknown>,
+    expectedName = name,
+) {
+    expect(Style.resolveStyle(name, value)).toEqual({
+        name: expectedName,
+        value: expectedValue,
+        parsed,
+    })
+}
+
+function expectInvalid(name: string, value: unknown, message: RegExp) {
+    expect(() => {
+        Style.resolveStyle(name, value)
+    }).toThrow(message)
+}
+
+function expectUnit(
+    name: string,
+    value: unknown,
+    expectedValue: string,
+    parsedValue: number,
+    unit: string,
+) {
+    expectResolved(name, value, expectedValue, { value: parsedValue, unit })
+}
+
+function expectKeywordUnit(name: string, value: unknown, keyword: string) {
+    expectResolved(name, value, keyword, { unit: keyword })
+}
+
+function expectNumber(
+    name: string,
+    value: unknown,
+    expectedValue: string,
+    parsedValue: number,
+) {
+    expectResolved(name, value, expectedValue, { value: parsedValue })
+}
+
+function expectEnum(
+    name: string,
+    value: unknown,
+    expectedValue: string,
+    parsedValue: number,
+) {
+    expectResolved(name, value, expectedValue, { enum: parsedValue })
+}
