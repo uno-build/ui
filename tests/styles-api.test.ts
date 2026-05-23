@@ -73,26 +73,6 @@ test('unitPixelStyle', () => {
     })
 })
 
-test('numberStyle', () => {
-    expect(() => {
-        Style.resolveStyle('flex', true)
-    }).toThrow(/expected number/)
-    expect(() => {
-        Style.resolveStyle('flexGrow', -1)
-    }).toThrow(/expected non-negative number/)
-
-    expect(Style.resolveStyle('flex', ' 1.5 ')).toEqual({
-        name: 'flex',
-        value: 1.5,
-        parsed: { value: 1.5 },
-    })
-    expect(Style.resolveStyle('flexGrow', 2)).toEqual({
-        name: 'flexGrow',
-        value: 2,
-        parsed: { value: 2 },
-    })
-})
-
 test('unitOrAutoStyle', () => {
     expect(() => {
         Style.resolveStyle('width', true)

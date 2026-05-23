@@ -127,6 +127,34 @@ test('gap', () => {
     }).toThrow(/expected non-negative unit/)
 })
 
+test('flex', () => {
+    expect(() => {
+        Style.resolveStyle('flex', true)
+    }).toThrow(/expected number/)
+    expect(() => {
+        Style.resolveStyle('flexGrow', -1)
+    }).toThrow(/expected non-negative number/)
+    expect(() => {
+        Style.resolveStyle('flex', '1 2 50%')
+    }).toThrow(/expected number/)
+
+    expect(Style.resolveStyle('flex', 1.5)).toEqual({
+        name: 'flex',
+        value: '1.5',
+        parsed: { value: 1.5 },
+    })
+    expect(Style.resolveStyle('flex', ' 1.5 ')).toEqual({
+        name: 'flex',
+        value: '1.5',
+        parsed: { value: 1.5 },
+    })
+    expect(Style.resolveStyle('flexGrow', 2)).toEqual({
+        name: 'flexGrow',
+        value: '2',
+        parsed: { value: 2 },
+    })
+})
+
 test('non-negative number styles reject negative values', () => {
     const styles = ['flexGrow', 'flexShrink', 'aspectRatio']
 
@@ -134,10 +162,49 @@ test('non-negative number styles reject negative values', () => {
         expect(() => {
             Style.resolveStyle(name, -1)
         }).toThrow(/expected non-negative number/)
+
         expect(Style.resolveStyle(name, 1)).toEqual({
             name,
-            value: 1,
+            value: '1',
             parsed: { value: 1 },
+        })
+    }
+})
+
+test('non-negative unit styles reject negative values', () => {
+    const styles = [
+        'borderRadius',
+        'flexBasis',
+        'width',
+        'height',
+        'minWidth',
+        'minHeight',
+        'maxWidth',
+        'maxHeight',
+        'paddingTop',
+        'paddingLeft',
+        'paddingRight',
+        'paddingBottom',
+        'padding',
+        'rowGap',
+        'columnGap',
+        'gap',
+    ]
+
+    for (const name of styles) {
+        expect(() => {
+            Style.resolveStyle(name, -1)
+        }).toThrow(/expected non-negative unit/)
+        expect(() => {
+            Style.resolveStyle(name, '-1px')
+        }).toThrow(/expected non-negative unit/)
+        expect(() => {
+            Style.resolveStyle(name, '-1%')
+        }).toThrow(/expected non-negative unit/)
+        expect(Style.resolveStyle(name, 1)).toEqual({
+            name,
+            value: '1px',
+            parsed: { value: 1, unit: 'px' },
         })
     }
 })

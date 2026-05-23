@@ -75,7 +75,11 @@ export function createStyle(name: string, alternatives: any) {
                     continue
                 }
 
-                return runParsePipeline(alternative.parse, normalized)
+                const result = runParsePipeline(alternative.parse, normalized)
+                return {
+                    ...result,
+                    value: String(result.value),
+                }
             }
 
             throw firstError ?? new Error('expected valid style value')

@@ -43,16 +43,16 @@ export default abstract class Node {
     }
 
     protected applyStyles(styles) {
-        Object.keys(styles).forEach((key) => {
-            this.setStyle(key, styles[key])
+        Object.keys(styles).forEach((name) => {
+            this.setStyle(name, styles[name])
         })
     }
 
-    protected setStyle(key: string, value: any): void {
+    protected setStyle(name: string, value: any): void {
         try {
-            const style = Style.resolveStyle(key, value)
-            if (this.styles[style.key]?.value !== style.value) {
-                this.styles[style.key] = {
+            const style = Style.resolveStyle(name, value)
+            if (this.styles[style.name]?.value !== style.value) {
+                this.styles[style.name] = {
                     value: style.value,
                     parsed: style.parsed,
                 }

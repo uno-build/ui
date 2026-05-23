@@ -44,6 +44,12 @@ import {
     runParsePipeline,
 } from './utils.ts'
 
+// if (typeof window !== 'undefined') {
+//     window.Style = {
+//         resolveStyle,
+//     }
+// }
+
 export function resolveStyle(name: string, value: any) {
     // Validating name
     if (typeof name !== 'string') {
@@ -247,10 +253,16 @@ export const STYLE = {
         },
     ]),
 
+    FLEX: createStyle('flex', {
+        normalize: [normalizeNumber],
+        validate: [validateNumber],
+        parse: [parseNumber],
+    }),
+
     FLEXBASIS: createStyle('flexBasis', [
         {
             normalize: [normalizeUnit],
-            validate: [validateUnit],
+            validate: [validateUnit, validateNonNegativeUnit],
             parse: [parseUnit],
         },
         {
@@ -259,12 +271,6 @@ export const STYLE = {
             parse: [parseAuto],
         },
     ]),
-
-    FLEX: createStyle('flex', {
-        normalize: [normalizeNumber],
-        validate: [validateNumber],
-        parse: [parseNumber],
-    }),
 
     FLEXGROW: createStyle('flexGrow', {
         normalize: [normalizeNumber],
@@ -281,7 +287,7 @@ export const STYLE = {
     WIDTH: createStyle('width', [
         {
             normalize: [normalizeUnit],
-            validate: [validateUnit],
+            validate: [validateUnit, validateNonNegativeUnit],
             parse: [parseUnit],
         },
         {
@@ -294,7 +300,7 @@ export const STYLE = {
     HEIGHT: createStyle('height', [
         {
             normalize: [normalizeUnit],
-            validate: [validateUnit],
+            validate: [validateUnit, validateNonNegativeUnit],
             parse: [parseUnit],
         },
         {
@@ -306,25 +312,25 @@ export const STYLE = {
 
     MINWIDTH: createStyle('minWidth', {
         normalize: [normalizeUnit],
-        validate: [validateUnit],
+        validate: [validateUnit, validateNonNegativeUnit],
         parse: [parseUnit],
     }),
 
     MINHEIGHT: createStyle('minHeight', {
         normalize: [normalizeUnit],
-        validate: [validateUnit],
+        validate: [validateUnit, validateNonNegativeUnit],
         parse: [parseUnit],
     }),
 
     MAXWIDTH: createStyle('maxWidth', {
         normalize: [normalizeUnit],
-        validate: [validateUnit],
+        validate: [validateUnit, validateNonNegativeUnit],
         parse: [parseUnit],
     }),
 
     MAXHEIGHT: createStyle('maxHeight', {
         normalize: [normalizeUnit],
-        validate: [validateUnit],
+        validate: [validateUnit, validateNonNegativeUnit],
         parse: [parseUnit],
     }),
 
@@ -390,31 +396,31 @@ export const STYLE = {
 
     PADDINGTOP: createStyle('paddingTop', {
         normalize: [normalizeUnit],
-        validate: [validateUnit],
+        validate: [validateUnit, validateNonNegativeUnit],
         parse: [parseUnit],
     }),
 
     PADDINGLEFT: createStyle('paddingLeft', {
         normalize: [normalizeUnit],
-        validate: [validateUnit],
+        validate: [validateUnit, validateNonNegativeUnit],
         parse: [parseUnit],
     }),
 
     PADDINGRIGHT: createStyle('paddingRight', {
         normalize: [normalizeUnit],
-        validate: [validateUnit],
+        validate: [validateUnit, validateNonNegativeUnit],
         parse: [parseUnit],
     }),
 
     PADDINGBOTTOM: createStyle('paddingBottom', {
         normalize: [normalizeUnit],
-        validate: [validateUnit],
+        validate: [validateUnit, validateNonNegativeUnit],
         parse: [parseUnit],
     }),
 
     PADDING: createStyle('padding', {
         normalize: [normalizeUnit],
-        validate: [validateUnit],
+        validate: [validateUnit, validateNonNegativeUnit],
         parse: [parseUnit],
     }),
 
