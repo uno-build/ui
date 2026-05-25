@@ -1,10 +1,11 @@
+import { UNIT } from './consts.ts'
 import { normalizeString } from './normalizers.ts'
 import { parseEnum } from './parsers.ts'
 import { validateEnum } from './validators.ts'
 
 export function readUnit(value: string | number) {
     if (typeof value === 'number') {
-        return Number.isFinite(value) ? { value, unit: 'px' } : undefined
+        return Number.isFinite(value) ? { value, unit: UNIT.PX } : undefined
     }
 
     const match = value.match(/^(-?(?:\d+|\d*\.\d+))(px|%)?$/)
@@ -17,7 +18,7 @@ export function readUnit(value: string | number) {
         return undefined
     }
 
-    return { value: number, unit: match[2] ?? 'px' }
+    return { value: number, unit: match[2] === '%' ? UNIT.PERCENT : UNIT.PX }
 }
 
 export function readNumber(value: any) {

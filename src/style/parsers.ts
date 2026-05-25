@@ -1,9 +1,10 @@
+import { UNIT } from './consts.ts'
 import { readUnit } from './utils.ts'
 
 export function parseAuto(value: string) {
     return {
         value,
-        parsed: { unit: 'auto' },
+        parsed: { unit: UNIT.AUTO },
     }
 }
 

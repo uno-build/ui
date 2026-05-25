@@ -10,7 +10,7 @@ import {
     OVERFLOW,
     POSITION,
     WRAP,
-} from './options.js'
+} from './consts.ts'
 import {
     normalizeStyleKey,
     normalizeString,

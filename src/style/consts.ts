@@ -1,3 +1,19 @@
+export const UNIT = {
+    PX: 'px',
+    PERCENT: '%',
+    AUTO: 'auto',
+}
+export const EDGE = {
+    left: 0,
+    top: 1,
+    right: 2,
+    bottom: 3,
+    start: 4,
+    end: 5,
+    horizontal: 6,
+    vertical: 7,
+    all: 8,
+}
 export const POSITION = {
     static: 0,
     relative: 1,
