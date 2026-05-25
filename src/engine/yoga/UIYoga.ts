@@ -84,8 +84,12 @@ export default class UIYoga extends UI<Node> {
 
     protected update() {
         this.node_mutations.forEach(({ node, mutation }) => {
-            console.log(node.id, mutation.name, mutation)
-            YOGA_SETTER[mutation.name](node.yoga, mutation)
+            if (YOGA_SETTER.hasOwnProperty(mutation.name)) {
+                YOGA_SETTER[mutation.name](node.yoga, mutation)
+            } else {
+                console.log(`Not supported:`, [mutation.name, mutation.value])
+                console.warn()
+            }
         })
         this.root.yoga.calculateLayout()
         for (const node of this.nodes) {
