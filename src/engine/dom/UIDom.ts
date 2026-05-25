@@ -30,6 +30,8 @@ export default class UIDom extends UI<Node> {
         Object.assign(element.style, {
             boxSizing: 'border-box',
             display: 'flex',
+            minWidth: '0',
+            minHeight: '0',
             // flexDirection: 'row',
             // alignItems: 'stretch',
             // alignContent: 'stretch',
@@ -39,8 +41,6 @@ export default class UIDom extends UI<Node> {
             // flexGrow: '0',
             // position: 'relative',
             // overflow: 'visible',
-            // minWidth: '0',
-            minHeight: '0',
         })
         return new Node({
             id: this.getNextNodeId(),
