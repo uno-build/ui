@@ -27,21 +27,7 @@ export default class UIDom extends UI<Node> {
 
     protected create(styles) {
         const element = document.createElement('div')
-        Object.assign(element.style, {
-            boxSizing: 'border-box',
-            display: 'flex',
-            minWidth: '0',
-            minHeight: '0',
-            // flexDirection: 'row',
-            // alignItems: 'stretch',
-            // alignContent: 'stretch',
-            // justifyContent: 'flex-start',
-            // flexWrap: 'nowrap',
-            // flexShrink: '1',
-            // flexGrow: '0',
-            // position: 'relative',
-            // overflow: 'visible',
-        })
+        Object.assign(element.style, DEFAULT_NODE_STYLE)
         return new Node({
             id: this.getNextNodeId(),
             element,
@@ -108,4 +94,11 @@ export default class UIDom extends UI<Node> {
 
 function parseInset(value) {
     return value === '' || value === 'auto' ? 0 : Math.round(parseFloat(value))
+}
+
+const DEFAULT_NODE_STYLE = {
+    boxSizing: 'border-box',
+    display: 'flex',
+    minWidth: '0',
+    minHeight: '0',
 }
