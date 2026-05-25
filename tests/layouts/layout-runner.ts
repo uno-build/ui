@@ -267,6 +267,7 @@ function createRendererElement(
 
 function readPaintLayout(ui): PaintLayoutRow[] {
     return [...ui.nodes].map((node) => ({
+        id: node.id,
         ...node.layout,
         path: node.path.join('.'),
     }))

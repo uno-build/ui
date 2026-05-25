@@ -90,47 +90,6 @@ test('position', () => {
     }
 })
 
-test('top, left, right, bottom, marginTop, marginLeft, marginRight, marginBottom, margin', () => {
-    const styles = [
-        'top',
-        'left',
-        'right',
-        'bottom',
-        'marginTop',
-        'marginLeft',
-        'marginRight',
-        'marginBottom',
-        'margin',
-    ]
-    const validUnitCases = [
-        [8, '8px', 8, 'px'],
-        ['8', '8px', 8, 'px'],
-        [' 8PX ', '8px', 8, 'px'],
-        ['12.5%', '12.5%', 12.5, '%'],
-        [-3, '-3px', -3, 'px'],
-        ['-4px', '-4px', -4, 'px'],
-        ['-5%', '-5%', -5, '%'],
-    ] as const
-    const invalidValues = [true, '12em', 'none', 'inherit']
-
-    for (const name of styles) {
-        expectKeywordUnit(name, ' Auto ', 'auto')
-
-        for (const [
-            value,
-            expectedValue,
-            parsedValue,
-            unit,
-        ] of validUnitCases) {
-            expectUnit(name, value, expectedValue, parsedValue, unit)
-        }
-
-        for (const value of invalidValues) {
-            expectInvalid(name, value, /expected px or % unit/)
-        }
-    }
-})
-
 test('alignContent', () => {
     const styles = ['alignContent']
     const validCases = [
@@ -259,6 +218,156 @@ test('justifyContent', () => {
     }
 })
 
+test('boxSizing', () => {
+    const styles = ['boxSizing']
+    const validCases = [
+        ['border-box', 'border-box', 0],
+        [' CONTENT-BOX ', 'content-box', 1],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'borderBox', /expected one of/)
+        expectInvalid(name, 'padding-box', /expected one of/)
+    }
+})
+
+test('overflow', () => {
+    const styles = ['overflow']
+    const validCases = [
+        ['visible', 'visible', 0],
+        [' Hidden ', 'hidden', 1],
+        ['SCROLL', 'scroll', 2],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'auto', /expected one of visible, hidden, scroll/)
+        expectInvalid(name, 'clip', /expected one of visible, hidden, scroll/)
+    }
+})
+
+test('display', () => {
+    const styles = ['display']
+    const validCases = [
+        ['flex', 'flex', 0],
+        [' None ', 'none', 1],
+        ['CONTENTS', 'contents', 2],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'block', /expected one of flex, none, contents/)
+        expectInvalid(
+            name,
+            'inline-flex',
+            /expected one of flex, none, contents/,
+        )
+    }
+})
+
+test('direction', () => {
+    const styles = ['direction']
+    const validCases = [
+        ['inherit', 'inherit', 0],
+        [' LTR ', 'ltr', 1],
+        ['RTL', 'rtl', 2],
+    ] as const
+
+    for (const name of styles) {
+        for (const [value, expectedValue, parsedValue] of validCases) {
+            expectEnum(name, value, expectedValue, parsedValue)
+        }
+
+        expectInvalid(name, 'auto', /expected one of inherit, ltr, rtl/)
+        expectInvalid(name, 'initial', /expected one of inherit, ltr, rtl/)
+    }
+})
+
+test('maxWidth, maxHeight', () => {
+    const styles = ['maxWidth', 'maxHeight']
+    const validUnitCases = [
+        [0, '0px', 0, 'px'],
+        ['20', '20px', 20, 'px'],
+        [' 20PX ', '20px', 20, 'px'],
+        ['75%', '75%', 75, '%'],
+    ] as const
+    const invalidCases = [
+        [-1, /expected non-negative unit/],
+        ['-1px', /expected non-negative unit/],
+        ['-1%', /expected non-negative unit/],
+        ['auto', /expected px or % unit/],
+        ['20em', /expected px or % unit/],
+    ] as const
+
+    for (const name of styles) {
+        expectKeywordUnit(name, ' None ', 'none')
+
+        for (const [
+            value,
+            expectedValue,
+            parsedValue,
+            unit,
+        ] of validUnitCases) {
+            expectUnit(name, value, expectedValue, parsedValue, unit)
+        }
+
+        for (const [value, message] of invalidCases) {
+            expectInvalid(name, value, message)
+        }
+    }
+})
+
+test('top, left, right, bottom, marginTop, marginLeft, marginRight, marginBottom, margin', () => {
+    const styles = [
+        'top',
+        'left',
+        'right',
+        'bottom',
+        'marginTop',
+        'marginLeft',
+        'marginRight',
+        'marginBottom',
+        'margin',
+    ]
+    const validUnitCases = [
+        [8, '8px', 8, 'px'],
+        ['8', '8px', 8, 'px'],
+        [' 8PX ', '8px', 8, 'px'],
+        ['12.5%', '12.5%', 12.5, '%'],
+        [-3, '-3px', -3, 'px'],
+        ['-4px', '-4px', -4, 'px'],
+        ['-5%', '-5%', -5, '%'],
+    ] as const
+    const invalidValues = [true, '12em', 'none', 'inherit']
+
+    for (const name of styles) {
+        expectKeywordUnit(name, ' Auto ', 'auto')
+
+        for (const [
+            value,
+            expectedValue,
+            parsedValue,
+            unit,
+        ] of validUnitCases) {
+            expectUnit(name, value, expectedValue, parsedValue, unit)
+        }
+
+        for (const value of invalidValues) {
+            expectInvalid(name, value, /expected px or % unit/)
+        }
+    }
+})
+
 test('flex, flexGrow, flexShrink, aspectRatio', () => {
     const styles = ['flex', 'flexGrow', 'flexShrink', 'aspectRatio']
     const validCases = [
@@ -365,57 +474,6 @@ test('minWidth, minHeight, paddingTop, paddingLeft, paddingRight, paddingBottom,
     }
 })
 
-test('maxWidth, maxHeight', () => {
-    const styles = ['maxWidth', 'maxHeight']
-    const validUnitCases = [
-        [0, '0px', 0, 'px'],
-        ['20', '20px', 20, 'px'],
-        [' 20PX ', '20px', 20, 'px'],
-        ['75%', '75%', 75, '%'],
-    ] as const
-    const invalidCases = [
-        [-1, /expected non-negative unit/],
-        ['-1px', /expected non-negative unit/],
-        ['-1%', /expected non-negative unit/],
-        ['auto', /expected px or % unit/],
-        ['20em', /expected px or % unit/],
-    ] as const
-
-    for (const name of styles) {
-        expectKeywordUnit(name, ' None ', 'none')
-
-        for (const [
-            value,
-            expectedValue,
-            parsedValue,
-            unit,
-        ] of validUnitCases) {
-            expectUnit(name, value, expectedValue, parsedValue, unit)
-        }
-
-        for (const [value, message] of invalidCases) {
-            expectInvalid(name, value, message)
-        }
-    }
-})
-
-test('boxSizing', () => {
-    const styles = ['boxSizing']
-    const validCases = [
-        ['border-box', 'border-box', 0],
-        [' CONTENT-BOX ', 'content-box', 1],
-    ] as const
-
-    for (const name of styles) {
-        for (const [value, expectedValue, parsedValue] of validCases) {
-            expectEnum(name, value, expectedValue, parsedValue)
-        }
-
-        expectInvalid(name, 'borderBox', /expected one of/)
-        expectInvalid(name, 'padding-box', /expected one of/)
-    }
-})
-
 test('borderTopWidth, borderLeftWidth, borderRightWidth, borderBottomWidth, borderWidth', () => {
     const styles = [
         'borderTopWidth',
@@ -448,64 +506,6 @@ test('borderTopWidth, borderLeftWidth, borderRightWidth, borderBottomWidth, bord
         for (const value of invalidValues) {
             expectInvalid(name, value, /expected px unit/)
         }
-    }
-})
-
-test('overflow', () => {
-    const styles = ['overflow']
-    const validCases = [
-        ['visible', 'visible', 0],
-        [' Hidden ', 'hidden', 1],
-        ['SCROLL', 'scroll', 2],
-    ] as const
-
-    for (const name of styles) {
-        for (const [value, expectedValue, parsedValue] of validCases) {
-            expectEnum(name, value, expectedValue, parsedValue)
-        }
-
-        expectInvalid(name, 'auto', /expected one of visible, hidden, scroll/)
-        expectInvalid(name, 'clip', /expected one of visible, hidden, scroll/)
-    }
-})
-
-test('display', () => {
-    const styles = ['display']
-    const validCases = [
-        ['flex', 'flex', 0],
-        [' None ', 'none', 1],
-        ['CONTENTS', 'contents', 2],
-    ] as const
-
-    for (const name of styles) {
-        for (const [value, expectedValue, parsedValue] of validCases) {
-            expectEnum(name, value, expectedValue, parsedValue)
-        }
-
-        expectInvalid(name, 'block', /expected one of flex, none, contents/)
-        expectInvalid(
-            name,
-            'inline-flex',
-            /expected one of flex, none, contents/,
-        )
-    }
-})
-
-test('direction', () => {
-    const styles = ['direction']
-    const validCases = [
-        ['inherit', 'inherit', 0],
-        [' LTR ', 'ltr', 1],
-        ['RTL', 'rtl', 2],
-    ] as const
-
-    for (const name of styles) {
-        for (const [value, expectedValue, parsedValue] of validCases) {
-            expectEnum(name, value, expectedValue, parsedValue)
-        }
-
-        expectInvalid(name, 'auto', /expected one of inherit, ltr, rtl/)
-        expectInvalid(name, 'initial', /expected one of inherit, ltr, rtl/)
     }
 })
 

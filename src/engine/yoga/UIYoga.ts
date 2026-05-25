@@ -18,18 +18,18 @@ export default class UIYoga extends UI<Node> {
         )
 
         this.root = new Node({
+            id: this.getNextNodeId(),
             yoga: this.Yoga.Node.create(this.yoga_config),
             styles: {},
             ui: this,
         })
-
         // this.nodes.add(this.root)
     }
 
-    protected createNode(styles, id: number) {
+    protected create(styles) {
         const yoga = this.Yoga.Node.create(this.yoga_config)
         return new Node({
-            id,
+            id: this.getNextNodeId(),
             yoga,
             styles,
             ui: this,

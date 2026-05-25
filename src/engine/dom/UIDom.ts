@@ -17,15 +17,15 @@ export default class UIDom extends UI<Node> {
         // }
 
         this.root = new Node({
+            id: this.getNextNodeId(),
             element: canvas,
             styles: {},
             ui: this,
         })
-
         // this.nodes.add(this.root)
     }
 
-    protected createNode(styles, id: number) {
+    protected create(styles) {
         const element = document.createElement('div')
         Object.assign(element.style, {
             boxSizing: 'border-box',
@@ -43,7 +43,7 @@ export default class UIDom extends UI<Node> {
             minHeight: '0',
         })
         return new Node({
-            id,
+            id: this.getNextNodeId(),
             element,
             styles,
             ui: this,

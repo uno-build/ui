@@ -6,9 +6,8 @@ export default abstract class UI<TNode extends Node = Node> {
     public mutations = new Set()
     private node_id = 0
 
-    create(styles) {
-        this.node_id += 1
-        return this.createNode(styles, this.node_id)
+    protected getNextNodeId() {
+        return this.node_id++
     }
 
     pushMutation(node, mutation) {
@@ -17,7 +16,7 @@ export default abstract class UI<TNode extends Node = Node> {
 
     update() {
         this.mutations.forEach(({ node, mutation }) => {
-            console.log(node.id, mutation)
+            // console.log(node.id, node.element, mutation)
         })
 
         this.calculateLayout()
@@ -38,7 +37,7 @@ export default abstract class UI<TNode extends Node = Node> {
         // no-op
     }
 
-    protected abstract createNode(styles, id: number): TNode
+    protected abstract create(styles): TNode
     protected abstract getLayout(node: TNode): Record<string, any>
 }
 
