@@ -34,33 +34,23 @@ export default abstract class Node {
         this.removeChild(child)
     }
 
+    setStyle(name: string, value: any): void {
+        const style = Style.resolveStyle(name, value)
+        if (this.styles[style.name]?.value !== style.value) {
+            this.styles[style.name] = {
+                value: style.value,
+                parsed: style.parsed,
+            }
+            this.ui.node_mutations.add({ node: this, mutation: style })
+        }
+    }
+
     on(type: string, listener: EventListener) {
         // no-op
     }
 
     off(type: string, listener: EventListener) {
         // no-op
-    }
-
-    protected applyStyles(styles) {
-        Object.keys(styles).forEach((name) => {
-            this.setStyle(name, styles[name])
-        })
-    }
-
-    protected setStyle(name: string, value: any): void {
-        try {
-            const style = Style.resolveStyle(name, value)
-            if (this.styles[style.name]?.value !== style.value) {
-                this.styles[style.name] = {
-                    value: style.value,
-                    parsed: style.parsed,
-                }
-                this.ui.pushMutation(this, style)
-            }
-        } catch (err) {
-            console.warn(err.message)
-        }
     }
 
     protected abstract getChildIndex(): number

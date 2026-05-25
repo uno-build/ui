@@ -3,52 +3,25 @@ import Node from './Node.ts'
 export default abstract class UI<TNode extends Node = Node> {
     public nodes = new Set<TNode>()
     public root!: TNode
-    public mutations = new Set()
     private node_id = 0
+    private node_mutations = new Set()
 
     protected getNextNodeId() {
         return this.node_id++
-    }
-
-    pushMutation(node, mutation) {
-        this.mutations.add({ node, mutation })
-    }
-
-    update() {
-        this.mutations.forEach(({ node, mutation }) => {
-            // console.log(node.id, node.element, mutation)
-        })
-
-        this.calculateLayout()
-        // const updatedNodes = []
-        for (const node of this.nodes) {
-            const layout = this.getLayout(node)
-            // if (!deepEqual(layout, node.layout)) {
-            //     updatedNodes.push(node)
-            // }
-            node.layout = layout
-        }
-        // return updatedNodes
-
-        this.mutations.clear()
-    }
-
-    protected calculateLayout() {
-        // no-op
     }
 
     protected abstract create(styles): TNode
     protected abstract getLayout(node: TNode): Record<string, any>
 }
 
-function deepEqual(obj1, obj2) {
-    for (const key in obj1) {
-        if (obj1[key] !== obj2[key]) {
-            return false
-        }
-    }
-    return true
-}
+// function deepEqual(obj1, obj2) {
+//     for (const key in obj1) {
+//         if (obj1[key] !== obj2[key]) {
+//             return false
+//         }
+//     }
+//     return true
+// }
 
 // function getPaintOrder(nodes) {
 //     return sortNodesForCanvasPaint(Array.from(nodes).filter(isAttachedToRoot))

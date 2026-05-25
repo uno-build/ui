@@ -93,6 +93,17 @@ export default class UIDom extends UI<Node> {
             centerY,
         }
     }
+
+    protected update() {
+        this.node_mutations.forEach(({ node, mutation }) => {
+            node.element.style[mutation.name] = mutation.value
+        })
+        for (const node of this.nodes) {
+            const layout = this.getLayout(node)
+            node.layout = layout
+        }
+        this.node_mutations.clear()
+    }
 }
 
 function parseInset(value) {

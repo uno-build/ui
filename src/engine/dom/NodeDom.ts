@@ -6,7 +6,9 @@ export default class NodeDom extends Node {
     constructor({ id, element, styles, ui }) {
         super({ id, styles, ui })
         this.element = element
-        this.applyStyles(styles)
+        Object.keys(styles).forEach((name) => {
+            this.setStyle(name, styles[name])
+        })
     }
 
     protected getChildIndex() {
@@ -21,19 +23,11 @@ export default class NodeDom extends Node {
         this.element.removeChild(child.element)
     }
 
-    protected setStyle(name, value) {
-        const style = super.setStyle(name, value)
-        // if (style !== undefined) {
-        //     this.element.style[style.name] = style.value
-        // }
-        this.element.style[name] = value
-    }
-
     on(type, listener) {
-        this.element.addEventListener(type, listener)
+        // this.element.addEventListener(type, listener)
     }
 
     off(type, listener) {
-        this.element.removeEventListener(type, listener)
+        // this.element.removeEventListener(type, listener)
     }
 }

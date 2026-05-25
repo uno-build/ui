@@ -6,7 +6,9 @@ export default class NodeYoga extends Node {
     constructor({ id, yoga, styles, ui }) {
         super({ id, styles, ui })
         this.yoga = yoga
-        this.applyStyles(styles)
+        Object.keys(styles).forEach((name) => {
+            this.setStyle(name, styles[name])
+        })
     }
 
     protected getChildIndex() {
@@ -19,13 +21,6 @@ export default class NodeYoga extends Node {
 
     protected removeChild(child) {
         this.yoga.removeChild(child.yoga)
-    }
-
-    protected setStyle(name, value) {
-        const style = super.setStyle(name, value)
-        // const style = Style.resolveStyle(key, value)
-        // const result = setLayoutProperty(this.yoga, key, value)
-        // console.log([key, value, result])
     }
 
     on(type, listener) {
