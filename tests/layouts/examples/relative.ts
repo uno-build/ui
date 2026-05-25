@@ -24,7 +24,9 @@ export default function createRelativeLayout({ ui, renderer }) {
                 height: '200px',
                 position: 'relative',
                 backgroundColor: '#eee',
-                border: '1px solid #333',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: '#333',
                 ...props,
             }),
         )

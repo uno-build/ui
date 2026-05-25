@@ -14,6 +14,11 @@ export const EDGE = {
     vertical: 7,
     all: 8,
 }
+export const GUTTER = {
+    column: 0,
+    row: 1,
+    all: 2,
+}
 export const POSITION = {
     static: 0,
     relative: 1,
@@ -83,4 +88,8 @@ export const DIRECTION = {
 export const BOX_SIZING = {
     'border-box': 0,
     'content-box': 1,
+}
+export const BORDER_STYLE = {
+    none: 0,
+    solid: 1,
 }

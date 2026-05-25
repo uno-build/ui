@@ -7,26 +7,26 @@ export default function createLayout({ ui, renderer }) {
         height: '100%',
         padding: '10px',
         gap: '10px',
-        backgroundColor: 'lightgray',
+        backgroundColor: '#eee',
     })
     ui.root.add(container)
 
     container.add(
         ui.create({
             flex: '1',
-            backgroundColor: 'red',
+            backgroundColor: '#ff0000',
         }),
     )
     container.add(
         ui.create({
             flex: '1',
-            backgroundColor: 'green',
+            backgroundColor: '#00ff00',
         }),
     )
     container.add(
         ui.create({
             flex: '1',
-            backgroundColor: 'blue',
+            backgroundColor: '#0000ff',
         }),
     )
 }

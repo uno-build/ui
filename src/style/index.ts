@@ -2,6 +2,7 @@ import {
     ALIGN_CONTENT,
     ALIGN_ITEMS,
     ALIGN_SELF,
+    BORDER_STYLE,
     BOX_SIZING,
     DIRECTION,
     DISPLAY,
@@ -362,6 +363,12 @@ export const STYLE = {
         parse: [parseNumber],
     }),
 
+    BORDERWIDTH: createStyle('borderWidth', {
+        normalize: [normalizeUnit],
+        validate: [validatePx, validateNonNegativeUnit],
+        parse: [parseUnit],
+    }),
+
     BORDERTOPWIDTH: createStyle('borderTopWidth', {
         normalize: [normalizeUnit],
         validate: [validatePx, validateNonNegativeUnit],
@@ -386,10 +393,16 @@ export const STYLE = {
         parse: [parseUnit],
     }),
 
-    BORDERWIDTH: createStyle('borderWidth', {
-        normalize: [normalizeUnit],
-        validate: [validatePx, validateNonNegativeUnit],
-        parse: [parseUnit],
+    BORDERSTYLE: createStyle('borderStyle', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(BORDER_STYLE)],
+        parse: [createEnumParser(BORDER_STYLE)],
+    }),
+
+    BORDERCOLOR: createStyle('borderColor', {
+        normalize: [normalizeString],
+        validate: [validateColor],
+        parse: [parseColor],
     }),
 
     OVERFLOW: createStyle('overflow', {
