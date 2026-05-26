@@ -1,9 +1,10 @@
+import Style from '../style'
 import Node from './Node.ts'
 
-export default abstract class UI<TNode extends Node = Node> {
-    public nodes = new Set<TNode>()
-    public root!: TNode
-    protected renderer
+export default class UI {
+    public root = null
+    private renderer = null
+    private nodes = new Set()
     private node_id = 0
     private node_mutations = new Set()
 
@@ -11,116 +12,78 @@ export default abstract class UI<TNode extends Node = Node> {
         this.renderer = renderer
     }
 
-    protected getNextNodeId() {
+    public async init() {
+        this.root = this.create({})
+    }
+
+    public create(styles = {}) {
+        const node = new Node({
+            id: this.getNextNodeId(),
+            ui: this,
+        })
+
+        node.element = this.renderer.createElement(node)
+
+        Object.keys(styles).forEach((name) => {
+            this.setStyle(node, name, styles[name])
+        })
+
+        return node
+    }
+
+    public update() {
+        for (const { node, mutation } of this.node_mutations) {
+            this.renderer.setStyle(node, mutation.name, mutation.value)
+        }
+
+        for (const node of this.nodes) {
+            node.layout = this.getLayout(node)
+        }
+    }
+
+    private setStyle(node, name, value) {
+        const style = Style.resolveStyle(name, value)
+        node.styles[style.name] = {
+            value: style.value,
+            parsed: style.parsed,
+        }
+        this.node_mutations.add({ node, mutation: style })
+    }
+
+    private addChild(parent, child) {
+        if (this.nodes.has(child) === true) {
+            throw new Error('child already added')
+        }
+        if (parent !== this.root && this.nodes.has(parent) === false) {
+            throw new Error('cannot add child before adding parent')
+        }
+        const childIndex = this.renderer.getChildIndex(parent)
+        child.parent = parent
+        child.path = [...parent.path, childIndex]
+        this.nodes.add(child)
+        this.renderer.appendChild(parent, child)
+    }
+
+    private removeChild(child) {
+        const parent = child.parent
+        this.nodes.delete(child)
+        child.parent = undefined
+        this.renderer.removeChild(parent, child)
+    }
+
+    private getNextNodeId() {
         return this.node_id++
     }
 
-    public abstract init(): Promise<void>
-    public abstract create(styles): TNode
-    public abstract update(): void
-    protected abstract getLayout(node: TNode): Record<string, any>
+    private getLayout(node) {
+        const parentLayout =
+            node.parent === this.root
+                ? { x: 0, y: 0 }
+                : (node.parent?.layout ?? { x: 0, y: 0 })
+        return this.renderer.getLayout({
+            node,
+            parentLayout,
+            root: this.root,
+        })
+    }
 }
-
-// function deepEqual(obj1, obj2) {
-//     for (const key in obj1) {
-//         if (obj1[key] !== obj2[key]) {
-//             return false
-//         }
-//     }
-//     return true
-// }
-
-// function getPaintOrder(nodes) {
-//     return sortNodesForCanvasPaint(Array.from(nodes).filter(isAttachedToRoot))
-// }
-
-// function isAttachedToRoot(node) {
-//     let current = node
-//     while (current != null) {
-//         if (current === state.root) {
-//             return true
-//         }
-//         current = current.parent
-//     }
-//     return false
-// }
-
-// export function sortNodesForCanvasPaint(nodes) {
-//     const map = new Map()
-//     const root = getEntry(map, [])
-
-//     for (const node of nodes) {
-//         const entry = getEntry(map, readPath(node))
-//         if (entry.node != null && entry.node !== node) {
-//             throw new Error(`Duplicate paint node path: ${entry.path.join('/')}`)
-//         }
-//         entry.node = node
-//     }
-
-//     const result = []
-//     paint(root, result)
-//     return result
-// }
-
-// function getEntry(map, path) {
-//     const key = path.join('/')
-//     let entry = map.get(key)
-//     if (entry != null) {
-//         return entry
-//     }
-
-//     entry = { path, node: undefined, children: [] }
-//     map.set(key, entry)
-
-//     if (path.length > 0) {
-//         getEntry(map, path.slice(0, -1)).children.push(entry)
-//     }
-
-//     return entry
-// }
-
-// function paint(entry, result) {
-//     if (entry.node != null) {
-//         result.push(entry.node)
-//     }
-
-//     entry.children.sort(compareEntries)
-//     for (const child of entry.children) {
-//         paint(child, result)
-//     }
-// }
-
-// function compareEntries(a, b) {
-//     return zIndex(a.node) - zIndex(b.node) || comparePath(a.path, b.path)
-// }
-
-// function zIndex(node) {
-//     const value = node?.zIndex ?? node?.styles?.zIndex
-//     const number = Number(value)
-//     return value == null || value === 'auto' || !Number.isFinite(number)
-//         ? 0
-//         : number
-// }
-
-// function readPath(node) {
-//     if (!Array.isArray(node.path)) {
-//         throw new Error('Cannot sort paint nodes without a path array.')
-//     }
-
-//     return node.path.map((segment) => {
-//         const number = Number(segment)
-//         if (!Number.isInteger(number) || number < 0) {
-//             throw new Error(`Invalid paint node path segment: ${segment}`)
-//         }
-//         return number
-//     })
-// }
-
-// function comparePath(a, b) {
-//     for (let i = 0; i < Math.min(a.length, b.length); i++) {
-//         if (a[i] !== b[i]) {
-//             return a[i] - b[i]
-//         }
-//     }
-//     return a.length - b.length
-// }

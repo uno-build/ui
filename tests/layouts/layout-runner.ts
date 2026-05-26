@@ -1,18 +1,11 @@
-import UIDom from '../../src/engine/dom/UIDom'
-import UIYoga from '../../src/engine/yoga/UIYoga'
+import UI from '../../src/engine/UI'
 import RendererDom from '../../src/renderer/RendererDom'
 import { getLayout, layoutNames } from './index'
 
 export const SETUPS = {
-    'yoga.divs': {
-        elementType: 'div',
-        engine: UIYoga,
-        renderer: RendererDom,
-        attributes: {},
-    },
     'dom.html': {
         elementType: 'div',
-        engine: UIDom,
+        engine: UI,
         renderer: RendererDom,
         attributes: {},
     },
@@ -21,9 +14,12 @@ export const SETUPS = {
 export async function runLayout({
     root,
     layout,
-    setups = defaultSetupsNames,
+    renderers,
+    setups,
     logger = console,
 }) {
+    setups = setups ?? renderers ?? defaultRendererNames
+
     const createLayout = getLayout(layout)
     const results = []
 
@@ -81,7 +77,7 @@ export function readLayoutName(layout) {
 export function readRendererNames(renderersParam, logger = console) {
     const requestedRenderers =
         renderersParam == null || renderersParam === ''
-            ? defaultSetupsNames
+            ? defaultRendererNames
             : renderersParam.split(',')
 
     return requestedRenderers.filter((setupName) => {
@@ -91,7 +87,7 @@ export function readRendererNames(renderersParam, logger = console) {
 
         logger.warn(
             `setup '${setupName}' not found. Available setups:`,
-            defaultSetupsNames,
+            defaultRendererNames,
         )
         return false
     })
@@ -201,7 +197,7 @@ function getSetup(name) {
     }
 
     throw new Error(
-        `setup '${name}' not found. Available setups: ${defaultSetupsNames.join(', ')}`,
+        `setup '${name}' not found. Available setups: ${defaultRendererNames.join(', ')}`,
     )
 }
 
@@ -209,7 +205,8 @@ function hasOwn(object, key) {
     return Object.prototype.hasOwnProperty.call(object, key)
 }
 
-export const defaultSetupsNames = Object.keys(SETUPS)
+export const defaultRendererNames = Object.keys(SETUPS)
+export const defaultSetupsNames = defaultRendererNames
 export const comparedLayoutKeys = [
     'width',
     'height',
