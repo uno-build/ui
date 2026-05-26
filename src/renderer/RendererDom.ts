@@ -1,5 +1,6 @@
 export default class RendererDom {
-    constructor() {}
-
-    render({}) {}
+    public canvas
+    constructor({ canvas }) {
+        this.canvas = canvas
+    }
 }

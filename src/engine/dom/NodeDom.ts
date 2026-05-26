@@ -3,7 +3,7 @@ import Node from '../Node.ts'
 export default class NodeDom extends Node {
     public element
 
-    constructor({ id, element, styles, ui }) {
+    constructor({ id, styles, ui, element }) {
         super({ id, styles, ui })
         this.element = element
         Object.keys(styles).forEach((name) => {

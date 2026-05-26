@@ -1,16 +1,19 @@
 import UIDom from '../../src/engine/dom/UIDom'
 import UIYoga from '../../src/engine/yoga/UIYoga'
+import RendererDom from '../../src/renderer/RendererDom'
 import { getLayout, layoutNames } from './index'
 
 export const SETUPS = {
     'yoga.divs': {
         elementType: 'div',
         engine: UIYoga,
+        renderer: RendererDom,
         attributes: {},
     },
     'dom.html': {
         elementType: 'div',
         engine: UIDom,
+        renderer: RendererDom,
         attributes: {},
     },
 }
@@ -25,15 +28,17 @@ export async function runLayout({
     const results = []
 
     for (const setupName of setups) {
-        const renderer = getSetup(setupName)
-        const canvas = createCanvasElement(root, setupName, renderer)
-        const UI = renderer.engine
-        const ui = new UI({ canvas })
+        const setup = getSetup(setupName)
+        const canvas = createCanvasElement(root, setupName, setup)
+        const UI = setup.engine
+        const Renderer = setup.renderer
+        const renderer = new Renderer({ canvas })
+        const ui = new UI({ renderer })
         await ui.init()
 
         ui.root.setStyle('width', canvas.clientWidth)
         ui.root.setStyle('height', canvas.clientHeight)
-        createLayout({ ui, renderer: setupName })
+        createLayout({ ui, setup: setupName })
 
         ui.update()
 
@@ -85,7 +90,7 @@ export function readRendererNames(renderersParam, logger = console) {
         }
 
         logger.warn(
-            `renderer '${setupName}' not found. Available setups:`,
+            `setup '${setupName}' not found. Available setups:`,
             defaultSetupsNames,
         )
         return false
@@ -156,8 +161,8 @@ export function reportLayoutComparisons(comparisons, logger = console) {
     }
 }
 
-function createCanvasElement(root, setupName, renderer) {
-    const canvas = document.createElement(renderer.elementType)
+function createCanvasElement(root, setupName, setup) {
+    const canvas = document.createElement(setup.elementType)
 
     root.appendChild(canvas)
     canvas.id = setupName
@@ -175,7 +180,7 @@ function createCanvasElement(root, setupName, renderer) {
     canvas.width = canvas.clientWidth
     canvas.height = canvas.clientHeight
 
-    Object.entries(renderer.attributes).forEach(([key, value]) => {
+    Object.entries(setup.attributes).forEach(([key, value]) => {
         canvas.setAttribute(key, value)
     })
 
@@ -196,7 +201,7 @@ function getSetup(name) {
     }
 
     throw new Error(
-        `renderer '${name}' not found. Available setups: ${defaultSetupsNames.join(', ')}`,
+        `setup '${name}' not found. Available setups: ${defaultSetupsNames.join(', ')}`,
     )
 }
 

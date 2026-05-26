@@ -3,9 +3,13 @@ import Node from './Node.ts'
 export default abstract class UI<TNode extends Node = Node> {
     public nodes = new Set<TNode>()
     public root!: TNode
+    protected renderer
     private node_id = 0
     private node_mutations = new Set()
-    private canvas
+
+    constructor({ renderer }) {
+        this.renderer = renderer
+    }
 
     protected getNextNodeId() {
         return this.node_id++

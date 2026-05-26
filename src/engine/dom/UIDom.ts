@@ -2,15 +2,10 @@ import Node from './NodeDom.ts'
 import UI from '../UI.ts'
 
 export default class UIDom extends UI<Node> {
-    constructor({ canvas }) {
-        super()
-        this.canvas = canvas
-    }
-
     public async init() {
         this.root = new Node({
             id: this.getNextNodeId(),
-            element: this.canvas,
+            element: this.renderer.canvas,
             styles: {},
             ui: this,
         })

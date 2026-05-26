@@ -1,5 +1,5 @@
-export default function createZIndexLayout({ ui, renderer }) {
-    console.log(`--- ${renderer} ---`)
+export default function createZIndexLayout({ ui, setup }) {
+    console.log(`--- ${setup} ---`)
 
     const PADDING = 100
     const OFFSET = 10
