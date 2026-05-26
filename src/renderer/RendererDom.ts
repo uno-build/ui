@@ -1,4 +1,6 @@
 export default class RendererDom {
+    pending_styles = []
+
     constructor({ canvas }) {
         this.canvas = canvas
     }
@@ -13,11 +15,15 @@ export default class RendererDom {
         return element
     }
 
-    setStyle(node, name, value) {
+    addPendingStyle(node, style) {
+        this.pending_styles.push({ node, style })
+    }
+
+    updateStyle(node, name, value) {
         node.element.style[name] = value
     }
 
-    appendChild(parent, child) {
+    addChild(parent, child) {
         parent.element.appendChild(child.element)
     }
 
@@ -29,7 +35,23 @@ export default class RendererDom {
         return node.element.children.length
     }
 
-    getLayout({ node, parentLayout }) {
+    update(nodes) {
+        for (const { node, style } of this.pending_styles) {
+            this.updateStyle(node, style.name, style.value)
+        }
+        this.pending_styles.length = 0
+
+        for (const node of nodes) {
+            node.layout = this.getLayout(node)
+        }
+    }
+
+    getLayout(node) {
+        const parentLayout =
+            node.parent === undefined
+                ? { x: 0, y: 0 }
+                : (node.parent?.layout ?? { x: 0, y: 0 })
+
         const rect = node.element.getBoundingClientRect()
         const parentRect = node.parent.element.getBoundingClientRect()
         const width = Math.round(rect.width)

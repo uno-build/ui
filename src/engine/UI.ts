@@ -5,20 +5,19 @@ export default class UI {
     public root = null
     private renderer = null
     private nodes = new Set()
-    private node_id = 0
-    private node_mutations = new Set()
+    private next_node_id = 0
 
     constructor({ renderer }) {
         this.renderer = renderer
     }
 
     public async init() {
-        this.root = this.create({})
+        this.root = this.create()
     }
 
     public create(styles = {}) {
         const node = new Node({
-            id: this.getNextNodeId(),
+            id: this.next_node_id++,
             ui: this,
         })
 
@@ -32,13 +31,7 @@ export default class UI {
     }
 
     public update() {
-        for (const { node, mutation } of this.node_mutations) {
-            this.renderer.setStyle(node, mutation.name, mutation.value)
-        }
-
-        for (const node of this.nodes) {
-            node.layout = this.getLayout(node)
-        }
+        this.renderer.update(this.nodes)
     }
 
     private setStyle(node, name, value) {
@@ -47,7 +40,7 @@ export default class UI {
             value: style.value,
             parsed: style.parsed,
         }
-        this.node_mutations.add({ node, mutation: style })
+        this.renderer.addPendingStyle(node, style)
     }
 
     private addChild(parent, child) {
@@ -61,29 +54,13 @@ export default class UI {
         child.parent = parent
         child.path = [...parent.path, childIndex]
         this.nodes.add(child)
-        this.renderer.appendChild(parent, child)
+        this.renderer.addChild(parent, child)
     }
 
     private removeChild(child) {
         const parent = child.parent
-        this.nodes.delete(child)
         child.parent = undefined
+        this.nodes.delete(child)
         this.renderer.removeChild(parent, child)
-    }
-
-    private getNextNodeId() {
-        return this.node_id++
-    }
-
-    private getLayout(node) {
-        const parentLayout =
-            node.parent === this.root
-                ? { x: 0, y: 0 }
-                : (node.parent?.layout ?? { x: 0, y: 0 })
-        return this.renderer.getLayout({
-            node,
-            parentLayout,
-            root: this.root,
-        })
     }
 }
