@@ -27,12 +27,12 @@ export default class RendererDom {
         node.element.style[name] = value
     }
 
-    addChild(parent, child) {
-        parent.element.appendChild(child.element)
+    addChild(parent, node) {
+        parent.element.appendChild(node.element)
     }
 
-    removeChild(parent, child) {
-        parent.element.removeChild(child.element)
+    removeChild(parent, node) {
+        parent.element.removeChild(node.element)
     }
 
     getChildIndex(node) {
@@ -52,23 +52,23 @@ export default class RendererDom {
 
     getLayout(node) {
         const parent = node.parent
-        const parentLayout =
+        const parent_layout =
             parent == null || parent.parent == null
                 ? { x: 0, y: 0 }
                 : (parent.layout ?? { x: 0, y: 0 })
 
-        const rect = node.element.getBoundingClientRect()
-        const parentRect = (
+        const node_rect = node.element.getBoundingClientRect()
+        const parent_rect = (
             parent?.element ?? this.canvas
         ).getBoundingClientRect()
-        const width = Math.round(rect.width)
-        const height = Math.round(rect.height)
-        const parentWidth = Math.round(parentRect.width)
-        const parentHeight = Math.round(parentRect.height)
-        const left = Math.round(rect.left - parentRect.left)
-        const top = Math.round(rect.top - parentRect.top)
-        const x = Math.round(parentLayout.x + left)
-        const y = Math.round(parentLayout.y + top)
+        const width = Math.round(node_rect.width)
+        const height = Math.round(node_rect.height)
+        const parentWidth = Math.round(parent_rect.width)
+        const parentHeight = Math.round(parent_rect.height)
+        const left = Math.round(node_rect.left - parent_rect.left)
+        const top = Math.round(node_rect.top - parent_rect.top)
+        const x = Math.round(parent_layout.x + left)
+        const y = Math.round(parent_layout.y + top)
         const centerX = Math.round(left + width / 2 - parentWidth / 2)
         const centerY = Math.round(-(top + height / 2 - parentHeight / 2))
 
