@@ -12,6 +12,7 @@ export default class UI {
     }
 
     public async init() {
+        await this.renderer.init()
         this.root = this.create()
     }
 
@@ -59,7 +60,7 @@ export default class UI {
 
     private removeChild(child) {
         const parent = child.parent
-        child.parent = undefined
+        child.parent = null
         this.nodes.delete(child)
         this.renderer.removeChild(parent, child)
     }

@@ -20,6 +20,19 @@ for (const layout of layoutNames) {
             throw new Error('No baseline renderer result was produced')
         }
 
+        for (const { setupName, result } of results) {
+            for (const [rowIndex, row] of result.entries()) {
+                for (const key of comparedLayoutKeys) {
+                    expect
+                        .soft(
+                            Number.isFinite(row[key]),
+                            `${layout} ${setupName} row ${rowIndex} ${key}`,
+                        )
+                        .toBe(true)
+                }
+            }
+        }
+
         for (const comparison of compareLayoutResults(results)) {
             expect
                 .soft(

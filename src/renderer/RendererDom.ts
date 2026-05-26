@@ -5,6 +5,10 @@ export default class RendererDom {
         this.canvas = canvas
     }
 
+    async init() {
+        // nothing to do
+    }
+
     createElement(node) {
         if (node.id === 0) {
             return this.canvas
@@ -47,13 +51,16 @@ export default class RendererDom {
     }
 
     getLayout(node) {
+        const parent = node.parent
         const parentLayout =
-            node.parent === undefined
+            parent == null || parent.parent == null
                 ? { x: 0, y: 0 }
-                : (node.parent?.layout ?? { x: 0, y: 0 })
+                : (parent.layout ?? { x: 0, y: 0 })
 
         const rect = node.element.getBoundingClientRect()
-        const parentRect = node.parent.element.getBoundingClientRect()
+        const parentRect = (
+            parent?.element ?? this.canvas
+        ).getBoundingClientRect()
         const width = Math.round(rect.width)
         const height = Math.round(rect.height)
         const parentWidth = Math.round(parentRect.width)
