@@ -87,15 +87,28 @@ export default class UIYoga extends UI<Node> {
             if (YOGA_SETTER.hasOwnProperty(mutation.name)) {
                 YOGA_SETTER[mutation.name](node.yoga, mutation)
             } else {
-                console.log(`Not supported:`, [mutation.name, mutation.value])
-                console.warn()
+                console.warn(`Not supported:`, [mutation.name, mutation.value])
             }
         })
         this.root.yoga.calculateLayout()
         for (const node of this.nodes) {
-            const layout = this.getLayout(node)
-            node.layout = layout
+            node.layout = this.getLayout(node)
         }
+
+        RendererDom({ ui: this, mutations: this.node_mutations })
+
         this.node_mutations.clear()
     }
+}
+
+function RendererDom({ ui, mutations }) {
+    console.log('mutations', ui.root, ui.nodes)
+
+    // mutations.forEach(({ node, mutation }) => {
+    //     if (YOGA_SETTER.hasOwnProperty(mutation.name)) {
+    //         // YOGA_SETTER[mutation.name](node.yoga, mutation)
+    //     } else {
+    //         console.warn(`Not supported:`, [mutation.name, mutation.value])
+    //     }
+    // })
 }

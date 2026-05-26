@@ -5,17 +5,6 @@ export default class UIDom extends UI<Node> {
     constructor({ canvas }) {
         super()
 
-        // html-in-canvas
-        // if (typeof canvas.getContext === 'function') {
-        //     const ctx = canvas.getContext('2d')
-        //     canvas.onpaint = (event) => {
-        //         ctx.reset()
-        //         for (const element of event.changedElements) {
-        //             ctx.drawElementImage(element, 0, 0)
-        //         }
-        //     }
-        // }
-
         this.root = new Node({
             id: this.getNextNodeId(),
             element: canvas,
@@ -102,3 +91,14 @@ const DEFAULT_NODE_STYLE = {
     minWidth: '0',
     minHeight: '0',
 }
+
+// html-in-canvas
+// if (typeof canvas.getContext === 'function') {
+//     const ctx = canvas.getContext('2d')
+//     canvas.onpaint = (event) => {
+//         ctx.reset()
+//         for (const element of event.changedElements) {
+//             ctx.drawElementImage(element, 0, 0)
+//         }
+//     }
+// }
