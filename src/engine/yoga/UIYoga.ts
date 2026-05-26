@@ -1,3 +1,4 @@
+import { loadYoga } from 'yoga-layout/load'
 import { YOGA_SETTER } from '../../style/yoga.ts'
 import Node from './NodeYoga.ts'
 import UI from '../UI.ts'
@@ -6,11 +7,14 @@ export default class UIYoga extends UI<Node> {
     private Yoga
     private yoga_config
 
-    constructor({ Yoga }) {
+    constructor({ canvas }) {
         super()
+        this.canvas = canvas
+    }
 
-        this.Yoga = Yoga
-        this.yoga_config = Yoga.Config.create()
+    public async init() {
+        this.Yoga = await loadYoga()
+        this.yoga_config = this.Yoga.Config.create()
         this.yoga_config.setUseWebDefaults(true)
         // this.yoga_config.setPointScaleFactor(200)
         this.yoga_config.setExperimentalFeatureEnabled(
@@ -27,7 +31,7 @@ export default class UIYoga extends UI<Node> {
         // this.nodes.add(this.root)
     }
 
-    protected create(styles) {
+    public create(styles) {
         const yoga = this.Yoga.Node.create(this.yoga_config)
         return new Node({
             id: this.getNextNodeId(),
@@ -35,6 +39,21 @@ export default class UIYoga extends UI<Node> {
             styles,
             ui: this,
         })
+    }
+
+    public update() {
+        this.node_mutations.forEach(({ node, mutation }) => {
+            if (YOGA_SETTER.hasOwnProperty(mutation.name)) {
+                YOGA_SETTER[mutation.name](node.yoga, mutation)
+            } else {
+                console.warn(`Not supported:`, [mutation.name, mutation.value])
+            }
+        })
+        this.root.yoga.calculateLayout()
+        for (const node of this.nodes) {
+            node.layout = this.getLayout(node)
+        }
+        this.node_mutations.clear()
     }
 
     protected getLayout(node) {
@@ -81,34 +100,4 @@ export default class UIYoga extends UI<Node> {
             centerY,
         }
     }
-
-    protected update() {
-        this.node_mutations.forEach(({ node, mutation }) => {
-            if (YOGA_SETTER.hasOwnProperty(mutation.name)) {
-                YOGA_SETTER[mutation.name](node.yoga, mutation)
-            } else {
-                console.warn(`Not supported:`, [mutation.name, mutation.value])
-            }
-        })
-        this.root.yoga.calculateLayout()
-        for (const node of this.nodes) {
-            node.layout = this.getLayout(node)
-        }
-
-        RendererDom({ ui: this, mutations: this.node_mutations })
-
-        this.node_mutations.clear()
-    }
-}
-
-function RendererDom({ ui, mutations }) {
-    console.log('mutations', ui.root, ui.nodes)
-
-    // mutations.forEach(({ node, mutation }) => {
-    //     if (YOGA_SETTER.hasOwnProperty(mutation.name)) {
-    //         // YOGA_SETTER[mutation.name](node.yoga, mutation)
-    //     } else {
-    //         console.warn(`Not supported:`, [mutation.name, mutation.value])
-    //     }
-    // })
 }

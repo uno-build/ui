@@ -11,6 +11,14 @@ export default class NodeYoga extends Node {
         })
     }
 
+    public on(type, listener) {
+        // no-op
+    }
+
+    public off(type, listener) {
+        // no-op
+    }
+
     protected getChildIndex() {
         return this.yoga.getChildCount()
     }
@@ -21,13 +29,5 @@ export default class NodeYoga extends Node {
 
     protected removeChild(child) {
         this.yoga.removeChild(child.yoga)
-    }
-
-    on(type, listener) {
-        // no-op
-    }
-
-    off(type, listener) {
-        // no-op
     }
 }

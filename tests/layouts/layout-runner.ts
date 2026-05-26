@@ -1,4 +1,3 @@
-import { loadYoga } from 'yoga-layout/load'
 import UIDom from '../../src/engine/dom/UIDom'
 import UIYoga from '../../src/engine/yoga/UIYoga'
 import { getLayout, layoutNames } from './index'
@@ -23,15 +22,14 @@ export async function runLayout({
     logger = console,
 }) {
     const createLayout = getLayout(layout)
-    const Yoga = await loadYoga()
     const results = []
 
     for (const setupName of setups) {
-        console.log(`Running layout with renderer: ${setupName}`)
         const renderer = getSetup(setupName)
-        const canvas = createRendererElement(root, setupName, renderer)
+        const canvas = createCanvasElement(root, setupName, renderer)
         const UI = renderer.engine
-        const ui = new UI({ canvas, Yoga })
+        const ui = new UI({ canvas })
+        await ui.init()
 
         ui.root.setStyle('width', canvas.clientWidth)
         ui.root.setStyle('height', canvas.clientHeight)
@@ -158,7 +156,7 @@ export function reportLayoutComparisons(comparisons, logger = console) {
     }
 }
 
-function createRendererElement(root, setupName, renderer) {
+function createCanvasElement(root, setupName, renderer) {
     const canvas = document.createElement(renderer.elementType)
 
     root.appendChild(canvas)

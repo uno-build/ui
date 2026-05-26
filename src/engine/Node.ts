@@ -14,7 +14,7 @@ export default abstract class Node {
         this.ui = ui
     }
 
-    add(child: any) {
+    public add(child: any) {
         if (this.ui.nodes.has(child)) {
             throw new Error('child already added')
         }
@@ -28,13 +28,13 @@ export default abstract class Node {
         this.appendChild(child, childIndex)
     }
 
-    remove(child: any) {
+    public remove(child: any) {
         this.ui.nodes.delete(child)
         child.parent = undefined
         this.removeChild(child)
     }
 
-    setStyle(name: string, value: any): void {
+    public setStyle(name: string, value: any): void {
         const style = Style.resolveStyle(name, value)
         if (this.styles[style.name]?.value !== style.value) {
             this.styles[style.name] = {
@@ -45,11 +45,11 @@ export default abstract class Node {
         }
     }
 
-    on(type: string, listener: EventListener) {
+    public on(type: string, listener: EventListener) {
         // no-op
     }
 
-    off(type: string, listener: EventListener) {
+    public off(type: string, listener: EventListener) {
         // no-op
     }
 

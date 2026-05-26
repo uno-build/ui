@@ -5,16 +5,19 @@ export default class UIDom extends UI<Node> {
     constructor({ canvas }) {
         super()
         this.canvas = canvas
+    }
+
+    public async init() {
         this.root = new Node({
             id: this.getNextNodeId(),
-            element: canvas,
+            element: this.canvas,
             styles: {},
             ui: this,
         })
         // this.nodes.add(this.root)
     }
 
-    protected create(styles) {
+    public create(styles) {
         const element = document.createElement('div')
         Object.assign(element.style, DEFAULT_NODE_STYLE)
         return new Node({
@@ -23,6 +26,17 @@ export default class UIDom extends UI<Node> {
             styles,
             ui: this,
         })
+    }
+
+    public update() {
+        this.node_mutations.forEach(({ node, mutation }) => {
+            node.element.style[mutation.name] = mutation.value
+        })
+        for (const node of this.nodes) {
+            const layout = this.getLayout(node)
+            node.layout = layout
+        }
+        this.node_mutations.clear()
     }
 
     protected getLayout(node) {
@@ -67,17 +81,6 @@ export default class UIDom extends UI<Node> {
             centerX,
             centerY,
         }
-    }
-
-    protected update() {
-        this.node_mutations.forEach(({ node, mutation }) => {
-            node.element.style[mutation.name] = mutation.value
-        })
-        for (const node of this.nodes) {
-            const layout = this.getLayout(node)
-            node.layout = layout
-        }
-        this.node_mutations.clear()
     }
 }
 

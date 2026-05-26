@@ -11,7 +11,9 @@ export default abstract class UI<TNode extends Node = Node> {
         return this.node_id++
     }
 
-    protected abstract create(styles): TNode
+    public abstract init(): Promise<void>
+    public abstract create(styles): TNode
+    public abstract update(): void
     protected abstract getLayout(node: TNode): Record<string, any>
 }
 

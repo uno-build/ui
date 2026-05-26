@@ -11,6 +11,14 @@ export default class NodeDom extends Node {
         })
     }
 
+    public on(type, listener) {
+        // this.element.addEventListener(type, listener)
+    }
+
+    public off(type, listener) {
+        // this.element.removeEventListener(type, listener)
+    }
+
     protected getChildIndex() {
         return this.element.children.length
     }
@@ -21,13 +29,5 @@ export default class NodeDom extends Node {
 
     protected removeChild(child) {
         this.element.removeChild(child.element)
-    }
-
-    on(type, listener) {
-        // this.element.addEventListener(type, listener)
-    }
-
-    off(type, listener) {
-        // this.element.removeEventListener(type, listener)
     }
 }
