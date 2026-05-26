@@ -5,6 +5,7 @@ export default abstract class UI<TNode extends Node = Node> {
     public root!: TNode
     private node_id = 0
     private node_mutations = new Set()
+    private canvas
 
     protected getNextNodeId() {
         return this.node_id++

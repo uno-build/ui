@@ -1,104 +1,47 @@
 import { loadYoga } from 'yoga-layout/load'
 import UIDom from '../../src/engine/dom/UIDom'
 import UIYoga from '../../src/engine/yoga/UIYoga'
-import { getLayout, layoutNames, type LayoutName } from './index'
+import { getLayout, layoutNames } from './index'
 
-type Logger = Pick<Console, 'error' | 'log' | 'table' | 'warn'>
-
-type RendererDefinition = {
-    elementType: keyof HTMLElementTagNameMap
-    engine: any
-    attributes: Record<string, string>
-}
-
-export type PaintLayoutRow = {
-    width: number
-    height: number
-    left: number
-    top: number
-    x: number
-    y: number
-    centerX: number
-    centerY: number
-    path: string
-}
-
-export type LayoutRunResult = {
-    rendererName: RendererName
-    result: PaintLayoutRow[]
-}
-
-export type LayoutComparison = {
-    rendererA: RendererName
-    rendererB: RendererName
-    matches: boolean
-}
-
-export const RENDERERS = {
+export const SETUPS = {
     'yoga.divs': {
         elementType: 'div',
         engine: UIYoga,
         attributes: {},
     },
-    // 'dom.htmlincanvas': {
-    //     elementType: 'canvas',
-    //     engine: UIDom,
-    //     attributes: {
-    //         layoutsubtree: '',
-    //     },
-    // },
     'dom.html': {
         elementType: 'div',
         engine: UIDom,
         attributes: {},
     },
-} satisfies Record<string, RendererDefinition>
-
-export type RendererName = keyof typeof RENDERERS
-
-export const defaultRendererNames = Object.keys(RENDERERS) as RendererName[]
-export const comparedLayoutKeys = [
-    'width',
-    'height',
-    'x',
-    'y',
-    'centerX',
-    'centerY',
-] as const
-export const layoutComparisonTolerance = 1
-
-export { layoutNames, type LayoutName }
+}
 
 export async function runLayout({
     root,
     layout,
-    renderers = defaultRendererNames,
+    setups = defaultSetupsNames,
     logger = console,
-}: {
-    root: HTMLElement
-    layout: LayoutName | string
-    renderers?: readonly (RendererName | string)[]
-    logger?: Logger
-}): Promise<LayoutRunResult[]> {
+}) {
     const createLayout = getLayout(layout)
     const Yoga = await loadYoga()
-    const results: LayoutRunResult[] = []
+    const results = []
 
-    for (const rendererName of renderers) {
-        const renderer = getRenderer(rendererName)
-        const canvas = createRendererElement(root, rendererName, renderer)
+    for (const setupName of setups) {
+        console.log(`Running layout with renderer: ${setupName}`)
+        const renderer = getSetup(setupName)
+        const canvas = createRendererElement(root, setupName, renderer)
         const UI = renderer.engine
         const ui = new UI({ canvas, Yoga })
 
         ui.root.setStyle('width', canvas.clientWidth)
         ui.root.setStyle('height', canvas.clientHeight)
-        createLayout({ ui, renderer: rendererName })
+        createLayout({ ui, renderer: setupName })
 
         ui.update()
 
         const result = readPaintLayout(ui)
         logger.table(result)
-        results.push({ rendererName, result })
+        results.push({ setupName, result })
     }
 
     return results
@@ -109,62 +52,50 @@ export async function runLayoutFromSearchParams({
     params,
     origin,
     logger = console,
-}: {
-    root: HTMLElement
-    params: URLSearchParams
-    origin: string
-    logger?: Logger
-}): Promise<LayoutRunResult[]> {
+}) {
     const layout = readLayoutName(params.get('layout'))
-    const renderers = readRendererNames(params.get('renderers'), logger)
+    const setups = readRendererNames(params.get('setups'), logger)
 
     logger.log(
-        `Running: ${origin}/?layout=${layout}&renderers=${renderers.join(',')}`,
+        `Running: ${origin}/?layout=${layout}&setups=${setups.join(',')}`,
     )
 
-    const results = await runLayout({ root, layout, renderers, logger })
+    const results = await runLayout({ root, layout, setups, logger })
     reportLayoutComparisons(compareLayoutResults(results), logger)
 
     return results
 }
 
-export function readLayoutName(layout: string | null): LayoutName {
+export function readLayoutName(layout) {
     if (layout == null || layout === '') {
         return 'basic'
     }
 
     getLayout(layout)
-    return layout as LayoutName
+    return layout
 }
 
-export function readRendererNames(
-    renderersParam: string | null,
-    logger: Pick<Console, 'warn'> = console,
-): RendererName[] {
+export function readRendererNames(renderersParam, logger = console) {
     const requestedRenderers =
         renderersParam == null || renderersParam === ''
-            ? defaultRendererNames
+            ? defaultSetupsNames
             : renderersParam.split(',')
 
-    return requestedRenderers.filter(
-        (rendererName): rendererName is RendererName => {
-            if (hasOwn(RENDERERS, rendererName)) {
-                return true
-            }
+    return requestedRenderers.filter((setupName) => {
+        if (hasOwn(SETUPS, setupName)) {
+            return true
+        }
 
-            logger.warn(
-                `renderer '${rendererName}' not found. Available renderers:`,
-                defaultRendererNames,
-            )
-            return false
-        },
-    )
+        logger.warn(
+            `renderer '${setupName}' not found. Available setups:`,
+            defaultSetupsNames,
+        )
+        return false
+    })
 }
 
-export function compareLayoutResults(
-    results: readonly LayoutRunResult[],
-): LayoutComparison[] {
-    const comparisons: LayoutComparison[] = []
+export function compareLayoutResults(results) {
+    const comparisons = []
 
     for (let i = 0; i < results.length - 1; i++) {
         const a = results[i]
@@ -175,8 +106,8 @@ export function compareLayoutResults(
         }
 
         comparisons.push({
-            rendererA: a.rendererName,
-            rendererB: b.rendererName,
+            rendererA: a.setupName,
+            rendererB: b.setupName,
             matches: paintLayoutResultsMatch(a.result, b.result),
         })
     }
@@ -185,8 +116,8 @@ export function compareLayoutResults(
 }
 
 export function paintLayoutResultsMatch(
-    a: readonly PaintLayoutRow[],
-    b: readonly PaintLayoutRow[],
+    a,
+    b,
     tolerance = layoutComparisonTolerance,
 ) {
     if (a.length !== b.length) {
@@ -213,10 +144,7 @@ export function paintLayoutResultsMatch(
     })
 }
 
-export function reportLayoutComparisons(
-    comparisons: readonly LayoutComparison[],
-    logger: Pick<Console, 'error' | 'log'> = console,
-) {
+export function reportLayoutComparisons(comparisons, logger = console) {
     for (const comparison of comparisons) {
         if (comparison.matches) {
             logger.log(
@@ -230,20 +158,11 @@ export function reportLayoutComparisons(
     }
 }
 
-function createRendererElement(
-    root: HTMLElement,
-    rendererName: string,
-    renderer: RendererDefinition,
-) {
-    const canvas = document.createElement(
-        renderer.elementType,
-    ) as HTMLElement & {
-        width: number
-        height: number
-    }
+function createRendererElement(root, setupName, renderer) {
+    const canvas = document.createElement(renderer.elementType)
 
     root.appendChild(canvas)
-    canvas.id = rendererName
+    canvas.id = setupName
     Object.assign(canvas.style, {
         display: 'flex',
         position: 'absolute',
@@ -265,7 +184,7 @@ function createRendererElement(
     return canvas
 }
 
-function readPaintLayout(ui): PaintLayoutRow[] {
+function readPaintLayout(ui) {
     return [...ui.nodes].map((node) => ({
         id: node.id,
         ...node.layout,
@@ -273,16 +192,29 @@ function readPaintLayout(ui): PaintLayoutRow[] {
     }))
 }
 
-function getRenderer(name: string): RendererDefinition {
-    if (hasOwn(RENDERERS, name)) {
-        return RENDERERS[name]
+function getSetup(name) {
+    if (hasOwn(SETUPS, name)) {
+        return SETUPS[name]
     }
 
     throw new Error(
-        `renderer '${name}' not found. Available renderers: ${defaultRendererNames.join(', ')}`,
+        `renderer '${name}' not found. Available setups: ${defaultSetupsNames.join(', ')}`,
     )
 }
 
-function hasOwn<T extends object>(object: T, key: PropertyKey): key is keyof T {
+function hasOwn(object, key) {
     return Object.prototype.hasOwnProperty.call(object, key)
 }
+
+export const defaultSetupsNames = Object.keys(SETUPS)
+export const comparedLayoutKeys = [
+    'width',
+    'height',
+    'x',
+    'y',
+    'centerX',
+    'centerY',
+]
+export const layoutComparisonTolerance = 1
+
+export { layoutNames }

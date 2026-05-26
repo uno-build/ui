@@ -2,24 +2,15 @@ import layoutBasic from './examples/basic'
 import layoutRelative from './examples/relative'
 import layoutZIndex from './examples/zindex'
 
-export type LayoutContext = {
-    ui: any
-    renderer: string
-}
-
-export type LayoutFactory = (context: LayoutContext) => void
-
 export const LAYOUTS = {
     basic: layoutBasic,
     relative: layoutRelative,
     zindex: layoutZIndex,
-} satisfies Record<string, LayoutFactory>
+}
 
-export type LayoutName = keyof typeof LAYOUTS
+export const layoutNames = Object.keys(LAYOUTS)
 
-export const layoutNames = Object.keys(LAYOUTS) as LayoutName[]
-
-export function getLayout(name: string): LayoutFactory {
+export function getLayout(name) {
     if (hasOwn(LAYOUTS, name)) {
         return LAYOUTS[name]
     }
@@ -29,9 +20,6 @@ export function getLayout(name: string): LayoutFactory {
     )
 }
 
-function hasOwn<T extends object>(
-    object: T,
-    key: PropertyKey,
-): key is keyof T {
+function hasOwn(object, key) {
     return Object.prototype.hasOwnProperty.call(object, key)
 }

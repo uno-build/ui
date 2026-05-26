@@ -6,7 +6,6 @@ import {
     defaultRendererNames,
     layoutComparisonTolerance,
     layoutNames,
-    type LayoutRunResult,
 } from './layouts/layout-runner'
 
 const layoutRunnerUrl = `/@fs${path.resolve('tests/layouts/layout-runner.ts')}`
@@ -68,7 +67,7 @@ for (const layout of layoutNames) {
     })
 }
 
-async function renderLayout(page, layout: string): Promise<LayoutRunResult[]> {
+async function renderLayout(page, layout) {
     await page.goto(layoutHarnessUrl)
 
     return page.evaluate(

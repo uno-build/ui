@@ -4,7 +4,7 @@ import UI from '../UI.ts'
 export default class UIDom extends UI<Node> {
     constructor({ canvas }) {
         super()
-
+        this.canvas = canvas
         this.root = new Node({
             id: this.getNextNodeId(),
             element: canvas,

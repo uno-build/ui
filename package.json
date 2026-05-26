@@ -3,11 +3,13 @@
         "dev": "vite ./examples/dev/",
         "test": "playwright test"
     },
+    "dependencies": {
+        "yoga-layout": "^3.2.1"
+    },
     "devDependencies": {
         "@playwright/test": "^1.52.0",
         "fast-deep-equal": "^3.1.3",
         "vite": "^8.0.12",
-        "wgpu-matrix": "^3.4.2",
-        "yoga-layout": "^3.2.1"
+        "wgpu-matrix": "^3.4.2"
     }
 }
