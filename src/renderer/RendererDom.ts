@@ -1,45 +1,40 @@
 export default class RendererDom {
-    pending_styles = []
+    private pending_styles = []
 
     constructor({ canvas }) {
         this.canvas = canvas
     }
 
-    async init() {
+    public async init() {
         // nothing to do
     }
 
-    createElement(node) {
+    public createElement(node) {
         if (node.id === 0) {
             return this.canvas
         }
-
         const element = document.createElement('div')
         Object.assign(element.style, DEFAULT_NODE_STYLE)
         return element
     }
 
-    addPendingStyle(node, style) {
+    public addPendingStyle(node, style) {
         this.pending_styles.push({ node, style })
     }
 
-    updateStyle(node, name, value) {
+    public updateStyle(node, name, value) {
         node.element.style[name] = value
     }
 
-    addChild(parent, node) {
+    public addChild(parent, node) {
         parent.element.appendChild(node.element)
     }
 
-    removeChild(parent, node) {
+    public removeChild(parent, node) {
         parent.element.removeChild(node.element)
     }
 
-    getChildIndex(node) {
-        return node.element.children.length
-    }
-
-    update(nodes) {
+    public update(nodes) {
         for (const { node, style } of this.pending_styles) {
             this.updateStyle(node, style.name, style.value)
         }
@@ -50,17 +45,19 @@ export default class RendererDom {
         }
     }
 
-    getLayout(node) {
-        const parent = node.parent
-        const parent_layout =
-            parent == null || parent.parent == null
-                ? { x: 0, y: 0 }
-                : (parent.layout ?? { x: 0, y: 0 })
+    public getChildIndex(node) {
+        return node.element.children.length
+    }
 
+    // prettier-ignore
+    private getLayout(node) {
+        const parent = node.parent
+        const parent_layout = parent.parent === null
+                ? { x: 0, y: 0 }
+                : parent.layout
         const node_rect = node.element.getBoundingClientRect()
-        const parent_rect = (
-            parent?.element ?? this.canvas
-        ).getBoundingClientRect()
+        const parent_rect = (parent?.element ?? this.canvas).getBoundingClientRect()
+
         const width = Math.round(node_rect.width)
         const height = Math.round(node_rect.height)
         const parentWidth = Math.round(parent_rect.width)
@@ -73,14 +70,10 @@ export default class RendererDom {
         const centerY = Math.round(-(top + height / 2 - parentHeight / 2))
 
         return {
-            width,
-            height,
-            left,
-            top,
-            x,
-            y,
-            centerX,
-            centerY,
+            width, height,
+            left, top,
+            x, y,
+            centerX, centerY,
         }
     }
 }

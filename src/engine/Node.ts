@@ -1,10 +1,9 @@
 export default class Node {
-    parent = null
-    path = []
-    element = null
-    parent = null
-    styles = {}
-    layout = {}
+    public parent = null
+    public element = null
+    public path = []
+    public styles = {}
+    public layout = {}
 
     constructor({ id, ui }) {
         this.id = id
