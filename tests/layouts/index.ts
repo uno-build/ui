@@ -1,13 +1,11 @@
 import layoutBasic from './examples/basic'
 import layoutRelative from './examples/relative'
-import layoutZIndexRows from './examples/zindex-rows'
-import layoutZIndexGrid from './examples/zindex-grid'
+import layoutZIndex from './examples/zindex'
 
 export const LAYOUTS = {
     basic: layoutBasic,
     relative: layoutRelative,
-    'zindex-rows': layoutZIndexRows,
-    'zindex-grid': layoutZIndexGrid,
+    zindex: layoutZIndex,
 }
 
 export const layoutNames = Object.keys(LAYOUTS)

@@ -67,17 +67,15 @@ export const YOGA_SETTER = {
     bottom: (node, { value }) => {
         node.setPosition(EDGE.bottom, value)
     },
-    // alignContent: (node, { value }) => {
-    //     const value = convertEnum(ALIGN_LUT, input, 4)
-    //     node.setAlignContent(value)
-    // },
+    alignContent: (node, { parsed }) => {
+        node.setAlignContent(parsed.enum)
+    },
     alignItems: (node, { parsed }) => {
         node.setAlignItems(parsed.enum)
     },
-    // alignSelf: (node, { value }) => {
-    //     const value = convertEnum(ALIGN_LUT, input, 0)
-    //     node.setAlignSelf(value)
-    // },
+    alignSelf: (node, { parsed }) => {
+        node.setAlignSelf(parsed.enum)
+    },
     flexDirection: (node, { parsed }) => {
         node.setFlexDirection(parsed.enum)
     },

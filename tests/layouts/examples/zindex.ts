@@ -5,17 +5,13 @@ export default function createZIndexLayout({ ui, rendererName }) {
     const OFFSET = 10
 
     const Container = ui.create({
-        flexDirection: 'column',
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignContent: 'flex-start',
         flex: '1',
         padding: `${PADDING}px`,
     })
     ui.root.add(Container)
-
-    const Row1 = ui.create({})
-    Container.add(Row1)
-
-    const Row2 = ui.create({})
-    Container.add(Row2)
 
     const Cell1 = ui.create(
         createCell({
@@ -24,9 +20,12 @@ export default function createZIndexLayout({ ui, rendererName }) {
             bottom: `-${OFFSET}px`,
             alignItems: 'flex-end',
             justifyContent: 'flex-end',
+            borderWidth: '2px',
+            borderColor: '#0002',
+            borderStyle: 'solid',
         }),
     )
-    Row1.add(Cell1)
+    Container.add(Cell1)
 
     const Label1 = ui.create(
         createLabel({
@@ -41,9 +40,12 @@ export default function createZIndexLayout({ ui, rendererName }) {
             left: `-${OFFSET}px`,
             bottom: `-${OFFSET}px`,
             alignItems: 'flex-end',
+            borderWidth: '2px',
+            borderColor: '#0002',
+            borderStyle: 'solid',
         }),
     )
-    Row1.add(Cell2)
+    Container.add(Cell2)
 
     const Label2 = ui.create(
         createLabel({
@@ -59,9 +61,12 @@ export default function createZIndexLayout({ ui, rendererName }) {
             top: `-${OFFSET}px`,
             alignItems: 'flex-start',
             justifyContent: 'flex-end',
+            borderWidth: '2px',
+            borderColor: '#0002',
+            borderStyle: 'solid',
         }),
     )
-    Row2.add(Cell3)
+    Container.add(Cell3)
 
     const Label3 = ui.create(
         createLabel({
@@ -76,13 +81,17 @@ export default function createZIndexLayout({ ui, rendererName }) {
             left: `-${OFFSET}px`,
             top: `-${OFFSET}px`,
             alignItems: 'flex-start',
+            borderWidth: '2px',
+            borderColor: '#0002',
+            borderStyle: 'solid',
         }),
     )
-    Row2.add(Cell4)
+    Container.add(Cell4)
 
     const Label4 = ui.create(
         createLabel({
             backgroundColor: '#ff0',
+            position: 'absolute',
         }),
     )
     Cell4.add(Label4)
