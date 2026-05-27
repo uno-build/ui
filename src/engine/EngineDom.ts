@@ -10,6 +10,7 @@ export default class LayoutEngineDom {
             return this.canvas
         }
         const element = document.createElement('div')
+        element.id = `node-${node.id}`
         Object.assign(element.style, DEFAULT_NODE_STYLE)
         return element
     }

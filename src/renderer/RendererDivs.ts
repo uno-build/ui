@@ -18,11 +18,18 @@ export default class RendererDivs extends Renderer {
 
     public createElement(node) {
         const element = this.engine.createElement(node)
-        const div = document.createElement('div')
+
+        let div
+        if (node.id === 0) {
+            div = this.canvas
+        } else {
+            div = document.createElement('div')
+            div.id = `node-${node.id}`
+            this.canvas.appendChild(div)
+            Object.assign(div.style, DEFAULT_NODE_STYLE)
+        }
 
         this.divs.set(node, div)
-        this.canvas.appendChild(div)
-        Object.assign(div.style, DEFAULT_NODE_STYLE)
 
         return element
     }
