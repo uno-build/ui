@@ -17,17 +17,14 @@ export default abstract class Renderer {
         parent.element.removeChild(node.element)
     }
 
-    public update(nodes) {
+    public beforeUpdate(nodes) {
         for (const { node, style } of this.pending_styles) {
             this.updateStyle(node, style)
         }
-
-        this.pending_styles.length = 0
-        this.afterUpdate(nodes)
     }
 
-    protected afterUpdate(nodes) {
-        // optional hook
+    public afterUpdate(nodes) {
+        this.pending_styles.length = 0
     }
 
     protected getParentLayout(node) {
@@ -53,9 +50,7 @@ export default abstract class Renderer {
         const x = Math.round(parent_rect.x + left)
         const y = Math.round(parent_rect.y + top)
         const centerX = Math.round(left + width / 2 - parent_rect.width / 2)
-        const centerY = Math.round(
-            -(top + height / 2 - parent_rect.height / 2),
-        )
+        const centerY = Math.round(-(top + height / 2 - parent_rect.height / 2))
 
         return {
             width,
@@ -72,6 +67,7 @@ export default abstract class Renderer {
     public abstract createElement(node)
     public abstract getChildIndex(node)
     public abstract getLayout(node)
+    public abstract afterUpdate(nodes)
 
     protected abstract updateStyle(node, style)
     protected abstract insertChild(parent, node, childIndex)

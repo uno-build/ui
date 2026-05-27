@@ -32,10 +32,11 @@ export default class UI {
     }
 
     public update() {
-        this.renderer.update(this.nodes)
+        this.renderer.beforeUpdate(this.nodes)
         for (const node of this.nodes) {
             node.layout = this.renderer.getLayout(node)
         }
+        this.renderer.afterUpdate(this.nodes)
     }
 
     private setStyle(node, name, value) {

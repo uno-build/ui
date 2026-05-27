@@ -3,7 +3,7 @@ import Renderer from '../Renderer.ts'
 export default class RendererDom extends Renderer {
     private canvas
 
-    constructor({ canvas = null } = {}) {
+    constructor({ canvas }) {
         super()
         this.canvas = canvas
     }
@@ -28,6 +28,14 @@ export default class RendererDom extends Renderer {
     protected updateStyle(node, { name, value }) {
         node.element.style[name] = value
     }
+
+    // public beforeUpdate(nodes) {
+    //     super.beforeUpdate(nodes)
+    // }
+
+    // public afterUpdate(nodes) {
+    //     super.afterUpdate(nodes)
+    // }
 
     // prettier-ignore
     public getLayout(node) {
