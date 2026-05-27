@@ -32,29 +32,23 @@ export default class RendererDom extends Renderer {
     // prettier-ignore
     public getLayout(node) {
         const parent = node.parent
-        const parent_layout = parent.parent === null
-                ? { x: 0, y: 0 }
-                : parent.layout
+        const parent_layout = this.getParentLayout(node)
         const node_rect = node.element.getBoundingClientRect()
         const parent_rect = (parent?.element ?? this.canvas).getBoundingClientRect()
 
-        const width = Math.round(node_rect.width)
-        const height = Math.round(node_rect.height)
-        const parentWidth = Math.round(parent_rect.width)
-        const parentHeight = Math.round(parent_rect.height)
-        const left = Math.round(node_rect.left - parent_rect.left)
-        const top = Math.round(node_rect.top - parent_rect.top)
-        const x = Math.round(parent_layout.x + left)
-        const y = Math.round(parent_layout.y + top)
-        const centerX = Math.round(left + width / 2 - parentWidth / 2)
-        const centerY = Math.round(-(top + height / 2 - parentHeight / 2))
-
-        return {
-            width, height,
-            left, top,
-            x, y,
-            centerX, centerY,
-        }
+        return this.calculateLayoutRect(
+            {
+                width: node_rect.width,
+                height: node_rect.height,
+                left: node_rect.left - parent_rect.left,
+                top: node_rect.top - parent_rect.top,
+            },
+            {
+                ...parent_layout,
+                width: parent_rect.width,
+                height: parent_rect.height,
+            },
+        )
     }
 }
 
