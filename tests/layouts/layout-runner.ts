@@ -1,4 +1,4 @@
-import UI from '../../src/engine/UI'
+import UI from '../../src/UI'
 import RendererDivs from '../../src/renderer/RendererDivs'
 import RendererDom from '../../src/renderer/RendererDom'
 import { getLayout, layoutNames } from './index'

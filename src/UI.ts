@@ -1,4 +1,4 @@
-import Style from '../style'
+import Style from './style'
 import Node from './Node.ts'
 
 export default class UI {
