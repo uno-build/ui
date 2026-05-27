@@ -1,5 +1,6 @@
 import { loadYoga } from 'yoga-layout/load'
 import { YOGA_SETTER } from '../style/yoga.ts'
+import { UNIT } from '../style/consts.ts'
 import Renderer from '../Renderer.ts'
 
 export default class RendererDivs extends Renderer {
@@ -58,7 +59,6 @@ export default class RendererDivs extends Renderer {
         if (YOGA_SETTER.hasOwnProperty(style.name)) {
             YOGA_SETTER[style.name](node.element, style)
         } else {
-            console.log(style)
             div.style[style.name] = style.value
         }
     }
@@ -73,7 +73,6 @@ export default class RendererDivs extends Renderer {
         for (const node of nodes) {
             const { layout } = node
             const div = this.divs.get(node)
-            console.log(node.path, layout)
             div.style.left = `${layout.x}px`
             div.style.top = `${layout.y}px`
             div.style.width = `${layout.width}px`
@@ -90,8 +89,71 @@ export default class RendererDivs extends Renderer {
                 ? { ...parent_layout, ...this.root_element.getComputedLayout() }
                 : parent_layout
 
-        return this.calculateLayoutRect(node_rect, parent_rect)
+        return this.calculateLayoutRect(
+            this.applyBorderContentOffset(
+                node,
+                this.applyRowRelativeCrossOffset(node, node_rect),
+            ),
+            parent_rect,
+        )
     }
+
+    private applyRowRelativeCrossOffset(node, rect) {
+        if (
+            node.styles.position?.value !== 'relative' ||
+            node.parent?.styles.flexDirection?.value !== 'row'
+        ) {
+            return rect
+        }
+
+        return {
+            ...rect,
+            top:
+                rect.top +
+                readPxOffset(node.styles.top) -
+                readPxOffset(node.styles.bottom),
+        }
+    }
+
+    private applyBorderContentOffset(node, rect) {
+        const borderWidth = readPxOffset(node.parent?.styles.borderWidth)
+
+        if (borderWidth === 0) {
+            return rect
+        }
+
+        return {
+            ...rect,
+            left:
+                rect.left +
+                readFlexContentOffset(
+                    node.parent?.styles.justifyContent?.value,
+                    borderWidth,
+                ),
+            top:
+                rect.top +
+                readFlexContentOffset(
+                    node.parent?.styles.alignItems?.value,
+                    borderWidth,
+                ),
+        }
+    }
+}
+
+function readPxOffset(style) {
+    return style?.parsed?.unit === UNIT.PX ? style.parsed.value : 0
+}
+
+function readFlexContentOffset(alignment, borderWidth) {
+    if (alignment === 'flex-end') {
+        return -borderWidth
+    }
+
+    if (alignment == null || alignment === 'flex-start') {
+        return borderWidth
+    }
+
+    return 0
 }
 
 const DEFAULT_NODE_STYLE = {

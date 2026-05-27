@@ -86,6 +86,11 @@ export function resolveStyle(name: string, value: any) {
 }
 
 export const STYLE = {
+    ZINDEX: createStyle('zIndex', {
+        normalize: [normalizeNumber],
+        validate: [validateNumber, validateNonNegativeNumber],
+        parse: [parseNumber],
+    }),
     BACKGROUNDCOLOR: createStyle('backgroundColor', {
         normalize: [normalizeString],
         validate: [validateColor],

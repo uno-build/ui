@@ -1,7 +1,6 @@
 import { UNIT, EDGE, GUTTER } from './consts.ts'
 
 // /Users/enzo/projects/uno/ui/node_modules/yoga-layout/src/wrapAssembly.ts
-// https://github.com/Josema/uno-ui/blob/3a403f9b0bebd10dd63a4a272fc75ca772216bfe/src/engine/properties.ts
 export const YOGA_SETTER = {
     width: (node, { value, parsed }) => {
         if (parsed.unit === UNIT.AUTO) {
@@ -82,10 +81,9 @@ export const YOGA_SETTER = {
     flexDirection: (node, { parsed }) => {
         node.setFlexDirection(parsed.enum)
     },
-    // flexWrap: (node, { value }) => {
-    //     const value = convertEnum(WRAP_LUT, input, 0)
-    //     node.setFlexWrap(value)
-    // },
+    flexWrap: (node, { parsed }) => {
+        node.setFlexWrap(parsed.enum)
+    },
     justifyContent: (node, { parsed }) => {
         node.setJustifyContent(parsed.enum)
     },

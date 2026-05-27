@@ -4,14 +4,14 @@ import RendererDom from '../../src/renderer/RendererDom'
 import { getLayout, layoutNames } from './index'
 
 export const SETUPS = {
-    'yoga.divs': {
-        elementType: 'div',
-        renderer: RendererDivs,
-        attributes: {},
-    },
-    'dom.html': {
+    RendererDom: {
         elementType: 'div',
         renderer: RendererDom,
+        attributes: {},
+    },
+    RendererDivs: {
+        elementType: 'div',
+        renderer: RendererDivs,
         attributes: {},
     },
 }
@@ -173,8 +173,8 @@ function createCanvasElement(root, setupName, setup) {
         top: '0',
         width: '100%',
         height: '100%',
-        opacity: '1',
         zIndex: '0',
+        opacity: '1',
     })
 
     canvas.width = canvas.clientWidth
