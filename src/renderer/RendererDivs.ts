@@ -48,7 +48,7 @@ export default class RendererDivs extends Renderer {
         parent.element.insertChild(node.element, childIndex)
     }
 
-    protected removeChild(parent, node) {
+    public removeChild(parent, node) {
         super.removeChild(parent, node)
     }
 
