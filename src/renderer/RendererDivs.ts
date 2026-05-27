@@ -1,14 +1,11 @@
 import { loadYoga } from 'yoga-layout/load'
 import { YOGA_SETTER } from '../style/yoga.ts'
+import Renderer from '../Renderer.ts'
 
-export default class RendererDivs {
-    private pending_styles = []
-    private canvas
+export default class RendererDivs extends Renderer {
     private Yoga
     private yoga_config
     private root_element
-
-    constructor() {}
 
     public async init() {
         this.Yoga = await loadYoga()
@@ -29,24 +26,7 @@ export default class RendererDivs {
         return element
     }
 
-    public addPendingStyle(node, style) {
-        this.pending_styles.push({ node, style })
-    }
-
-    public addChild(parent, node) {
-        const child_index = parent.element.getChildCount()
-        parent.element.insertChild(node.element, child_index)
-    }
-
-    public removeChild(parent, node) {
-        parent.element.removeChild(node.element)
-    }
-
-    public update(nodes) {
-        for (const { node, style } of this.pending_styles) {
-            this.updateStyle(node, style)
-        }
-        this.pending_styles.length = 0
+    protected afterUpdate() {
         this.root_element.calculateLayout()
     }
 
@@ -54,7 +34,11 @@ export default class RendererDivs {
         return node.element.getChildCount()
     }
 
-    private updateStyle(node, style) {
+    protected insertChild(parent, node, childIndex) {
+        parent.element.insertChild(node.element, childIndex)
+    }
+
+    protected updateStyle(node, style) {
         if (YOGA_SETTER.hasOwnProperty(style.name)) {
             YOGA_SETTER[style.name](node.element, style)
         } else {
@@ -63,7 +47,7 @@ export default class RendererDivs {
     }
 
     // prettier-ignore
-    private getLayout(node) {
+    public getLayout(node) {
         const node_rect = node.element.getComputedLayout()
         const parent_rect =
             node.parent.element === this.root_element

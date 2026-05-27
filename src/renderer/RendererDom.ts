@@ -1,13 +1,11 @@
-export default class RendererDom {
-    private pending_styles = []
+import Renderer from '../Renderer.ts'
+
+export default class RendererDom extends Renderer {
     private canvas
 
-    constructor({ canvas }) {
+    constructor({ canvas = null } = {}) {
+        super()
         this.canvas = canvas
-    }
-
-    public async init() {
-        // nothing to do
     }
 
     public createElement(node) {
@@ -19,35 +17,20 @@ export default class RendererDom {
         return element
     }
 
-    public addPendingStyle(node, style) {
-        this.pending_styles.push({ node, style })
-    }
-
-    public addChild(parent, node) {
+    protected insertChild(parent, node) {
         parent.element.appendChild(node.element)
-    }
-
-    public removeChild(parent, node) {
-        parent.element.removeChild(node.element)
-    }
-
-    public update(nodes) {
-        for (const { node, style } of this.pending_styles) {
-            this.updateStyle(node, style)
-        }
-        this.pending_styles.length = 0
     }
 
     public getChildIndex(node) {
         return node.element.children.length
     }
 
-    private updateStyle(node, { name, value }) {
+    protected updateStyle(node, { name, value }) {
         node.element.style[name] = value
     }
 
     // prettier-ignore
-    private getLayout(node) {
+    public getLayout(node) {
         const parent = node.parent
         const parent_layout = parent.parent === null
                 ? { x: 0, y: 0 }
