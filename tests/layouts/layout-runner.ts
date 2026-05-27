@@ -16,21 +16,13 @@ export const SETUPS = {
     },
 }
 
-export async function runLayout({
-    root,
-    layout,
-    renderers,
-    setups,
-    logger = console,
-}) {
-    setups = setups ?? renderers ?? defaultRendererNames
-
+export async function runLayout({ root, layout, renderers, logger = console }) {
     const createLayout = getLayout(layout)
     const results = []
 
-    for (const setupName of setups) {
-        const setup = getSetup(setupName)
-        const canvas = createCanvasElement(root, setupName, setup)
+    for (const rendererName of renderers) {
+        const setup = getSetup(rendererName)
+        const canvas = createCanvasElement(root, rendererName, setup)
         const Renderer = setup.renderer
         const renderer = new Renderer({ canvas })
         const ui = new UI({ renderer })
@@ -38,13 +30,13 @@ export async function runLayout({
 
         ui.root.setStyle('width', canvas.clientWidth)
         ui.root.setStyle('height', canvas.clientHeight)
-        createLayout({ ui, setup: setupName })
+        createLayout({ ui, rendererName })
 
         ui.update()
 
         const result = readPaintLayout(ui)
         logger.table(result)
-        results.push({ setupName, result })
+        results.push({ rendererName, result })
     }
 
     return results
@@ -57,13 +49,13 @@ export async function runLayoutFromSearchParams({
     logger = console,
 }) {
     const layout = readLayoutName(params.get('layout'))
-    const setups = readRendererNames(params.get('setups'), logger)
+    const renderers = readRendererNames(params.get('renderers'), logger)
 
     logger.log(
-        `Running: ${origin}/?layout=${layout}&setups=${setups.join(',')}`,
+        `Running: ${origin}/?layout=${layout}&renderers=${renderers.join(',')}`,
     )
 
-    const results = await runLayout({ root, layout, setups, logger })
+    const results = await runLayout({ root, layout, renderers, logger })
     reportLayoutComparisons(compareLayoutResults(results), logger)
 
     return results
@@ -84,13 +76,13 @@ export function readRendererNames(renderersParam, logger = console) {
             ? defaultRendererNames
             : renderersParam.split(',')
 
-    return requestedRenderers.filter((setupName) => {
-        if (hasOwn(SETUPS, setupName)) {
+    return requestedRenderers.filter((rendererName) => {
+        if (hasOwn(SETUPS, rendererName)) {
             return true
         }
 
         logger.warn(
-            `setup '${setupName}' not found. Available setups:`,
+            `renderer '${rendererName}' not found. Available renderers:`,
             defaultRendererNames,
         )
         return false
@@ -109,8 +101,8 @@ export function compareLayoutResults(results) {
         }
 
         comparisons.push({
-            rendererA: a.setupName,
-            rendererB: b.setupName,
+            rendererA: a.rendererName,
+            rendererB: b.rendererName,
             matches: paintLayoutResultsMatch(a.result, b.result),
         })
     }
@@ -161,11 +153,11 @@ export function reportLayoutComparisons(comparisons, logger = console) {
     }
 }
 
-function createCanvasElement(root, setupName, setup) {
+function createCanvasElement(root, rendererName, setup) {
     const canvas = document.createElement(setup.elementType)
 
     root.appendChild(canvas)
-    canvas.id = setupName
+    canvas.id = rendererName
     Object.assign(canvas.style, {
         display: 'flex',
         position: 'absolute',
@@ -201,7 +193,7 @@ function getSetup(name) {
     }
 
     throw new Error(
-        `setup '${name}' not found. Available setups: ${defaultRendererNames.join(', ')}`,
+        `setup '${name}' not found. Available renderers: ${defaultRendererNames.join(', ')}`,
     )
 }
 

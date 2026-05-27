@@ -1,38 +1,24 @@
-import { loadYoga } from 'yoga-layout/load'
-import { YOGA_SETTER } from '../style/yoga.ts'
-import { UNIT } from '../style/consts.ts'
 import Renderer from '../Renderer.ts'
+import EngineYoga from '../engine/EngineYoga.ts'
 
 export default class RendererDivs extends Renderer {
     private canvas
-    private Yoga
-    private yoga_config
-    private root_element
+    private engine
     private divs = new WeakMap()
 
     constructor({ canvas }) {
         super()
         this.canvas = canvas
+        this.engine = new EngineYoga()
     }
 
     public async init() {
-        this.Yoga = await loadYoga()
-        this.yoga_config = this.Yoga.Config.create()
-        this.yoga_config.setUseWebDefaults(true)
-        // this.yoga_config.setPointScaleFactor(200)
-        this.yoga_config.setExperimentalFeatureEnabled(
-            0, // ExperimentalFeature.WebFlexBasis
-            true,
-        )
+        await this.engine.init()
     }
 
     public createElement(node) {
-        const element = this.Yoga.Node.create(this.yoga_config)
+        const element = this.engine.createElement(node)
         const div = document.createElement('div')
-
-        if (node.id === 0) {
-            this.root_element = element
-        }
 
         this.divs.set(node, div)
         this.canvas.appendChild(div)
@@ -42,30 +28,28 @@ export default class RendererDivs extends Renderer {
     }
 
     public getChildIndex(node) {
-        return node.element.getChildCount()
+        return this.engine.getChildIndex(node)
     }
 
     protected insertChild(parent, node, childIndex) {
-        parent.element.insertChild(node.element, childIndex)
+        this.engine.insertChild(parent, node, childIndex)
     }
 
     public removeChild(parent, node) {
-        super.removeChild(parent, node)
+        this.engine.removeChild(parent, node)
     }
 
     protected updateStyle(node, style) {
         const div = this.divs.get(node)
 
-        if (YOGA_SETTER.hasOwnProperty(style.name)) {
-            YOGA_SETTER[style.name](node.element, style)
-        } else {
+        if (this.engine.updateStyle(node, style) === false) {
             div.style[style.name] = style.value
         }
     }
 
     public beforeUpdate(nodes) {
         super.beforeUpdate(nodes)
-        this.root_element.calculateLayout()
+        this.engine.beforeUpdate(nodes)
     }
 
     public afterUpdate(nodes) {
@@ -80,80 +64,9 @@ export default class RendererDivs extends Renderer {
         }
     }
 
-    // prettier-ignore
     public getLayout(node) {
-        const node_rect = node.element.getComputedLayout()
-        const parent_layout = this.getParentLayout(node)
-        const parent_rect =
-            node.parent.element === this.root_element
-                ? { ...parent_layout, ...this.root_element.getComputedLayout() }
-                : parent_layout
-
-        return this.calculateLayoutRect(
-            this.applyBorderContentOffset(
-                node,
-                this.applyRowRelativeCrossOffset(node, node_rect),
-            ),
-            parent_rect,
-        )
+        return this.engine.getLayout(node)
     }
-
-    private applyRowRelativeCrossOffset(node, rect) {
-        if (
-            node.styles.position?.value !== 'relative' ||
-            node.parent?.styles.flexDirection?.value !== 'row'
-        ) {
-            return rect
-        }
-
-        return {
-            ...rect,
-            top:
-                rect.top +
-                readPxOffset(node.styles.top) -
-                readPxOffset(node.styles.bottom),
-        }
-    }
-
-    private applyBorderContentOffset(node, rect) {
-        const borderWidth = readPxOffset(node.parent?.styles.borderWidth)
-
-        if (borderWidth === 0) {
-            return rect
-        }
-
-        return {
-            ...rect,
-            left:
-                rect.left +
-                readFlexContentOffset(
-                    node.parent?.styles.justifyContent?.value,
-                    borderWidth,
-                ),
-            top:
-                rect.top +
-                readFlexContentOffset(
-                    node.parent?.styles.alignItems?.value,
-                    borderWidth,
-                ),
-        }
-    }
-}
-
-function readPxOffset(style) {
-    return style?.parsed?.unit === UNIT.PX ? style.parsed.value : 0
-}
-
-function readFlexContentOffset(alignment, borderWidth) {
-    if (alignment === 'flex-end') {
-        return -borderWidth
-    }
-
-    if (alignment == null || alignment === 'flex-start') {
-        return borderWidth
-    }
-
-    return 0
 }
 
 const DEFAULT_NODE_STYLE = {

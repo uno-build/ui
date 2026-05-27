@@ -1,5 +1,5 @@
-export default function createRelativeLayout({ ui, setup }) {
-    console.log(`--- ${setup} ---`)
+export default function createRelativeLayout({ ui, rendererName }) {
+    console.log(`--- ${rendererName} ---`)
 
     const container = ui.create({
         // flexDirection: 'row',
