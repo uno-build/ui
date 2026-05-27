@@ -33,6 +33,9 @@ export default class UI {
 
     public update() {
         this.renderer.update(this.nodes)
+        for (const node of this.nodes) {
+            node.layout = this.renderer.getLayout(node)
+        }
     }
 
     private setStyle(node, name, value) {

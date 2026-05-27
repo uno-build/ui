@@ -36,10 +36,6 @@ export default class RendererDom {
             this.updateStyle(node, style)
         }
         this.pending_styles.length = 0
-
-        for (const node of nodes) {
-            node.layout = this.getLayout(node)
-        }
     }
 
     public getChildIndex(node) {

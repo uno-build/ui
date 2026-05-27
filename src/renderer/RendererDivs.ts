@@ -47,12 +47,7 @@ export default class RendererDivs {
             this.updateStyle(node, style)
         }
         this.pending_styles.length = 0
-
         this.root_element.calculateLayout()
-
-        for (const node of nodes) {
-            node.layout = this.getLayout(node)
-        }
     }
 
     public getChildIndex(node) {
