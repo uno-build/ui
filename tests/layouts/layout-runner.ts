@@ -1,11 +1,16 @@
 import UI from '../../src/engine/UI'
+import RendererDivs from '../../src/renderer/RendererDivs'
 import RendererDom from '../../src/renderer/RendererDom'
 import { getLayout, layoutNames } from './index'
 
 export const SETUPS = {
+    'yoga.divs': {
+        elementType: 'div',
+        renderer: RendererDivs,
+        attributes: {},
+    },
     'dom.html': {
         elementType: 'div',
-        engine: UI,
         renderer: RendererDom,
         attributes: {},
     },
@@ -26,7 +31,6 @@ export async function runLayout({
     for (const setupName of setups) {
         const setup = getSetup(setupName)
         const canvas = createCanvasElement(root, setupName, setup)
-        const UI = setup.engine
         const Renderer = setup.renderer
         const renderer = new Renderer({ canvas })
         const ui = new UI({ renderer })

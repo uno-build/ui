@@ -1,5 +1,6 @@
 export default class RendererDom {
     private pending_styles = []
+    private canvas
 
     constructor({ canvas }) {
         this.canvas = canvas
@@ -22,10 +23,6 @@ export default class RendererDom {
         this.pending_styles.push({ node, style })
     }
 
-    public updateStyle(node, name, value) {
-        node.element.style[name] = value
-    }
-
     public addChild(parent, node) {
         parent.element.appendChild(node.element)
     }
@@ -36,7 +33,7 @@ export default class RendererDom {
 
     public update(nodes) {
         for (const { node, style } of this.pending_styles) {
-            this.updateStyle(node, style.name, style.value)
+            this.updateStyle(node, style)
         }
         this.pending_styles.length = 0
 
@@ -47,6 +44,10 @@ export default class RendererDom {
 
     public getChildIndex(node) {
         return node.element.children.length
+    }
+
+    private updateStyle(node, { name, value }) {
+        node.element.style[name] = value
     }
 
     // prettier-ignore
