@@ -1,8 +1,9 @@
 import { loadYoga } from 'yoga-layout/load'
+import Engine from '../Engine.ts'
 import { YOGA_SETTER } from '../style/yoga.ts'
 import { UNIT } from '../style/consts.ts'
 
-export default class LayoutEngineYoga {
+export default class EngineYoga extends Engine {
     private Yoga
     private yoga_config
     private root_element
@@ -56,53 +57,16 @@ export default class LayoutEngineYoga {
     // prettier-ignore
     public getLayout(node) {
         const node_rect = node.element.getComputedLayout()
-        const parent_layout = getParentLayout(node)
+        const parent_layout = this.getParentLayout(node)
         const parent_rect =
             node.parent.element === this.root_element
                 ? { ...parent_layout, ...this.root_element.getComputedLayout() }
                 : parent_layout
 
-        return calculateLayoutRect(
+        return this.calculateLayoutRect(
             applyWrappedRelativeOffsets(node, node_rect),
             parent_rect,
         )
-    }
-}
-
-function getParentLayout(node) {
-    const parent = node.parent
-
-    if (parent === null || parent.parent === null) {
-        return {
-            x: 0,
-            y: 0,
-            width: 0,
-            height: 0,
-        }
-    }
-
-    return parent.layout
-}
-
-function calculateLayoutRect(node_rect, parent_rect) {
-    const width = Math.round(node_rect.width)
-    const height = Math.round(node_rect.height)
-    const left = Math.round(node_rect.left)
-    const top = Math.round(node_rect.top)
-    const x = Math.round(parent_rect.x + left)
-    const y = Math.round(parent_rect.y + top)
-    const centerX = Math.round(left + width / 2 - parent_rect.width / 2)
-    const centerY = Math.round(-(top + height / 2 - parent_rect.height / 2))
-
-    return {
-        width,
-        height,
-        left,
-        top,
-        x,
-        y,
-        centerX,
-        centerY,
     }
 }
 

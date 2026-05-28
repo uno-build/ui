@@ -1,7 +1,10 @@
-export default class LayoutEngineDom {
+import Engine from '../Engine.ts'
+
+export default class EngineDom extends Engine {
     private canvas
 
     constructor({ canvas }) {
+        super()
         this.canvas = canvas
     }
 
@@ -34,11 +37,11 @@ export default class LayoutEngineDom {
     // prettier-ignore
     public getLayout(node) {
         const parent = node.parent
-        const parent_layout = getParentLayout(node)
+        const parent_layout = this.getParentLayout(node)
         const node_rect = node.element.getBoundingClientRect()
         const parent_rect = (parent?.element ?? this.canvas).getBoundingClientRect()
 
-        return calculateLayoutRect(
+        return this.calculateLayoutRect(
             {
                 width: node_rect.width,
                 height: node_rect.height,
@@ -51,43 +54,6 @@ export default class LayoutEngineDom {
                 height: parent_rect.height,
             },
         )
-    }
-}
-
-function getParentLayout(node) {
-    const parent = node.parent
-
-    if (parent === null || parent.parent === null) {
-        return {
-            x: 0,
-            y: 0,
-            width: 0,
-            height: 0,
-        }
-    }
-
-    return parent.layout
-}
-
-function calculateLayoutRect(node_rect, parent_rect) {
-    const width = Math.round(node_rect.width)
-    const height = Math.round(node_rect.height)
-    const left = Math.round(node_rect.left)
-    const top = Math.round(node_rect.top)
-    const x = Math.round(parent_rect.x + left)
-    const y = Math.round(parent_rect.y + top)
-    const centerX = Math.round(left + width / 2 - parent_rect.width / 2)
-    const centerY = Math.round(-(top + height / 2 - parent_rect.height / 2))
-
-    return {
-        width,
-        height,
-        left,
-        top,
-        x,
-        y,
-        centerX,
-        centerY,
     }
 }
 
