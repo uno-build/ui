@@ -1,13 +1,9 @@
-import { readInteger, readNumber } from './utils.ts'
-
 export function normalizeNumber(value: any) {
-    const number = readNumber(value)
-    return number === undefined ? value : number
+    return normalizeString(value)
 }
 
 export function normalizeInteger(value: any) {
-    const integer = readInteger(value)
-    return integer === undefined ? value : integer
+    return normalizeString(value)
 }
 
 export function normalizeStyleKey(name: string) {
@@ -15,7 +11,7 @@ export function normalizeStyleKey(name: string) {
 }
 
 export function normalizeString(value: any) {
-    return String(value).trim().toLowerCase()
+    return typeof value === 'string' ? value.trim().toLowerCase() : value
 }
 
 export function normalizePx(value: any) {

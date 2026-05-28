@@ -26,7 +26,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     }).toThrow(/invalid value 'red' for property 'backgroundColor': expected hex color/)
     expect(() => {
         child.setStyle('width', true)
-    }).toThrow(/style value for property 'width' must be a string/)
+    }).toThrow(/invalid value 'true' for property 'width': expected px unit/)
 
     expect(child.styles).toMatchObject({
         width: {

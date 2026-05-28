@@ -12,7 +12,7 @@ test('resolveStyle', () => {
     expect(() => {
         Style.resolveStyle('backgroundColor')
     }).toThrow(
-        /style value for property 'backgroundColor' must be a string, got 'undefined'/,
+        /invalid value 'undefined' for property 'backgroundColor': expected hex color/,
     )
 })
 
@@ -38,7 +38,7 @@ test('unitPixelStyle', () => {
     }).toThrow(/expected px unit/)
     expect(() => {
         Style.resolveStyle('borderWidth', -1)
-    }).toThrow(/style value for property 'borderWidth' must be a string/)
+    }).toThrow(/expected px unit/)
     expect(() => {
         Style.resolveStyle('borderWidth', 'thin')
     }).toThrow(/expected px unit/)
@@ -81,7 +81,7 @@ test('unitPixelStyle', () => {
 test('unitOrAutoStyle', () => {
     expect(() => {
         Style.resolveStyle('width', true)
-    }).toThrow(/style value for property 'width' must be a string/)
+    }).toThrow(/expected px unit/)
     expect(() => {
         Style.resolveStyle('width', '12em')
     }).toThrow(/expected px unit/)
@@ -183,7 +183,7 @@ test('integerStyle', () => {
     }).toThrow(/expected integer/)
     expect(() => {
         Style.resolveStyle('zIndex', 1)
-    }).toThrow(/style value for property 'zIndex' must be a string/)
+    }).toThrow(/expected integer/)
 })
 
 test('non-negative number styles reject negative values', () => {
@@ -225,7 +225,7 @@ test('non-negative unit styles reject negative values', () => {
     for (const name of styles) {
         expect(() => {
             Style.resolveStyle(name, -1)
-        }).toThrow(/style value for property '.+' must be a string/)
+        }).toThrow(/expected px unit/)
         expect(() => {
             Style.resolveStyle(name, '-1px')
         }).toThrow(/expected non-negative value/)
@@ -317,7 +317,7 @@ test('border width styles are px-only and non-negative', () => {
         }).toThrow(/expected px unit/)
         expect(() => {
             Style.resolveStyle(name, -1)
-        }).toThrow(/style value for property '.+' must be a string/)
+        }).toThrow(/expected px unit/)
         expect(() => {
             Style.resolveStyle(name, 'thin')
         }).toThrow(/expected px unit/)

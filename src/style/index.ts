@@ -62,12 +62,6 @@ export function resolveStyle(name: string, value: any) {
         throw new Error(`unsupported property '${name}'`)
     }
 
-    // Validating value
-    if (typeof value !== 'string') {
-        throw new Error(
-            `style value for property '${style.name}' must be a string, got '${typeof value}'`,
-        )
-    }
     try {
         const result = style.resolve(value)
         return {

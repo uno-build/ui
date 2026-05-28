@@ -1,5 +1,5 @@
 import { UNIT } from './consts.ts'
-import { readPercent, readPx } from './utils.ts'
+import { readInteger, readNumber, readPercent, readPx } from './utils.ts'
 
 export function parseAuto(value: string) {
     return {
@@ -22,12 +22,14 @@ export function parseUnset(value: string) {
     }
 }
 
-export function parseNumber(value: number) {
-    return { value, parsed: { value } }
+export function parseNumber(value: string) {
+    const number = readNumber(value)!
+    return { value: number, parsed: { value: number } }
 }
 
-export function parseInteger(value: number) {
-    return { value, parsed: { value } }
+export function parseInteger(value: string) {
+    const integer = readInteger(value)!
+    return { value: integer, parsed: { value: integer } }
 }
 
 export function parseRgba(value: string) {
