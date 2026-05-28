@@ -6,6 +6,11 @@ import layoutNestedPercentDimensions from './examples/nestedPercentDimensions'
 import layoutNestedRelativeOffsets from './examples/nestedRelativeOffsets'
 import layoutNestedWrapGap from './examples/nestedWrapGap'
 import layoutRelative from './examples/relative'
+import layoutWrappedAlignContentRelativeOffsets from './examples/wrappedAlignContentRelativeOffsets'
+import layoutWrappedColumnRelativeOffsets from './examples/wrappedColumnRelativeOffsets'
+import layoutWrappedPercentRelativeOffsets from './examples/wrappedPercentRelativeOffsets'
+import layoutWrappedRelativeOffsets from './examples/wrappedRelativeOffsets'
+import layoutWrappedRelativeWrapReverse from './examples/wrappedRelativeWrapReverse'
 import layoutZIndex from './examples/zindex'
 
 export const LAYOUTS = {
@@ -17,6 +22,12 @@ export const LAYOUTS = {
     nestedRelativeOffsets: layoutNestedRelativeOffsets,
     nestedWrapGap: layoutNestedWrapGap,
     relative: layoutRelative,
+    wrappedAlignContentRelativeOffsets:
+        layoutWrappedAlignContentRelativeOffsets,
+    wrappedColumnRelativeOffsets: layoutWrappedColumnRelativeOffsets,
+    wrappedPercentRelativeOffsets: layoutWrappedPercentRelativeOffsets,
+    wrappedRelativeOffsets: layoutWrappedRelativeOffsets,
+    wrappedRelativeWrapReverse: layoutWrappedRelativeWrapReverse,
     zindex: layoutZIndex,
 }
 

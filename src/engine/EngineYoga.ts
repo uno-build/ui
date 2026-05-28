@@ -63,29 +63,54 @@ export default class LayoutEngineYoga {
                 : parent_layout
 
         return calculateLayoutRect(
-            applyWrappedRowRelativeCrossOffset(node, node_rect),
+            applyWrappedRelativeCrossOffset(node, node_rect),
             parent_rect,
         )
     }
 }
 
-function applyWrappedRowRelativeCrossOffset(node, rect) {
+function applyWrappedRelativeCrossOffset(node, rect) {
+    const parentFlexDirection = node.parent?.styles.flexDirection?.value
+
     if (
         node.styles.position?.value !== 'relative' ||
-        node.parent?.styles.flexDirection?.value !== 'row' ||
         node.parent?.styles.flexWrap?.value == null ||
         node.parent?.styles.flexWrap?.value === 'nowrap'
     ) {
         return rect
     }
 
-    return {
-        ...rect,
-        top:
-            rect.top +
-            readPxOffset(node.styles.top) -
-            readPxOffset(node.styles.bottom),
+    if (
+        parentFlexDirection === 'row' ||
+        parentFlexDirection === 'row-reverse'
+    ) {
+        const parentContentHeight = readContentSize(node.parent, 'height')
+
+        return {
+            ...rect,
+            top:
+                rect.top +
+                readOffset(node.styles.top, parentContentHeight) -
+                readOffset(node.styles.bottom, parentContentHeight),
+        }
     }
+
+    if (
+        parentFlexDirection === 'column' ||
+        parentFlexDirection === 'column-reverse'
+    ) {
+        const parentContentWidth = readContentSize(node.parent, 'width')
+
+        return {
+            ...rect,
+            left:
+                rect.left +
+                readOffset(node.styles.left, parentContentWidth) -
+                readOffset(node.styles.right, parentContentWidth),
+        }
+    }
+
+    return rect
 }
 
 function getParentLayout(node) {
@@ -123,6 +148,21 @@ function calculateLayoutRect(node_rect, parent_rect) {
         centerX,
         centerY,
     }
+}
+
+function readContentSize(node, dimension) {
+    const padding = readPxOffset(node.styles.padding)
+    const borderWidth = readPxOffset(node.styles.borderWidth)
+
+    return node.layout[dimension] - padding * 2 - borderWidth * 2
+}
+
+function readOffset(style, referenceSize) {
+    if (style?.parsed?.unit === UNIT.PERCENT) {
+        return (referenceSize * style.parsed.value) / 100
+    }
+
+    return readPxOffset(style)
 }
 
 function readPxOffset(style) {
