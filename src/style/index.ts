@@ -298,6 +298,11 @@ export const STYLE = {
             validate: [validateAuto],
             parse: [parseAuto],
         },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
+        },
     ]),
 
     FLEXGROW: createStyle('flexGrow', {

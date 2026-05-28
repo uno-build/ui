@@ -232,6 +232,7 @@ test('resettable unit styles accept unset', () => {
         'left',
         'right',
         'bottom',
+        'flexBasis',
         'minWidth',
         'minHeight',
         'maxWidth',

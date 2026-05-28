@@ -428,8 +428,8 @@ test('flex, flexGrow, flexShrink, aspectRatio', () => {
     }
 })
 
-test('flexBasis, width, height', () => {
-    const styles = ['flexBasis', 'width', 'height']
+test('flexBasis', () => {
+    const styles = ['flexBasis']
     const validUnitCases = [
         [0, '0px', 0, 'px'],
         ['10', '10px', 10, 'px'],
@@ -443,6 +443,43 @@ test('flexBasis, width, height', () => {
         [true, /expected px or % unit/],
         ['12em', /expected px or % unit/],
         ['none', /expected px or % unit/],
+    ] as const
+
+    for (const name of styles) {
+        expectKeywordUnit(name, ' Auto ', 'auto')
+        expectKeywordUnit(name, ' Unset ', 'unset')
+
+        for (const [
+            value,
+            expectedValue,
+            parsedValue,
+            unit,
+        ] of validUnitCases) {
+            expectUnit(name, value, expectedValue, parsedValue, unit)
+        }
+
+        for (const [value, message] of invalidCases) {
+            expectInvalid(name, value, message)
+        }
+    }
+})
+
+test('width, height', () => {
+    const styles = ['width', 'height']
+    const validUnitCases = [
+        [0, '0px', 0, 'px'],
+        ['10', '10px', 10, 'px'],
+        [' 10PX ', '10px', 10, 'px'],
+        ['33.3%', '33.3%', 33.3, '%'],
+    ] as const
+    const invalidCases = [
+        [-1, /expected non-negative unit/],
+        ['-1px', /expected non-negative unit/],
+        ['-1%', /expected non-negative unit/],
+        [true, /expected px or % unit/],
+        ['12em', /expected px or % unit/],
+        ['none', /expected px or % unit/],
+        ['unset', /expected px or % unit/],
     ] as const
 
     for (const name of styles) {

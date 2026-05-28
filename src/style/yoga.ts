@@ -71,6 +71,33 @@ export const YOGA_SETTER = {
     bottom: (node, { parsed }) => {
         setPosition(node, EDGE.bottom, parsed)
     },
+
+    flex: (node, { value }) => {
+        node.setFlex(value)
+    },
+    flexGrow: (node, { value }) => {
+        node.setFlexGrow(value)
+    },
+    flexShrink: (node, { value }) => {
+        node.setFlexShrink(value)
+    },
+    flexBasis: (node, { parsed }) => {
+        if (parsed.unit === UNIT.PX) {
+            node.setFlexBasis(parsed.value)
+        } else if (parsed.unit === UNIT.PERCENT) {
+            node.setFlexBasisPercent(parsed.value)
+        } else if (parsed.unit === UNIT.AUTO) {
+            node.setFlexBasisAuto()
+        } else if (parsed.unit === UNIT.UNSET) {
+            node.setFlexBasis(undefined)
+        }
+    },
+    flexDirection: (node, { parsed }) => {
+        node.setFlexDirection(parsed.enum)
+    },
+    flexWrap: (node, { parsed }) => {
+        node.setFlexWrap(parsed.enum)
+    },
     alignContent: (node, { parsed }) => {
         node.setAlignContent(parsed.enum)
     },
@@ -80,15 +107,10 @@ export const YOGA_SETTER = {
     alignSelf: (node, { parsed }) => {
         node.setAlignSelf(parsed.enum)
     },
-    flexDirection: (node, { parsed }) => {
-        node.setFlexDirection(parsed.enum)
-    },
-    flexWrap: (node, { parsed }) => {
-        node.setFlexWrap(parsed.enum)
-    },
     justifyContent: (node, { parsed }) => {
         node.setJustifyContent(parsed.enum)
     },
+
     margin: (node, { value }) => {
         node.setMargin(EDGE.all, value)
     },
@@ -111,26 +133,6 @@ export const YOGA_SETTER = {
     // marginVertical: (node, { value }) => {
     //     const value = formatEdgeUnit(node, input, root)
     //     node.setMargin(EDGE.vertical, value)
-    // },
-    flex: (node, { value }) => {
-        node.setFlex(value)
-    },
-    flexGrow: (node, { value }) => {
-        node.setFlexGrow(value)
-    },
-    flexShrink: (node, { value }) => {
-        node.setFlexShrink(value)
-    },
-    // flexBasis: (node, { value }) => {
-    //     const value = formatUnit(node, input, root, NaN)
-    //     node.setFlexBasis(value)
-    // },
-    // flexBasisPercent: (node, { value }) => {
-    //     const value = convertPercent(input)
-    //     node.setFlexBasisPercent(value)
-    // },
-    // flexBasisAuto: (node) => {
-    //     node.setFlexBasisAuto()
     // },
     // boxSizing: (node, { value }) => {
     //     const value = convertEnum(BOX_SIZING_LUT, input, 0)

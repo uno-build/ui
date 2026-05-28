@@ -38,6 +38,29 @@ test('height', async () => {
     expect(child.layout.height).toBe(200)
 })
 
+test('flexBasis', async () => {
+    const { ui, root, child } = await createUI({ width: '200px' })
+    expect(root.layout.width).toBe(200)
+    expect(child.layout.width).toBe(0)
+
+    child.setStyle('flexBasis', '50px')
+    ui.update()
+    expect(child.layout.width).toBe(50)
+
+    child.setStyle('flexBasis', '50%')
+    ui.update()
+    expect(child.layout.width).toBe(100)
+
+    child.setStyle('width', '75px')
+    child.setStyle('flexBasis', 'auto')
+    ui.update()
+    expect(child.layout.width).toBe(75)
+
+    child.setStyle('flexBasis', 'unset')
+    ui.update()
+    expect(child.layout.width).toBe(75)
+})
+
 test('minWidth', async () => {
     const { ui, root, child } = await createUI({ width: '200px' })
     expect(root.layout.width).toBe(200)
