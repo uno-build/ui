@@ -64,11 +64,4 @@ export default function createNestedWrapGapLayout({ ui, rendererName }) {
             backgroundColor: '#e8ddff',
         }),
     )
-
-    return {
-        markers: {
-            firstLineMarker,
-            secondLineMarker,
-        },
-    }
 }

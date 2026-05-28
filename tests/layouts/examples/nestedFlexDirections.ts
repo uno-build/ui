@@ -84,11 +84,4 @@ export default function createNestedFlexDirectionsLayout({ ui, rendererName }) {
         backgroundColor: '#aa00ff',
     })
     rowReverse.add(reverseEndMarker)
-
-    return {
-        markers: {
-            directionMarker,
-            reverseEndMarker,
-        },
-    }
 }

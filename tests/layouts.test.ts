@@ -88,26 +88,14 @@ for (const layout of layoutNames) {
 }
 
 function assertPaintedRectsMatchLayout({ layout, baseline, comparisons }) {
-    const baselineNames = baseline.paintedRects.map(({ name }) => name)
-    const expectedNames = expectedPaintedRectNames[layout]
-
-    if (expectedNames != null) {
-        expect(baselineNames).toEqual(expectedNames)
-    }
-
-    if (
-        baseline.paintedRects.length === 0 &&
-        comparisons.every(({ paintedRects }) => paintedRects.length === 0)
-    ) {
-        return
-    }
+    const baselinePaths = baseline.paintedRects.map(({ path }) => path)
 
     for (const comparison of comparisons) {
         expect(comparison.paintedRects).toHaveLength(
             baseline.paintedRects.length,
         )
-        expect(comparison.paintedRects.map(({ name }) => name)).toEqual(
-            baselineNames,
+        expect(comparison.paintedRects.map(({ path }) => path)).toEqual(
+            baselinePaths,
         )
 
         for (const [
@@ -121,14 +109,14 @@ function assertPaintedRectsMatchLayout({ layout, baseline, comparisons }) {
                 continue
             }
 
-            expect(comparisonRect.name).toBe(baselineRect.name)
+            expect(comparisonRect.id).toBe(baselineRect.id)
             expect(comparisonRect.path).toBe(baselineRect.path)
 
             for (const key of comparedPaintedRectKeys) {
                 expect
                     .soft(
                         comparisonRect[key],
-                        `${layout} ${comparison.rendererName} painted ${baselineRect.name} ${key}`,
+                        `${layout} ${comparison.rendererName} painted ${baselineRect.path} ${key}`,
                     )
                     .toBeGreaterThanOrEqual(
                         baselineRect[key] - layoutComparisonTolerance,
@@ -136,7 +124,7 @@ function assertPaintedRectsMatchLayout({ layout, baseline, comparisons }) {
                 expect
                     .soft(
                         comparisonRect[key],
-                        `${layout} ${comparison.rendererName} painted ${baselineRect.name} ${key}`,
+                        `${layout} ${comparison.rendererName} painted ${baselineRect.path} ${key}`,
                     )
                     .toBeLessThanOrEqual(
                         baselineRect[key] + layoutComparisonTolerance,
@@ -144,23 +132,6 @@ function assertPaintedRectsMatchLayout({ layout, baseline, comparisons }) {
             }
         }
     }
-}
-
-const expectedPaintedRectNames = {
-    deepNestedPaint: ['flowMarker', 'alignedMarker', 'absoluteMarker'],
-    nestedFlexDirections: ['directionMarker', 'reverseEndMarker'],
-    nestedMargins: [
-        'nestedMarginMarker',
-        'afterMarginMarker',
-        'endAlignedMarginMarker',
-    ],
-    nestedPercentDimensions: [
-        'percentSizeMarker',
-        'endAlignedPercentMarker',
-        'percentOffsetMarker',
-    ],
-    nestedRelativeOffsets: ['positiveMarker', 'mixedMarker'],
-    nestedWrapGap: ['firstLineMarker', 'secondLineMarker'],
 }
 
 async function renderLayout(page, layout) {

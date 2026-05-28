@@ -30,13 +30,12 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
 
         ui.root.setStyle('width', canvas.clientWidth)
         ui.root.setStyle('height', canvas.clientHeight)
-        const layoutResult = createLayout({ ui, rendererName }) ?? {}
-        const markers = layoutResult.markers ?? {}
+        createLayout({ ui, rendererName })
 
         ui.update()
 
         const result = readPaintLayout(ui)
-        const paintedRects = readPaintedRects({ canvas, markers })
+        const paintedRects = readPaintedRects({ canvas, nodes: ui.nodes })
         logger.table(result)
         results.push({ rendererName, result, paintedRects })
     }
@@ -189,22 +188,22 @@ function readPaintLayout(ui) {
     }))
 }
 
-function readPaintedRects({ canvas, markers }) {
+function readPaintedRects({ canvas, nodes }) {
     const canvasRect = canvas.getBoundingClientRect()
 
-    return Object.entries(markers).map(([name, node]) => {
+    return [...nodes].map((node) => {
         const element = canvas.querySelector(`#node-${node.id}`)
+        const path = node.path.join('.')
 
         if (element == null) {
-            throw new Error(`Missing painted element for marker '${name}'`)
+            throw new Error(`Missing painted element for node '${path}'`)
         }
 
         const rect = element.getBoundingClientRect()
 
         return {
-            name,
             id: node.id,
-            path: node.path.join('.'),
+            path,
             x: Math.round(rect.left - canvasRect.left),
             y: Math.round(rect.top - canvasRect.top),
             width: Math.round(rect.width),

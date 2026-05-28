@@ -86,12 +86,4 @@ export default function createNestedPercentDimensionsLayout({
         backgroundColor: '#ff6b00',
     })
     absoluteHost.add(percentOffsetMarker)
-
-    return {
-        markers: {
-            percentSizeMarker,
-            endAlignedPercentMarker,
-            percentOffsetMarker,
-        },
-    }
 }

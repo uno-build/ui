@@ -89,11 +89,4 @@ export default function createNestedRelativeOffsetsLayout({
         backgroundColor: '#ff5500',
     })
     mixedGrandchild.add(mixedMarker)
-
-    return {
-        markers: {
-            positiveMarker,
-            mixedMarker,
-        },
-    }
 }

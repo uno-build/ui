@@ -125,12 +125,4 @@ export default function createNestedMarginsLayout({ ui, rendererName }) {
         backgroundColor: '#dd7700',
     })
     endAlignedMarginHost.add(endAlignedMarginMarker)
-
-    return {
-        markers: {
-            nestedMarginMarker,
-            afterMarginMarker,
-            endAlignedMarginMarker,
-        },
-    }
 }

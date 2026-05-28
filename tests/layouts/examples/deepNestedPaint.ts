@@ -163,12 +163,4 @@ export default function createDeepNestedPaintLayout({ ui, rendererName }) {
         backgroundColor: '#0000ff',
     })
     absoluteHost.add(absoluteMarker)
-
-    return {
-        markers: {
-            flowMarker,
-            alignedMarker,
-            absoluteMarker,
-        },
-    }
 }
