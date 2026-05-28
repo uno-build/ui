@@ -119,6 +119,11 @@ export const STYLE = {
             validate: [validateAuto],
             parse: [parseAuto],
         },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
+        },
     ]),
 
     LEFT: createStyle('left', [
@@ -131,6 +136,11 @@ export const STYLE = {
             normalize: [normalizeString],
             validate: [validateAuto],
             parse: [parseAuto],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
         },
     ]),
 
@@ -145,6 +155,11 @@ export const STYLE = {
             validate: [validateAuto],
             parse: [parseAuto],
         },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
+        },
     ]),
 
     BOTTOM: createStyle('bottom', [
@@ -157,6 +172,11 @@ export const STYLE = {
             normalize: [normalizeString],
             validate: [validateAuto],
             parse: [parseAuto],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
         },
     ]),
 

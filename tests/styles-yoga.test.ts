@@ -124,6 +124,53 @@ test('maxHeight', async () => {
     expect(child.layout.height).toBe(150)
 })
 
+test('position', async () => {
+    const { ui, root, child } = await createUI({
+        height: '200px',
+        alignItems: 'flex-start',
+    })
+    expect(root.layout.width).toBe(200)
+    expect(root.layout.height).toBe(200)
+
+    child.setStyle('width', '50px')
+    child.setStyle('height', '40px')
+    ui.update()
+    expect(child.layout.x).toBe(0)
+    expect(child.layout.y).toBe(0)
+
+    child.setStyle('position', 'relative')
+    child.setStyle('left', '20px')
+    child.setStyle('top', '30px')
+    ui.update()
+    expect(child.layout.x).toBe(20)
+    expect(child.layout.y).toBe(30)
+
+    child.setStyle('position', 'absolute')
+    child.setStyle('left', '25%')
+    child.setStyle('top', '10%')
+    ui.update()
+    expect(child.layout.x).toBe(50)
+    expect(child.layout.y).toBe(20)
+
+    child.setStyle('left', 'unset')
+    child.setStyle('top', 'unset')
+    ui.update()
+    expect(child.layout.x).toBe(0)
+    expect(child.layout.y).toBe(0)
+
+    child.setStyle('right', '25%')
+    child.setStyle('bottom', '10%')
+    ui.update()
+    expect(child.layout.x).toBe(100)
+    expect(child.layout.y).toBe(140)
+
+    child.setStyle('right', 'unset')
+    child.setStyle('bottom', 'unset')
+    ui.update()
+    expect(child.layout.x).toBe(0)
+    expect(child.layout.y).toBe(0)
+})
+
 async function createUI(styles = {}) {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })

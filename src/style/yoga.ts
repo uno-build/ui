@@ -59,17 +59,17 @@ export const YOGA_SETTER = {
     position: (node, { parsed }) => {
         node.setPositionType(parsed.enum)
     },
-    top: (node, { value }) => {
-        node.setPosition(EDGE.top, value)
+    top: (node, { parsed }) => {
+        setPosition(node, EDGE.top, parsed)
     },
-    left: (node, { value }) => {
-        node.setPosition(EDGE.left, value)
+    left: (node, { parsed }) => {
+        setPosition(node, EDGE.left, parsed)
     },
-    right: (node, { value }) => {
-        node.setPosition(EDGE.right, value)
+    right: (node, { parsed }) => {
+        setPosition(node, EDGE.right, parsed)
     },
-    bottom: (node, { value }) => {
-        node.setPosition(EDGE.bottom, value)
+    bottom: (node, { parsed }) => {
+        setPosition(node, EDGE.bottom, parsed)
     },
     alignContent: (node, { parsed }) => {
         node.setAlignContent(parsed.enum)
@@ -233,4 +233,16 @@ export const YOGA_SETTER = {
     //     node.setIsReferenceBaseline(Boolean(input))
     //     return Boolean(input)
     // },
+}
+
+function setPosition(node, edge, parsed) {
+    if (parsed.unit === UNIT.PX) {
+        node.setPosition(edge, parsed.value)
+    } else if (parsed.unit === UNIT.PERCENT) {
+        node.setPositionPercent(edge, parsed.value)
+    } else if (parsed.unit === UNIT.AUTO) {
+        node.setPositionAuto(edge)
+    } else if (parsed.unit === UNIT.UNSET) {
+        node.setPosition(edge, undefined)
+    }
 }

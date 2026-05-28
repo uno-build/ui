@@ -226,8 +226,17 @@ test('size constraint styles reject none', () => {
     }
 })
 
-test('size constraint styles accept unset', () => {
-    const styles = ['minWidth', 'minHeight', 'maxWidth', 'maxHeight']
+test('resettable unit styles accept unset', () => {
+    const styles = [
+        'top',
+        'left',
+        'right',
+        'bottom',
+        'minWidth',
+        'minHeight',
+        'maxWidth',
+        'maxHeight',
+    ]
 
     for (const name of styles) {
         expect(Style.resolveStyle(name, ' Unset ')).toEqual({

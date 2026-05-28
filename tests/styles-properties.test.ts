@@ -328,12 +328,40 @@ test('maxWidth, maxHeight', () => {
     }
 })
 
-test('top, left, right, bottom, marginTop, marginLeft, marginRight, marginBottom, margin', () => {
+test('top, left, right, bottom', () => {
+    const styles = ['top', 'left', 'right', 'bottom']
+    const validUnitCases = [
+        [8, '8px', 8, 'px'],
+        ['8', '8px', 8, 'px'],
+        [' 8PX ', '8px', 8, 'px'],
+        ['12.5%', '12.5%', 12.5, '%'],
+        [-3, '-3px', -3, 'px'],
+        ['-4px', '-4px', -4, 'px'],
+        ['-5%', '-5%', -5, '%'],
+    ] as const
+    const invalidValues = [true, '12em', 'none', 'inherit']
+
+    for (const name of styles) {
+        expectKeywordUnit(name, ' Auto ', 'auto')
+        expectKeywordUnit(name, ' Unset ', 'unset')
+
+        for (const [
+            value,
+            expectedValue,
+            parsedValue,
+            unit,
+        ] of validUnitCases) {
+            expectUnit(name, value, expectedValue, parsedValue, unit)
+        }
+
+        for (const value of invalidValues) {
+            expectInvalid(name, value, /expected px or % unit/)
+        }
+    }
+})
+
+test('marginTop, marginLeft, marginRight, marginBottom, margin', () => {
     const styles = [
-        'top',
-        'left',
-        'right',
-        'bottom',
         'marginTop',
         'marginLeft',
         'marginRight',
@@ -349,7 +377,7 @@ test('top, left, right, bottom, marginTop, marginLeft, marginRight, marginBottom
         ['-4px', '-4px', -4, 'px'],
         ['-5%', '-5%', -5, '%'],
     ] as const
-    const invalidValues = [true, '12em', 'none', 'inherit']
+    const invalidValues = [true, '12em', 'none', 'unset', 'inherit']
 
     for (const name of styles) {
         expectKeywordUnit(name, ' Auto ', 'auto')
