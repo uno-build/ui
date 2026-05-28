@@ -1,11 +1,10 @@
-import layoutBasic from './examples/basic'
+import layoutPositionRelative from './examples/positionRelative'
 import layoutDeepNestedPaint from './examples/deepNestedPaint'
 import layoutNestedFlexDirections from './examples/nestedFlexDirections'
 import layoutNestedMargins from './examples/nestedMargins'
 import layoutNestedPercentDimensions from './examples/nestedPercentDimensions'
 import layoutNestedRelativeOffsets from './examples/nestedRelativeOffsets'
 import layoutNestedWrapGap from './examples/nestedWrapGap'
-import layoutRelative from './examples/relative'
 import layoutWrappedAlignContentRelativeOffsets from './examples/wrappedAlignContentRelativeOffsets'
 import layoutWrappedColumnRelativeOffsets from './examples/wrappedColumnRelativeOffsets'
 import layoutWrappedMainAxisRelativeOffsets from './examples/wrappedMainAxisRelativeOffsets'
@@ -15,14 +14,13 @@ import layoutWrappedRelativeWrapReverse from './examples/wrappedRelativeWrapReve
 import layoutZIndex from './examples/zindex'
 
 export const LAYOUTS = {
-    basic: layoutBasic,
+    positionRelative: layoutPositionRelative,
     deepNestedPaint: layoutDeepNestedPaint,
     nestedFlexDirections: layoutNestedFlexDirections,
     nestedMargins: layoutNestedMargins,
     nestedPercentDimensions: layoutNestedPercentDimensions,
     nestedRelativeOffsets: layoutNestedRelativeOffsets,
     nestedWrapGap: layoutNestedWrapGap,
-    relative: layoutRelative,
     wrappedAlignContentRelativeOffsets:
         layoutWrappedAlignContentRelativeOffsets,
     wrappedColumnRelativeOffsets: layoutWrappedColumnRelativeOffsets,

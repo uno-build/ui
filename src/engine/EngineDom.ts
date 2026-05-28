@@ -96,4 +96,5 @@ const DEFAULT_NODE_STYLE = {
     display: 'flex',
     minWidth: '0',
     minHeight: '0',
+    zIndex: '0',
 }
