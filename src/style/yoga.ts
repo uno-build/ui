@@ -15,7 +15,7 @@ export const YOGA_SETTER = {
         if (parsed.unit === UNIT.AUTO) {
             node.setHeightAuto()
         } else if (parsed.unit === UNIT.PERCENT) {
-            node.setHeightPercent(value)
+            node.setHeightPercent(parsed.value)
         } else if (parsed.unit === UNIT.PX) {
             node.setHeight(value)
         }

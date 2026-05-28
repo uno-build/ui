@@ -89,13 +89,10 @@ for (const layout of layoutNames) {
 
 function assertPaintedRectsMatchLayout({ layout, baseline, comparisons }) {
     const baselineNames = baseline.paintedRects.map(({ name }) => name)
+    const expectedNames = expectedPaintedRectNames[layout]
 
-    if (layout === 'deepNestedPaint') {
-        expect(baselineNames).toEqual([
-            'flowMarker',
-            'alignedMarker',
-            'absoluteMarker',
-        ])
+    if (expectedNames != null) {
+        expect(baselineNames).toEqual(expectedNames)
     }
 
     if (
@@ -147,6 +144,23 @@ function assertPaintedRectsMatchLayout({ layout, baseline, comparisons }) {
             }
         }
     }
+}
+
+const expectedPaintedRectNames = {
+    deepNestedPaint: ['flowMarker', 'alignedMarker', 'absoluteMarker'],
+    nestedFlexDirections: ['directionMarker', 'reverseEndMarker'],
+    nestedMargins: [
+        'nestedMarginMarker',
+        'afterMarginMarker',
+        'endAlignedMarginMarker',
+    ],
+    nestedPercentDimensions: [
+        'percentSizeMarker',
+        'endAlignedPercentMarker',
+        'percentOffsetMarker',
+    ],
+    nestedRelativeOffsets: ['positiveMarker', 'mixedMarker'],
+    nestedWrapGap: ['firstLineMarker', 'secondLineMarker'],
 }
 
 async function renderLayout(page, layout) {
