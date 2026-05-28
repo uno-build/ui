@@ -85,6 +85,9 @@ export const YOGA_SETTER = {
     justifyContent: (node, { parsed }) => {
         node.setJustifyContent(parsed.enum)
     },
+    margin: (node, { value }) => {
+        node.setMargin(EDGE.all, value)
+    },
     marginTop: (node, { value }) => {
         node.setMargin(EDGE.top, value)
     },
@@ -94,14 +97,9 @@ export const YOGA_SETTER = {
     marginRight: (node, { value }) => {
         node.setMargin(EDGE.right, value)
     },
-    // marginBottom: (node, { value }) => {
-    //     const value = formatEdgeUnit(node, input, root)
-    //     node.setMargin(EDGE.bottom, value)
-    // },
-    // margin: (node, { value }) => {
-    //     const value = formatEdgeUnit(node, input, root)
-    //     node.setMargin(EDGE.all, value)
-    // },
+    marginBottom: (node, { value }) => {
+        node.setMargin(EDGE.bottom, value)
+    },
     // marginHorizontal: (node, { value }) => {
     //     const value = formatEdgeUnit(node, input, root)
     //     node.setMargin(EDGE.horizontal, value)

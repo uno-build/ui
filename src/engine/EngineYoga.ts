@@ -1,5 +1,5 @@
-import { loadYoga } from 'yoga-layout/load'
 import Engine from '../Engine.ts'
+import { loadYoga } from 'yoga-layout/load'
 import { YOGA_SETTER } from '../style/yoga.ts'
 import { UNIT } from '../style/consts.ts'
 
@@ -59,7 +59,7 @@ export default class EngineYoga extends Engine {
         const node_rect = node.element.getComputedLayout()
         const parent_layout = this.getParentLayout(node)
         const parent_rect =
-            node.parent.element === this.root_element
+            node.parent?.element === this.root_element
                 ? { ...parent_layout, ...this.root_element.getComputedLayout() }
                 : parent_layout
 

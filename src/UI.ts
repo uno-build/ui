@@ -33,6 +33,7 @@ export default class UI {
 
     public update() {
         this.renderer.beforeUpdate(this.nodes)
+        this.root.layout = this.renderer.getLayout(this.root)
         for (const node of this.nodes) {
             node.layout = this.renderer.getLayout(node)
         }

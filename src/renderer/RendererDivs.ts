@@ -6,10 +6,11 @@ export default class RendererDivs extends Renderer {
     private engine
     private divs = new WeakMap()
 
-    constructor({ canvas }) {
+    constructor({ canvas, createDiv = createDivFactory }) {
         super()
         this.canvas = canvas
         this.engine = new EngineYoga()
+        this.createDiv = createDiv
     }
 
     public async init() {
@@ -23,7 +24,7 @@ export default class RendererDivs extends Renderer {
         if (node.id === 0) {
             div = this.canvas
         } else {
-            div = document.createElement('div')
+            div = this.createDiv()
             div.id = `node-${node.id}`
             this.canvas.appendChild(div)
             Object.assign(div.style, DEFAULT_NODE_STYLE)
@@ -79,4 +80,8 @@ export default class RendererDivs extends Renderer {
 const DEFAULT_NODE_STYLE = {
     boxSizing: 'border-box',
     position: 'absolute',
+}
+
+function createDivFactory() {
+    return document.createElement('div')
 }
