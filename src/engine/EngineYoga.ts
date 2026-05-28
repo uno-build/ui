@@ -63,54 +63,73 @@ export default class LayoutEngineYoga {
                 : parent_layout
 
         return calculateLayoutRect(
-            applyWrappedRelativeCrossOffset(node, node_rect),
+            applyWrappedRelativeOffsets(node, node_rect),
             parent_rect,
         )
     }
 }
 
-function applyWrappedRelativeCrossOffset(node, rect) {
-    const parentFlexDirection = node.parent?.styles.flexDirection?.value
+function applyWrappedRelativeOffsets(node, rect) {
+    const mainAxis =
+        FLEX_DIRECTION_MAIN_AXIS[node.parent?.styles.flexDirection?.value]
 
     if (
         node.styles.position?.value !== 'relative' ||
         node.parent?.styles.flexWrap?.value == null ||
-        node.parent?.styles.flexWrap?.value === 'nowrap'
+        node.parent?.styles.flexWrap?.value === 'nowrap' ||
+        mainAxis == null
     ) {
         return rect
     }
 
-    if (
-        parentFlexDirection === 'row' ||
-        parentFlexDirection === 'row-reverse'
-    ) {
-        const parentContentHeight = readContentSize(node.parent, 'height')
+    let correctedRect = rect
 
-        return {
-            ...rect,
-            top:
-                rect.top +
-                readOffset(node.styles.top, parentContentHeight) -
-                readOffset(node.styles.bottom, parentContentHeight),
+    for (const axis of RELATIVE_OFFSET_AXES) {
+        const referenceSize = readContentSize(
+            node.parent,
+            axis.referenceDimension,
+        )
+        const cssOffset =
+            readOffset(node.styles[axis.startStyle], referenceSize) -
+            readOffset(node.styles[axis.endStyle], referenceSize)
+        const yogaOffset =
+            axis.name === mainAxis.name ? cssOffset * mainAxis.direction : 0
+        const correction = cssOffset - yogaOffset
+
+        if (correction !== 0) {
+            correctedRect = {
+                ...correctedRect,
+                [axis.rectProperty]:
+                    correctedRect[axis.rectProperty] + correction,
+            }
         }
     }
 
-    if (
-        parentFlexDirection === 'column' ||
-        parentFlexDirection === 'column-reverse'
-    ) {
-        const parentContentWidth = readContentSize(node.parent, 'width')
+    return correctedRect
+}
 
-        return {
-            ...rect,
-            left:
-                rect.left +
-                readOffset(node.styles.left, parentContentWidth) -
-                readOffset(node.styles.right, parentContentWidth),
-        }
-    }
+const RELATIVE_OFFSET_AXES = [
+    {
+        name: 'x',
+        rectProperty: 'left',
+        startStyle: 'left',
+        endStyle: 'right',
+        referenceDimension: 'width',
+    },
+    {
+        name: 'y',
+        rectProperty: 'top',
+        startStyle: 'top',
+        endStyle: 'bottom',
+        referenceDimension: 'height',
+    },
+]
 
-    return rect
+const FLEX_DIRECTION_MAIN_AXIS = {
+    row: { name: 'x', direction: 1 },
+    'row-reverse': { name: 'x', direction: -1 },
+    column: { name: 'y', direction: 1 },
+    'column-reverse': { name: 'y', direction: -1 },
 }
 
 function getParentLayout(node) {

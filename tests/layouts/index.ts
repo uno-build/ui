@@ -8,6 +8,7 @@ import layoutNestedWrapGap from './examples/nestedWrapGap'
 import layoutRelative from './examples/relative'
 import layoutWrappedAlignContentRelativeOffsets from './examples/wrappedAlignContentRelativeOffsets'
 import layoutWrappedColumnRelativeOffsets from './examples/wrappedColumnRelativeOffsets'
+import layoutWrappedMainAxisRelativeOffsets from './examples/wrappedMainAxisRelativeOffsets'
 import layoutWrappedPercentRelativeOffsets from './examples/wrappedPercentRelativeOffsets'
 import layoutWrappedRelativeOffsets from './examples/wrappedRelativeOffsets'
 import layoutWrappedRelativeWrapReverse from './examples/wrappedRelativeWrapReverse'
@@ -25,6 +26,7 @@ export const LAYOUTS = {
     wrappedAlignContentRelativeOffsets:
         layoutWrappedAlignContentRelativeOffsets,
     wrappedColumnRelativeOffsets: layoutWrappedColumnRelativeOffsets,
+    wrappedMainAxisRelativeOffsets: layoutWrappedMainAxisRelativeOffsets,
     wrappedPercentRelativeOffsets: layoutWrappedPercentRelativeOffsets,
     wrappedRelativeOffsets: layoutWrappedRelativeOffsets,
     wrappedRelativeWrapReverse: layoutWrappedRelativeWrapReverse,
