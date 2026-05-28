@@ -216,26 +216,18 @@ test('non-negative unit styles reject negative values', () => {
     }
 })
 
-test('max size styles accept none', () => {
-    const styles = ['maxWidth', 'maxHeight']
+test('size constraint styles reject none', () => {
+    const styles = ['minWidth', 'minHeight', 'maxWidth', 'maxHeight']
 
     for (const name of styles) {
-        expect(Style.resolveStyle(name, ' None ')).toEqual({
-            name,
-            value: 'none',
-            parsed: { unit: 'none' },
-        })
-    }
-
-    for (const name of ['minWidth', 'minHeight']) {
         expect(() => {
             Style.resolveStyle(name, 'none')
         }).toThrow(/expected px or % unit/)
     }
 })
 
-test('min size styles accept unset', () => {
-    const styles = ['minWidth', 'minHeight']
+test('size constraint styles accept unset', () => {
+    const styles = ['minWidth', 'minHeight', 'maxWidth', 'maxHeight']
 
     for (const name of styles) {
         expect(Style.resolveStyle(name, ' Unset ')).toEqual({
@@ -248,8 +240,6 @@ test('min size styles accept unset', () => {
     for (const name of [
         'width',
         'height',
-        'maxWidth',
-        'maxHeight',
         'paddingTop',
         'paddingLeft',
         'paddingRight',

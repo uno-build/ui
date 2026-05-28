@@ -24,7 +24,6 @@ import {
     validateEnum,
     validateUnit,
     validateAuto,
-    validateNone,
     validateUnset,
     validateNumber,
     validateNonNegativeNumber,
@@ -36,7 +35,6 @@ import {
     parseEnum,
     parseUnit,
     parseAuto,
-    parseNone,
     parseUnset,
     parseNumber,
 } from './parsers.ts'
@@ -354,8 +352,8 @@ export const STYLE = {
         },
         {
             normalize: [normalizeString],
-            validate: [validateNone],
-            parse: [parseNone],
+            validate: [validateUnset],
+            parse: [parseUnset],
         },
     ]),
 
@@ -367,8 +365,8 @@ export const STYLE = {
         },
         {
             normalize: [normalizeString],
-            validate: [validateNone],
-            parse: [parseNone],
+            validate: [validateUnset],
+            parse: [parseUnset],
         },
     ]),
 

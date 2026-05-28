@@ -306,11 +306,12 @@ test('maxWidth, maxHeight', () => {
         ['-1px', /expected non-negative unit/],
         ['-1%', /expected non-negative unit/],
         ['auto', /expected px or % unit/],
+        ['none', /expected px or % unit/],
         ['20em', /expected px or % unit/],
     ] as const
 
     for (const name of styles) {
-        expectKeywordUnit(name, ' None ', 'none')
+        expectKeywordUnit(name, ' Unset ', 'unset')
 
         for (const [
             value,

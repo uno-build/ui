@@ -22,12 +22,6 @@ export function validateAuto(value: any) {
     }
 }
 
-export function validateNone(value: any) {
-    if (value !== 'none') {
-        throw new Error('expected none')
-    }
-}
-
 export function validateUnset(value: any) {
     if (value !== 'unset') {
         throw new Error('expected unset')

@@ -38,38 +38,24 @@ export const YOGA_SETTER = {
             node.setMinHeight(undefined)
         }
     },
-    // minWidth: (node, { value }) => {
-    //     const value = formatUnit(node, input, root)
-    //     node.setMinWidth(value)
-    // },
-    // minWidthPercent: (node, { value }) => {
-    //     const value = convertPercent(input)
-    //     node.setMinWidthPercent(value)
-    // },
-    // minHeight: (node, { value }) => {
-    //     const value = formatUnit(node, input, root)
-    //     node.setMinHeight(value)
-    // },
-    // minHeightPercent: (node, { value }) => {
-    //     const value = convertPercent(input)
-    //     node.setMinHeightPercent(value)
-    // },
-    // maxWidth: (node, { value }) => {
-    //     const value = formatUnit(node, input, root)
-    //     node.setMaxWidth(value)
-    // },
-    // maxWidthPercent: (node, { value }) => {
-    //     const value = convertPercent(input)
-    //     node.setMaxWidthPercent(value)
-    // },
-    // maxHeight: (node, { value }) => {
-    //     const value = formatUnit(node, input, root)
-    //     node.setMaxHeight(value)
-    // },
-    // maxHeightPercent: (node, { value }) => {
-    //     const value = convertPercent(input)
-    //     node.setMaxHeightPercent(value)
-    // },
+    maxWidth: (node, { parsed }) => {
+        if (parsed.unit === UNIT.PX) {
+            node.setMaxWidth(parsed.value)
+        } else if (parsed.unit === UNIT.PERCENT) {
+            node.setMaxWidthPercent(parsed.value)
+        } else if (parsed.unit === UNIT.UNSET) {
+            node.setMaxWidth(undefined)
+        }
+    },
+    maxHeight: (node, { parsed }) => {
+        if (parsed.unit === UNIT.PX) {
+            node.setMaxHeight(parsed.value)
+        } else if (parsed.unit === UNIT.PERCENT) {
+            node.setMaxHeightPercent(parsed.value)
+        } else if (parsed.unit === UNIT.UNSET) {
+            node.setMaxHeight(undefined)
+        }
+    },
     position: (node, { parsed }) => {
         node.setPositionType(parsed.enum)
     },
