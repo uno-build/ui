@@ -72,8 +72,12 @@ export const YOGA_SETTER = {
         setPosition(node, EDGE.bottom, parsed)
     },
 
-    flex: (node, { value }) => {
-        node.setFlex(value)
+    flex: (node, { value, parsed }) => {
+        if (parsed.unit === UNIT.UNSET) {
+            node.setFlex(undefined)
+        } else {
+            node.setFlex(value)
+        }
     },
     flexGrow: (node, { value }) => {
         node.setFlexGrow(value)

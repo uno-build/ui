@@ -325,11 +325,18 @@ export const STYLE = {
         },
     ]),
 
-    FLEX: createStyle('flex', {
-        normalize: [normalizeNumber],
-        validate: [validateNumber, validateNonNegative],
-        parse: [parseNumber],
-    }),
+    FLEX: createStyle('flex', [
+        {
+            normalize: [normalizeNumber],
+            validate: [validateNumber, validateNonNegative],
+            parse: [parseNumber],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
+        },
+    ]),
 
     FLEXBASIS: createStyle('flexBasis', [
         {

@@ -38,6 +38,39 @@ test('height', async () => {
     expect(child.layout.height).toBe(200)
 })
 
+test('flex', async () => {
+    const { ui, root, child } = await createUI({ width: '200px' })
+    expect(root.layout.width).toBe(200)
+    expect(child.layout.width).toBe(0)
+
+    child.setStyle('flex', '1')
+    ui.update()
+    expect(child.layout.width).toBe(200)
+
+    child.setStyle('flex', 'unset')
+    ui.update()
+    expect(child.layout.width).toBe(0)
+})
+
+test('flexDirection', async () => {
+    const { ui, root, child } = await createUI({ height: '200px' })
+    const sibling = ui.create()
+
+    child.setStyle('width', '50px')
+    child.setStyle('height', '50px')
+    sibling.setStyle('width', '50px')
+    sibling.setStyle('height', '50px')
+    root.add(sibling)
+    ui.update()
+    expect(sibling.layout.x).toBe(50)
+    expect(sibling.layout.y).toBe(0)
+
+    root.setStyle('flexDirection', 'column')
+    ui.update()
+    expect(sibling.layout.x).toBe(0)
+    expect(sibling.layout.y).toBe(50)
+})
+
 test('flexBasis', async () => {
     const { ui, root, child } = await createUI({ width: '200px' })
     expect(root.layout.width).toBe(200)
