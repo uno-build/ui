@@ -234,6 +234,37 @@ test('max size styles accept none', () => {
     }
 })
 
+test('min size styles accept unset', () => {
+    const styles = ['minWidth', 'minHeight']
+
+    for (const name of styles) {
+        expect(Style.resolveStyle(name, ' Unset ')).toEqual({
+            name,
+            value: 'unset',
+            parsed: { unit: 'unset' },
+        })
+    }
+
+    for (const name of [
+        'width',
+        'height',
+        'maxWidth',
+        'maxHeight',
+        'paddingTop',
+        'paddingLeft',
+        'paddingRight',
+        'paddingBottom',
+        'padding',
+        'rowGap',
+        'columnGap',
+        'gap',
+    ]) {
+        expect(() => {
+            Style.resolveStyle(name, 'unset')
+        }).toThrow(/expected px or % unit/)
+    }
+})
+
 test('border width styles are px-only and non-negative', () => {
     const styles = [
         'borderTopWidth',

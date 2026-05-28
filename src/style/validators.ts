@@ -28,6 +28,12 @@ export function validateNone(value: any) {
     }
 }
 
+export function validateUnset(value: any) {
+    if (value !== 'unset') {
+        throw new Error('expected unset')
+    }
+}
+
 export function validateNumber(value: any) {
     if (typeof value !== 'number' || !Number.isFinite(value)) {
         throw new Error('expected number')

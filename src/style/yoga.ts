@@ -3,21 +3,39 @@ import { UNIT, EDGE, GUTTER } from './consts.ts'
 // /Users/enzo/projects/uno/ui/node_modules/yoga-layout/src/wrapAssembly.ts
 export const YOGA_SETTER = {
     width: (node, { value, parsed }) => {
-        if (parsed.unit === UNIT.AUTO) {
-            node.setWidthAuto()
+        if (parsed.unit === UNIT.PX) {
+            node.setWidth(parsed.value)
         } else if (parsed.unit === UNIT.PERCENT) {
             node.setWidthPercent(parsed.value)
-        } else if (parsed.unit === UNIT.PX) {
-            node.setWidth(parsed.value)
+        } else if (parsed.unit === UNIT.AUTO) {
+            node.setWidthAuto()
         }
     },
     height: (node, { value, parsed }) => {
-        if (parsed.unit === UNIT.AUTO) {
-            node.setHeightAuto()
+        if (parsed.unit === UNIT.PX) {
+            node.setHeight(value)
         } else if (parsed.unit === UNIT.PERCENT) {
             node.setHeightPercent(parsed.value)
-        } else if (parsed.unit === UNIT.PX) {
-            node.setHeight(value)
+        } else if (parsed.unit === UNIT.AUTO) {
+            node.setHeightAuto()
+        }
+    },
+    minWidth: (node, { parsed }) => {
+        if (parsed.unit === UNIT.PX) {
+            node.setMinWidth(parsed.value)
+        } else if (parsed.unit === UNIT.PERCENT) {
+            node.setMinWidthPercent(parsed.value)
+        } else if (parsed.unit === UNIT.UNSET) {
+            node.setMinWidth(undefined)
+        }
+    },
+    minHeight: (node, { parsed }) => {
+        if (parsed.unit === UNIT.PX) {
+            node.setMinHeight(parsed.value)
+        } else if (parsed.unit === UNIT.PERCENT) {
+            node.setMinHeightPercent(parsed.value)
+        } else if (parsed.unit === UNIT.UNSET) {
+            node.setMinHeight(undefined)
         }
     },
     // minWidth: (node, { value }) => {

@@ -25,6 +25,7 @@ import {
     validateUnit,
     validateAuto,
     validateNone,
+    validateUnset,
     validateNumber,
     validateNonNegativeNumber,
     validatePx,
@@ -36,6 +37,7 @@ import {
     parseUnit,
     parseAuto,
     parseNone,
+    parseUnset,
     parseNumber,
 } from './parsers.ts'
 import {
@@ -318,17 +320,31 @@ export const STYLE = {
         },
     ]),
 
-    MINWIDTH: createStyle('minWidth', {
-        normalize: [normalizeUnit],
-        validate: [validateUnit, validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    MINWIDTH: createStyle('minWidth', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit, validateNonNegativeUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
+        },
+    ]),
 
-    MINHEIGHT: createStyle('minHeight', {
-        normalize: [normalizeUnit],
-        validate: [validateUnit, validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    MINHEIGHT: createStyle('minHeight', [
+        {
+            normalize: [normalizeUnit],
+            validate: [validateUnit, validateNonNegativeUnit],
+            parse: [parseUnit],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
+        },
+    ]),
 
     MAXWIDTH: createStyle('maxWidth', [
         {

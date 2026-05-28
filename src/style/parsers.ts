@@ -15,6 +15,13 @@ export function parseNone(value: string) {
     }
 }
 
+export function parseUnset(value: string) {
+    return {
+        value,
+        parsed: { unit: UNIT.UNSET },
+    }
+}
+
 export function parseNumber(value: number) {
     return { value, parsed: { value } }
 }

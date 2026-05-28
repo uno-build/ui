@@ -2,6 +2,7 @@ export const UNIT = {
     PX: 'px',
     PERCENT: '%',
     AUTO: 'auto',
+    UNSET: 'unset',
 }
 export const EDGE = {
     left: 0,

@@ -434,10 +434,39 @@ test('flexBasis, width, height', () => {
     }
 })
 
-test('minWidth, minHeight, paddingTop, paddingLeft, paddingRight, paddingBottom, padding, rowGap, columnGap, gap', () => {
+test('minWidth, minHeight', () => {
+    const styles = ['minWidth', 'minHeight']
+    const validCases = [
+        [0, '0px', 0, 'px'],
+        ['6', '6px', 6, 'px'],
+        [' 6PX ', '6px', 6, 'px'],
+        ['12.5%', '12.5%', 12.5, '%'],
+    ] as const
+    const invalidCases = [
+        [-1, /expected non-negative unit/],
+        ['-1px', /expected non-negative unit/],
+        ['-1%', /expected non-negative unit/],
+        ['auto', /expected px or % unit/],
+        ['none', /expected px or % unit/],
+        ['6em', /expected px or % unit/],
+        [false, /expected px or % unit/],
+    ] as const
+
+    for (const name of styles) {
+        expectKeywordUnit(name, ' Unset ', 'unset')
+
+        for (const [value, expectedValue, parsedValue, unit] of validCases) {
+            expectUnit(name, value, expectedValue, parsedValue, unit)
+        }
+
+        for (const [value, message] of invalidCases) {
+            expectInvalid(name, value, message)
+        }
+    }
+})
+
+test('paddingTop, paddingLeft, paddingRight, paddingBottom, padding, rowGap, columnGap, gap', () => {
     const styles = [
-        'minWidth',
-        'minHeight',
         'paddingTop',
         'paddingLeft',
         'paddingRight',
@@ -459,6 +488,7 @@ test('minWidth, minHeight, paddingTop, paddingLeft, paddingRight, paddingBottom,
         ['-1%', /expected non-negative unit/],
         ['auto', /expected px or % unit/],
         ['none', /expected px or % unit/],
+        ['unset', /expected px or % unit/],
         ['6em', /expected px or % unit/],
         [false, /expected px or % unit/],
     ] as const
