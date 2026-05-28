@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import path from 'node:path'
 import {
     comparedLayoutKeys,
+    comparedPaintedRectKeys,
     compareLayoutResults,
     defaultRendererNames,
     layoutComparisonTolerance,
@@ -20,13 +21,13 @@ for (const layout of layoutNames) {
             throw new Error('No baseline renderer result was produced')
         }
 
-        for (const { setupName, result } of results) {
+        for (const { rendererName, result } of results) {
             for (const [rowIndex, row] of result.entries()) {
                 for (const key of comparedLayoutKeys) {
                     expect
                         .soft(
                             Number.isFinite(row[key]),
-                            `${layout} ${setupName} row ${rowIndex} ${key}`,
+                            `${layout} ${rendererName} row ${rowIndex} ${key}`,
                         )
                         .toBe(true)
                 }
@@ -77,7 +78,75 @@ for (const layout of layoutNames) {
                 }
             }
         }
+
+        assertPaintedRectsMatchLayout({
+            layout,
+            baseline,
+            comparisons,
+        })
     })
+}
+
+function assertPaintedRectsMatchLayout({ layout, baseline, comparisons }) {
+    const baselineNames = baseline.paintedRects.map(({ name }) => name)
+
+    if (layout === 'deepNestedPaint') {
+        expect(baselineNames).toEqual([
+            'flowMarker',
+            'alignedMarker',
+            'absoluteMarker',
+        ])
+    }
+
+    if (
+        baseline.paintedRects.length === 0 &&
+        comparisons.every(({ paintedRects }) => paintedRects.length === 0)
+    ) {
+        return
+    }
+
+    for (const comparison of comparisons) {
+        expect(comparison.paintedRects).toHaveLength(
+            baseline.paintedRects.length,
+        )
+        expect(comparison.paintedRects.map(({ name }) => name)).toEqual(
+            baselineNames,
+        )
+
+        for (const [
+            rowIndex,
+            baselineRect,
+        ] of baseline.paintedRects.entries()) {
+            const comparisonRect = comparison.paintedRects[rowIndex]
+            expect(comparisonRect).toBeDefined()
+
+            if (comparisonRect == null) {
+                continue
+            }
+
+            expect(comparisonRect.name).toBe(baselineRect.name)
+            expect(comparisonRect.path).toBe(baselineRect.path)
+
+            for (const key of comparedPaintedRectKeys) {
+                expect
+                    .soft(
+                        comparisonRect[key],
+                        `${layout} ${comparison.rendererName} painted ${baselineRect.name} ${key}`,
+                    )
+                    .toBeGreaterThanOrEqual(
+                        baselineRect[key] - layoutComparisonTolerance,
+                    )
+                expect
+                    .soft(
+                        comparisonRect[key],
+                        `${layout} ${comparison.rendererName} painted ${baselineRect.name} ${key}`,
+                    )
+                    .toBeLessThanOrEqual(
+                        baselineRect[key] + layoutComparisonTolerance,
+                    )
+            }
+        }
+    }
 }
 
 async function renderLayout(page, layout) {

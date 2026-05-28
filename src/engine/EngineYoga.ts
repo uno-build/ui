@@ -63,19 +63,18 @@ export default class LayoutEngineYoga {
                 : parent_layout
 
         return calculateLayoutRect(
-            applyBorderContentOffset(
-                node,
-                applyRowRelativeCrossOffset(node, node_rect),
-            ),
+            applyWrappedRowRelativeCrossOffset(node, node_rect),
             parent_rect,
         )
     }
 }
 
-function applyRowRelativeCrossOffset(node, rect) {
+function applyWrappedRowRelativeCrossOffset(node, rect) {
     if (
         node.styles.position?.value !== 'relative' ||
-        node.parent?.styles.flexDirection?.value !== 'row'
+        node.parent?.styles.flexDirection?.value !== 'row' ||
+        node.parent?.styles.flexWrap?.value == null ||
+        node.parent?.styles.flexWrap?.value === 'nowrap'
     ) {
         return rect
     }
@@ -86,30 +85,6 @@ function applyRowRelativeCrossOffset(node, rect) {
             rect.top +
             readPxOffset(node.styles.top) -
             readPxOffset(node.styles.bottom),
-    }
-}
-
-function applyBorderContentOffset(node, rect) {
-    const borderWidth = readPxOffset(node.parent?.styles.borderWidth)
-
-    if (borderWidth === 0) {
-        return rect
-    }
-
-    return {
-        ...rect,
-        left:
-            rect.left +
-            readFlexContentOffset(
-                node.parent?.styles.justifyContent?.value,
-                borderWidth,
-            ),
-        top:
-            rect.top +
-            readFlexContentOffset(
-                node.parent?.styles.alignItems?.value,
-                borderWidth,
-            ),
     }
 }
 
@@ -152,16 +127,4 @@ function calculateLayoutRect(node_rect, parent_rect) {
 
 function readPxOffset(style) {
     return style?.parsed?.unit === UNIT.PX ? style.parsed.value : 0
-}
-
-function readFlexContentOffset(alignment, borderWidth) {
-    if (alignment === 'flex-end') {
-        return -borderWidth
-    }
-
-    if (alignment == null || alignment === 'flex-start') {
-        return borderWidth
-    }
-
-    return 0
 }

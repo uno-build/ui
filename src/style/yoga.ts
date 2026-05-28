@@ -110,17 +110,6 @@ export const YOGA_SETTER = {
     //     const value = formatEdgeUnit(node, input, root)
     //     node.setMargin(EDGE.vertical, value)
     // },
-    // flexBasis: (node, { value }) => {
-    //     const value = formatUnit(node, input, root, NaN)
-    //     node.setFlexBasis(value)
-    // },
-    // flexBasisPercent: (node, { value }) => {
-    //     const value = convertPercent(input)
-    //     node.setFlexBasisPercent(value)
-    // },
-    flexBasisAuto: (node) => {
-        node.setFlexBasisAuto()
-    },
     flex: (node, { value }) => {
         node.setFlex(value)
     },
@@ -130,12 +119,23 @@ export const YOGA_SETTER = {
     flexShrink: (node, { value }) => {
         node.setFlexShrink(value)
     },
+    // flexBasis: (node, { value }) => {
+    //     const value = formatUnit(node, input, root, NaN)
+    //     node.setFlexBasis(value)
+    // },
+    // flexBasisPercent: (node, { value }) => {
+    //     const value = convertPercent(input)
+    //     node.setFlexBasisPercent(value)
+    // },
+    // flexBasisAuto: (node) => {
+    //     node.setFlexBasisAuto()
+    // },
     // boxSizing: (node, { value }) => {
     //     const value = convertEnum(BOX_SIZING_LUT, input, 0)
     //     node.setBoxSizing(value)
     // },
-    borderWidth: (node, { value }) => {
-        node.setBorder(EDGE.all, value)
+    borderWidth: (node, { parsed }) => {
+        node.setBorder(EDGE.all, parsed.value)
     },
     // borderTopWidth: (node, { value }) => {
     //     const value = convertBorderWidth(input, root)
@@ -192,6 +192,13 @@ export const YOGA_SETTER = {
     //     const value = formatEdgeUnit(node, input, root)
     //     node.setPadding(EDGE.vertical, value)
     // },
+    gap: (node, { parsed }) => {
+        if (parsed.unit === UNIT.PERCENT) {
+            node.setGapPercent(GUTTER.all, parsed.value)
+        } else if (parsed.unit === UNIT.PX) {
+            node.setGap(GUTTER.all, parsed.value)
+        }
+    },
     // gapRow: (node, { value }) => {
     //     const value = formatGap(node, input, root)
     //     node.setGap(GUTTER.row, value)
@@ -208,13 +215,6 @@ export const YOGA_SETTER = {
     //     const value = formatGap(node, input, root)
     //     node.setGap(GUTTER.column, value)
     // },
-    gap: (node, { parsed }) => {
-        if (parsed.unit === UNIT.PERCENT) {
-            node.setGapPercent(GUTTER.all, parsed.value)
-        } else if (parsed.unit === UNIT.PX) {
-            node.setGap(GUTTER.all, parsed.value)
-        }
-    },
     // direction: (node, { value }) => {
     //     const value = convertEnum(DIRECTION_LUT, input, 0)
     //     node.setDirection(value)

@@ -30,13 +30,15 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
 
         ui.root.setStyle('width', canvas.clientWidth)
         ui.root.setStyle('height', canvas.clientHeight)
-        createLayout({ ui, rendererName })
+        const layoutResult = createLayout({ ui, rendererName }) ?? {}
+        const markers = layoutResult.markers ?? {}
 
         ui.update()
 
         const result = readPaintLayout(ui)
+        const paintedRects = readPaintedRects({ canvas, markers })
         logger.table(result)
-        results.push({ rendererName, result })
+        results.push({ rendererName, result, paintedRects })
     }
 
     return results
@@ -187,6 +189,30 @@ function readPaintLayout(ui) {
     }))
 }
 
+function readPaintedRects({ canvas, markers }) {
+    const canvasRect = canvas.getBoundingClientRect()
+
+    return Object.entries(markers).map(([name, node]) => {
+        const element = canvas.querySelector(`#node-${node.id}`)
+
+        if (element == null) {
+            throw new Error(`Missing painted element for marker '${name}'`)
+        }
+
+        const rect = element.getBoundingClientRect()
+
+        return {
+            name,
+            id: node.id,
+            path: node.path.join('.'),
+            x: Math.round(rect.left - canvasRect.left),
+            y: Math.round(rect.top - canvasRect.top),
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+        }
+    })
+}
+
 function getSetup(name) {
     if (hasOwn(SETUPS, name)) {
         return SETUPS[name]
@@ -211,6 +237,7 @@ export const comparedLayoutKeys = [
     'centerX',
     'centerY',
 ]
+export const comparedPaintedRectKeys = ['x', 'y', 'width', 'height']
 export const layoutComparisonTolerance = 1
 
 export { layoutNames }

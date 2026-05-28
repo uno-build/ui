@@ -1,9 +1,11 @@
 import layoutBasic from './examples/basic'
+import layoutDeepNestedPaint from './examples/deepNestedPaint'
 import layoutRelative from './examples/relative'
 import layoutZIndex from './examples/zindex'
 
 export const LAYOUTS = {
     basic: layoutBasic,
+    deepNestedPaint: layoutDeepNestedPaint,
     relative: layoutRelative,
     zindex: layoutZIndex,
 }
