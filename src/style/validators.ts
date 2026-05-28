@@ -1,4 +1,4 @@
-import { readUnit } from './utils.ts'
+import { readPercent, readPx } from './utils.ts'
 
 export function validateColor(value: string) {
     if (!/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) {
@@ -10,12 +10,6 @@ export function validateEnum(value: string, values: Record<string, any>) {
         throw new Error(`expected one of ${Object.keys(values).join(', ')}`)
     }
 }
-export function validateUnit(value: string | number) {
-    if (readUnit(value) === undefined) {
-        throw new Error('expected px or % unit')
-    }
-}
-
 export function validateAuto(value: any) {
     if (value !== 'auto') {
         throw new Error('expected auto')
@@ -34,28 +28,38 @@ export function validateNumber(value: any) {
     }
 }
 
-export function validatePx(value: string | number) {
-    const unit = readUnit(value)
-    if (unit === undefined || unit.unit !== 'px' || unit.value < 0) {
+export function validateInteger(value: any) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+        throw new Error('expected integer')
+    }
+
+    if (!Number.isInteger(value)) {
+        throw new Error('expected integer')
+    }
+}
+
+export function validatePx(value: string) {
+    if (readPx(value) === undefined) {
         throw new Error('expected px unit')
     }
 }
 
-export function validateNonNegativeNumber(value: any) {
-    validateNumber(value)
-    if (value < 0) {
-        throw new Error('expected non-negative number')
+export function validatePercent(value: string) {
+    if (readPercent(value) === undefined) {
+        throw new Error('expected % unit')
     }
 }
 
-export function validateNonNegativeUnit(value: string | number) {
-    const unit = readUnit(value)
-    if (unit === undefined) {
-        validateUnit(value)
-        return
+export function validateNonNegative(value: any) {
+    let number
+
+    if (typeof value === 'number') {
+        number = value
+    } else if (typeof value === 'string') {
+        number = (readPx(value) ?? readPercent(value))?.value
     }
 
-    if (unit.value < 0) {
-        throw new Error('expected non-negative unit')
+    if (number !== undefined && number < 0) {
+        throw new Error('expected non-negative value')
     }
 }

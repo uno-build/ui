@@ -1,8 +1,6 @@
 export default abstract class Engine {
     public async init() {}
 
-    public beforeUpdate(nodes) {}
-
     protected getParentLayout(node) {
         const parent = node.parent
 

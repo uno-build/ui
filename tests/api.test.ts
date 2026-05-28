@@ -8,7 +8,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     await ui.init()
 
     const child = ui.create({
-        width: 120,
+        width: '120px',
         backgroundColor: '#123',
     })
     const sibling = ui.create()
@@ -26,7 +26,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     }).toThrow(/invalid value 'red' for property 'backgroundColor': expected hex color/)
     expect(() => {
         child.setStyle('width', true)
-    }).toThrow(/invalid value 'true' for property 'width': expected px or % unit/)
+    }).toThrow(/style value for property 'width' must be a string/)
 
     expect(child.styles).toMatchObject({
         width: {

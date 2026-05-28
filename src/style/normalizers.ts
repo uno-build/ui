@@ -1,8 +1,13 @@
-import { readNumber } from './utils.ts'
+import { readInteger, readNumber } from './utils.ts'
 
 export function normalizeNumber(value: any) {
     const number = readNumber(value)
     return number === undefined ? value : number
+}
+
+export function normalizeInteger(value: any) {
+    const integer = readInteger(value)
+    return integer === undefined ? value : integer
 }
 
 export function normalizeStyleKey(name: string) {
@@ -13,8 +18,12 @@ export function normalizeString(value: any) {
     return String(value).trim().toLowerCase()
 }
 
-export function normalizeUnit(value: any) {
-    return typeof value === 'number' ? value : normalizeString(value)
+export function normalizePx(value: any) {
+    return normalizeString(value)
+}
+
+export function normalizePercent(value: any) {
+    return normalizeString(value)
 }
 
 export function normalizeStyleName(name: string, STYLE) {

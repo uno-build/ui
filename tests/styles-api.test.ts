@@ -11,7 +11,9 @@ test('resolveStyle', () => {
 
     expect(() => {
         Style.resolveStyle('backgroundColor')
-    }).toThrow(/style value for property 'backgroundColor' cannot be undefined/)
+    }).toThrow(
+        /style value for property 'backgroundColor' must be a string, got 'undefined'/,
+    )
 })
 
 test('resolveStyle should always normalize name', () => {
@@ -36,7 +38,7 @@ test('unitPixelStyle', () => {
     }).toThrow(/expected px unit/)
     expect(() => {
         Style.resolveStyle('borderWidth', -1)
-    }).toThrow(/expected px unit/)
+    }).toThrow(/style value for property 'borderWidth' must be a string/)
     expect(() => {
         Style.resolveStyle('borderWidth', 'thin')
     }).toThrow(/expected px unit/)
@@ -56,7 +58,10 @@ test('unitPixelStyle', () => {
         Style.resolveStyle('border', '1px')
     }).toThrow(/unsupported property 'border'/)
 
-    expect(Style.resolveStyle('borderWidth', 2)).toEqual({
+    expect(() => {
+        Style.resolveStyle('borderWidth', '2')
+    }).toThrow(/expected px unit/)
+    expect(Style.resolveStyle('borderWidth', '2px')).toEqual({
         name: 'borderWidth',
         value: '2px',
         parsed: { value: 2, unit: 'px' },
@@ -76,10 +81,10 @@ test('unitPixelStyle', () => {
 test('unitOrAutoStyle', () => {
     expect(() => {
         Style.resolveStyle('width', true)
-    }).toThrow(/expected px or % unit/)
+    }).toThrow(/style value for property 'width' must be a string/)
     expect(() => {
         Style.resolveStyle('width', '12em')
-    }).toThrow(/expected px or % unit/)
+    }).toThrow(/expected px unit/)
 
     expect(Style.resolveStyle('width', 'auto')).toEqual({
         name: 'width',
@@ -162,15 +167,34 @@ test('colorStyle', () => {
     })
 })
 
+test('integerStyle', () => {
+    expect(Style.resolveStyle('zIndex', '-1')).toEqual({
+        name: 'zIndex',
+        value: '-1',
+        parsed: { value: -1 },
+    })
+    expect(Style.resolveStyle('zIndex', '2')).toEqual({
+        name: 'zIndex',
+        value: '2',
+        parsed: { value: 2 },
+    })
+    expect(() => {
+        Style.resolveStyle('zIndex', '1.5')
+    }).toThrow(/expected integer/)
+    expect(() => {
+        Style.resolveStyle('zIndex', 1)
+    }).toThrow(/style value for property 'zIndex' must be a string/)
+})
+
 test('non-negative number styles reject negative values', () => {
     const styles = ['flexGrow', 'flexShrink', 'aspectRatio']
 
     for (const name of styles) {
         expect(() => {
-            Style.resolveStyle(name, -1)
-        }).toThrow(/expected non-negative number/)
+            Style.resolveStyle(name, '-1')
+        }).toThrow(/expected non-negative value/)
 
-        expect(Style.resolveStyle(name, 1)).toEqual({
+        expect(Style.resolveStyle(name, '1')).toEqual({
             name,
             value: '1',
             parsed: { value: 1 },
@@ -201,14 +225,14 @@ test('non-negative unit styles reject negative values', () => {
     for (const name of styles) {
         expect(() => {
             Style.resolveStyle(name, -1)
-        }).toThrow(/expected non-negative unit/)
+        }).toThrow(/style value for property '.+' must be a string/)
         expect(() => {
             Style.resolveStyle(name, '-1px')
-        }).toThrow(/expected non-negative unit/)
+        }).toThrow(/expected non-negative value/)
         expect(() => {
             Style.resolveStyle(name, '-1%')
-        }).toThrow(/expected non-negative unit/)
-        expect(Style.resolveStyle(name, 1)).toEqual({
+        }).toThrow(/expected non-negative value/)
+        expect(Style.resolveStyle(name, '1px')).toEqual({
             name,
             value: '1px',
             parsed: { value: 1, unit: 'px' },
@@ -222,7 +246,7 @@ test('size constraint styles reject none', () => {
     for (const name of styles) {
         expect(() => {
             Style.resolveStyle(name, 'none')
-        }).toThrow(/expected px or % unit/)
+        }).toThrow(/expected px unit/)
     }
 })
 
@@ -261,7 +285,7 @@ test('resettable unit styles accept unset', () => {
     ]) {
         expect(() => {
             Style.resolveStyle(name, 'unset')
-        }).toThrow(/expected px or % unit/)
+        }).toThrow(/expected px unit/)
     }
 })
 
@@ -275,10 +299,10 @@ test('border width styles are px-only and non-negative', () => {
     ]
 
     for (const name of styles) {
-        expect(Style.resolveStyle(name, 1)).toEqual({
+        expect(Style.resolveStyle(name, '2px')).toEqual({
             name,
-            value: '1px',
-            parsed: { value: 1, unit: 'px' },
+            value: '2px',
+            parsed: { value: 2, unit: 'px' },
         })
         expect(Style.resolveStyle(name, '1px')).toEqual({
             name,
@@ -289,8 +313,11 @@ test('border width styles are px-only and non-negative', () => {
             Style.resolveStyle(name, '10%')
         }).toThrow(/expected px unit/)
         expect(() => {
-            Style.resolveStyle(name, -1)
+            Style.resolveStyle(name, '1')
         }).toThrow(/expected px unit/)
+        expect(() => {
+            Style.resolveStyle(name, -1)
+        }).toThrow(/style value for property '.+' must be a string/)
         expect(() => {
             Style.resolveStyle(name, 'thin')
         }).toThrow(/expected px unit/)

@@ -28,8 +28,8 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
         const ui = new UI({ renderer })
         await ui.init()
 
-        ui.root.setStyle('width', canvas.clientWidth)
-        ui.root.setStyle('height', canvas.clientHeight)
+        ui.root.setStyle('width', `${canvas.clientWidth}px`)
+        ui.root.setStyle('height', `${canvas.clientHeight}px`)
         createLayout({ ui, rendererName })
 
         ui.update()

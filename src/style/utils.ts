@@ -1,41 +1,66 @@
 import { UNIT } from './consts.ts'
-import { normalizeString } from './normalizers.ts'
 import { parseEnum } from './parsers.ts'
 import { validateEnum } from './validators.ts'
 
-export function readUnit(value: string | number) {
-    if (typeof value === 'number') {
-        return Number.isFinite(value) ? { value, unit: UNIT.PX } : undefined
-    }
-
-    const match = value.match(/^(-?(?:\d+|\d*\.\d+))(px|%)?$/)
-    if (!match) {
+export function readPx(value: string) {
+    const match = readUnitMatch(value, /^(-?(?:\d+|\d*\.\d+))px$/)
+    if (match === undefined) {
         return undefined
     }
 
-    const number = Number(match[1])
-    if (!Number.isFinite(number)) {
+    return { value: match, unit: UNIT.PX }
+}
+
+export function readPercent(value: string) {
+    const match = readUnitMatch(value, /^(-?(?:\d+|\d*\.\d+))%$/)
+    if (match === undefined) {
         return undefined
     }
 
-    return { value: number, unit: match[2] === '%' ? UNIT.PERCENT : UNIT.PX }
+    return { value: match, unit: UNIT.PERCENT }
 }
 
 export function readNumber(value: any) {
-    if (typeof value === 'number') {
-        return Number.isFinite(value) ? value : undefined
-    }
-
     if (typeof value !== 'string') {
         return undefined
     }
 
-    const normalized = normalizeString(value)
+    const normalized = value.trim().toLowerCase()
     if (!/^-?(?:\d+|\d*\.\d+)$/.test(normalized)) {
         return undefined
     }
 
     const number = Number(normalized)
+    return Number.isFinite(number) ? number : undefined
+}
+
+export function readInteger(value: any) {
+    if (typeof value !== 'string') {
+        return undefined
+    }
+
+    const normalized = value.trim().toLowerCase()
+    if (!/^-?\d+$/.test(normalized)) {
+        return undefined
+    }
+
+    const integer = Number(normalized)
+    return Number.isFinite(integer) && Number.isInteger(integer)
+        ? integer
+        : undefined
+}
+
+function readUnitMatch(value: string, pattern: RegExp) {
+    if (typeof value !== 'string') {
+        return undefined
+    }
+
+    const match = value.trim().toLowerCase().match(pattern)
+    if (!match) {
+        return undefined
+    }
+
+    const number = Number(match[1])
     return Number.isFinite(number) ? number : undefined
 }
 

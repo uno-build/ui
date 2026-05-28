@@ -1,5 +1,5 @@
 import { UNIT } from './consts.ts'
-import { readUnit } from './utils.ts'
+import { readPercent, readPx } from './utils.ts'
 
 export function parseAuto(value: string) {
     return {
@@ -26,6 +26,10 @@ export function parseNumber(value: number) {
     return { value, parsed: { value } }
 }
 
+export function parseInteger(value: number) {
+    return { value, parsed: { value } }
+}
+
 export function parseRgba(value: string) {
     const hex = value.slice(1)
     const channels =
@@ -48,8 +52,16 @@ export function parseEnum(value: string, values: Record<string, any>) {
     return { value, parsed: { enum: values[value] } }
 }
 
-export function parseUnit(value: string | number) {
-    const unit = readUnit(value)!
+export function parsePx(value: string) {
+    const unit = readPx(value)!
+    return {
+        value: `${String(unit.value)}${unit.unit}`,
+        parsed: unit,
+    }
+}
+
+export function parsePercent(value: string) {
+    const unit = readPercent(value)!
     return {
         value: `${String(unit.value)}${unit.unit}`,
         parsed: unit,

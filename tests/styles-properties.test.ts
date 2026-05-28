@@ -20,7 +20,6 @@ test('backgroundColor', () => {
         '#1234567',
         ' LightGray ',
         'red',
-        true,
     ]
 
     for (const name of styles) {
@@ -31,26 +30,28 @@ test('backgroundColor', () => {
         for (const value of invalidValues) {
             expectInvalid(name, value, /expected hex color/)
         }
+
+        expectInvalid(name, true, /must be a string/)
     }
 })
 
 test('borderRadius', () => {
     const styles = ['borderRadius']
     const validCases = [
-        [0, '0px', 0, 'px'],
-        ['4', '4px', 4, 'px'],
+        ['0px', '0px', 0, 'px'],
+        ['4px', '4px', 4, 'px'],
         [' 4PX ', '4px', 4, 'px'],
         ['12.5px', '12.5px', 12.5, 'px'],
         ['50%', '50%', 50, '%'],
     ] as const
     const invalidCases = [
-        [-1, /expected non-negative unit/],
-        ['-1px', /expected non-negative unit/],
-        ['-1%', /expected non-negative unit/],
-        ['auto', /expected px or % unit/],
-        ['none', /expected px or % unit/],
-        ['4em', /expected px or % unit/],
-        [true, /expected px or % unit/],
+        [-1, /must be a string/],
+        ['-1px', /expected non-negative value/],
+        ['-1%', /expected non-negative value/],
+        ['auto', /expected px unit/],
+        ['none', /expected px unit/],
+        ['4em', /expected px unit/],
+        [true, /must be a string/],
     ] as const
 
     for (const name of styles) {
@@ -296,18 +297,18 @@ test('direction', () => {
 test('maxWidth, maxHeight', () => {
     const styles = ['maxWidth', 'maxHeight']
     const validUnitCases = [
-        [0, '0px', 0, 'px'],
-        ['20', '20px', 20, 'px'],
+        ['0px', '0px', 0, 'px'],
+        ['20px', '20px', 20, 'px'],
         [' 20PX ', '20px', 20, 'px'],
         ['75%', '75%', 75, '%'],
     ] as const
     const invalidCases = [
-        [-1, /expected non-negative unit/],
-        ['-1px', /expected non-negative unit/],
-        ['-1%', /expected non-negative unit/],
-        ['auto', /expected px or % unit/],
-        ['none', /expected px or % unit/],
-        ['20em', /expected px or % unit/],
+        [-1, /must be a string/],
+        ['-1px', /expected non-negative value/],
+        ['-1%', /expected non-negative value/],
+        ['auto', /expected px unit/],
+        ['none', /expected px unit/],
+        ['20em', /expected px unit/],
     ] as const
 
     for (const name of styles) {
@@ -331,11 +332,10 @@ test('maxWidth, maxHeight', () => {
 test('top, left, right, bottom', () => {
     const styles = ['top', 'left', 'right', 'bottom']
     const validUnitCases = [
-        [8, '8px', 8, 'px'],
-        ['8', '8px', 8, 'px'],
+        ['8px', '8px', 8, 'px'],
         [' 8PX ', '8px', 8, 'px'],
         ['12.5%', '12.5%', 12.5, '%'],
-        [-3, '-3px', -3, 'px'],
+        ['-3px', '-3px', -3, 'px'],
         ['-4px', '-4px', -4, 'px'],
         ['-5%', '-5%', -5, '%'],
     ] as const
@@ -355,7 +355,9 @@ test('top, left, right, bottom', () => {
         }
 
         for (const value of invalidValues) {
-            expectInvalid(name, value, /expected px or % unit/)
+            const message =
+                value === true ? /must be a string/ : /expected px unit/
+            expectInvalid(name, value, message)
         }
     }
 })
@@ -369,11 +371,10 @@ test('marginTop, marginLeft, marginRight, marginBottom, margin', () => {
         'margin',
     ]
     const validUnitCases = [
-        [8, '8px', 8, 'px'],
-        ['8', '8px', 8, 'px'],
+        ['8px', '8px', 8, 'px'],
         [' 8PX ', '8px', 8, 'px'],
         ['12.5%', '12.5%', 12.5, '%'],
-        [-3, '-3px', -3, 'px'],
+        ['-3px', '-3px', -3, 'px'],
         ['-4px', '-4px', -4, 'px'],
         ['-5%', '-5%', -5, '%'],
     ] as const
@@ -392,7 +393,9 @@ test('marginTop, marginLeft, marginRight, marginBottom, margin', () => {
         }
 
         for (const value of invalidValues) {
-            expectInvalid(name, value, /expected px or % unit/)
+            const message =
+                value === true ? /must be a string/ : /expected px unit/
+            expectInvalid(name, value, message)
         }
     }
 })
@@ -400,8 +403,8 @@ test('marginTop, marginLeft, marginRight, marginBottom, margin', () => {
 test('flex, flexGrow, flexShrink, aspectRatio', () => {
     const styles = ['flex', 'flexGrow', 'flexShrink', 'aspectRatio']
     const validCases = [
-        [0, '0', 0],
-        [1.5, '1.5', 1.5],
+        ['0', '0', 0],
+        ['1.5', '1.5', 1.5],
         [' 2.25 ', '2.25', 2.25],
     ] as const
     const expectedNumberFailures = [
@@ -411,7 +414,7 @@ test('flex, flexGrow, flexShrink, aspectRatio', () => {
         Number.POSITIVE_INFINITY,
         NaN,
     ]
-    const expectedNonNegativeFailures = [-1, '-1']
+    const expectedNonNegativeFailures = ['-1']
 
     for (const name of styles) {
         for (const [value, expectedValue, parsedValue] of validCases) {
@@ -419,11 +422,15 @@ test('flex, flexGrow, flexShrink, aspectRatio', () => {
         }
 
         for (const value of expectedNumberFailures) {
-            expectInvalid(name, value, /expected number/)
+            const message =
+                typeof value === 'string'
+                    ? /expected number/
+                    : /must be a string/
+            expectInvalid(name, value, message)
         }
 
         for (const value of expectedNonNegativeFailures) {
-            expectInvalid(name, value, /expected non-negative number/)
+            expectInvalid(name, value, /expected non-negative value/)
         }
     }
 })
@@ -431,18 +438,18 @@ test('flex, flexGrow, flexShrink, aspectRatio', () => {
 test('flexBasis', () => {
     const styles = ['flexBasis']
     const validUnitCases = [
-        [0, '0px', 0, 'px'],
-        ['10', '10px', 10, 'px'],
+        ['0px', '0px', 0, 'px'],
+        ['10px', '10px', 10, 'px'],
         [' 10PX ', '10px', 10, 'px'],
         ['33.3%', '33.3%', 33.3, '%'],
     ] as const
     const invalidCases = [
-        [-1, /expected non-negative unit/],
-        ['-1px', /expected non-negative unit/],
-        ['-1%', /expected non-negative unit/],
-        [true, /expected px or % unit/],
-        ['12em', /expected px or % unit/],
-        ['none', /expected px or % unit/],
+        [-1, /must be a string/],
+        ['-1px', /expected non-negative value/],
+        ['-1%', /expected non-negative value/],
+        [true, /must be a string/],
+        ['12em', /expected px unit/],
+        ['none', /expected px unit/],
     ] as const
 
     for (const name of styles) {
@@ -467,19 +474,19 @@ test('flexBasis', () => {
 test('width, height', () => {
     const styles = ['width', 'height']
     const validUnitCases = [
-        [0, '0px', 0, 'px'],
-        ['10', '10px', 10, 'px'],
+        ['0px', '0px', 0, 'px'],
+        ['10px', '10px', 10, 'px'],
         [' 10PX ', '10px', 10, 'px'],
         ['33.3%', '33.3%', 33.3, '%'],
     ] as const
     const invalidCases = [
-        [-1, /expected non-negative unit/],
-        ['-1px', /expected non-negative unit/],
-        ['-1%', /expected non-negative unit/],
-        [true, /expected px or % unit/],
-        ['12em', /expected px or % unit/],
-        ['none', /expected px or % unit/],
-        ['unset', /expected px or % unit/],
+        [-1, /must be a string/],
+        ['-1px', /expected non-negative value/],
+        ['-1%', /expected non-negative value/],
+        [true, /must be a string/],
+        ['12em', /expected px unit/],
+        ['none', /expected px unit/],
+        ['unset', /expected px unit/],
     ] as const
 
     for (const name of styles) {
@@ -503,19 +510,19 @@ test('width, height', () => {
 test('minWidth, minHeight', () => {
     const styles = ['minWidth', 'minHeight']
     const validCases = [
-        [0, '0px', 0, 'px'],
-        ['6', '6px', 6, 'px'],
+        ['0px', '0px', 0, 'px'],
+        ['6px', '6px', 6, 'px'],
         [' 6PX ', '6px', 6, 'px'],
         ['12.5%', '12.5%', 12.5, '%'],
     ] as const
     const invalidCases = [
-        [-1, /expected non-negative unit/],
-        ['-1px', /expected non-negative unit/],
-        ['-1%', /expected non-negative unit/],
-        ['auto', /expected px or % unit/],
-        ['none', /expected px or % unit/],
-        ['6em', /expected px or % unit/],
-        [false, /expected px or % unit/],
+        [-1, /must be a string/],
+        ['-1px', /expected non-negative value/],
+        ['-1%', /expected non-negative value/],
+        ['auto', /expected px unit/],
+        ['none', /expected px unit/],
+        ['6em', /expected px unit/],
+        [false, /must be a string/],
     ] as const
 
     for (const name of styles) {
@@ -543,20 +550,20 @@ test('paddingTop, paddingLeft, paddingRight, paddingBottom, padding, rowGap, col
         'gap',
     ]
     const validCases = [
-        [0, '0px', 0, 'px'],
-        ['6', '6px', 6, 'px'],
+        ['0px', '0px', 0, 'px'],
+        ['6px', '6px', 6, 'px'],
         [' 6PX ', '6px', 6, 'px'],
         ['12.5%', '12.5%', 12.5, '%'],
     ] as const
     const invalidCases = [
-        [-1, /expected non-negative unit/],
-        ['-1px', /expected non-negative unit/],
-        ['-1%', /expected non-negative unit/],
-        ['auto', /expected px or % unit/],
-        ['none', /expected px or % unit/],
-        ['unset', /expected px or % unit/],
-        ['6em', /expected px or % unit/],
-        [false, /expected px or % unit/],
+        [-1, /must be a string/],
+        ['-1px', /expected non-negative value/],
+        ['-1%', /expected non-negative value/],
+        ['auto', /expected px unit/],
+        ['none', /expected px unit/],
+        ['unset', /expected px unit/],
+        ['6em', /expected px unit/],
+        [false, /must be a string/],
     ] as const
 
     for (const name of styles) {
@@ -579,28 +586,29 @@ test('borderTopWidth, borderLeftWidth, borderRightWidth, borderBottomWidth, bord
         'borderWidth',
     ]
     const validCases = [
-        [0, '0px', 0, 'px'],
-        ['1', '1px', 1, 'px'],
+        ['0px', '0px', 0, 'px'],
+        ['1px', '1px', 1, 'px'],
         [' 1PX ', '1px', 1, 'px'],
         ['2.5px', '2.5px', 2.5, 'px'],
     ] as const
-    const invalidValues = [
-        -1,
-        '-1px',
-        '10%',
-        '-10%',
-        'thin',
-        '1px solid #333',
-        '1em',
-    ]
+    const invalidCases = [
+        [-1, /must be a string/],
+        ['-1px', /expected non-negative value/],
+        ['10%', /expected px unit/],
+        ['-10%', /expected non-negative value/],
+        ['thin', /expected px unit/],
+        ['1px solid #333', /expected px unit/],
+        ['1em', /expected px unit/],
+        ['1', /expected px unit/],
+    ] as const
 
     for (const name of styles) {
         for (const [value, expectedValue, parsedValue, unit] of validCases) {
             expectUnit(name, value, expectedValue, parsedValue, unit)
         }
 
-        for (const value of invalidValues) {
-            expectInvalid(name, value, /expected px unit/)
+        for (const [value, message] of invalidCases) {
+            expectInvalid(name, value, message)
         }
     }
 })

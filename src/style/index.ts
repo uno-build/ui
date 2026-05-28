@@ -15,28 +15,32 @@ import {
 import {
     normalizeStyleKey,
     normalizeString,
-    normalizeUnit,
+    normalizeInteger,
     normalizeNumber,
+    normalizePx,
+    normalizePercent,
     normalizeStyleName,
 } from './normalizers.ts'
 import {
     validateColor,
     validateEnum,
-    validateUnit,
     validateAuto,
     validateUnset,
+    validateInteger,
     validateNumber,
-    validateNonNegativeNumber,
     validatePx,
-    validateNonNegativeUnit,
+    validatePercent,
+    validateNonNegative,
 } from './validators.ts'
 import {
     parseColor,
     parseEnum,
-    parseUnit,
     parseAuto,
     parseUnset,
+    parseInteger,
     parseNumber,
+    parsePx,
+    parsePercent,
 } from './parsers.ts'
 import {
     createStyle,
@@ -46,12 +50,6 @@ import {
     runValidators,
     runParsePipeline,
 } from './utils.ts'
-
-// if (typeof window !== 'undefined') {
-//     window.Style = {
-//         resolveStyle,
-//     }
-// }
 
 export function resolveStyle(name: string, value: any) {
     // Validating name
@@ -65,9 +63,9 @@ export function resolveStyle(name: string, value: any) {
     }
 
     // Validating value
-    if (typeof value === 'undefined') {
+    if (typeof value !== 'string') {
         throw new Error(
-            `style value for property '${style.name}' cannot be undefined`,
+            `style value for property '${style.name}' must be a string, got '${typeof value}'`,
         )
     }
     try {
@@ -87,20 +85,27 @@ export function resolveStyle(name: string, value: any) {
 
 export const STYLE = {
     ZINDEX: createStyle('zIndex', {
-        normalize: [normalizeNumber],
-        validate: [validateNumber, validateNonNegativeNumber],
-        parse: [parseNumber],
+        normalize: [normalizeInteger],
+        validate: [validateInteger],
+        parse: [parseInteger],
     }),
     BACKGROUNDCOLOR: createStyle('backgroundColor', {
         normalize: [normalizeString],
         validate: [validateColor],
         parse: [parseColor],
     }),
-    BORDERRADIUS: createStyle('borderRadius', {
-        normalize: [normalizeUnit],
-        validate: [validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    BORDERRADIUS: createStyle('borderRadius', [
+        {
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
+        },
+    ]),
 
     POSITION: createStyle('position', {
         normalize: [normalizeString],
@@ -110,9 +115,14 @@ export const STYLE = {
 
     TOP: createStyle('top', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -128,9 +138,14 @@ export const STYLE = {
 
     LEFT: createStyle('left', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -146,9 +161,14 @@ export const STYLE = {
 
     RIGHT: createStyle('right', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -164,9 +184,14 @@ export const STYLE = {
 
     BOTTOM: createStyle('bottom', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -218,9 +243,14 @@ export const STYLE = {
 
     MARGINTOP: createStyle('marginTop', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -231,9 +261,14 @@ export const STYLE = {
 
     MARGINLEFT: createStyle('marginLeft', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -244,9 +279,14 @@ export const STYLE = {
 
     MARGINRIGHT: createStyle('marginRight', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -257,9 +297,14 @@ export const STYLE = {
 
     MARGINBOTTOM: createStyle('marginBottom', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -270,9 +315,14 @@ export const STYLE = {
 
     MARGIN: createStyle('margin', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -283,15 +333,20 @@ export const STYLE = {
 
     FLEX: createStyle('flex', {
         normalize: [normalizeNumber],
-        validate: [validateNumber, validateNonNegativeNumber],
+        validate: [validateNumber, validateNonNegative],
         parse: [parseNumber],
     }),
 
     FLEXBASIS: createStyle('flexBasis', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit, validateNonNegativeUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -307,21 +362,26 @@ export const STYLE = {
 
     FLEXGROW: createStyle('flexGrow', {
         normalize: [normalizeNumber],
-        validate: [validateNumber, validateNonNegativeNumber],
+        validate: [validateNumber, validateNonNegative],
         parse: [parseNumber],
     }),
 
     FLEXSHRINK: createStyle('flexShrink', {
         normalize: [normalizeNumber],
-        validate: [validateNumber, validateNonNegativeNumber],
+        validate: [validateNumber, validateNonNegative],
         parse: [parseNumber],
     }),
 
     WIDTH: createStyle('width', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit, validateNonNegativeUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -332,9 +392,14 @@ export const STYLE = {
 
     HEIGHT: createStyle('height', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit, validateNonNegativeUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -345,9 +410,14 @@ export const STYLE = {
 
     MINWIDTH: createStyle('minWidth', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit, validateNonNegativeUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -358,9 +428,14 @@ export const STYLE = {
 
     MINHEIGHT: createStyle('minHeight', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit, validateNonNegativeUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -371,9 +446,14 @@ export const STYLE = {
 
     MAXWIDTH: createStyle('maxWidth', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit, validateNonNegativeUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -384,9 +464,14 @@ export const STYLE = {
 
     MAXHEIGHT: createStyle('maxHeight', [
         {
-            normalize: [normalizeUnit],
-            validate: [validateUnit, validateNonNegativeUnit],
-            parse: [parseUnit],
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
         },
         {
             normalize: [normalizeString],
@@ -403,38 +488,38 @@ export const STYLE = {
 
     ASPECTRATIO: createStyle('aspectRatio', {
         normalize: [normalizeNumber],
-        validate: [validateNumber, validateNonNegativeNumber],
+        validate: [validateNumber, validateNonNegative],
         parse: [parseNumber],
     }),
 
     BORDERWIDTH: createStyle('borderWidth', {
-        normalize: [normalizeUnit],
-        validate: [validatePx, validateNonNegativeUnit],
-        parse: [parseUnit],
+        normalize: [normalizePx],
+        validate: [validateNonNegative, validatePx],
+        parse: [parsePx],
     }),
 
     BORDERTOPWIDTH: createStyle('borderTopWidth', {
-        normalize: [normalizeUnit],
-        validate: [validatePx, validateNonNegativeUnit],
-        parse: [parseUnit],
+        normalize: [normalizePx],
+        validate: [validateNonNegative, validatePx],
+        parse: [parsePx],
     }),
 
     BORDERLEFTWIDTH: createStyle('borderLeftWidth', {
-        normalize: [normalizeUnit],
-        validate: [validatePx, validateNonNegativeUnit],
-        parse: [parseUnit],
+        normalize: [normalizePx],
+        validate: [validateNonNegative, validatePx],
+        parse: [parsePx],
     }),
 
     BORDERRIGHTWIDTH: createStyle('borderRightWidth', {
-        normalize: [normalizeUnit],
-        validate: [validatePx, validateNonNegativeUnit],
-        parse: [parseUnit],
+        normalize: [normalizePx],
+        validate: [validateNonNegative, validatePx],
+        parse: [parsePx],
     }),
 
     BORDERBOTTOMWIDTH: createStyle('borderBottomWidth', {
-        normalize: [normalizeUnit],
-        validate: [validatePx, validateNonNegativeUnit],
-        parse: [parseUnit],
+        normalize: [normalizePx],
+        validate: [validateNonNegative, validatePx],
+        parse: [parsePx],
     }),
 
     BORDERSTYLE: createStyle('borderStyle', {
@@ -467,53 +552,109 @@ export const STYLE = {
         parse: [createEnumParser(DIRECTION)],
     }),
 
-    PADDINGTOP: createStyle('paddingTop', {
-        normalize: [normalizeUnit],
-        validate: [validateUnit, validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    PADDINGTOP: createStyle('paddingTop', [
+        {
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
+        },
+    ]),
 
-    PADDINGLEFT: createStyle('paddingLeft', {
-        normalize: [normalizeUnit],
-        validate: [validateUnit, validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    PADDINGLEFT: createStyle('paddingLeft', [
+        {
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
+        },
+    ]),
 
-    PADDINGRIGHT: createStyle('paddingRight', {
-        normalize: [normalizeUnit],
-        validate: [validateUnit, validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    PADDINGRIGHT: createStyle('paddingRight', [
+        {
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
+        },
+    ]),
 
-    PADDINGBOTTOM: createStyle('paddingBottom', {
-        normalize: [normalizeUnit],
-        validate: [validateUnit, validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    PADDINGBOTTOM: createStyle('paddingBottom', [
+        {
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
+        },
+    ]),
 
-    PADDING: createStyle('padding', {
-        normalize: [normalizeUnit],
-        validate: [validateUnit, validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    PADDING: createStyle('padding', [
+        {
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
+        },
+    ]),
 
-    ROWGAP: createStyle('rowGap', {
-        normalize: [normalizeUnit],
-        validate: [validateUnit, validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    ROWGAP: createStyle('rowGap', [
+        {
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
+        },
+    ]),
 
-    COLUMNGAP: createStyle('columnGap', {
-        normalize: [normalizeUnit],
-        validate: [validateUnit, validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    COLUMNGAP: createStyle('columnGap', [
+        {
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
+        },
+    ]),
 
-    GAP: createStyle('gap', {
-        normalize: [normalizeUnit],
-        validate: [validateUnit, validateNonNegativeUnit],
-        parse: [parseUnit],
-    }),
+    GAP: createStyle('gap', [
+        {
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
+        },
+    ]),
 }
 
 export default {
