@@ -503,6 +503,43 @@ test('aspectRatio', async () => {
     expect(heightChild.layout.height).toBe(80)
 })
 
+test('boxSizing', async () => {
+    const cases = [
+        ['border-box', 100, 100, 70, 70],
+        ['content-box', 130, 130, 100, 100],
+    ] as const
+
+    for (const [
+        boxSizing,
+        boxWidth,
+        boxHeight,
+        innerWidth,
+        innerHeight,
+    ] of cases) {
+        const { ui, child: box } = await createUI({
+            height: '200px',
+            alignItems: 'flex-start',
+        })
+        const inner = ui.create()
+
+        box.setStyle('boxSizing', boxSizing)
+        box.setStyle('width', '100px')
+        box.setStyle('height', '100px')
+        box.setStyle('padding', '10px')
+        box.setStyle('borderWidth', '5px')
+        inner.setStyle('flex', '1')
+        box.add(inner)
+        ui.update()
+
+        expect(box.layout.width).toBe(boxWidth)
+        expect(box.layout.height).toBe(boxHeight)
+        expect(inner.layout.x).toBe(15)
+        expect(inner.layout.y).toBe(15)
+        expect(inner.layout.width).toBe(innerWidth)
+        expect(inner.layout.height).toBe(innerHeight)
+    }
+})
+
 test('border width', async () => {
     const cases = [
         ['borderWidth', 10, 10, 180, 180],

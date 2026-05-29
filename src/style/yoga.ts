@@ -1,8 +1,8 @@
 import { UNIT, EDGE, GUTTER } from './consts.ts'
 
-// /Users/enzo/projects/uno/ui/node_modules/yoga-layout/src/wrapAssembly.ts
+// node_modules/yoga-layout/src/wrapAssembly.ts
 export const YOGA_SETTER = {
-    width: (node, { value, parsed }) => {
+    width: (node, { parsed }) => {
         if (parsed.unit === UNIT.PX) {
             node.setWidth(parsed.value)
         } else if (parsed.unit === UNIT.PERCENT) {
@@ -11,9 +11,9 @@ export const YOGA_SETTER = {
             node.setWidthAuto()
         }
     },
-    height: (node, { value, parsed }) => {
+    height: (node, { parsed }) => {
         if (parsed.unit === UNIT.PX) {
-            node.setHeight(value)
+            node.setHeight(parsed.value)
         } else if (parsed.unit === UNIT.PERCENT) {
             node.setHeightPercent(parsed.value)
         } else if (parsed.unit === UNIT.AUTO) {
@@ -146,10 +146,9 @@ export const YOGA_SETTER = {
     //     const value = formatEdgeUnit(node, input, root)
     //     node.setMargin(EDGE.vertical, value)
     // },
-    // boxSizing: (node, { value }) => {
-    //     const value = convertEnum(BOX_SIZING_LUT, input, 0)
-    //     node.setBoxSizing(value)
-    // },
+    boxSizing: (node, { parsed }) => {
+        node.setBoxSizing(parsed.enum)
+    },
     borderWidth: (node, { parsed }) => {
         node.setBorder(EDGE.all, parsed.value)
     },

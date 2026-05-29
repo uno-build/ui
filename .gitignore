@@ -3,4 +3,3 @@ node_modules/
 package-lock.json
 tests/.results/
 AGENTS.md
-yoga-api.ts
