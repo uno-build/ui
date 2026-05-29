@@ -123,20 +123,20 @@ export const YOGA_SETTER = {
         node.setJustifyContent(parsed.enum)
     },
 
-    margin: (node, { value }) => {
-        node.setMargin(EDGE.all, value)
+    margin: (node, { parsed }) => {
+        setMargin(node, EDGE.all, parsed)
     },
-    marginTop: (node, { value }) => {
-        node.setMargin(EDGE.top, value)
+    marginTop: (node, { parsed }) => {
+        setMargin(node, EDGE.top, parsed)
     },
-    marginLeft: (node, { value }) => {
-        node.setMargin(EDGE.left, value)
+    marginLeft: (node, { parsed }) => {
+        setMargin(node, EDGE.left, parsed)
     },
-    marginRight: (node, { value }) => {
-        node.setMargin(EDGE.right, value)
+    marginRight: (node, { parsed }) => {
+        setMargin(node, EDGE.right, parsed)
     },
-    marginBottom: (node, { value }) => {
-        node.setMargin(EDGE.bottom, value)
+    marginBottom: (node, { parsed }) => {
+        setMargin(node, EDGE.bottom, parsed)
     },
     // marginHorizontal: (node, { value }) => {
     //     const value = formatEdgeUnit(node, input, root)
@@ -247,5 +247,15 @@ function setPosition(node, edge, parsed) {
         node.setPositionAuto(edge)
     } else if (parsed.unit === UNIT.UNSET) {
         node.setPosition(edge, undefined)
+    }
+}
+
+function setMargin(node, edge, parsed) {
+    if (parsed.unit === UNIT.PX) {
+        node.setMargin(edge, parsed.value)
+    } else if (parsed.unit === UNIT.PERCENT) {
+        node.setMarginPercent(edge, parsed.value)
+    } else if (parsed.unit === UNIT.AUTO) {
+        node.setMarginAuto(edge)
     }
 }

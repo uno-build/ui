@@ -237,6 +237,24 @@ export const STYLE = {
         parse: [createEnumParser(JUSTIFY)],
     }),
 
+    MARGIN: createStyle('margin', [
+        {
+            normalize: [normalizePx],
+            validate: [validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validatePercent],
+            parse: [parsePercent],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateAuto],
+            parse: [parseAuto],
+        },
+    ]),
+
     MARGINTOP: createStyle('marginTop', [
         {
             normalize: [normalizePx],
@@ -292,24 +310,6 @@ export const STYLE = {
     ]),
 
     MARGINBOTTOM: createStyle('marginBottom', [
-        {
-            normalize: [normalizePx],
-            validate: [validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-    ]),
-
-    MARGIN: createStyle('margin', [
         {
             normalize: [normalizePx],
             validate: [validatePx],

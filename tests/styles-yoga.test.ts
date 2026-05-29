@@ -602,6 +602,45 @@ test('gap', async () => {
     expect(rowSibling.layout.y).toBe(50)
 })
 
+test('margin', async () => {
+    const cases = [
+        ['margin', 10, 10, 70],
+        ['marginTop', 0, 10, 50],
+        ['marginLeft', 10, 0, 60],
+        ['marginRight', 0, 0, 60],
+    ] as const
+
+    for (const [name, childX, childY, siblingX] of cases) {
+        const { ui, root, child } = await createUI({
+            height: '200px',
+            alignItems: 'flex-start',
+        })
+        const sibling = ui.create()
+
+        child.setStyle('width', '50px')
+        child.setStyle('height', '50px')
+        child.setStyle(name, '10px')
+        sibling.setStyle('width', '50px')
+        sibling.setStyle('height', '50px')
+        root.add(sibling)
+        ui.update()
+        expect(child.layout.x).toBe(childX)
+        expect(child.layout.y).toBe(childY)
+        expect(sibling.layout.x).toBe(siblingX)
+    }
+
+    const { ui, child } = await createUI({
+        height: '200px',
+        alignItems: 'flex-end',
+    })
+
+    child.setStyle('width', '50px')
+    child.setStyle('height', '50px')
+    child.setStyle('marginBottom', '10px')
+    ui.update()
+    expect(child.layout.y).toBe(140)
+})
+
 async function createUI(styles = {}) {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })
