@@ -103,6 +103,13 @@ export const STYLE = {
         },
     ]),
 
+    OVERFLOW: createStyle('overflow', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(OVERFLOW)],
+        parse: [createEnumParser(OVERFLOW)],
+    }),
+
+    // YOGA PROPERTIES
     POSITION: createStyle('position', {
         normalize: [normalizeString],
         validate: [createEnumValidator(POSITION)],
@@ -597,12 +604,6 @@ export const STYLE = {
         normalize: [normalizeString],
         validate: [validateColor],
         parse: [parseColor],
-    }),
-
-    OVERFLOW: createStyle('overflow', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(OVERFLOW)],
-        parse: [createEnumParser(OVERFLOW)],
     }),
 
     DISPLAY: createStyle('display', {
