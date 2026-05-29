@@ -310,6 +310,63 @@ test('alignItems', async () => {
     }
 })
 
+test('alignSelf', async () => {
+    const { ui, root, child } = await createUI({
+        width: '200px',
+        height: '200px',
+        alignItems: 'flex-end',
+    })
+    const sibling = ui.create()
+    const cases = [
+        ['auto', 200, 0, 120],
+        ['normal', 200, 0, 120],
+        ['flex-start', 0, 0, 120],
+        ['center', 100, 0, 120],
+        ['flex-end', 200, 0, 120],
+        ['stretch', 0, 200, 120],
+        ['baseline', 0, 0, 0],
+    ] as const
+
+    child.setStyle('width', '50px')
+    sibling.setStyle('width', '50px')
+    sibling.setStyle('height', '80px')
+    root.add(sibling)
+
+    for (const [alignSelf, childY, childHeight, siblingY] of cases) {
+        child.setStyle('alignSelf', alignSelf)
+        ui.update()
+        expect(child.layout.y).toBe(childY)
+        expect(child.layout.height).toBe(childHeight)
+        expect(sibling.layout.y).toBe(siblingY)
+    }
+})
+
+test('justifyContent', async () => {
+    const { ui, root, child } = await createUI({ width: '200px' })
+    const sibling = ui.create()
+    const cases = [
+        ['flex-start', 0, 50],
+        ['center', 50, 100],
+        ['flex-end', 100, 150],
+        ['space-between', 0, 150],
+        ['space-around', 25, 125],
+        ['space-evenly', 33, 117],
+    ] as const
+
+    child.setStyle('width', '50px')
+    child.setStyle('height', '50px')
+    sibling.setStyle('width', '50px')
+    sibling.setStyle('height', '50px')
+    root.add(sibling)
+
+    for (const [justifyContent, childX, siblingX] of cases) {
+        root.setStyle('justifyContent', justifyContent)
+        ui.update()
+        expect(child.layout.x).toBe(childX)
+        expect(sibling.layout.x).toBe(siblingX)
+    }
+})
+
 test('display', async () => {
     const {
         ui,
