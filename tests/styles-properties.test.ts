@@ -417,6 +417,8 @@ test('flex, flexGrow, flexShrink, aspectRatio', () => {
             expectNumber(name, value, expectedValue, parsedValue)
         }
 
+        expectKeywordUnit(name, ' Unset ', 'unset')
+
         for (const value of expectedNumberFailures) {
             expectInvalid(name, value, /expected number/)
         }

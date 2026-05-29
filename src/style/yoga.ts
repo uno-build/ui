@@ -219,10 +219,13 @@ export const YOGA_SETTER = {
     direction: (node, { parsed }) => {
         node.setDirection(parsed.enum)
     },
-    // aspectRatio: (node, { value }) => {
-    //     node.setAspectRatio(input)
-    //     return input
-    // },
+    aspectRatio: (node, { parsed }) => {
+        if (parsed.unit === UNIT.UNSET) {
+            node.setAspectRatio(undefined)
+        } else {
+            node.setAspectRatio(parsed.value)
+        }
+    },
     // isReferenceBaseline: (node, { value }) => {
     //     node.setIsReferenceBaseline(Boolean(input))
     //     return Boolean(input)

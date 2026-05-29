@@ -474,6 +474,35 @@ test('flexBasis', async () => {
     expect(child.layout.width).toBe(75)
 })
 
+test('aspectRatio', async () => {
+    const { ui, child } = await createUI({
+        height: '200px',
+        alignItems: 'flex-start',
+    })
+
+    child.setStyle('width', '100px')
+    child.setStyle('aspectRatio', '2')
+    ui.update()
+    expect(child.layout.width).toBe(100)
+    expect(child.layout.height).toBe(50)
+
+    child.setStyle('aspectRatio', 'unset')
+    ui.update()
+    expect(child.layout.width).toBe(100)
+    expect(child.layout.height).toBe(0)
+
+    const { ui: heightUi, child: heightChild } = await createUI({
+        height: '200px',
+        alignItems: 'flex-start',
+    })
+
+    heightChild.setStyle('height', '80px')
+    heightChild.setStyle('aspectRatio', '2')
+    heightUi.update()
+    expect(heightChild.layout.width).toBe(160)
+    expect(heightChild.layout.height).toBe(80)
+})
+
 test('border width', async () => {
     const cases = [
         ['borderWidth', 10, 10, 180, 180],

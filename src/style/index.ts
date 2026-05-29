@@ -510,11 +510,18 @@ export const STYLE = {
         parse: [createEnumParser(BOX_SIZING)],
     }),
 
-    ASPECTRATIO: createStyle('aspectRatio', {
-        normalize: [normalizeNumber],
-        validate: [validateNumber, validateNonNegative],
-        parse: [parseNumber],
-    }),
+    ASPECTRATIO: createStyle('aspectRatio', [
+        {
+            normalize: [normalizeNumber],
+            validate: [validateNumber, validateNonNegative],
+            parse: [parseNumber],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
+        },
+    ]),
 
     BORDERWIDTH: createStyle('borderWidth', {
         normalize: [normalizePx],
