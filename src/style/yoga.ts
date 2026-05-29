@@ -204,8 +204,20 @@ export const YOGA_SETTER = {
             node.setGap(GUTTER.all, parsed.value)
         } else if (parsed.unit === UNIT.PERCENT) {
             node.setGapPercent(GUTTER.all, parsed.value)
-        } else if (parsed.unit === UNIT.UNSET) {
-            node.setGap(GUTTER.all, undefined)
+        }
+    },
+    rowGap: (node, { parsed }) => {
+        if (parsed.unit === UNIT.PX) {
+            node.setGap(GUTTER.row, parsed.value)
+        } else if (parsed.unit === UNIT.PERCENT) {
+            node.setGapPercent(GUTTER.row, parsed.value)
+        }
+    },
+    columnGap: (node, { parsed }) => {
+        if (parsed.unit === UNIT.PX) {
+            node.setGap(GUTTER.column, parsed.value)
+        } else if (parsed.unit === UNIT.PERCENT) {
+            node.setGapPercent(GUTTER.column, parsed.value)
         }
     },
 

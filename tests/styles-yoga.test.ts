@@ -537,7 +537,7 @@ test('gap', async () => {
     ui.update()
     expect(sibling.layout.x).toBe(60)
 
-    root.setStyle('gap', 'unset')
+    root.setStyle('gap', '0px')
     ui.update()
     expect(sibling.layout.x).toBe(50)
 
@@ -545,9 +545,61 @@ test('gap', async () => {
     ui.update()
     expect(sibling.layout.x).toBe(70)
 
-    root.setStyle('gap', 'unset')
+    root.setStyle('gap', '0px')
     ui.update()
     expect(sibling.layout.x).toBe(50)
+
+    root.setStyle('columnGap', '10px')
+    ui.update()
+    expect(sibling.layout.x).toBe(60)
+
+    root.setStyle('columnGap', '0px')
+    ui.update()
+    expect(sibling.layout.x).toBe(50)
+
+    root.setStyle('columnGap', '10%')
+    ui.update()
+    expect(sibling.layout.x).toBe(70)
+
+    root.setStyle('columnGap', '0px')
+    ui.update()
+    expect(sibling.layout.x).toBe(50)
+
+    const {
+        ui: rowUi,
+        root: rowRoot,
+        child: rowChild,
+    } = await createUI({
+        width: '200px',
+        height: '200px',
+        flexWrap: 'wrap',
+        alignContent: 'flex-start',
+    })
+    const rowSibling = rowUi.create()
+
+    rowChild.setStyle('width', '150px')
+    rowChild.setStyle('height', '50px')
+    rowSibling.setStyle('width', '150px')
+    rowSibling.setStyle('height', '50px')
+    rowRoot.add(rowSibling)
+    rowUi.update()
+    expect(rowSibling.layout.y).toBe(50)
+
+    rowRoot.setStyle('rowGap', '10px')
+    rowUi.update()
+    expect(rowSibling.layout.y).toBe(60)
+
+    rowRoot.setStyle('rowGap', '0px')
+    rowUi.update()
+    expect(rowSibling.layout.y).toBe(50)
+
+    rowRoot.setStyle('rowGap', '10%')
+    rowUi.update()
+    expect(rowSibling.layout.y).toBe(70)
+
+    rowRoot.setStyle('rowGap', '0px')
+    rowUi.update()
+    expect(rowSibling.layout.y).toBe(50)
 })
 
 async function createUI(styles = {}) {

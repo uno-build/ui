@@ -617,6 +617,19 @@ export const STYLE = {
         parse: [createEnumParser(DIRECTION)],
     }),
 
+    PADDING: createStyle('padding', [
+        {
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
+        },
+    ]),
+
     PADDINGTOP: createStyle('paddingTop', [
         {
             normalize: [normalizePx],
@@ -669,19 +682,6 @@ export const STYLE = {
         },
     ]),
 
-    PADDING: createStyle('padding', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-    ]),
-
     GAP: createStyle('gap', [
         {
             normalize: [normalizePx],
@@ -692,11 +692,6 @@ export const STYLE = {
             normalize: [normalizePercent],
             validate: [validateNonNegative, validatePercent],
             parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
         },
     ]),
 
@@ -711,11 +706,6 @@ export const STYLE = {
             validate: [validateNonNegative, validatePercent],
             parse: [parsePercent],
         },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
     ]),
 
     COLUMNGAP: createStyle('columnGap', [
@@ -728,11 +718,6 @@ export const STYLE = {
             normalize: [normalizePercent],
             validate: [validateNonNegative, validatePercent],
             parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
         },
     ]),
 }
