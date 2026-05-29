@@ -641,6 +641,49 @@ test('margin', async () => {
     expect(child.layout.y).toBe(140)
 })
 
+test('padding', async () => {
+    const cases = [
+        ['padding', 10, 10, 180, 180],
+        ['paddingTop', 0, 10, 200, 190],
+        ['paddingLeft', 10, 0, 190, 200],
+        ['paddingRight', 0, 0, 190, 200],
+        ['paddingBottom', 0, 0, 200, 190],
+    ] as const
+
+    for (const [name, x, y, width, height] of cases) {
+        const { ui, child } = await createUI({
+            height: '200px',
+            [name]: '10px',
+        })
+
+        child.setStyle('flex', '1')
+        ui.update()
+        expect(child.layout.x).toBe(x)
+        expect(child.layout.y).toBe(y)
+        expect(child.layout.width).toBe(width)
+        expect(child.layout.height).toBe(height)
+    }
+
+    const {
+        ui,
+        child: wrapper,
+    } = await createUI({
+        height: '200px',
+    })
+    const child = ui.create()
+
+    wrapper.setStyle('width', '200px')
+    wrapper.setStyle('height', '200px')
+    wrapper.setStyle('padding', '10%')
+    child.setStyle('flex', '1')
+    wrapper.add(child)
+    ui.update()
+    expect(child.layout.x).toBe(20)
+    expect(child.layout.y).toBe(20)
+    expect(child.layout.width).toBe(160)
+    expect(child.layout.height).toBe(160)
+})
+
 async function createUI(styles = {}) {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })

@@ -172,25 +172,21 @@ export const YOGA_SETTER = {
     display: (node, { parsed }) => {
         node.setDisplay(parsed.enum)
     },
-    padding: (node, { value, parsed }) => {
-        node.setPadding(EDGE.all, value)
+    padding: (node, { parsed }) => {
+        setPadding(node, EDGE.all, parsed)
     },
-    // paddingTop: (node, { value }) => {
-    //     const value = formatEdgeUnit(node, input, root)
-    //     node.setPadding(EDGE.top, value)
-    // },
-    // paddingLeft: (node, { value }) => {
-    //     const value = formatEdgeUnit(node, input, root)
-    //     node.setPadding(EDGE.left, value)
-    // },
-    // paddingRight: (node, { value }) => {
-    //     const value = formatEdgeUnit(node, input, root)
-    //     node.setPadding(EDGE.right, value)
-    // },
-    // paddingBottom: (node, { value }) => {
-    //     const value = formatEdgeUnit(node, input, root)
-    //     node.setPadding(EDGE.bottom, value)
-    // },
+    paddingTop: (node, { parsed }) => {
+        setPadding(node, EDGE.top, parsed)
+    },
+    paddingLeft: (node, { parsed }) => {
+        setPadding(node, EDGE.left, parsed)
+    },
+    paddingRight: (node, { parsed }) => {
+        setPadding(node, EDGE.right, parsed)
+    },
+    paddingBottom: (node, { parsed }) => {
+        setPadding(node, EDGE.bottom, parsed)
+    },
     // paddingHorizontal: (node, { value }) => {
     //     const value = formatEdgeUnit(node, input, root)
     //     node.setPadding(EDGE.horizontal, value)
@@ -257,5 +253,13 @@ function setMargin(node, edge, parsed) {
         node.setMarginPercent(edge, parsed.value)
     } else if (parsed.unit === UNIT.AUTO) {
         node.setMarginAuto(edge)
+    }
+}
+
+function setPadding(node, edge, parsed) {
+    if (parsed.unit === UNIT.PX) {
+        node.setPadding(edge, parsed.value)
+    } else if (parsed.unit === UNIT.PERCENT) {
+        node.setPaddingPercent(edge, parsed.value)
     }
 }
