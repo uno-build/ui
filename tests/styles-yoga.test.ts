@@ -193,41 +193,60 @@ test('flex', async () => {
 test('flexDirection', async () => {
     const { ui, root, child } = await createUI({ height: '200px' })
     const sibling = ui.create()
+    const cases = [
+        ['row', 0, 0, 50, 0],
+        ['row-reverse', 150, 0, 100, 0],
+        ['column', 0, 0, 0, 50],
+        ['column-reverse', 0, 150, 0, 100],
+    ] as const
 
     child.setStyle('width', '50px')
     child.setStyle('height', '50px')
     sibling.setStyle('width', '50px')
     sibling.setStyle('height', '50px')
     root.add(sibling)
-    ui.update()
-    expect(sibling.layout.x).toBe(50)
-    expect(sibling.layout.y).toBe(0)
 
-    root.setStyle('flexDirection', 'column')
-    ui.update()
-    expect(sibling.layout.x).toBe(0)
-    expect(sibling.layout.y).toBe(50)
+    for (const [flexDirection, childX, childY, siblingX, siblingY] of cases) {
+        root.setStyle('flexDirection', flexDirection)
+        ui.update()
+        expect(child.layout.x).toBe(childX)
+        expect(child.layout.y).toBe(childY)
+        expect(sibling.layout.x).toBe(siblingX)
+        expect(sibling.layout.y).toBe(siblingY)
+    }
 })
 
 test('flexWrap', async () => {
     const { ui, root, child } = await createUI({ width: '200px' })
     const sibling = ui.create()
+    const cases = [
+        ['nowrap', 100, 0, 100, 100, 0],
+        ['wrap', 150, 0, 150, 0, 50],
+        ['wrap-reverse', 150, 50, 150, 0, 0],
+    ] as const
 
     child.setStyle('width', '150px')
     child.setStyle('height', '50px')
     sibling.setStyle('width', '150px')
     sibling.setStyle('height', '50px')
     root.add(sibling)
-    ui.update()
-    expect(child.layout.width).toBe(100)
-    expect(sibling.layout.x).toBe(100)
-    expect(sibling.layout.y).toBe(0)
 
-    root.setStyle('flexWrap', 'wrap')
-    ui.update()
-    expect(child.layout.width).toBe(150)
-    expect(sibling.layout.x).toBe(0)
-    expect(sibling.layout.y).toBe(50)
+    for (const [
+        flexWrap,
+        childWidth,
+        childY,
+        siblingWidth,
+        siblingX,
+        siblingY,
+    ] of cases) {
+        root.setStyle('flexWrap', flexWrap)
+        ui.update()
+        expect(child.layout.width).toBe(childWidth)
+        expect(child.layout.y).toBe(childY)
+        expect(sibling.layout.width).toBe(siblingWidth)
+        expect(sibling.layout.x).toBe(siblingX)
+        expect(sibling.layout.y).toBe(siblingY)
+    }
 })
 
 test('alignContent', async () => {
