@@ -474,6 +474,82 @@ test('flexBasis', async () => {
     expect(child.layout.width).toBe(75)
 })
 
+test('border width', async () => {
+    const cases = [
+        ['borderWidth', 10, 10, 180, 180],
+        ['borderTopWidth', 0, 10, 200, 190],
+        ['borderLeftWidth', 10, 0, 190, 200],
+        ['borderRightWidth', 0, 0, 190, 200],
+        ['borderBottomWidth', 0, 0, 200, 190],
+    ] as const
+
+    for (const [name, x, y, width, height] of cases) {
+        const { ui, child } = await createUI({
+            height: '200px',
+            [name]: '10px',
+        })
+
+        child.setStyle('flex', '1')
+        ui.update()
+        expect(child.layout.x).toBe(x)
+        expect(child.layout.y).toBe(y)
+        expect(child.layout.width).toBe(width)
+        expect(child.layout.height).toBe(height)
+    }
+})
+
+test('direction', async () => {
+    const { ui, root, child } = await createUI({ width: '200px' })
+    const sibling = ui.create()
+    const cases = [
+        ['inherit', 0, 50],
+        ['ltr', 0, 50],
+        ['rtl', 150, 100],
+    ] as const
+
+    child.setStyle('width', '50px')
+    child.setStyle('height', '50px')
+    sibling.setStyle('width', '50px')
+    sibling.setStyle('height', '50px')
+    root.add(sibling)
+
+    for (const [direction, childX, siblingX] of cases) {
+        root.setStyle('direction', direction)
+        ui.update()
+        expect(child.layout.x).toBe(childX)
+        expect(sibling.layout.x).toBe(siblingX)
+    }
+})
+
+test('gap', async () => {
+    const { ui, root, child } = await createUI({ width: '200px' })
+    const sibling = ui.create()
+
+    child.setStyle('width', '50px')
+    child.setStyle('height', '50px')
+    sibling.setStyle('width', '50px')
+    sibling.setStyle('height', '50px')
+    root.add(sibling)
+    ui.update()
+    expect(sibling.layout.x).toBe(50)
+
+    root.setStyle('gap', '10px')
+    ui.update()
+    expect(sibling.layout.x).toBe(60)
+
+    root.setStyle('gap', 'unset')
+    ui.update()
+    expect(sibling.layout.x).toBe(50)
+
+    root.setStyle('gap', '10%')
+    ui.update()
+    expect(sibling.layout.x).toBe(70)
+
+    root.setStyle('gap', 'unset')
+    ui.update()
+    expect(sibling.layout.x).toBe(50)
+})
+
 async function createUI(styles = {}) {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })

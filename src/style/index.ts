@@ -545,7 +545,55 @@ export const STYLE = {
         parse: [createEnumParser(BORDER_STYLE)],
     }),
 
+    BORDERTOPSTYLE: createStyle('borderTopStyle', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(BORDER_STYLE)],
+        parse: [createEnumParser(BORDER_STYLE)],
+    }),
+
+    BORDERLEFTSTYLE: createStyle('borderLeftStyle', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(BORDER_STYLE)],
+        parse: [createEnumParser(BORDER_STYLE)],
+    }),
+
+    BORDERRIGHTSTYLE: createStyle('borderRightStyle', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(BORDER_STYLE)],
+        parse: [createEnumParser(BORDER_STYLE)],
+    }),
+
+    BORDERBOTTOMSTYLE: createStyle('borderBottomStyle', {
+        normalize: [normalizeString],
+        validate: [createEnumValidator(BORDER_STYLE)],
+        parse: [createEnumParser(BORDER_STYLE)],
+    }),
+
     BORDERCOLOR: createStyle('borderColor', {
+        normalize: [normalizeString],
+        validate: [validateColor],
+        parse: [parseColor],
+    }),
+
+    BORDERTOPCOLOR: createStyle('borderTopColor', {
+        normalize: [normalizeString],
+        validate: [validateColor],
+        parse: [parseColor],
+    }),
+
+    BORDERLEFTCOLOR: createStyle('borderLeftColor', {
+        normalize: [normalizeString],
+        validate: [validateColor],
+        parse: [parseColor],
+    }),
+
+    BORDERRIGHTCOLOR: createStyle('borderRightColor', {
+        normalize: [normalizeString],
+        validate: [validateColor],
+        parse: [parseColor],
+    }),
+
+    BORDERBOTTOMCOLOR: createStyle('borderBottomColor', {
         normalize: [normalizeString],
         validate: [validateColor],
         parse: [parseColor],
@@ -634,6 +682,24 @@ export const STYLE = {
         },
     ]),
 
+    GAP: createStyle('gap', [
+        {
+            normalize: [normalizePx],
+            validate: [validateNonNegative, validatePx],
+            parse: [parsePx],
+        },
+        {
+            normalize: [normalizePercent],
+            validate: [validateNonNegative, validatePercent],
+            parse: [parsePercent],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
+        },
+    ]),
+
     ROWGAP: createStyle('rowGap', [
         {
             normalize: [normalizePx],
@@ -644,6 +710,11 @@ export const STYLE = {
             normalize: [normalizePercent],
             validate: [validateNonNegative, validatePercent],
             parse: [parsePercent],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
         },
     ]),
 
@@ -658,18 +729,10 @@ export const STYLE = {
             validate: [validateNonNegative, validatePercent],
             parse: [parsePercent],
         },
-    ]),
-
-    GAP: createStyle('gap', [
         {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
         },
     ]),
 }

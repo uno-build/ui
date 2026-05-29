@@ -153,26 +153,18 @@ export const YOGA_SETTER = {
     borderWidth: (node, { parsed }) => {
         node.setBorder(EDGE.all, parsed.value)
     },
-    // borderTopWidth: (node, { value }) => {
-    //     const value = convertBorderWidth(input, root)
-    //     node.setBorder(EDGE.top, value)
-    // },
-    // borderLeftWidth: (node, { value }) => {
-    //     const value = convertBorderWidth(input, root)
-    //     node.setBorder(EDGE.left, value)
-    // },
-    // borderRightWidth: (node, { value }) => {
-    //     const value = convertBorderWidth(input, root)
-    //     node.setBorder(EDGE.right, value)
-    // },
-    // borderBottomWidth: (node, { value }) => {
-    //     const value = convertBorderWidth(input, root)
-    //     node.setBorder(EDGE.bottom, value)
-    // },
-    // borderWidth: (node, { value }) => {
-    //     const value = convertBorderWidth(input, root)
-    //     node.setBorder(EDGE.all, value)
-    // },
+    borderTopWidth: (node, { parsed }) => {
+        node.setBorder(EDGE.top, parsed.value)
+    },
+    borderLeftWidth: (node, { parsed }) => {
+        node.setBorder(EDGE.left, parsed.value)
+    },
+    borderRightWidth: (node, { parsed }) => {
+        node.setBorder(EDGE.right, parsed.value)
+    },
+    borderBottomWidth: (node, { parsed }) => {
+        node.setBorder(EDGE.bottom, parsed.value)
+    },
     // overflow: (node, { value }) => {
     //     const value = convertEnum(OVERFLOW_LUT, input, 0)
     //     node.setOverflow(value)
@@ -208,32 +200,18 @@ export const YOGA_SETTER = {
     //     node.setPadding(EDGE.vertical, value)
     // },
     gap: (node, { parsed }) => {
-        if (parsed.unit === UNIT.PERCENT) {
-            node.setGapPercent(GUTTER.all, parsed.value)
-        } else if (parsed.unit === UNIT.PX) {
+        if (parsed.unit === UNIT.PX) {
             node.setGap(GUTTER.all, parsed.value)
+        } else if (parsed.unit === UNIT.PERCENT) {
+            node.setGapPercent(GUTTER.all, parsed.value)
+        } else if (parsed.unit === UNIT.UNSET) {
+            node.setGap(GUTTER.all, undefined)
         }
     },
-    // gapRow: (node, { value }) => {
-    //     const value = formatGap(node, input, root)
-    //     node.setGap(GUTTER.row, value)
-    // },
-    // gapColumn: (node, { value }) => {
-    //     const value = formatGap(node, input, root)
-    //     node.setGap(GUTTER.column, value)
-    // },
-    // rowGap: (node, { value }) => {
-    //     const value = formatGap(node, input, root)
-    //     node.setGap(GUTTER.row, value)
-    // },
-    // columnGap: (node, { value }) => {
-    //     const value = formatGap(node, input, root)
-    //     node.setGap(GUTTER.column, value)
-    // },
-    // direction: (node, { value }) => {
-    //     const value = convertEnum(DIRECTION_LUT, input, 0)
-    //     node.setDirection(value)
-    // },
+
+    direction: (node, { parsed }) => {
+        node.setDirection(parsed.enum)
+    },
     // aspectRatio: (node, { value }) => {
     //     node.setAspectRatio(input)
     //     return input
