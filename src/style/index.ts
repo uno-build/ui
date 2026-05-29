@@ -361,17 +361,31 @@ export const STYLE = {
         },
     ]),
 
-    FLEXGROW: createStyle('flexGrow', {
-        normalize: [normalizeNumber],
-        validate: [validateNumber, validateNonNegative],
-        parse: [parseNumber],
-    }),
+    FLEXGROW: createStyle('flexGrow', [
+        {
+            normalize: [normalizeNumber],
+            validate: [validateNumber, validateNonNegative],
+            parse: [parseNumber],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
+        },
+    ]),
 
-    FLEXSHRINK: createStyle('flexShrink', {
-        normalize: [normalizeNumber],
-        validate: [validateNumber, validateNonNegative],
-        parse: [parseNumber],
-    }),
+    FLEXSHRINK: createStyle('flexShrink', [
+        {
+            normalize: [normalizeNumber],
+            validate: [validateNumber, validateNonNegative],
+            parse: [parseNumber],
+        },
+        {
+            normalize: [normalizeString],
+            validate: [validateUnset],
+            parse: [parseUnset],
+        },
+    ]),
 
     WIDTH: createStyle('width', [
         {

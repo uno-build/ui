@@ -79,11 +79,19 @@ export const YOGA_SETTER = {
             node.setFlex(value)
         }
     },
-    flexGrow: (node, { value }) => {
-        node.setFlexGrow(value)
+    flexGrow: (node, { value, parsed }) => {
+        if (parsed.unit === UNIT.UNSET) {
+            node.setFlexGrow(undefined)
+        } else {
+            node.setFlexGrow(value)
+        }
     },
-    flexShrink: (node, { value }) => {
-        node.setFlexShrink(value)
+    flexShrink: (node, { value, parsed }) => {
+        if (parsed.unit === UNIT.UNSET) {
+            node.setFlexShrink(undefined)
+        } else {
+            node.setFlexShrink(value)
+        }
     },
     flexBasis: (node, { parsed }) => {
         if (parsed.unit === UNIT.PX) {
