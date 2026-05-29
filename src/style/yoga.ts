@@ -177,10 +177,9 @@ export const YOGA_SETTER = {
     //     const value = convertEnum(OVERFLOW_LUT, input, 0)
     //     node.setOverflow(value)
     // },
-    // display: (node, { value }) => {
-    //     const value = convertEnum(DISPLAY_LUT, input, 0)
-    //     node.setDisplay(value)
-    // },
+    display: (node, { parsed }) => {
+        node.setDisplay(parsed.enum)
+    },
     padding: (node, { value, parsed }) => {
         node.setPadding(EDGE.all, value)
     },

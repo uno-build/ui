@@ -204,6 +204,67 @@ test('flexDirection', async () => {
     expect(sibling.layout.y).toBe(50)
 })
 
+test('flexWrap', async () => {
+    const { ui, root, child } = await createUI({ width: '200px' })
+    const sibling = ui.create()
+
+    child.setStyle('width', '150px')
+    child.setStyle('height', '50px')
+    sibling.setStyle('width', '150px')
+    sibling.setStyle('height', '50px')
+    root.add(sibling)
+    ui.update()
+    expect(child.layout.width).toBe(100)
+    expect(sibling.layout.x).toBe(100)
+    expect(sibling.layout.y).toBe(0)
+
+    root.setStyle('flexWrap', 'wrap')
+    ui.update()
+    expect(child.layout.width).toBe(150)
+    expect(sibling.layout.x).toBe(0)
+    expect(sibling.layout.y).toBe(50)
+})
+
+test('display', async () => {
+    const {
+        ui,
+        root,
+        child: wrapper,
+    } = await createUI({
+        width: '200px',
+        height: '200px',
+    })
+    const child = ui.create()
+    const sibling = ui.create()
+
+    wrapper.setStyle('width', '100px')
+    wrapper.setStyle('height', '100px')
+    child.setStyle('width', '40px')
+    child.setStyle('height', '40px')
+    sibling.setStyle('width', '50px')
+    sibling.setStyle('height', '50px')
+    wrapper.add(child)
+    root.add(sibling)
+
+    wrapper.setStyle('display', 'flex')
+    ui.update()
+    expect(wrapper.layout.width).toBe(100)
+    expect(child.layout.width).toBe(40)
+    expect(sibling.layout.x).toBe(100)
+
+    wrapper.setStyle('display', 'none')
+    ui.update()
+    expect(wrapper.layout.width).toBe(0)
+    expect(child.layout.width).toBe(0)
+    expect(sibling.layout.x).toBe(0)
+
+    wrapper.setStyle('display', 'contents')
+    ui.update()
+    expect(wrapper.layout.width).toBe(0)
+    expect(child.layout.width).toBe(40)
+    expect(sibling.layout.x).toBe(40)
+})
+
 test('flexGrow', async () => {
     const { ui, root, child } = await createUI({ width: '200px' })
     const sibling = ui.create()
