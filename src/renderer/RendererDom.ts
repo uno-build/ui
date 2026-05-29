@@ -25,8 +25,8 @@ export default class RendererDom extends Renderer {
         return this.engine.getChildIndex(node)
     }
 
-    protected updateStyle(node, style) {
-        this.engine.updateStyle(node, style)
+    protected updateStyle(node, { name, value }) {
+        node.element.style[name] = value
     }
 
     public getLayout(node) {

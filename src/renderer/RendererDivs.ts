@@ -1,5 +1,6 @@
 import Renderer from '../Renderer.ts'
 import EngineYoga from '../engine/EngineYoga.ts'
+import { YOGA_SETTER } from '../style/yoga.ts'
 
 export default class RendererDivs extends Renderer {
     private canvas
@@ -48,9 +49,14 @@ export default class RendererDivs extends Renderer {
     }
 
     protected updateStyle(node, style) {
+        const MANDATORY = ['borderWidth']
         const div = this.divs.get(node)
+        const is_yoga_style = YOGA_SETTER.hasOwnProperty(style.name)
 
-        if (this.engine.updateStyle(node, style) === false) {
+        if (is_yoga_style) {
+            YOGA_SETTER[style.name](node.element, style)
+        }
+        if (!is_yoga_style || MANDATORY.includes(style.name)) {
             div.style[style.name] = style.value
         }
     }

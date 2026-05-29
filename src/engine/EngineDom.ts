@@ -30,10 +30,6 @@ export default class EngineDom extends Engine {
         return node.element.children.length
     }
 
-    public updateStyle(node, { name, value }) {
-        node.element.style[name] = value
-    }
-
     // prettier-ignore
     public getLayout(node) {
         const parent = node.parent

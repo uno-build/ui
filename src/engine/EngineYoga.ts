@@ -1,6 +1,5 @@
 import Engine from '../Engine.ts'
 import { loadYoga } from 'yoga-layout/load'
-import { YOGA_SETTER } from '../style/yoga.ts'
 import { UNIT } from '../style/consts.ts'
 
 export default class EngineYoga extends Engine {
@@ -39,15 +38,6 @@ export default class EngineYoga extends Engine {
 
     public removeChild(parent, node) {
         parent.element.removeChild(node.element)
-    }
-
-    public updateStyle(node, style) {
-        if (YOGA_SETTER.hasOwnProperty(style.name)) {
-            YOGA_SETTER[style.name](node.element, style)
-            return true
-        }
-
-        return false
     }
 
     public beforeUpdate() {

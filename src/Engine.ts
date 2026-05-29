@@ -42,6 +42,5 @@ export default abstract class Engine {
     public abstract getChildIndex(node)
     public abstract insertChild(parent, node, childIndex)
     public abstract removeChild(parent, node)
-    public abstract updateStyle(node, style)
     public abstract getLayout(node)
 }
