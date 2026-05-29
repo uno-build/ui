@@ -138,9 +138,14 @@ test('position', async () => {
     expect(child.layout.x).toBe(0)
     expect(child.layout.y).toBe(0)
 
-    child.setStyle('position', 'relative')
+    child.setStyle('position', 'static')
     child.setStyle('left', '20px')
     child.setStyle('top', '30px')
+    ui.update()
+    expect(child.layout.x).toBe(0)
+    expect(child.layout.y).toBe(0)
+
+    child.setStyle('position', 'relative')
     ui.update()
     expect(child.layout.x).toBe(20)
     expect(child.layout.y).toBe(30)
@@ -223,6 +228,67 @@ test('flexWrap', async () => {
     expect(child.layout.width).toBe(150)
     expect(sibling.layout.x).toBe(0)
     expect(sibling.layout.y).toBe(50)
+})
+
+test('alignContent', async () => {
+    const { ui, root, child } = await createUI({
+        width: '200px',
+        height: '200px',
+        flexWrap: 'wrap',
+    })
+    const sibling = ui.create()
+    const cases = [
+        ['flex-start', 0, 50],
+        ['center', 50, 100],
+        ['flex-end', 100, 150],
+        ['stretch', 0, 100],
+        ['baseline', 0, 50],
+        ['space-between', 0, 150],
+        ['space-around', 25, 125],
+        ['space-evenly', 33, 117],
+    ] as const
+
+    child.setStyle('width', '150px')
+    child.setStyle('height', '50px')
+    sibling.setStyle('width', '150px')
+    sibling.setStyle('height', '50px')
+    root.add(sibling)
+
+    for (const [alignContent, childY, siblingY] of cases) {
+        root.setStyle('alignContent', alignContent)
+        ui.update()
+        expect(child.layout.y).toBe(childY)
+        expect(sibling.layout.y).toBe(siblingY)
+    }
+})
+
+test('alignItems', async () => {
+    const { ui, root, child } = await createUI({
+        width: '200px',
+        height: '200px',
+    })
+    const sibling = ui.create()
+    const cases = [
+        ['normal', 200, 0, 120],
+        ['flex-start', 0, 0, 0],
+        ['center', 100, 0, 60],
+        ['flex-end', 200, 0, 120],
+        ['stretch', 0, 200, 0],
+        ['baseline', 80, 0, 0],
+    ] as const
+
+    child.setStyle('width', '50px')
+    sibling.setStyle('width', '50px')
+    sibling.setStyle('height', '80px')
+    root.add(sibling)
+
+    for (const [alignItems, childY, childHeight, siblingY] of cases) {
+        root.setStyle('alignItems', alignItems)
+        ui.update()
+        expect(child.layout.y).toBe(childY)
+        expect(child.layout.height).toBe(childHeight)
+        expect(sibling.layout.y).toBe(siblingY)
+    }
 })
 
 test('display', async () => {

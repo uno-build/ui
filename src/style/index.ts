@@ -83,11 +83,13 @@ export const STYLE = {
         validate: [validateInteger],
         parse: [parseInteger],
     }),
+
     BACKGROUNDCOLOR: createStyle('backgroundColor', {
         normalize: [normalizeString],
         validate: [validateColor],
         parse: [parseColor],
     }),
+
     BORDERRADIUS: createStyle('borderRadius', [
         {
             normalize: [normalizePx],
