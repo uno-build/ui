@@ -14,7 +14,6 @@ import layoutWrappedRelativeWrapReverse from './examples/wrappedRelativeWrapReve
 import layoutZIndex from './examples/zindex'
 
 export const LAYOUTS = {
-    positionRelative: layoutPositionRelative,
     deepNestedPaint: layoutDeepNestedPaint,
     nestedFlexDirections: layoutNestedFlexDirections,
     nestedMargins: layoutNestedMargins,
@@ -28,6 +27,7 @@ export const LAYOUTS = {
     wrappedPercentRelativeOffsets: layoutWrappedPercentRelativeOffsets,
     wrappedRelativeOffsets: layoutWrappedRelativeOffsets,
     wrappedRelativeWrapReverse: layoutWrappedRelativeWrapReverse,
+    positionRelative: layoutPositionRelative,
     zindex: layoutZIndex,
 }
 

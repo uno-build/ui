@@ -55,19 +55,113 @@
                 transform: translate(12px, 12px);
                 white-space: nowrap;
             }
+            #settings-panel {
+                position: absolute;
+                left: 16px;
+                top: 16px;
+                z-index: 999;
+                min-width: 140px;
+                min-height: 40px;
+                padding: 8px;
+                border-radius: 5px;
+                background: rgba(18, 18, 18, 0.88);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+                color: white;
+                cursor: grab;
+                font:
+                    11px system-ui,
+                    sans-serif;
+            }
+            #settings-panel.dragging {
+                cursor: grabbing;
+            }
+            #settings-panel-title {
+                margin-bottom: 8px;
+                font-weight: 600;
+            }
+            .settings-renderer {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 6px;
+                cursor: pointer;
+            }
+            .settings-renderer input {
+                margin: 0;
+            }
         </style>
         <script type="module" src="./main.ts"></script>
     </head>
     <body>
         <div id="root"></div>
+        <div id="settings-panel">
+            <div id="settings-panel-title">Renderers</div>
+            <div id="settings-renderers"></div>
+        </div>
         <div id="mouse-tooltip">x: 0, y: 0</div>
         <script>
+            const root = document.getElementById('root')
             const tooltip = document.getElementById('mouse-tooltip')
+            const settingsPanel = document.getElementById('settings-panel')
+            const settingsRenderers =
+                document.getElementById('settings-renderers')
+            let settingsDragX = 0
+            let settingsDragY = 0
 
             window.addEventListener('mousemove', (event) => {
                 tooltip.textContent = `x: ${event.clientX}, y: ${event.clientY}`
                 tooltip.style.left = `${event.clientX}px`
                 tooltip.style.top = `${event.clientY}px`
+            })
+
+            settingsPanel.addEventListener('pointerdown', (event) => {
+                if (event.target.closest('.settings-renderer')) {
+                    return
+                }
+
+                settingsDragX = event.clientX - settingsPanel.offsetLeft
+                settingsDragY = event.clientY - settingsPanel.offsetTop
+                settingsPanel.classList.add('dragging')
+                settingsPanel.setPointerCapture(event.pointerId)
+            })
+
+            settingsPanel.addEventListener('pointermove', (event) => {
+                if (!settingsPanel.hasPointerCapture(event.pointerId)) {
+                    return
+                }
+
+                settingsPanel.style.left = `${event.clientX - settingsDragX}px`
+                settingsPanel.style.top = `${event.clientY - settingsDragY}px`
+            })
+
+            settingsPanel.addEventListener('pointerup', (event) => {
+                if (!settingsPanel.hasPointerCapture(event.pointerId)) {
+                    return
+                }
+
+                settingsPanel.classList.remove('dragging')
+                settingsPanel.releasePointerCapture(event.pointerId)
+            })
+
+            document.addEventListener('DOMContentLoaded', () => {
+                Array.from(root.children).forEach((renderer) => {
+                    const rendererDisplay = renderer.style.display
+                    const rendererToggle = document.createElement('input')
+                    rendererToggle.type = 'checkbox'
+                    rendererToggle.checked = true
+
+                    const rendererLabel = document.createElement('label')
+                    rendererLabel.className = 'settings-renderer'
+                    rendererLabel.append(rendererToggle, renderer.id)
+
+                    rendererToggle.addEventListener('change', () => {
+                        renderer.style.display = rendererToggle.checked
+                            ? rendererDisplay
+                            : 'none'
+                    })
+
+                    settingsRenderers.appendChild(rendererLabel)
+                })
             })
         </script>
     </body>

@@ -1,7 +1,7 @@
 import UI from '../../src/UI'
 import RendererDivs from '../../src/renderer/RendererDivs'
 import RendererDom from '../../src/renderer/RendererDom'
-import { getLayout, layoutNames } from './index'
+import { getLayout, layoutNames, LAYOUTS } from './index'
 
 export const SETUPS = {
     RendererDom: {
@@ -64,7 +64,7 @@ export async function runLayoutFromSearchParams({
 
 export function readLayoutName(layout) {
     if (layout == null || layout === '') {
-        return 'basic'
+        return Object.keys(LAYOUTS)[0]
     }
 
     getLayout(layout)
