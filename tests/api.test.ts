@@ -57,6 +57,8 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
 
     ui.update()
 
+    expect([...ui.nodes].toSorted(byId)).toEqual([child, sibling, grandchild])
+    expect([...ui.nodes]).toEqual([child, grandchild, sibling])
     expect(renderer.appliedStyles.map(toStyleUpdate)).toEqual([
         [child.id, 'width', '120px'],
         [child.id, 'backgroundColor', '#123'],
@@ -64,8 +66,8 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
         [sibling.id, 'marginLeft', '10%'],
     ])
     expect(renderer.updates).toEqual([
-        ['before', [child, sibling, grandchild]],
-        ['after', [child, sibling, grandchild]],
+        ['before', [child, grandchild, sibling]],
+        ['after', [child, grandchild, sibling]],
     ])
     expect(child.layout).toEqual({ id: child.id, childCount: 1 })
     expect(sibling.layout).toEqual({ id: sibling.id, childCount: 0 })
@@ -142,4 +144,8 @@ class TestRenderer {
 
 function toStyleUpdate({ node, style }) {
     return [node.id, style.name, style.value]
+}
+
+function byId(a, b) {
+    return a.id - b.id
 }

@@ -4,7 +4,7 @@ import Node from './Node.ts'
 export default class UI {
     public root = null
     private renderer = null
-    private nodes = new Set()
+    private nodes = []
     private next_node_id = 0
 
     constructor({ renderer }) {
@@ -32,18 +32,14 @@ export default class UI {
     }
 
     public update() {
+        this.nodes.sort(sortPaintingOrder)
         this.renderer.beforeUpdate(this.nodes)
         this.root.layout = this.renderer.getLayout(this.root)
 
-        // Calculate layout
-        for (const node of this.nodes) {
+        for (let i = 0; i < this.nodes.length; i++) {
+            const node = this.nodes[i]
             node.layout = this.renderer.getLayout(node)
-        }
-
-        // Paint order
-        const nodes_ordered = [...this.nodes].sort(comparePaintOrder)
-        for (let i = 0; i < nodes_ordered.length; i++) {
-            nodes_ordered[i].order = i
+            node.order = i
         }
 
         this.renderer.afterUpdate(this.nodes)
@@ -59,28 +55,30 @@ export default class UI {
     }
 
     private addChild(parent, child) {
-        if (this.nodes.has(child) === true) {
+        if (this.nodes.includes(child) === true) {
             throw new Error('child already added')
         }
-        if (parent !== this.root && this.nodes.has(parent) === false) {
+        if (parent !== this.root && this.nodes.includes(parent) === false) {
             throw new Error('cannot add child before adding parent')
         }
         const childIndex = this.renderer.getChildIndex(parent)
         child.parent = parent
         child.path = [...parent.path, childIndex]
-        this.nodes.add(child)
+        this.nodes.push(child)
         this.renderer.addChild(parent, child)
     }
 
     private removeChild(child) {
+        const index = this.nodes.indexOf(child)
+        if (index === -1) return
         const parent = child.parent
         child.parent = null
-        this.nodes.delete(child)
+        this.nodes.splice(index, 1)
         this.renderer.removeChild(parent, child)
     }
 }
 
-export function comparePaintOrder(a, b) {
+export function sortPaintingOrder(a, b) {
     const depth = readDivergentDepth(a.path, b.path)
 
     if (depth === a.path.length) {
@@ -90,12 +88,12 @@ export function comparePaintOrder(a, b) {
         return 1
     }
 
-    const branchA = readAncestorAtDepth(a, depth + 1)
-    const branchB = readAncestorAtDepth(b, depth + 1)
+    const branch_a = readAncestorAtDepth(a, depth + 1)
+    const branch_b = readAncestorAtDepth(b, depth + 1)
 
     return (
-        readZIndex(branchA) - readZIndex(branchB) ||
-        branchA.path[depth] - branchB.path[depth]
+        readZIndex(branch_a) - readZIndex(branch_b) ||
+        branch_a.path[depth] - branch_b.path[depth]
     )
 }
 
@@ -116,7 +114,7 @@ function readZIndex(node) {
 }
 
 // STACKING CONTEXTS VERSION (NOT FORCING ZINDEX TO 0 FOR ALL NODES)
-// export function comparePaintOrder(a, b) {
+// export function sortPaintingOrder(a, b) {
 //     if (isAncestor(a, b)) {
 //         return -1
 //     }
