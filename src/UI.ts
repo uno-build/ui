@@ -34,9 +34,18 @@ export default class UI {
     public update() {
         this.renderer.beforeUpdate(this.nodes)
         this.root.layout = this.renderer.getLayout(this.root)
+
+        // Calculate layout
         for (const node of this.nodes) {
             node.layout = this.renderer.getLayout(node)
         }
+
+        // Paint order
+        const nodes_ordered = [...this.nodes].sort(comparePaintOrder)
+        for (let i = 0; i < nodes_ordered.length; i++) {
+            nodes_ordered[i].order = i
+        }
+
         this.renderer.afterUpdate(this.nodes)
     }
 
@@ -69,4 +78,39 @@ export default class UI {
         this.nodes.delete(child)
         this.renderer.removeChild(parent, child)
     }
+}
+
+export function comparePaintOrder(a, b) {
+    const depth = readDivergentDepth(a.path, b.path)
+
+    if (depth === a.path.length) {
+        return -1
+    }
+    if (depth === b.path.length) {
+        return 1
+    }
+
+    const branchA = readAncestorAtDepth(a, depth + 1)
+    const branchB = readAncestorAtDepth(b, depth + 1)
+
+    return (
+        readZIndex(branchA) - readZIndex(branchB) ||
+        branchA.path[depth] - branchB.path[depth]
+    )
+}
+
+function readDivergentDepth(a, b, depth = 0) {
+    return depth < a.length && depth < b.length && a[depth] === b[depth]
+        ? readDivergentDepth(a, b, depth + 1)
+        : depth
+}
+
+function readAncestorAtDepth(node, depth) {
+    return node.path.length === depth
+        ? node
+        : readAncestorAtDepth(node.parent, depth)
+}
+
+function readZIndex(node) {
+    return node.styles.zIndex?.parsed.value ?? 0
 }

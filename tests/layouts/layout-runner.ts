@@ -188,6 +188,7 @@ function createCanvasElement(root, rendererName, setup) {
 function readPaintLayout(ui) {
     return [...ui.nodes].map((node) => ({
         id: node.id,
+        order: node.order,
         ...node.layout,
         path: node.path.join('.'),
     }))

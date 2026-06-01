@@ -4,6 +4,7 @@ export default class Node {
     public path = []
     public styles = {}
     public layout = {}
+    public order = 0
 
     constructor({ id, ui }) {
         this.id = id

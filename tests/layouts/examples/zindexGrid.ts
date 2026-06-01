@@ -23,6 +23,7 @@ export default function createZIndexLayout({ ui, rendererName }) {
             borderWidth: '2px',
             borderColor: '#0002',
             borderStyle: 'solid',
+            zIndex: '4',
         }),
     )
     Container.add(Cell1)
@@ -43,6 +44,7 @@ export default function createZIndexLayout({ ui, rendererName }) {
             borderWidth: '2px',
             borderColor: '#0002',
             borderStyle: 'solid',
+            zIndex: '3',
         }),
     )
     Container.add(Cell2)
@@ -64,6 +66,7 @@ export default function createZIndexLayout({ ui, rendererName }) {
             borderWidth: '2px',
             borderColor: '#0002',
             borderStyle: 'solid',
+            zIndex: '2',
         }),
     )
     Container.add(Cell3)
@@ -84,6 +87,7 @@ export default function createZIndexLayout({ ui, rendererName }) {
             borderWidth: '2px',
             borderColor: '#0002',
             borderStyle: 'solid',
+            zIndex: '1',
         }),
     )
     Container.add(Cell4)
