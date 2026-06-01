@@ -145,6 +145,12 @@ function assertPaintSamples(layout, results) {
                     `${layout} ${rendererName} paint sample '${sample.name}'`,
                 )
                 .toBe(sample.expectedPath)
+            expect
+                .soft(
+                    sample.actualStack,
+                    `${layout} ${rendererName} paint stack '${sample.name}'`,
+                )
+                .toEqual(sample.expectedStack)
         }
     }
 }

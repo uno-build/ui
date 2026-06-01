@@ -220,8 +220,9 @@ function readPaintedRects({ canvas, nodes }) {
 
 function readPaintSamples({ canvas, nodes, samples }) {
     const canvasRect = canvas.getBoundingClientRect()
-    const pathsByElementId = new Map(
-        [...nodes].map((node) => [`node-${node.id}`, node.path.join('.')]),
+    const nodesList = [...nodes]
+    const nodesByElementId = new Map(
+        nodesList.map((node) => [`node-${node.id}`, node]),
     )
 
     return samples.map(({ name, x, y, expected }) => {
@@ -229,20 +230,41 @@ function readPaintSamples({ canvas, nodes, samples }) {
             canvasRect.left + x,
             canvasRect.top + y,
         )
-        const topElement = elements.find(
-            (element) =>
-                canvas.contains(element) && pathsByElementId.has(element.id),
-        )
+        const actualStack = elements
+            .filter((element) => canvas.contains(element))
+            .map((element) => nodesByElementId.get(element.id))
+            .filter((node) => node != null)
+            .map(readNodePath)
+        const expectedStack = nodesList
+            .filter((node) => nodeContainsPoint(node, x, y))
+            .sort((a, b) => b.order - a.order)
+            .map(readNodePath)
 
         return {
             name,
             x,
             y,
-            expectedPath: expected.path.join('.'),
-            actualPath:
-                topElement == null ? null : pathsByElementId.get(topElement.id),
+            expectedPath: readNodePath(expected),
+            actualPath: actualStack[0] ?? null,
+            expectedStack,
+            actualStack,
         }
     })
+}
+
+function readNodePath(node) {
+    return node.path.join('.')
+}
+
+function nodeContainsPoint(node, x, y) {
+    const { layout } = node
+
+    return (
+        x >= layout.x &&
+        x < layout.x + layout.width &&
+        y >= layout.y &&
+        y < layout.y + layout.height
+    )
 }
 
 function getSetup(name) {
