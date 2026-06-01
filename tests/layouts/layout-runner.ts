@@ -30,14 +30,19 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
 
         ui.root.setStyle('width', `${canvas.clientWidth}px`)
         ui.root.setStyle('height', `${canvas.clientHeight}px`)
-        createLayout({ ui, rendererName })
+        const layoutResult = createLayout({ ui, rendererName })
 
         ui.update()
 
         const result = readPaintLayout(ui)
         const paintedRects = readPaintedRects({ canvas, nodes: ui.nodes })
+        const paintSamples = readPaintSamples({
+            canvas,
+            nodes: ui.nodes,
+            samples: layoutResult?.paintSamples ?? [],
+        })
         logger.table(result)
-        results.push({ rendererName, result, paintedRects })
+        results.push({ rendererName, result, paintedRects, paintSamples })
     }
 
     return results
@@ -208,6 +213,33 @@ function readPaintedRects({ canvas, nodes }) {
             y: Math.round(rect.top - canvasRect.top),
             width: Math.round(rect.width),
             height: Math.round(rect.height),
+        }
+    })
+}
+
+function readPaintSamples({ canvas, nodes, samples }) {
+    const canvasRect = canvas.getBoundingClientRect()
+    const pathsByElementId = new Map(
+        [...nodes].map((node) => [`node-${node.id}`, node.path.join('.')]),
+    )
+
+    return samples.map(({ name, x, y, expected }) => {
+        const elements = document.elementsFromPoint(
+            canvasRect.left + x,
+            canvasRect.top + y,
+        )
+        const topElement = elements.find(
+            (element) =>
+                canvas.contains(element) && pathsByElementId.has(element.id),
+        )
+
+        return {
+            name,
+            x,
+            y,
+            expectedPath: expected.path.join('.'),
+            actualPath:
+                topElement == null ? null : pathsByElementId.get(topElement.id),
         }
     })
 }

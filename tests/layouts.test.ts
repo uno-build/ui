@@ -84,6 +84,8 @@ for (const layout of layoutNames) {
             baseline,
             comparisons,
         })
+
+        assertPaintSamples(layout, results)
     })
 }
 
@@ -130,6 +132,19 @@ function assertPaintedRectsMatchLayout({ layout, baseline, comparisons }) {
                         baselineRect[key] + layoutComparisonTolerance,
                     )
             }
+        }
+    }
+}
+
+function assertPaintSamples(layout, results) {
+    for (const { rendererName, paintSamples } of results) {
+        for (const sample of paintSamples) {
+            expect
+                .soft(
+                    sample.actualPath,
+                    `${layout} ${rendererName} paint sample '${sample.name}'`,
+                )
+                .toBe(sample.expectedPath)
         }
     }
 }

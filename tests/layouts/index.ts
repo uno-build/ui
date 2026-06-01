@@ -11,7 +11,9 @@ import layoutWrappedMainAxisRelativeOffsets from './examples/wrappedMainAxisRela
 import layoutWrappedPercentRelativeOffsets from './examples/wrappedPercentRelativeOffsets'
 import layoutWrappedRelativeOffsets from './examples/wrappedRelativeOffsets'
 import layoutWrappedRelativeWrapReverse from './examples/wrappedRelativeWrapReverse'
-import layoutZIndex from './examples/zindex'
+import zindexBasic from './examples/zindexBasic'
+import zindexNested from './examples/zindexNested'
+import zindexGrid from './examples/zindexGrid'
 
 export const LAYOUTS = {
     deepNestedPaint: layoutDeepNestedPaint,
@@ -28,7 +30,9 @@ export const LAYOUTS = {
     wrappedRelativeOffsets: layoutWrappedRelativeOffsets,
     wrappedRelativeWrapReverse: layoutWrappedRelativeWrapReverse,
     positionRelative: layoutPositionRelative,
-    zindex: layoutZIndex,
+    zindexBasic: zindexBasic,
+    zindexNested: zindexNested,
+    zindexGrid: zindexGrid,
 }
 
 export const layoutNames = Object.keys(LAYOUTS)
