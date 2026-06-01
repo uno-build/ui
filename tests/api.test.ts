@@ -1,11 +1,15 @@
 import { test, expect } from '@playwright/test'
 import UI from '../src/UI'
+import RendererDivs from '../src/renderer/RendererDivs.ts'
 
 test('UI and Node api creates, styles, updates, and removes nodes', async () => {
-    const renderer = new TestRenderer()
+    const canvas = createDiv()
+    const renderer = new RendererDivs({ canvas, createDiv })
     const ui = new UI({ renderer })
 
     await ui.init()
+    ui.root.setStyle('width', '200px')
+    ui.root.setStyle('height', '200px')
 
     const child = ui.create({
         width: '120px',
@@ -59,91 +63,40 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
 
     expect([...ui.nodes].toSorted(byId)).toEqual([child, sibling, grandchild])
     expect([...ui.nodes]).toEqual([child, grandchild, sibling])
-    expect(renderer.appliedStyles.map(toStyleUpdate)).toEqual([
-        [child.id, 'width', '120px'],
-        [child.id, 'backgroundColor', '#123'],
-        [child.id, 'height', '40px'],
-        [sibling.id, 'marginLeft', '10%'],
-    ])
-    expect(renderer.updates).toEqual([
-        ['before', [child, grandchild, sibling]],
-        ['after', [child, grandchild, sibling]],
-    ])
-    expect(child.layout).toEqual({ id: child.id, childCount: 1 })
-    expect(sibling.layout).toEqual({ id: sibling.id, childCount: 0 })
-    expect(grandchild.layout).toEqual({
-        id: grandchild.id,
-        childCount: 0,
-    })
+    expect(ui.root.layout).toMatchObject({ x: 0, y: 0, width: 200, height: 200 })
+    expect(child.layout).toMatchObject({ x: 0, y: 0, width: 120, height: 40 })
+    expect(sibling.layout).toMatchObject({ x: 140, y: 0, width: 0, height: 200 })
+    expect(grandchild.layout).toMatchObject({ x: 0, y: 0, width: 0, height: 40 })
 
     child.remove(grandchild)
     ui.root.remove(child)
 
     expect([...ui.nodes]).toEqual([sibling])
-    expect(ui.root.element.children).toEqual([sibling.element])
-    expect(child.element.children).toEqual([])
+    expect(canvas.children.map(({ id }) => id)).toContain('node-2')
+    expect(canvas.children.map(({ id }) => id)).not.toContain('node-1')
+    expect(canvas.children.map(({ id }) => id)).not.toContain('node-3')
+    expect(ui.root.element.getChildCount()).toBe(1)
+    expect(child.element.getChildCount()).toBe(0)
     expect(child.parent).toBe(null)
     expect(grandchild.parent).toBe(null)
 
     ui.update()
 
-    expect(renderer.updates.slice(2)).toEqual([
-        ['before', [sibling]],
-        ['after', [sibling]],
-    ])
+    expect(sibling.layout).toMatchObject({ x: 20, y: 0, width: 0, height: 200 })
 })
 
-class TestRenderer {
-    public pendingStyles = []
-    public appliedStyles = []
-    public updates = []
-
-    public async init() {}
-
-    public createElement(node) {
-        return {
-            node,
-            children: [],
-        }
+function createDiv() {
+    return {
+        children: [],
+        style: {},
+        appendChild(child) {
+            this.children.push(child)
+        },
+        removeChild(child) {
+            const index = this.children.indexOf(child)
+            this.children.splice(index, 1)
+        },
     }
-
-    public addPendingStyle(node, style) {
-        this.pendingStyles.push({ node, style })
-    }
-
-    public getChildIndex(node) {
-        return node.element.children.length
-    }
-
-    public addChild(parent, node) {
-        parent.element.children.push(node.element)
-    }
-
-    public removeChild(parent, node) {
-        const index = parent.element.children.indexOf(node.element)
-        parent.element.children.splice(index, 1)
-    }
-
-    public beforeUpdate(nodes) {
-        this.updates.push(['before', [...nodes]])
-        this.appliedStyles.push(...this.pendingStyles)
-    }
-
-    public getLayout(node) {
-        return {
-            id: node.id,
-            childCount: node.element.children.length,
-        }
-    }
-
-    public afterUpdate(nodes) {
-        this.updates.push(['after', [...nodes]])
-        this.pendingStyles.length = 0
-    }
-}
-
-function toStyleUpdate({ node, style }) {
-    return [node.id, style.name, style.value]
 }
 
 function byId(a, b) {

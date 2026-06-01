@@ -2,15 +2,23 @@ import Renderer from '../Renderer.ts'
 import EngineDom from '../engine/EngineDom.ts'
 
 export default class RendererDom extends Renderer {
+    private canvas
     private engine
 
     constructor({ canvas }) {
         super()
+        this.canvas = canvas
         this.engine = new EngineDom({ canvas })
     }
 
     public createElement(node) {
-        return this.engine.createElement(node)
+        if (node.id === 0) {
+            return this.canvas
+        }
+        const element = document.createElement('div')
+        element.id = `node-${node.id}`
+        Object.assign(element.style, DEFAULT_NODE_STYLE)
+        return element
     }
 
     protected insertChild(parent, node, childIndex) {
@@ -32,4 +40,12 @@ export default class RendererDom extends Renderer {
     public getLayout(node) {
         return this.engine.getLayout(node)
     }
+}
+
+const DEFAULT_NODE_STYLE = {
+    boxSizing: 'border-box',
+    display: 'flex',
+    minWidth: '0',
+    minHeight: '0',
+    zIndex: '0',
 }

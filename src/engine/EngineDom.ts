@@ -8,16 +8,6 @@ export default class EngineDom extends Engine {
         this.canvas = canvas
     }
 
-    public createElement(node) {
-        if (node.id === 0) {
-            return this.canvas
-        }
-        const element = document.createElement('div')
-        element.id = `node-${node.id}`
-        Object.assign(element.style, DEFAULT_NODE_STYLE)
-        return element
-    }
-
     public insertChild(parent, node) {
         parent.element.appendChild(node.element)
     }
@@ -51,12 +41,4 @@ export default class EngineDom extends Engine {
             },
         )
     }
-}
-
-const DEFAULT_NODE_STYLE = {
-    boxSizing: 'border-box',
-    display: 'flex',
-    minWidth: '0',
-    minHeight: '0',
-    zIndex: '0',
 }
