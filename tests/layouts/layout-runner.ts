@@ -1,7 +1,7 @@
 import UI from '../../src/UI'
 import RendererDivs from '../../src/renderer/RendererDivs'
 import RendererDom from '../../src/renderer/RendererDom'
-import { getLayout, layoutNames, LAYOUTS } from './index'
+import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
 
 export const SETUPS = {
     RendererDom: {
@@ -70,6 +70,12 @@ export async function runLayoutFromSearchParams({
 export function readLayoutName(layout) {
     if (layout == null || layout === '') {
         return Object.keys(LAYOUTS)[0]
+    }
+
+    const layoutName = resolveLayoutName(layout)
+
+    if (layoutName != null) {
+        return layoutName
     }
 
     getLayout(layout)
@@ -225,7 +231,8 @@ function readPaintSamples({ canvas, nodes, samples }) {
         nodesList.map((node) => [`node-${node.id}`, node]),
     )
 
-    return samples.map(({ name, x, y, expected }) => {
+    return samples.map((sample) => {
+        const { name, x, y, expected } = sample
         const elements = document.elementsFromPoint(
             canvasRect.left + x,
             canvasRect.top + y,
@@ -235,10 +242,12 @@ function readPaintSamples({ canvas, nodes, samples }) {
             .map((element) => nodesByElementId.get(element.id))
             .filter((node) => node != null)
             .map(readNodePath)
-        const expectedStack = nodesList
-            .filter((node) => nodeContainsPoint(node, x, y))
-            .sort((a, b) => b.order - a.order)
-            .map(readNodePath)
+        const expectedStack =
+            sample.expectedStack?.map(readNodePath) ??
+            nodesList
+                .filter((node) => nodeContainsPoint(node, x, y))
+                .sort((a, b) => b.order - a.order)
+                .map(readNodePath)
 
         return {
             name,

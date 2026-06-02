@@ -99,6 +99,29 @@ export default function createZIndexLayout({ ui, rendererName }) {
         }),
     )
     Cell4.add(Label4)
+
+    return {
+        paintSamples: [
+            {
+                name: 'horizontal cell overlap',
+                x: 400,
+                y: 200,
+                expected: Cell1,
+            },
+            {
+                name: 'vertical cell overlap',
+                x: 300,
+                y: 300,
+                expected: Cell1,
+            },
+            {
+                name: 'four-way label overlap',
+                x: 400,
+                y: 300,
+                expected: Label1,
+            },
+        ],
+    }
 }
 
 function createCell({ ...props }) {

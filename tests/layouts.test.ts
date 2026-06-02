@@ -11,6 +11,7 @@ import {
 
 const layoutRunnerUrl = `/@fs${path.resolve('tests/layouts/layout-runner.ts')}`
 const layoutHarnessUrl = `/@fs${path.resolve('tests/layouts/layout-harness.html')}`
+const uiUrl = `/@fs${path.resolve('src/UI.ts')}`
 
 for (const layout of layoutNames) {
     test(`Layout: ${layout}`, async ({ page }) => {
@@ -88,6 +89,142 @@ for (const layout of layoutNames) {
         assertPaintSamples(layout, results)
     })
 }
+
+test('Layout: zIndex updates repaint order', async ({ page }) => {
+    await page.goto(layoutHarnessUrl)
+
+    const results = await page.evaluate(
+        async ({ layoutRunnerUrl, renderers, uiUrl }) => {
+            const [{ SETUPS }, { default: UI }] = await Promise.all([
+                import(layoutRunnerUrl),
+                import(uiUrl),
+            ])
+            const root = document.getElementById('root')
+
+            if (root == null) {
+                throw new Error("Missing '#root' element")
+            }
+
+            function createCanvasElement(root, rendererName, setup) {
+                const canvas = document.createElement(setup.elementType)
+
+                root.appendChild(canvas)
+                canvas.id = rendererName
+                Object.assign(canvas.style, {
+                    display: 'flex',
+                    position: 'absolute',
+                    left: '0',
+                    top: '0',
+                    width: '220px',
+                    height: '220px',
+                    zIndex: '0',
+                    opacity: '1',
+                })
+
+                canvas.width = canvas.clientWidth
+                canvas.height = canvas.clientHeight
+
+                Object.entries(setup.attributes).forEach(([key, value]) => {
+                    canvas.setAttribute(key, value)
+                })
+
+                return canvas
+            }
+
+            function readTopPath(canvas, nodes, x, y) {
+                const canvasRect = canvas.getBoundingClientRect()
+                const nodesByElementId = new Map(
+                    [...nodes].map((node) => [`node-${node.id}`, node]),
+                )
+                const elements = document.elementsFromPoint(
+                    canvasRect.left + x,
+                    canvasRect.top + y,
+                )
+
+                for (const element of elements) {
+                    if (!canvas.contains(element)) {
+                        continue
+                    }
+
+                    const node = nodesByElementId.get(element.id)
+
+                    if (node != null) {
+                        return node.path.join('.')
+                    }
+                }
+
+                return null
+            }
+
+            const results = []
+
+            for (const rendererName of renderers) {
+                const setup = SETUPS[rendererName]
+                const canvas = createCanvasElement(root, rendererName, setup)
+                const Renderer = setup.renderer
+                const renderer = new Renderer({ canvas })
+                const ui = new UI({ renderer })
+
+                await ui.init()
+                ui.root.setStyle('width', '220px')
+                ui.root.setStyle('height', '220px')
+
+                const lower = ui.create({
+                    width: '120px',
+                    height: '120px',
+                    position: 'absolute',
+                    left: '40px',
+                    top: '40px',
+                    backgroundColor: '#f00',
+                    zIndex: '1',
+                })
+                ui.root.add(lower)
+
+                const higher = ui.create({
+                    width: '120px',
+                    height: '120px',
+                    position: 'absolute',
+                    left: '70px',
+                    top: '70px',
+                    backgroundColor: '#00f',
+                    zIndex: '2',
+                })
+                ui.root.add(higher)
+
+                ui.update()
+                const initialTop = readTopPath(canvas, ui.nodes, 100, 100)
+
+                lower.setStyle('zIndex', '3')
+                ui.update()
+                const updatedTop = readTopPath(canvas, ui.nodes, 100, 100)
+
+                root.removeChild(canvas)
+
+                results.push({
+                    rendererName,
+                    initialTop,
+                    updatedTop,
+                    expectedInitialTop: higher.path.join('.'),
+                    expectedUpdatedTop: lower.path.join('.'),
+                })
+            }
+
+            return results
+        },
+        { layoutRunnerUrl, renderers: defaultRendererNames, uiUrl },
+    )
+
+    for (const result of results) {
+        expect(
+            result.initialTop,
+            `${result.rendererName} initial zIndex paint order`,
+        ).toBe(result.expectedInitialTop)
+        expect(
+            result.updatedTop,
+            `${result.rendererName} updated zIndex paint order`,
+        ).toBe(result.expectedUpdatedTop)
+    }
+})
 
 function assertPaintedRectsMatchLayout({ layout, baseline, comparisons }) {
     const baselinePaths = baseline.paintedRects.map(({ path }) => path)

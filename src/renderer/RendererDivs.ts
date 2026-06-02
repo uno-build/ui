@@ -1,6 +1,7 @@
 import Renderer from '../Renderer.ts'
 import { createYogaLayout } from '../layout/yoga.ts'
 import { YOGA_SETTER } from '../style/yoga.ts'
+import { getAncestorClipping } from '../utils/getAncestorClipping.ts'
 
 export default class RendererDivs extends Renderer {
     private canvas
@@ -49,14 +50,13 @@ export default class RendererDivs extends Renderer {
     }
 
     protected updateStyle(node, style) {
-        const MANDATORY = ['borderWidth']
         const div = this.divs.get(node)
         const is_yoga_style = YOGA_SETTER.hasOwnProperty(style.name)
 
         if (is_yoga_style) {
             YOGA_SETTER[style.name](node.element, style)
         }
-        if (!is_yoga_style || MANDATORY.includes(style.name)) {
+        if (!is_yoga_style || MANDATORY_STYLES.includes(style.name)) {
             div.style[style.name] = style.value
         }
     }
@@ -72,11 +72,15 @@ export default class RendererDivs extends Renderer {
         for (const node of nodes) {
             const { layout } = node
             const div = this.divs.get(node)
+            const clipping = getAncestorClipping(node)
             div.style.left = `${layout.x}px`
             div.style.top = `${layout.y}px`
             div.style.width = `${layout.width}px`
             div.style.height = `${layout.height}px`
             div.style.zIndex = `${node.order}`
+            if (clipping !== null) {
+                div.style.clipPath = `inset(${clipping.top}px ${clipping.right}px ${clipping.bottom}px ${clipping.left}px)`
+            }
         }
     }
 
@@ -90,6 +94,8 @@ const DEFAULT_NODE_STYLE = {
     position: 'absolute',
     zIndex: '0',
 }
+
+const MANDATORY_STYLES = ['borderWidth']
 
 function createDivFactory() {
     return document.createElement('div')
