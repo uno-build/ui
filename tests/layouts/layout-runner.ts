@@ -1,6 +1,7 @@
 import UI from '../../src/UI'
-import RendererDivs from '../../src/renderer/RendererDivs'
 import RendererDom from '../../src/renderer/RendererDom'
+import RendererDivs from '../../src/renderer/RendererDivs'
+import RendererWebGPU from '../../src/renderer/RendererWebGPU'
 import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
 
 export const SETUPS = {
@@ -13,6 +14,13 @@ export const SETUPS = {
         elementType: 'div',
         renderer: RendererDivs,
         attributes: {},
+    },
+    RendererWebGPU: {
+        elementType: 'canvas',
+        renderer: RendererWebGPU,
+        attributes: {},
+        default: false,
+        inspectPaint: false,
     },
 }
 
@@ -35,12 +43,18 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
         ui.update()
 
         const result = readPaintLayout(ui)
-        const paintedRects = readPaintedRects({ canvas, nodes: ui.nodes })
-        const paintSamples = readPaintSamples({
-            canvas,
-            nodes: ui.nodes,
-            samples: layoutResult?.paintSamples ?? [],
-        })
+        const paintedRects =
+            setup.inspectPaint === false
+                ? readLayoutRects({ nodes: ui.nodes })
+                : readPaintedRects({ canvas, nodes: ui.nodes })
+        const paintSamples =
+            setup.inspectPaint === false
+                ? []
+                : readPaintSamples({
+                      canvas,
+                      nodes: ui.nodes,
+                      samples: layoutResult?.paintSamples ?? [],
+                  })
         logger.table(result)
         results.push({ rendererName, result, paintedRects, paintSamples })
     }
@@ -224,6 +238,21 @@ function readPaintedRects({ canvas, nodes }) {
     })
 }
 
+function readLayoutRects({ nodes }) {
+    return [...nodes].map((node) => {
+        const { layout } = node
+
+        return {
+            id: node.id,
+            path: node.path.join('.'),
+            x: Math.round(layout.x),
+            y: Math.round(layout.y),
+            width: Math.round(layout.width),
+            height: Math.round(layout.height),
+        }
+    })
+}
+
 function readPaintSamples({ canvas, nodes, samples }) {
     const canvasRect = canvas.getBoundingClientRect()
     const nodesList = [...nodes]
@@ -290,7 +319,9 @@ function hasOwn(object, key) {
     return Object.prototype.hasOwnProperty.call(object, key)
 }
 
-export const defaultRendererNames = Object.keys(SETUPS)
+export const defaultRendererNames = Object.keys(SETUPS).filter(
+    (rendererName) => SETUPS[rendererName].default !== false,
+)
 export const defaultSetupsNames = defaultRendererNames
 export const comparedLayoutKeys = [
     'width',

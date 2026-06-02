@@ -143,15 +143,21 @@
                 settingsPanel.releasePointerCapture(event.pointerId)
             })
 
-            document.addEventListener('DOMContentLoaded', () => {
+            function addRendererSettings() {
                 Array.from(root.children).forEach((renderer) => {
+                    if (settingsRenderers.querySelector(`#settings-${renderer.id}`)) {
+                        return
+                    }
+
                     const rendererDisplay = renderer.style.display
                     const rendererToggle = document.createElement('input')
                     rendererToggle.type = 'checkbox'
+                    rendererToggle.id = `settings-${renderer.id}`
                     rendererToggle.checked = true
 
                     const rendererLabel = document.createElement('label')
                     rendererLabel.className = 'settings-renderer'
+                    rendererLabel.htmlFor = rendererToggle.id
                     rendererLabel.append(rendererToggle, renderer.id)
 
                     rendererToggle.addEventListener('change', () => {
@@ -161,6 +167,13 @@
                     })
 
                     settingsRenderers.appendChild(rendererLabel)
+                })
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                addRendererSettings()
+                new MutationObserver(addRendererSettings).observe(root, {
+                    childList: true,
                 })
             })
         </script>
