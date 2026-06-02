@@ -1,22 +1,13 @@
-import { loadYoga } from 'yoga-layout/load'
-import { UNIT } from '../style/consts.ts'
-import { calculateLayoutRect, getParentLayout } from './utils.ts'
+import { createFlexily } from 'flexily'
+import { UNIT } from '../style/consts.js'
+import { calculateLayoutRect, getParentLayout } from './utils.js'
 
-export default async function createYogaLayout() {
-    const Yoga = await loadYoga()
-    const yoga_config = Yoga.Config.create()
-    let root_element
-
-    yoga_config.setUseWebDefaults(true)
-    // yoga_config.setPointScaleFactor(200)
-    yoga_config.setExperimentalFeatureEnabled(
-        0, // ExperimentalFeature.WebFlexBasis
-        true,
-    )
+export default function createFlexilyLayout() {
+    const Flexily = createFlexily()
 
     return {
         createElement(node) {
-            const element = Yoga.Node.create(yoga_config)
+            const element = Flexily.createNode()
 
             if (node.id === 0) {
                 root_element = element

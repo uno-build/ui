@@ -1,8 +1,6 @@
 import Renderer from '../Renderer.ts'
-import { createYogaLayout } from '../layout/yoga.ts'
+import createYogaLayout from '../layout/yoga.ts'
 import { YOGA_SETTER } from '../style/yoga.ts'
-import rectangleVertWGSL from '../wgsl/rectangleVert.ts'
-import rectangleFragWGSL from '../wgsl/rectangleFrag.ts'
 
 export default class RendererWebGPU extends Renderer {
     private canvas
@@ -260,3 +258,42 @@ const INSTANCE_FLOATS = 8
 const INSTANCE_SIZE = INSTANCE_FLOATS * 4
 const VIEWPORT_SIZE = 4 * 4
 const QUAD_VERTICES = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
+
+const rectangleVertWGSL = /* wgsl */ `
+struct Viewport {
+  size: vec2f,
+  padding: vec2f,
+}
+
+struct VertexOutput {
+  @builtin(position) position: vec4f,
+  @location(0) color: vec4f,
+}
+
+@group(0) @binding(0) var<uniform> viewport: Viewport;
+
+@vertex
+fn main(
+  @location(0) position: vec2f,
+  @location(1) rect: vec4f,
+  @location(2) color: vec4f,
+) -> VertexOutput {
+  let pixel = rect.xy + position * rect.zw;
+  let clip = vec2f(
+    pixel.x / viewport.size.x * 2.0 - 1.0,
+    1.0 - pixel.y / viewport.size.y * 2.0,
+  );
+
+  var output: VertexOutput;
+  output.position = vec4f(clip, 0.0, 1.0);
+  output.color = color;
+  return output;
+}
+`
+
+const rectangleFragWGSL = /* wgsl */ `
+@fragment
+fn main(@location(0) color: vec4f) -> @location(0) vec4f {
+  return color;
+}
+`
