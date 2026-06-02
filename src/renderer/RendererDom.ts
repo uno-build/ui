@@ -1,14 +1,12 @@
 import Renderer from '../Renderer.ts'
-import EngineDom from '../engine/EngineDom.ts'
+import { calculateLayoutRect, getParentLayout } from '../layout/utils.ts'
 
 export default class RendererDom extends Renderer {
     private canvas
-    private engine
 
     constructor({ canvas }) {
         super()
         this.canvas = canvas
-        this.engine = new EngineDom({ canvas })
     }
 
     public createElement(node) {
@@ -22,23 +20,41 @@ export default class RendererDom extends Renderer {
     }
 
     protected insertChild(parent, node, childIndex) {
-        this.engine.insertChild(parent, node, childIndex)
+        parent.element.appendChild(node.element)
     }
 
     public removeChild(parent, node) {
-        this.engine.removeChild(parent, node)
+        parent.element.removeChild(node.element)
     }
 
     public getChildIndex(node) {
-        return this.engine.getChildIndex(node)
+        return node.element.children.length
     }
 
     protected updateStyle(node, { name, value }) {
         node.element.style[name] = value
     }
 
+    // prettier-ignore
     public getLayout(node) {
-        return this.engine.getLayout(node)
+        const parent = node.parent
+        const parent_layout = getParentLayout(node)
+        const node_rect = node.element.getBoundingClientRect()
+        const parent_rect = (parent?.element ?? this.canvas).getBoundingClientRect()
+
+        return calculateLayoutRect(
+            {
+                width: node_rect.width,
+                height: node_rect.height,
+                left: node_rect.left - parent_rect.left,
+                top: node_rect.top - parent_rect.top,
+            },
+            {
+                ...parent_layout,
+                width: parent_rect.width,
+                height: parent_rect.height,
+            },
+        )
     }
 }
 

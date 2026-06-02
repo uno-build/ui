@@ -1,62 +1,60 @@
-import Engine from '../Engine.ts'
 import { loadYoga } from 'yoga-layout/load'
 import { UNIT } from '../style/consts.ts'
+import { calculateLayoutRect, getParentLayout } from './utils.ts'
 
-export default class EngineYoga extends Engine {
-    private Yoga
-    private yoga_config
-    private root_element
+export async function createYogaLayout() {
+    const Yoga = await loadYoga()
+    const yoga_config = Yoga.Config.create()
+    let root_element
 
-    public async init() {
-        this.Yoga = await loadYoga()
-        this.yoga_config = this.Yoga.Config.create()
-        this.yoga_config.setUseWebDefaults(true)
-        // this.yoga_config.setPointScaleFactor(200)
-        this.yoga_config.setExperimentalFeatureEnabled(
-            0, // ExperimentalFeature.WebFlexBasis
-            true,
-        )
-    }
+    yoga_config.setUseWebDefaults(true)
+    // yoga_config.setPointScaleFactor(200)
+    yoga_config.setExperimentalFeatureEnabled(
+        0, // ExperimentalFeature.WebFlexBasis
+        true,
+    )
 
-    public createElement(node) {
-        const element = this.Yoga.Node.create(this.yoga_config)
+    return {
+        createElement(node) {
+            const element = Yoga.Node.create(yoga_config)
 
-        if (node.id === 0) {
-            this.root_element = element
-        }
+            if (node.id === 0) {
+                root_element = element
+            }
 
-        return element
-    }
+            return element
+        },
 
-    public getChildIndex(node) {
-        return node.element.getChildCount()
-    }
+        getChildIndex(node) {
+            return node.element.getChildCount()
+        },
 
-    public insertChild(parent, node, childIndex) {
-        parent.element.insertChild(node.element, childIndex)
-    }
+        insertChild(parent, node, childIndex) {
+            parent.element.insertChild(node.element, childIndex)
+        },
 
-    public removeChild(parent, node) {
-        parent.element.removeChild(node.element)
-    }
+        removeChild(parent, node) {
+            parent.element.removeChild(node.element)
+        },
 
-    public beforeUpdate() {
-        this.root_element.calculateLayout()
-    }
+        update() {
+            root_element.calculateLayout()
+        },
 
-    // prettier-ignore
-    public getLayout(node) {
-        const node_rect = node.element.getComputedLayout()
-        const parent_layout = this.getParentLayout(node)
-        const parent_rect =
-            node.parent?.element === this.root_element
-                ? { ...parent_layout, ...this.root_element.getComputedLayout() }
-                : parent_layout
+        // prettier-ignore
+        getLayout(node) {
+            const node_rect = node.element.getComputedLayout()
+            const parent_layout = getParentLayout(node)
+            const parent_rect =
+                node.parent?.element === root_element
+                    ? { ...parent_layout, ...root_element.getComputedLayout() }
+                    : parent_layout
 
-        return this.calculateLayoutRect(
-            applyWrappedRelativeOffsets(node, node_rect),
-            parent_rect,
-        )
+            return calculateLayoutRect(
+                applyWrappedRelativeOffsets(node, node_rect),
+                parent_rect,
+            )
+        },
     }
 }
 

@@ -1,25 +1,24 @@
 import Renderer from '../Renderer.ts'
-import EngineYoga from '../engine/EngineYoga.ts'
+import { createYogaLayout } from '../layout/yoga.ts'
 import { YOGA_SETTER } from '../style/yoga.ts'
 
 export default class RendererDivs extends Renderer {
     private canvas
-    private engine
+    private layout
     private divs = new WeakMap()
 
     constructor({ canvas, createDiv = createDivFactory }) {
         super()
         this.canvas = canvas
-        this.engine = new EngineYoga()
         this.createDiv = createDiv
     }
 
     public async init() {
-        await this.engine.init()
+        this.layout = await createYogaLayout()
     }
 
     public createElement(node) {
-        const element = this.engine.createElement(node)
+        const element = this.layout.createElement(node)
 
         let div
         if (node.id === 0) {
@@ -37,15 +36,15 @@ export default class RendererDivs extends Renderer {
     }
 
     public getChildIndex(node) {
-        return this.engine.getChildIndex(node)
+        return this.layout.getChildIndex(node)
     }
 
     protected insertChild(parent, node, childIndex) {
-        this.engine.insertChild(parent, node, childIndex)
+        this.layout.insertChild(parent, node, childIndex)
     }
 
     public removeChild(parent, node) {
-        this.engine.removeChild(parent, node)
+        this.layout.removeChild(parent, node)
         this.canvas.removeChild(this.divs.get(node))
     }
 
@@ -64,7 +63,7 @@ export default class RendererDivs extends Renderer {
 
     public beforeUpdate(nodes) {
         super.beforeUpdate(nodes)
-        this.engine.beforeUpdate(nodes)
+        this.layout.update()
     }
 
     public afterUpdate(nodes) {
@@ -82,7 +81,7 @@ export default class RendererDivs extends Renderer {
     }
 
     public getLayout(node) {
-        return this.engine.getLayout(node)
+        return this.layout.getLayout(node)
     }
 }
 
