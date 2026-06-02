@@ -1,21 +1,23 @@
 import Renderer from '../Renderer.ts'
 import { createYogaLayout } from '../layout/yoga.ts'
 import { YOGA_SETTER } from '../style/yoga.ts'
+import rectangleVertWGSL from '../wgsl/rectangleVert.ts'
+import rectangleFragWGSL from '../wgsl/rectangleFrag.ts'
 
 export default class RendererWebGPU extends Renderer {
     private canvas
     private layout
     private root
-    private nodeStates = new WeakMap()
+    private node_states = new WeakMap()
     private context
     private device
     private format
     private pipeline
-    private bindGroup
-    private quadBuffer
-    private instanceBuffer = null
-    private instanceBufferSize = 0
-    private viewportBuffer
+    private bind_group
+    private quad_buffer
+    private instance_buffer = null
+    private instance_buffer_size = 0
+    private viewport_buffer
 
     constructor({ canvas }) {
         super()
@@ -46,12 +48,12 @@ export default class RendererWebGPU extends Renderer {
             format: this.format,
             alphaMode: 'premultiplied',
         })
-        this.quadBuffer = this.device.createBuffer({
+        this.quad_buffer = this.device.createBuffer({
             size: QUAD_VERTICES.byteLength,
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         })
-        this.device.queue.writeBuffer(this.quadBuffer, 0, QUAD_VERTICES)
-        this.viewportBuffer = this.device.createBuffer({
+        this.device.queue.writeBuffer(this.quad_buffer, 0, QUAD_VERTICES)
+        this.viewport_buffer = this.device.createBuffer({
             size: VIEWPORT_SIZE,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
@@ -118,13 +120,13 @@ export default class RendererWebGPU extends Renderer {
                 topology: 'triangle-list',
             },
         })
-        this.bindGroup = this.device.createBindGroup({
+        this.bind_group = this.device.createBindGroup({
             layout: this.pipeline.getBindGroupLayout(0),
             entries: [
                 {
                     binding: 0,
                     resource: {
-                        buffer: this.viewportBuffer,
+                        buffer: this.viewport_buffer,
                     },
                 },
             ],
@@ -138,7 +140,7 @@ export default class RendererWebGPU extends Renderer {
             this.root = node
         }
 
-        this.nodeStates.set(node, {})
+        this.node_states.set(node, {})
 
         return element
     }
@@ -147,13 +149,13 @@ export default class RendererWebGPU extends Renderer {
         return this.layout.getChildIndex(node)
     }
 
-    protected insertChild(parent, node, childIndex) {
-        this.layout.insertChild(parent, node, childIndex)
+    protected insertChild(parent, node, child_index) {
+        this.layout.insertChild(parent, node, child_index)
     }
 
     public removeChild(parent, node) {
         this.layout.removeChild(parent, node)
-        this.nodeStates.delete(node)
+        this.node_states.delete(node)
     }
 
     protected updateStyle(node, style) {
@@ -162,7 +164,7 @@ export default class RendererWebGPU extends Renderer {
         }
 
         if (style.name === 'backgroundColor') {
-            this.nodeStates.get(node).backgroundColor = style.parsed.rgba
+            this.node_states.get(node).background_color = style.parsed.rgba
         }
     }
 
@@ -173,7 +175,7 @@ export default class RendererWebGPU extends Renderer {
 
     public afterUpdate(nodes) {
         super.afterUpdate(nodes)
-        this.draw([this.root, ...nodes])
+        this.draw([...nodes])
     }
 
     public getLayout(node) {
@@ -182,20 +184,20 @@ export default class RendererWebGPU extends Renderer {
 
     private draw(nodes) {
         const instances = this.createInstanceData(nodes)
-        const instanceCount = instances.length / INSTANCE_FLOATS
+        const instance_count = instances.length / INSTANCE_FLOATS
 
         this.device.queue.writeBuffer(
-            this.viewportBuffer,
+            this.viewport_buffer,
             0,
             new Float32Array([this.canvas.width, this.canvas.height, 0, 0]),
         )
 
-        const commandEncoder = this.device.createCommandEncoder()
-        const textureView = this.context.getCurrentTexture().createView()
-        const passEncoder = commandEncoder.beginRenderPass({
+        const command_encoder = this.device.createCommandEncoder()
+        const texture_view = this.context.getCurrentTexture().createView()
+        const pass_encoder = command_encoder.beginRenderPass({
             colorAttachments: [
                 {
-                    view: textureView,
+                    view: texture_view,
                     clearValue: [0, 0, 0, 0],
                     loadOp: 'clear',
                     storeOp: 'store',
@@ -203,41 +205,41 @@ export default class RendererWebGPU extends Renderer {
             ],
         })
 
-        passEncoder.setPipeline(this.pipeline)
-        passEncoder.setBindGroup(0, this.bindGroup)
+        pass_encoder.setPipeline(this.pipeline)
+        pass_encoder.setBindGroup(0, this.bind_group)
 
-        if (instanceCount > 0) {
+        if (instance_count > 0) {
             this.writeInstanceData(instances)
-            passEncoder.setVertexBuffer(0, this.quadBuffer)
-            passEncoder.setVertexBuffer(1, this.instanceBuffer)
-            passEncoder.draw(QUAD_VERTEX_COUNT, instanceCount)
+            pass_encoder.setVertexBuffer(0, this.quad_buffer)
+            pass_encoder.setVertexBuffer(1, this.instance_buffer)
+            pass_encoder.draw(QUAD_VERTEX_COUNT, instance_count)
         }
 
-        passEncoder.end()
-        this.device.queue.submit([commandEncoder.finish()])
+        pass_encoder.end()
+        this.device.queue.submit([command_encoder.finish()])
     }
 
     private writeInstanceData(instances) {
         if (
-            this.instanceBuffer == null ||
-            this.instanceBufferSize < instances.byteLength
+            this.instance_buffer == null ||
+            this.instance_buffer_size < instances.byteLength
         ) {
-            this.instanceBuffer?.destroy()
-            this.instanceBuffer = this.device.createBuffer({
+            this.instance_buffer?.destroy()
+            this.instance_buffer = this.device.createBuffer({
                 size: instances.byteLength,
                 usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
             })
-            this.instanceBufferSize = instances.byteLength
+            this.instance_buffer_size = instances.byteLength
         }
 
-        this.device.queue.writeBuffer(this.instanceBuffer, 0, instances)
+        this.device.queue.writeBuffer(this.instance_buffer, 0, instances)
     }
 
     private createInstanceData(nodes) {
         const instances = []
 
         for (const node of nodes) {
-            const color = this.nodeStates.get(node).backgroundColor
+            const color = this.node_states.get(node).background_color
 
             if (color == null) {
                 continue
@@ -258,42 +260,3 @@ const INSTANCE_FLOATS = 8
 const INSTANCE_SIZE = INSTANCE_FLOATS * 4
 const VIEWPORT_SIZE = 4 * 4
 const QUAD_VERTICES = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
-
-const rectangleVertWGSL = `
-struct Viewport {
-  size: vec2f,
-  padding: vec2f,
-}
-
-struct VertexOutput {
-  @builtin(position) position: vec4f,
-  @location(0) color: vec4f,
-}
-
-@group(0) @binding(0) var<uniform> viewport: Viewport;
-
-@vertex
-fn main(
-  @location(0) position: vec2f,
-  @location(1) rect: vec4f,
-  @location(2) color: vec4f,
-) -> VertexOutput {
-  let pixel = rect.xy + position * rect.zw;
-  let clip = vec2f(
-    pixel.x / viewport.size.x * 2.0 - 1.0,
-    1.0 - pixel.y / viewport.size.y * 2.0,
-  );
-
-  var output: VertexOutput;
-  output.position = vec4f(clip, 0.0, 1.0);
-  output.color = color;
-  return output;
-}
-`
-
-const rectangleFragWGSL = `
-@fragment
-fn main(@location(0) color: vec4f) -> @location(0) vec4f {
-  return color;
-}
-`
