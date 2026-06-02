@@ -1,12 +1,14 @@
+import { OVERFLOW } from '../style/consts.ts'
+
 export function getAncestorClipping(node) {
     let clip = null
     let ancestor = node.parent
 
     while (ancestor?.parent != null) {
-        if (ancestor.styles.overflow?.value === 'hidden') {
+        const overflow = ancestor.styles.overflow?.parsed.enum
+        if (overflow === OVERFLOW.hidden || overflow === OVERFLOW.scroll) {
             clip = intersectRects(clip, ancestor.layout)
         }
-
         ancestor = ancestor.parent
     }
 
