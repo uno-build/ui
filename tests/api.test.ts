@@ -148,6 +148,30 @@ test('Node remove removes descendants', async () => {
     expect(canvas.children.map(({ id }) => id)).toEqual(['node-4'])
 })
 
+test('Node add and remove throw for invalid tree operations', async () => {
+    const canvas = createDiv()
+    const renderer = new RendererDivs({ canvas, createDiv })
+    const ui = new UI({ renderer })
+
+    await ui.init()
+
+    const child = ui.create()
+    const detached_parent = ui.create()
+    const detached_child = ui.create()
+
+    ui.root.add(child)
+
+    expect(() => {
+        ui.root.add(child)
+    }).toThrow(/child already added/)
+    expect(() => {
+        detached_parent.add(detached_child)
+    }).toThrow(/cannot add child before adding parent/)
+    expect(() => {
+        ui.root.remove(detached_child)
+    }).toThrow(/child not found/)
+})
+
 test('Node remove discards pending styles', async () => {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })

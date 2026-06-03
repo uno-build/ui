@@ -5,7 +5,6 @@ import { YOGA_SETTER } from '../style/yoga.ts'
 export default class RendererWebGPU extends Renderer {
     private canvas
     private engine
-    private root
     private node_states = new WeakMap()
     private context
     private device
@@ -133,10 +132,6 @@ export default class RendererWebGPU extends Renderer {
 
     public createElement(node) {
         const element = this.engine.createElement(node)
-
-        if (node.id === 0) {
-            this.root = node
-        }
 
         this.node_states.set(node, {})
 

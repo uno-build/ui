@@ -71,16 +71,15 @@ export default class UI {
     }
 
     private removeChild(child) {
+        const index = this.nodes.indexOf(child)
+        if (index === -1) {
+            throw new Error('child not found')
+        }
+
         for (const nested_child of [...child.children]) {
             this.removeChild(nested_child)
         }
 
-        this.removeSingleChild(child)
-    }
-
-    private removeSingleChild(child) {
-        const index = this.nodes.indexOf(child)
-        if (index === -1) return
         const parent = child.parent
         child.parent = null
         child.children.length = 0
