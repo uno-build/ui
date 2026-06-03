@@ -81,8 +81,9 @@ function syncRootSize({ ui, root, canvas }) {
     ui.root.setStyle('height', `${root.clientHeight}px`)
 
     if (canvas.tagName === 'CANVAS') {
-        canvas.width = root.clientWidth
-        canvas.height = root.clientHeight
+        const device_pixel_ratio = window.devicePixelRatio
+        canvas.width = Math.round(root.clientWidth * device_pixel_ratio)
+        canvas.height = Math.round(root.clientHeight * device_pixel_ratio)
     }
 }
 

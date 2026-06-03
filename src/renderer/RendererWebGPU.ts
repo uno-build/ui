@@ -182,7 +182,12 @@ export default class RendererWebGPU extends Renderer {
         this.device.queue.writeBuffer(
             this.viewport_buffer,
             0,
-            new Float32Array([this.canvas.width, this.canvas.height, 0, 0]),
+            new Float32Array([
+                this.canvas.clientWidth,
+                this.canvas.clientHeight,
+                0,
+                0,
+            ]),
         )
 
         const command_encoder = this.device.createCommandEncoder()
