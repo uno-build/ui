@@ -9,6 +9,12 @@ export default abstract class Renderer {
         this.pending_styles.push({ node, style })
     }
 
+    public discardPendingStyles(node) {
+        this.pending_styles = this.pending_styles.filter(
+            (pending_style) => pending_style.node !== node,
+        )
+    }
+
     public addChild(parent, node) {
         this.insertChild(parent, node, this.getChildIndex(parent))
     }

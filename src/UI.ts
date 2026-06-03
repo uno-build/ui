@@ -86,6 +86,8 @@ export default class UI {
         child.children.length = 0
         parent.children.splice(parent.children.indexOf(child), 1)
         this.nodes.splice(index, 1)
+        this.renderer.discardPendingStyles(child)
         this.renderer.removeChild(parent, child)
+        child.element = null
     }
 }

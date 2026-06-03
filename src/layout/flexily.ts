@@ -27,6 +27,7 @@ export default function createFlexilyLayout() {
 
         removeChild(parent, node) {
             parent.element.removeChild(node.element)
+            node.element.free()
         },
 
         update() {

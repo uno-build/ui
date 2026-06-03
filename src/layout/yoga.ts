@@ -35,6 +35,7 @@ export default async function createYogaLayout() {
 
         removeChild(parent, node) {
             parent.element.removeChild(node.element)
+            node.element.free()
         },
 
         update() {

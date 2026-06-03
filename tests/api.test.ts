@@ -96,7 +96,8 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     expect(canvas.children.map(({ id }) => id)).not.toContain('node-1')
     expect(canvas.children.map(({ id }) => id)).not.toContain('node-3')
     expect(ui.root.element.getChildCount()).toBe(1)
-    expect(child.element.getChildCount()).toBe(0)
+    expect(child.element).toBe(null)
+    expect(grandchild.element).toBe(null)
     expect(ui.root.children).toEqual([sibling])
     expect(child.children).toEqual([])
     expect(grandchild.children).toEqual([])
@@ -141,7 +142,31 @@ test('Node remove removes descendants', async () => {
     expect(parent.parent).toBe(null)
     expect(child.parent).toBe(null)
     expect(grandchild.parent).toBe(null)
+    expect(parent.element).toBe(null)
+    expect(child.element).toBe(null)
+    expect(grandchild.element).toBe(null)
     expect(canvas.children.map(({ id }) => id)).toEqual(['node-4'])
+})
+
+test('Node remove discards pending styles', async () => {
+    const canvas = createDiv()
+    const renderer = new RendererDivs({ canvas, createDiv })
+    const ui = new UI({ renderer })
+
+    await ui.init()
+
+    const child = ui.create({
+        width: '120px',
+        backgroundColor: '#123',
+    })
+
+    ui.root.add(child)
+    ui.root.remove(child)
+
+    expect(() => ui.update()).not.toThrow()
+    expect([...ui.nodes]).toEqual([])
+    expect(canvas.children).toEqual([])
+    expect(child.element).toBe(null)
 })
 
 function createDiv() {

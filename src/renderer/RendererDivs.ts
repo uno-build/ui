@@ -46,8 +46,11 @@ export default class RendererDivs extends Renderer {
     }
 
     public removeChild(parent, node) {
+        const div = this.divs.get(node)
+
         this.layout.removeChild(parent, node)
-        this.canvas.removeChild(this.divs.get(node))
+        this.canvas.removeChild(div)
+        this.divs.delete(node)
     }
 
     protected updateStyle(node, style) {
