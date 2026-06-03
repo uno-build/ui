@@ -12,82 +12,95 @@ import {
 const layoutRunnerUrl = `/@fs${path.resolve('tests/layouts/layout-runner.ts')}`
 const layoutHarnessUrl = `/@fs${path.resolve('tests/layouts/layout-harness.html')}`
 const uiUrl = `/@fs${path.resolve('src/UI.ts')}`
+const LAYOUT_VIEWPORTS = [
+    { width: 360, height: 640 },
+    { width: 800, height: 600 },
+    { width: 1280, height: 720 },
+]
 
 for (const layout of layoutNames) {
-    test(`Layout: ${layout}`, async ({ page }) => {
-        const results = await renderLayout(page, layout)
-        const [baseline, ...comparisons] = results
+    for (const viewport of LAYOUT_VIEWPORTS) {
+        test(`Layout: ${layout} ${viewport.width}x${viewport.height}`, async ({
+            page,
+        }) => {
+            await page.setViewportSize(viewport)
+            const results = await renderLayout(page, layout)
+            const [baseline, ...comparisons] = results
 
-        if (baseline == null) {
-            throw new Error('No baseline renderer result was produced')
-        }
+            if (baseline == null) {
+                throw new Error('No baseline renderer result was produced')
+            }
 
-        for (const { rendererName, result } of results) {
-            for (const [rowIndex, row] of result.entries()) {
-                for (const key of comparedLayoutKeys) {
-                    expect
-                        .soft(
-                            Number.isFinite(row[key]),
-                            `${layout} ${rendererName} row ${rowIndex} ${key}`,
-                        )
-                        .toBe(true)
+            for (const { rendererName, result } of results) {
+                for (const [rowIndex, row] of result.entries()) {
+                    for (const key of comparedLayoutKeys) {
+                        expect
+                            .soft(
+                                Number.isFinite(row[key]),
+                                `${layout} ${rendererName} row ${rowIndex} ${key}`,
+                            )
+                            .toBe(true)
+                    }
                 }
             }
-        }
 
-        for (const comparison of compareLayoutResults(results)) {
-            expect
-                .soft(
-                    comparison.matches,
-                    `${layout} ${comparison.rendererA} vs ${comparison.rendererB}`,
-                )
-                .toBe(true)
-        }
+            for (const comparison of compareLayoutResults(results)) {
+                expect
+                    .soft(
+                        comparison.matches,
+                        `${layout} ${comparison.rendererA} vs ${comparison.rendererB}`,
+                    )
+                    .toBe(true)
+            }
 
-        for (const comparison of comparisons) {
-            expect(comparison.result).toHaveLength(baseline.result.length)
+            for (const comparison of comparisons) {
+                expect(comparison.result).toHaveLength(baseline.result.length)
 
-            for (const [rowIndex, baselineRow] of baseline.result.entries()) {
-                const comparisonRow = comparison.result[rowIndex]
-                expect(comparisonRow).toBeDefined()
+                for (const [
+                    rowIndex,
+                    baselineRow,
+                ] of baseline.result.entries()) {
+                    const comparisonRow = comparison.result[rowIndex]
+                    expect(comparisonRow).toBeDefined()
 
-                if (comparisonRow == null) {
-                    continue
-                }
+                    if (comparisonRow == null) {
+                        continue
+                    }
 
-                for (const key of comparedLayoutKeys) {
-                    expect
-                        .soft(
-                            comparisonRow[key],
-                            `${layout} ${comparison.rendererName} row ${rowIndex} ${key}`,
-                        )
-                        .toBeGreaterThanOrEqual(
-                            baselineRow[key] - layoutComparisonTolerance,
-                        )
-                    expect
-                        .soft(
-                            comparisonRow[key],
-                            `${layout} ${comparison.rendererName} row ${rowIndex} ${key}`,
-                        )
-                        .toBeLessThanOrEqual(
-                            baselineRow[key] + layoutComparisonTolerance,
-                        )
-                }
+                    for (const key of comparedLayoutKeys) {
+                        expect
+                            .soft(
+                                comparisonRow[key],
+                                `${layout} ${comparison.rendererName} row ${rowIndex} ${key}`,
+                            )
+                            .toBeGreaterThanOrEqual(
+                                baselineRow[key] - layoutComparisonTolerance,
+                            )
+                        expect
+                            .soft(
+                                comparisonRow[key],
+                                `${layout} ${comparison.rendererName} row ${rowIndex} ${key}`,
+                            )
+                            .toBeLessThanOrEqual(
+                                baselineRow[key] + layoutComparisonTolerance,
+                            )
+                    }
 
-                for (const key of comparedLayoutKeys) {
-                    expect(Number.isFinite(comparisonRow[key])).toBe(true)
+                    for (const key of comparedLayoutKeys) {
+                        expect(Number.isFinite(comparisonRow[key])).toBe(true)
+                    }
                 }
             }
-        }
 
-        assertPaintedRectsMatchLayout({
-            layout,
-            baseline,
-            comparisons,
+            assertPaintedRectsMatchLayout({
+                layout,
+                baseline,
+                comparisons,
+            })
+
+            assertPaintSamples(layout, results)
         })
-
-        assertPaintSamples(layout, results)
-    })
+    }
 }
 
 test('Layout: zIndex updates repaint order', async ({ page }) => {

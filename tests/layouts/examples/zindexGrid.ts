@@ -3,6 +3,7 @@ export default function createZIndexLayout({ ui, rendererName }) {
 
     const PADDING = 100
     const OFFSET = 10
+    const CENTER_X = ui.root.styles.width.parsed.value / 2
 
     const Container = ui.create({
         flexDirection: 'row',
@@ -116,7 +117,7 @@ export default function createZIndexLayout({ ui, rendererName }) {
             },
             {
                 name: 'four-way label overlap',
-                x: 400,
+                x: CENTER_X,
                 y: 300,
                 expected: Label1,
             },
