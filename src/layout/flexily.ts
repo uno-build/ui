@@ -4,6 +4,7 @@ import { calculateLayoutRect, getParentLayout } from './utils.js'
 
 export default function createFlexilyLayout() {
     const Flexily = createFlexily()
+    let root_element
 
     return {
         createElement(node) {

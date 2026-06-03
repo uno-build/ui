@@ -1,5 +1,5 @@
 import Renderer from '../Renderer.ts'
-// import createLayout from '../layout/flexily.ts'
+// import createFlexilyLayout from '../layout/flexily.ts'
 import createYogaLayout from '../layout/yoga.ts'
 import { YOGA_SETTER } from '../style/yoga.ts'
 import { getAncestorClipping } from '../utils/getAncestorClipping.ts'

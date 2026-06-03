@@ -9,18 +9,23 @@ export const SETUPS = {
         elementType: 'div',
         renderer: RendererDom,
         attributes: {},
+        inspectDomPaint: true,
+        runByDefault: true,
+        sourceOfTruth: true,
     },
     RendererDivs: {
         elementType: 'div',
         renderer: RendererDivs,
         attributes: {},
+        inspectDomPaint: true,
+        runByDefault: true,
     },
     RendererWebGPU: {
         elementType: 'canvas',
         renderer: RendererWebGPU,
         attributes: {},
-        default: false,
-        inspectPaint: false,
+        inspectDomPaint: false,
+        runByDefault: false,
     },
 }
 
@@ -44,18 +49,22 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
 
         const result = readPaintLayout(ui)
         const paintedRects =
-            setup.inspectPaint === false
+            setup.inspectDomPaint === false
                 ? readLayoutRects({ nodes: ui.nodes })
                 : readPaintedRects({ canvas, nodes: ui.nodes })
         const paintSamples =
-            setup.inspectPaint === false
+            setup.inspectDomPaint === false
                 ? []
                 : readPaintSamples({
                       canvas,
                       nodes: ui.nodes,
                       samples: layoutResult?.paintSamples ?? [],
                   })
+
+        logger.groupCollapsed?.(`${rendererName} layout`)
         logger.table(result)
+        logger.groupEnd?.()
+
         results.push({ rendererName, result, paintedRects, paintSamples })
     }
 
@@ -117,19 +126,26 @@ export function readRendererNames(renderersParam, logger = console) {
 
 export function compareLayoutResults(results) {
     const comparisons = []
+    const sourceOfTruth = results.find(
+        ({ rendererName }) => SETUPS[rendererName].sourceOfTruth === true,
+    )
 
-    for (let i = 0; i < results.length - 1; i++) {
-        const a = results[i]
-        const b = results[i + 1]
+    if (sourceOfTruth == null) {
+        throw new Error('No source of truth renderer result was produced')
+    }
 
-        if (a == null || b == null) {
+    for (const result of results) {
+        if (result.rendererName === sourceOfTruth.rendererName) {
             continue
         }
 
         comparisons.push({
-            rendererA: a.rendererName,
-            rendererB: b.rendererName,
-            matches: paintLayoutResultsMatch(a.result, b.result),
+            rendererA: sourceOfTruth.rendererName,
+            rendererB: result.rendererName,
+            matches: paintLayoutResultsMatch(
+                sourceOfTruth.result,
+                result.result,
+            ),
         })
     }
 
@@ -320,7 +336,7 @@ function hasOwn(object, key) {
 }
 
 export const defaultRendererNames = Object.keys(SETUPS).filter(
-    (rendererName) => SETUPS[rendererName].default !== false,
+    (rendererName) => SETUPS[rendererName].runByDefault !== false,
 )
 export const defaultSetupsNames = defaultRendererNames
 export const comparedLayoutKeys = [
