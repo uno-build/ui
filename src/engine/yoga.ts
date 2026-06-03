@@ -2,7 +2,7 @@ import { loadYoga } from 'yoga-layout/load'
 import { UNIT } from '../style/consts.ts'
 import { calculateLayoutRect, getParentLayout } from './utils.ts'
 
-export default async function createYogaLayout() {
+export default async function createYogaEngine() {
     const Yoga = await loadYoga()
     const yoga_config = Yoga.Config.create()
     let root_element

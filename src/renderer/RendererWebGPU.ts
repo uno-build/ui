@@ -56,7 +56,7 @@ export default class RendererWebGPU extends Renderer {
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
         this.pipeline = this.device.createRenderPipeline({
-            engine: 'auto',
+            layout: 'auto',
             vertex: {
                 module: this.device.createShaderModule({
                     code: rectangleVertWGSL,
@@ -119,7 +119,7 @@ export default class RendererWebGPU extends Renderer {
             },
         })
         this.bind_group = this.device.createBindGroup({
-            engine: this.pipeline.getBindGroupLayout(0),
+            layout: this.pipeline.getBindGroupLayout(0),
             entries: [
                 {
                     binding: 0,
@@ -243,7 +243,7 @@ export default class RendererWebGPU extends Renderer {
                 continue
             }
 
-            const { x, y, width, height } = node.engine
+            const { x, y, width, height } = node.layout
             instances.push(x, y, width, height, ...color)
         }
 
