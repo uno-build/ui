@@ -10,7 +10,7 @@ export const SETUPS = {
         renderer: RendererDom,
         attributes: {},
         inspectDomPaint: true,
-        runByDefault: true,
+        runOnTests: true,
         sourceOfTruth: true,
     },
     RendererDivs: {
@@ -18,14 +18,14 @@ export const SETUPS = {
         renderer: RendererDivs,
         attributes: {},
         inspectDomPaint: true,
-        runByDefault: true,
+        runOnTests: true,
     },
     RendererWebGPU: {
         elementType: 'canvas',
         renderer: RendererWebGPU,
         attributes: {},
         inspectDomPaint: false,
-        runByDefault: false,
+        runOnTests: false,
     },
 }
 
@@ -83,6 +83,8 @@ export async function runLayoutFromSearchParams({
     logger.log(
         `Running: ${origin}/?layout=${layout}&renderers=${renderers.join(',')}`,
     )
+    logger.log('Available layouts:', Object.keys(LAYOUTS))
+    // logger.log('Available renderers:', Object.keys(SETUPS))
 
     const results = await runLayout({ root, layout, renderers, logger })
     reportLayoutComparisons(compareLayoutResults(results), logger)
@@ -108,7 +110,7 @@ export function readLayoutName(layout) {
 export function readRendererNames(renderersParam, logger = console) {
     const requestedRenderers =
         renderersParam == null || renderersParam === ''
-            ? defaultRendererNames
+            ? rendererNames
             : renderersParam.split(',')
 
     return requestedRenderers.filter((rendererName) => {
@@ -118,7 +120,7 @@ export function readRendererNames(renderersParam, logger = console) {
 
         logger.warn(
             `renderer '${rendererName}' not found. Available renderers:`,
-            defaultRendererNames,
+            rendererNames,
         )
         return false
     })
@@ -327,7 +329,7 @@ function getSetup(name) {
     }
 
     throw new Error(
-        `setup '${name}' not found. Available renderers: ${defaultRendererNames.join(', ')}`,
+        `setup '${name}' not found. Available renderers: ${rendererNames.join(', ')}`,
     )
 }
 
@@ -335,8 +337,9 @@ function hasOwn(object, key) {
     return Object.prototype.hasOwnProperty.call(object, key)
 }
 
-export const defaultRendererNames = Object.keys(SETUPS).filter(
-    (rendererName) => SETUPS[rendererName].runByDefault !== false,
+export const rendererNames = Object.keys(SETUPS)
+export const defaultRendererNames = rendererNames.filter(
+    (rendererName) => SETUPS[rendererName].runOnTests !== false,
 )
 export const defaultSetupsNames = defaultRendererNames
 export const comparedLayoutKeys = [
