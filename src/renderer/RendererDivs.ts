@@ -1,13 +1,13 @@
 import Renderer from '../Renderer.ts'
-// import createFlexilyLayout from '../layout/flexily.ts'
-import createYogaLayout from '../layout/yoga.ts'
+import createEngine from '../engine/yoga.ts'
 import { YOGA_SETTER } from '../style/yoga.ts'
 import { getAncestorClipping } from '../utils/getAncestorClipping.ts'
 
 export default class RendererDivs extends Renderer {
     private canvas
-    private layout
+    private engine
     private divs = new WeakMap()
+    private createDiv
 
     constructor({ canvas, createDiv = createDivFactory }) {
         super()
@@ -16,11 +16,11 @@ export default class RendererDivs extends Renderer {
     }
 
     public async init() {
-        this.layout = await createYogaLayout()
+        this.engine = await createEngine()
     }
 
     public createElement(node) {
-        const element = this.layout.createElement(node)
+        const element = this.engine.createElement(node)
 
         let div
         if (node.id === 0) {
@@ -38,17 +38,17 @@ export default class RendererDivs extends Renderer {
     }
 
     public getChildIndex(node) {
-        return this.layout.getChildIndex(node)
+        return this.engine.getChildIndex(node)
     }
 
     protected insertChild(parent, node, childIndex) {
-        this.layout.insertChild(parent, node, childIndex)
+        this.engine.insertChild(parent, node, childIndex)
     }
 
     public removeChild(parent, node) {
         const div = this.divs.get(node)
 
-        this.layout.removeChild(parent, node)
+        this.engine.removeChild(parent, node)
         this.canvas.removeChild(div)
         this.divs.delete(node)
     }
@@ -67,7 +67,7 @@ export default class RendererDivs extends Renderer {
 
     public beforeUpdate(nodes) {
         super.beforeUpdate(nodes)
-        this.layout.update()
+        this.engine.update()
     }
 
     public afterUpdate(nodes) {
@@ -89,7 +89,7 @@ export default class RendererDivs extends Renderer {
     }
 
     public getLayout(node) {
-        return this.layout.getLayout(node)
+        return this.engine.getLayout(node)
     }
 }
 

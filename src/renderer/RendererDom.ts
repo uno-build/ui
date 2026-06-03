@@ -1,5 +1,5 @@
 import Renderer from '../Renderer.ts'
-import { calculateLayoutRect, getParentLayout } from '../layout/utils.ts'
+import { calculateLayoutRect, getParentLayout } from '../engine/utils.ts'
 
 export default class RendererDom extends Renderer {
     private canvas

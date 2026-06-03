@@ -4,7 +4,6 @@
         "test": "playwright test"
     },
     "dependencies": {
-        "flexily": "^0.7.3",
         "yoga-layout": "^3.2.1"
     },
     "devDependencies": {

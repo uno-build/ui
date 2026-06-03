@@ -1,10 +1,10 @@
 import Renderer from '../Renderer.ts'
-import createYogaLayout from '../layout/yoga.ts'
+import createEngine from '../engine/yoga.ts'
 import { YOGA_SETTER } from '../style/yoga.ts'
 
 export default class RendererWebGPU extends Renderer {
     private canvas
-    private layout
+    private engine
     private root
     private node_states = new WeakMap()
     private context
@@ -23,7 +23,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public async init() {
-        this.layout = await createYogaLayout()
+        this.engine = await createEngine()
 
         const adapter = await navigator.gpu.requestAdapter({
             featureLevel: 'compatibility',
@@ -56,7 +56,7 @@ export default class RendererWebGPU extends Renderer {
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
         this.pipeline = this.device.createRenderPipeline({
-            layout: 'auto',
+            engine: 'auto',
             vertex: {
                 module: this.device.createShaderModule({
                     code: rectangleVertWGSL,
@@ -119,7 +119,7 @@ export default class RendererWebGPU extends Renderer {
             },
         })
         this.bind_group = this.device.createBindGroup({
-            layout: this.pipeline.getBindGroupLayout(0),
+            engine: this.pipeline.getBindGroupLayout(0),
             entries: [
                 {
                     binding: 0,
@@ -132,7 +132,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public createElement(node) {
-        const element = this.layout.createElement(node)
+        const element = this.engine.createElement(node)
 
         if (node.id === 0) {
             this.root = node
@@ -144,15 +144,15 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public getChildIndex(node) {
-        return this.layout.getChildIndex(node)
+        return this.engine.getChildIndex(node)
     }
 
     protected insertChild(parent, node, child_index) {
-        this.layout.insertChild(parent, node, child_index)
+        this.engine.insertChild(parent, node, child_index)
     }
 
     public removeChild(parent, node) {
-        this.layout.removeChild(parent, node)
+        this.engine.removeChild(parent, node)
         this.node_states.delete(node)
     }
 
@@ -168,7 +168,7 @@ export default class RendererWebGPU extends Renderer {
 
     public beforeUpdate(nodes) {
         super.beforeUpdate(nodes)
-        this.layout.update()
+        this.engine.update()
     }
 
     public afterUpdate(nodes) {
@@ -177,7 +177,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public getLayout(node) {
-        return this.layout.getLayout(node)
+        return this.engine.getLayout(node)
     }
 
     private draw(nodes) {
@@ -243,7 +243,7 @@ export default class RendererWebGPU extends Renderer {
                 continue
             }
 
-            const { x, y, width, height } = node.layout
+            const { x, y, width, height } = node.engine
             instances.push(x, y, width, height, ...color)
         }
 
