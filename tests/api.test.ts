@@ -27,7 +27,9 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
 
     expect(() => {
         ui.create({ backgroundColor: 'red' })
-    }).toThrow(/invalid value 'red' for property 'backgroundColor': expected hex color/)
+    }).toThrow(
+        /invalid value 'red' for property 'backgroundColor': expected hex color/,
+    )
     expect(() => {
         child.setStyle('width', true)
     }).toThrow(/invalid value 'true' for property 'width': expected px unit/)
@@ -63,12 +65,26 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
 
     expect([...ui.nodes].toSorted(byId)).toEqual([child, sibling, grandchild])
     expect([...ui.nodes]).toEqual([child, grandchild, sibling])
-    expect(ui.root.layout).toMatchObject({ x: 0, y: 0, width: 200, height: 200 })
+    expect(ui.root.layout).toMatchObject({
+        x: 0,
+        y: 0,
+        width: 200,
+        height: 200,
+    })
     expect(child.layout).toMatchObject({ x: 0, y: 0, width: 120, height: 40 })
-    expect(sibling.layout).toMatchObject({ x: 140, y: 0, width: 0, height: 200 })
-    expect(grandchild.layout).toMatchObject({ x: 0, y: 0, width: 0, height: 40 })
+    expect(sibling.layout).toMatchObject({
+        x: 140,
+        y: 0,
+        width: 0,
+        height: 200,
+    })
+    expect(grandchild.layout).toMatchObject({
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 40,
+    })
 
-    child.remove(grandchild)
     ui.root.remove(child)
 
     expect([...ui.nodes]).toEqual([sibling])
@@ -83,6 +99,35 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     ui.update()
 
     expect(sibling.layout).toMatchObject({ x: 20, y: 0, width: 0, height: 200 })
+})
+
+test('Node remove removes descendants', async () => {
+    const canvas = createDiv()
+    const renderer = new RendererDivs({ canvas, createDiv })
+    const ui = new UI({ renderer })
+
+    await ui.init()
+
+    const parent = ui.create()
+    const child = ui.create()
+    const grandchild = ui.create()
+    const sibling = ui.create()
+
+    ui.root.add(parent)
+    ui.root.add(sibling)
+    parent.add(child)
+    child.add(grandchild)
+
+    expect(ui.nodes.length).toBe(4)
+
+    ui.root.remove(parent)
+
+    expect(ui.nodes.length).toBe(1)
+    expect([...ui.nodes]).toEqual([sibling])
+    expect(parent.parent).toBe(null)
+    expect(child.parent).toBe(null)
+    expect(grandchild.parent).toBe(null)
+    expect(canvas.children.map(({ id }) => id)).toEqual(['node-4'])
 })
 
 function createDiv() {

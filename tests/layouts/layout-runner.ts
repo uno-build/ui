@@ -32,6 +32,7 @@ export const SETUPS = {
 export async function runLayout({ root, layout, renderers, logger = console }) {
     const createLayout = getLayout(layout)
     const results = []
+    const rendered_layouts = []
 
     for (const rendererName of renderers) {
         const setup = getSetup(rendererName)
@@ -66,7 +67,11 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
         logger.groupEnd?.()
 
         results.push({ rendererName, result, paintedRects, paintSamples })
+        rendered_layouts.push({ rendererName, ui })
     }
+
+    ;(window as any).addRandomNode = createAddRandomNode(rendered_layouts)
+    ;(window as any).removeRandomNode = createRemoveRandomNode(rendered_layouts)
 
     return results
 }
@@ -310,6 +315,91 @@ function readPaintSamples({ canvas, nodes, samples }) {
 
 function readNodePath(node) {
     return node.path.join('.')
+}
+
+function createAddRandomNode(rendered_layouts) {
+    return function addRandomNode() {
+        const parent = pickRandomNode(rendered_layouts[0].ui)
+        const parent_path = parent.path
+        const background_color = readRandomColor()
+        const added_nodes = []
+
+        for (const { rendererName, ui } of rendered_layouts) {
+            const target_parent = findNodeByPath(ui, parent_path)
+            const item = ui.create({
+                width: '24px',
+                height: '24px',
+                backgroundColor: background_color,
+            })
+
+            target_parent.add(item)
+            ui.update()
+
+            added_nodes.push({
+                rendererName,
+                parentPath: readNodePath(target_parent),
+                path: readNodePath(item),
+                backgroundColor: background_color,
+            })
+        }
+
+        return added_nodes
+    }
+}
+
+function createRemoveRandomNode(rendered_layouts) {
+    return function removeRandomNode() {
+        const node = pickRandomDeepNode(rendered_layouts[0].ui)
+        const node_path = node.path
+        const removed_nodes = []
+
+        for (const { rendererName, ui } of rendered_layouts) {
+            const target_node = findNodeByPath(ui, node_path)
+
+            target_node.parent.remove(target_node)
+            ui.update()
+
+            removed_nodes.push({
+                rendererName,
+                path: readNodePath(target_node),
+            })
+        }
+
+        return removed_nodes
+    }
+}
+
+function pickRandomNode(ui) {
+    const nodes = [ui.root, ...ui.nodes]
+
+    return nodes[Math.floor(Math.random() * nodes.length)]
+}
+
+function pickRandomDeepNode(ui) {
+    const max_path_length = Math.max(
+        ...ui.nodes.map((node) => node.path.length),
+    )
+    const nodes = ui.nodes.filter(
+        (node) => node.path.length >= max_path_length - 1,
+    )
+
+    return nodes[Math.floor(Math.random() * nodes.length)]
+}
+
+function readRandomColor() {
+    const value = Math.floor(Math.random() * 0x1000000)
+
+    return `#${value.toString(16).padStart(6, '0')}`
+}
+
+function findNodeByPath(ui, path) {
+    const path_key = path.join('.')
+
+    if (path_key === '') {
+        return ui.root
+    }
+
+    return ui.nodes.find((node) => readNodePath(node) === path_key)
 }
 
 function nodeContainsPoint(node, x, y) {

@@ -46,7 +46,7 @@ export default class UI {
         this.renderer.afterUpdate(this.nodes)
     }
 
-    private setStyle(node, name, value) {
+    public setStyle(node, name, value) {
         const style = Style.resolveStyle(name, value)
         node.styles[style.name] = {
             value: style.value,
@@ -62,19 +62,33 @@ export default class UI {
         if (parent !== this.root && this.nodes.includes(parent) === false) {
             throw new Error('cannot add child before adding parent')
         }
-        const childIndex = this.renderer.getChildIndex(parent)
+        const child_index = this.renderer.getChildIndex(parent)
         child.parent = parent
-        child.path = [...parent.path, childIndex]
+        child.path = [...parent.path, child_index]
         this.nodes.push(child)
         this.renderer.addChild(parent, child)
     }
 
     private removeChild(child) {
+        const branch_nodes = this.nodes
+            .filter((node) => this.nodePathStartsWith(node.path, child.path))
+            .sort((a, b) => b.path.length - a.path.length)
+
+        for (const branch_node of branch_nodes) {
+            this.removeSingleChild(branch_node)
+        }
+    }
+
+    private removeSingleChild(child) {
         const index = this.nodes.indexOf(child)
         if (index === -1) return
         const parent = child.parent
         child.parent = null
         this.nodes.splice(index, 1)
         this.renderer.removeChild(parent, child)
+    }
+
+    private nodePathStartsWith(path, prefix) {
+        return prefix.every((value, index) => path[index] === value)
     }
 }

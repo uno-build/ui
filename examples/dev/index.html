@@ -79,6 +79,10 @@
                 margin-bottom: 8px;
                 font-weight: 600;
             }
+            #settings-buttons {
+                display: flex;
+                gap: 4px;
+            }
             .settings-renderer {
                 display: flex;
                 align-items: center;
@@ -89,6 +93,20 @@
             .settings-renderer input {
                 margin: 0;
             }
+            #settings-panel button {
+                display: block;
+                margin-top: 8px;
+                width: 100%;
+                padding: 4px 0;
+                border: none;
+                border-radius: 4px;
+                background: rgba(255, 255, 255, 0.1);
+                color: white;
+                font:
+                    11px system-ui,
+                    sans-serif;
+                cursor: pointer;
+            }
         </style>
         <script type="module" src="./main.ts"></script>
     </head>
@@ -97,6 +115,10 @@
         <div id="settings-panel">
             <!-- <div id="settings-panel-title">Renderers</div> -->
             <div id="settings-renderers"></div>
+            <div id="settings-buttons">
+                <button id="add-random-node-button">+</button>
+                <button id="remove-random-node-button">-</button>
+            </div>
         </div>
         <div id="mouse-tooltip">x: 0, y: 0</div>
         <script>
@@ -105,6 +127,12 @@
             const settingsPanel = document.getElementById('settings-panel')
             const settingsRenderers =
                 document.getElementById('settings-renderers')
+            const add_random_node_button = document.getElementById(
+                'add-random-node-button',
+            )
+            const remove_random_node_button = document.getElementById(
+                'remove-random-node-button',
+            )
             let settingsDragX = 0
             let settingsDragY = 0
 
@@ -115,7 +143,7 @@
             })
 
             settingsPanel.addEventListener('pointerdown', (event) => {
-                if (event.target.closest('.settings-renderer')) {
+                if (event.target.closest('.settings-renderer, button')) {
                     return
                 }
 
@@ -145,7 +173,11 @@
 
             function addRendererSettings() {
                 Array.from(root.children).forEach((renderer) => {
-                    if (settingsRenderers.querySelector(`#settings-${renderer.id}`)) {
+                    if (
+                        settingsRenderers.querySelector(
+                            `#settings-${renderer.id}`,
+                        )
+                    ) {
                         return
                     }
 
@@ -169,6 +201,14 @@
                     settingsRenderers.appendChild(rendererLabel)
                 })
             }
+
+            add_random_node_button.addEventListener('click', () => {
+                window.addRandomNode()
+            })
+
+            remove_random_node_button.addEventListener('click', () => {
+                window.removeRandomNode()
+            })
 
             document.addEventListener('DOMContentLoaded', () => {
                 addRendererSettings()
