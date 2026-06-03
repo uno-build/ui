@@ -65,18 +65,17 @@ export default class UI {
         const child_index = this.renderer.getChildIndex(parent)
         child.parent = parent
         child.path = [...parent.path, child_index]
+        parent.children.push(child)
         this.nodes.push(child)
         this.renderer.addChild(parent, child)
     }
 
     private removeChild(child) {
-        const branch_nodes = this.nodes
-            .filter((node) => this.nodePathStartsWith(node.path, child.path))
-            .sort((a, b) => b.path.length - a.path.length)
-
-        for (const branch_node of branch_nodes) {
-            this.removeSingleChild(branch_node)
+        for (const nested_child of [...child.children]) {
+            this.removeChild(nested_child)
         }
+
+        this.removeSingleChild(child)
     }
 
     private removeSingleChild(child) {
@@ -84,11 +83,9 @@ export default class UI {
         if (index === -1) return
         const parent = child.parent
         child.parent = null
+        child.children.length = 0
+        parent.children.splice(parent.children.indexOf(child), 1)
         this.nodes.splice(index, 1)
         this.renderer.removeChild(parent, child)
-    }
-
-    private nodePathStartsWith(path, prefix) {
-        return prefix.every((value, index) => path[index] === value)
     }
 }

@@ -1,6 +1,7 @@
 export default class Node {
-    public parent = null
     public element = null
+    public parent = null
+    public children = []
     public path = []
     public styles = {}
     public layout = {}
