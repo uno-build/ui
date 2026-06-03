@@ -42,11 +42,11 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
         const ui = new UI({ renderer })
         await ui.init()
 
-        ui.root.setStyle('width', `${canvas.clientWidth}px`)
-        ui.root.setStyle('height', `${canvas.clientHeight}px`)
+        syncRootSize({ ui, root, canvas })
         const layoutResult = createLayout({ ui, rendererName })
 
         ui.update()
+        observeRootSize({ ui, root, canvas })
 
         const result = readPaintLayout(ui)
         const paintedRects =
@@ -74,6 +74,35 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
     ;(window as any).removeRandomNode = createRemoveRandomNode(rendered_layouts)
 
     return results
+}
+
+function syncRootSize({ ui, root, canvas }) {
+    ui.root.setStyle('width', `${root.clientWidth}px`)
+    ui.root.setStyle('height', `${root.clientHeight}px`)
+
+    if (canvas.tagName === 'CANVAS') {
+        canvas.width = root.clientWidth
+        canvas.height = root.clientHeight
+    }
+}
+
+function observeRootSize({ ui, root, canvas }) {
+    let width = root.clientWidth
+    let height = root.clientHeight
+
+    const observer = new ResizeObserver(() => {
+        if (root.clientWidth === width && root.clientHeight === height) {
+            return
+        }
+
+        width = root.clientWidth
+        height = root.clientHeight
+        syncRootSize({ ui, root, canvas })
+        ui.update()
+    })
+
+    observer.observe(root)
+    ;(canvas as any).resizeObserver = observer
 }
 
 export async function runLayoutFromSearchParams({
