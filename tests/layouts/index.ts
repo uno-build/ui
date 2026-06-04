@@ -1,3 +1,4 @@
+import borderRadiusGrid from './examples/borderRadiusGrid'
 import positionRelative from './examples/positionRelative'
 import deepNestedPaint from './examples/deepNestedPaint'
 import nestedFlexDirections from './examples/nestedFlexDirections'
@@ -19,6 +20,7 @@ import zindexGrid from './examples/zindexGrid'
 import zindexEdgeCases from './examples/zindexEdgeCases'
 
 export const LAYOUTS = {
+    borderRadiusGrid,
     deepNestedPaint,
     nestedFlexDirections,
     nestedMargins,

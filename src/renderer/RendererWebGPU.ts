@@ -86,6 +86,16 @@ export default class RendererWebGPU extends Renderer {
                                 offset: 16,
                                 format: 'float32x4',
                             },
+                            {
+                                shaderLocation: 3,
+                                offset: 32,
+                                format: 'float32x4',
+                            },
+                            {
+                                shaderLocation: 4,
+                                offset: 48,
+                                format: 'float32',
+                            },
                         ],
                     },
                 ],
@@ -158,6 +168,15 @@ export default class RendererWebGPU extends Renderer {
 
         if (style.name === 'backgroundColor') {
             this.node_states.get(node).background_color = style.parsed.rgba
+        }
+        if (style.name === 'borderColor') {
+            this.node_states.get(node).border_color = style.parsed.rgba
+        }
+        if (style.name === 'borderWidth') {
+            this.node_states.get(node).border_width = style.parsed.value
+        }
+        if (style.name === 'borderStyle') {
+            this.node_states.get(node).border_style = style.value
         }
     }
 
@@ -237,14 +256,28 @@ export default class RendererWebGPU extends Renderer {
         const instances = []
 
         for (const node of nodes) {
-            const color = this.node_states.get(node).background_color
+            const state = this.node_states.get(node)
+            const background_color = state.background_color
+            const border_color = state.border_color
+            const border_width =
+                state.border_style === 'solid' && border_color != null
+                    ? (state.border_width ?? 0)
+                    : 0
 
-            if (color == null) {
+            if (background_color == null && border_width === 0) {
                 continue
             }
 
             const { x, y, width, height } = node.layout
-            instances.push(x, y, width, height, ...color)
+            instances.push(
+                x,
+                y,
+                width,
+                height,
+                ...(background_color ?? TRANSPARENT),
+                ...(border_color ?? TRANSPARENT),
+                border_width,
+            )
         }
 
         return new Float32Array(instances)
@@ -254,9 +287,10 @@ export default class RendererWebGPU extends Renderer {
 const QUAD_VERTEX_COUNT = 6
 const QUAD_VERTEX_FLOATS = 2
 const QUAD_VERTEX_SIZE = QUAD_VERTEX_FLOATS * 4
-const INSTANCE_FLOATS = 8
+const INSTANCE_FLOATS = 13
 const INSTANCE_SIZE = INSTANCE_FLOATS * 4
 const VIEWPORT_SIZE = 4 * 4
+const TRANSPARENT = [0, 0, 0, 0]
 const QUAD_VERTICES = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
 
 const rectangleVertWGSL = /* wgsl */ `
@@ -267,7 +301,11 @@ struct Viewport {
 
 struct VertexOutput {
   @builtin(position) position: vec4f,
-  @location(0) color: vec4f,
+  @location(0) local_position: vec2f,
+  @location(1) rect_size: vec2f,
+  @location(2) background_color: vec4f,
+  @location(3) border_color: vec4f,
+  @location(4) border_width: f32,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -276,9 +314,12 @@ struct VertexOutput {
 fn main(
   @location(0) position: vec2f,
   @location(1) rect: vec4f,
-  @location(2) color: vec4f,
+  @location(2) background_color: vec4f,
+  @location(3) border_color: vec4f,
+  @location(4) border_width: f32,
 ) -> VertexOutput {
-  let pixel = rect.xy + position * rect.zw;
+  let local_position = position * rect.zw;
+  let pixel = rect.xy + local_position;
   let clip = vec2f(
     pixel.x / viewport.size.x * 2.0 - 1.0,
     1.0 - pixel.y / viewport.size.y * 2.0,
@@ -286,14 +327,39 @@ fn main(
 
   var output: VertexOutput;
   output.position = vec4f(clip, 0.0, 1.0);
-  output.color = color;
+  output.local_position = local_position;
+  output.rect_size = rect.zw;
+  output.background_color = background_color;
+  output.border_color = border_color;
+  output.border_width = border_width;
   return output;
 }
 `
 
 const rectangleFragWGSL = /* wgsl */ `
+struct FragmentInput {
+  @location(0) local_position: vec2f,
+  @location(1) rect_size: vec2f,
+  @location(2) background_color: vec4f,
+  @location(3) border_color: vec4f,
+  @location(4) border_width: f32,
+}
+
 @fragment
-fn main(@location(0) color: vec4f) -> @location(0) vec4f {
-  return color;
+fn main(input: FragmentInput) -> @location(0) vec4f {
+  let in_border =
+    input.border_width > 0.0 &&
+    (
+      input.local_position.x < input.border_width ||
+      input.local_position.y < input.border_width ||
+      input.local_position.x >= input.rect_size.x - input.border_width ||
+      input.local_position.y >= input.rect_size.y - input.border_width
+    );
+
+  if (in_border) {
+    return input.border_color;
+  }
+
+  return input.background_color;
 }
 `
