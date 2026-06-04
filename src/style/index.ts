@@ -1,64 +1,40 @@
+import { normalizeStyleKey, normalizeStyleName } from './normalizers.ts'
+import { createStyle } from './utils.ts'
 import {
-    ALIGN_CONTENT,
-    ALIGN_ITEMS,
-    ALIGN_SELF,
-    BORDER_STYLE,
-    BOX_SIZING,
-    DIRECTION,
-    DISPLAY,
-    FLEX_DIRECTION,
-    JUSTIFY,
-    OVERFLOW,
-    POSITION,
-    WRAP,
-} from './consts.ts'
-import {
-    normalizeStyleKey,
-    normalizeString,
-    normalizeInteger,
-    normalizeNumber,
-    normalizePx,
-    normalizePercent,
-    normalizeStyleName,
-} from './normalizers.ts'
-import {
-    validateColor,
-    validateEnum,
-    validateAuto,
-    validateUnset,
-    validateInteger,
-    validateNumber,
-    validatePx,
-    validatePercent,
-    validateNonNegative,
-} from './validators.ts'
-import {
-    parseColor,
-    parseEnum,
-    parseAuto,
-    parseUnset,
-    parseInteger,
-    parseNumber,
-    parsePx,
-    parsePercent,
-} from './parsers.ts'
-import {
-    createStyle,
-    createEnumValidator,
-    createEnumParser,
-    runNormalizePipeline,
-    runValidators,
-    runParsePipeline,
-} from './utils.ts'
+    ALIGN_CONTENT_VALUE,
+    ALIGN_ITEMS_VALUE,
+    ALIGN_SELF_VALUE,
+    BORDER_VALUE,
+    BORDER_WIDTH_VALUE,
+    BOX_SIZING_VALUE,
+    COLOR_VALUE,
+    DIRECTION_VALUE,
+    DISPLAY_VALUE,
+    FLEX_BASIS_VALUE,
+    FLEX_DIRECTION_VALUE,
+    FLEX_WRAP_VALUE,
+    JUSTIFY_CONTENT_VALUE,
+    MARGIN_VALUE,
+    MIN_MAX_SIZE_VALUE,
+    NUMBER_UNSET_VALUE,
+    OFFSET_VALUE,
+    OVERFLOW_VALUE,
+    POSITION_VALUE,
+    PX_PERCENT_VALUE,
+    SIZE_VALUE,
+    INTEGER_VALUE,
+} from './values.ts'
 
 export function resolveStyle(name: string, value: any) {
     // Validating name
     if (typeof name !== 'string') {
         throw new Error(`style name must be a string, got '${typeof name}'`)
     }
+
+    name = normalizeStyleName(name, STYLE)
     const style = STYLE[normalizeStyleKey(name)]
+
     if (!style) {
-        name = normalizeStyleName(name, STYLE)
         throw new Error(`unsupported property '${name}'`)
     }
 
@@ -78,656 +54,65 @@ export function resolveStyle(name: string, value: any) {
 }
 
 export const STYLE = {
-    ZINDEX: createStyle('zIndex', {
-        normalize: [normalizeInteger],
-        validate: [validateInteger],
-        parse: [parseInteger],
-    }),
-
-    BACKGROUNDCOLOR: createStyle('backgroundColor', {
-        normalize: [normalizeString],
-        validate: [validateColor],
-        parse: [parseColor],
-    }),
-
-    BORDERRADIUS: createStyle('borderRadius', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-    ]),
-
-    OVERFLOW: createStyle('overflow', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(OVERFLOW)],
-        parse: [createEnumParser(OVERFLOW)],
-    }),
+    ZINDEX: createStyle('zIndex', INTEGER_VALUE),
+    BACKGROUNDCOLOR: createStyle('backgroundColor', COLOR_VALUE),
+    BORDERRADIUS: createStyle('borderRadius', PX_PERCENT_VALUE),
+    OVERFLOW: createStyle('overflow', OVERFLOW_VALUE),
 
     // YOGA PROPERTIES
-    POSITION: createStyle('position', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(POSITION)],
-        parse: [createEnumParser(POSITION)],
-    }),
-
-    TOP: createStyle('top', [
-        {
-            normalize: [normalizePx],
-            validate: [validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    LEFT: createStyle('left', [
-        {
-            normalize: [normalizePx],
-            validate: [validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    RIGHT: createStyle('right', [
-        {
-            normalize: [normalizePx],
-            validate: [validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    BOTTOM: createStyle('bottom', [
-        {
-            normalize: [normalizePx],
-            validate: [validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    ALIGNCONTENT: createStyle('alignContent', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(ALIGN_CONTENT)],
-        parse: [createEnumParser(ALIGN_CONTENT)],
-    }),
-
-    ALIGNITEMS: createStyle('alignItems', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(ALIGN_ITEMS)],
-        parse: [createEnumParser(ALIGN_ITEMS)],
-    }),
-
-    ALIGNSELF: createStyle('alignSelf', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(ALIGN_SELF)],
-        parse: [createEnumParser(ALIGN_SELF)],
-    }),
-
-    FLEXDIRECTION: createStyle('flexDirection', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(FLEX_DIRECTION)],
-        parse: [createEnumParser(FLEX_DIRECTION)],
-    }),
-
-    FLEXWRAP: createStyle('flexWrap', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(WRAP)],
-        parse: [createEnumParser(WRAP)],
-    }),
-
-    JUSTIFYCONTENT: createStyle('justifyContent', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(JUSTIFY)],
-        parse: [createEnumParser(JUSTIFY)],
-    }),
-
-    MARGIN: createStyle('margin', [
-        {
-            normalize: [normalizePx],
-            validate: [validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-    ]),
-
-    MARGINTOP: createStyle('marginTop', [
-        {
-            normalize: [normalizePx],
-            validate: [validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-    ]),
-
-    MARGINLEFT: createStyle('marginLeft', [
-        {
-            normalize: [normalizePx],
-            validate: [validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-    ]),
-
-    MARGINRIGHT: createStyle('marginRight', [
-        {
-            normalize: [normalizePx],
-            validate: [validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-    ]),
-
-    MARGINBOTTOM: createStyle('marginBottom', [
-        {
-            normalize: [normalizePx],
-            validate: [validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-    ]),
-
-    FLEX: createStyle('flex', [
-        {
-            normalize: [normalizeNumber],
-            validate: [validateNumber, validateNonNegative],
-            parse: [parseNumber],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    FLEXBASIS: createStyle('flexBasis', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    FLEXGROW: createStyle('flexGrow', [
-        {
-            normalize: [normalizeNumber],
-            validate: [validateNumber, validateNonNegative],
-            parse: [parseNumber],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    FLEXSHRINK: createStyle('flexShrink', [
-        {
-            normalize: [normalizeNumber],
-            validate: [validateNumber, validateNonNegative],
-            parse: [parseNumber],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    WIDTH: createStyle('width', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-    ]),
-
-    HEIGHT: createStyle('height', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateAuto],
-            parse: [parseAuto],
-        },
-    ]),
-
-    MINWIDTH: createStyle('minWidth', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    MINHEIGHT: createStyle('minHeight', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    MAXWIDTH: createStyle('maxWidth', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    MAXHEIGHT: createStyle('maxHeight', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    BOXSIZING: createStyle('boxSizing', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(BOX_SIZING)],
-        parse: [createEnumParser(BOX_SIZING)],
-    }),
-
-    ASPECTRATIO: createStyle('aspectRatio', [
-        {
-            normalize: [normalizeNumber],
-            validate: [validateNumber, validateNonNegative],
-            parse: [parseNumber],
-        },
-        {
-            normalize: [normalizeString],
-            validate: [validateUnset],
-            parse: [parseUnset],
-        },
-    ]),
-
-    BORDERWIDTH: createStyle('borderWidth', {
-        normalize: [normalizePx],
-        validate: [validateNonNegative, validatePx],
-        parse: [parsePx],
-    }),
-
-    BORDERTOPWIDTH: createStyle('borderTopWidth', {
-        normalize: [normalizePx],
-        validate: [validateNonNegative, validatePx],
-        parse: [parsePx],
-    }),
-
-    BORDERLEFTWIDTH: createStyle('borderLeftWidth', {
-        normalize: [normalizePx],
-        validate: [validateNonNegative, validatePx],
-        parse: [parsePx],
-    }),
-
-    BORDERRIGHTWIDTH: createStyle('borderRightWidth', {
-        normalize: [normalizePx],
-        validate: [validateNonNegative, validatePx],
-        parse: [parsePx],
-    }),
-
-    BORDERBOTTOMWIDTH: createStyle('borderBottomWidth', {
-        normalize: [normalizePx],
-        validate: [validateNonNegative, validatePx],
-        parse: [parsePx],
-    }),
-
-    BORDERSTYLE: createStyle('borderStyle', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(BORDER_STYLE)],
-        parse: [createEnumParser(BORDER_STYLE)],
-    }),
-
-    BORDERTOPSTYLE: createStyle('borderTopStyle', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(BORDER_STYLE)],
-        parse: [createEnumParser(BORDER_STYLE)],
-    }),
-
-    BORDERLEFTSTYLE: createStyle('borderLeftStyle', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(BORDER_STYLE)],
-        parse: [createEnumParser(BORDER_STYLE)],
-    }),
-
-    BORDERRIGHTSTYLE: createStyle('borderRightStyle', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(BORDER_STYLE)],
-        parse: [createEnumParser(BORDER_STYLE)],
-    }),
-
-    BORDERBOTTOMSTYLE: createStyle('borderBottomStyle', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(BORDER_STYLE)],
-        parse: [createEnumParser(BORDER_STYLE)],
-    }),
-
-    BORDERCOLOR: createStyle('borderColor', {
-        normalize: [normalizeString],
-        validate: [validateColor],
-        parse: [parseColor],
-    }),
-
-    BORDERTOPCOLOR: createStyle('borderTopColor', {
-        normalize: [normalizeString],
-        validate: [validateColor],
-        parse: [parseColor],
-    }),
-
-    BORDERLEFTCOLOR: createStyle('borderLeftColor', {
-        normalize: [normalizeString],
-        validate: [validateColor],
-        parse: [parseColor],
-    }),
-
-    BORDERRIGHTCOLOR: createStyle('borderRightColor', {
-        normalize: [normalizeString],
-        validate: [validateColor],
-        parse: [parseColor],
-    }),
-
-    BORDERBOTTOMCOLOR: createStyle('borderBottomColor', {
-        normalize: [normalizeString],
-        validate: [validateColor],
-        parse: [parseColor],
-    }),
-
-    DISPLAY: createStyle('display', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(DISPLAY)],
-        parse: [createEnumParser(DISPLAY)],
-    }),
-
-    DIRECTION: createStyle('direction', {
-        normalize: [normalizeString],
-        validate: [createEnumValidator(DIRECTION)],
-        parse: [createEnumParser(DIRECTION)],
-    }),
-
-    PADDING: createStyle('padding', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-    ]),
-
-    PADDINGTOP: createStyle('paddingTop', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-    ]),
-
-    PADDINGLEFT: createStyle('paddingLeft', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-    ]),
-
-    PADDINGRIGHT: createStyle('paddingRight', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-    ]),
-
-    PADDINGBOTTOM: createStyle('paddingBottom', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-    ]),
-
-    GAP: createStyle('gap', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-    ]),
-
-    ROWGAP: createStyle('rowGap', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-    ]),
-
-    COLUMNGAP: createStyle('columnGap', [
-        {
-            normalize: [normalizePx],
-            validate: [validateNonNegative, validatePx],
-            parse: [parsePx],
-        },
-        {
-            normalize: [normalizePercent],
-            validate: [validateNonNegative, validatePercent],
-            parse: [parsePercent],
-        },
-    ]),
+    POSITION: createStyle('position', POSITION_VALUE),
+    TOP: createStyle('top', OFFSET_VALUE),
+    LEFT: createStyle('left', OFFSET_VALUE),
+    RIGHT: createStyle('right', OFFSET_VALUE),
+    BOTTOM: createStyle('bottom', OFFSET_VALUE),
+    ALIGNCONTENT: createStyle('alignContent', ALIGN_CONTENT_VALUE),
+    ALIGNITEMS: createStyle('alignItems', ALIGN_ITEMS_VALUE),
+    ALIGNSELF: createStyle('alignSelf', ALIGN_SELF_VALUE),
+    FLEXDIRECTION: createStyle('flexDirection', FLEX_DIRECTION_VALUE),
+    FLEXWRAP: createStyle('flexWrap', FLEX_WRAP_VALUE),
+    JUSTIFYCONTENT: createStyle('justifyContent', JUSTIFY_CONTENT_VALUE),
+    MARGIN: createStyle('margin', MARGIN_VALUE),
+    MARGINTOP: createStyle('marginTop', MARGIN_VALUE),
+    MARGINLEFT: createStyle('marginLeft', MARGIN_VALUE),
+    MARGINRIGHT: createStyle('marginRight', MARGIN_VALUE),
+    MARGINBOTTOM: createStyle('marginBottom', MARGIN_VALUE),
+    FLEX: createStyle('flex', NUMBER_UNSET_VALUE),
+    FLEXBASIS: createStyle('flexBasis', FLEX_BASIS_VALUE),
+    FLEXGROW: createStyle('flexGrow', NUMBER_UNSET_VALUE),
+    FLEXSHRINK: createStyle('flexShrink', NUMBER_UNSET_VALUE),
+    WIDTH: createStyle('width', SIZE_VALUE),
+    HEIGHT: createStyle('height', SIZE_VALUE),
+    MINWIDTH: createStyle('minWidth', MIN_MAX_SIZE_VALUE),
+    MINHEIGHT: createStyle('minHeight', MIN_MAX_SIZE_VALUE),
+    MAXWIDTH: createStyle('maxWidth', MIN_MAX_SIZE_VALUE),
+    MAXHEIGHT: createStyle('maxHeight', MIN_MAX_SIZE_VALUE),
+    BOXSIZING: createStyle('boxSizing', BOX_SIZING_VALUE),
+    ASPECTRATIO: createStyle('aspectRatio', NUMBER_UNSET_VALUE),
+    BORDERWIDTH: createStyle('borderWidth', BORDER_WIDTH_VALUE),
+    BORDERTOPWIDTH: createStyle('borderTopWidth', BORDER_WIDTH_VALUE),
+    BORDERLEFTWIDTH: createStyle('borderLeftWidth', BORDER_WIDTH_VALUE),
+    BORDERRIGHTWIDTH: createStyle('borderRightWidth', BORDER_WIDTH_VALUE),
+    BORDERBOTTOMWIDTH: createStyle('borderBottomWidth', BORDER_WIDTH_VALUE),
+    BORDERSTYLE: createStyle('borderStyle', BORDER_VALUE),
+    BORDERTOPSTYLE: createStyle('borderTopStyle', BORDER_VALUE),
+    BORDERLEFTSTYLE: createStyle('borderLeftStyle', BORDER_VALUE),
+    BORDERRIGHTSTYLE: createStyle('borderRightStyle', BORDER_VALUE),
+    BORDERBOTTOMSTYLE: createStyle('borderBottomStyle', BORDER_VALUE),
+    BORDERCOLOR: createStyle('borderColor', COLOR_VALUE),
+    BORDERTOPCOLOR: createStyle('borderTopColor', COLOR_VALUE),
+    BORDERLEFTCOLOR: createStyle('borderLeftColor', COLOR_VALUE),
+    BORDERRIGHTCOLOR: createStyle('borderRightColor', COLOR_VALUE),
+    BORDERBOTTOMCOLOR: createStyle('borderBottomColor', COLOR_VALUE),
+    DISPLAY: createStyle('display', DISPLAY_VALUE),
+    DIRECTION: createStyle('direction', DIRECTION_VALUE),
+    PADDING: createStyle('padding', PX_PERCENT_VALUE),
+    PADDINGTOP: createStyle('paddingTop', PX_PERCENT_VALUE),
+    PADDINGLEFT: createStyle('paddingLeft', PX_PERCENT_VALUE),
+    PADDINGRIGHT: createStyle('paddingRight', PX_PERCENT_VALUE),
+    PADDINGBOTTOM: createStyle('paddingBottom', PX_PERCENT_VALUE),
+    GAP: createStyle('gap', PX_PERCENT_VALUE),
+    ROWGAP: createStyle('rowGap', PX_PERCENT_VALUE),
+    COLUMNGAP: createStyle('columnGap', PX_PERCENT_VALUE),
 }
 
 export default {

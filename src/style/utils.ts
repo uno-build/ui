@@ -78,30 +78,29 @@ export function runParsePipeline(fns: ParseFn[], value: any) {
     return fns.reduce((current, fn) => fn(current), value)
 }
 
-export function createStyle(name: string, alternatives: any) {
+export function createStyle(name: string, value_definitions: any) {
     return {
         name,
         resolve(value: any) {
             let firstError: unknown
 
-            if (!Array.isArray(alternatives)) {
-                alternatives = [alternatives]
-            }
-
-            for (const alternative of alternatives) {
+            for (const value_definition of value_definitions) {
                 const normalized = runNormalizePipeline(
-                    alternative.normalize,
+                    value_definition.normalize,
                     value,
                 )
 
                 try {
-                    runValidators(alternative.validate, normalized)
+                    runValidators(value_definition.validate, normalized)
                 } catch (err) {
                     firstError ??= err
                     continue
                 }
 
-                const result = runParsePipeline(alternative.parse, normalized)
+                const result = runParsePipeline(
+                    value_definition.parse,
+                    normalized,
+                )
                 return {
                     ...result,
                     value: String(result.value),
