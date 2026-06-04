@@ -1,4 +1,5 @@
-import borderRadiusGrid from './examples/borderRadiusGrid'
+import borderRadius from './examples/borderRadius'
+import borderRadiusCorners from './examples/borderRadiusCorners'
 import borderRadiusOverlap from './examples/borderRadiusOverlap'
 import positionRelative from './examples/positionRelative'
 import deepNestedPaint from './examples/deepNestedPaint'
@@ -21,7 +22,8 @@ import zindexGrid from './examples/zindexGrid'
 import zindexEdgeCases from './examples/zindexEdgeCases'
 
 export const LAYOUTS = {
-    borderRadiusGrid,
+    borderRadius,
+    borderRadiusCorners,
     borderRadiusOverlap,
     deepNestedPaint,
     nestedFlexDirections,
@@ -56,9 +58,7 @@ export function getLayout(name) {
         return LAYOUTS[layoutName]
     }
 
-    throw new Error(
-        `layout '${name}' not found. Available layouts: ${layoutNames.join(', ')}`,
-    )
+    throw new Error(`layout '${name}' not found. Available layouts: ${layoutNames.join(', ')}`)
 }
 
 export function resolveLayoutName(name) {
