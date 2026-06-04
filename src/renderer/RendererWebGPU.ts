@@ -401,6 +401,15 @@ fn roundedRectCoverage(
   return smoothstep(-antialias, antialias, distance);
 }
 
+fn compositeOver(top: vec4f, bottom: vec4f) -> vec4f {
+  let alpha = top.a + bottom.a * (1.0 - top.a);
+  let color =
+    (top.rgb * top.a + bottom.rgb * bottom.a * (1.0 - top.a)) /
+    max(alpha, 0.0001);
+
+  return vec4f(color, alpha);
+}
+
 @fragment
 fn main(input: FragmentInput) -> @location(0) vec4f {
   let outer_coverage = roundedRectCoverage(
@@ -419,7 +428,8 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
 
   var color = input.background_color;
   if (input.border_width > 0.0) {
-    color = mix(input.border_color, input.background_color, inner_coverage);
+    let border_color = compositeOver(input.border_color, input.background_color);
+    color = mix(border_color, input.background_color, inner_coverage);
   }
   color.a *= outer_coverage;
 
