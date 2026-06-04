@@ -249,6 +249,29 @@ test('flexWrap', async () => {
     }
 })
 
+test('wrapped relative percent offsets use border side widths', async () => {
+    const { ui, root, child } = await createUI({
+        height: '200px',
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignContent: 'flex-start',
+        borderTopWidth: '10px',
+        borderBottomWidth: '10px',
+    })
+    const sibling = ui.create()
+
+    child.setStyle('width', '150px')
+    child.setStyle('height', '50px')
+    sibling.setStyle('width', '150px')
+    sibling.setStyle('height', '50px')
+    sibling.setStyle('position', 'relative')
+    sibling.setStyle('top', '10%')
+    root.add(sibling)
+    ui.update()
+
+    expect(sibling.layout.y).toBe(78)
+})
+
 test('alignContent', async () => {
     const { ui, root, child } = await createUI({
         width: '200px',

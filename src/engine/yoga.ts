@@ -115,8 +115,12 @@ const RELATIVE_OFFSET_AXES = [
 
 function readContentSize(node, dimension) {
     const padding = readPxOffset(node.styles.padding)
-    const borderWidth = readPxOffset(node.styles.borderWidth)
-    return node.layout[dimension] - padding * 2 - borderWidth * 2
+    const border_width =
+        dimension === 'width'
+            ? readPxOffset(node.styles.borderLeftWidth) + readPxOffset(node.styles.borderRightWidth)
+            : readPxOffset(node.styles.borderTopWidth) + readPxOffset(node.styles.borderBottomWidth)
+
+    return node.layout[dimension] - padding * 2 - border_width
 }
 
 function readOffset(style, reference_size) {

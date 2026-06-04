@@ -27,7 +27,7 @@ export default function createBorderRadiusCornersLayout({ ui, rendererName }) {
     ui.root.add(stage)
 
     const grid = ui.create({
-        width: '792px',
+        width: '800px',
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: '12px',
