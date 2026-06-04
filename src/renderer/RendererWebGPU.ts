@@ -102,6 +102,21 @@ export default class RendererWebGPU extends Renderer {
                                 offset: 52,
                                 format: 'float32x2',
                             },
+                            {
+                                shaderLocation: 6,
+                                offset: 60,
+                                format: 'float32x2',
+                            },
+                            {
+                                shaderLocation: 7,
+                                offset: 68,
+                                format: 'float32x2',
+                            },
+                            {
+                                shaderLocation: 8,
+                                offset: 76,
+                                format: 'float32x2',
+                            },
                         ],
                     },
                 ],
@@ -184,8 +199,17 @@ export default class RendererWebGPU extends Renderer {
         if (style.name === 'borderStyle') {
             this.node_states.get(node).border_style = style.value
         }
-        if (style.name === 'borderRadius') {
-            this.node_states.get(node).border_radius = style.parsed
+        if (style.name === 'borderTopLeftRadius') {
+            this.node_states.get(node).border_top_left_radius = style.parsed
+        }
+        if (style.name === 'borderTopRightRadius') {
+            this.node_states.get(node).border_top_right_radius = style.parsed
+        }
+        if (style.name === 'borderBottomLeftRadius') {
+            this.node_states.get(node).border_bottom_left_radius = style.parsed
+        }
+        if (style.name === 'borderBottomRightRadius') {
+            this.node_states.get(node).border_bottom_right_radius = style.parsed
         }
     }
 
@@ -278,8 +302,23 @@ export default class RendererWebGPU extends Renderer {
             }
 
             const { x, y, width, height } = node.layout
-            const border_radius = readBorderRadius(
-                state.border_radius,
+            const border_top_left_radius = readBorderRadius(
+                state.border_top_left_radius,
+                width,
+                height,
+            )
+            const border_top_right_radius = readBorderRadius(
+                state.border_top_right_radius,
+                width,
+                height,
+            )
+            const border_bottom_left_radius = readBorderRadius(
+                state.border_bottom_left_radius,
+                width,
+                height,
+            )
+            const border_bottom_right_radius = readBorderRadius(
+                state.border_bottom_right_radius,
                 width,
                 height,
             )
@@ -291,7 +330,10 @@ export default class RendererWebGPU extends Renderer {
                 ...(background_color ?? TRANSPARENT),
                 ...(border_color ?? TRANSPARENT),
                 border_width,
-                ...border_radius,
+                ...border_top_left_radius,
+                ...border_top_right_radius,
+                ...border_bottom_left_radius,
+                ...border_bottom_right_radius,
             )
         }
 
@@ -302,7 +344,7 @@ export default class RendererWebGPU extends Renderer {
 const QUAD_VERTEX_COUNT = 6
 const QUAD_VERTEX_FLOATS = 2
 const QUAD_VERTEX_SIZE = QUAD_VERTEX_FLOATS * 4
-const INSTANCE_FLOATS = 15
+const INSTANCE_FLOATS = 21
 const INSTANCE_SIZE = INSTANCE_FLOATS * 4
 const VIEWPORT_SIZE = 4 * 4
 const TRANSPARENT = [0, 0, 0, 0]
@@ -337,7 +379,10 @@ struct VertexOutput {
   @location(2) background_color: vec4f,
   @location(3) border_color: vec4f,
   @location(4) border_width: f32,
-  @location(5) border_radius: vec2f,
+  @location(5) border_top_left_radius: vec2f,
+  @location(6) border_top_right_radius: vec2f,
+  @location(7) border_bottom_left_radius: vec2f,
+  @location(8) border_bottom_right_radius: vec2f,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -349,7 +394,10 @@ fn main(
   @location(2) background_color: vec4f,
   @location(3) border_color: vec4f,
   @location(4) border_width: f32,
-  @location(5) border_radius: vec2f,
+  @location(5) border_top_left_radius: vec2f,
+  @location(6) border_top_right_radius: vec2f,
+  @location(7) border_bottom_left_radius: vec2f,
+  @location(8) border_bottom_right_radius: vec2f,
 ) -> VertexOutput {
   let local_position = position * rect.zw;
   let pixel = rect.xy + local_position;
@@ -365,7 +413,10 @@ fn main(
   output.background_color = background_color;
   output.border_color = border_color;
   output.border_width = border_width;
-  output.border_radius = border_radius;
+  output.border_top_left_radius = border_top_left_radius;
+  output.border_top_right_radius = border_top_right_radius;
+  output.border_bottom_left_radius = border_bottom_left_radius;
+  output.border_bottom_right_radius = border_bottom_right_radius;
   return output;
 }
 `
@@ -379,14 +430,42 @@ struct FragmentInput {
   @location(2) background_color: vec4f,
   @location(3) border_color: vec4f,
   @location(4) border_width: f32,
-  @location(5) border_radius: vec2f,
+  @location(5) border_top_left_radius: vec2f,
+  @location(6) border_top_right_radius: vec2f,
+  @location(7) border_bottom_left_radius: vec2f,
+  @location(8) border_bottom_right_radius: vec2f,
+}
+
+fn cornerRadius(
+  local_position: vec2f,
+  rect_size: vec2f,
+  top_left_radius: vec2f,
+  top_right_radius: vec2f,
+  bottom_left_radius: vec2f,
+  bottom_right_radius: vec2f,
+) -> vec2f {
+  let left_radius = select(bottom_left_radius, top_left_radius, local_position.y < rect_size.y * 0.5);
+  let right_radius = select(bottom_right_radius, top_right_radius, local_position.y < rect_size.y * 0.5);
+
+  return select(right_radius, left_radius, local_position.x < rect_size.x * 0.5);
 }
 
 fn roundedRectCoverage(
   local_position: vec2f,
   rect_size: vec2f,
-  border_radius: vec2f,
+  top_left_radius: vec2f,
+  top_right_radius: vec2f,
+  bottom_left_radius: vec2f,
+  bottom_right_radius: vec2f,
 ) -> f32 {
+  let border_radius = cornerRadius(
+    local_position,
+    rect_size,
+    top_left_radius,
+    top_right_radius,
+    bottom_left_radius,
+    bottom_right_radius,
+  );
   let radius = min(border_radius, rect_size * 0.5);
   let rect_distance = min(
     min(local_position.x, local_position.y),
@@ -415,14 +494,27 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
   let outer_coverage = roundedRectCoverage(
     input.local_position,
     input.rect_size,
-    input.border_radius,
+    input.border_top_left_radius,
+    input.border_top_right_radius,
+    input.border_bottom_left_radius,
+    input.border_bottom_right_radius,
   );
   let inner_size = input.rect_size - vec2f(input.border_width * 2.0);
   let inner_position = input.local_position - vec2f(input.border_width);
-  let inner_radius = max(input.border_radius - vec2f(input.border_width), vec2f(0.0));
+  let inner_top_left_radius = max(input.border_top_left_radius - vec2f(input.border_width), vec2f(0.0));
+  let inner_top_right_radius = max(input.border_top_right_radius - vec2f(input.border_width), vec2f(0.0));
+  let inner_bottom_left_radius = max(input.border_bottom_left_radius - vec2f(input.border_width), vec2f(0.0));
+  let inner_bottom_right_radius = max(input.border_bottom_right_radius - vec2f(input.border_width), vec2f(0.0));
   let inner_coverage = select(
     0.0,
-    roundedRectCoverage(inner_position, inner_size, inner_radius),
+    roundedRectCoverage(
+      inner_position,
+      inner_size,
+      inner_top_left_radius,
+      inner_top_right_radius,
+      inner_bottom_left_radius,
+      inner_bottom_right_radius,
+    ),
     all(inner_size > vec2f(0.0)),
   );
 

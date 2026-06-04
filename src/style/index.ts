@@ -47,17 +47,18 @@ export function resolveStyle(name: string, value: any) {
     } catch (err) {
         const message = err instanceof Error ? err.message : err
         const suffix = message ? `: ${message}` : ''
-        throw new Error(
-            `invalid value '${value}' for property '${style.name}'${suffix}`,
-        )
+        throw new Error(`invalid value '${value}' for property '${style.name}'${suffix}`)
     }
 }
 
 export const STYLE = {
     ZINDEX: createStyle('zIndex', INTEGER_VALUE),
-    BACKGROUNDCOLOR: createStyle('backgroundColor', COLOR_VALUE),
-    BORDERRADIUS: createStyle('borderRadius', PX_PERCENT_VALUE),
     OVERFLOW: createStyle('overflow', OVERFLOW_VALUE),
+    BACKGROUNDCOLOR: createStyle('backgroundColor', COLOR_VALUE),
+    BORDERTOPLEFTRADIUS: createStyle('borderTopLeftRadius', PX_PERCENT_VALUE),
+    BORDERTOPRIGHTRADIUS: createStyle('borderTopRightRadius', PX_PERCENT_VALUE),
+    BORDERBOTTOMLEFTRADIUS: createStyle('borderBottomLeftRadius', PX_PERCENT_VALUE),
+    BORDERBOTTOMRIGHTRADIUS: createStyle('borderBottomRightRadius', PX_PERCENT_VALUE),
 
     // YOGA PROPERTIES
     POSITION: createStyle('position', POSITION_VALUE),

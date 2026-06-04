@@ -127,7 +127,10 @@ function createCell({ ...props }) {
     return {
         width: '50%',
         height: '200px',
-        borderRadius: '8px',
+        borderTopLeftRadius: '8px',
+        borderTopRightRadius: '8px',
+        borderBottomLeftRadius: '8px',
+        borderBottomRightRadius: '8px',
         position: 'relative',
         ...props,
     }

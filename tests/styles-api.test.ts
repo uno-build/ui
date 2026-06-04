@@ -204,7 +204,10 @@ test('non-negative number styles reject negative values', () => {
 
 test('non-negative unit styles reject negative values', () => {
     const styles = [
-        'borderRadius',
+        'borderTopLeftRadius',
+        'borderTopRightRadius',
+        'borderBottomLeftRadius',
+        'borderBottomRightRadius',
         'flexBasis',
         'width',
         'height',

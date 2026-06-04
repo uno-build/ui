@@ -35,8 +35,13 @@ test('backgroundColor', () => {
     }
 })
 
-test('borderRadius', () => {
-    const styles = ['borderRadius']
+test('border corner radius', () => {
+    const styles = [
+        'borderTopLeftRadius',
+        'borderTopRightRadius',
+        'borderBottomLeftRadius',
+        'borderBottomRightRadius',
+    ]
     const validCases = [
         ['0px', '0px', 0, 'px'],
         ['4px', '4px', 4, 'px'],

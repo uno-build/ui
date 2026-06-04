@@ -97,7 +97,10 @@ export default function createBorderRadiusGridLayout({ ui, rendererName }) {
                 ui.create({
                     width: '58px',
                     height,
-                    borderRadius: radius,
+                    borderTopLeftRadius: radius,
+                    borderTopRightRadius: radius,
+                    borderBottomLeftRadius: radius,
+                    borderBottomRightRadius: radius,
                     borderWidth: border_width,
                     borderStyle: 'solid',
                     borderColor: border_color,
