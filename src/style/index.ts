@@ -1,5 +1,5 @@
 import { normalizeStyleKey, normalizeStyleName } from './normalizers.ts'
-import { createStyle } from './utils.ts'
+import { runNormalizePipeline, runValidators, runParsePipeline } from './utils.ts'
 import {
     ALIGN_CONTENT_VALUE,
     ALIGN_ITEMS_VALUE,
@@ -51,6 +51,34 @@ export function resolveStyle(name: string, value: any) {
     }
 }
 
+function createStyle(name: string, value_definitions: any) {
+    return {
+        name,
+        resolve(value: any) {
+            let firstError: unknown
+
+            for (const value_definition of value_definitions) {
+                const normalized = runNormalizePipeline(value_definition.normalize, value)
+
+                try {
+                    runValidators(value_definition.validate, normalized)
+                } catch (err) {
+                    firstError ??= err
+                    continue
+                }
+
+                const result = runParsePipeline(value_definition.parse, normalized)
+                return {
+                    ...result,
+                    value: String(result.value),
+                }
+            }
+
+            throw firstError ?? new Error('expected valid style value')
+        },
+    }
+}
+
 export const STYLE = {
     ZINDEX: createStyle('zIndex', INTEGER_VALUE),
     OVERFLOW: createStyle('overflow', OVERFLOW_VALUE),
@@ -86,9 +114,9 @@ export const STYLE = {
     MARGINRIGHT: createStyle('marginRight', MARGIN_VALUE),
     MARGINBOTTOM: createStyle('marginBottom', MARGIN_VALUE),
     FLEX: createStyle('flex', NUMBER_UNSET_VALUE),
-    FLEXBASIS: createStyle('flexBasis', FLEX_BASIS_VALUE),
     FLEXGROW: createStyle('flexGrow', NUMBER_UNSET_VALUE),
     FLEXSHRINK: createStyle('flexShrink', NUMBER_UNSET_VALUE),
+    FLEXBASIS: createStyle('flexBasis', FLEX_BASIS_VALUE),
     WIDTH: createStyle('width', SIZE_VALUE),
     HEIGHT: createStyle('height', SIZE_VALUE),
     MINWIDTH: createStyle('minWidth', MIN_MAX_SIZE_VALUE),

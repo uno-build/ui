@@ -45,9 +45,7 @@ export function readInteger(value: any) {
     }
 
     const integer = Number(normalized)
-    return Number.isFinite(integer) && Number.isInteger(integer)
-        ? integer
-        : undefined
+    return Number.isFinite(integer) && Number.isInteger(integer) ? integer : undefined
 }
 
 function readUnitMatch(value: string, pattern: RegExp) {
@@ -76,40 +74,6 @@ export function runValidators(fns: [] = [], value: any) {
 
 export function runParsePipeline(fns: ParseFn[], value: any) {
     return fns.reduce((current, fn) => fn(current), value)
-}
-
-export function createStyle(name: string, value_definitions: any) {
-    return {
-        name,
-        resolve(value: any) {
-            let firstError: unknown
-
-            for (const value_definition of value_definitions) {
-                const normalized = runNormalizePipeline(
-                    value_definition.normalize,
-                    value,
-                )
-
-                try {
-                    runValidators(value_definition.validate, normalized)
-                } catch (err) {
-                    firstError ??= err
-                    continue
-                }
-
-                const result = runParsePipeline(
-                    value_definition.parse,
-                    normalized,
-                )
-                return {
-                    ...result,
-                    value: String(result.value),
-                }
-            }
-
-            throw firstError ?? new Error('expected valid style value')
-        },
-    }
 }
 
 export function createEnumValidator(values: Record<string, any>) {
