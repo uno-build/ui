@@ -51,18 +51,20 @@ function createStyle(name, shorthandCallback) {
     return {
         name,
         resolve(value) {
-            let firstError: unknown
             const style_shorthand = shorthandCallback(name, value)
             const styles = []
 
             for (const { name, value, definition } of style_shorthand) {
+                let first_error: unknown
+                let resolved = false
+
                 for (const definition_item of definition) {
                     const normalized = runNormalizePipeline(definition_item.normalize, value)
 
                     try {
                         runValidators(definition_item.validate, normalized)
                     } catch (err) {
-                        firstError ??= err
+                        first_error ??= err
                         continue
                     }
 
@@ -72,6 +74,11 @@ function createStyle(name, shorthandCallback) {
                         ...result,
                         value: String(result.value),
                     })
+                    resolved = true
+                }
+
+                if (!resolved) {
+                    throw first_error
                 }
             }
 

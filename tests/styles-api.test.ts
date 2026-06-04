@@ -9,7 +9,11 @@ test('resolveStyle', () => {
         Style.resolveStyle('noexist')
     }).toThrow(/unsupported property 'noexist'/)
 
-    expect(Style.resolveStyle('backgroundColor')).toEqual([])
+    expect(() => {
+        Style.resolveStyle('backgroundColor')
+    }).toThrow(
+        /invalid value 'undefined' for property 'backgroundColor': expected hex color/,
+    )
 })
 
 test('resolveStyle should always normalize name', () => {
@@ -29,18 +33,34 @@ test('resolveStyle should always normalize name', () => {
 })
 
 test('unitPixelStyle', () => {
-    expect(Style.resolveStyle('borderTopWidth', '10%')).toEqual([])
-    expect(Style.resolveStyle('borderTopWidth', -1)).toEqual([])
-    expect(Style.resolveStyle('borderTopWidth', 'thin')).toEqual([])
-    expect(Style.resolveStyle('borderTopWidth', 'thin')).toEqual([])
-    expect(Style.resolveStyle('borderLeftWidth', 'medium')).toEqual([])
-    expect(Style.resolveStyle('borderRightWidth', 'thick')).toEqual([])
-    expect(Style.resolveStyle('borderTopWidth', '1px solid #333')).toEqual([])
+    expect(() => {
+        Style.resolveStyle('borderTopWidth', '10%')
+    }).toThrow(/expected px unit/)
+    expect(() => {
+        Style.resolveStyle('borderTopWidth', -1)
+    }).toThrow(/expected px unit/)
+    expect(() => {
+        Style.resolveStyle('borderTopWidth', 'thin')
+    }).toThrow(/expected px unit/)
+    expect(() => {
+        Style.resolveStyle('borderTopWidth', 'thin')
+    }).toThrow(/expected px unit/)
+    expect(() => {
+        Style.resolveStyle('borderLeftWidth', 'medium')
+    }).toThrow(/expected px unit/)
+    expect(() => {
+        Style.resolveStyle('borderRightWidth', 'thick')
+    }).toThrow(/expected px unit/)
+    expect(() => {
+        Style.resolveStyle('borderTopWidth', '1px solid #333')
+    }).toThrow(/expected px unit/)
     expect(() => {
         Style.resolveStyle('border', '1px')
     }).toThrow(/unsupported property 'border'/)
 
-    expect(Style.resolveStyle('borderTopWidth', '2')).toEqual([])
+    expect(() => {
+        Style.resolveStyle('borderTopWidth', '2')
+    }).toThrow(/expected px unit/)
     expect(Style.resolveStyle('borderTopWidth', '2px')).toEqual([{
         name: 'borderTopWidth',
         value: '2px',
@@ -59,8 +79,12 @@ test('unitPixelStyle', () => {
 })
 
 test('unitOrAutoStyle', () => {
-    expect(Style.resolveStyle('width', true)).toEqual([])
-    expect(Style.resolveStyle('width', '12em')).toEqual([])
+    expect(() => {
+        Style.resolveStyle('width', true)
+    }).toThrow(/expected px unit/)
+    expect(() => {
+        Style.resolveStyle('width', '12em')
+    }).toThrow(/expected px unit/)
 
     expect(Style.resolveStyle('width', 'auto')).toEqual([{
         name: 'width',
@@ -100,8 +124,14 @@ test('unitOrAutoStyle', () => {
 })
 
 test('enumStyle', () => {
-    expect(Style.resolveStyle('flexWrap', 'no-wrap')).toEqual([])
-    expect(Style.resolveStyle('alignItems', 'space-between')).toEqual([])
+    expect(() => {
+        Style.resolveStyle('flexWrap', 'no-wrap')
+    }).toThrow(/expected one of nowrap, wrap, wrap-reverse/)
+    expect(() => {
+        Style.resolveStyle('alignItems', 'space-between')
+    }).toThrow(
+        /expected one of normal, flex-start, center, flex-end, stretch, baseline/,
+    )
 
     expect(Style.resolveStyle('flexWrap', ' Nowrap ')).toEqual([{
         name: 'flexWrap',
@@ -126,7 +156,9 @@ test('enumStyle', () => {
 })
 
 test('colorStyle', () => {
-    expect(Style.resolveStyle('backgroundColor', 'rgb(255, 0, 0)')).toEqual([])
+    expect(() => {
+        Style.resolveStyle('backgroundColor', 'rgb(255, 0, 0)')
+    }).toThrow(/expected hex color/)
 
     expect(Style.resolveStyle('backgroundColor', ' #0A1B2C ')).toEqual([{
         name: 'backgroundColor',
@@ -146,15 +178,21 @@ test('integerStyle', () => {
         value: '2',
         parsed: { value: 2 },
     }])
-    expect(Style.resolveStyle('zIndex', '1.5')).toEqual([])
-    expect(Style.resolveStyle('zIndex', 1)).toEqual([])
+    expect(() => {
+        Style.resolveStyle('zIndex', '1.5')
+    }).toThrow(/expected integer/)
+    expect(() => {
+        Style.resolveStyle('zIndex', 1)
+    }).toThrow(/expected integer/)
 })
 
 test('non-negative number styles reject negative values', () => {
     const styles = ['flexGrow', 'flexShrink', 'aspectRatio']
 
     for (const name of styles) {
-        expect(Style.resolveStyle(name, '-1')).toEqual([])
+        expect(() => {
+            Style.resolveStyle(name, '-1')
+        }).toThrow(/expected non-negative value/)
 
         expect(Style.resolveStyle(name, '1')).toEqual([{
             name,
@@ -188,9 +226,15 @@ test('non-negative unit styles reject negative values', () => {
     ]
 
     for (const name of styles) {
-        expect(Style.resolveStyle(name, -1)).toEqual([])
-        expect(Style.resolveStyle(name, '-1px')).toEqual([])
-        expect(Style.resolveStyle(name, '-1%')).toEqual([])
+        expect(() => {
+            Style.resolveStyle(name, -1)
+        }).toThrow(/expected px unit/)
+        expect(() => {
+            Style.resolveStyle(name, '-1px')
+        }).toThrow(/expected non-negative value/)
+        expect(() => {
+            Style.resolveStyle(name, '-1%')
+        }).toThrow(/expected non-negative value/)
         expect(Style.resolveStyle(name, '1px')).toEqual([{
             name,
             value: '1px',
@@ -203,7 +247,9 @@ test('size constraint styles reject none', () => {
     const styles = ['minWidth', 'minHeight', 'maxWidth', 'maxHeight']
 
     for (const name of styles) {
-        expect(Style.resolveStyle(name, 'none')).toEqual([])
+        expect(() => {
+            Style.resolveStyle(name, 'none')
+        }).toThrow(/expected px unit/)
     }
 })
 
@@ -240,7 +286,9 @@ test('resettable unit styles accept unset', () => {
         'columnGap',
         'gap',
     ]) {
-        expect(Style.resolveStyle(name, 'unset')).toEqual([])
+        expect(() => {
+            Style.resolveStyle(name, 'unset')
+        }).toThrow(/expected px unit/)
     }
 })
 
@@ -263,11 +311,21 @@ test('border width styles are px-only and non-negative', () => {
             value: '1px',
             parsed: { value: 1, unit: 'px' },
         }])
-        expect(Style.resolveStyle(name, '10%')).toEqual([])
-        expect(Style.resolveStyle(name, '1')).toEqual([])
-        expect(Style.resolveStyle(name, -1)).toEqual([])
-        expect(Style.resolveStyle(name, 'thin')).toEqual([])
-        expect(Style.resolveStyle(name, '1px solid #333')).toEqual([])
+        expect(() => {
+            Style.resolveStyle(name, '10%')
+        }).toThrow(/expected px unit/)
+        expect(() => {
+            Style.resolveStyle(name, '1')
+        }).toThrow(/expected px unit/)
+        expect(() => {
+            Style.resolveStyle(name, -1)
+        }).toThrow(/expected px unit/)
+        expect(() => {
+            Style.resolveStyle(name, 'thin')
+        }).toThrow(/expected px unit/)
+        expect(() => {
+            Style.resolveStyle(name, '1px solid #333')
+        }).toThrow(/expected px unit/)
     }
 })
 
@@ -317,6 +375,8 @@ test('enumStyle maps all enum properties', () => {
             value,
             parsed: { enum: parsed },
         }])
-        expect(Style.resolveStyle(name, 'invalid-value')).toEqual([])
+        expect(() => {
+            Style.resolveStyle(name, 'invalid-value')
+        }).toThrow(/expected one of/)
     }
 })

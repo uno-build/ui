@@ -625,8 +625,10 @@ function expectResolved(
     }])
 }
 
-function expectInvalid(name: string, value: unknown, _message: RegExp) {
-    expect(Style.resolveStyle(name, value)).toEqual([])
+function expectInvalid(name: string, value: unknown, message: RegExp) {
+    expect(() => {
+        Style.resolveStyle(name, value)
+    }).toThrow(message)
 }
 
 function expectUnit(
