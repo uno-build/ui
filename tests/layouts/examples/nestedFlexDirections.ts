@@ -1,6 +1,4 @@
 export default function createNestedFlexDirectionsLayout({ ui, rendererName }) {
-    console.log(`--- ${rendererName} ---`)
-
     const row = ui.create({
         flex: '1',
         flexDirection: 'row',

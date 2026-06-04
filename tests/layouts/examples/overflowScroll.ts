@@ -1,6 +1,4 @@
 export default function createOverflowScrollLayout({ ui, rendererName }) {
-    console.log(`--- ${rendererName} ---`)
-
     const frame = ui.create({
         width: '420px',
         height: '360px',

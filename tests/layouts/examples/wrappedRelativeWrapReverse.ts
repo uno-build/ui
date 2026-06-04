@@ -2,8 +2,6 @@ export default function createWrappedRelativeWrapReverseLayout({
     ui,
     rendererName,
 }) {
-    console.log(`--- ${rendererName} ---`)
-
     const stage = ui.create({
         flex: '1',
         flexDirection: 'row',

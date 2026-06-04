@@ -1,6 +1,7 @@
-export default function createOverflowVisibleHiddenLayout({ ui, rendererName }) {
-    console.log(`--- ${rendererName} ---`)
-
+export default function createOverflowVisibleHiddenLayout({
+    ui,
+    rendererName,
+}) {
     const frame = ui.create({
         width: '420px',
         height: '360px',

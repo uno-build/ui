@@ -1,6 +1,4 @@
 export default function createZIndexLayout({ ui, rendererName }) {
-    console.log(`--- ${rendererName} ---`)
-
     const PADDING = 100
     const OFFSET = 10
     const CENTER_X = ui.root.styles.width.parsed.value / 2

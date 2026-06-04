@@ -1,6 +1,4 @@
 export default function createZIndexLayout({ ui, rendererName }) {
-    console.log(`--- ${rendererName} ---`)
-
     const frame = ui.create({
         width: '240px',
         height: '180px',

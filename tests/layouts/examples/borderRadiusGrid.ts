@@ -1,6 +1,4 @@
 export default function createBorderRadiusGridLayout({ ui, rendererName }) {
-    console.log(`--- ${rendererName} ---`)
-
     const RADII_BY_COLUMN = [
         '0px',
         '10px',
@@ -38,16 +36,28 @@ export default function createBorderRadiusGridLayout({ ui, rendererName }) {
         '49px',
     ]
     const COLORS_BY_COLUMN = [
-        '#d8ecff',
-        '#dff5df',
-        '#fff0cc',
-        '#ffdcd2',
-        '#e8ddff',
-        '#d7f3f0',
-        '#f4e1ef',
-        '#e6ecdc',
-        '#f3e6d8',
-        '#dde9f2',
+        '#ff0000',
+        '#00aa00',
+        '#0000ff',
+        '#ffff00',
+        '#ff00ff',
+        '#00ffff',
+        '#ff8800',
+        '#8800ff',
+        '#0088ff',
+        '#ffffff',
+    ]
+    const BORDER_COLORS_BY_COLUMN = [
+        '#0000001a',
+        '#00000033',
+        '#0000004d',
+        '#00000066',
+        '#00000080',
+        '#00000099',
+        '#000000b3',
+        '#000000cc',
+        '#000000e6',
+        '#000000ff',
     ]
 
     const stage = ui.create({
@@ -81,6 +91,7 @@ export default function createBorderRadiusGridLayout({ ui, rendererName }) {
             const border_width = BORDER_WIDTHS_BY_ROW[row_index]
             const height = HEIGHTS_BY_ROW[row_index]
             const background_color = COLORS_BY_COLUMN[column_index]
+            const border_color = BORDER_COLORS_BY_COLUMN[column_index]
 
             grid.add(
                 ui.create({
@@ -89,7 +100,7 @@ export default function createBorderRadiusGridLayout({ ui, rendererName }) {
                     borderRadius: radius,
                     borderWidth: border_width,
                     borderStyle: 'solid',
-                    borderColor: '#263238',
+                    borderColor: border_color,
                     backgroundColor: background_color,
                 }),
             )

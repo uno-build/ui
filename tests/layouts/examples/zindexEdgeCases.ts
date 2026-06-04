@@ -1,6 +1,4 @@
 export default function createZIndexEdgeCasesLayout({ ui, rendererName }) {
-    console.log(`--- ${rendererName} ---`)
-
     const negativeGroup = ui.create({
         width: '20px',
         height: '20px',

@@ -2,8 +2,6 @@ export default function createNestedPercentDimensionsLayout({
     ui,
     rendererName,
 }) {
-    console.log(`--- ${rendererName} ---`)
-
     const stage = ui.create({
         flex: '1',
         padding: '40px',

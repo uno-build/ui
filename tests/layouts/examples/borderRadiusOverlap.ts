@@ -1,6 +1,4 @@
 export default function createBorderRadiusOverlapLayout({ ui, rendererName }) {
-    console.log(`--- ${rendererName} ---`)
-
     const ITEMS = [
         {
             left: '40px',

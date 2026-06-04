@@ -1,5 +1,5 @@
 export default function createDeepNestedPaintLayout({ ui, rendererName }) {
-    // console.log(`--- ${rendererName} ---`)
+    //
 
     const shell = ui.create({
         flex: '1',
