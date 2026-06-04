@@ -576,13 +576,12 @@ test('paddingTop, paddingLeft, paddingRight, paddingBottom, padding, rowGap, col
     }
 })
 
-test('borderTopWidth, borderLeftWidth, borderRightWidth, borderBottomWidth, borderWidth', () => {
+test('borderTopWidth, borderLeftWidth, borderRightWidth, borderBottomWidth', () => {
     const styles = [
         'borderTopWidth',
         'borderLeftWidth',
         'borderRightWidth',
         'borderBottomWidth',
-        'borderWidth',
     ]
     const validCases = [
         ['0px', '0px', 0, 'px'],

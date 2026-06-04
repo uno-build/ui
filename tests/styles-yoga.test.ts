@@ -526,7 +526,10 @@ test('boxSizing', async () => {
         box.setStyle('width', '100px')
         box.setStyle('height', '100px')
         box.setStyle('padding', '10px')
-        box.setStyle('borderWidth', '5px')
+        box.setStyle('borderTopWidth', '5px')
+        box.setStyle('borderLeftWidth', '5px')
+        box.setStyle('borderRightWidth', '5px')
+        box.setStyle('borderBottomWidth', '5px')
         inner.setStyle('flex', '1')
         box.add(inner)
         ui.update()
@@ -542,17 +545,28 @@ test('boxSizing', async () => {
 
 test('border width', async () => {
     const cases = [
-        ['borderWidth', 10, 10, 180, 180],
-        ['borderTopWidth', 0, 10, 200, 190],
-        ['borderLeftWidth', 10, 0, 190, 200],
-        ['borderRightWidth', 0, 0, 190, 200],
-        ['borderBottomWidth', 0, 0, 200, 190],
+        [
+            {
+                borderTopWidth: '10px',
+                borderLeftWidth: '10px',
+                borderRightWidth: '10px',
+                borderBottomWidth: '10px',
+            },
+            10,
+            10,
+            180,
+            180,
+        ],
+        [{ borderTopWidth: '10px' }, 0, 10, 200, 190],
+        [{ borderLeftWidth: '10px' }, 10, 0, 190, 200],
+        [{ borderRightWidth: '10px' }, 0, 0, 190, 200],
+        [{ borderBottomWidth: '10px' }, 0, 0, 200, 190],
     ] as const
 
-    for (const [name, x, y, width, height] of cases) {
+    for (const [styles, x, y, width, height] of cases) {
         const { ui, child } = await createUI({
             height: '200px',
-            [name]: '10px',
+            ...styles,
         })
 
         child.setStyle('flex', '1')

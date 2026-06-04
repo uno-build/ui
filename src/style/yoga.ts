@@ -153,9 +153,9 @@ export const YOGA_SETTER = {
     boxSizing: (node, { parsed }) => {
         node.setBoxSizing(parsed.enum)
     },
-    borderWidth: (node, { parsed }) => {
-        node.setBorder(EDGE.all, parsed.value)
-    },
+    // borderWidth: (node, { parsed }) => {
+    //     node.setBorder(EDGE.all, parsed.value)
+    // },
     borderTopWidth: (node, { parsed }) => {
         node.setBorder(EDGE.top, parsed.value)
     },

@@ -62,8 +62,7 @@ export default async function createYogaEngine() {
 // Correct Yoga's wrapped flex relative offsets so painted divs match the DOM.
 // Yoga may omit cross-axis offsets or apply reverse main-axis offsets backward.
 function applyWrappedRelativeOffsets(node, rect) {
-    const main_axis =
-        FLEX_DIRECTION_AXIS[node.parent?.styles.flexDirection?.value]
+    const main_axis = FLEX_DIRECTION_AXIS[node.parent?.styles.flexDirection?.value]
 
     // If the node is not a relatively positioned child of a wrapped flex container, no correction is needed.
     if (main_axis == null || !isRelative(node) || !isWrappedFlexParent(node)) {
@@ -72,22 +71,17 @@ function applyWrappedRelativeOffsets(node, rect) {
 
     let rect_corrected = rect
     for (const axis of RELATIVE_OFFSET_AXES) {
-        const reference_size = readContentSize(
-            node.parent,
-            axis.reference_dimension,
-        )
+        const reference_size = readContentSize(node.parent, axis.reference_dimension)
         const css_offset =
             readOffset(node.styles[axis.style_start], reference_size) -
             readOffset(node.styles[axis.style_end], reference_size)
-        const yoga_offset =
-            axis.name === main_axis.name ? css_offset * main_axis.direction : 0
+        const yoga_offset = axis.name === main_axis.name ? css_offset * main_axis.direction : 0
         const correction = css_offset - yoga_offset
 
         if (correction !== 0) {
             rect_corrected = {
                 ...rect_corrected,
-                [axis.rect_property]:
-                    rect_corrected[axis.rect_property] + correction,
+                [axis.rect_property]: rect_corrected[axis.rect_property] + correction,
             }
         }
     }
@@ -122,7 +116,6 @@ const RELATIVE_OFFSET_AXES = [
 function readContentSize(node, dimension) {
     const padding = readPxOffset(node.styles.padding)
     const borderWidth = readPxOffset(node.styles.borderWidth)
-
     return node.layout[dimension] - padding * 2 - borderWidth * 2
 }
 

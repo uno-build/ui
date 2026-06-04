@@ -99,7 +99,12 @@ const DEFAULT_NODE_STYLE = {
     zIndex: '0',
 }
 
-const MANDATORY_STYLES = ['borderWidth']
+const MANDATORY_STYLES = [
+    'borderTopWidth',
+    'borderLeftWidth',
+    'borderRightWidth',
+    'borderBottomWidth',
+]
 
 function createDivFactory() {
     return document.createElement('div')

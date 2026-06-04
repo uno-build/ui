@@ -96,8 +96,14 @@ export default function createBorderRadiusOverlapLayout({ ui, rendererName }) {
         frame.add(
             ui.create({
                 position: 'absolute',
-                borderWidth: '4px',
-                borderStyle: 'solid',
+                borderTopWidth: '4px',
+                borderLeftWidth: '4px',
+                borderRightWidth: '4px',
+                borderBottomWidth: '4px',
+                borderTopStyle: 'solid',
+                borderLeftStyle: 'solid',
+                borderRightStyle: 'solid',
+                borderBottomStyle: 'solid',
                 ...item,
             }),
         )

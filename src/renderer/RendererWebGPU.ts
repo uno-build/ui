@@ -95,26 +95,41 @@ export default class RendererWebGPU extends Renderer {
                             {
                                 shaderLocation: 4,
                                 offset: 48,
-                                format: 'float32',
+                                format: 'float32x4',
                             },
                             {
                                 shaderLocation: 5,
-                                offset: 52,
-                                format: 'float32x2',
+                                offset: 64,
+                                format: 'float32x4',
                             },
                             {
                                 shaderLocation: 6,
-                                offset: 60,
-                                format: 'float32x2',
+                                offset: 80,
+                                format: 'float32x4',
                             },
                             {
                                 shaderLocation: 7,
-                                offset: 68,
-                                format: 'float32x2',
+                                offset: 96,
+                                format: 'float32x4',
                             },
                             {
                                 shaderLocation: 8,
-                                offset: 76,
+                                offset: 112,
+                                format: 'float32x2',
+                            },
+                            {
+                                shaderLocation: 9,
+                                offset: 120,
+                                format: 'float32x2',
+                            },
+                            {
+                                shaderLocation: 10,
+                                offset: 128,
+                                format: 'float32x2',
+                            },
+                            {
+                                shaderLocation: 11,
+                                offset: 136,
                                 format: 'float32x2',
                             },
                         ],
@@ -190,14 +205,41 @@ export default class RendererWebGPU extends Renderer {
         if (style.name === 'backgroundColor') {
             this.node_states.get(node).background_color = style.parsed.rgba
         }
-        if (style.name === 'borderColor') {
-            this.node_states.get(node).border_color = style.parsed.rgba
+        if (style.name === 'borderTopColor') {
+            this.node_states.get(node).border_top_color = style.parsed.rgba
         }
-        if (style.name === 'borderWidth') {
-            this.node_states.get(node).border_width = style.parsed.value
+        if (style.name === 'borderRightColor') {
+            this.node_states.get(node).border_right_color = style.parsed.rgba
         }
-        if (style.name === 'borderStyle') {
-            this.node_states.get(node).border_style = style.value
+        if (style.name === 'borderBottomColor') {
+            this.node_states.get(node).border_bottom_color = style.parsed.rgba
+        }
+        if (style.name === 'borderLeftColor') {
+            this.node_states.get(node).border_left_color = style.parsed.rgba
+        }
+        if (style.name === 'borderTopWidth') {
+            this.node_states.get(node).border_top_width = style.parsed.value
+        }
+        if (style.name === 'borderRightWidth') {
+            this.node_states.get(node).border_right_width = style.parsed.value
+        }
+        if (style.name === 'borderBottomWidth') {
+            this.node_states.get(node).border_bottom_width = style.parsed.value
+        }
+        if (style.name === 'borderLeftWidth') {
+            this.node_states.get(node).border_left_width = style.parsed.value
+        }
+        if (style.name === 'borderTopStyle') {
+            this.node_states.get(node).border_top_style = style.value
+        }
+        if (style.name === 'borderRightStyle') {
+            this.node_states.get(node).border_right_style = style.value
+        }
+        if (style.name === 'borderBottomStyle') {
+            this.node_states.get(node).border_bottom_style = style.value
+        }
+        if (style.name === 'borderLeftStyle') {
+            this.node_states.get(node).border_left_style = style.value
         }
         if (style.name === 'borderTopLeftRadius') {
             this.node_states.get(node).border_top_left_radius = style.parsed
@@ -291,13 +333,34 @@ export default class RendererWebGPU extends Renderer {
         for (const node of nodes) {
             const state = this.node_states.get(node)
             const background_color = state.background_color
-            const border_color = state.border_color
-            const border_width =
-                state.border_style === 'solid' && border_color != null
-                    ? (state.border_width ?? 0)
+            const border_top_color = state.border_top_color
+            const border_right_color = state.border_right_color
+            const border_bottom_color = state.border_bottom_color
+            const border_left_color = state.border_left_color
+            const border_top_width =
+                state.border_top_style === 'solid' && border_top_color != null
+                    ? (state.border_top_width ?? 0)
+                    : 0
+            const border_right_width =
+                state.border_right_style === 'solid' && border_right_color != null
+                    ? (state.border_right_width ?? 0)
+                    : 0
+            const border_bottom_width =
+                state.border_bottom_style === 'solid' && border_bottom_color != null
+                    ? (state.border_bottom_width ?? 0)
+                    : 0
+            const border_left_width =
+                state.border_left_style === 'solid' && border_left_color != null
+                    ? (state.border_left_width ?? 0)
                     : 0
 
-            if (background_color == null && border_width === 0) {
+            if (
+                background_color == null &&
+                border_top_width === 0 &&
+                border_right_width === 0 &&
+                border_bottom_width === 0 &&
+                border_left_width === 0
+            ) {
                 continue
             }
 
@@ -328,8 +391,14 @@ export default class RendererWebGPU extends Renderer {
                 width,
                 height,
                 ...(background_color ?? TRANSPARENT),
-                ...(border_color ?? TRANSPARENT),
-                border_width,
+                ...(border_top_color ?? TRANSPARENT),
+                ...(border_right_color ?? TRANSPARENT),
+                ...(border_bottom_color ?? TRANSPARENT),
+                ...(border_left_color ?? TRANSPARENT),
+                border_top_width,
+                border_right_width,
+                border_bottom_width,
+                border_left_width,
                 ...border_top_left_radius,
                 ...border_top_right_radius,
                 ...border_bottom_left_radius,
@@ -344,7 +413,7 @@ export default class RendererWebGPU extends Renderer {
 const QUAD_VERTEX_COUNT = 6
 const QUAD_VERTEX_FLOATS = 2
 const QUAD_VERTEX_SIZE = QUAD_VERTEX_FLOATS * 4
-const INSTANCE_FLOATS = 21
+const INSTANCE_FLOATS = 36
 const INSTANCE_SIZE = INSTANCE_FLOATS * 4
 const VIEWPORT_SIZE = 4 * 4
 const TRANSPARENT = [0, 0, 0, 0]
@@ -377,12 +446,15 @@ struct VertexOutput {
   @location(0) local_position: vec2f,
   @location(1) rect_size: vec2f,
   @location(2) background_color: vec4f,
-  @location(3) border_color: vec4f,
-  @location(4) border_width: f32,
-  @location(5) border_top_left_radius: vec2f,
-  @location(6) border_top_right_radius: vec2f,
-  @location(7) border_bottom_left_radius: vec2f,
-  @location(8) border_bottom_right_radius: vec2f,
+  @location(3) border_top_color: vec4f,
+  @location(4) border_right_color: vec4f,
+  @location(5) border_bottom_color: vec4f,
+  @location(6) border_left_color: vec4f,
+  @location(7) border_widths: vec4f,
+  @location(8) border_top_left_radius: vec2f,
+  @location(9) border_top_right_radius: vec2f,
+  @location(10) border_bottom_left_radius: vec2f,
+  @location(11) border_bottom_right_radius: vec2f,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -392,12 +464,15 @@ fn main(
   @location(0) position: vec2f,
   @location(1) rect: vec4f,
   @location(2) background_color: vec4f,
-  @location(3) border_color: vec4f,
-  @location(4) border_width: f32,
-  @location(5) border_top_left_radius: vec2f,
-  @location(6) border_top_right_radius: vec2f,
-  @location(7) border_bottom_left_radius: vec2f,
-  @location(8) border_bottom_right_radius: vec2f,
+  @location(3) border_top_color: vec4f,
+  @location(4) border_right_color: vec4f,
+  @location(5) border_bottom_color: vec4f,
+  @location(6) border_left_color: vec4f,
+  @location(7) border_widths: vec4f,
+  @location(8) border_top_left_radius: vec2f,
+  @location(9) border_top_right_radius: vec2f,
+  @location(10) border_bottom_left_radius: vec2f,
+  @location(11) border_bottom_right_radius: vec2f,
 ) -> VertexOutput {
   let local_position = position * rect.zw;
   let pixel = rect.xy + local_position;
@@ -411,8 +486,11 @@ fn main(
   output.local_position = local_position;
   output.rect_size = rect.zw;
   output.background_color = background_color;
-  output.border_color = border_color;
-  output.border_width = border_width;
+  output.border_top_color = border_top_color;
+  output.border_right_color = border_right_color;
+  output.border_bottom_color = border_bottom_color;
+  output.border_left_color = border_left_color;
+  output.border_widths = border_widths;
   output.border_top_left_radius = border_top_left_radius;
   output.border_top_right_radius = border_top_right_radius;
   output.border_bottom_left_radius = border_bottom_left_radius;
@@ -428,12 +506,15 @@ struct FragmentInput {
   @location(0) local_position: vec2f,
   @location(1) rect_size: vec2f,
   @location(2) background_color: vec4f,
-  @location(3) border_color: vec4f,
-  @location(4) border_width: f32,
-  @location(5) border_top_left_radius: vec2f,
-  @location(6) border_top_right_radius: vec2f,
-  @location(7) border_bottom_left_radius: vec2f,
-  @location(8) border_bottom_right_radius: vec2f,
+  @location(3) border_top_color: vec4f,
+  @location(4) border_right_color: vec4f,
+  @location(5) border_bottom_color: vec4f,
+  @location(6) border_left_color: vec4f,
+  @location(7) border_widths: vec4f,
+  @location(8) border_top_left_radius: vec2f,
+  @location(9) border_top_right_radius: vec2f,
+  @location(10) border_bottom_left_radius: vec2f,
+  @location(11) border_bottom_right_radius: vec2f,
 }
 
 fn cornerRadius(
@@ -489,6 +570,19 @@ fn compositeOver(top: vec4f, bottom: vec4f) -> vec4f {
   return vec4f(color, alpha);
 }
 
+fn borderColorForPosition(input: FragmentInput) -> vec4f {
+  let left_distance = input.local_position.x;
+  let right_distance = input.rect_size.x - input.local_position.x;
+  let top_distance = input.local_position.y;
+  let bottom_distance = input.rect_size.y - input.local_position.y;
+  let horizontal_color = select(input.border_left_color, input.border_right_color, right_distance < left_distance);
+  let vertical_color = select(input.border_top_color, input.border_bottom_color, bottom_distance < top_distance);
+  let horizontal_distance = min(left_distance, right_distance);
+  let vertical_distance = min(top_distance, bottom_distance);
+
+  return select(vertical_color, horizontal_color, horizontal_distance < vertical_distance);
+}
+
 @fragment
 fn main(input: FragmentInput) -> @location(0) vec4f {
   let outer_coverage = roundedRectCoverage(
@@ -499,12 +593,19 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
     input.border_bottom_left_radius,
     input.border_bottom_right_radius,
   );
-  let inner_size = input.rect_size - vec2f(input.border_width * 2.0);
-  let inner_position = input.local_position - vec2f(input.border_width);
-  let inner_top_left_radius = max(input.border_top_left_radius - vec2f(input.border_width), vec2f(0.0));
-  let inner_top_right_radius = max(input.border_top_right_radius - vec2f(input.border_width), vec2f(0.0));
-  let inner_bottom_left_radius = max(input.border_bottom_left_radius - vec2f(input.border_width), vec2f(0.0));
-  let inner_bottom_right_radius = max(input.border_bottom_right_radius - vec2f(input.border_width), vec2f(0.0));
+  let border_top_width = input.border_widths.x;
+  let border_right_width = input.border_widths.y;
+  let border_bottom_width = input.border_widths.z;
+  let border_left_width = input.border_widths.w;
+  let inner_size = input.rect_size - vec2f(
+    border_left_width + border_right_width,
+    border_top_width + border_bottom_width,
+  );
+  let inner_position = input.local_position - vec2f(border_left_width, border_top_width);
+  let inner_top_left_radius = max(input.border_top_left_radius - vec2f(border_left_width, border_top_width), vec2f(0.0));
+  let inner_top_right_radius = max(input.border_top_right_radius - vec2f(border_right_width, border_top_width), vec2f(0.0));
+  let inner_bottom_left_radius = max(input.border_bottom_left_radius - vec2f(border_left_width, border_bottom_width), vec2f(0.0));
+  let inner_bottom_right_radius = max(input.border_bottom_right_radius - vec2f(border_right_width, border_bottom_width), vec2f(0.0));
   let inner_coverage = select(
     0.0,
     roundedRectCoverage(
@@ -519,8 +620,8 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
   );
 
   var color = input.background_color;
-  if (input.border_width > 0.0) {
-    let border_color = compositeOver(input.border_color, input.background_color);
+  if (any(input.border_widths > vec4f(0.0))) {
+    let border_color = compositeOver(borderColorForPosition(input), input.background_color);
     color = mix(border_color, input.background_color, inner_coverage);
   }
   color.a *= outer_coverage;

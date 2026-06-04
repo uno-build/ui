@@ -34,13 +34,13 @@ test('resolveStyle should always normalize name', () => {
 
 test('unitPixelStyle', () => {
     expect(() => {
-        Style.resolveStyle('borderWidth', '10%')
+        Style.resolveStyle('borderTopWidth', '10%')
     }).toThrow(/expected px unit/)
     expect(() => {
-        Style.resolveStyle('borderWidth', -1)
+        Style.resolveStyle('borderTopWidth', -1)
     }).toThrow(/expected px unit/)
     expect(() => {
-        Style.resolveStyle('borderWidth', 'thin')
+        Style.resolveStyle('borderTopWidth', 'thin')
     }).toThrow(/expected px unit/)
     expect(() => {
         Style.resolveStyle('borderTopWidth', 'thin')
@@ -52,22 +52,22 @@ test('unitPixelStyle', () => {
         Style.resolveStyle('borderRightWidth', 'thick')
     }).toThrow(/expected px unit/)
     expect(() => {
-        Style.resolveStyle('borderWidth', '1px solid #333')
+        Style.resolveStyle('borderTopWidth', '1px solid #333')
     }).toThrow(/expected px unit/)
     expect(() => {
         Style.resolveStyle('border', '1px')
     }).toThrow(/unsupported property 'border'/)
 
     expect(() => {
-        Style.resolveStyle('borderWidth', '2')
+        Style.resolveStyle('borderTopWidth', '2')
     }).toThrow(/expected px unit/)
-    expect(Style.resolveStyle('borderWidth', '2px')).toEqual({
-        name: 'borderWidth',
+    expect(Style.resolveStyle('borderTopWidth', '2px')).toEqual({
+        name: 'borderTopWidth',
         value: '2px',
         parsed: { value: 2, unit: 'px' },
     })
-    expect(Style.resolveStyle('borderWidth', '1px')).toEqual({
-        name: 'borderWidth',
+    expect(Style.resolveStyle('borderTopWidth', '1px')).toEqual({
+        name: 'borderTopWidth',
         value: '1px',
         parsed: { value: 1, unit: 'px' },
     })
@@ -298,7 +298,6 @@ test('border width styles are px-only and non-negative', () => {
         'borderLeftWidth',
         'borderRightWidth',
         'borderBottomWidth',
-        'borderWidth',
     ]
 
     for (const name of styles) {
