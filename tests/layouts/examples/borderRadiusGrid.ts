@@ -25,6 +25,18 @@ export default function createBorderRadiusGridLayout({ ui, rendererName }) {
         '8.89px',
         '10px',
     ]
+    const HEIGHTS_BY_ROW = [
+        '58px',
+        '57px',
+        '56px',
+        '55px',
+        '54px',
+        '53px',
+        '52px',
+        '51px',
+        '50px',
+        '49px',
+    ]
     const COLORS_BY_COLUMN = [
         '#d8ecff',
         '#dff5df',
@@ -67,12 +79,13 @@ export default function createBorderRadiusGridLayout({ ui, rendererName }) {
         ) {
             const radius = RADII_BY_COLUMN[column_index]
             const border_width = BORDER_WIDTHS_BY_ROW[row_index]
+            const height = HEIGHTS_BY_ROW[row_index]
             const background_color = COLORS_BY_COLUMN[column_index]
 
             grid.add(
                 ui.create({
                     width: '58px',
-                    height: '58px',
+                    height,
                     borderRadius: radius,
                     borderWidth: border_width,
                     borderStyle: 'solid',

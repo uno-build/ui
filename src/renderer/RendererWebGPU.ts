@@ -1,5 +1,6 @@
 import Renderer from '../Renderer.ts'
 import createEngine from '../engine/yoga.ts'
+import { UNIT } from '../style/consts.ts'
 import { YOGA_SETTER } from '../style/yoga.ts'
 
 export default class RendererWebGPU extends Renderer {
@@ -96,6 +97,11 @@ export default class RendererWebGPU extends Renderer {
                                 offset: 48,
                                 format: 'float32',
                             },
+                            {
+                                shaderLocation: 5,
+                                offset: 52,
+                                format: 'float32x2',
+                            },
                         ],
                     },
                 ],
@@ -177,6 +183,9 @@ export default class RendererWebGPU extends Renderer {
         }
         if (style.name === 'borderStyle') {
             this.node_states.get(node).border_style = style.value
+        }
+        if (style.name === 'borderRadius') {
+            this.node_states.get(node).border_radius = style.parsed
         }
     }
 
@@ -269,6 +278,11 @@ export default class RendererWebGPU extends Renderer {
             }
 
             const { x, y, width, height } = node.layout
+            const border_radius = readBorderRadius(
+                state.border_radius,
+                width,
+                height,
+            )
             instances.push(
                 x,
                 y,
@@ -277,6 +291,7 @@ export default class RendererWebGPU extends Renderer {
                 ...(background_color ?? TRANSPARENT),
                 ...(border_color ?? TRANSPARENT),
                 border_width,
+                ...border_radius,
             )
         }
 
@@ -287,11 +302,27 @@ export default class RendererWebGPU extends Renderer {
 const QUAD_VERTEX_COUNT = 6
 const QUAD_VERTEX_FLOATS = 2
 const QUAD_VERTEX_SIZE = QUAD_VERTEX_FLOATS * 4
-const INSTANCE_FLOATS = 13
+const INSTANCE_FLOATS = 15
 const INSTANCE_SIZE = INSTANCE_FLOATS * 4
 const VIEWPORT_SIZE = 4 * 4
 const TRANSPARENT = [0, 0, 0, 0]
+const SQUARE_RADIUS = [0, 0]
+const BORDER_RADIUS_ANTIALIAS_FACTOR = 0.5
 const QUAD_VERTICES = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
+
+function readBorderRadius(border_radius, width, height) {
+    if (border_radius == null) {
+        return SQUARE_RADIUS
+    }
+    if (border_radius.unit === UNIT.PERCENT) {
+        return [
+            (width * border_radius.value) / 100,
+            (height * border_radius.value) / 100,
+        ]
+    }
+
+    return [border_radius.value, border_radius.value]
+}
 
 const rectangleVertWGSL = /* wgsl */ `
 struct Viewport {
@@ -306,6 +337,7 @@ struct VertexOutput {
   @location(2) background_color: vec4f,
   @location(3) border_color: vec4f,
   @location(4) border_width: f32,
+  @location(5) border_radius: vec2f,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -317,6 +349,7 @@ fn main(
   @location(2) background_color: vec4f,
   @location(3) border_color: vec4f,
   @location(4) border_width: f32,
+  @location(5) border_radius: vec2f,
 ) -> VertexOutput {
   let local_position = position * rect.zw;
   let pixel = rect.xy + local_position;
@@ -332,34 +365,64 @@ fn main(
   output.background_color = background_color;
   output.border_color = border_color;
   output.border_width = border_width;
+  output.border_radius = border_radius;
   return output;
 }
 `
 
 const rectangleFragWGSL = /* wgsl */ `
+const BORDER_RADIUS_ANTIALIAS_FACTOR = ${BORDER_RADIUS_ANTIALIAS_FACTOR};
+
 struct FragmentInput {
   @location(0) local_position: vec2f,
   @location(1) rect_size: vec2f,
   @location(2) background_color: vec4f,
   @location(3) border_color: vec4f,
   @location(4) border_width: f32,
+  @location(5) border_radius: vec2f,
+}
+
+fn roundedRectCoverage(
+  local_position: vec2f,
+  rect_size: vec2f,
+  border_radius: vec2f,
+) -> f32 {
+  let radius = min(border_radius, rect_size * 0.5);
+  let rect_distance = min(
+    min(local_position.x, local_position.y),
+    min(rect_size.x - local_position.x, rect_size.y - local_position.y),
+  );
+  let corner_distance = min(local_position, rect_size - local_position);
+  let corner_delta = max(radius - corner_distance, vec2f(0.0));
+  let rounded_distance = 1.0 - length(corner_delta / max(radius, vec2f(0.0001)));
+  let distance = select(rect_distance, rounded_distance, all(radius > vec2f(0.0)));
+
+  let antialias = max(fwidth(distance) * BORDER_RADIUS_ANTIALIAS_FACTOR, 0.0001);
+  return smoothstep(-antialias, antialias, distance);
 }
 
 @fragment
 fn main(input: FragmentInput) -> @location(0) vec4f {
-  let in_border =
-    input.border_width > 0.0 &&
-    (
-      input.local_position.x < input.border_width ||
-      input.local_position.y < input.border_width ||
-      input.local_position.x >= input.rect_size.x - input.border_width ||
-      input.local_position.y >= input.rect_size.y - input.border_width
-    );
+  let outer_coverage = roundedRectCoverage(
+    input.local_position,
+    input.rect_size,
+    input.border_radius,
+  );
+  let inner_size = input.rect_size - vec2f(input.border_width * 2.0);
+  let inner_position = input.local_position - vec2f(input.border_width);
+  let inner_radius = max(input.border_radius - vec2f(input.border_width), vec2f(0.0));
+  let inner_coverage = select(
+    0.0,
+    roundedRectCoverage(inner_position, inner_size, inner_radius),
+    all(inner_size > vec2f(0.0)),
+  );
 
-  if (in_border) {
-    return input.border_color;
+  var color = input.background_color;
+  if (input.border_width > 0.0) {
+    color = mix(input.border_color, input.background_color, inner_coverage);
   }
+  color.a *= outer_coverage;
 
-  return input.background_color;
+  return color;
 }
 `
