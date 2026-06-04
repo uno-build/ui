@@ -47,12 +47,14 @@ export default class UI {
     }
 
     public setStyle(node, name, value) {
-        const style = Style.resolveStyle(name, value)
-        node.styles[style.name] = {
-            value: style.value,
-            parsed: style.parsed,
+        const styles = Style.resolveStyle(name, value)
+        for (const style of styles) {
+            node.styles[style.name] = {
+                value: style.value,
+                parsed: style.parsed,
+            }
+            this.renderer.addPendingStyle(node, style)
         }
-        this.renderer.addPendingStyle(node, style)
     }
 
     private addChild(parent, child) {

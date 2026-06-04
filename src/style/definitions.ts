@@ -40,7 +40,7 @@ import {
 } from './parsers.ts'
 import { createEnumValidator, createEnumParser } from './utils.ts'
 
-export const INTEGER_VALUE = [
+export const INTEGER_DEFINITION = [
     {
         normalize: [normalizeInteger],
         validate: [validateInteger],
@@ -48,7 +48,7 @@ export const INTEGER_VALUE = [
     },
 ]
 
-export const COLOR_VALUE = [
+export const COLOR_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [validateColor],
@@ -56,7 +56,7 @@ export const COLOR_VALUE = [
     },
 ]
 
-export const PX_PERCENT_VALUE = [
+export const PX_PERCENT_DEFINITION = [
     {
         normalize: [normalizePx],
         validate: [validateNonNegative, validatePx],
@@ -69,7 +69,7 @@ export const PX_PERCENT_VALUE = [
     },
 ]
 
-export const OFFSET_VALUE = [
+export const OFFSET_DEFINITION = [
     {
         normalize: [normalizePx],
         validate: [validatePx],
@@ -92,7 +92,7 @@ export const OFFSET_VALUE = [
     },
 ]
 
-export const OVERFLOW_VALUE = [
+export const OVERFLOW_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [createEnumValidator(OVERFLOW)],
@@ -100,7 +100,7 @@ export const OVERFLOW_VALUE = [
     },
 ]
 
-export const POSITION_VALUE = [
+export const POSITION_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [createEnumValidator(POSITION)],
@@ -108,7 +108,7 @@ export const POSITION_VALUE = [
     },
 ]
 
-export const ALIGN_CONTENT_VALUE = [
+export const ALIGN_CONTENT_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [createEnumValidator(ALIGN_CONTENT)],
@@ -116,7 +116,7 @@ export const ALIGN_CONTENT_VALUE = [
     },
 ]
 
-export const ALIGN_ITEMS_VALUE = [
+export const ALIGN_ITEMS_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [createEnumValidator(ALIGN_ITEMS)],
@@ -124,7 +124,7 @@ export const ALIGN_ITEMS_VALUE = [
     },
 ]
 
-export const ALIGN_SELF_VALUE = [
+export const ALIGN_SELF_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [createEnumValidator(ALIGN_SELF)],
@@ -132,7 +132,7 @@ export const ALIGN_SELF_VALUE = [
     },
 ]
 
-export const FLEX_DIRECTION_VALUE = [
+export const FLEX_DIRECTION_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [createEnumValidator(FLEX_DIRECTION)],
@@ -140,7 +140,7 @@ export const FLEX_DIRECTION_VALUE = [
     },
 ]
 
-export const FLEX_WRAP_VALUE = [
+export const FLEX_WRAP_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [createEnumValidator(WRAP)],
@@ -148,7 +148,7 @@ export const FLEX_WRAP_VALUE = [
     },
 ]
 
-export const JUSTIFY_CONTENT_VALUE = [
+export const JUSTIFY_CONTENT_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [createEnumValidator(JUSTIFY)],
@@ -156,7 +156,7 @@ export const JUSTIFY_CONTENT_VALUE = [
     },
 ]
 
-export const MARGIN_VALUE = [
+export const MARGIN_DEFINITION = [
     {
         normalize: [normalizePx],
         validate: [validatePx],
@@ -174,7 +174,7 @@ export const MARGIN_VALUE = [
     },
 ]
 
-export const NUMBER_UNSET_VALUE = [
+export const NUMBER_UNSET_DEFINITION = [
     {
         normalize: [normalizeNumber],
         validate: [validateNumber, validateNonNegative],
@@ -187,8 +187,8 @@ export const NUMBER_UNSET_VALUE = [
     },
 ]
 
-export const FLEX_BASIS_VALUE = [
-    ...PX_PERCENT_VALUE,
+export const FLEX_BASIS_DEFINITION = [
+    ...PX_PERCENT_DEFINITION,
     {
         normalize: [normalizeString],
         validate: [validateAuto],
@@ -201,8 +201,8 @@ export const FLEX_BASIS_VALUE = [
     },
 ]
 
-export const SIZE_VALUE = [
-    ...PX_PERCENT_VALUE,
+export const SIZE_DEFINITION = [
+    ...PX_PERCENT_DEFINITION,
     {
         normalize: [normalizeString],
         validate: [validateAuto],
@@ -210,8 +210,8 @@ export const SIZE_VALUE = [
     },
 ]
 
-export const MIN_MAX_SIZE_VALUE = [
-    ...PX_PERCENT_VALUE,
+export const MIN_MAX_SIZE_DEFINITION = [
+    ...PX_PERCENT_DEFINITION,
     {
         normalize: [normalizeString],
         validate: [validateUnset],
@@ -219,7 +219,7 @@ export const MIN_MAX_SIZE_VALUE = [
     },
 ]
 
-export const BORDER_WIDTH_VALUE = [
+export const BORDER_WIDTH_DEFINITION = [
     {
         normalize: [normalizePx],
         validate: [validateNonNegative, validatePx],
@@ -227,7 +227,7 @@ export const BORDER_WIDTH_VALUE = [
     },
 ]
 
-export const BORDER_VALUE = [
+export const BORDER_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [createEnumValidator(BORDER_STYLE)],
@@ -235,7 +235,7 @@ export const BORDER_VALUE = [
     },
 ]
 
-export const BOX_SIZING_VALUE = [
+export const BOX_SIZING_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [createEnumValidator(BOX_SIZING)],
@@ -243,7 +243,7 @@ export const BOX_SIZING_VALUE = [
     },
 ]
 
-export const DISPLAY_VALUE = [
+export const DISPLAY_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [createEnumValidator(DISPLAY)],
@@ -251,7 +251,7 @@ export const DISPLAY_VALUE = [
     },
 ]
 
-export const DIRECTION_VALUE = [
+export const DIRECTION_DEFINITION = [
     {
         normalize: [normalizeString],
         validate: [createEnumValidator(DIRECTION)],

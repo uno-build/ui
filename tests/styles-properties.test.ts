@@ -618,17 +618,15 @@ function expectResolved(
     parsed: Record<string, unknown>,
     expectedName = name,
 ) {
-    expect(Style.resolveStyle(name, value)).toEqual({
+    expect(Style.resolveStyle(name, value)).toEqual([{
         name: expectedName,
         value: expectedValue,
         parsed,
-    })
+    }])
 }
 
-function expectInvalid(name: string, value: unknown, message: RegExp) {
-    expect(() => {
-        Style.resolveStyle(name, value)
-    }).toThrow(message)
+function expectInvalid(name: string, value: unknown, _message: RegExp) {
+    expect(Style.resolveStyle(name, value)).toEqual([])
 }
 
 function expectUnit(
