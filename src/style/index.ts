@@ -26,13 +26,13 @@ import {
 } from './definitions.ts'
 
 export function resolveStyle(name: string, value: any) {
-    // Validating name
     if (typeof name !== 'string') {
         throw new Error(`style name must be a string, got '${typeof name}'`)
     }
 
-    name = normalizeStyleName(name, STYLE)
-    const StyleParser = STYLE[normalizeStyleKey(name)]
+    const normalizedName = normalizeStyleName(name, STYLE)
+    const normalizedKey = normalizeStyleKey(normalizedName)
+    const StyleParser = STYLE[normalizedKey]
 
     if (!StyleParser) {
         throw new Error(`unsupported property '${name}'`)
@@ -184,9 +184,12 @@ export const STYLE = {
     MARGINBOTTOM: createStyle('marginBottom', (name, value) => [
         { name, value, definition: MARGIN_DEFINITION },
     ]),
-    FLEX: createStyle('flex', (name, value) => [
-        { name, value, definition: NUMBER_UNSET_DEFINITION },
-    ]),
+    FLEX: createStyle('flex', (name, value) => {
+        return [
+            { name, value, definition: NUMBER_UNSET_DEFINITION },
+        ]
+    }
+),
     FLEXGROW: createStyle('flexGrow', (name, value) => [
         { name, value, definition: NUMBER_UNSET_DEFINITION },
     ]),

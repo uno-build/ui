@@ -1,7 +1,6 @@
 import Renderer from '../Renderer.ts'
-import createEngine from '../engine/yoga.ts'
+import createEngine, { YOGA_SETTER } from '../engine/yoga.ts'
 import { UNIT } from '../style/consts.ts'
-import { YOGA_SETTER } from '../style/yoga.ts'
 
 export default class RendererWebGPU extends Renderer {
     private canvas
@@ -276,12 +275,7 @@ export default class RendererWebGPU extends Renderer {
         this.device.queue.writeBuffer(
             this.viewport_buffer,
             0,
-            new Float32Array([
-                this.canvas.clientWidth,
-                this.canvas.clientHeight,
-                0,
-                0,
-            ]),
+            new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, 0, 0]),
         )
 
         const command_encoder = this.device.createCommandEncoder()
@@ -312,10 +306,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private writeInstanceData(instances) {
-        if (
-            this.instance_buffer == null ||
-            this.instance_buffer_size < instances.byteLength
-        ) {
+        if (this.instance_buffer == null || this.instance_buffer_size < instances.byteLength) {
             this.instance_buffer?.destroy()
             this.instance_buffer = this.device.createBuffer({
                 size: instances.byteLength,
@@ -426,10 +417,7 @@ function readBorderRadius(border_radius, width, height) {
         return SQUARE_RADIUS
     }
     if (border_radius.unit === UNIT.PERCENT) {
-        return [
-            (width * border_radius.value) / 100,
-            (height * border_radius.value) / 100,
-        ]
+        return [(width * border_radius.value) / 100, (height * border_radius.value) / 100]
     }
 
     return [border_radius.value, border_radius.value]

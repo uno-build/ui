@@ -1,6 +1,5 @@
 import Renderer from '../Renderer.ts'
-import createEngine from '../engine/yoga.ts'
-import { YOGA_SETTER } from '../style/yoga.ts'
+import createEngine, { YOGA_SETTER } from '../engine/yoga.ts'
 import { getAncestorClipping } from '../utils/getAncestorClipping.ts'
 
 export default class RendererDivs extends Renderer {
