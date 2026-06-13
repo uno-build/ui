@@ -401,8 +401,8 @@ test('marginTop, marginLeft, marginRight, marginBottom, margin', () => {
     }
 })
 
-test('flex, flexGrow, flexShrink, aspectRatio', () => {
-    const styles = ['flex', 'flexGrow', 'flexShrink', 'aspectRatio']
+test('flexGrow, flexShrink, aspectRatio', () => {
+    const styles = ['flexGrow', 'flexShrink', 'aspectRatio']
     const validCases = [
         ['0', '0', 0],
         ['1.5', '1.5', 1.5],
@@ -432,6 +432,36 @@ test('flex, flexGrow, flexShrink, aspectRatio', () => {
             expectInvalid(name, value, /expected non-negative value/)
         }
     }
+})
+
+test('flex', () => {
+    expect(Style.resolveStyle('flex', '1.5')).toEqual([
+        { name: 'flexGrow', value: '1.5', parsed: { value: 1.5 } },
+        { name: 'flexShrink', value: '1', parsed: { value: 1 } },
+        { name: 'flexBasis', value: '0%', parsed: { value: 0, unit: '%' } },
+    ])
+
+    expect(Style.resolveStyle('flex', '1 2')).toEqual([
+        { name: 'flexGrow', value: '1', parsed: { value: 1 } },
+        { name: 'flexShrink', value: '2', parsed: { value: 2 } },
+        { name: 'flexBasis', value: 'auto', parsed: { unit: 'auto' } },
+    ])
+
+    expect(Style.resolveStyle('flex', '1 1 0%')).toEqual([
+        { name: 'flexGrow', value: '1', parsed: { value: 1 } },
+        { name: 'flexShrink', value: '1', parsed: { value: 1 } },
+        { name: 'flexBasis', value: '0%', parsed: { value: 0, unit: '%' } },
+    ])
+
+    expect(Style.resolveStyle('flex', ' Unset ')).toEqual([
+        { name: 'flexGrow', value: 'unset', parsed: { unit: 'unset' } },
+        { name: 'flexShrink', value: 'unset', parsed: { unit: 'unset' } },
+        { name: 'flexBasis', value: 'unset', parsed: { unit: 'unset' } },
+    ])
+
+    expectInvalid('flex', true, /expected number/)
+    expectInvalid('flex', '-1', /expected non-negative value/)
+    expectInvalid('flex', '1 1 nope', /expected px unit/)
 })
 
 test('flexBasis', () => {
@@ -626,9 +656,13 @@ function expectResolved(
 }
 
 function expectInvalid(name: string, value: unknown, message: RegExp) {
+    const expected_message = typeof value === 'string'
+        ? message
+        : /style value must be a string/
+
     expect(() => {
         Style.resolveStyle(name, value)
-    }).toThrow(message)
+    }).toThrow(expected_message)
 }
 
 function expectUnit(

@@ -32,7 +32,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     )
     expect(() => {
         child.setStyle('width', true)
-    }).toThrow(/invalid value 'true' for property 'width': expected px unit/)
+    }).toThrow(/style value must be a string/)
 
     expect(child.styles).toMatchObject({
         width: {

@@ -1,5 +1,6 @@
-import { normalizeStyleKey, normalizeStyleName } from './normalizers.ts'
+import { normalizeStyleName, normalizeStyleKey, normalizeStyleValue } from './normalizers.ts'
 import { runNormalizePipeline, runValidators, runParsePipeline } from './utils.ts'
+import expandProperty from './expandProperty.ts'
 import {
     ALIGN_CONTENT_DEFINITION,
     ALIGN_ITEMS_DEFINITION,
@@ -30,16 +31,22 @@ export function resolveStyle(name: string, value: any) {
         throw new Error(`style name must be a string, got '${typeof name}'`)
     }
 
-    const normalizedName = normalizeStyleName(name, STYLE)
-    const normalizedKey = normalizeStyleKey(normalizedName)
-    const StyleParser = STYLE[normalizedKey]
+    const normalized_name = normalizeStyleName(name, STYLE)
+    const normalized_key = normalizeStyleKey(normalized_name)
+    const StyleParser = STYLE[normalized_key]
 
     if (!StyleParser) {
         throw new Error(`unsupported property '${name}'`)
     }
 
+    if (typeof value !== 'string') {
+        throw new Error(`style value must be a string, got '${typeof value}'`)
+    }
+
+    const normalized_value = normalizeStyleValue(value)
+
     try {
-        return StyleParser.resolve(value)
+        return StyleParser.resolve(normalized_value)
     } catch (err) {
         const message = err instanceof Error ? err.message : err
         const suffix = message ? `: ${message}` : ''
@@ -185,11 +192,19 @@ export const STYLE = {
         { name, value, definition: MARGIN_DEFINITION },
     ]),
     FLEX: createStyle('flex', (name, value) => {
-        return [
-            { name, value, definition: NUMBER_UNSET_DEFINITION },
-        ]
-    }
-),
+        const definitions = {
+            flexGrow: NUMBER_UNSET_DEFINITION,
+            flexShrink: NUMBER_UNSET_DEFINITION,
+            flexBasis: FLEX_BASIS_DEFINITION,
+        }
+        const values = expandProperty('flex', value)
+        const result = Object.keys(values).map((key) => ({
+            name: key,
+            value: values[key],
+            definition: definitions[key],
+        }))
+        return result
+    }),
     FLEXGROW: createStyle('flexGrow', (name, value) => [
         { name, value, definition: NUMBER_UNSET_DEFINITION },
     ]),
