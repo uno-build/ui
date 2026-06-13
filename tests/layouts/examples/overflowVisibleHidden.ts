@@ -147,6 +147,38 @@ export default function createOverflowVisibleHiddenLayout({
     })
     hiddenIntermediateInner.add(hiddenIntermediateChild)
 
+    const emptyClipHost = ui.create({
+        width: '80px',
+        height: '40px',
+        position: 'absolute',
+        left: '280px',
+        top: '300px',
+        overflow: 'hidden',
+        backgroundColor: '#eee',
+    })
+    frame.add(emptyClipHost)
+
+    const emptyClipInner = ui.create({
+        width: '40px',
+        height: '40px',
+        position: 'absolute',
+        left: '100px',
+        top: '0px',
+        overflow: 'hidden',
+        backgroundColor: '#bbb',
+    })
+    emptyClipHost.add(emptyClipInner)
+
+    const emptyClipChild = ui.create({
+        width: '40px',
+        height: '40px',
+        position: 'absolute',
+        left: '0px',
+        top: '0px',
+        backgroundColor: '#111',
+    })
+    emptyClipInner.add(emptyClipChild)
+
     return {
         paintSamples: [
             {
@@ -172,6 +204,13 @@ export default function createOverflowVisibleHiddenLayout({
                 name: 'hidden child is clipped by intermediate parent',
                 x: 420,
                 y: 290,
+                expected: background,
+                expectedStack: [background, frame],
+            },
+            {
+                name: 'empty ancestor clipping hides child',
+                x: 440,
+                y: 350,
                 expected: background,
                 expectedStack: [background, frame],
             },

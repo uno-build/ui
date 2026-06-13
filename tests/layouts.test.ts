@@ -12,6 +12,7 @@ import {
 const layoutRunnerUrl = `/@fs${path.resolve('tests/layouts/layout-runner.ts')}`
 const layoutHarnessUrl = `/@fs${path.resolve('tests/layouts/layout-harness.html')}`
 const uiUrl = `/@fs${path.resolve('src/UI.ts')}`
+const rendererDivsUrl = `/@fs${path.resolve('src/renderer/RendererDivs.ts')}`
 const LAYOUT_VIEWPORTS = [
     // { width: 360, height: 640 },
     { width: 800, height: 600 },
@@ -237,6 +238,85 @@ test('Layout: zIndex updates repaint order', async ({ page }) => {
             `${result.rendererName} updated zIndex paint order`,
         ).toBe(result.expectedUpdatedTop)
     }
+})
+
+test('Layout: RendererDivs clears overflow clipping updates', async ({
+    page,
+}) => {
+    await page.goto(layoutHarnessUrl)
+
+    const result = await page.evaluate(
+        async ({ rendererDivsUrl, uiUrl }) => {
+            const [{ default: RendererDivs }, { default: UI }] =
+                await Promise.all([import(rendererDivsUrl), import(uiUrl)])
+            const root = document.getElementById('root')
+
+            if (root == null) {
+                throw new Error("Missing '#root' element")
+            }
+
+            const canvas = document.createElement('div')
+            root.appendChild(canvas)
+            Object.assign(canvas.style, {
+                display: 'flex',
+                position: 'absolute',
+                left: '0',
+                top: '0',
+                width: '220px',
+                height: '220px',
+            })
+
+            const renderer = new RendererDivs({ canvas })
+            const ui = new UI({ renderer })
+
+            await ui.init()
+            ui.root.setStyle('width', '220px')
+            ui.root.setStyle('height', '220px')
+
+            const host = ui.create({
+                width: '80px',
+                height: '80px',
+                position: 'absolute',
+                left: '20px',
+                top: '20px',
+                overflow: 'hidden',
+                backgroundColor: '#fff',
+            })
+            ui.root.add(host)
+
+            const child = ui.create({
+                width: '80px',
+                height: '80px',
+                position: 'absolute',
+                left: '60px',
+                top: '0px',
+                backgroundColor: '#000',
+            })
+            host.add(child)
+
+            ui.update()
+
+            const div = canvas.querySelector(`#node-${child.id}`)
+
+            if (div == null) {
+                throw new Error('Missing child div')
+            }
+
+            const hiddenClipPath = (div as HTMLElement).style.clipPath
+
+            host.setStyle('overflow', 'visible')
+            ui.update()
+
+            return {
+                hiddenClipPath,
+                visibleClipPath: (div as HTMLElement).style.clipPath,
+            }
+        },
+        { rendererDivsUrl, uiUrl },
+    )
+
+    expect(result.hiddenClipPath).toContain('inset(')
+    expect(result.visibleClipPath).toBe('')
 })
 
 function assertPaintedRectsMatchLayout({ layout, baseline, comparisons }) {

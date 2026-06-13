@@ -12,11 +12,21 @@ export function getAncestorClipping(node) {
         ancestor = ancestor.parent
     }
 
-    if (clip == null || clip.width <= 0 || clip.height <= 0) {
+    if (clip == null) {
         return null
     }
 
     const { layout } = node
+
+    if (clip.width <= 0 || clip.height <= 0) {
+        return {
+            top: 0,
+            right: layout.width,
+            bottom: layout.height,
+            left: 0,
+        }
+    }
+
     const top = Math.max(clip.y - layout.y, 0)
     const right = Math.max(layout.x + layout.width - (clip.x + clip.width), 0)
     const bottom = Math.max(

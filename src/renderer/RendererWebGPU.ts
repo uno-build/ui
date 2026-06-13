@@ -1,6 +1,7 @@
 import Renderer from '../Renderer.ts'
 import createEngine, { YOGA_SETTER } from '../engine/yoga.ts'
 import { UNIT } from '../style/consts.ts'
+import { getAncestorClipping } from '../utils/getAncestorClipping.ts'
 
 export default class RendererWebGPU extends Renderer {
     private canvas
@@ -130,6 +131,11 @@ export default class RendererWebGPU extends Renderer {
                                 shaderLocation: 11,
                                 offset: 136,
                                 format: 'float32x2',
+                            },
+                            {
+                                shaderLocation: 12,
+                                offset: 144,
+                                format: 'float32x4',
                             },
                         ],
                     },
@@ -356,6 +362,16 @@ export default class RendererWebGPU extends Renderer {
             }
 
             const { x, y, width, height } = node.layout
+            const clipping = getAncestorClipping(node)
+
+            if (
+                clipping !== null &&
+                (clipping.left + clipping.right >= width ||
+                    clipping.top + clipping.bottom >= height)
+            ) {
+                continue
+            }
+
             const border_top_left_radius = readBorderRadius(
                 state.border_top_left_radius,
                 width,
@@ -394,6 +410,9 @@ export default class RendererWebGPU extends Renderer {
                 ...border_top_right_radius,
                 ...border_bottom_left_radius,
                 ...border_bottom_right_radius,
+                ...(clipping === null
+                    ? NO_CLIP
+                    : [clipping.top, clipping.right, clipping.bottom, clipping.left]),
             )
         }
 
@@ -404,10 +423,11 @@ export default class RendererWebGPU extends Renderer {
 const QUAD_VERTEX_COUNT = 6
 const QUAD_VERTEX_FLOATS = 2
 const QUAD_VERTEX_SIZE = QUAD_VERTEX_FLOATS * 4
-const INSTANCE_FLOATS = 36
+const INSTANCE_FLOATS = 40
 const INSTANCE_SIZE = INSTANCE_FLOATS * 4
 const VIEWPORT_SIZE = 4 * 4
 const TRANSPARENT = [0, 0, 0, 0]
+const NO_CLIP = [0, 0, 0, 0]
 const SQUARE_RADIUS = [0, 0]
 const BORDER_RADIUS_ANTIALIAS_FACTOR = 0.5
 const QUAD_VERTICES = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
@@ -443,6 +463,7 @@ struct VertexOutput {
   @location(9) border_top_right_radius: vec2f,
   @location(10) border_bottom_left_radius: vec2f,
   @location(11) border_bottom_right_radius: vec2f,
+  @location(12) clip_insets: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -461,6 +482,7 @@ fn main(
   @location(9) border_top_right_radius: vec2f,
   @location(10) border_bottom_left_radius: vec2f,
   @location(11) border_bottom_right_radius: vec2f,
+  @location(12) clip_insets: vec4f,
 ) -> VertexOutput {
   let local_position = position * rect.zw;
   let pixel = rect.xy + local_position;
@@ -483,6 +505,7 @@ fn main(
   output.border_top_right_radius = border_top_right_radius;
   output.border_bottom_left_radius = border_bottom_left_radius;
   output.border_bottom_right_radius = border_bottom_right_radius;
+  output.clip_insets = clip_insets;
   return output;
 }
 `
@@ -503,6 +526,7 @@ struct FragmentInput {
   @location(9) border_top_right_radius: vec2f,
   @location(10) border_bottom_left_radius: vec2f,
   @location(11) border_bottom_right_radius: vec2f,
+  @location(12) clip_insets: vec4f,
 }
 
 fn cornerRadius(
@@ -573,6 +597,15 @@ fn borderColorForPosition(input: FragmentInput) -> vec4f {
 
 @fragment
 fn main(input: FragmentInput) -> @location(0) vec4f {
+  if (
+    input.local_position.x < input.clip_insets.w ||
+    input.local_position.y < input.clip_insets.x ||
+    input.local_position.x > input.rect_size.x - input.clip_insets.y ||
+    input.local_position.y > input.rect_size.y - input.clip_insets.z
+  ) {
+    discard;
+  }
+
   let outer_coverage = roundedRectCoverage(
     input.local_position,
     input.rect_size,

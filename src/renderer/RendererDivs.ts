@@ -81,9 +81,10 @@ export default class RendererDivs extends Renderer {
             div.style.width = `${layout.width}px`
             div.style.height = `${layout.height}px`
             div.style.zIndex = `${node.order}`
-            if (clipping !== null) {
-                div.style.clipPath = `inset(${clipping.top}px ${clipping.right}px ${clipping.bottom}px ${clipping.left}px)`
-            }
+            div.style.clipPath =
+                clipping === null
+                    ? ''
+                    : `inset(${clipping.top}px ${clipping.right}px ${clipping.bottom}px ${clipping.left}px)`
         }
     }
 
