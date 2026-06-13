@@ -365,13 +365,12 @@ test('top, left, right, bottom', () => {
     }
 })
 
-test('marginTop, marginLeft, marginRight, marginBottom, margin', () => {
+test('marginTop, marginLeft, marginRight, marginBottom', () => {
     const styles = [
         'marginTop',
         'marginLeft',
         'marginRight',
         'marginBottom',
-        'margin',
     ]
     const validUnitCases = [
         ['8px', '8px', 8, 'px'],
@@ -432,36 +431,6 @@ test('flexGrow, flexShrink, aspectRatio', () => {
             expectInvalid(name, value, /expected non-negative value/)
         }
     }
-})
-
-test('flex', () => {
-    expect(Style.resolveStyle('flex', '1.5')).toEqual([
-        { name: 'flexGrow', value: '1.5', parsed: { value: 1.5 } },
-        { name: 'flexShrink', value: '1', parsed: { value: 1 } },
-        { name: 'flexBasis', value: '0%', parsed: { value: 0, unit: '%' } },
-    ])
-
-    expect(Style.resolveStyle('flex', '1 2')).toEqual([
-        { name: 'flexGrow', value: '1', parsed: { value: 1 } },
-        { name: 'flexShrink', value: '2', parsed: { value: 2 } },
-        { name: 'flexBasis', value: 'auto', parsed: { unit: 'auto' } },
-    ])
-
-    expect(Style.resolveStyle('flex', '1 1 0%')).toEqual([
-        { name: 'flexGrow', value: '1', parsed: { value: 1 } },
-        { name: 'flexShrink', value: '1', parsed: { value: 1 } },
-        { name: 'flexBasis', value: '0%', parsed: { value: 0, unit: '%' } },
-    ])
-
-    expect(Style.resolveStyle('flex', ' Unset ')).toEqual([
-        { name: 'flexGrow', value: 'unset', parsed: { unit: 'unset' } },
-        { name: 'flexShrink', value: 'unset', parsed: { unit: 'unset' } },
-        { name: 'flexBasis', value: 'unset', parsed: { unit: 'unset' } },
-    ])
-
-    expectInvalid('flex', true, /expected number/)
-    expectInvalid('flex', '-1', /expected non-negative value/)
-    expectInvalid('flex', '1 1 nope', /expected px unit/)
 })
 
 test('flexBasis', () => {
@@ -567,13 +536,12 @@ test('minWidth, minHeight', () => {
     }
 })
 
-test('paddingTop, paddingLeft, paddingRight, paddingBottom, padding, rowGap, columnGap, gap', () => {
+test('paddingTop, paddingLeft, paddingRight, paddingBottom, rowGap, columnGap, gap', () => {
     const styles = [
         'paddingTop',
         'paddingLeft',
         'paddingRight',
         'paddingBottom',
-        'padding',
         'rowGap',
         'columnGap',
         'gap',

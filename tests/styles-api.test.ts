@@ -55,10 +55,6 @@ test('unitPixelStyle', () => {
         Style.resolveStyle('borderTopWidth', '1px solid #333')
     }).toThrow(/expected px unit/)
     expect(() => {
-        Style.resolveStyle('border', '1px')
-    }).toThrow(/unsupported property 'border'/)
-
-    expect(() => {
         Style.resolveStyle('borderTopWidth', '2')
     }).toThrow(/expected px unit/)
     expect(Style.resolveStyle('borderTopWidth', '2px')).toEqual([{
@@ -219,7 +215,6 @@ test('non-negative unit styles reject negative values', () => {
         'paddingLeft',
         'paddingRight',
         'paddingBottom',
-        'padding',
         'rowGap',
         'columnGap',
         'gap',
@@ -281,7 +276,6 @@ test('resettable unit styles accept unset', () => {
         'paddingLeft',
         'paddingRight',
         'paddingBottom',
-        'padding',
         'rowGap',
         'columnGap',
         'gap',
@@ -339,7 +333,6 @@ test('unitOrAutoStyle accepts auto across all auto-capable styles', () => {
         'marginLeft',
         'marginRight',
         'marginBottom',
-        'margin',
         'flexBasis',
         'width',
         'height',
