@@ -62,10 +62,6 @@ function readUnitMatch(value: string, pattern: RegExp) {
     return Number.isFinite(number) ? number : undefined
 }
 
-export function runNormalizePipeline(fns: [] = [], value: any) {
-    return fns.reduce((current, fn) => fn(current), value)
-}
-
 export function runValidators(fns: [] = [], value: any) {
     for (const fn of fns) {
         fn(value)

@@ -1,6 +1,6 @@
 import { normalizeStyleName, normalizeStyleKey, normalizeStyleValue } from './normalizers.ts'
-import { runNormalizePipeline, runValidators, runParsePipeline } from './utils.ts'
-import expandProperty from './expandProperty.ts'
+import { runValidators, runParsePipeline } from './utils.ts'
+import { expandProperty } from './expand.ts'
 import {
     ALIGN_CONTENT_DEFINITION,
     ALIGN_ITEMS_DEFINITION,
@@ -66,16 +66,14 @@ function createStyle(name, shorthandCallback) {
                 let resolved = false
 
                 for (const definition_item of definition) {
-                    const normalized = runNormalizePipeline(definition_item.normalize, value)
-
                     try {
-                        runValidators(definition_item.validate, normalized)
+                        runValidators(definition_item.validate, value)
                     } catch (err) {
                         first_error ??= err
                         continue
                     }
 
-                    const result = runParsePipeline(definition_item.parse, normalized)
+                    const result = runParsePipeline(definition_item.parse, value)
                     styles.push({
                         name,
                         ...result,

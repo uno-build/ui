@@ -13,13 +13,6 @@ import {
     WRAP,
 } from './consts.ts'
 import {
-    normalizeString,
-    normalizeInteger,
-    normalizeNumber,
-    normalizePx,
-    normalizePercent,
-} from './normalizers.ts'
-import {
     validateColor,
     validateAuto,
     validateUnset,
@@ -42,7 +35,6 @@ import { createEnumValidator, createEnumParser } from './utils.ts'
 
 export const INTEGER_DEFINITION = [
     {
-        normalize: [normalizeInteger],
         validate: [validateInteger],
         parse: [parseInteger],
     },
@@ -50,7 +42,6 @@ export const INTEGER_DEFINITION = [
 
 export const COLOR_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [validateColor],
         parse: [parseColor],
     },
@@ -58,12 +49,10 @@ export const COLOR_DEFINITION = [
 
 export const PX_PERCENT_DEFINITION = [
     {
-        normalize: [normalizePx],
         validate: [validateNonNegative, validatePx],
         parse: [parsePx],
     },
     {
-        normalize: [normalizePercent],
         validate: [validateNonNegative, validatePercent],
         parse: [parsePercent],
     },
@@ -71,22 +60,18 @@ export const PX_PERCENT_DEFINITION = [
 
 export const OFFSET_DEFINITION = [
     {
-        normalize: [normalizePx],
         validate: [validatePx],
         parse: [parsePx],
     },
     {
-        normalize: [normalizePercent],
         validate: [validatePercent],
         parse: [parsePercent],
     },
     {
-        normalize: [normalizeString],
         validate: [validateAuto],
         parse: [parseAuto],
     },
     {
-        normalize: [normalizeString],
         validate: [validateUnset],
         parse: [parseUnset],
     },
@@ -94,7 +79,6 @@ export const OFFSET_DEFINITION = [
 
 export const OVERFLOW_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [createEnumValidator(OVERFLOW)],
         parse: [createEnumParser(OVERFLOW)],
     },
@@ -102,7 +86,6 @@ export const OVERFLOW_DEFINITION = [
 
 export const POSITION_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [createEnumValidator(POSITION)],
         parse: [createEnumParser(POSITION)],
     },
@@ -110,7 +93,6 @@ export const POSITION_DEFINITION = [
 
 export const ALIGN_CONTENT_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [createEnumValidator(ALIGN_CONTENT)],
         parse: [createEnumParser(ALIGN_CONTENT)],
     },
@@ -118,7 +100,6 @@ export const ALIGN_CONTENT_DEFINITION = [
 
 export const ALIGN_ITEMS_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [createEnumValidator(ALIGN_ITEMS)],
         parse: [createEnumParser(ALIGN_ITEMS)],
     },
@@ -126,7 +107,6 @@ export const ALIGN_ITEMS_DEFINITION = [
 
 export const ALIGN_SELF_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [createEnumValidator(ALIGN_SELF)],
         parse: [createEnumParser(ALIGN_SELF)],
     },
@@ -134,7 +114,6 @@ export const ALIGN_SELF_DEFINITION = [
 
 export const FLEX_DIRECTION_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [createEnumValidator(FLEX_DIRECTION)],
         parse: [createEnumParser(FLEX_DIRECTION)],
     },
@@ -142,7 +121,6 @@ export const FLEX_DIRECTION_DEFINITION = [
 
 export const FLEX_WRAP_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [createEnumValidator(WRAP)],
         parse: [createEnumParser(WRAP)],
     },
@@ -150,7 +128,6 @@ export const FLEX_WRAP_DEFINITION = [
 
 export const JUSTIFY_CONTENT_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [createEnumValidator(JUSTIFY)],
         parse: [createEnumParser(JUSTIFY)],
     },
@@ -158,17 +135,14 @@ export const JUSTIFY_CONTENT_DEFINITION = [
 
 export const MARGIN_DEFINITION = [
     {
-        normalize: [normalizePx],
         validate: [validatePx],
         parse: [parsePx],
     },
     {
-        normalize: [normalizePercent],
         validate: [validatePercent],
         parse: [parsePercent],
     },
     {
-        normalize: [normalizeString],
         validate: [validateAuto],
         parse: [parseAuto],
     },
@@ -176,12 +150,10 @@ export const MARGIN_DEFINITION = [
 
 export const NUMBER_UNSET_DEFINITION = [
     {
-        normalize: [normalizeNumber],
         validate: [validateNumber, validateNonNegative],
         parse: [parseNumber],
     },
     {
-        normalize: [normalizeString],
         validate: [validateUnset],
         parse: [parseUnset],
     },
@@ -190,12 +162,10 @@ export const NUMBER_UNSET_DEFINITION = [
 export const FLEX_BASIS_DEFINITION = [
     ...PX_PERCENT_DEFINITION,
     {
-        normalize: [normalizeString],
         validate: [validateAuto],
         parse: [parseAuto],
     },
     {
-        normalize: [normalizeString],
         validate: [validateUnset],
         parse: [parseUnset],
     },
@@ -204,7 +174,6 @@ export const FLEX_BASIS_DEFINITION = [
 export const SIZE_DEFINITION = [
     ...PX_PERCENT_DEFINITION,
     {
-        normalize: [normalizeString],
         validate: [validateAuto],
         parse: [parseAuto],
     },
@@ -213,7 +182,6 @@ export const SIZE_DEFINITION = [
 export const MIN_MAX_SIZE_DEFINITION = [
     ...PX_PERCENT_DEFINITION,
     {
-        normalize: [normalizeString],
         validate: [validateUnset],
         parse: [parseUnset],
     },
@@ -221,7 +189,6 @@ export const MIN_MAX_SIZE_DEFINITION = [
 
 export const BORDER_WIDTH_DEFINITION = [
     {
-        normalize: [normalizePx],
         validate: [validateNonNegative, validatePx],
         parse: [parsePx],
     },
@@ -229,7 +196,6 @@ export const BORDER_WIDTH_DEFINITION = [
 
 export const BORDER_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [createEnumValidator(BORDER_STYLE)],
         parse: [createEnumParser(BORDER_STYLE)],
     },
@@ -237,7 +203,6 @@ export const BORDER_DEFINITION = [
 
 export const BOX_SIZING_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [createEnumValidator(BOX_SIZING)],
         parse: [createEnumParser(BOX_SIZING)],
     },
@@ -245,7 +210,6 @@ export const BOX_SIZING_DEFINITION = [
 
 export const DISPLAY_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [createEnumValidator(DISPLAY)],
         parse: [createEnumParser(DISPLAY)],
     },
@@ -253,7 +217,6 @@ export const DISPLAY_DEFINITION = [
 
 export const DIRECTION_DEFINITION = [
     {
-        normalize: [normalizeString],
         validate: [createEnumValidator(DIRECTION)],
         parse: [createEnumParser(DIRECTION)],
     },

@@ -21,23 +21,3 @@ export function normalizeStyleKey(name: string) {
 export function normalizeStyleValue(value: string) {
     return value.trim().toLowerCase()
 }
-
-export function normalizeNumber(value: any) {
-    return normalizeString(value)
-}
-
-export function normalizeInteger(value: any) {
-    return normalizeString(value)
-}
-
-export function normalizeString(value: any) {
-    return typeof value === 'string' ? value.trim().toLowerCase() : value
-}
-
-export function normalizePx(value: any) {
-    return normalizeString(value)
-}
-
-export function normalizePercent(value: any) {
-    return normalizeString(value)
-}

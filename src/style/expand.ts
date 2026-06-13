@@ -1,4 +1,4 @@
-// https://github.com/robinweser/inline-style-expand-shorthand/blob/master/src/expandProperty.js
+// https://github.com/robinweser/inline-style-expand-shorthand/blob/master/src/expand.js
 
 const LENGTH_UNIT = /(em|ex|ch|rem|vw|vh|vmin|vmax|cm|mm|q|in|pt|pc|px|dpi|dpcm|dppx|%|auto)$/i
 const CALC = /^(calc\()/i
@@ -478,14 +478,14 @@ function parseInset(value: string) {
     }
 }
 
-function expandProperty(property: string, value: string) {
+function expand(property: string, value: string) {
     // special expansion for the border property as its 2 levels deep
     if (property === 'border') {
         const longhands = parseBorder(value, (key) => 'border' + key)
 
         var result = {}
         for (let property in longhands) {
-            Object.assign(result, expandProperty(property, longhands[property]))
+            Object.assign(result, expand(property, longhands[property]))
         }
 
         return result
@@ -548,12 +548,12 @@ function expandProperty(property: string, value: string) {
     }
 }
 
-export default function preExpand(property: string, value: string | string[]) {
+export function expandProperty(property: string, value: string | string[]) {
     if (Array.isArray(value)) {
         const result = {}
 
         value.forEach((item) => {
-            const itemResult = expandProperty(property, item)
+            const itemResult = expand(property, item)
 
             if (itemResult) {
                 Object.keys(itemResult).forEach((itemProperty) => {
@@ -570,5 +570,5 @@ export default function preExpand(property: string, value: string | string[]) {
         return null
     }
 
-    return expandProperty(property, value)
+    return expand(property, value)
 }
