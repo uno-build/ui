@@ -5,6 +5,53 @@ const NUMBER = /^-?(?:\d+|\d*\.\d+)$/
 const BORDER_WIDTH = /^-?(?:\d+|\d*\.\d+)px$|^0$/
 const BORDER_STYLE_VALUES = Object.keys(BORDER_STYLE)
 
+export function expandProperty(property: string, value: string | string[]) {
+    if (Array.isArray(value)) {
+        const result = {}
+
+        value.forEach((item) => {
+            const itemResult = expand(property, item)
+
+            if (itemResult) {
+                Object.keys(itemResult).forEach((itemProperty) => {
+                    result[itemProperty] = result[itemProperty] || []
+                    result[itemProperty].push(itemResult[itemProperty])
+                })
+            }
+        })
+
+        if (Object.keys(result).length) {
+            return result
+        }
+
+        return null
+    }
+
+    return expand(property, value)
+}
+
+function expand(property: string, value: string) {
+    if (property === 'flex') {
+        return parseFlex(value)
+    }
+
+    if (property === 'padding') {
+        return parseEdges(value, (key) => 'padding' + key)
+    }
+
+    if (property === 'margin') {
+        return parseEdges(value, (key) => 'margin' + key)
+    }
+
+    if (property === 'border') {
+        return expandBorder(value)
+    }
+
+    if (property === 'borderRadius') {
+        return parseBorderRadius(value)
+    }
+}
+
 function splitShorthand(value: string) {
     let values = ['']
     let openParensCount = 0
@@ -176,51 +223,4 @@ function parseFlex(value: string) {
     }
 
     return longhands
-}
-
-function expand(property: string, value: string) {
-    if (property === 'flex') {
-        return parseFlex(value)
-    }
-
-    if (property === 'padding') {
-        return parseEdges(value, (key) => 'padding' + key)
-    }
-
-    if (property === 'margin') {
-        return parseEdges(value, (key) => 'margin' + key)
-    }
-
-    if (property === 'border') {
-        return expandBorder(value)
-    }
-
-    if (property === 'borderRadius') {
-        return parseBorderRadius(value)
-    }
-}
-
-export function expandProperty(property: string, value: string | string[]) {
-    if (Array.isArray(value)) {
-        const result = {}
-
-        value.forEach((item) => {
-            const itemResult = expand(property, item)
-
-            if (itemResult) {
-                Object.keys(itemResult).forEach((itemProperty) => {
-                    result[itemProperty] = result[itemProperty] || []
-                    result[itemProperty].push(itemResult[itemProperty])
-                })
-            }
-        })
-
-        if (Object.keys(result).length) {
-            return result
-        }
-
-        return null
-    }
-
-    return expand(property, value)
 }

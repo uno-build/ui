@@ -26,9 +26,9 @@ import {
     INTEGER_DEFINITION,
 } from './definitions.ts'
 
-if (typeof window !== 'undefined') {
-    window.resolveStyle = resolveStyle
-}
+// if (typeof window !== 'undefined') {
+//     window.resolveStyle = resolveStyle
+// }
 
 export function resolveStyle(name: string, value: any) {
     if (typeof name !== 'string') {
@@ -116,8 +116,8 @@ export const STYLE = {
     BACKGROUNDCOLOR: createStyle('backgroundColor', (name, value) => [
         { name, value, definition: COLOR_DEFINITION },
     ]),
-    BORDER: createStyle('border', (name, value) => {
-        return expandHelper(name, value, {
+    BORDER: createStyle('border', (name, value) => 
+        expandHelper(name, value, {
             borderTopWidth: BORDER_WIDTH_DEFINITION,
             borderRightWidth: BORDER_WIDTH_DEFINITION,
             borderBottomWidth: BORDER_WIDTH_DEFINITION,
@@ -131,15 +131,15 @@ export const STYLE = {
             borderBottomColor: COLOR_DEFINITION,
             borderLeftColor: COLOR_DEFINITION,
         })
-    }),
-    BORDERRADIUS: createStyle('borderRadius', (name, value) => {
-        return expandHelper(name, value, {
+    ),
+    BORDERRADIUS: createStyle('borderRadius', (name, value) => 
+        expandHelper(name, value, {
             borderTopLeftRadius: PX_PERCENT_DEFINITION,
             borderTopRightRadius: PX_PERCENT_DEFINITION,
             borderBottomLeftRadius: PX_PERCENT_DEFINITION,
             borderBottomRightRadius: PX_PERCENT_DEFINITION,
         })
-    }),
+    ),
     BORDERTOPLEFTRADIUS: createStyle('borderTopLeftRadius', (name, value) => [
         { name, value, definition: PX_PERCENT_DEFINITION },
     ]),
@@ -211,14 +211,14 @@ export const STYLE = {
     JUSTIFYCONTENT: createStyle('justifyContent', (name, value) => [
         { name, value, definition: JUSTIFY_CONTENT_DEFINITION },
     ]),
-    MARGIN: createStyle('margin', (name, value) => {
-        return expandHelper(name, value, {
+    MARGIN: createStyle('margin', (name, value) => 
+        expandHelper(name, value, {
             marginTop: MARGIN_DEFINITION,
             marginRight: MARGIN_DEFINITION,
             marginBottom: MARGIN_DEFINITION,
             marginLeft: MARGIN_DEFINITION,
         })
-    }),
+    ),
     MARGINTOP: createStyle('marginTop', (name, value) => [
         { name, value, definition: MARGIN_DEFINITION },
     ]),
@@ -231,13 +231,13 @@ export const STYLE = {
     MARGINBOTTOM: createStyle('marginBottom', (name, value) => [
         { name, value, definition: MARGIN_DEFINITION },
     ]),
-    FLEX: createStyle('flex', (name, value) => {
-        return expandHelper(name, value, {
+    FLEX: createStyle('flex', (name, value) => 
+        expandHelper(name, value, {
             flexGrow: NUMBER_UNSET_DEFINITION,
             flexShrink: NUMBER_UNSET_DEFINITION,
             flexBasis: FLEX_BASIS_DEFINITION,
         })
-    }),
+    ),
     FLEXGROW: createStyle('flexGrow', (name, value) => [
         { name, value, definition: NUMBER_UNSET_DEFINITION },
     ]),
@@ -289,14 +289,14 @@ export const STYLE = {
     DIRECTION: createStyle('direction', (name, value) => [
         { name, value, definition: DIRECTION_DEFINITION },
     ]),
-    PADDING: createStyle('padding', (name, value) => {
-        return expandHelper(name, value, {
+    PADDING: createStyle('padding', (name, value) => 
+        expandHelper(name, value, {
             paddingTop: PX_PERCENT_DEFINITION,
             paddingRight: PX_PERCENT_DEFINITION,
             paddingBottom: PX_PERCENT_DEFINITION,
             paddingLeft: PX_PERCENT_DEFINITION,
         })
-    }),
+    ),
     PADDINGTOP: createStyle('paddingTop', (name, value) => [
         { name, value, definition: PX_PERCENT_DEFINITION },
     ]),

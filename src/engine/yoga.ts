@@ -174,9 +174,9 @@ export const YOGA_SETTER = {
         node.setJustifyContent(parsed.enum)
     },
 
-    margin: (node, { parsed }) => {
-        setMargin(node, EDGE.all, parsed)
-    },
+    // margin: (node, { parsed }) => {
+    //     setMargin(node, EDGE.all, parsed)
+    // },
     marginTop: (node, { parsed }) => {
         setMargin(node, EDGE.top, parsed)
     },
@@ -221,9 +221,9 @@ export const YOGA_SETTER = {
     display: (node, { parsed }) => {
         node.setDisplay(parsed.enum)
     },
-    padding: (node, { parsed }) => {
-        setPadding(node, EDGE.all, parsed)
-    },
+    // padding: (node, { parsed }) => {
+    //     setPadding(node, EDGE.all, parsed)
+    // },
     paddingTop: (node, { parsed }) => {
         setPadding(node, EDGE.top, parsed)
     },
@@ -341,13 +341,16 @@ const RELATIVE_OFFSET_AXES = [
 ]
 
 function readContentSize(node, dimension) {
-    const padding = readPxOffset(node.styles.padding)
+    const padding =
+        dimension === 'width'
+            ? readPxOffset(node.styles.paddingLeft) + readPxOffset(node.styles.paddingRight)
+            : readPxOffset(node.styles.paddingTop) + readPxOffset(node.styles.paddingBottom)
     const border_width =
         dimension === 'width'
             ? readPxOffset(node.styles.borderLeftWidth) + readPxOffset(node.styles.borderRightWidth)
             : readPxOffset(node.styles.borderTopWidth) + readPxOffset(node.styles.borderBottomWidth)
 
-    return node.layout[dimension] - padding * 2 - border_width
+    return node.layout[dimension] - padding - border_width
 }
 
 function readOffset(style, reference_size) {
