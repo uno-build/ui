@@ -11,11 +11,14 @@ export default class RendererWebGPU extends Renderer {
     private device
     private format
     private pipeline
+    private image_pipeline
+    private image_sampler
     private bind_group
     private quad_buffer
     private instance_buffer = null
     private instance_buffer_size = 0
     private viewport_buffer
+    private rendered_nodes = []
 
     constructor({ canvas }) {
         super()
@@ -55,7 +58,27 @@ export default class RendererWebGPU extends Renderer {
             size: VIEWPORT_SIZE,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
-        this.pipeline = this.device.createRenderPipeline({
+        this.pipeline = this.createPipeline(rectangleFragWGSL)
+        this.image_pipeline = this.createPipeline(imageFragWGSL)
+        this.image_sampler = this.device.createSampler({
+            minFilter: 'linear',
+            magFilter: 'linear',
+        })
+        this.bind_group = this.device.createBindGroup({
+            layout: this.pipeline.getBindGroupLayout(0),
+            entries: [
+                {
+                    binding: 0,
+                    resource: {
+                        buffer: this.viewport_buffer,
+                    },
+                },
+            ],
+        })
+    }
+
+    private createPipeline(fragment_code) {
+        return this.device.createRenderPipeline({
             layout: 'auto',
             vertex: {
                 module: this.device.createShaderModule({
@@ -143,7 +166,7 @@ export default class RendererWebGPU extends Renderer {
             },
             fragment: {
                 module: this.device.createShaderModule({
-                    code: rectangleFragWGSL,
+                    code: fragment_code,
                 }),
                 entryPoint: 'main',
                 targets: [
@@ -168,17 +191,6 @@ export default class RendererWebGPU extends Renderer {
                 topology: 'triangle-list',
             },
         })
-        this.bind_group = this.device.createBindGroup({
-            layout: this.pipeline.getBindGroupLayout(0),
-            entries: [
-                {
-                    binding: 0,
-                    resource: {
-                        buffer: this.viewport_buffer,
-                    },
-                },
-            ],
-        })
     }
 
     public createElement(node) {
@@ -198,6 +210,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public removeChild(parent, node) {
+        this.disposeBackgroundImage(this.node_states.get(node))
         this.engine.removeChild(parent, node)
         this.node_states.delete(node)
     }
@@ -209,6 +222,18 @@ export default class RendererWebGPU extends Renderer {
 
         if (style.name === 'backgroundColor') {
             this.node_states.get(node).background_color = style.parsed.rgba
+        }
+        if (style.name === 'backgroundImage') {
+            const state = this.node_states.get(node)
+            const src = style.parsed.src
+
+            if (state.background_image_src !== src) {
+                this.disposeBackgroundImage(state)
+                state.background_image_src = src
+                state.background_image_bind_group = null
+            }
+
+            void this.loadBackgroundImage(node, src)
         }
         if (style.name === 'borderTopColor') {
             this.node_states.get(node).border_top_color = style.parsed.rgba
@@ -260,6 +285,69 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
+    private async loadBackgroundImage(node, src) {
+        try {
+            const image = new Image()
+            image.src = src
+            await image.decode()
+
+            const bitmap = await createImageBitmap(image)
+            const state = this.node_states.get(node)
+
+            if (state == null || state.background_image_src !== src) {
+                bitmap.close()
+                return
+            }
+
+            const texture = this.device.createTexture({
+                size: [bitmap.width, bitmap.height],
+                format: 'rgba8unorm',
+                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+            })
+            const pixels = readImagePixels(bitmap)
+            this.device.queue.writeTexture(
+                { texture },
+                pixels.data,
+                { bytesPerRow: pixels.bytes_per_row, rowsPerImage: bitmap.height },
+                { width: bitmap.width, height: bitmap.height },
+            )
+
+            this.disposeBackgroundImage(state)
+            state.background_image_src = src
+            state.background_image_texture = texture
+            state.background_image_bind_group = this.device.createBindGroup({
+                layout: this.image_pipeline.getBindGroupLayout(0),
+                entries: [
+                    {
+                        binding: 0,
+                        resource: {
+                            buffer: this.viewport_buffer,
+                        },
+                    },
+                    {
+                        binding: 1,
+                        resource: this.image_sampler,
+                    },
+                    {
+                        binding: 2,
+                        resource: texture.createView(),
+                    },
+                ],
+            })
+
+            bitmap.close()
+            this.draw(this.rendered_nodes)
+        } catch {}
+    }
+
+    private disposeBackgroundImage(state) {
+        state?.background_image_texture?.destroy()
+        if (state != null) {
+            state.background_image_texture = null
+            state.background_image_bind_group = null
+        }
+    }
+
     public beforeUpdate(nodes) {
         super.beforeUpdate(nodes)
         this.engine.update()
@@ -275,8 +363,8 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private draw(nodes) {
-        const instances = this.createInstanceData(nodes)
-        const instance_count = instances.length / INSTANCE_FLOATS
+        this.rendered_nodes = [...nodes]
+        const { instances, draw_calls } = this.createDrawData(nodes)
 
         this.device.queue.writeBuffer(
             this.viewport_buffer,
@@ -297,14 +385,26 @@ export default class RendererWebGPU extends Renderer {
             ],
         })
 
-        pass_encoder.setPipeline(this.pipeline)
-        pass_encoder.setBindGroup(0, this.bind_group)
-
-        if (instance_count > 0) {
+        if (draw_calls.length > 0) {
             this.writeInstanceData(instances)
             pass_encoder.setVertexBuffer(0, this.quad_buffer)
-            pass_encoder.setVertexBuffer(1, this.instance_buffer)
-            pass_encoder.draw(QUAD_VERTEX_COUNT, instance_count)
+
+            for (const draw_call of draw_calls) {
+                if (draw_call.type === 'image') {
+                    pass_encoder.setPipeline(this.image_pipeline)
+                    pass_encoder.setBindGroup(0, draw_call.bind_group)
+                } else {
+                    pass_encoder.setPipeline(this.pipeline)
+                    pass_encoder.setBindGroup(0, this.bind_group)
+                }
+
+                pass_encoder.setVertexBuffer(
+                    1,
+                    this.instance_buffer,
+                    draw_call.first_instance * INSTANCE_SIZE,
+                )
+                pass_encoder.draw(QUAD_VERTEX_COUNT, draw_call.instance_count)
+            }
         }
 
         pass_encoder.end()
@@ -324,99 +424,141 @@ export default class RendererWebGPU extends Renderer {
         this.device.queue.writeBuffer(this.instance_buffer, 0, instances)
     }
 
-    private createInstanceData(nodes) {
+    private createDrawData(nodes) {
         const instances = []
+        const draw_calls = []
 
         for (const node of nodes) {
             const state = this.node_states.get(node)
-            const background_color = state.background_color
-            const border_top_color = state.border_top_color
-            const border_right_color = state.border_right_color
-            const border_bottom_color = state.border_bottom_color
-            const border_left_color = state.border_left_color
-            const border_top_width =
-                state.border_top_style === 'solid' && border_top_color != null
-                    ? (state.border_top_width ?? 0)
-                    : 0
-            const border_right_width =
-                state.border_right_style === 'solid' && border_right_color != null
-                    ? (state.border_right_width ?? 0)
-                    : 0
-            const border_bottom_width =
-                state.border_bottom_style === 'solid' && border_bottom_color != null
-                    ? (state.border_bottom_width ?? 0)
-                    : 0
-            const border_left_width =
-                state.border_left_style === 'solid' && border_left_color != null
-                    ? (state.border_left_width ?? 0)
-                    : 0
+            const has_image = state?.background_image_bind_group != null
+            const instance = this.createNodeInstanceData(node, has_image)
 
-            if (
-                background_color == null &&
-                border_top_width === 0 &&
-                border_right_width === 0 &&
-                border_bottom_width === 0 &&
-                border_left_width === 0
-            ) {
+            if (instance == null) {
                 continue
             }
 
-            const { x, y, width, height } = node.layout
-            const clipping = getAncestorClipping(node)
+            const first_instance = instances.length / INSTANCE_FLOATS
+            instances.push(...instance)
 
-            if (
-                clipping !== null &&
-                (clipping.left + clipping.right >= width ||
-                    clipping.top + clipping.bottom >= height)
-            ) {
+            if (has_image) {
+                draw_calls.push({
+                    type: 'image',
+                    bind_group: state.background_image_bind_group,
+                    first_instance,
+                    instance_count: 1,
+                })
                 continue
             }
 
-            const border_top_left_radius = readBorderRadius(
-                state.border_top_left_radius,
-                width,
-                height,
-            )
-            const border_top_right_radius = readBorderRadius(
-                state.border_top_right_radius,
-                width,
-                height,
-            )
-            const border_bottom_left_radius = readBorderRadius(
-                state.border_bottom_left_radius,
-                width,
-                height,
-            )
-            const border_bottom_right_radius = readBorderRadius(
-                state.border_bottom_right_radius,
-                width,
-                height,
-            )
-            instances.push(
-                x,
-                y,
-                width,
-                height,
-                ...(background_color ?? TRANSPARENT),
-                ...(border_top_color ?? TRANSPARENT),
-                ...(border_right_color ?? TRANSPARENT),
-                ...(border_bottom_color ?? TRANSPARENT),
-                ...(border_left_color ?? TRANSPARENT),
-                border_top_width,
-                border_right_width,
-                border_bottom_width,
-                border_left_width,
-                ...border_top_left_radius,
-                ...border_top_right_radius,
-                ...border_bottom_left_radius,
-                ...border_bottom_right_radius,
-                ...(clipping === null
-                    ? NO_CLIP
-                    : [clipping.top, clipping.right, clipping.bottom, clipping.left]),
-            )
+            const last_draw_call = draw_calls[draw_calls.length - 1]
+
+            if (last_draw_call?.type === 'rectangle') {
+                last_draw_call.instance_count++
+            } else {
+                draw_calls.push({
+                    type: 'rectangle',
+                    first_instance,
+                    instance_count: 1,
+                })
+            }
         }
 
-        return new Float32Array(instances)
+        return { instances: new Float32Array(instances), draw_calls }
+    }
+
+    private createNodeInstanceData(node, has_image) {
+        const state = this.node_states.get(node)
+
+        if (state == null) {
+            return null
+        }
+
+        const background_color = state.background_color
+        const border_top_color = state.border_top_color
+        const border_right_color = state.border_right_color
+        const border_bottom_color = state.border_bottom_color
+        const border_left_color = state.border_left_color
+        const border_top_width =
+            state.border_top_style === 'solid' && border_top_color != null
+                ? (state.border_top_width ?? 0)
+                : 0
+        const border_right_width =
+            state.border_right_style === 'solid' && border_right_color != null
+                ? (state.border_right_width ?? 0)
+                : 0
+        const border_bottom_width =
+            state.border_bottom_style === 'solid' && border_bottom_color != null
+                ? (state.border_bottom_width ?? 0)
+                : 0
+        const border_left_width =
+            state.border_left_style === 'solid' && border_left_color != null
+                ? (state.border_left_width ?? 0)
+                : 0
+
+        if (
+            background_color == null &&
+            has_image === false &&
+            border_top_width === 0 &&
+            border_right_width === 0 &&
+            border_bottom_width === 0 &&
+            border_left_width === 0
+        ) {
+            return null
+        }
+
+        const { x, y, width, height } = node.layout
+        const clipping = getAncestorClipping(node)
+
+        if (
+            clipping !== null &&
+            (clipping.left + clipping.right >= width ||
+                clipping.top + clipping.bottom >= height)
+        ) {
+            return null
+        }
+
+        const border_top_left_radius = readBorderRadius(
+            state.border_top_left_radius,
+            width,
+            height,
+        )
+        const border_top_right_radius = readBorderRadius(
+            state.border_top_right_radius,
+            width,
+            height,
+        )
+        const border_bottom_left_radius = readBorderRadius(
+            state.border_bottom_left_radius,
+            width,
+            height,
+        )
+        const border_bottom_right_radius = readBorderRadius(
+            state.border_bottom_right_radius,
+            width,
+            height,
+        )
+        return [
+            x,
+            y,
+            width,
+            height,
+            ...(background_color ?? TRANSPARENT),
+            ...(border_top_color ?? TRANSPARENT),
+            ...(border_right_color ?? TRANSPARENT),
+            ...(border_bottom_color ?? TRANSPARENT),
+            ...(border_left_color ?? TRANSPARENT),
+            border_top_width,
+            border_right_width,
+            border_bottom_width,
+            border_left_width,
+            ...border_top_left_radius,
+            ...border_top_right_radius,
+            ...border_bottom_left_radius,
+            ...border_bottom_right_radius,
+            ...(clipping === null
+                ? NO_CLIP
+                : [clipping.top, clipping.right, clipping.bottom, clipping.left]),
+        ]
     }
 }
 
@@ -441,6 +583,42 @@ function readBorderRadius(border_radius, width, height) {
     }
 
     return [border_radius.value, border_radius.value]
+}
+
+function readImagePixels(bitmap) {
+    const canvas = document.createElement('canvas')
+    canvas.width = bitmap.width
+    canvas.height = bitmap.height
+
+    const context = canvas.getContext('2d')
+
+    if (context == null) {
+        throw new Error('2d canvas context not available')
+    }
+
+    context.drawImage(bitmap, 0, 0)
+
+    const bytes_per_pixel = 4
+    const source_bytes_per_row = bitmap.width * bytes_per_pixel
+    const bytes_per_row = Math.ceil(source_bytes_per_row / 256) * 256
+    const source = context.getImageData(0, 0, bitmap.width, bitmap.height).data
+
+    if (bytes_per_row === source_bytes_per_row) {
+        return { data: source, bytes_per_row }
+    }
+
+    const data = new Uint8Array(bytes_per_row * bitmap.height)
+
+    for (let row = 0; row < bitmap.height; row++) {
+        const source_start = row * source_bytes_per_row
+        const target_start = row * bytes_per_row
+        data.set(
+            source.subarray(source_start, source_start + source_bytes_per_row),
+            target_start,
+        )
+    }
+
+    return { data, bytes_per_row }
 }
 
 const rectangleVertWGSL = /* wgsl */ `
@@ -644,6 +822,164 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
   if (any(input.border_widths > vec4f(0.0))) {
     let border_color = compositeOver(borderColorForPosition(input), input.background_color);
     color = mix(border_color, input.background_color, inner_coverage);
+  }
+  color.a *= outer_coverage;
+
+  return color;
+}
+`
+
+const imageFragWGSL = /* wgsl */ `
+const BORDER_RADIUS_ANTIALIAS_FACTOR = ${BORDER_RADIUS_ANTIALIAS_FACTOR};
+
+struct FragmentInput {
+  @location(0) local_position: vec2f,
+  @location(1) rect_size: vec2f,
+  @location(2) background_color: vec4f,
+  @location(3) border_top_color: vec4f,
+  @location(4) border_right_color: vec4f,
+  @location(5) border_bottom_color: vec4f,
+  @location(6) border_left_color: vec4f,
+  @location(7) border_widths: vec4f,
+  @location(8) border_top_left_radius: vec2f,
+  @location(9) border_top_right_radius: vec2f,
+  @location(10) border_bottom_left_radius: vec2f,
+  @location(11) border_bottom_right_radius: vec2f,
+  @location(12) clip_insets: vec4f,
+}
+
+@group(0) @binding(1) var background_image_sampler: sampler;
+@group(0) @binding(2) var background_image_texture: texture_2d<f32>;
+
+fn cornerRadius(
+  local_position: vec2f,
+  rect_size: vec2f,
+  top_left_radius: vec2f,
+  top_right_radius: vec2f,
+  bottom_left_radius: vec2f,
+  bottom_right_radius: vec2f,
+) -> vec2f {
+  let left_radius = select(bottom_left_radius, top_left_radius, local_position.y < rect_size.y * 0.5);
+  let right_radius = select(bottom_right_radius, top_right_radius, local_position.y < rect_size.y * 0.5);
+
+  return select(right_radius, left_radius, local_position.x < rect_size.x * 0.5);
+}
+
+fn roundedRectCoverage(
+  local_position: vec2f,
+  rect_size: vec2f,
+  top_left_radius: vec2f,
+  top_right_radius: vec2f,
+  bottom_left_radius: vec2f,
+  bottom_right_radius: vec2f,
+) -> f32 {
+  let border_radius = cornerRadius(
+    local_position,
+    rect_size,
+    top_left_radius,
+    top_right_radius,
+    bottom_left_radius,
+    bottom_right_radius,
+  );
+  let radius = min(border_radius, rect_size * 0.5);
+  let rect_distance = min(
+    min(local_position.x, local_position.y),
+    min(rect_size.x - local_position.x, rect_size.y - local_position.y),
+  );
+  let corner_distance = min(local_position, rect_size - local_position);
+  let corner_delta = max(radius - corner_distance, vec2f(0.0));
+  let rounded_distance = 1.0 - length(corner_delta / max(radius, vec2f(0.0001)));
+  let distance = select(rect_distance, rounded_distance, all(radius > vec2f(0.0)));
+
+  let antialias = max(fwidth(distance) * BORDER_RADIUS_ANTIALIAS_FACTOR, 0.0001);
+  return smoothstep(-antialias, antialias, distance);
+}
+
+fn compositeOver(top: vec4f, bottom: vec4f) -> vec4f {
+  let alpha = top.a + bottom.a * (1.0 - top.a);
+  let color =
+    (top.rgb * top.a + bottom.rgb * bottom.a * (1.0 - top.a)) /
+    max(alpha, 0.0001);
+
+  return vec4f(color, alpha);
+}
+
+fn borderColorForPosition(input: FragmentInput) -> vec4f {
+  let left_distance = input.local_position.x;
+  let right_distance = input.rect_size.x - input.local_position.x;
+  let top_distance = input.local_position.y;
+  let bottom_distance = input.rect_size.y - input.local_position.y;
+  let horizontal_color = select(input.border_left_color, input.border_right_color, right_distance < left_distance);
+  let vertical_color = select(input.border_top_color, input.border_bottom_color, bottom_distance < top_distance);
+  let horizontal_distance = min(left_distance, right_distance);
+  let vertical_distance = min(top_distance, bottom_distance);
+
+  return select(vertical_color, horizontal_color, horizontal_distance < vertical_distance);
+}
+
+fn backgroundImageColor(local_position: vec2f, rect_size: vec2f) -> vec4f {
+  let image_dimensions = textureDimensions(background_image_texture);
+  let image_size = vec2f(f32(image_dimensions.x), f32(image_dimensions.y));
+  let scale = max(rect_size.x / image_size.x, rect_size.y / image_size.y);
+  let scaled_size = image_size * scale;
+  let offset = (scaled_size - rect_size) * 0.5;
+  let uv = (local_position + offset) / scaled_size;
+
+  return textureSample(background_image_texture, background_image_sampler, uv);
+}
+
+@fragment
+fn main(input: FragmentInput) -> @location(0) vec4f {
+  if (
+    input.local_position.x < input.clip_insets.w ||
+    input.local_position.y < input.clip_insets.x ||
+    input.local_position.x > input.rect_size.x - input.clip_insets.y ||
+    input.local_position.y > input.rect_size.y - input.clip_insets.z
+  ) {
+    discard;
+  }
+
+  let outer_coverage = roundedRectCoverage(
+    input.local_position,
+    input.rect_size,
+    input.border_top_left_radius,
+    input.border_top_right_radius,
+    input.border_bottom_left_radius,
+    input.border_bottom_right_radius,
+  );
+  let border_top_width = input.border_widths.x;
+  let border_right_width = input.border_widths.y;
+  let border_bottom_width = input.border_widths.z;
+  let border_left_width = input.border_widths.w;
+  let inner_size = input.rect_size - vec2f(
+    border_left_width + border_right_width,
+    border_top_width + border_bottom_width,
+  );
+  let inner_position = input.local_position - vec2f(border_left_width, border_top_width);
+  let inner_top_left_radius = max(input.border_top_left_radius - vec2f(border_left_width, border_top_width), vec2f(0.0));
+  let inner_top_right_radius = max(input.border_top_right_radius - vec2f(border_right_width, border_top_width), vec2f(0.0));
+  let inner_bottom_left_radius = max(input.border_bottom_left_radius - vec2f(border_left_width, border_bottom_width), vec2f(0.0));
+  let inner_bottom_right_radius = max(input.border_bottom_right_radius - vec2f(border_right_width, border_bottom_width), vec2f(0.0));
+  let inner_coverage = select(
+    0.0,
+    roundedRectCoverage(
+      inner_position,
+      inner_size,
+      inner_top_left_radius,
+      inner_top_right_radius,
+      inner_bottom_left_radius,
+      inner_bottom_right_radius,
+    ),
+    all(inner_size > vec2f(0.0)),
+  );
+
+  var color = compositeOver(
+    backgroundImageColor(inner_position, inner_size),
+    input.background_color,
+  );
+  if (any(input.border_widths > vec4f(0.0))) {
+    let border_color = compositeOver(borderColorForPosition(input), color);
+    color = mix(border_color, color, inner_coverage);
   }
   color.a *= outer_coverage;
 

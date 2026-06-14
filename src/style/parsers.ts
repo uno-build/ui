@@ -50,6 +50,11 @@ export function parseRgba(value: string) {
 export function parseColor(value: string) {
     return { value, parsed: { rgba: parseRgba(value) } }
 }
+
+export function parseBackgroundImage(value: string) {
+    return { value, parsed: { src: value } }
+}
+
 export function parseEnum(value: string, values: Record<string, any>) {
     return { value, parsed: { enum: values[value] } }
 }

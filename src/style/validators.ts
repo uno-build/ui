@@ -8,6 +8,16 @@ export function validateColor(value: string) {
         throw new Error('expected hex color')
     }
 }
+
+export function validateBackgroundImage(value: string) {
+    if (typeof value !== 'string' || value.length === 0) {
+        throw new Error('expected non-empty image path')
+    }
+    if (/^url\(/i.test(value)) {
+        throw new Error('expected raw image path')
+    }
+}
+
 export function validateEnum(value: string, values: Record<string, any>) {
     if (
         typeof value !== 'string' ||

@@ -18,6 +18,10 @@ export function normalizeStyleKey(name: string) {
     return name.trim().replace(/-/g, '').toUpperCase()
 }
 
-export function normalizeStyleValue(value: string) {
+export function normalizeStyleValue(value: string, name: string) {
+    if (name === 'backgroundImage') {
+        return value.trim()
+    }
+
     return value.trim().toLowerCase()
 }

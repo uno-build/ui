@@ -59,6 +59,13 @@ export default class RendererDivs extends Renderer {
         if (is_yoga_style) {
             YOGA_SETTER[style.name](node.element, style)
         }
+        if (style.name === 'backgroundImage') {
+            div.style.backgroundImage = toCssBackgroundImage(style.value)
+            div.style.backgroundPosition = 'center'
+            div.style.backgroundRepeat = 'no-repeat'
+            div.style.backgroundSize = 'cover'
+            return
+        }
         if (!is_yoga_style || MANDATORY_STYLES.includes(style.name)) {
             div.style[style.name] = style.value
         }
@@ -108,4 +115,8 @@ const MANDATORY_STYLES = [
 
 function createDivFactory() {
     return document.createElement('div')
+}
+
+function toCssBackgroundImage(value) {
+    return `url(${JSON.stringify(value)})`
 }

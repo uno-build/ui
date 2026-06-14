@@ -32,6 +32,14 @@ export default class RendererDom extends Renderer {
     }
 
     protected updateStyle(node, { name, value }) {
+        if (name === 'backgroundImage') {
+            node.element.style.backgroundImage = toCssBackgroundImage(value)
+            node.element.style.backgroundPosition = 'center'
+            node.element.style.backgroundRepeat = 'no-repeat'
+            node.element.style.backgroundSize = 'cover'
+            return
+        }
+
         node.element.style[name] = value
     }
 
@@ -64,4 +72,8 @@ const DEFAULT_NODE_STYLE = {
     minWidth: '0',
     minHeight: '0',
     zIndex: '0',
+}
+
+function toCssBackgroundImage(value) {
+    return `url(${JSON.stringify(value)})`
 }

@@ -35,6 +35,27 @@ test('backgroundColor', () => {
     }
 })
 
+test('backgroundImage', () => {
+    expectResolved(
+        'backgroundImage',
+        ' /img/Hero.PNG ',
+        '/img/Hero.PNG',
+        { src: '/img/Hero.PNG' },
+    )
+    expectResolved(
+        'background-image',
+        '/Hero.PNG',
+        '/Hero.PNG',
+        { src: '/Hero.PNG' },
+        'backgroundImage',
+    )
+
+    expectInvalid('backgroundImage', '', /expected non-empty image path/)
+    expectInvalid('backgroundImage', '   ', /expected non-empty image path/)
+    expectInvalid('backgroundImage', 'url(/Hero.PNG)', /expected raw image path/)
+    expectInvalid('backgroundImage', 'URL(/Hero.PNG)', /expected raw image path/)
+})
+
 test('border corner radius', () => {
     const styles = [
         'borderTopLeftRadius',

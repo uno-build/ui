@@ -193,6 +193,32 @@ test('Node remove discards pending styles', async () => {
     expect(child.element).toBe(null)
 })
 
+test('RendererDivs applies backgroundImage as CSS url', async () => {
+    const canvas = createDiv()
+    const renderer = new RendererDivs({ canvas, createDiv })
+    const ui = new UI({ renderer })
+
+    await ui.init()
+
+    const child = ui.create({
+        width: '120px',
+        height: '80px',
+        backgroundImage: ' /img/Hero.PNG ',
+    })
+
+    ui.root.add(child)
+    ui.update()
+
+    expect(child.styles.backgroundImage).toEqual({
+        value: '/img/Hero.PNG',
+        parsed: { src: '/img/Hero.PNG' },
+    })
+    expect(canvas.children[0].style.backgroundImage).toBe('url("/img/Hero.PNG")')
+    expect(canvas.children[0].style.backgroundPosition).toBe('center')
+    expect(canvas.children[0].style.backgroundRepeat).toBe('no-repeat')
+    expect(canvas.children[0].style.backgroundSize).toBe('cover')
+})
+
 function createDiv() {
     return {
         children: [],
