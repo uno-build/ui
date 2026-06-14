@@ -36,24 +36,31 @@ test('backgroundColor', () => {
 })
 
 test('backgroundImage', () => {
-    expectResolved(
-        'backgroundImage',
-        ' /img/Hero.PNG ',
-        '/img/Hero.PNG',
-        { src: '/img/Hero.PNG' },
-    )
-    expectResolved(
-        'background-image',
-        '/Hero.PNG',
-        '/Hero.PNG',
-        { src: '/Hero.PNG' },
-        'backgroundImage',
-    )
+    const image = {
+        src: '/img/Hero.PNG',
+        data: new Uint8Array(256),
+        width: 1,
+        height: 1,
+        bytes_per_row: 256,
+    }
 
-    expectInvalid('backgroundImage', '', /expected non-empty image path/)
-    expectInvalid('backgroundImage', '   ', /expected non-empty image path/)
-    expectInvalid('backgroundImage', 'url(/Hero.PNG)', /expected raw image path/)
-    expectInvalid('backgroundImage', 'URL(/Hero.PNG)', /expected raw image path/)
+    expect(Style.resolveStyle('backgroundImage', image)).toEqual([{
+        name: 'backgroundImage',
+        value: image,
+        parsed: image,
+    }])
+    expect(Style.resolveStyle('background-image', image)).toEqual([{
+        name: 'backgroundImage',
+        value: image,
+        parsed: image,
+    }])
+
+    expectInvalid('backgroundImage', '', /expected loaded image/)
+    expectInvalid('backgroundImage', '   ', /expected loaded image/)
+    expectInvalid('backgroundImage', 'url(/Hero.PNG)', /expected loaded image/)
+    expect(() => {
+        Style.resolveStyle('backgroundImage', { ...image, src: '' })
+    }).toThrow(/expected loaded image/)
 })
 
 test('border corner radius', () => {

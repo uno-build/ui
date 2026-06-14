@@ -44,8 +44,9 @@ export function resolveStyle(name: string, value: any) {
         throw new Error(`unsupported property '${name}'`)
     }
 
-    if (typeof value !== 'string') {
-        throw new Error(`style value must be a string, got '${typeof value}'`)
+    const typeof_value = typeof value
+    if (typeof_value !== 'string' && typeof_value !== 'object') {
+        throw new Error(`style value must be a string or an object, got '${typeof_value}'`)
     }
 
     const normalized_value = normalizeStyleValue(value, normalized_name)
@@ -82,7 +83,7 @@ function createStyle(name, shorthandCallback) {
                     styles.push({
                         name,
                         ...result,
-                        value: String(result.value),
+                        value: name === 'backgroundImage' ? result.value : String(result.value),
                     })
                     resolved = true
                 }

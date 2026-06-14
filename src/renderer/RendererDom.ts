@@ -31,16 +31,16 @@ export default class RendererDom extends Renderer {
         return node.element.children.length
     }
 
-    protected updateStyle(node, { name, value }) {
-        if (name === 'backgroundImage') {
-            node.element.style.backgroundImage = toCssBackgroundImage(value)
+    protected updateStyle(node, style) {
+        if (style.name === 'backgroundImage') {
+            node.element.style.backgroundImage = toCssBackgroundImage(style.parsed.src)
             node.element.style.backgroundPosition = 'center'
             node.element.style.backgroundRepeat = 'no-repeat'
             node.element.style.backgroundSize = 'cover'
             return
         }
 
-        node.element.style[name] = value
+        node.element.style[style.name] = style.value
     }
 
     // prettier-ignore

@@ -14,7 +14,7 @@ import {
 } from './consts.ts'
 import {
     validateColor,
-    validateBackgroundImage,
+    validateImage,
     validateAuto,
     validateUnset,
     validateInteger,
@@ -25,7 +25,7 @@ import {
 } from './validators.ts'
 import {
     parseColor,
-    parseBackgroundImage,
+    parseImage,
     parseAuto,
     parseUnset,
     parseInteger,
@@ -51,8 +51,8 @@ export const COLOR_DEFINITION = [
 
 export const BACKGROUND_IMAGE_DEFINITION = [
     {
-        validate: [validateBackgroundImage],
-        parse: [parseBackgroundImage],
+        validate: [validateImage],
+        parse: [parseImage],
     },
 ]
 

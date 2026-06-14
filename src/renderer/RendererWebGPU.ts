@@ -233,7 +233,7 @@ export default class RendererWebGPU extends Renderer {
                 state.background_image_bind_group = null
             }
 
-            void this.loadBackgroundImage(node, src)
+            this.loadBackgroundImage(node, style.parsed)
         }
         if (style.name === 'borderTopColor') {
             this.node_states.get(node).border_top_color = style.parsed.rgba
@@ -285,59 +285,49 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
-    private async loadBackgroundImage(node, src) {
-        try {
-            const image = new Image()
-            image.src = src
-            await image.decode()
+    private loadBackgroundImage(node, image) {
+        const state = this.node_states.get(node)
 
-            const bitmap = await createImageBitmap(image)
-            const state = this.node_states.get(node)
+        if (state == null || state.background_image_src !== image.src) {
+            return
+        }
 
-            if (state == null || state.background_image_src !== src) {
-                bitmap.close()
-                return
-            }
+        const texture = this.device.createTexture({
+            size: [image.width, image.height],
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+        })
+        this.device.queue.writeTexture(
+            { texture },
+            image.data,
+            { bytesPerRow: image.bytes_per_row, rowsPerImage: image.height },
+            { width: image.width, height: image.height },
+        )
 
-            const texture = this.device.createTexture({
-                size: [bitmap.width, bitmap.height],
-                format: 'rgba8unorm',
-                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-            })
-            const pixels = readImagePixels(bitmap)
-            this.device.queue.writeTexture(
-                { texture },
-                pixels.data,
-                { bytesPerRow: pixels.bytes_per_row, rowsPerImage: bitmap.height },
-                { width: bitmap.width, height: bitmap.height },
-            )
-
-            this.disposeBackgroundImage(state)
-            state.background_image_src = src
-            state.background_image_texture = texture
-            state.background_image_bind_group = this.device.createBindGroup({
-                layout: this.image_pipeline.getBindGroupLayout(0),
-                entries: [
-                    {
-                        binding: 0,
-                        resource: {
-                            buffer: this.viewport_buffer,
-                        },
+        this.disposeBackgroundImage(state)
+        state.background_image_src = image.src
+        state.background_image_texture = texture
+        state.background_image_bind_group = this.device.createBindGroup({
+            layout: this.image_pipeline.getBindGroupLayout(0),
+            entries: [
+                {
+                    binding: 0,
+                    resource: {
+                        buffer: this.viewport_buffer,
                     },
-                    {
-                        binding: 1,
-                        resource: this.image_sampler,
-                    },
-                    {
-                        binding: 2,
-                        resource: texture.createView(),
-                    },
-                ],
-            })
+                },
+                {
+                    binding: 1,
+                    resource: this.image_sampler,
+                },
+                {
+                    binding: 2,
+                    resource: texture.createView(),
+                },
+            ],
+        })
 
-            bitmap.close()
-            this.draw(this.rendered_nodes)
-        } catch {}
+        this.draw(this.rendered_nodes)
     }
 
     private disposeBackgroundImage(state) {
@@ -583,42 +573,6 @@ function readBorderRadius(border_radius, width, height) {
     }
 
     return [border_radius.value, border_radius.value]
-}
-
-function readImagePixels(bitmap) {
-    const canvas = document.createElement('canvas')
-    canvas.width = bitmap.width
-    canvas.height = bitmap.height
-
-    const context = canvas.getContext('2d')
-
-    if (context == null) {
-        throw new Error('2d canvas context not available')
-    }
-
-    context.drawImage(bitmap, 0, 0)
-
-    const bytes_per_pixel = 4
-    const source_bytes_per_row = bitmap.width * bytes_per_pixel
-    const bytes_per_row = Math.ceil(source_bytes_per_row / 256) * 256
-    const source = context.getImageData(0, 0, bitmap.width, bitmap.height).data
-
-    if (bytes_per_row === source_bytes_per_row) {
-        return { data: source, bytes_per_row }
-    }
-
-    const data = new Uint8Array(bytes_per_row * bitmap.height)
-
-    for (let row = 0; row < bitmap.height; row++) {
-        const source_start = row * source_bytes_per_row
-        const target_start = row * bytes_per_row
-        data.set(
-            source.subarray(source_start, source_start + source_bytes_per_row),
-            target_start,
-        )
-    }
-
-    return { data, bytes_per_row }
 }
 
 const rectangleVertWGSL = /* wgsl */ `

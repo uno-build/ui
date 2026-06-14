@@ -1,6 +1,8 @@
-const BACKGROUND_IMAGE = '/assets/coin.png'
+import { loadImage } from '../../../src/utils/loadImage'
 
-export default function createBackgroundImageLayout({ ui }) {
+export default async function createBackgroundImageLayout({ ui }) {
+    const background_image = await loadImage('/assets/coin.png')
+
     const frame = ui.create({
         width: '360px',
         height: '240px',
@@ -17,7 +19,7 @@ export default function createBackgroundImageLayout({ ui }) {
         left: '40px',
         top: '40px',
         backgroundColor: '#123',
-        backgroundImage: BACKGROUND_IMAGE,
+        backgroundImage: background_image,
         border: '4px solid #000',
         borderRadius: '16px',
     })
@@ -52,7 +54,7 @@ export default function createBackgroundImageLayout({ ui }) {
         left: '40px',
         top: '10px',
         backgroundColor: '#321',
-        backgroundImage: BACKGROUND_IMAGE,
+        backgroundImage: background_image,
         borderRadius: '12px',
     })
     clipHost.add(clippedImage)

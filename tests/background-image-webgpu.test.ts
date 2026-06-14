@@ -4,6 +4,7 @@ import path from 'node:path'
 const layoutHarnessUrl = `/@fs${path.resolve('tests/layouts/layout-harness.html')}`
 const uiUrl = `/@fs${path.resolve('src/UI.ts')}`
 const rendererWebGPUUrl = `/@fs${path.resolve('src/renderer/RendererWebGPU.ts')}`
+const loadImageUrl = `/@fs${path.resolve('src/utils/loadImage.ts')}`
 
 test('RendererWebGPU paints backgroundImage when WebGPU is available', async ({
     page,
@@ -17,7 +18,7 @@ test('RendererWebGPU paints backgroundImage when WebGPU is available', async ({
     await page.goto(layoutHarnessUrl)
 
     const result = await page.evaluate(
-        async ({ rendererWebGPUUrl, uiUrl }) => {
+        async ({ loadImageUrl, rendererWebGPUUrl, uiUrl }) => {
             if (!navigator.gpu) {
                 return { skipped: true, pixel: null }
             }
@@ -30,8 +31,15 @@ test('RendererWebGPU paints backgroundImage when WebGPU is available', async ({
                 return { skipped: true, pixel: null }
             }
 
-            const [{ default: RendererWebGPU }, { default: UI }] =
-                await Promise.all([import(rendererWebGPUUrl), import(uiUrl)])
+            const [
+                { loadImage },
+                { default: RendererWebGPU },
+                { default: UI },
+            ] = await Promise.all([
+                import(loadImageUrl),
+                import(rendererWebGPUUrl),
+                import(uiUrl),
+            ])
             const root = document.getElementById('root')
 
             if (root == null) {
@@ -61,7 +69,7 @@ test('RendererWebGPU paints backgroundImage when WebGPU is available', async ({
                 width: '32px',
                 height: '32px',
                 backgroundColor: '#000',
-                backgroundImage: '/background-image-smoke.svg',
+                backgroundImage: await loadImage('/background-image-smoke.svg'),
             })
             ui.root.add(child)
             ui.update()
@@ -92,7 +100,7 @@ test('RendererWebGPU paints backgroundImage when WebGPU is available', async ({
 
             return { skipped: false, pixel }
         },
-        { rendererWebGPUUrl, uiUrl },
+        { loadImageUrl, rendererWebGPUUrl, uiUrl },
     )
 
     test.skip(result.skipped, 'WebGPU is not available')

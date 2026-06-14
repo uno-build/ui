@@ -9,20 +9,24 @@ export function validateColor(value: string) {
     }
 }
 
-export function validateBackgroundImage(value: string) {
-    if (typeof value !== 'string' || value.length === 0) {
-        throw new Error('expected non-empty image path')
-    }
-    if (/^url\(/i.test(value)) {
-        throw new Error('expected raw image path')
+export function validateImage(value: string) {
+    const is_valid =
+        value != null &&
+        typeof value === 'object' &&
+        typeof value.src === 'string' &&
+        value.src.length > 0 &&
+        Number.isFinite(value.width) &&
+        Number.isFinite(value.height) &&
+        Number.isFinite(value.bytes_per_row) &&
+        (value.data instanceof Uint8Array || value.data instanceof Uint8ClampedArray)
+
+    if (!is_valid) {
+        throw new Error('expected loaded image')
     }
 }
 
 export function validateEnum(value: string, values: Record<string, any>) {
-    if (
-        typeof value !== 'string' ||
-        !Object.prototype.hasOwnProperty.call(values, value)
-    ) {
+    if (typeof value !== 'string' || !Object.prototype.hasOwnProperty.call(values, value)) {
         throw new Error(`expected one of ${Object.keys(values).join(', ')}`)
     }
 }
@@ -63,8 +67,7 @@ export function validatePercent(value: string) {
 }
 
 export function validateNonNegative(value: any) {
-    const number =
-        readNumber(value) ?? (readPx(value) ?? readPercent(value))?.value
+    const number = readNumber(value) ?? (readPx(value) ?? readPercent(value))?.value
 
     if (number !== undefined && number < 0) {
         throw new Error('expected non-negative value')

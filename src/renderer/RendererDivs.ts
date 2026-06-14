@@ -60,7 +60,7 @@ export default class RendererDivs extends Renderer {
             YOGA_SETTER[style.name](node.element, style)
         }
         if (style.name === 'backgroundImage') {
-            div.style.backgroundImage = toCssBackgroundImage(style.value)
+            div.style.backgroundImage = toCssBackgroundImage(style.parsed.src)
             div.style.backgroundPosition = 'center'
             div.style.backgroundRepeat = 'no-repeat'
             div.style.backgroundSize = 'cover'

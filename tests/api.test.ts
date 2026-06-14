@@ -197,21 +197,22 @@ test('RendererDivs applies backgroundImage as CSS url', async () => {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })
     const ui = new UI({ renderer })
+    const image = createLoadedImage('/img/Hero.PNG')
 
     await ui.init()
 
     const child = ui.create({
         width: '120px',
         height: '80px',
-        backgroundImage: ' /img/Hero.PNG ',
+        backgroundImage: image,
     })
 
     ui.root.add(child)
     ui.update()
 
     expect(child.styles.backgroundImage).toEqual({
-        value: '/img/Hero.PNG',
-        parsed: { src: '/img/Hero.PNG' },
+        value: image,
+        parsed: image,
     })
     expect(canvas.children[0].style.backgroundImage).toBe('url("/img/Hero.PNG")')
     expect(canvas.children[0].style.backgroundPosition).toBe('center')
@@ -230,6 +231,16 @@ function createDiv() {
             const index = this.children.indexOf(child)
             this.children.splice(index, 1)
         },
+    }
+}
+
+function createLoadedImage(src) {
+    return {
+        src,
+        data: new Uint8Array(256),
+        width: 1,
+        height: 1,
+        bytes_per_row: 256,
     }
 }
 

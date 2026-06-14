@@ -43,7 +43,7 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
         await ui.init()
 
         syncRootSize({ ui, root, canvas })
-        const layoutResult = createLayout({ ui, rendererName })
+        const layoutResult = await createLayout({ ui, rendererName })
 
         ui.update()
         observeRootSize({ ui, root, canvas })
