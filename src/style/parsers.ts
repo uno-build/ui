@@ -52,7 +52,7 @@ export function parseColor(value: string) {
 }
 
 export function parseImage(value: any) {
-    return { value, parsed: value }
+    return { value: value.src, parsed: value }
 }
 
 export function parseEnum(value: string, values: Record<string, any>) {

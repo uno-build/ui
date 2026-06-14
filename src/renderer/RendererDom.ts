@@ -33,7 +33,7 @@ export default class RendererDom extends Renderer {
 
     protected updateStyle(node, style) {
         if (style.name === 'backgroundImage') {
-            node.element.style.backgroundImage = toCssBackgroundImage(style.parsed.src)
+            node.element.style.backgroundImage = `url(${style.value})`
             node.element.style.backgroundPosition = 'center'
             node.element.style.backgroundRepeat = 'no-repeat'
             node.element.style.backgroundSize = 'cover'
