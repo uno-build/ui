@@ -38,20 +38,19 @@ test('backgroundColor', () => {
 test('backgroundImage', () => {
     const image = {
         src: '/img/Hero.PNG',
-        data: new Uint8Array(256),
+        bitmap: {},
         width: 1,
         height: 1,
-        bytes_per_row: 256,
     }
 
     expect(Style.resolveStyle('backgroundImage', image)).toEqual([{
         name: 'backgroundImage',
-        value: image,
+        value: image.src,
         parsed: image,
     }])
     expect(Style.resolveStyle('background-image', image)).toEqual([{
         name: 'backgroundImage',
-        value: image,
+        value: image.src,
         parsed: image,
     }])
 

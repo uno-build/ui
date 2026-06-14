@@ -295,13 +295,15 @@ export default class RendererWebGPU extends Renderer {
         const texture = this.device.createTexture({
             size: [image.width, image.height],
             format: 'rgba8unorm',
-            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+            usage:
+                GPUTextureUsage.TEXTURE_BINDING |
+                GPUTextureUsage.COPY_DST |
+                GPUTextureUsage.RENDER_ATTACHMENT,
         })
-        this.device.queue.writeTexture(
+        this.device.queue.copyExternalImageToTexture(
+            { source: image.bitmap },
             { texture },
-            image.data,
-            { bytesPerRow: image.bytes_per_row, rowsPerImage: image.height },
-            { width: image.width, height: image.height },
+            [image.width, image.height],
         )
 
         this.disposeBackgroundImage(state)

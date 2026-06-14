@@ -17,8 +17,8 @@ export function validateImage(value: string) {
         value.src.length > 0 &&
         Number.isFinite(value.width) &&
         Number.isFinite(value.height) &&
-        Number.isFinite(value.bytes_per_row) &&
-        (value.data instanceof Uint8Array || value.data instanceof Uint8ClampedArray)
+        value.bitmap != null &&
+        typeof value.bitmap === 'object'
 
     if (!is_valid) {
         throw new Error('expected loaded image')
