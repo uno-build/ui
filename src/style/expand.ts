@@ -3,7 +3,6 @@ import { BORDER_STYLE } from './consts.ts'
 
 const NUMBER = /^-?(?:\d+|\d*\.\d+)$/
 const BORDER_WIDTH = /^-?(?:\d+|\d*\.\d+)px$|^0$/
-const BORDER_STYLE_VALUES = Object.keys(BORDER_STYLE)
 
 export function expandProperty(property: string, value: string | string[]) {
     if (Array.isArray(value)) {
@@ -85,7 +84,7 @@ function parseBorder(value: string, resolve) {
     const longhands = {}
 
     values.forEach((val) => {
-        if (BORDER_STYLE_VALUES.includes(val)) {
+        if (BORDER_STYLE.hasOwnProperty(val)) {
             longhands[resolve('Style')] = val
         } else if (BORDER_WIDTH.test(val)) {
             longhands[resolve('Width')] = val
