@@ -61,9 +61,9 @@ export default class RendererDivs extends Renderer {
         }
         if (style.name === 'backgroundImage') {
             div.style.backgroundImage = `url(${style.value})`
+            div.style.backgroundSize = 'cover'
             div.style.backgroundPosition = 'center'
             div.style.backgroundRepeat = 'no-repeat'
-            div.style.backgroundSize = 'cover'
             return
         }
         if (!is_yoga_style || MANDATORY_STYLES.includes(style.name)) {

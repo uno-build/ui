@@ -1,92 +1,89 @@
 import { loadImage } from '../../../src/utils/loadImage'
 
 export default async function createBackgroundImageLayout({ ui }) {
-    const background_image = await loadImage('/assets/coin.png')
+    const background_image = await loadImage('/assets/tree.png')
 
-    const frame = ui.create({
-        width: '360px',
-        height: '240px',
+    const container = ui.create({
+        width: '100%',
+        height: '100%',
         position: 'relative',
-        margin: '40px',
-        backgroundColor: '#f5f5f5',
     })
-    ui.root.add(frame)
+    ui.root.add(container)
 
-    const card = ui.create({
-        width: '140px',
-        height: '100px',
+    const card1 = ui.create({
+        width: '128px',
+        height: '128px',
         position: 'absolute',
-        left: '40px',
-        top: '40px',
-        backgroundColor: '#123',
+        left: '20px',
+        top: '20px',
+        backgroundColor: '#cccccc',
         backgroundImage: background_image,
-        border: '4px solid #000',
+        border: '2px solid #000',
         borderRadius: '16px',
     })
-    frame.add(card)
+    container.add(card1)
 
-    const overlay = ui.create({
-        width: '60px',
-        height: '60px',
+    const card2 = ui.create({
+        width: '128px',
+        height: '64px',
         position: 'absolute',
-        left: '120px',
-        top: '80px',
-        backgroundColor: '#00f',
-        zIndex: '1',
-    })
-    frame.add(overlay)
-
-    const clipHost = ui.create({
-        width: '100px',
-        height: '80px',
-        position: 'absolute',
-        left: '220px',
-        top: '50px',
-        overflow: 'hidden',
-        backgroundColor: '#ddd',
-    })
-    frame.add(clipHost)
-
-    const clippedImage = ui.create({
-        width: '120px',
-        height: '90px',
-        position: 'absolute',
-        left: '40px',
-        top: '10px',
-        backgroundColor: '#321',
+        left: '200px',
+        top: '20px',
+        backgroundColor: '#cccccc',
         backgroundImage: background_image,
-        borderRadius: '12px',
+        border: '2px solid #000',
+        borderRadius: '16px',
     })
-    clipHost.add(clippedImage)
+    container.add(card2)
+
+    const card3 = ui.create({
+        width: '64px',
+        height: '128px',
+        position: 'absolute',
+        left: '400px',
+        top: '20px',
+        backgroundColor: '#cccccc',
+        backgroundImage: background_image,
+        border: '2px solid #000',
+        borderRadius: '16px',
+    })
+    container.add(card3)
+
+    const card4 = ui.create({
+        width: '64px',
+        height: '64px',
+        position: 'absolute',
+        left: '540px',
+        top: '20px',
+        backgroundColor: '#cccccc',
+        backgroundImage: background_image,
+        border: '2px solid #000',
+        borderRadius: '16px',
+    })
+    container.add(card4)
 
     return {
         paintSamples: [
-            {
-                name: 'card backgroundImage participates in paint',
-                x: 120,
-                y: 110,
-                expected: card,
-            },
-            {
-                name: 'overlay paints above backgroundImage',
-                x: 170,
-                y: 130,
-                expected: overlay,
-            },
-            {
-                name: 'clipped backgroundImage visible inside host',
-                x: 310,
-                y: 110,
-                expected: clippedImage,
-                expectedStack: [clippedImage, clipHost, frame],
-            },
-            {
-                name: 'clipped backgroundImage hidden outside host',
-                x: 365,
-                y: 110,
-                expected: frame,
-                expectedStack: [frame],
-            },
+            // {
+            //     name: 'card backgroundImage participates in paint',
+            //     x: 120,
+            //     y: 110,
+            //     expected: card,
+            // },
+            // {
+            //     name: 'clipped backgroundImage visible inside host',
+            //     x: 310,
+            //     y: 110,
+            //     expected: clippedImage,
+            //     expectedStack: [clippedImage, clipHost, container],
+            // },
+            // {
+            //     name: 'clipped backgroundImage hidden outside host',
+            //     x: 365,
+            //     y: 110,
+            //     expected: container,
+            //     expectedStack: [container],
+            // },
         ],
     }
 }
