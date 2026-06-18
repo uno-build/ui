@@ -1,13 +1,14 @@
 import { loadImage } from '../../../src/utils/loadImage'
 
 export default async function createBackgroundImageLayout({ ui }) {
+    const size = 150
     const asset_coin = await loadImage('/assets/coin.png')
     const asset_texture = await loadImage('/assets/texture.jpg')
     const CARD_SIZES = [
-        ['128px', '128px'],
-        ['128px', '64px'],
-        ['64px', '128px'],
-        ['64px', '64px'],
+        [`${size}px`, `${size}px`],
+        [`${size}px`, `${size / 2}px`],
+        [`${size / 2}px`, `${size}px`],
+        [`${size / 2}px`, `${size / 2}px`],
     ]
     const BACKGROUND_COLORS = ['#f8cdd3', '#cfe8d5', '#cfe0f8', '#f8e7bf']
     const BACKGROUND_IMAGES = [asset_coin, asset_texture]
