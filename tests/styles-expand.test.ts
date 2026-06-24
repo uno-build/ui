@@ -73,16 +73,16 @@ test('border expands to width, style, color on each edge', () => {
     expect(Style.resolveStyle('border', '2px solid #123')).toEqual([
         { name: 'borderTopWidth', value: '2px', parsed: { value: 2, unit: 'px' } },
         { name: 'borderTopStyle', value: 'solid', parsed: { enum: 1 } },
-        { name: 'borderTopColor', value: '#123', parsed: { rgba: [17 / 255, 34 / 255, 51 / 255, 1] } },
+        { name: 'borderTopColor', value: '#123', parsed: { rgba: [17, 34, 51, 255] } },
         { name: 'borderRightWidth', value: '2px', parsed: { value: 2, unit: 'px' } },
         { name: 'borderRightStyle', value: 'solid', parsed: { enum: 1 } },
-        { name: 'borderRightColor', value: '#123', parsed: { rgba: [17 / 255, 34 / 255, 51 / 255, 1] } },
+        { name: 'borderRightColor', value: '#123', parsed: { rgba: [17, 34, 51, 255] } },
         { name: 'borderBottomWidth', value: '2px', parsed: { value: 2, unit: 'px' } },
         { name: 'borderBottomStyle', value: 'solid', parsed: { enum: 1 } },
-        { name: 'borderBottomColor', value: '#123', parsed: { rgba: [17 / 255, 34 / 255, 51 / 255, 1] } },
+        { name: 'borderBottomColor', value: '#123', parsed: { rgba: [17, 34, 51, 255] } },
         { name: 'borderLeftWidth', value: '2px', parsed: { value: 2, unit: 'px' } },
         { name: 'borderLeftStyle', value: 'solid', parsed: { enum: 1 } },
-        { name: 'borderLeftColor', value: '#123', parsed: { rgba: [17 / 255, 34 / 255, 51 / 255, 1] } },
+        { name: 'borderLeftColor', value: '#123', parsed: { rgba: [17, 34, 51, 255] } },
     ])
 })
 

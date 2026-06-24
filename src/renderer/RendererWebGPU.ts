@@ -66,15 +66,13 @@ export default class RendererWebGPU extends Renderer {
                         attributes: [
                             {
                                 shaderLocation: INSTANCE_BUFFER_FIELDS.LAYOUT.shader_location,
-                                offset: getInstanceFieldByteOffset(INSTANCE_BUFFER_FIELDS.LAYOUT),
+                                offset: INSTANCE_BUFFER_FIELDS.LAYOUT.byte_offset,
                                 format: INSTANCE_BUFFER_FIELDS.LAYOUT.format,
                             },
                             {
                                 shaderLocation:
                                     INSTANCE_BUFFER_FIELDS.BACKGROUND_COLOR.shader_location,
-                                offset: getInstanceFieldByteOffset(
-                                    INSTANCE_BUFFER_FIELDS.BACKGROUND_COLOR,
-                                ),
+                                offset: INSTANCE_BUFFER_FIELDS.BACKGROUND_COLOR.byte_offset,
                                 format: INSTANCE_BUFFER_FIELDS.BACKGROUND_COLOR.format,
                             },
                         ],
@@ -145,7 +143,7 @@ export default class RendererWebGPU extends Renderer {
             YOGA_SETTER[style.name](node.element, style)
         }
         // if (style.name === 'backgroundColor') {
-        //     this.node_states.get(node).background_color = style.parsed.rgba
+        //     this.node_states.get(node).backgroundColor = style.parsed.rgba
         // }
     }
 
@@ -165,7 +163,7 @@ export default class RendererWebGPU extends Renderer {
 
     private draw(nodes) {
         const instances = this.createInstanceData(nodes)
-        const instance_count = instances.length / INSTANCE_FLOATS
+        const instance_count = instances.byteLength / INSTANCE_SIZE
         const command_encoder = this.device.createCommandEncoder()
         const texture_view = this.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
@@ -208,59 +206,73 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private createInstanceData(nodes) {
-        const instances = []
+        let instance_count = 0
 
         for (const node of nodes) {
-            const state = this.node_states.get(node)
+            if (node.styles.backgroundColor !== undefined) {
+                instance_count++
+            }
+        }
 
+        const instance_data = new ArrayBuffer(instance_count * INSTANCE_SIZE)
+        const instance_floats = new Float32Array(instance_data)
+        const instance_bytes = new Uint8Array(instance_data)
+        let instance_byte_offset = 0
+
+        for (const node of nodes) {
             if (node.styles.backgroundColor === undefined) {
                 continue
             }
 
-            const { x, y, width, height } = node.layout
-            const [r, g, b, a] = node.styles.backgroundColor.parsed.rgba
+            // Layout: x, y, width, height
+            const layout_float_offset =
+                (instance_byte_offset + INSTANCE_BUFFER_FIELDS.LAYOUT.byte_offset) / FLOAT32_SIZE
+            instance_floats[layout_float_offset + 0] = node.layout.x
+            instance_floats[layout_float_offset + 1] = node.layout.y
+            instance_floats[layout_float_offset + 2] = node.layout.width
+            instance_floats[layout_float_offset + 3] = node.layout.height
 
-            /* prettier-ignore */
-            instances.push(
-                x, y, width, height,    // shader_location 1 (LAYOUT)
-                r, g, b, a,             // shader_location 2 (BACKGROUND_COLOR)
-            )
+            // backgroundColor: r, g, b, a
+            const background_color_byte_offset =
+                instance_byte_offset + INSTANCE_BUFFER_FIELDS.BACKGROUND_COLOR.byte_offset
+            const [r, g, b, a] = node.styles.backgroundColor.parsed.rgba
+            instance_bytes[background_color_byte_offset + 0] = r
+            instance_bytes[background_color_byte_offset + 1] = g
+            instance_bytes[background_color_byte_offset + 2] = b
+            instance_bytes[background_color_byte_offset + 3] = a
+
+            instance_byte_offset += INSTANCE_SIZE
         }
 
-        return new Float32Array(instances)
+        return instance_bytes
     }
 }
 
-const FLOAT_SIZE = 4
-const VIEWPORT_SIZE = 4 * FLOAT_SIZE
+const FLOAT32_SIZE = 4
+const VIEWPORT_SIZE = 4 * FLOAT32_SIZE
 const QUAD_VERTEX_COUNT = 6
 const QUAD_VERTEX_FLOATS = 2
-const QUAD_VERTEX_SIZE = QUAD_VERTEX_FLOATS * FLOAT_SIZE
+const QUAD_VERTEX_SIZE = QUAD_VERTEX_FLOATS * FLOAT32_SIZE
 const QUAD_VERTICES = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
 const INSTANCE_BUFFER_FIELDS = {
     LAYOUT: {
         shader_location: 1,
-        float_offset: 0,
-        float_count: 4,
+        byte_offset: 0,
+        byte_size: 4 * FLOAT32_SIZE,
         format: 'float32x4',
     },
     BACKGROUND_COLOR: {
         shader_location: 2,
-        float_offset: 4,
-        float_count: 4,
-        format: 'float32x4',
+        byte_offset: 4 * FLOAT32_SIZE,
+        byte_size: 4,
+        format: 'unorm8x4',
     },
 }
-const INSTANCE_FLOATS = Math.max(
+const INSTANCE_SIZE = Math.max(
     ...Object.values(INSTANCE_BUFFER_FIELDS).map(
-        (instance_field) => instance_field.float_offset + instance_field.float_count,
+        (instance_field) => instance_field.byte_offset + instance_field.byte_size,
     ),
 )
-const INSTANCE_SIZE = INSTANCE_FLOATS * FLOAT_SIZE
-
-function getInstanceFieldByteOffset(field) {
-    return field.float_offset * FLOAT_SIZE
-}
 
 const rectangleVertWGSL = /* wgsl */ `
 struct Viewport {
@@ -270,7 +282,7 @@ struct Viewport {
 
 struct VertexOutput {
   @builtin(position) position: vec4f,
-  @location(0) background_color: vec4f,
+  @location(0) backgroundColor: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -279,7 +291,7 @@ struct VertexOutput {
 fn main(
   @location(0) position: vec2f,
   @location(1) rect: vec4f,
-  @location(2) background_color: vec4f,
+  @location(2) backgroundColor: vec4f,
 ) -> VertexOutput {
   let local_position = position * rect.zw;
   let pixel = rect.xy + local_position;
@@ -290,18 +302,18 @@ fn main(
 
   var output: VertexOutput;
   output.position = vec4f(clip, 0.0, 1.0);
-  output.background_color = background_color;
+  output.backgroundColor = backgroundColor;
   return output;
 }
 `
 
 const rectangleFragWGSL = /* wgsl */ `
 struct FragmentInput {
-  @location(0) background_color: vec4f,
+  @location(0) backgroundColor: vec4f,
 }
 
 @fragment
 fn main(input: FragmentInput) -> @location(0) vec4f {
-  return input.background_color;
+  return input.backgroundColor;
 }
 `

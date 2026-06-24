@@ -27,9 +27,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
 
     expect(() => {
         ui.create({ backgroundColor: 'red' })
-    }).toThrow(
-        /invalid value 'red' for property 'backgroundColor': expected hex color/,
-    )
+    }).toThrow(/invalid value 'red' for property 'backgroundColor': expected hex color/)
     expect(() => {
         child.setStyle('width', true)
     }).toThrow(/style value must be a string/)
@@ -41,7 +39,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
         },
         backgroundColor: {
             value: '#123',
-            parsed: { rgba: [17 / 255, 34 / 255, 51 / 255, 1] },
+            parsed: { rgba: [17, 34, 51, 255] },
         },
         height: {
             value: '40px',
