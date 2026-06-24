@@ -13,7 +13,7 @@ export default class RendererWebGPU extends Renderer {
     private bind_group
     private position_buffer
     private viewport_buffer
-    private nodes_buffer = null
+    private nodes_buffer
     private nodes_buffer_size = 0
 
     constructor({ canvas }) {
@@ -162,7 +162,7 @@ export default class RendererWebGPU extends Renderer {
 
     private draw(nodes) {
         const node_instances = this.createInstancesNodes(nodes)
-        const instance_count = node_instances.bytes_offset / INSTANCE_SIZE
+        const node_instances_count = node_instances.bytes_offset / INSTANCE_SIZE
         const command_encoder = this.device.createCommandEncoder()
         const texture_view = this.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
@@ -176,20 +176,19 @@ export default class RendererWebGPU extends Renderer {
             ],
         })
 
-        if (instance_count > 0) {
+        // If there are no node instances to draw, we skip the draw call.
+        if (node_instances_count > 0) {
+            // If the buffer is too small to hold all the node instances
+            // we destroy the old buffer and create a new one with the required size.
             if (this.nodes_buffer_size < node_instances.bytes_offset) {
+                this.nodes_buffer_size = node_instances.bytes_offset
                 this.nodes_buffer?.destroy()
                 this.nodes_buffer = this.device.createBuffer({
                     size: node_instances.bytes_offset,
                     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
                 })
-                this.nodes_buffer_size = node_instances.bytes_offset
             }
-            this.device.queue.writeBuffer(
-                this.viewport_buffer,
-                0,
-                new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, 0, 0]),
-            )
+
             this.device.queue.writeBuffer(
                 this.nodes_buffer,
                 0,
@@ -197,11 +196,16 @@ export default class RendererWebGPU extends Renderer {
                 0,
                 node_instances.bytes_offset,
             )
+            this.device.queue.writeBuffer(
+                this.viewport_buffer,
+                0,
+                new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, 0, 0]),
+            )
             pass_encoder.setVertexBuffer(0, this.position_buffer)
             pass_encoder.setVertexBuffer(1, this.nodes_buffer)
             pass_encoder.setPipeline(this.pipeline)
             pass_encoder.setBindGroup(0, this.bind_group)
-            pass_encoder.draw(POSITION_VERTEX_COUNT, instance_count)
+            pass_encoder.draw(POSITION_VERTEX_COUNT, node_instances_count)
         }
 
         pass_encoder.end()
@@ -216,7 +220,7 @@ export default class RendererWebGPU extends Renderer {
         let bytes_offset = 0
 
         for (const node of nodes) {
-            if (node.styles.backgroundColor === undefined) {
+            if (!isNodeDrawable(node)) {
                 continue
             }
 
@@ -242,6 +246,17 @@ export default class RendererWebGPU extends Renderer {
 
         return { bytes, bytes_offset }
     }
+}
+
+function isNodeDrawable(node) {
+    return (
+        node.layout.width > 0 &&
+        node.layout.height > 0 &&
+        (node.styles.backgroundColor !== undefined || node.styles.backgroundColor.rgba[3] > 0)
+        // node.styles.display !== 'none' &&
+        // node.styles.visibility !== 'hidden' &&
+        // node.styles.opacity !== 0 &&
+    )
 }
 
 const FLOAT32_SIZE = 4
@@ -278,7 +293,7 @@ struct Viewport {
 
 struct VertexOutput {
   @builtin(position) position: vec4f,
-  @location(0) bgcolor: vec4f,
+  @location(0) background_color: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -286,11 +301,11 @@ struct VertexOutput {
 @vertex
 fn main(
   @location(0) position: vec2f,
-  @location(1) node_layout: vec4f,
-  @location(2) bgcolor: vec4f,
+  @location(1) layout_node: vec4f,
+  @location(2) background_color: vec4f,
 ) -> VertexOutput {
-  let local_position = position * node_layout.zw;
-  let pixel = node_layout.xy + local_position;
+  let local_position = position * layout_node.zw;
+  let pixel = layout_node.xy + local_position;
   let clip = vec2f(
     pixel.x / viewport.size.x * 2.0 - 1.0,
     1.0 - pixel.y / viewport.size.y * 2.0,
@@ -298,18 +313,18 @@ fn main(
 
   var output: VertexOutput;
   output.position = vec4f(clip, 0.0, 1.0);
-  output.bgcolor = bgcolor;
+  output.background_color = background_color;
   return output;
 }
 `
 
 const rectangleFragWGSL = /* wgsl */ `
 struct FragmentInput {
-  @location(0) bgcolor: vec4f,
+  @location(0) background_color: vec4f,
 }
 
 @fragment
 fn main(input: FragmentInput) -> @location(0) vec4f {
-  return input.bgcolor;
+  return input.background_color;
 }
 `
