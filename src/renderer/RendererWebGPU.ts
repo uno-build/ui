@@ -2,7 +2,7 @@ import Renderer from '../Renderer.ts'
 import createEngine, { YOGA_SETTER } from '../engine/yoga.ts'
 
 export default class RendererWebGPU extends Renderer {
-    private node_states = new WeakMap()
+    // private node_states = new WeakMap()
     private canvas
     private engine
     private adapter
@@ -120,7 +120,7 @@ export default class RendererWebGPU extends Renderer {
 
     public createElement(node) {
         const element = this.engine.createElement(node)
-        this.node_states.set(node, {})
+        // this.node_states.set(node, {})
         return element
     }
 
@@ -134,7 +134,7 @@ export default class RendererWebGPU extends Renderer {
 
     public removeChild(parent, node) {
         this.engine.removeChild(parent, node)
-        this.node_states.delete(node)
+        // this.node_states.delete(node)
     }
 
     protected updateStyle(node, style) {
@@ -153,7 +153,7 @@ export default class RendererWebGPU extends Renderer {
 
     public afterUpdate(nodes) {
         super.afterUpdate(nodes)
-        this.draw([...nodes])
+        this.draw(nodes)
     }
 
     public getLayout(node) {
