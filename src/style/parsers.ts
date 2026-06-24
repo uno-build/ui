@@ -39,7 +39,11 @@ export function parseRgba(value: string) {
             ? hex.split('').map((channel) => parseInt(channel + channel, 16))
             : hex.match(/../g)!.map((channel) => parseInt(channel, 16))
 
-    return [channels[0], channels[1], channels[2], channels[3] == null ? 255 : channels[3]]
+    if (channels[3] === undefined) {
+        channels[3] = 255
+    }
+
+    return channels
 }
 
 export function parseColor(value: string) {
