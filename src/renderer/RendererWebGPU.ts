@@ -65,15 +65,14 @@ export default class RendererWebGPU extends Renderer {
                         /* pretty-ignore */
                         attributes: [
                             {
-                                shaderLocation: INSTANCE_BUFFER_FIELDS.LAYOUT.shader_location,
-                                offset: INSTANCE_BUFFER_FIELDS.LAYOUT.byte_offset,
-                                format: INSTANCE_BUFFER_FIELDS.LAYOUT.format,
+                                shaderLocation: BUFFER_FIELDS.LAYOUT.shader_location,
+                                offset: BUFFER_FIELDS.LAYOUT.byte_offset,
+                                format: BUFFER_FIELDS.LAYOUT.format,
                             },
                             {
-                                shaderLocation:
-                                    INSTANCE_BUFFER_FIELDS.BACKGROUND_COLOR.shader_location,
-                                offset: INSTANCE_BUFFER_FIELDS.BACKGROUND_COLOR.byte_offset,
-                                format: INSTANCE_BUFFER_FIELDS.BACKGROUND_COLOR.format,
+                                shaderLocation: BUFFER_FIELDS.BACKGROUNDCOLOR.shader_location,
+                                offset: BUFFER_FIELDS.BACKGROUNDCOLOR.byte_offset,
+                                format: BUFFER_FIELDS.BACKGROUNDCOLOR.format,
                             },
                         ],
                     },
@@ -162,8 +161,8 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private draw(nodes) {
-        const instances = this.createInstanceData(nodes)
-        const instance_count = instances.byteLength / INSTANCE_SIZE
+        const instances = this.createInstancesNodes(nodes)
+        const instance_count = instances.bytes_offset / INSTANCE_SIZE
         const command_encoder = this.device.createCommandEncoder()
         const texture_view = this.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
@@ -178,15 +177,24 @@ export default class RendererWebGPU extends Renderer {
         })
 
         if (instance_count > 0) {
-            if (this.buffer_instance == null || this.buffer_instance_size < instances.byteLength) {
+            if (
+                this.buffer_instance == null ||
+                this.buffer_instance_size < instances.bytes_offset
+            ) {
                 this.buffer_instance?.destroy()
                 this.buffer_instance = this.device.createBuffer({
-                    size: instances.byteLength,
+                    size: instances.bytes_offset,
                     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
                 })
-                this.buffer_instance_size = instances.byteLength
+                this.buffer_instance_size = instances.bytes_offset
             }
-            this.device.queue.writeBuffer(this.buffer_instance, 0, instances)
+            this.device.queue.writeBuffer(
+                this.buffer_instance,
+                0,
+                instances.bytes,
+                0,
+                instances.bytes_offset,
+            )
             const viewport = new Float32Array([
                 this.canvas.clientWidth,
                 this.canvas.clientHeight,
@@ -205,19 +213,12 @@ export default class RendererWebGPU extends Renderer {
         this.device.queue.submit([command_encoder.finish()])
     }
 
-    private createInstanceData(nodes) {
-        let instance_count = 0
-
-        for (const node of nodes) {
-            if (node.styles.backgroundColor !== undefined) {
-                instance_count++
-            }
-        }
-
-        const instance_data = new ArrayBuffer(instance_count * INSTANCE_SIZE)
-        const instance_floats = new Float32Array(instance_data)
-        const instance_bytes = new Uint8Array(instance_data)
-        let instance_byte_offset = 0
+    // This function creates a buffer containing all the data prepared for the GPU to render the nodes.
+    private createInstancesNodes(nodes) {
+        const buffer = new ArrayBuffer(nodes.length * INSTANCE_SIZE)
+        const floats = new Float32Array(buffer)
+        const bytes = new Uint8Array(buffer)
+        let bytes_offset = 0
 
         for (const node of nodes) {
             if (node.styles.backgroundColor === undefined) {
@@ -226,25 +227,25 @@ export default class RendererWebGPU extends Renderer {
 
             // Layout: x, y, width, height
             const layout_float_offset =
-                (instance_byte_offset + INSTANCE_BUFFER_FIELDS.LAYOUT.byte_offset) / FLOAT32_SIZE
-            instance_floats[layout_float_offset + 0] = node.layout.x
-            instance_floats[layout_float_offset + 1] = node.layout.y
-            instance_floats[layout_float_offset + 2] = node.layout.width
-            instance_floats[layout_float_offset + 3] = node.layout.height
+                (bytes_offset + BUFFER_FIELDS.LAYOUT.byte_offset) / FLOAT32_SIZE
+            const { x, y, width, height } = node.layout
+            floats[layout_float_offset + 0] = x
+            floats[layout_float_offset + 1] = y
+            floats[layout_float_offset + 2] = width
+            floats[layout_float_offset + 3] = height
 
             // backgroundColor: r, g, b, a
-            const background_color_byte_offset =
-                instance_byte_offset + INSTANCE_BUFFER_FIELDS.BACKGROUND_COLOR.byte_offset
+            const bgcolor_bytes_offset = bytes_offset + BUFFER_FIELDS.BACKGROUNDCOLOR.byte_offset
             const [r, g, b, a] = node.styles.backgroundColor.parsed.rgba
-            instance_bytes[background_color_byte_offset + 0] = r
-            instance_bytes[background_color_byte_offset + 1] = g
-            instance_bytes[background_color_byte_offset + 2] = b
-            instance_bytes[background_color_byte_offset + 3] = a
+            bytes[bgcolor_bytes_offset + 0] = r
+            bytes[bgcolor_bytes_offset + 1] = g
+            bytes[bgcolor_bytes_offset + 2] = b
+            bytes[bgcolor_bytes_offset + 3] = a
 
-            instance_byte_offset += INSTANCE_SIZE
+            bytes_offset += INSTANCE_SIZE
         }
 
-        return instance_bytes
+        return { bytes, bytes_offset }
     }
 }
 
@@ -254,14 +255,14 @@ const QUAD_VERTEX_COUNT = 6
 const QUAD_VERTEX_FLOATS = 2
 const QUAD_VERTEX_SIZE = QUAD_VERTEX_FLOATS * FLOAT32_SIZE
 const QUAD_VERTICES = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
-const INSTANCE_BUFFER_FIELDS = {
+const BUFFER_FIELDS = {
     LAYOUT: {
         shader_location: 1,
         byte_offset: 0,
         byte_size: 4 * FLOAT32_SIZE,
         format: 'float32x4',
     },
-    BACKGROUND_COLOR: {
+    BACKGROUNDCOLOR: {
         shader_location: 2,
         byte_offset: 4 * FLOAT32_SIZE,
         byte_size: 4,
@@ -269,7 +270,7 @@ const INSTANCE_BUFFER_FIELDS = {
     },
 }
 const INSTANCE_SIZE = Math.max(
-    ...Object.values(INSTANCE_BUFFER_FIELDS).map(
+    ...Object.values(BUFFER_FIELDS).map(
         (instance_field) => instance_field.byte_offset + instance_field.byte_size,
     ),
 )
