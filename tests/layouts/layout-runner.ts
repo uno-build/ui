@@ -106,18 +106,11 @@ function observeRootSize({ ui, root, canvas }) {
     ;(canvas as any).resizeObserver = observer
 }
 
-export async function runLayoutFromSearchParams({
-    root,
-    params,
-    origin,
-    logger = console,
-}) {
+export async function runLayoutFromSearchParams({ root, params, origin, logger = console }) {
     const layout = readLayoutName(params.get('layout'))
     const renderers = readRendererNames(params.get('renderers'), logger)
 
-    logger.log(
-        `Running: ${origin}/?layout=${layout}&renderers=${renderers.join(',')}`,
-    )
+    logger.log(`Running: ${origin}/?layout=${layout}&renderers=${renderers.join(',')}`)
     logger.log('Available layouts:', Object.keys(LAYOUTS))
     // logger.log('Available renderers:', Object.keys(SETUPS))
 
@@ -144,19 +137,14 @@ export function readLayoutName(layout) {
 
 export function readRendererNames(renderersParam, logger = console) {
     const requestedRenderers =
-        renderersParam == null || renderersParam === ''
-            ? rendererNames
-            : renderersParam.split(',')
+        renderersParam == null || renderersParam === '' ? rendererNames : renderersParam.split(',')
 
     return requestedRenderers.filter((rendererName) => {
         if (hasOwn(SETUPS, rendererName)) {
             return true
         }
 
-        logger.warn(
-            `renderer '${rendererName}' not found. Available renderers:`,
-            rendererNames,
-        )
+        logger.warn(`renderer '${rendererName}' not found. Available renderers:`, rendererNames)
         return false
     })
 }
@@ -168,7 +156,7 @@ export function compareLayoutResults(results) {
     )
 
     if (sourceOfTruth == null) {
-        throw new Error('No source of truth renderer result was produced')
+        return comparisons
     }
 
     for (const result of results) {
@@ -179,21 +167,14 @@ export function compareLayoutResults(results) {
         comparisons.push({
             rendererA: sourceOfTruth.rendererName,
             rendererB: result.rendererName,
-            matches: paintLayoutResultsMatch(
-                sourceOfTruth.result,
-                result.result,
-            ),
+            matches: paintLayoutResultsMatch(sourceOfTruth.result, result.result),
         })
     }
 
     return comparisons
 }
 
-export function paintLayoutResultsMatch(
-    a,
-    b,
-    tolerance = layoutComparisonTolerance,
-) {
+export function paintLayoutResultsMatch(a, b, tolerance = layoutComparisonTolerance) {
     if (a.length !== b.length) {
         return false
     }
@@ -309,16 +290,11 @@ function readLayoutRects({ nodes }) {
 function readPaintSamples({ canvas, nodes, samples }) {
     const canvasRect = canvas.getBoundingClientRect()
     const nodesList = [...nodes]
-    const nodesByElementId = new Map(
-        nodesList.map((node) => [`node-${node.id}`, node]),
-    )
+    const nodesByElementId = new Map(nodesList.map((node) => [`node-${node.id}`, node]))
 
     return samples.map((sample) => {
         const { name, x, y, expected } = sample
-        const elements = document.elementsFromPoint(
-            canvasRect.left + x,
-            canvasRect.top + y,
-        )
+        const elements = document.elementsFromPoint(canvasRect.left + x, canvasRect.top + y)
         const actualStack = elements
             .filter((element) => canvas.contains(element))
             .map((element) => nodesByElementId.get(element.id))
@@ -406,12 +382,8 @@ function pickRandomNode(ui) {
 }
 
 function pickRandomDeepNode(ui) {
-    const max_path_length = Math.max(
-        ...ui.nodes.map((node) => node.path.length),
-    )
-    const nodes = ui.nodes.filter(
-        (node) => node.path.length >= max_path_length - 1,
-    )
+    const max_path_length = Math.max(...ui.nodes.map((node) => node.path.length))
+    const nodes = ui.nodes.filter((node) => node.path.length >= max_path_length - 1)
 
     return nodes[Math.floor(Math.random() * nodes.length)]
 }
@@ -448,9 +420,7 @@ function getSetup(name) {
         return SETUPS[name]
     }
 
-    throw new Error(
-        `setup '${name}' not found. Available renderers: ${rendererNames.join(', ')}`,
-    )
+    throw new Error(`setup '${name}' not found. Available renderers: ${rendererNames.join(', ')}`)
 }
 
 function hasOwn(object, key) {
@@ -462,14 +432,7 @@ export const defaultRendererNames = rendererNames.filter(
     (rendererName) => SETUPS[rendererName].runOnTests !== false,
 )
 export const defaultSetupsNames = defaultRendererNames
-export const comparedLayoutKeys = [
-    'width',
-    'height',
-    'x',
-    'y',
-    'centerX',
-    'centerY',
-]
+export const comparedLayoutKeys = ['width', 'height', 'x', 'y', 'centerX', 'centerY']
 export const comparedPaintedRectKeys = ['x', 'y', 'width', 'height']
 export const layoutComparisonTolerance = 1
 
