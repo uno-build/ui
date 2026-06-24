@@ -11,10 +11,10 @@ export default class RendererWebGPU extends Renderer {
     private format
     private pipeline
     private bind_group
-    private buffer_quad
-    private buffer_viewport
-    private buffer_instance = null
-    private buffer_instance_size = 0
+    private position_buffer
+    private viewport_buffer
+    private nodes_buffer = null
+    private nodes_buffer_size = 0
 
     constructor({ canvas }) {
         super()
@@ -32,15 +32,15 @@ export default class RendererWebGPU extends Renderer {
             format: this.format,
             alphaMode: 'premultiplied',
         })
-        this.buffer_quad = this.device.createBuffer({
-            size: QUAD_VERTICES.byteLength,
+        this.position_buffer = this.device.createBuffer({
+            size: POSITION_VERTICES.byteLength,
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         })
-        this.buffer_viewport = this.device.createBuffer({
+        this.viewport_buffer = this.device.createBuffer({
             size: VIEWPORT_SIZE,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
-        this.device.queue.writeBuffer(this.buffer_quad, 0, QUAD_VERTICES)
+        this.device.queue.writeBuffer(this.position_buffer, 0, POSITION_VERTICES)
         this.pipeline = this.device.createRenderPipeline({
             layout: 'auto',
             vertex: {
@@ -50,7 +50,7 @@ export default class RendererWebGPU extends Renderer {
                 entryPoint: 'main',
                 buffers: [
                     {
-                        arrayStride: QUAD_VERTEX_SIZE,
+                        arrayStride: POSITION_VERTEX_SIZE,
                         attributes: [
                             {
                                 shaderLocation: 0,
@@ -111,7 +111,7 @@ export default class RendererWebGPU extends Renderer {
                 {
                     binding: 0,
                     resource: {
-                        buffer: this.buffer_viewport,
+                        buffer: this.viewport_buffer,
                     },
                 },
             ],
@@ -161,8 +161,8 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private draw(nodes) {
-        const instances = this.createInstancesNodes(nodes)
-        const instance_count = instances.bytes_offset / INSTANCE_SIZE
+        const node_instances = this.createInstancesNodes(nodes)
+        const instance_count = node_instances.bytes_offset / INSTANCE_SIZE
         const command_encoder = this.device.createCommandEncoder()
         const texture_view = this.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
@@ -177,36 +177,31 @@ export default class RendererWebGPU extends Renderer {
         })
 
         if (instance_count > 0) {
-            if (
-                this.buffer_instance == null ||
-                this.buffer_instance_size < instances.bytes_offset
-            ) {
-                this.buffer_instance?.destroy()
-                this.buffer_instance = this.device.createBuffer({
-                    size: instances.bytes_offset,
+            if (this.nodes_buffer_size < node_instances.bytes_offset) {
+                this.nodes_buffer?.destroy()
+                this.nodes_buffer = this.device.createBuffer({
+                    size: node_instances.bytes_offset,
                     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
                 })
-                this.buffer_instance_size = instances.bytes_offset
+                this.nodes_buffer_size = node_instances.bytes_offset
             }
             this.device.queue.writeBuffer(
-                this.buffer_instance,
+                this.viewport_buffer,
                 0,
-                instances.bytes,
-                0,
-                instances.bytes_offset,
+                new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, 0, 0]),
             )
-            const viewport = new Float32Array([
-                this.canvas.clientWidth,
-                this.canvas.clientHeight,
+            this.device.queue.writeBuffer(
+                this.nodes_buffer,
                 0,
+                node_instances.bytes,
                 0,
-            ])
-            this.device.queue.writeBuffer(this.buffer_viewport, 0, viewport)
-            pass_encoder.setVertexBuffer(0, this.buffer_quad)
-            pass_encoder.setVertexBuffer(1, this.buffer_instance)
+                node_instances.bytes_offset,
+            )
+            pass_encoder.setVertexBuffer(0, this.position_buffer)
+            pass_encoder.setVertexBuffer(1, this.nodes_buffer)
             pass_encoder.setPipeline(this.pipeline)
             pass_encoder.setBindGroup(0, this.bind_group)
-            pass_encoder.draw(QUAD_VERTEX_COUNT, instance_count)
+            pass_encoder.draw(POSITION_VERTEX_COUNT, instance_count)
         }
 
         pass_encoder.end()
@@ -251,10 +246,10 @@ export default class RendererWebGPU extends Renderer {
 
 const FLOAT32_SIZE = 4
 const VIEWPORT_SIZE = 4 * FLOAT32_SIZE
-const QUAD_VERTEX_COUNT = 6
-const QUAD_VERTEX_FLOATS = 2
-const QUAD_VERTEX_SIZE = QUAD_VERTEX_FLOATS * FLOAT32_SIZE
-const QUAD_VERTICES = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
+const POSITION_VERTEX_COUNT = 6
+const POSITION_VERTEX_FLOATS = 2
+const POSITION_VERTEX_SIZE = POSITION_VERTEX_FLOATS * FLOAT32_SIZE
+const POSITION_VERTICES = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
 const BUFFER_FIELDS = {
     LAYOUT: {
         shader_location: 1,
@@ -283,7 +278,7 @@ struct Viewport {
 
 struct VertexOutput {
   @builtin(position) position: vec4f,
-  @location(0) backgroundColor: vec4f,
+  @location(0) bgcolor: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -291,11 +286,11 @@ struct VertexOutput {
 @vertex
 fn main(
   @location(0) position: vec2f,
-  @location(1) rect: vec4f,
-  @location(2) backgroundColor: vec4f,
+  @location(1) node_layout: vec4f,
+  @location(2) bgcolor: vec4f,
 ) -> VertexOutput {
-  let local_position = position * rect.zw;
-  let pixel = rect.xy + local_position;
+  let local_position = position * node_layout.zw;
+  let pixel = node_layout.xy + local_position;
   let clip = vec2f(
     pixel.x / viewport.size.x * 2.0 - 1.0,
     1.0 - pixel.y / viewport.size.y * 2.0,
@@ -303,18 +298,18 @@ fn main(
 
   var output: VertexOutput;
   output.position = vec4f(clip, 0.0, 1.0);
-  output.backgroundColor = backgroundColor;
+  output.bgcolor = bgcolor;
   return output;
 }
 `
 
 const rectangleFragWGSL = /* wgsl */ `
 struct FragmentInput {
-  @location(0) backgroundColor: vec4f,
+  @location(0) bgcolor: vec4f,
 }
 
 @fragment
 fn main(input: FragmentInput) -> @location(0) vec4f {
-  return input.backgroundColor;
+  return input.bgcolor;
 }
 `
