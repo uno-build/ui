@@ -17,6 +17,10 @@ export default class RendererWebGPU extends Renderer {
     private viewport_buffer
     private nodes_buffer
     private nodes_buffer_size = 0
+    private nodes_array_buffer
+    private nodes_array_buffer_size = 0
+    private nodes_floats
+    private nodes_bytes
 
     constructor({ canvas }) {
         super()
@@ -62,7 +66,7 @@ export default class RendererWebGPU extends Renderer {
                         ],
                     },
                     {
-                        arrayStride: ATTRIBUTES_SIZE,
+                        arrayStride: ATTRIBUTE_SIZE,
                         stepMode: 'instance',
                         /* pretty-ignore */
                         attributes: [
@@ -77,9 +81,14 @@ export default class RendererWebGPU extends Renderer {
                                 format: ATTRIBUTES.CLIPPING.FORMAT,
                             },
                             {
-                                shaderLocation: ATTRIBUTES.BORDERRADIUS.LOCATION,
-                                offset: ATTRIBUTES.BORDERRADIUS.OFFSET,
-                                format: ATTRIBUTES.BORDERRADIUS.FORMAT,
+                                shaderLocation: ATTRIBUTES.BORDERRADIUS_X.LOCATION,
+                                offset: ATTRIBUTES.BORDERRADIUS_X.OFFSET,
+                                format: ATTRIBUTES.BORDERRADIUS_X.FORMAT,
+                            },
+                            {
+                                shaderLocation: ATTRIBUTES.BORDERRADIUS_Y.LOCATION,
+                                offset: ATTRIBUTES.BORDERRADIUS_Y.OFFSET,
+                                format: ATTRIBUTES.BORDERRADIUS_Y.FORMAT,
                             },
                             {
                                 shaderLocation: ATTRIBUTES.BACKGROUNDCOLOR.LOCATION,
@@ -174,7 +183,7 @@ export default class RendererWebGPU extends Renderer {
 
     private draw(nodes) {
         const node_instances = this.createInstancesNodes(nodes)
-        const node_instances_count = node_instances.bytes_offset / ATTRIBUTES_SIZE
+        const node_instances_count = node_instances.bytes_offset / ATTRIBUTE_SIZE
         const command_encoder = this.device.createCommandEncoder()
         const texture_view = this.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
@@ -226,9 +235,17 @@ export default class RendererWebGPU extends Renderer {
 
     // This function creates a buffer containing all the data prepared for the GPU to render the nodes.
     private createInstancesNodes(nodes) {
-        const buffer = new ArrayBuffer(nodes.length * ATTRIBUTES_SIZE)
-        const floats = new Float32Array(buffer)
-        const bytes = new Uint8Array(buffer)
+        const nodes_array_buffer_size = nodes.length * ATTRIBUTE_SIZE
+
+        if (this.nodes_array_buffer_size < nodes_array_buffer_size || !this.nodes_array_buffer) {
+            this.nodes_array_buffer_size = nodes_array_buffer_size
+            this.nodes_array_buffer = new ArrayBuffer(nodes_array_buffer_size)
+            this.nodes_floats = new Float32Array(this.nodes_array_buffer)
+            this.nodes_bytes = new Uint8Array(this.nodes_array_buffer)
+        }
+
+        const floats = this.nodes_floats
+        const bytes = this.nodes_bytes
         let bytes_offset = 0
 
         for (const node of nodes) {
@@ -246,39 +263,46 @@ export default class RendererWebGPU extends Renderer {
             floats[layout_float_offset + 2] = width
             floats[layout_float_offset + 3] = height
 
-            // Clipping/Overflow: top, right, bottom, left
-            if (clipping !== null) {
-                const clipping_float_offset =
-                    (bytes_offset + ATTRIBUTES.CLIPPING.OFFSET) / FLOAT32_SIZE
-                floats[clipping_float_offset + 0] = clipping.top
-                floats[clipping_float_offset + 1] = clipping.right
-                floats[clipping_float_offset + 2] = clipping.bottom
-                floats[clipping_float_offset + 3] = clipping.left
-            }
+            // Clipping/Overflow:hidden
+            const clipping_float_offset = (bytes_offset + ATTRIBUTES.CLIPPING.OFFSET) / FLOAT32_SIZE
+            floats[clipping_float_offset + 0] = clipping?.top ?? 0
+            floats[clipping_float_offset + 1] = clipping?.right ?? 0
+            floats[clipping_float_offset + 2] = clipping?.bottom ?? 0
+            floats[clipping_float_offset + 3] = clipping?.left ?? 0
 
             // borderRadius: top-left, top-right, bottom-right, bottom-left
-            const border_radius_float_offset =
-                (bytes_offset + ATTRIBUTES.BORDERRADIUS.OFFSET) / FLOAT32_SIZE
-            floats[border_radius_float_offset + 0] = readBorderRadius(
+            const border_radius_x_float_offset =
+                (bytes_offset + ATTRIBUTES.BORDERRADIUS_X.OFFSET) / FLOAT32_SIZE
+            const border_radius_y_float_offset =
+                (bytes_offset + ATTRIBUTES.BORDERRADIUS_Y.OFFSET) / FLOAT32_SIZE
+            const border_top_left_radius = readBorderRadius(
                 node.styles.borderTopLeftRadius?.parsed,
                 width,
                 height,
             )
-            floats[border_radius_float_offset + 1] = readBorderRadius(
+            const border_top_right_radius = readBorderRadius(
                 node.styles.borderTopRightRadius?.parsed,
                 width,
                 height,
             )
-            floats[border_radius_float_offset + 2] = readBorderRadius(
+            const border_bottom_right_radius = readBorderRadius(
                 node.styles.borderBottomRightRadius?.parsed,
                 width,
                 height,
             )
-            floats[border_radius_float_offset + 3] = readBorderRadius(
+            const border_bottom_left_radius = readBorderRadius(
                 node.styles.borderBottomLeftRadius?.parsed,
                 width,
                 height,
             )
+            floats[border_radius_x_float_offset + 0] = border_top_left_radius[0]
+            floats[border_radius_x_float_offset + 1] = border_top_right_radius[0]
+            floats[border_radius_x_float_offset + 2] = border_bottom_right_radius[0]
+            floats[border_radius_x_float_offset + 3] = border_bottom_left_radius[0]
+            floats[border_radius_y_float_offset + 0] = border_top_left_radius[1]
+            floats[border_radius_y_float_offset + 1] = border_top_right_radius[1]
+            floats[border_radius_y_float_offset + 2] = border_bottom_right_radius[1]
+            floats[border_radius_y_float_offset + 3] = border_bottom_left_radius[1]
 
             // backgroundColor: r, g, b, a
             const bgcolor_bytes_offset = bytes_offset + ATTRIBUTES.BACKGROUNDCOLOR.OFFSET
@@ -288,7 +312,7 @@ export default class RendererWebGPU extends Renderer {
             bytes[bgcolor_bytes_offset + 2] = b
             bytes[bgcolor_bytes_offset + 3] = a
 
-            bytes_offset += ATTRIBUTES_SIZE
+            bytes_offset += ATTRIBUTE_SIZE
         }
 
         return { bytes, bytes_offset }
@@ -313,13 +337,13 @@ function isNodeDrawable(node, clip) {
 
 function readBorderRadius(border_radius, width, height) {
     if (border_radius === undefined) {
-        return 0
+        return [0, 0]
     }
     if (border_radius.unit === UNIT.PERCENT) {
-        return (Math.min(width, height) * border_radius.value) / 100
+        return [(width * border_radius.value) / 100, (height * border_radius.value) / 100]
     }
 
-    return border_radius.value
+    return [border_radius.value, border_radius.value]
 }
 
 const FLOAT32_SIZE = 4
@@ -341,20 +365,26 @@ const ATTRIBUTES = {
         SIZE: 4 * FLOAT32_SIZE,
         FORMAT: 'float32x4',
     },
-    BORDERRADIUS: {
+    BORDERRADIUS_X: {
         LOCATION: 3,
         OFFSET: 4 * FLOAT32_SIZE + 4 + 4 * FLOAT32_SIZE,
         SIZE: 4 * FLOAT32_SIZE,
         FORMAT: 'float32x4',
     },
-    BACKGROUNDCOLOR: {
+    BORDERRADIUS_Y: {
         LOCATION: 4,
+        OFFSET: 4 * FLOAT32_SIZE + 4 + 4 * FLOAT32_SIZE + 4 * FLOAT32_SIZE,
+        SIZE: 4 * FLOAT32_SIZE,
+        FORMAT: 'float32x4',
+    },
+    BACKGROUNDCOLOR: {
+        LOCATION: 5,
         OFFSET: 4 * FLOAT32_SIZE,
         SIZE: 4,
         FORMAT: 'unorm8x4',
     },
 }
-const ATTRIBUTES_SIZE = Math.max(
+const ATTRIBUTE_SIZE = Math.max(
     ...Object.values(ATTRIBUTES).map((attrb) => attrb.OFFSET + attrb.SIZE),
 )
 
@@ -369,8 +399,9 @@ struct VertexOutput {
     @location(0) local_position: vec2f,
     @location(1) rect_size: vec2f,
     @location(2) clipping: vec4f,
-    @location(3) border_radius: vec4f,
-    @location(4) background_color: vec4f,
+    @location(3) border_radius_x: vec4f,
+    @location(4) border_radius_y: vec4f,
+    @location(5) background_color: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -380,8 +411,9 @@ fn main(
     @location(0) position: vec2f,
     @location(1) layout_node: vec4f,
     @location(2) clipping: vec4f,
-    @location(3) border_radius: vec4f,
-    @location(4) background_color: vec4f,
+    @location(3) border_radius_x: vec4f,
+    @location(4) border_radius_y: vec4f,
+    @location(5) background_color: vec4f,
 ) -> VertexOutput {
     let local_position = position * layout_node.zw;
     let pixel = layout_node.xy + local_position;
@@ -395,7 +427,8 @@ fn main(
     output.local_position = local_position;
     output.rect_size = layout_node.zw;
     output.clipping = clipping;
-    output.border_radius = border_radius;
+    output.border_radius_x = border_radius_x;
+    output.border_radius_y = border_radius_y;
     output.background_color = background_color;
     return output;
 }
@@ -406,17 +439,27 @@ struct FragmentInput {
     @location(0) local_position: vec2f,
     @location(1) rect_size: vec2f,
     @location(2) clipping: vec4f,
-    @location(3) border_radius: vec4f,
-    @location(4) background_color: vec4f,
+    @location(3) border_radius_x: vec4f,
+    @location(4) border_radius_y: vec4f,
+    @location(5) background_color: vec4f,
 }
 
 fn cornerRadius(
     local_position: vec2f,
     rect_size: vec2f,
-    border_radius: vec4f,
-) -> f32 {
-    let top_radius = select(border_radius.y, border_radius.x, local_position.x < rect_size.x * 0.5);
-    let bottom_radius = select(border_radius.z, border_radius.w, local_position.x < rect_size.x * 0.5);
+    border_radius_x: vec4f,
+    border_radius_y: vec4f,
+) -> vec2f {
+    let top_radius = select(
+        vec2f(border_radius_x.y, border_radius_y.y),
+        vec2f(border_radius_x.x, border_radius_y.x),
+        local_position.x < rect_size.x * 0.5,
+    );
+    let bottom_radius = select(
+        vec2f(border_radius_x.z, border_radius_y.z),
+        vec2f(border_radius_x.w, border_radius_y.w),
+        local_position.x < rect_size.x * 0.5,
+    );
 
     return select(bottom_radius, top_radius, local_position.y < rect_size.y * 0.5);
 }
@@ -424,20 +467,24 @@ fn cornerRadius(
 fn roundedRectCoverage(
     local_position: vec2f,
     rect_size: vec2f,
-    border_radius: vec4f,
+    border_radius_x: vec4f,
+    border_radius_y: vec4f,
 ) -> f32 {
-    let radius = min(
-        cornerRadius(local_position, rect_size, border_radius),
-        min(rect_size.x, rect_size.y) * 0.5,
+    let border_radius = cornerRadius(
+        local_position,
+        rect_size,
+        border_radius_x,
+        border_radius_y,
     );
+    let radius = min(border_radius, rect_size * 0.5);
     let rect_distance = min(
         min(local_position.x, local_position.y),
         min(rect_size.x - local_position.x, rect_size.y - local_position.y),
     );
     let corner_distance = min(local_position, rect_size - local_position);
-    let corner_delta = max(vec2f(radius) - corner_distance, vec2f(0.0));
-    let rounded_distance = 1.0 - length(corner_delta / max(radius, 0.0001));
-    let distance = select(rect_distance, rounded_distance, radius > 0.0);
+    let corner_delta = max(radius - corner_distance, vec2f(0.0));
+    let rounded_distance = 1.0 - length(corner_delta / max(radius, vec2f(0.0001)));
+    let distance = select(rect_distance, rounded_distance, all(radius > vec2f(0.0)));
     let antialias = max(fwidth(distance) * 0.5, 0.0001);
 
     return smoothstep(-antialias, antialias, distance);
@@ -455,7 +502,12 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
     }
 
     var color = input.background_color;
-    color.a *= roundedRectCoverage(input.local_position, input.rect_size, input.border_radius);
+    color.a *= roundedRectCoverage(
+        input.local_position,
+        input.rect_size,
+        input.border_radius_x,
+        input.border_radius_y,
+    );
 
     return color;
 }
