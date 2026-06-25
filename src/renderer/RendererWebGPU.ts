@@ -46,7 +46,7 @@ export default class RendererWebGPU extends Renderer {
             layout: 'auto',
             vertex: {
                 module: this.device.createShaderModule({
-                    code: nodeVertWGSL,
+                    code: nodeVertexWGSL,
                 }),
                 entryPoint: 'main',
                 buffers: [
@@ -86,7 +86,7 @@ export default class RendererWebGPU extends Renderer {
             },
             fragment: {
                 module: this.device.createShaderModule({
-                    code: nodeFragWGSL,
+                    code: nodeFragmentWGSL,
                 }),
                 entryPoint: 'main',
                 targets: [
@@ -310,65 +310,65 @@ const ATTRIBUTES_SIZE = Math.max(
     ...Object.values(ATTRIBUTES).map((attrb) => attrb.OFFSET + attrb.SIZE),
 )
 
-const nodeVertWGSL = /* wgsl */ `
+const nodeVertexWGSL = /* wgsl */ `
 struct Viewport {
-  size: vec2f,
-  padding: vec2f,
+    size: vec2f,
+    padding: vec2f,
 }
 
 struct VertexOutput {
-  @builtin(position) position: vec4f,
-  @location(0) local_position: vec2f,
-  @location(1) rect_size: vec2f,
-  @location(2) clipping: vec4f,
-  @location(3) background_color: vec4f,
-}
+    @builtin(position) position: vec4f,
+    @location(0) local_position: vec2f,
+    @location(1) rect_size: vec2f,
+    @location(2) clipping: vec4f,
+    @location(3) background_color: vec4f,
+    }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
 
 @vertex
 fn main(
-  @location(0) position: vec2f,
-  @location(1) layout_node: vec4f,
-  @location(2) clipping: vec4f,
-  @location(3) background_color: vec4f,
+    @location(0) position: vec2f,
+    @location(1) layout_node: vec4f,
+    @location(2) clipping: vec4f,
+    @location(3) background_color: vec4f,
 ) -> VertexOutput {
-  let local_position = position * layout_node.zw;
-  let pixel = layout_node.xy + local_position;
-  let clip = vec2f(
-    pixel.x / viewport.size.x * 2.0 - 1.0,
-    1.0 - pixel.y / viewport.size.y * 2.0,
-  );
+    let local_position = position * layout_node.zw;
+    let pixel = layout_node.xy + local_position;
+    let clip = vec2f(
+        pixel.x / viewport.size.x * 2.0 - 1.0,
+        1.0 - pixel.y / viewport.size.y * 2.0,
+    );
 
-  var output: VertexOutput;
-  output.position = vec4f(clip, 0.0, 1.0);
-  output.local_position = local_position;
-  output.rect_size = layout_node.zw;
-  output.background_color = background_color;
-  output.clipping = clipping;
-  return output;
+    var output: VertexOutput;
+    output.position = vec4f(clip, 0.0, 1.0);
+    output.local_position = local_position;
+    output.rect_size = layout_node.zw;
+    output.background_color = background_color;
+    output.clipping = clipping;
+    return output;
 }
 `
 
-const nodeFragWGSL = /* wgsl */ `
+const nodeFragmentWGSL = /* wgsl */ `
 struct FragmentInput {
-  @location(0) local_position: vec2f,
-  @location(1) rect_size: vec2f,
-  @location(2) clipping: vec4f,
-  @location(3) background_color: vec4f,
+    @location(0) local_position: vec2f,
+    @location(1) rect_size: vec2f,
+    @location(2) clipping: vec4f,
+    @location(3) background_color: vec4f,
 }
 
 @fragment
 fn main(input: FragmentInput) -> @location(0) vec4f {
-  if (
-    input.local_position.x < input.clipping.w ||
-    input.local_position.y < input.clipping.x ||
-    input.local_position.x > input.rect_size.x - input.clipping.y ||
-    input.local_position.y > input.rect_size.y - input.clipping.z
-  ) {
-    discard;
-  }
+    if (
+        input.local_position.x < input.clipping.w ||
+        input.local_position.y < input.clipping.x ||
+        input.local_position.x > input.rect_size.x - input.clipping.y ||
+        input.local_position.y > input.rect_size.y - input.clipping.z
+    ) {
+        discard;
+    }
 
-  return input.background_color;
+    return input.background_color;
 }
 `
