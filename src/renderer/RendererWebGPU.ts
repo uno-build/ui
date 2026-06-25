@@ -400,10 +400,9 @@ function isNodeDrawable(node, clip) {
     return (
         width > 0 &&
         height > 0 &&
+        display === DISPLAY.flex &&
         (clip === null || (clip.left + clip.right < width && clip.top + clip.bottom < height)) &&
-        (has_background || has_border) &&
-        display === DISPLAY.flex
-        // opacity !== 0 &&
+        (has_background || has_border)
     )
 }
 

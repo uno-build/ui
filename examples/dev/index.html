@@ -125,16 +125,74 @@
             const root = document.getElementById('root')
             const tooltip = document.getElementById('mouse-tooltip')
             const settingsPanel = document.getElementById('settings-panel')
-            const settingsRenderers =
-                document.getElementById('settings-renderers')
-            const add_random_node_button = document.getElementById(
-                'add-random-node-button',
-            )
-            const remove_random_node_button = document.getElementById(
-                'remove-random-node-button',
-            )
+            const settingsRenderers = document.getElementById('settings-renderers')
+            const add_random_node_button = document.getElementById('add-random-node-button')
+            const remove_random_node_button = document.getElementById('remove-random-node-button')
+            const SETTINGS_PANEL_POSITION_STORAGE_KEY = 'settings-panel-position'
+            const SETTINGS_RENDERERS_STORAGE_KEY = 'settings-renderers'
             let settingsDragX = 0
             let settingsDragY = 0
+            const saved_active_renderer_names = getSavedActiveRendererNames()
+
+            function getSettingsPanelPosition(left, top) {
+                return {
+                    left: Math.min(left, window.innerWidth - settingsPanel.offsetWidth),
+                    top: Math.min(top, window.innerHeight - settingsPanel.offsetHeight),
+                }
+            }
+
+            const saved_settings_panel_position = localStorage.getItem(
+                SETTINGS_PANEL_POSITION_STORAGE_KEY,
+            )
+            if (saved_settings_panel_position) {
+                const settings_panel_position = JSON.parse(saved_settings_panel_position)
+                const normalized_settings_panel_position = getSettingsPanelPosition(
+                    settings_panel_position.left,
+                    settings_panel_position.top,
+                )
+                settingsPanel.style.left = `${normalized_settings_panel_position.left}px`
+                settingsPanel.style.top = `${normalized_settings_panel_position.top}px`
+                localStorage.setItem(
+                    SETTINGS_PANEL_POSITION_STORAGE_KEY,
+                    JSON.stringify(normalized_settings_panel_position),
+                )
+            }
+
+            function saveSettingsPanelPosition() {
+                const settings_panel_position = getSettingsPanelPosition(
+                    settingsPanel.offsetLeft,
+                    settingsPanel.offsetTop,
+                )
+                localStorage.setItem(
+                    SETTINGS_PANEL_POSITION_STORAGE_KEY,
+                    JSON.stringify(settings_panel_position),
+                )
+            }
+
+            function getSavedActiveRendererNames() {
+                const saved_renderer_names = localStorage.getItem(SETTINGS_RENDERERS_STORAGE_KEY)
+
+                if (saved_renderer_names != null) {
+                    return saved_renderer_names === '' ? [] : saved_renderer_names.split(',')
+                }
+
+                return null
+            }
+
+            function isRendererActive(rendererName) {
+                return (
+                    saved_active_renderer_names == null ||
+                    saved_active_renderer_names.includes(rendererName)
+                )
+            }
+
+            function saveRendererSettings() {
+                const renderer_names = Array.from(
+                    settingsRenderers.querySelectorAll('input:checked'),
+                ).map((rendererToggle) => rendererToggle.id.replace('settings-', ''))
+
+                localStorage.setItem(SETTINGS_RENDERERS_STORAGE_KEY, renderer_names.join(','))
+            }
 
             window.addEventListener('mousemove', (event) => {
                 tooltip.textContent = `x: ${event.clientX}, y: ${event.clientY}`
@@ -169,15 +227,12 @@
 
                 settingsPanel.classList.remove('dragging')
                 settingsPanel.releasePointerCapture(event.pointerId)
+                saveSettingsPanelPosition()
             })
 
             function addRendererSettings() {
                 Array.from(root.children).forEach((renderer) => {
-                    if (
-                        settingsRenderers.querySelector(
-                            `#settings-${renderer.id}`,
-                        )
-                    ) {
+                    if (settingsRenderers.querySelector(`#settings-${renderer.id}`)) {
                         return
                     }
 
@@ -185,7 +240,8 @@
                     const rendererToggle = document.createElement('input')
                     rendererToggle.type = 'checkbox'
                     rendererToggle.id = `settings-${renderer.id}`
-                    rendererToggle.checked = true
+                    rendererToggle.checked = isRendererActive(renderer.id)
+                    renderer.style.display = rendererToggle.checked ? rendererDisplay : 'none'
 
                     const rendererLabel = document.createElement('label')
                     rendererLabel.className = 'settings-renderer'
@@ -193,9 +249,8 @@
                     rendererLabel.append(rendererToggle, renderer.id)
 
                     rendererToggle.addEventListener('change', () => {
-                        renderer.style.display = rendererToggle.checked
-                            ? rendererDisplay
-                            : 'none'
+                        renderer.style.display = rendererToggle.checked ? rendererDisplay : 'none'
+                        saveRendererSettings()
                     })
 
                     settingsRenderers.appendChild(rendererLabel)
