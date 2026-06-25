@@ -3,6 +3,7 @@ import borderRadiusCorners from './examples/borderRadiusCorners'
 import borderRadiusOverlap from './examples/borderRadiusOverlap'
 import positionRelative from './examples/positionRelative'
 import deepNestedPaint from './examples/deepNestedPaint'
+import display from './examples/display'
 import nestedFlexDirections from './examples/nestedFlexDirections'
 import nestedMargins from './examples/nestedMargins'
 import nestedPercentDimensions from './examples/nestedPercentDimensions'
@@ -26,6 +27,7 @@ export const LAYOUTS = {
     borderRadiusCorners,
     borderRadiusOverlap,
     deepNestedPaint,
+    display,
     nestedFlexDirections,
     nestedMargins,
     nestedPercentDimensions,

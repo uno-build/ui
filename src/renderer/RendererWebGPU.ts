@@ -1,6 +1,6 @@
 import Renderer from '../Renderer.ts'
 import createEngine, { YOGA_SETTER } from '../engine/yoga.ts'
-import { UNIT } from '../style/consts.ts'
+import { UNIT, DISPLAY } from '../style/consts.ts'
 import { getAncestorClipping } from '../utils/getAncestorClipping.ts'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders.ts'
 import {
@@ -388,6 +388,7 @@ export default class RendererWebGPU extends Renderer {
 
 function isNodeDrawable(node, clip) {
     const { width, height } = node.layout
+    const display = node.styles.display?.parsed.enum || DISPLAY.flex
     const background_color = node.styles.backgroundColor?.parsed.rgba
     const has_background = background_color !== undefined && background_color[3] > 0
     const has_border =
@@ -400,8 +401,8 @@ function isNodeDrawable(node, clip) {
         width > 0 &&
         height > 0 &&
         (clip === null || (clip.left + clip.right < width && clip.top + clip.bottom < height)) &&
-        (has_background || has_border)
-        // display !== 'none' &&
+        (has_background || has_border) &&
+        display === DISPLAY.flex
         // opacity !== 0 &&
     )
 }
