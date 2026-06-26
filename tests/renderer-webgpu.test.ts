@@ -3,29 +3,29 @@ import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { OVERFLOW, UNIT } from '../src/style/consts.ts'
 import { ATTRIBUTES_SIZE, ATTRIBUTES, FLOAT32_SIZE } from '../src/renderer/webgpu/buffers.ts'
 
-test('RendererWebGPU accumulates opacity into node instances', () => {
+test('RendererWebGPU accumulates opacity into nodes buffer data', () => {
     const root = createNode({ opacity: 0.5 })
     const parent = createNode({ parent: root, opacity: 0.5 })
     const child = createNode({ parent, opacity: 0.8 })
     const renderer = new RendererWebGPU({ canvas: {} })
-    const node_instances = (renderer as any).createInstancesNodes([child])
-    const floats = new Float32Array(node_instances.bytes.buffer)
+    const nodes_buffer_data = (renderer as any).createNodesBufferData([child])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
     const opacity_float_offset = ATTRIBUTES.OPACITY.OFFSET / FLOAT32_SIZE
 
-    expect(node_instances.bytes_offset).toBe(ATTRIBUTES_SIZE)
+    expect(nodes_buffer_data.bytes_offset).toBe(ATTRIBUTES_SIZE)
     expect(floats[opacity_float_offset]).toBeCloseTo(0.2)
 })
 
-test('RendererWebGPU skips fully transparent node instances', () => {
+test('RendererWebGPU skips fully transparent nodes buffer data', () => {
     const root = createNode({ opacity: 0 })
     const child = createNode({ parent: root })
     const renderer = new RendererWebGPU({ canvas: {} })
-    const node_instances = (renderer as any).createInstancesNodes([child])
+    const nodes_buffer_data = (renderer as any).createNodesBufferData([child])
 
-    expect(node_instances.bytes_offset).toBe(0)
+    expect(nodes_buffer_data.bytes_offset).toBe(0)
 })
 
-test('RendererWebGPU writes layout and clipping into node instances', () => {
+test('RendererWebGPU writes layout and clipping into nodes buffer data', () => {
     const root = createNode()
     const parent = createNode({
         parent: root,
@@ -37,17 +37,17 @@ test('RendererWebGPU writes layout and clipping into node instances', () => {
         layout: { x: 0, y: 0, width: 10, height: 10 },
     })
     const renderer = new RendererWebGPU({ canvas: {} })
-    const node_instances = (renderer as any).createInstancesNodes([child])
-    const floats = new Float32Array(node_instances.bytes.buffer)
+    const nodes_buffer_data = (renderer as any).createNodesBufferData([child])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
     const layout_float_offset = ATTRIBUTES.LAYOUT.OFFSET / FLOAT32_SIZE
     const clipping_float_offset = ATTRIBUTES.CLIPPING.OFFSET / FLOAT32_SIZE
 
-    expect(node_instances.bytes_offset).toBe(ATTRIBUTES_SIZE)
+    expect(nodes_buffer_data.bytes_offset).toBe(ATTRIBUTES_SIZE)
     expect(Array.from(floats.slice(layout_float_offset, layout_float_offset + 4))).toEqual([0, 0, 10, 10])
     expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([3, 3, 3, 2])
 })
 
-test('RendererWebGPU writes border drawing data into node instances', () => {
+test('RendererWebGPU writes border drawing data into nodes buffer data', () => {
     const node = createNode({
         layout: { x: 0, y: 0, width: 20, height: 10 },
         styles: {
@@ -70,14 +70,14 @@ test('RendererWebGPU writes border drawing data into node instances', () => {
         },
     })
     const renderer = new RendererWebGPU({ canvas: {} })
-    const node_instances = (renderer as any).createInstancesNodes([node])
-    const floats = new Float32Array(node_instances.bytes.buffer)
-    const bytes = node_instances.bytes
+    const nodes_buffer_data = (renderer as any).createNodesBufferData([node])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
+    const bytes = nodes_buffer_data.bytes
     const border_radius_x_float_offset = ATTRIBUTES.BORDERRADIUS_X.OFFSET / FLOAT32_SIZE
     const border_radius_y_float_offset = ATTRIBUTES.BORDERRADIUS_Y.OFFSET / FLOAT32_SIZE
     const border_widths_float_offset = ATTRIBUTES.BORDERWIDTHS.OFFSET / FLOAT32_SIZE
 
-    expect(node_instances.bytes_offset).toBe(ATTRIBUTES_SIZE)
+    expect(nodes_buffer_data.bytes_offset).toBe(ATTRIBUTES_SIZE)
     expect(Array.from(floats.slice(border_radius_x_float_offset, border_radius_x_float_offset + 4))).toEqual([
         10, 2, 3, 4,
     ])

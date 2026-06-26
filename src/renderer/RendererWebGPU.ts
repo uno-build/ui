@@ -221,8 +221,8 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private draw(nodes) {
-        const node_render_data = this.createNodeRenderData(nodes)
-        const node_drawable_count = node_render_data.bytes_offset / ATTRIBUTES_SIZE
+        const nodes_buffer_data = this.createNodesBufferData(nodes)
+        const nodes_drawable_count = nodes_buffer_data.bytes_offset / ATTRIBUTES_SIZE
         const command_encoder = this.device.createCommandEncoder()
         const texture_view = this.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
@@ -237,14 +237,14 @@ export default class RendererWebGPU extends Renderer {
         })
 
         // If there are no drawable nodes, we skip the draw call.
-        if (node_drawable_count > 0) {
-            // If the buffer is too small to hold all the node render data
+        if (nodes_drawable_count > 0) {
+            // If the buffer is too small to hold all the nodes buffer data
             // we destroy the old buffer and create a new one with the required size.
-            if (this.nodes_buffer_size < node_render_data.bytes_offset || !this.nodes_buffer) {
-                this.nodes_buffer_size = node_render_data.bytes_offset
+            if (this.nodes_buffer_size < nodes_buffer_data.bytes_offset || !this.nodes_buffer) {
+                this.nodes_buffer_size = nodes_buffer_data.bytes_offset
                 this.nodes_buffer?.destroy()
                 this.nodes_buffer = this.device.createBuffer({
-                    size: node_render_data.bytes_offset,
+                    size: nodes_buffer_data.bytes_offset,
                     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
                 })
             }
@@ -252,9 +252,9 @@ export default class RendererWebGPU extends Renderer {
             this.device.queue.writeBuffer(
                 this.nodes_buffer,
                 0,
-                node_render_data.bytes,
+                nodes_buffer_data.bytes,
                 0,
-                node_render_data.bytes_offset,
+                nodes_buffer_data.bytes_offset,
             )
             this.device.queue.writeBuffer(
                 this.viewport_buffer,
@@ -265,7 +265,7 @@ export default class RendererWebGPU extends Renderer {
             pass_encoder.setVertexBuffer(1, this.nodes_buffer)
             pass_encoder.setPipeline(this.pipeline)
             pass_encoder.setBindGroup(0, this.bind_group)
-            pass_encoder.draw(POSITION_VERTEX_COUNT, node_drawable_count)
+            pass_encoder.draw(POSITION_VERTEX_COUNT, nodes_drawable_count)
         }
 
         pass_encoder.end()
@@ -273,7 +273,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     // This function creates a buffer containing all the data prepared for the GPU to render the nodes.
-    private createNodeRenderData(nodes) {
+    private createNodesBufferData(nodes) {
         const nodes_array_buffer_size = nodes.length * ATTRIBUTES_SIZE
         let bytes_offset = 0
 
@@ -287,6 +287,7 @@ export default class RendererWebGPU extends Renderer {
         for (const node of nodes) {
             const drawing_data = getNodeDrawingData(node)
 
+            // If the node is not drawable, we skip it and move to the next one.
             if (drawing_data === null) {
                 continue
             }

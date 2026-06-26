@@ -16,10 +16,7 @@ export function getNodeDrawingData(node) {
     const border_width_bottom = getNodeBorderWidth(node, 'Bottom')
     const border_width_left = getNodeBorderWidth(node, 'Left')
     const has_border =
-        border_width_top > 0 ||
-        border_width_right > 0 ||
-        border_width_bottom > 0 ||
-        border_width_left > 0
+        border_width_top > 0 || border_width_right > 0 || border_width_bottom > 0 || border_width_left > 0
 
     if (!has_background && !has_border) {
         return null
@@ -31,8 +28,7 @@ export function getNodeDrawingData(node) {
     }
 
     const clip = getAncestorClipping(node)
-    const normalized_clipping =
-        clip === null ? [0, 0, 0, 0] : [clip.top, clip.right, clip.bottom, clip.left]
+    const normalized_clipping = clip === null ? [0, 0, 0, 0] : [clip.top, clip.right, clip.bottom, clip.left]
     if (
         normalized_clipping[0] >= height ||
         normalized_clipping[1] >= width ||
@@ -42,30 +38,15 @@ export function getNodeDrawingData(node) {
         return null
     }
 
-    const border_top_left_radius = getBorderRadius(
-        node.styles.borderTopLeftRadius?.parsed,
-        width,
-        height,
-    )
-    const border_top_right_radius = getBorderRadius(
-        node.styles.borderTopRightRadius?.parsed,
-        width,
-        height,
-    )
-    const border_bottom_right_radius = getBorderRadius(
-        node.styles.borderBottomRightRadius?.parsed,
-        width,
-        height,
-    )
-    const border_bottom_left_radius = getBorderRadius(
-        node.styles.borderBottomLeftRadius?.parsed,
-        width,
-        height,
-    )
+    const border_top_left_radius = getBorderRadius(node.styles.borderTopLeftRadius?.parsed, width, height)
+    const border_top_right_radius = getBorderRadius(node.styles.borderTopRightRadius?.parsed, width, height)
+    const border_bottom_right_radius = getBorderRadius(node.styles.borderBottomRightRadius?.parsed, width, height)
+    const border_bottom_left_radius = getBorderRadius(node.styles.borderBottomLeftRadius?.parsed, width, height)
 
     return {
         layout: [x, y, width, height],
         clipping: normalized_clipping,
+        opacity,
         border_radius_x: [
             border_top_left_radius[0],
             border_top_right_radius[0],
@@ -82,14 +63,8 @@ export function getNodeDrawingData(node) {
         border_color_right: node.styles.borderRightColor?.parsed.rgba ?? TRANSPARENT_COLOR,
         border_color_bottom: node.styles.borderBottomColor?.parsed.rgba ?? TRANSPARENT_COLOR,
         border_color_left: node.styles.borderLeftColor?.parsed.rgba ?? TRANSPARENT_COLOR,
-        border_widths: [
-            border_width_top,
-            border_width_right,
-            border_width_bottom,
-            border_width_left,
-        ],
+        border_widths: [border_width_top, border_width_right, border_width_bottom, border_width_left],
         background_color: background_color ?? TRANSPARENT_COLOR,
-        opacity,
     }
 }
 
