@@ -1,5 +1,7 @@
-import { DISPLAY, OVERFLOW } from '../../style/consts.js'
+import { DISPLAY, OVERFLOW, UNIT } from '../../style/consts.js'
+import { TRANSPARENT_COLOR } from '../webgpu/buffers.js'
 
+// If null is returned, the node should not be drawn
 export function getNodeDrawingData(node) {
     const { x, y, width, height } = node.layout
     const display = node.styles.display?.parsed.enum || DISPLAY.flex
@@ -9,11 +11,15 @@ export function getNodeDrawingData(node) {
 
     const background_color = node.styles.backgroundColor?.parsed.rgba
     const has_background = background_color !== undefined && background_color[3] > 0
+    const border_width_top = getNodeBorderWidth(node, 'Top')
+    const border_width_right = getNodeBorderWidth(node, 'Right')
+    const border_width_bottom = getNodeBorderWidth(node, 'Bottom')
+    const border_width_left = getNodeBorderWidth(node, 'Left')
     const has_border =
-        getNodeBorderWidth(node, 'Top') > 0 ||
-        getNodeBorderWidth(node, 'Right') > 0 ||
-        getNodeBorderWidth(node, 'Bottom') > 0 ||
-        getNodeBorderWidth(node, 'Left') > 0
+        border_width_top > 0 ||
+        border_width_right > 0 ||
+        border_width_bottom > 0 ||
+        border_width_left > 0
 
     if (!has_background && !has_border) {
         return null
@@ -36,9 +42,53 @@ export function getNodeDrawingData(node) {
         return null
     }
 
+    const border_top_left_radius = getBorderRadius(
+        node.styles.borderTopLeftRadius?.parsed,
+        width,
+        height,
+    )
+    const border_top_right_radius = getBorderRadius(
+        node.styles.borderTopRightRadius?.parsed,
+        width,
+        height,
+    )
+    const border_bottom_right_radius = getBorderRadius(
+        node.styles.borderBottomRightRadius?.parsed,
+        width,
+        height,
+    )
+    const border_bottom_left_radius = getBorderRadius(
+        node.styles.borderBottomLeftRadius?.parsed,
+        width,
+        height,
+    )
+
     return {
         layout: [x, y, width, height],
         clipping: normalized_clipping,
+        border_radius_x: [
+            border_top_left_radius[0],
+            border_top_right_radius[0],
+            border_bottom_right_radius[0],
+            border_bottom_left_radius[0],
+        ],
+        border_radius_y: [
+            border_top_left_radius[1],
+            border_top_right_radius[1],
+            border_bottom_right_radius[1],
+            border_bottom_left_radius[1],
+        ],
+        border_color_top: node.styles.borderTopColor?.parsed.rgba ?? TRANSPARENT_COLOR,
+        border_color_right: node.styles.borderRightColor?.parsed.rgba ?? TRANSPARENT_COLOR,
+        border_color_bottom: node.styles.borderBottomColor?.parsed.rgba ?? TRANSPARENT_COLOR,
+        border_color_left: node.styles.borderLeftColor?.parsed.rgba ?? TRANSPARENT_COLOR,
+        border_widths: [
+            border_width_top,
+            border_width_right,
+            border_width_bottom,
+            border_width_left,
+        ],
+        background_color: background_color ?? TRANSPARENT_COLOR,
         opacity,
     }
 }
@@ -65,6 +115,17 @@ export function getNodeBorderWidth(node, side) {
     }
 
     return border_width?.parsed.value ?? 0
+}
+
+function getBorderRadius(border_radius, width, height) {
+    if (border_radius === undefined) {
+        return [0, 0]
+    }
+    if (border_radius.unit === UNIT.PERCENT) {
+        return [(width * border_radius.value) / 100, (height * border_radius.value) / 100]
+    }
+
+    return [border_radius.value, border_radius.value]
 }
 
 export function getAncestorClipping(node) {

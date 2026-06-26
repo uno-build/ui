@@ -1,17 +1,14 @@
 import Renderer from '../Renderer.ts'
 import createEngine, { YOGA_SETTER } from '../engine/yoga.ts'
-import { UNIT } from '../style/consts.ts'
-import { getNodeDrawingData, getNodeBorderWidth } from './utils/node.js'
+import { getNodeDrawingData } from './utils/node.js'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders.ts'
 import {
     FLOAT32_SIZE,
-    RGBA8_SIZE,
     VIEWPORT_SIZE,
     POSITION_VERTEX_COUNT,
     POSITION_VERTEX_FLOATS,
     POSITION_VERTEX_SIZE,
     POSITION_VERTICES,
-    TRANSPARENT_COLOR,
     ATTRIBUTES,
     ATTRIBUTE_SIZE,
 } from './webgpu/buffers.ts'
@@ -295,90 +292,62 @@ export default class RendererWebGPU extends Renderer {
                 continue
             }
 
-            const { layout, clipping, opacity } = node_data
+            const {
+                layout,
+                clipping,
+                border_radius_x,
+                border_radius_y,
+                border_color_top,
+                border_color_right,
+                border_color_bottom,
+                border_color_left,
+                border_widths,
+                background_color,
+                opacity,
+            } = node_data
 
-            // Layout: x, y, width, height
+            // layout: x, y, width, height
             const layout_float_offset = (bytes_offset + ATTRIBUTES.LAYOUT.OFFSET) / FLOAT32_SIZE
             this.nodes_floats.set(layout, layout_float_offset)
 
-            // Clipping/Overflow:hidden
+            // overflow/clipping: hidden
             const clipping_float_offset = (bytes_offset + ATTRIBUTES.CLIPPING.OFFSET) / FLOAT32_SIZE
             this.nodes_floats.set(clipping, clipping_float_offset)
+
+            // opacity
+            const opacity_float_offset = (bytes_offset + ATTRIBUTES.OPACITY.OFFSET) / FLOAT32_SIZE
+            this.nodes_floats[opacity_float_offset] = opacity
 
             // borderRadius: top-left, top-right, bottom-right, bottom-left
             const border_radius_x_float_offset =
                 (bytes_offset + ATTRIBUTES.BORDERRADIUS_X.OFFSET) / FLOAT32_SIZE
             const border_radius_y_float_offset =
                 (bytes_offset + ATTRIBUTES.BORDERRADIUS_Y.OFFSET) / FLOAT32_SIZE
-            const border_top_left_radius = getBorderRadius(
-                node.styles.borderTopLeftRadius?.parsed,
-                layout.width,
-                layout.height,
-            )
-            const border_top_right_radius = getBorderRadius(
-                node.styles.borderTopRightRadius?.parsed,
-                layout.width,
-                layout.height,
-            )
-            const border_bottom_right_radius = getBorderRadius(
-                node.styles.borderBottomRightRadius?.parsed,
-                layout.width,
-                layout.height,
-            )
-            const border_bottom_left_radius = getBorderRadius(
-                node.styles.borderBottomLeftRadius?.parsed,
-                layout.width,
-                layout.height,
-            )
-            this.nodes_floats[border_radius_x_float_offset + 0] = border_top_left_radius[0]
-            this.nodes_floats[border_radius_x_float_offset + 1] = border_top_right_radius[0]
-            this.nodes_floats[border_radius_x_float_offset + 2] = border_bottom_right_radius[0]
-            this.nodes_floats[border_radius_x_float_offset + 3] = border_bottom_left_radius[0]
-            this.nodes_floats[border_radius_y_float_offset + 0] = border_top_left_radius[1]
-            this.nodes_floats[border_radius_y_float_offset + 1] = border_top_right_radius[1]
-            this.nodes_floats[border_radius_y_float_offset + 2] = border_bottom_right_radius[1]
-            this.nodes_floats[border_radius_y_float_offset + 3] = border_bottom_left_radius[1]
+            this.nodes_floats.set(border_radius_x, border_radius_x_float_offset)
+            this.nodes_floats.set(border_radius_y, border_radius_y_float_offset)
 
             // borderColor: top, right, bottom, left
-            writeColorIntoBuffer(
-                this.nodes_bytes,
-                bytes_offset + ATTRIBUTES.BORDERCOLOR_TOP.OFFSET,
-                node.styles.borderTopColor?.parsed.rgba,
-            )
-            writeColorIntoBuffer(
-                this.nodes_bytes,
+            this.nodes_bytes.set(border_color_top, bytes_offset + ATTRIBUTES.BORDERCOLOR_TOP.OFFSET)
+            this.nodes_bytes.set(
+                border_color_right,
                 bytes_offset + ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET,
-                node.styles.borderRightColor?.parsed.rgba,
             )
-            writeColorIntoBuffer(
-                this.nodes_bytes,
+            this.nodes_bytes.set(
+                border_color_bottom,
                 bytes_offset + ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET,
-                node.styles.borderBottomColor?.parsed.rgba,
             )
-            writeColorIntoBuffer(
-                this.nodes_bytes,
+            this.nodes_bytes.set(
+                border_color_left,
                 bytes_offset + ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET,
-                node.styles.borderLeftColor?.parsed.rgba,
             )
 
             // borderWidth: top, right, bottom, left
             const border_widths_float_offset =
                 (bytes_offset + ATTRIBUTES.BORDERWIDTHS.OFFSET) / FLOAT32_SIZE
-            this.nodes_floats[border_widths_float_offset + 0] = getNodeBorderWidth(node, 'Top')
-            this.nodes_floats[border_widths_float_offset + 1] = getNodeBorderWidth(node, 'Right')
-            this.nodes_floats[border_widths_float_offset + 2] = getNodeBorderWidth(node, 'Bottom')
-            this.nodes_floats[border_widths_float_offset + 3] = getNodeBorderWidth(node, 'Left')
+            this.nodes_floats.set(border_widths, border_widths_float_offset)
 
             // backgroundColor: r, g, b, a
-            writeColorIntoBuffer(
-                this.nodes_bytes,
-                bytes_offset + ATTRIBUTES.BACKGROUNDCOLOR.OFFSET,
-                node.styles.backgroundColor?.parsed.rgba,
-            )
-
-            // opacity
-            const opacity_float_offset = (bytes_offset + ATTRIBUTES.OPACITY.OFFSET) / FLOAT32_SIZE
-            this.nodes_floats[opacity_float_offset] = opacity
+            this.nodes_bytes.set(background_color, bytes_offset + ATTRIBUTES.BACKGROUNDCOLOR.OFFSET)
 
             // Move the offset to the next node instance
             bytes_offset += ATTRIBUTE_SIZE
@@ -386,23 +355,4 @@ export default class RendererWebGPU extends Renderer {
 
         return { bytes: this.nodes_bytes, bytes_offset }
     }
-}
-
-function getBorderRadius(border_radius, width, height) {
-    if (border_radius === undefined) {
-        return [0, 0]
-    }
-    if (border_radius.unit === UNIT.PERCENT) {
-        return [(width * border_radius.value) / 100, (height * border_radius.value) / 100]
-    }
-
-    return [border_radius.value, border_radius.value]
-}
-
-function writeColorIntoBuffer(bytes, bytes_offset, color) {
-    const [r, g, b, a] = color ?? TRANSPARENT_COLOR
-    bytes[bytes_offset + 0] = r
-    bytes[bytes_offset + 1] = g
-    bytes[bytes_offset + 2] = b
-    bytes[bytes_offset + 3] = a
 }
