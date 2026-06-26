@@ -60,3 +60,11 @@ export function validateNonNegative(value: any) {
         throw new Error('expected non-negative value')
     }
 }
+
+export function validateMaxOne(value: any) {
+    const number = readNumber(value)
+
+    if (number !== undefined && number > 1) {
+        throw new Error('expected value between 0 and 1')
+    }
+}

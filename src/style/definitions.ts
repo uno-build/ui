@@ -21,6 +21,7 @@ import {
     validatePx,
     validatePercent,
     validateNonNegative,
+    validateMaxOne,
 } from './validators.ts'
 import {
     parseColor,
@@ -44,6 +45,13 @@ export const COLOR_DEFINITION = [
     {
         validate: [validateColor],
         parse: [parseColor],
+    },
+]
+
+export const OPACITY_DEFINITION = [
+    {
+        validate: [validateNumber, validateNonNegative, validateMaxOne],
+        parse: [parseNumber],
     },
 ]
 

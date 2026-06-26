@@ -35,6 +35,30 @@ test('backgroundColor', () => {
     }
 })
 
+test('opacity', () => {
+    const valid_cases = [
+        ['0', '0', 0],
+        ['0.5', '0.5', 0.5],
+        ['.5', '0.5', 0.5],
+        ['1', '1', 1],
+    ] as const
+    const invalid_cases = [
+        ['-0.1', /expected non-negative value/],
+        ['1.1', /expected value between 0 and 1/],
+        ['50%', /expected number/],
+        ['auto', /expected number/],
+        [true, /expected number/],
+    ] as const
+
+    for (const [value, expected_value, parsed_value] of valid_cases) {
+        expectResolved('opacity', value, expected_value, { value: parsed_value })
+    }
+
+    for (const [value, message] of invalid_cases) {
+        expectInvalid('opacity', value, message)
+    }
+})
+
 test('border corner radius', () => {
     const styles = [
         'borderTopLeftRadius',

@@ -67,6 +67,12 @@ export const ATTRIBUTES = {
         SIZE: RGBA8_SIZE,
         FORMAT: 'unorm8x4',
     },
+    OPACITY: {
+        LOCATION: 11,
+        OFFSET: 20 * FLOAT32_SIZE + 5 * RGBA8_SIZE,
+        SIZE: FLOAT32_SIZE,
+        FORMAT: 'float32',
+    },
 }
 export const ATTRIBUTE_SIZE = Math.max(
     ...Object.values(ATTRIBUTES).map((attrb) => attrb.OFFSET + attrb.SIZE),

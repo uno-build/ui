@@ -19,6 +19,7 @@ import {
     MIN_MAX_SIZE_DEFINITION,
     NUMBER_UNSET_DEFINITION,
     OFFSET_DEFINITION,
+    OPACITY_DEFINITION,
     OVERFLOW_DEFINITION,
     POSITION_DEFINITION,
     PX_PERCENT_DEFINITION,
@@ -115,6 +116,9 @@ export const STYLE = {
     ]),
     BACKGROUNDCOLOR: createStyle('backgroundColor', (name, value) => [
         { name, value, definition: COLOR_DEFINITION },
+    ]),
+    OPACITY: createStyle('opacity', (name, value) => [
+        { name, value, definition: OPACITY_DEFINITION },
     ]),
     BORDER: createStyle('border', (name, value) => 
         expandHelper(name, value, {

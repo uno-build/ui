@@ -133,6 +133,11 @@ export default class RendererWebGPU extends Renderer {
                                 offset: ATTRIBUTES.BACKGROUNDCOLOR.OFFSET,
                                 format: ATTRIBUTES.BACKGROUNDCOLOR.FORMAT,
                             },
+                            {
+                                shaderLocation: ATTRIBUTES.OPACITY.LOCATION,
+                                offset: ATTRIBUTES.OPACITY.OFFSET,
+                                format: ATTRIBUTES.OPACITY.FORMAT,
+                            },
                         ],
                     },
                 ],
@@ -287,8 +292,13 @@ export default class RendererWebGPU extends Renderer {
         let bytes_offset = 0
 
         for (const node of nodes) {
-            const clipping = getAncestorClipping(node)
+            const opacity = readOpacity(node)
 
+            if (opacity === 0) {
+                continue
+            }
+
+            const clipping = getAncestorClipping(node)
             if (!isNodeDrawable(node, clipping)) {
                 continue
             }
@@ -379,11 +389,26 @@ export default class RendererWebGPU extends Renderer {
                 node.styles.backgroundColor?.parsed.rgba,
             )
 
+            const opacity_float_offset = (bytes_offset + ATTRIBUTES.OPACITY.OFFSET) / FLOAT32_SIZE
+            floats[opacity_float_offset] = opacity
+
             bytes_offset += ATTRIBUTE_SIZE
         }
 
         return { bytes, bytes_offset }
     }
+}
+
+function readOpacity(node) {
+    let opacity = 1
+    let current_node = node
+
+    while (current_node != null) {
+        opacity *= current_node.styles.opacity?.parsed.value ?? 1
+        current_node = current_node.parent
+    }
+
+    return opacity
 }
 
 function isNodeDrawable(node, clip) {

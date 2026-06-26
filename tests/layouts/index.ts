@@ -9,6 +9,7 @@ import nestedMargins from './examples/nestedMargins'
 import nestedPercentDimensions from './examples/nestedPercentDimensions'
 import nestedRelativeOffsets from './examples/nestedRelativeOffsets'
 import nestedWrapGap from './examples/nestedWrapGap'
+import opacity from './examples/opacity'
 import overflowScroll from './examples/overflowScroll'
 import overflowVisibleHidden from './examples/overflowVisibleHidden'
 import wrappedAlignContentRelativeOffsets from './examples/wrappedAlignContentRelativeOffsets'
@@ -33,6 +34,7 @@ export const LAYOUTS = {
     nestedPercentDimensions,
     nestedRelativeOffsets,
     nestedWrapGap,
+    opacity,
     overflowScroll,
     overflowVisibleHidden,
     wrappedAlignContentRelativeOffsets,

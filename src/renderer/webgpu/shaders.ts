@@ -17,6 +17,7 @@ struct VertexOutput {
     @location(8) border_left_color: vec4f,
     @location(9) border_widths: vec4f,
     @location(10) background_color: vec4f,
+    @location(11) opacity: f32,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -34,6 +35,7 @@ fn main(
     @location(8) border_left_color: vec4f,
     @location(9) border_widths: vec4f,
     @location(10) background_color: vec4f,
+    @location(11) opacity: f32,
 ) -> VertexOutput {
     let local_position = position * layout_node.zw;
     let pixel = layout_node.xy + local_position;
@@ -55,6 +57,7 @@ fn main(
     output.border_left_color = border_left_color;
     output.border_widths = border_widths;
     output.background_color = background_color;
+    output.opacity = opacity;
     return output;
 }
 `
@@ -72,6 +75,7 @@ struct FragmentInput {
     @location(8) border_left_color: vec4f,
     @location(9) border_widths: vec4f,
     @location(10) background_color: vec4f,
+    @location(11) opacity: f32,
 }
 
 fn cornerRadius(
@@ -210,7 +214,7 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
         let border_color = compositeOver(borderColorForPosition(input), input.background_color);
         color = mix(border_color, input.background_color, inner_coverage);
     }
-    color.a *= outer_coverage;
+    color.a *= outer_coverage * input.opacity;
 
     return color;
 }
