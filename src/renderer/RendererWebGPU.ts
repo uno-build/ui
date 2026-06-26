@@ -294,7 +294,7 @@ export default class RendererWebGPU extends Renderer {
         for (const node of nodes) {
             const { is_drawable, clipping, opacity } = getNodeDrawingData(node)
 
-            if (!is_drawable) {
+            if (is_drawable === false) {
                 continue
             }
 
@@ -348,22 +348,22 @@ export default class RendererWebGPU extends Renderer {
             floats[border_radius_y_float_offset + 3] = border_bottom_left_radius[1]
 
             // borderColor: top, right, bottom, left
-            writeColor(
+            writeColorIntoBuffer(
                 bytes,
                 bytes_offset + ATTRIBUTES.BORDERCOLOR_TOP.OFFSET,
                 node.styles.borderTopColor?.parsed.rgba,
             )
-            writeColor(
+            writeColorIntoBuffer(
                 bytes,
                 bytes_offset + ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET,
                 node.styles.borderRightColor?.parsed.rgba,
             )
-            writeColor(
+            writeColorIntoBuffer(
                 bytes,
                 bytes_offset + ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET,
                 node.styles.borderBottomColor?.parsed.rgba,
             )
-            writeColor(
+            writeColorIntoBuffer(
                 bytes,
                 bytes_offset + ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET,
                 node.styles.borderLeftColor?.parsed.rgba,
@@ -378,15 +378,17 @@ export default class RendererWebGPU extends Renderer {
             floats[border_widths_float_offset + 3] = getNodeBorderWidth(node, 'Left')
 
             // backgroundColor: r, g, b, a
-            writeColor(
+            writeColorIntoBuffer(
                 bytes,
                 bytes_offset + ATTRIBUTES.BACKGROUNDCOLOR.OFFSET,
                 node.styles.backgroundColor?.parsed.rgba,
             )
 
+            // opacity
             const opacity_float_offset = (bytes_offset + ATTRIBUTES.OPACITY.OFFSET) / FLOAT32_SIZE
             floats[opacity_float_offset] = opacity
 
+            // Move the offset to the next node instance
             bytes_offset += ATTRIBUTE_SIZE
         }
 
@@ -405,7 +407,7 @@ function getBorderRadius(border_radius, width, height) {
     return [border_radius.value, border_radius.value]
 }
 
-function writeColor(bytes, bytes_offset, color) {
+function writeColorIntoBuffer(bytes, bytes_offset, color) {
     const [r, g, b, a] = color ?? TRANSPARENT_COLOR
     bytes[bytes_offset + 0] = r
     bytes[bytes_offset + 1] = g
