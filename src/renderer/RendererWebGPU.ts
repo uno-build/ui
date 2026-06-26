@@ -279,6 +279,7 @@ export default class RendererWebGPU extends Renderer {
     // This function creates a buffer containing all the data prepared for the GPU to render the nodes.
     private createInstancesNodes(nodes) {
         const nodes_array_buffer_size = nodes.length * ATTRIBUTE_SIZE
+        let bytes_offset = 0
 
         if (this.nodes_array_buffer_size < nodes_array_buffer_size || !this.nodes_array_buffer) {
             this.nodes_array_buffer_size = nodes_array_buffer_size
@@ -286,10 +287,6 @@ export default class RendererWebGPU extends Renderer {
             this.nodes_floats = new Float32Array(this.nodes_array_buffer)
             this.nodes_bytes = new Uint8Array(this.nodes_array_buffer)
         }
-
-        const floats = this.nodes_floats
-        const bytes = this.nodes_bytes
-        let bytes_offset = 0
 
         for (const node of nodes) {
             const node_data = getNodeDrawingData(node)
@@ -302,11 +299,11 @@ export default class RendererWebGPU extends Renderer {
 
             // Layout: x, y, width, height
             const layout_float_offset = (bytes_offset + ATTRIBUTES.LAYOUT.OFFSET) / FLOAT32_SIZE
-            floats.set(layout, layout_float_offset)
+            this.nodes_floats.set(layout, layout_float_offset)
 
             // Clipping/Overflow:hidden
             const clipping_float_offset = (bytes_offset + ATTRIBUTES.CLIPPING.OFFSET) / FLOAT32_SIZE
-            floats.set(clipping, clipping_float_offset)
+            this.nodes_floats.set(clipping, clipping_float_offset)
 
             // borderRadius: top-left, top-right, bottom-right, bottom-left
             const border_radius_x_float_offset =
@@ -333,33 +330,33 @@ export default class RendererWebGPU extends Renderer {
                 layout.width,
                 layout.height,
             )
-            floats[border_radius_x_float_offset + 0] = border_top_left_radius[0]
-            floats[border_radius_x_float_offset + 1] = border_top_right_radius[0]
-            floats[border_radius_x_float_offset + 2] = border_bottom_right_radius[0]
-            floats[border_radius_x_float_offset + 3] = border_bottom_left_radius[0]
-            floats[border_radius_y_float_offset + 0] = border_top_left_radius[1]
-            floats[border_radius_y_float_offset + 1] = border_top_right_radius[1]
-            floats[border_radius_y_float_offset + 2] = border_bottom_right_radius[1]
-            floats[border_radius_y_float_offset + 3] = border_bottom_left_radius[1]
+            this.nodes_floats[border_radius_x_float_offset + 0] = border_top_left_radius[0]
+            this.nodes_floats[border_radius_x_float_offset + 1] = border_top_right_radius[0]
+            this.nodes_floats[border_radius_x_float_offset + 2] = border_bottom_right_radius[0]
+            this.nodes_floats[border_radius_x_float_offset + 3] = border_bottom_left_radius[0]
+            this.nodes_floats[border_radius_y_float_offset + 0] = border_top_left_radius[1]
+            this.nodes_floats[border_radius_y_float_offset + 1] = border_top_right_radius[1]
+            this.nodes_floats[border_radius_y_float_offset + 2] = border_bottom_right_radius[1]
+            this.nodes_floats[border_radius_y_float_offset + 3] = border_bottom_left_radius[1]
 
             // borderColor: top, right, bottom, left
             writeColorIntoBuffer(
-                bytes,
+                this.nodes_bytes,
                 bytes_offset + ATTRIBUTES.BORDERCOLOR_TOP.OFFSET,
                 node.styles.borderTopColor?.parsed.rgba,
             )
             writeColorIntoBuffer(
-                bytes,
+                this.nodes_bytes,
                 bytes_offset + ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET,
                 node.styles.borderRightColor?.parsed.rgba,
             )
             writeColorIntoBuffer(
-                bytes,
+                this.nodes_bytes,
                 bytes_offset + ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET,
                 node.styles.borderBottomColor?.parsed.rgba,
             )
             writeColorIntoBuffer(
-                bytes,
+                this.nodes_bytes,
                 bytes_offset + ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET,
                 node.styles.borderLeftColor?.parsed.rgba,
             )
@@ -367,27 +364,27 @@ export default class RendererWebGPU extends Renderer {
             // borderWidth: top, right, bottom, left
             const border_widths_float_offset =
                 (bytes_offset + ATTRIBUTES.BORDERWIDTHS.OFFSET) / FLOAT32_SIZE
-            floats[border_widths_float_offset + 0] = getNodeBorderWidth(node, 'Top')
-            floats[border_widths_float_offset + 1] = getNodeBorderWidth(node, 'Right')
-            floats[border_widths_float_offset + 2] = getNodeBorderWidth(node, 'Bottom')
-            floats[border_widths_float_offset + 3] = getNodeBorderWidth(node, 'Left')
+            this.nodes_floats[border_widths_float_offset + 0] = getNodeBorderWidth(node, 'Top')
+            this.nodes_floats[border_widths_float_offset + 1] = getNodeBorderWidth(node, 'Right')
+            this.nodes_floats[border_widths_float_offset + 2] = getNodeBorderWidth(node, 'Bottom')
+            this.nodes_floats[border_widths_float_offset + 3] = getNodeBorderWidth(node, 'Left')
 
             // backgroundColor: r, g, b, a
             writeColorIntoBuffer(
-                bytes,
+                this.nodes_bytes,
                 bytes_offset + ATTRIBUTES.BACKGROUNDCOLOR.OFFSET,
                 node.styles.backgroundColor?.parsed.rgba,
             )
 
             // opacity
             const opacity_float_offset = (bytes_offset + ATTRIBUTES.OPACITY.OFFSET) / FLOAT32_SIZE
-            floats[opacity_float_offset] = opacity
+            this.nodes_floats[opacity_float_offset] = opacity
 
             // Move the offset to the next node instance
             bytes_offset += ATTRIBUTE_SIZE
         }
 
-        return { bytes, bytes_offset }
+        return { bytes: this.nodes_bytes, bytes_offset }
     }
 }
 
