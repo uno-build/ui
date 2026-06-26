@@ -74,6 +74,4 @@ export const ATTRIBUTES = {
         FORMAT: 'unorm8x4',
     },
 }
-export const ATTRIBUTE_SIZE = Math.max(
-    ...Object.values(ATTRIBUTES).map((attrb) => attrb.OFFSET + attrb.SIZE),
-)
+export const ATTRIBUTES_SIZE = Math.max(...Object.values(ATTRIBUTES).map((attrb) => attrb.OFFSET + attrb.SIZE))

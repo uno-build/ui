@@ -1,11 +1,7 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { OVERFLOW, UNIT } from '../src/style/consts.ts'
-import {
-    ATTRIBUTE_SIZE,
-    ATTRIBUTES,
-    FLOAT32_SIZE,
-} from '../src/renderer/webgpu/buffers.ts'
+import { ATTRIBUTES_SIZE, ATTRIBUTES, FLOAT32_SIZE } from '../src/renderer/webgpu/buffers.ts'
 
 test('RendererWebGPU accumulates opacity into node instances', () => {
     const root = createNode({ opacity: 0.5 })
@@ -16,7 +12,7 @@ test('RendererWebGPU accumulates opacity into node instances', () => {
     const floats = new Float32Array(node_instances.bytes.buffer)
     const opacity_float_offset = ATTRIBUTES.OPACITY.OFFSET / FLOAT32_SIZE
 
-    expect(node_instances.bytes_offset).toBe(ATTRIBUTE_SIZE)
+    expect(node_instances.bytes_offset).toBe(ATTRIBUTES_SIZE)
     expect(floats[opacity_float_offset]).toBeCloseTo(0.2)
 })
 
@@ -46,13 +42,9 @@ test('RendererWebGPU writes layout and clipping into node instances', () => {
     const layout_float_offset = ATTRIBUTES.LAYOUT.OFFSET / FLOAT32_SIZE
     const clipping_float_offset = ATTRIBUTES.CLIPPING.OFFSET / FLOAT32_SIZE
 
-    expect(node_instances.bytes_offset).toBe(ATTRIBUTE_SIZE)
-    expect(Array.from(floats.slice(layout_float_offset, layout_float_offset + 4))).toEqual([
-        0, 0, 10, 10,
-    ])
-    expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([
-        3, 3, 3, 2,
-    ])
+    expect(node_instances.bytes_offset).toBe(ATTRIBUTES_SIZE)
+    expect(Array.from(floats.slice(layout_float_offset, layout_float_offset + 4))).toEqual([0, 0, 10, 10])
+    expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([3, 3, 3, 2])
 })
 
 test('RendererWebGPU writes border drawing data into node instances', () => {
@@ -85,42 +77,26 @@ test('RendererWebGPU writes border drawing data into node instances', () => {
     const border_radius_y_float_offset = ATTRIBUTES.BORDERRADIUS_Y.OFFSET / FLOAT32_SIZE
     const border_widths_float_offset = ATTRIBUTES.BORDERWIDTHS.OFFSET / FLOAT32_SIZE
 
-    expect(node_instances.bytes_offset).toBe(ATTRIBUTE_SIZE)
+    expect(node_instances.bytes_offset).toBe(ATTRIBUTES_SIZE)
+    expect(Array.from(floats.slice(border_radius_x_float_offset, border_radius_x_float_offset + 4))).toEqual([
+        10, 2, 3, 4,
+    ])
+    expect(Array.from(floats.slice(border_radius_y_float_offset, border_radius_y_float_offset + 4))).toEqual([
+        5, 2, 3, 4,
+    ])
+    expect(Array.from(floats.slice(border_widths_float_offset, border_widths_float_offset + 4))).toEqual([5, 6, 7, 8])
+    expect(Array.from(bytes.slice(ATTRIBUTES.BORDERCOLOR_TOP.OFFSET, ATTRIBUTES.BORDERCOLOR_TOP.OFFSET + 4))).toEqual([
+        1, 2, 3, 4,
+    ])
     expect(
-        Array.from(floats.slice(border_radius_x_float_offset, border_radius_x_float_offset + 4)),
-    ).toEqual([10, 2, 3, 4])
-    expect(
-        Array.from(floats.slice(border_radius_y_float_offset, border_radius_y_float_offset + 4)),
-    ).toEqual([5, 2, 3, 4])
-    expect(
-        Array.from(floats.slice(border_widths_float_offset, border_widths_float_offset + 4)),
+        Array.from(bytes.slice(ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET, ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET + 4)),
     ).toEqual([5, 6, 7, 8])
     expect(
-        Array.from(
-            bytes.slice(ATTRIBUTES.BORDERCOLOR_TOP.OFFSET, ATTRIBUTES.BORDERCOLOR_TOP.OFFSET + 4),
-        ),
-    ).toEqual([1, 2, 3, 4])
-    expect(
-        Array.from(
-            bytes.slice(
-                ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET,
-                ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET + 4,
-            ),
-        ),
-    ).toEqual([5, 6, 7, 8])
-    expect(
-        Array.from(
-            bytes.slice(
-                ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET,
-                ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET + 4,
-            ),
-        ),
+        Array.from(bytes.slice(ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET, ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET + 4)),
     ).toEqual([9, 10, 11, 12])
-    expect(
-        Array.from(
-            bytes.slice(ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET, ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET + 4),
-        ),
-    ).toEqual([13, 14, 15, 16])
+    expect(Array.from(bytes.slice(ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET, ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET + 4))).toEqual(
+        [13, 14, 15, 16],
+    )
 })
 
 function createNode({

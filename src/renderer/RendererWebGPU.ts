@@ -10,7 +10,7 @@ import {
     POSITION_VERTEX_SIZE,
     POSITION_VERTICES,
     ATTRIBUTES,
-    ATTRIBUTE_SIZE,
+    ATTRIBUTES_SIZE,
 } from './webgpu/buffers.ts'
 
 export default class RendererWebGPU extends Renderer {
@@ -76,7 +76,7 @@ export default class RendererWebGPU extends Renderer {
                         ],
                     },
                     {
-                        arrayStride: ATTRIBUTE_SIZE,
+                        arrayStride: ATTRIBUTES_SIZE,
                         stepMode: 'instance',
                         attributes: [
                             {
@@ -221,8 +221,8 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private draw(nodes) {
-        const node_instances = this.createInstancesNodes(nodes)
-        const node_instances_count = node_instances.bytes_offset / ATTRIBUTE_SIZE
+        const node_render_data = this.createNodeRenderData(nodes)
+        const node_drawable_count = node_render_data.bytes_offset / ATTRIBUTES_SIZE
         const command_encoder = this.device.createCommandEncoder()
         const texture_view = this.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
@@ -236,20 +236,26 @@ export default class RendererWebGPU extends Renderer {
             ],
         })
 
-        // If there are no node instances to draw, we skip the draw call.
-        if (node_instances_count > 0) {
-            // If the buffer is too small to hold all the node instances
+        // If there are no drawable nodes, we skip the draw call.
+        if (node_drawable_count > 0) {
+            // If the buffer is too small to hold all the node render data
             // we destroy the old buffer and create a new one with the required size.
-            if (this.nodes_buffer_size < node_instances.bytes_offset || !this.nodes_buffer) {
-                this.nodes_buffer_size = node_instances.bytes_offset
+            if (this.nodes_buffer_size < node_render_data.bytes_offset || !this.nodes_buffer) {
+                this.nodes_buffer_size = node_render_data.bytes_offset
                 this.nodes_buffer?.destroy()
                 this.nodes_buffer = this.device.createBuffer({
-                    size: node_instances.bytes_offset,
+                    size: node_render_data.bytes_offset,
                     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
                 })
             }
 
-            this.device.queue.writeBuffer(this.nodes_buffer, 0, node_instances.bytes, 0, node_instances.bytes_offset)
+            this.device.queue.writeBuffer(
+                this.nodes_buffer,
+                0,
+                node_render_data.bytes,
+                0,
+                node_render_data.bytes_offset,
+            )
             this.device.queue.writeBuffer(
                 this.viewport_buffer,
                 0,
@@ -259,7 +265,7 @@ export default class RendererWebGPU extends Renderer {
             pass_encoder.setVertexBuffer(1, this.nodes_buffer)
             pass_encoder.setPipeline(this.pipeline)
             pass_encoder.setBindGroup(0, this.bind_group)
-            pass_encoder.draw(POSITION_VERTEX_COUNT, node_instances_count)
+            pass_encoder.draw(POSITION_VERTEX_COUNT, node_drawable_count)
         }
 
         pass_encoder.end()
@@ -267,8 +273,8 @@ export default class RendererWebGPU extends Renderer {
     }
 
     // This function creates a buffer containing all the data prepared for the GPU to render the nodes.
-    private createInstancesNodes(nodes) {
-        const nodes_array_buffer_size = nodes.length * ATTRIBUTE_SIZE
+    private createNodeRenderData(nodes) {
+        const nodes_array_buffer_size = nodes.length * ATTRIBUTES_SIZE
         let bytes_offset = 0
 
         if (this.nodes_array_buffer_size < nodes_array_buffer_size || !this.nodes_array_buffer) {
@@ -330,8 +336,8 @@ export default class RendererWebGPU extends Renderer {
             // backgroundColor: r, g, b, a
             this.nodes_bytes.set(background_color, bytes_offset + ATTRIBUTES.BACKGROUNDCOLOR.OFFSET)
 
-            // Move the offset to the next node instance
-            bytes_offset += ATTRIBUTE_SIZE
+            // Move the offset to the next drawable node
+            bytes_offset += ATTRIBUTES_SIZE
         }
 
         return { bytes: this.nodes_bytes, bytes_offset }
