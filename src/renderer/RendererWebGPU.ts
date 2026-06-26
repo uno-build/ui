@@ -1,7 +1,7 @@
 import Renderer from '../Renderer.ts'
 import createEngine, { YOGA_SETTER } from '../engine/yoga.ts'
-import { UNIT, DISPLAY } from '../style/consts.ts'
-import { getAncestorClipping } from '../utils/getAncestorClipping.ts'
+import { UNIT } from '../style/consts.ts'
+import { getNodeDrawingData, getNodeBorderWidth } from './utils/node.js'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders.ts'
 import {
     FLOAT32_SIZE,
@@ -292,14 +292,9 @@ export default class RendererWebGPU extends Renderer {
         let bytes_offset = 0
 
         for (const node of nodes) {
-            const opacity = readOpacity(node)
+            const { is_drawable, clipping, opacity } = getNodeDrawingData(node)
 
-            if (opacity === 0) {
-                continue
-            }
-
-            const clipping = getAncestorClipping(node)
-            if (!isNodeDrawable(node, clipping)) {
+            if (!is_drawable) {
                 continue
             }
 
@@ -323,22 +318,22 @@ export default class RendererWebGPU extends Renderer {
                 (bytes_offset + ATTRIBUTES.BORDERRADIUS_X.OFFSET) / FLOAT32_SIZE
             const border_radius_y_float_offset =
                 (bytes_offset + ATTRIBUTES.BORDERRADIUS_Y.OFFSET) / FLOAT32_SIZE
-            const border_top_left_radius = readBorderRadius(
+            const border_top_left_radius = getBorderRadius(
                 node.styles.borderTopLeftRadius?.parsed,
                 width,
                 height,
             )
-            const border_top_right_radius = readBorderRadius(
+            const border_top_right_radius = getBorderRadius(
                 node.styles.borderTopRightRadius?.parsed,
                 width,
                 height,
             )
-            const border_bottom_right_radius = readBorderRadius(
+            const border_bottom_right_radius = getBorderRadius(
                 node.styles.borderBottomRightRadius?.parsed,
                 width,
                 height,
             )
-            const border_bottom_left_radius = readBorderRadius(
+            const border_bottom_left_radius = getBorderRadius(
                 node.styles.borderBottomLeftRadius?.parsed,
                 width,
                 height,
@@ -377,10 +372,10 @@ export default class RendererWebGPU extends Renderer {
             // borderWidth: top, right, bottom, left
             const border_widths_float_offset =
                 (bytes_offset + ATTRIBUTES.BORDERWIDTHS.OFFSET) / FLOAT32_SIZE
-            floats[border_widths_float_offset + 0] = readBorderWidth(node, 'Top')
-            floats[border_widths_float_offset + 1] = readBorderWidth(node, 'Right')
-            floats[border_widths_float_offset + 2] = readBorderWidth(node, 'Bottom')
-            floats[border_widths_float_offset + 3] = readBorderWidth(node, 'Left')
+            floats[border_widths_float_offset + 0] = getNodeBorderWidth(node, 'Top')
+            floats[border_widths_float_offset + 1] = getNodeBorderWidth(node, 'Right')
+            floats[border_widths_float_offset + 2] = getNodeBorderWidth(node, 'Bottom')
+            floats[border_widths_float_offset + 3] = getNodeBorderWidth(node, 'Left')
 
             // backgroundColor: r, g, b, a
             writeColor(
@@ -399,39 +394,7 @@ export default class RendererWebGPU extends Renderer {
     }
 }
 
-function readOpacity(node) {
-    let opacity = 1
-    let current_node = node
-
-    while (current_node != null) {
-        opacity *= current_node.styles.opacity?.parsed.value ?? 1
-        current_node = current_node.parent
-    }
-
-    return opacity
-}
-
-function isNodeDrawable(node, clip) {
-    const { width, height } = node.layout
-    const display = node.styles.display?.parsed.enum || DISPLAY.flex
-    const background_color = node.styles.backgroundColor?.parsed.rgba
-    const has_background = background_color !== undefined && background_color[3] > 0
-    const has_border =
-        readBorderWidth(node, 'Top') > 0 ||
-        readBorderWidth(node, 'Right') > 0 ||
-        readBorderWidth(node, 'Bottom') > 0 ||
-        readBorderWidth(node, 'Left') > 0
-
-    return (
-        width > 0 &&
-        height > 0 &&
-        display === DISPLAY.flex &&
-        (clip === null || (clip.left + clip.right < width && clip.top + clip.bottom < height)) &&
-        (has_background || has_border)
-    )
-}
-
-function readBorderRadius(border_radius, width, height) {
+function getBorderRadius(border_radius, width, height) {
     if (border_radius === undefined) {
         return [0, 0]
     }
@@ -440,18 +403,6 @@ function readBorderRadius(border_radius, width, height) {
     }
 
     return [border_radius.value, border_radius.value]
-}
-
-function readBorderWidth(node, side) {
-    const border_style = node.styles[`border${side}Style`]
-    const border_color = node.styles[`border${side}Color`]
-    const border_width = node.styles[`border${side}Width`]
-
-    if (border_style?.value !== 'solid' || border_color === undefined) {
-        return 0
-    }
-
-    return border_width?.parsed.value ?? 0
 }
 
 function writeColor(bytes, bytes_offset, color) {
