@@ -78,7 +78,6 @@ export default class RendererWebGPU extends Renderer {
                     {
                         arrayStride: ATTRIBUTE_SIZE,
                         stepMode: 'instance',
-                        /* pretty-ignore */
                         attributes: [
                             {
                                 shaderLocation: ATTRIBUTES.LAYOUT.LOCATION,
@@ -250,13 +249,7 @@ export default class RendererWebGPU extends Renderer {
                 })
             }
 
-            this.device.queue.writeBuffer(
-                this.nodes_buffer,
-                0,
-                node_instances.bytes,
-                0,
-                node_instances.bytes_offset,
-            )
+            this.device.queue.writeBuffer(this.nodes_buffer, 0, node_instances.bytes, 0, node_instances.bytes_offset)
             this.device.queue.writeBuffer(
                 this.viewport_buffer,
                 0,
@@ -286,15 +279,16 @@ export default class RendererWebGPU extends Renderer {
         }
 
         for (const node of nodes) {
-            const node_data = getNodeDrawingData(node)
+            const drawing_data = getNodeDrawingData(node)
 
-            if (node_data === null) {
+            if (drawing_data === null) {
                 continue
             }
 
             const {
                 layout,
                 clipping,
+                opacity,
                 border_radius_x,
                 border_radius_y,
                 border_color_top,
@@ -303,8 +297,7 @@ export default class RendererWebGPU extends Renderer {
                 border_color_left,
                 border_widths,
                 background_color,
-                opacity,
-            } = node_data
+            } = drawing_data
 
             // layout: x, y, width, height
             const layout_float_offset = (bytes_offset + ATTRIBUTES.LAYOUT.OFFSET) / FLOAT32_SIZE
@@ -319,31 +312,19 @@ export default class RendererWebGPU extends Renderer {
             this.nodes_floats[opacity_float_offset] = opacity
 
             // borderRadius: top-left, top-right, bottom-right, bottom-left
-            const border_radius_x_float_offset =
-                (bytes_offset + ATTRIBUTES.BORDERRADIUS_X.OFFSET) / FLOAT32_SIZE
-            const border_radius_y_float_offset =
-                (bytes_offset + ATTRIBUTES.BORDERRADIUS_Y.OFFSET) / FLOAT32_SIZE
+            const border_radius_x_float_offset = (bytes_offset + ATTRIBUTES.BORDERRADIUS_X.OFFSET) / FLOAT32_SIZE
+            const border_radius_y_float_offset = (bytes_offset + ATTRIBUTES.BORDERRADIUS_Y.OFFSET) / FLOAT32_SIZE
             this.nodes_floats.set(border_radius_x, border_radius_x_float_offset)
             this.nodes_floats.set(border_radius_y, border_radius_y_float_offset)
 
             // borderColor: top, right, bottom, left
             this.nodes_bytes.set(border_color_top, bytes_offset + ATTRIBUTES.BORDERCOLOR_TOP.OFFSET)
-            this.nodes_bytes.set(
-                border_color_right,
-                bytes_offset + ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET,
-            )
-            this.nodes_bytes.set(
-                border_color_bottom,
-                bytes_offset + ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET,
-            )
-            this.nodes_bytes.set(
-                border_color_left,
-                bytes_offset + ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET,
-            )
+            this.nodes_bytes.set(border_color_right, bytes_offset + ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET)
+            this.nodes_bytes.set(border_color_bottom, bytes_offset + ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET)
+            this.nodes_bytes.set(border_color_left, bytes_offset + ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET)
 
             // borderWidth: top, right, bottom, left
-            const border_widths_float_offset =
-                (bytes_offset + ATTRIBUTES.BORDERWIDTHS.OFFSET) / FLOAT32_SIZE
+            const border_widths_float_offset = (bytes_offset + ATTRIBUTES.BORDERWIDTHS.OFFSET) / FLOAT32_SIZE
             this.nodes_floats.set(border_widths, border_widths_float_offset)
 
             // backgroundColor: r, g, b, a
