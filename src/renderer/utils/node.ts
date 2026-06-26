@@ -1,8 +1,12 @@
 import { DISPLAY, OVERFLOW } from '../../style/consts.js'
 
 export function getNodeDrawingData(node) {
-    const { width, height } = node.layout
+    const { x, y, width, height } = node.layout
     const display = node.styles.display?.parsed.enum || DISPLAY.flex
+    if (width === 0 || height === 0 || display !== DISPLAY.flex) {
+        return null
+    }
+
     const background_color = node.styles.backgroundColor?.parsed.rgba
     const has_background = background_color !== undefined && background_color[3] > 0
     const has_border =
@@ -11,21 +15,30 @@ export function getNodeDrawingData(node) {
         getNodeBorderWidth(node, 'Bottom') > 0 ||
         getNodeBorderWidth(node, 'Left') > 0
 
-    const clipping = getAncestorClipping(node)
-    const opacity = getNodeOpacity(node)
+    if (!has_background && !has_border) {
+        return null
+    }
 
-    const is_drawable =
-        width > 0 &&
-        height > 0 &&
-        display === DISPLAY.flex &&
-        opacity > 0 &&
-        (clipping === null ||
-            (clipping.left + clipping.right < width && clipping.top + clipping.bottom < height)) &&
-        (has_background || has_border)
+    const opacity = getNodeOpacity(node)
+    if (opacity <= 0) {
+        return null
+    }
+
+    const clip = getAncestorClipping(node)
+    const normalized_clipping =
+        clip === null ? [0, 0, 0, 0] : [clip.top, clip.right, clip.bottom, clip.left]
+    if (
+        normalized_clipping[0] >= height ||
+        normalized_clipping[1] >= width ||
+        normalized_clipping[2] >= height ||
+        normalized_clipping[3] >= width
+    ) {
+        return null
+    }
 
     return {
-        is_drawable,
-        clipping,
+        layout: [x, y, width, height],
+        clipping: normalized_clipping,
         opacity,
     }
 }

@@ -292,26 +292,21 @@ export default class RendererWebGPU extends Renderer {
         let bytes_offset = 0
 
         for (const node of nodes) {
-            const { is_drawable, clipping, opacity } = getNodeDrawingData(node)
+            const node_data = getNodeDrawingData(node)
 
-            if (is_drawable === false) {
+            if (node_data === null) {
                 continue
             }
 
+            const { layout, clipping, opacity } = node_data
+
             // Layout: x, y, width, height
             const layout_float_offset = (bytes_offset + ATTRIBUTES.LAYOUT.OFFSET) / FLOAT32_SIZE
-            const { x, y, width, height } = node.layout
-            floats[layout_float_offset + 0] = x
-            floats[layout_float_offset + 1] = y
-            floats[layout_float_offset + 2] = width
-            floats[layout_float_offset + 3] = height
+            floats.set(layout, layout_float_offset)
 
             // Clipping/Overflow:hidden
             const clipping_float_offset = (bytes_offset + ATTRIBUTES.CLIPPING.OFFSET) / FLOAT32_SIZE
-            floats[clipping_float_offset + 0] = clipping?.top ?? 0
-            floats[clipping_float_offset + 1] = clipping?.right ?? 0
-            floats[clipping_float_offset + 2] = clipping?.bottom ?? 0
-            floats[clipping_float_offset + 3] = clipping?.left ?? 0
+            floats.set(clipping, clipping_float_offset)
 
             // borderRadius: top-left, top-right, bottom-right, bottom-left
             const border_radius_x_float_offset =
@@ -320,23 +315,23 @@ export default class RendererWebGPU extends Renderer {
                 (bytes_offset + ATTRIBUTES.BORDERRADIUS_Y.OFFSET) / FLOAT32_SIZE
             const border_top_left_radius = getBorderRadius(
                 node.styles.borderTopLeftRadius?.parsed,
-                width,
-                height,
+                layout.width,
+                layout.height,
             )
             const border_top_right_radius = getBorderRadius(
                 node.styles.borderTopRightRadius?.parsed,
-                width,
-                height,
+                layout.width,
+                layout.height,
             )
             const border_bottom_right_radius = getBorderRadius(
                 node.styles.borderBottomRightRadius?.parsed,
-                width,
-                height,
+                layout.width,
+                layout.height,
             )
             const border_bottom_left_radius = getBorderRadius(
                 node.styles.borderBottomLeftRadius?.parsed,
-                width,
-                height,
+                layout.width,
+                layout.height,
             )
             floats[border_radius_x_float_offset + 0] = border_top_left_radius[0]
             floats[border_radius_x_float_offset + 1] = border_top_right_radius[0]
