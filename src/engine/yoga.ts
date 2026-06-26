@@ -1,6 +1,6 @@
 import { loadYoga } from 'yoga-layout/load'
-import { UNIT, EDGE, GUTTER } from '../style/consts.ts'
-import { calculateLayoutRect, getParentLayout } from './utils.ts'
+import { UNIT, EDGE, GUTTER } from '../style/consts'
+import { calculateLayoutRect, getParentLayout } from './utils'
 
 export default async function createYogaEngine() {
     const Yoga = await loadYoga()

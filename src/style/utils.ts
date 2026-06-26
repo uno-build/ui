@@ -1,6 +1,6 @@
-import { UNIT } from './consts.ts'
-import { parseEnum } from './parsers.ts'
-import { validateEnum } from './validators.ts'
+import { UNIT } from './consts'
+import { parseEnum } from './parsers'
+import { validateEnum } from './validators'
 
 export function readPx(value: string) {
     const match = readUnitMatch(value, /^(-?(?:\d+|\d*\.\d+))px$/)

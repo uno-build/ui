@@ -1,6 +1,6 @@
-import { normalizeStyleName, normalizeStyleKey, normalizeStyleValue } from './normalizers.ts'
-import { runValidators, runParsePipeline } from './utils.ts'
-import { expandProperty } from './expand.ts'
+import { normalizeStyleName, normalizeStyleKey, normalizeStyleValue } from './normalizers'
+import { runValidators, runParsePipeline } from './utils'
+import { expandProperty } from './expand'
 import {
     ALIGN_CONTENT_DEFINITION,
     ALIGN_ITEMS_DEFINITION,
@@ -25,7 +25,7 @@ import {
     PX_PERCENT_DEFINITION,
     SIZE_DEFINITION,
     INTEGER_DEFINITION,
-} from './definitions.ts'
+} from './definitions'
 
 // if (typeof window !== 'undefined') {
 //     window.resolveStyle = resolveStyle

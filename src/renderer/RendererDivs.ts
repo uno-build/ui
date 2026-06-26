@@ -1,5 +1,5 @@
-import Renderer from '../Renderer.ts'
-import createEngine, { YOGA_SETTER } from '../engine/yoga.ts'
+import Renderer from '../Renderer'
+import createEngine, { YOGA_SETTER } from '../engine/yoga'
 import { getAncestorClipping } from './utils/node.js'
 
 export default class RendererDivs extends Renderer {
@@ -99,12 +99,7 @@ const DEFAULT_NODE_STYLE = {
     zIndex: '0',
 }
 
-const MANDATORY_STYLES = [
-    'borderTopWidth',
-    'borderLeftWidth',
-    'borderRightWidth',
-    'borderBottomWidth',
-]
+const MANDATORY_STYLES = ['borderTopWidth', 'borderLeftWidth', 'borderRightWidth', 'borderBottomWidth']
 
 function createDivFactory() {
     return document.createElement('div')

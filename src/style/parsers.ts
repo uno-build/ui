@@ -1,5 +1,5 @@
-import { UNIT } from './consts.ts'
-import { readInteger, readNumber, readPercent, readPx } from './utils.ts'
+import { UNIT } from './consts'
+import { readInteger, readNumber, readPercent, readPx } from './utils'
 
 export function parseAuto(value: string) {
     return {

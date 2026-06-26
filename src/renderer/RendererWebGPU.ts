@@ -1,20 +1,18 @@
-import Renderer from '../Renderer.ts'
-import createEngine, { YOGA_SETTER } from '../engine/yoga.ts'
+import Renderer from '../Renderer'
+import createEngine, { YOGA_SETTER } from '../engine/yoga'
 import { getNodeDrawingData } from './utils/node.js'
-import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders.ts'
+import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders'
 import {
     FLOAT32_SIZE,
     VIEWPORT_SIZE,
     POSITION_VERTEX_COUNT,
-    POSITION_VERTEX_FLOATS,
     POSITION_VERTEX_SIZE,
     POSITION_VERTICES,
     ATTRIBUTES,
     ATTRIBUTES_SIZE,
-} from './webgpu/buffers.ts'
+} from './webgpu/buffers'
 
 export default class RendererWebGPU extends Renderer {
-    // private node_states = new WeakMap()
     private canvas
     private engine
     private adapter

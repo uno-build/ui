@@ -1,18 +1,12 @@
-import { readInteger, readNumber, readPercent, readPx } from './utils.ts'
+import { readInteger, readNumber, readPercent, readPx } from './utils'
 
 export function validateColor(value: string) {
-    if (
-        typeof value !== 'string' ||
-        !/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)
-    ) {
+    if (typeof value !== 'string' || !/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) {
         throw new Error('expected hex color')
     }
 }
 export function validateEnum(value: string, values: Record<string, any>) {
-    if (
-        typeof value !== 'string' ||
-        !Object.prototype.hasOwnProperty.call(values, value)
-    ) {
+    if (typeof value !== 'string' || !Object.prototype.hasOwnProperty.call(values, value)) {
         throw new Error(`expected one of ${Object.keys(values).join(', ')}`)
     }
 }
@@ -53,8 +47,7 @@ export function validatePercent(value: string) {
 }
 
 export function validateNonNegative(value: any) {
-    const number =
-        readNumber(value) ?? (readPx(value) ?? readPercent(value))?.value
+    const number = readNumber(value) ?? (readPx(value) ?? readPercent(value))?.value
 
     if (number !== undefined && number < 0) {
         throw new Error('expected non-negative value')

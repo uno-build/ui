@@ -1,5 +1,5 @@
 // https://github.com/robinweser/inline-style-expand-shorthand/blob/master/src/expand.js
-import { BORDER_STYLE } from './consts.ts'
+import { BORDER_STYLE } from './consts'
 
 const NUMBER = /^-?(?:\d+|\d*\.\d+)$/
 const BORDER_WIDTH = /^-?(?:\d+|\d*\.\d+)px$|^0$/

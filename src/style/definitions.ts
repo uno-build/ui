@@ -11,7 +11,7 @@ import {
     OVERFLOW,
     POSITION,
     WRAP,
-} from './consts.ts'
+} from './consts'
 import {
     validateColor,
     validateAuto,
@@ -22,17 +22,9 @@ import {
     validatePercent,
     validateNonNegative,
     validateMaxOne,
-} from './validators.ts'
-import {
-    parseColor,
-    parseAuto,
-    parseUnset,
-    parseInteger,
-    parseNumber,
-    parsePx,
-    parsePercent,
-} from './parsers.ts'
-import { createEnumValidator, createEnumParser } from './utils.ts'
+} from './validators'
+import { parseColor, parseAuto, parseUnset, parseInteger, parseNumber, parsePx, parsePercent } from './parsers'
+import { createEnumValidator, createEnumParser } from './utils'
 
 export const INTEGER_DEFINITION = [
     {

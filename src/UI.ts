@@ -1,6 +1,6 @@
 import Style from './style'
-import Node from './Node.ts'
-import { sortPaintingOrder } from './utils/sortPaintingOrder.ts'
+import Node from './Node'
+import { sortPaintingOrder } from './utils/sortPaintingOrder'
 
 export default class UI {
     public root = null
