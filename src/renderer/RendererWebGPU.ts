@@ -91,6 +91,11 @@ export default class RendererWebGPU extends Renderer {
                                 format: ATTRIBUTES.CLIPPING.FORMAT,
                             },
                             {
+                                shaderLocation: ATTRIBUTES.OPACITY.LOCATION,
+                                offset: ATTRIBUTES.OPACITY.OFFSET,
+                                format: ATTRIBUTES.OPACITY.FORMAT,
+                            },
+                            {
                                 shaderLocation: ATTRIBUTES.BORDERRADIUS_X.LOCATION,
                                 offset: ATTRIBUTES.BORDERRADIUS_X.OFFSET,
                                 format: ATTRIBUTES.BORDERRADIUS_X.FORMAT,
@@ -129,11 +134,6 @@ export default class RendererWebGPU extends Renderer {
                                 shaderLocation: ATTRIBUTES.BACKGROUNDCOLOR.LOCATION,
                                 offset: ATTRIBUTES.BACKGROUNDCOLOR.OFFSET,
                                 format: ATTRIBUTES.BACKGROUNDCOLOR.FORMAT,
-                            },
-                            {
-                                shaderLocation: ATTRIBUTES.OPACITY.LOCATION,
-                                offset: ATTRIBUTES.OPACITY.OFFSET,
-                                format: ATTRIBUTES.OPACITY.FORMAT,
                             },
                         ],
                     },

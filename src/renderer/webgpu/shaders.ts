@@ -9,15 +9,15 @@ struct VertexOutput {
     @location(0) local_position: vec2f,
     @location(1) rect_size: vec2f,
     @location(2) clipping: vec4f,
-    @location(3) border_radius_x: vec4f,
-    @location(4) border_radius_y: vec4f,
-    @location(5) border_top_color: vec4f,
-    @location(6) border_right_color: vec4f,
-    @location(7) border_bottom_color: vec4f,
-    @location(8) border_left_color: vec4f,
-    @location(9) border_widths: vec4f,
-    @location(10) background_color: vec4f,
-    @location(11) opacity: f32,
+    @location(3) opacity: f32,
+    @location(4) border_radius_x: vec4f,
+    @location(5) border_radius_y: vec4f,
+    @location(6) border_top_color: vec4f,
+    @location(7) border_right_color: vec4f,
+    @location(8) border_bottom_color: vec4f,
+    @location(9) border_left_color: vec4f,
+    @location(10) border_widths: vec4f,
+    @location(11) background_color: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -27,15 +27,15 @@ fn main(
     @location(0) position: vec2f,
     @location(1) layout_node: vec4f,
     @location(2) clipping: vec4f,
-    @location(3) border_radius_x: vec4f,
-    @location(4) border_radius_y: vec4f,
-    @location(5) border_top_color: vec4f,
-    @location(6) border_right_color: vec4f,
-    @location(7) border_bottom_color: vec4f,
-    @location(8) border_left_color: vec4f,
-    @location(9) border_widths: vec4f,
-    @location(10) background_color: vec4f,
-    @location(11) opacity: f32,
+    @location(3) opacity: f32,
+    @location(4) border_radius_x: vec4f,
+    @location(5) border_radius_y: vec4f,
+    @location(6) border_top_color: vec4f,
+    @location(7) border_right_color: vec4f,
+    @location(8) border_bottom_color: vec4f,
+    @location(9) border_left_color: vec4f,
+    @location(10) border_widths: vec4f,
+    @location(11) background_color: vec4f,
 ) -> VertexOutput {
     let local_position = position * layout_node.zw;
     let pixel = layout_node.xy + local_position;
@@ -49,6 +49,7 @@ fn main(
     output.local_position = local_position;
     output.rect_size = layout_node.zw;
     output.clipping = clipping;
+    output.opacity = opacity;
     output.border_radius_x = border_radius_x;
     output.border_radius_y = border_radius_y;
     output.border_top_color = border_top_color;
@@ -57,7 +58,6 @@ fn main(
     output.border_left_color = border_left_color;
     output.border_widths = border_widths;
     output.background_color = background_color;
-    output.opacity = opacity;
     return output;
 }
 `
@@ -67,15 +67,15 @@ struct FragmentInput {
     @location(0) local_position: vec2f,
     @location(1) rect_size: vec2f,
     @location(2) clipping: vec4f,
-    @location(3) border_radius_x: vec4f,
-    @location(4) border_radius_y: vec4f,
-    @location(5) border_top_color: vec4f,
-    @location(6) border_right_color: vec4f,
-    @location(7) border_bottom_color: vec4f,
-    @location(8) border_left_color: vec4f,
-    @location(9) border_widths: vec4f,
-    @location(10) background_color: vec4f,
-    @location(11) opacity: f32,
+    @location(3) opacity: f32,
+    @location(4) border_radius_x: vec4f,
+    @location(5) border_radius_y: vec4f,
+    @location(6) border_top_color: vec4f,
+    @location(7) border_right_color: vec4f,
+    @location(8) border_bottom_color: vec4f,
+    @location(9) border_left_color: vec4f,
+    @location(10) border_widths: vec4f,
+    @location(11) background_color: vec4f,
 }
 
 fn cornerRadius(
