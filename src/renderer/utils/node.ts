@@ -1,5 +1,5 @@
-import { DISPLAY, OVERFLOW, UNIT } from '../../style/consts.js'
-import { TRANSPARENT_COLOR } from '../webgpu/buffers.js'
+import { DISPLAY, OVERFLOW, UNIT } from '../../style/consts'
+import { TRANSPARENT_COLOR } from '../webgpu/buffers'
 
 // If null is returned, the node should not be drawn
 export function getNodeDrawingData(node) {

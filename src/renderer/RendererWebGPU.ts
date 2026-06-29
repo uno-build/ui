@@ -1,6 +1,6 @@
 import Renderer from '../Renderer'
 import createEngine, { YOGA_SETTER } from '../engine/yoga'
-import { getNodeDrawingData } from './utils/node.js'
+import { getNodeDrawingData } from './utils/node'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders'
 import {
     FLOAT32_SIZE,

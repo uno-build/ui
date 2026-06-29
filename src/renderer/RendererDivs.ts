@@ -1,6 +1,6 @@
 import Renderer from '../Renderer'
 import createEngine, { YOGA_SETTER } from '../engine/yoga'
-import { getAncestorClipping } from './utils/node.js'
+import { getAncestorClipping } from './utils/node'
 
 export default class RendererDivs extends Renderer {
     private canvas
