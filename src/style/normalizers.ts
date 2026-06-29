@@ -18,6 +18,6 @@ export function normalizeStyleKey(name: string) {
     return name.trim().replace(/-/g, '').toUpperCase()
 }
 
-export function normalizeStyleValue(value: string) {
-    return value.trim().toLowerCase()
+export function normalizeStyleValue(value: string, name: any) {
+    return typeof value === 'string' ? value.trim().toLowerCase() : value
 }

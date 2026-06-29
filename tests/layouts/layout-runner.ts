@@ -43,7 +43,7 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
         await ui.init()
 
         syncRootSize({ ui, root, canvas })
-        const layoutResult = createLayout({ ui, rendererName })
+        const layoutResult = await createLayout({ ui, rendererName })
 
         ui.update()
         observeRootSize({ ui, root, canvas })
@@ -151,12 +151,10 @@ export function readRendererNames(renderersParam, logger = console) {
 
 export function compareLayoutResults(results) {
     const comparisons = []
-    const sourceOfTruth = results.find(
-        ({ rendererName }) => SETUPS[rendererName].sourceOfTruth === true,
-    )
+    const sourceOfTruth = results.find(({ rendererName }) => SETUPS[rendererName].sourceOfTruth === true)
 
     if (sourceOfTruth == null) {
-        return comparisons
+        throw new Error('No source of truth renderer result was produced')
     }
 
     for (const result of results) {
@@ -190,11 +188,7 @@ export function paintLayoutResultsMatch(a, b, tolerance = layoutComparisonTolera
             const aValue = aRow[key]
             const bValue = bRow[key]
 
-            return (
-                Number.isFinite(aValue) &&
-                Number.isFinite(bValue) &&
-                Math.abs(aValue - bValue) <= tolerance
-            )
+            return Number.isFinite(aValue) && Number.isFinite(bValue) && Math.abs(aValue - bValue) <= tolerance
         })
     })
 }
@@ -202,13 +196,9 @@ export function paintLayoutResultsMatch(a, b, tolerance = layoutComparisonTolera
 export function reportLayoutComparisons(comparisons, logger = console) {
     for (const comparison of comparisons) {
         if (comparison.matches) {
-            logger.log(
-                `✅ Layout results match between '${comparison.rendererA}' and '${comparison.rendererB}'`,
-            )
+            logger.log(`✅ Layout results match between '${comparison.rendererA}' and '${comparison.rendererB}'`)
         } else {
-            logger.error(
-                `❌ Layout results differ between '${comparison.rendererA}' and '${comparison.rendererB}'`,
-            )
+            logger.error(`❌ Layout results differ between '${comparison.rendererA}' and '${comparison.rendererB}'`)
         }
     }
 }
@@ -407,12 +397,7 @@ function findNodeByPath(ui, path) {
 function nodeContainsPoint(node, x, y) {
     const { layout } = node
 
-    return (
-        x >= layout.x &&
-        x < layout.x + layout.width &&
-        y >= layout.y &&
-        y < layout.y + layout.height
-    )
+    return x >= layout.x && x < layout.x + layout.width && y >= layout.y && y < layout.y + layout.height
 }
 
 function getSetup(name) {
@@ -428,9 +413,7 @@ function hasOwn(object, key) {
 }
 
 export const rendererNames = Object.keys(SETUPS)
-export const defaultRendererNames = rendererNames.filter(
-    (rendererName) => SETUPS[rendererName].runOnTests !== false,
-)
+export const defaultRendererNames = rendererNames.filter((rendererName) => SETUPS[rendererName].runOnTests !== false)
 export const defaultSetupsNames = defaultRendererNames
 export const comparedLayoutKeys = ['width', 'height', 'x', 'y', 'centerX', 'centerY']
 export const comparedPaintedRectKeys = ['x', 'y', 'width', 'height']

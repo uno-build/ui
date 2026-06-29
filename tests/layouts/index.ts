@@ -1,15 +1,14 @@
 import borderRadius from './examples/borderRadius'
 import borderRadiusCorners from './examples/borderRadiusCorners'
 import borderRadiusOverlap from './examples/borderRadiusOverlap'
+import backgroundImage from './examples/backgroundImage'
 import positionRelative from './examples/positionRelative'
 import deepNestedPaint from './examples/deepNestedPaint'
-import display from './examples/display'
 import nestedFlexDirections from './examples/nestedFlexDirections'
 import nestedMargins from './examples/nestedMargins'
 import nestedPercentDimensions from './examples/nestedPercentDimensions'
 import nestedRelativeOffsets from './examples/nestedRelativeOffsets'
 import nestedWrapGap from './examples/nestedWrapGap'
-import opacity from './examples/opacity'
 import overflowScroll from './examples/overflowScroll'
 import overflowVisibleHidden from './examples/overflowVisibleHidden'
 import wrappedAlignContentRelativeOffsets from './examples/wrappedAlignContentRelativeOffsets'
@@ -24,17 +23,16 @@ import zindexGrid from './examples/zindexGrid'
 import zindexEdgeCases from './examples/zindexEdgeCases'
 
 export const LAYOUTS = {
+    backgroundImage,
     borderRadius,
     borderRadiusCorners,
     borderRadiusOverlap,
     deepNestedPaint,
-    display,
     nestedFlexDirections,
     nestedMargins,
     nestedPercentDimensions,
     nestedRelativeOffsets,
     nestedWrapGap,
-    opacity,
     overflowScroll,
     overflowVisibleHidden,
     wrappedAlignContentRelativeOffsets,
@@ -51,9 +49,7 @@ export const LAYOUTS = {
 }
 
 export const layoutNames = Object.keys(LAYOUTS)
-const layoutNamesByLowerCase = Object.fromEntries(
-    layoutNames.map((name) => [name.toLowerCase(), name]),
-)
+const layoutNamesByLowerCase = Object.fromEntries(layoutNames.map((name) => [name.toLowerCase(), name]))
 
 export function getLayout(name) {
     const layoutName = layoutNamesByLowerCase[name.toLowerCase()]

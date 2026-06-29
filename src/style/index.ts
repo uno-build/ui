@@ -5,6 +5,7 @@ import {
     ALIGN_CONTENT_DEFINITION,
     ALIGN_ITEMS_DEFINITION,
     ALIGN_SELF_DEFINITION,
+    BACKGROUND_IMAGE_DEFINITION,
     BORDER_DEFINITION,
     BORDER_WIDTH_DEFINITION,
     BOX_SIZING_DEFINITION,
@@ -44,11 +45,12 @@ export function resolveStyle(name: string, value: any) {
         throw new Error(`unsupported property '${name}'`)
     }
 
-    if (typeof value !== 'string') {
-        throw new Error(`style value must be a string, got '${typeof value}'`)
+    const typeof_value = typeof value
+    if (typeof_value !== 'string' && typeof_value !== 'object') {
+        throw new Error(`style value must be a string or an object, got '${typeof_value}'`)
     }
 
-    const normalized_value = normalizeStyleValue(value)
+    const normalized_value = normalizeStyleValue(value, normalized_name)
 
     try {
         return StyleParser.resolve(normalized_value)
@@ -114,9 +116,6 @@ export const STYLE = {
     OVERFLOW: createStyle('overflow', (name, value) => [
         { name, value, definition: OVERFLOW_DEFINITION },
     ]),
-    BACKGROUNDCOLOR: createStyle('backgroundColor', (name, value) => [
-        { name, value, definition: COLOR_DEFINITION },
-    ]),
     OPACITY: createStyle('opacity', (name, value) => [
         { name, value, definition: OPACITY_DEFINITION },
     ]),
@@ -179,6 +178,12 @@ export const STYLE = {
     ]),
     BORDERBOTTOMCOLOR: createStyle('borderBottomColor', (name, value) => [
         { name, value, definition: COLOR_DEFINITION },
+    ]),
+    BACKGROUNDCOLOR: createStyle('backgroundColor', (name, value) => [
+        { name, value, definition: COLOR_DEFINITION },
+    ]),
+    BACKGROUNDIMAGE: createStyle('backgroundImage', (name, value) => [
+        { name, value, definition: BACKGROUND_IMAGE_DEFINITION },
     ]),
 
     // YOGA PROPERTIES

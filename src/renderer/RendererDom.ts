@@ -31,8 +31,16 @@ export default class RendererDom extends Renderer {
         return node.element.children.length
     }
 
-    protected updateStyle(node, { name, value }) {
-        node.element.style[name] = value
+    protected updateStyle(node, style) {
+        if (style.name === 'backgroundImage') {
+            node.element.style.backgroundImage = `url(${style.value})`
+            node.element.style.backgroundSize = 'cover'
+            node.element.style.backgroundPosition = 'center'
+            node.element.style.backgroundRepeat = 'no-repeat'
+            return
+        }
+
+        node.element.style[style.name] = style.value
     }
 
     // prettier-ignore
@@ -64,4 +72,8 @@ const DEFAULT_NODE_STYLE = {
     minWidth: '0',
     minHeight: '0',
     zIndex: '0',
+}
+
+function toCssBackgroundImage(value) {
+    return `url(${JSON.stringify(value)})`
 }

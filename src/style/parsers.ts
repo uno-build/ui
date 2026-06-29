@@ -68,3 +68,7 @@ export function parsePercent(value: string) {
         parsed: unit,
     }
 }
+
+export function parseImage(value: any) {
+    return { value: value.src, parsed: value }
+}
