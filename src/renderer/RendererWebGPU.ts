@@ -258,13 +258,15 @@ export default class RendererWebGPU extends Renderer {
                     kind: 'image_panel',
                     node,
                     order: node.order,
-                    page: texture.page,
+                    bind_group:
+                        texture.kind === 'dedicated' ? texture.page.bind_group : this.texture_manager.bind_group,
                     texture,
                     instance_data: {
                         ...drawing_data,
                         background_image_mode: 1,
                         background_uv_rect: texture.uv_rect,
                         background_image_size: texture.image_size,
+                        background_atlas_layer: texture.layer,
                     },
                 })
                 continue
@@ -274,12 +276,13 @@ export default class RendererWebGPU extends Renderer {
                 kind: 'panel',
                 node,
                 order: node.order,
-                page: this.texture_manager.default_page,
+                bind_group: this.texture_manager.bind_group,
                 instance_data: {
                     ...drawing_data,
                     background_image_mode: 0,
                     background_uv_rect: [0, 0, 1, 1],
                     background_image_size: [1, 1],
+                    background_atlas_layer: 0,
                 },
             })
         }
@@ -292,20 +295,15 @@ export default class RendererWebGPU extends Renderer {
 
         for (let index = 0; index < render_items.length; index++) {
             const render_item = render_items[index]
-            const bind_group = render_item.page.bind_group
+            const bind_group = render_item.bind_group
             const last_batch = batches[batches.length - 1]
 
-            if (
-                last_batch?.kind === render_item.kind &&
-                last_batch.pipeline === this.pipeline &&
-                last_batch.bind_group === bind_group
-            ) {
+            if (last_batch?.pipeline === this.pipeline && last_batch.bind_group === bind_group) {
                 last_batch.instance_count++
                 continue
             }
 
             batches.push({
-                kind: render_item.kind,
                 pipeline: this.pipeline,
                 bind_group,
                 first_instance: index,
@@ -355,11 +353,16 @@ export default class RendererWebGPU extends Renderer {
             pass_encoder.setVertexBuffer(0, this.position_buffer)
             pass_encoder.setVertexBuffer(1, this.nodes_buffer)
 
+            // let draws = 0
+            // let instances = 0
             for (const batch of batches) {
                 pass_encoder.setPipeline(batch.pipeline)
                 pass_encoder.setBindGroup(0, batch.bind_group)
                 pass_encoder.draw(POSITION_VERTEX_COUNT, batch.instance_count, 0, batch.first_instance)
+                // draws++
+                // instances += batch.instance_count
             }
+            // console.log(`Draws: ${draws}, Instances: ${instances}`)
         }
 
         pass_encoder.end()
@@ -401,6 +404,7 @@ export default class RendererWebGPU extends Renderer {
             background_image_mode,
             background_uv_rect,
             background_image_size,
+            background_atlas_layer,
         } = instance_data
 
         const layout_float_offset = (bytes_offset + ATTRIBUTES.LAYOUT.OFFSET) / FLOAT32_SIZE
@@ -437,5 +441,6 @@ export default class RendererWebGPU extends Renderer {
         const background_image_size_float_offset =
             (bytes_offset + ATTRIBUTES.BACKGROUND_IMAGE_SIZE.OFFSET) / FLOAT32_SIZE
         this.nodes_floats.set(background_image_size, background_image_size_float_offset)
+        this.nodes_floats[background_image_size_float_offset + 2] = background_atlas_layer
     }
 }

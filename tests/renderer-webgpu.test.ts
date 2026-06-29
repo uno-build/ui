@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { OVERFLOW, UNIT } from '../src/style/consts.ts'
 import { ATTRIBUTES_SIZE, ATTRIBUTES, FLOAT32_SIZE } from '../src/renderer/webgpu/buffers.ts'
-import { ATLAS_PADDING, ATLAS_SIZE, TextureManager } from '../src/renderer/webgpu/textures.ts'
+import { ATLAS_LAYERS, ATLAS_PADDING, ATLAS_SIZE, TextureManager } from '../src/renderer/webgpu/textures.ts'
 
 ;(globalThis as any).GPUTextureUsage = {
     TEXTURE_BINDING: 1,
@@ -108,12 +108,11 @@ test('RendererWebGPU writes border drawing data into panel instance data', () =>
 
 test('RendererWebGPU writes background image data into panel instance data', () => {
     const image = createImage('coin.png', 40, 20)
-    const page = createTexturePage('atlas')
     const texture_manager = createTextureManager({
         resources: {
             [image.src]: {
                 kind: 'atlas',
-                page,
+                layer: 3,
                 uv_rect: [0.1, 0.2, 0.3, 0.4],
                 image_size: [image.width, image.height],
             },
@@ -141,67 +140,68 @@ test('RendererWebGPU writes background image data into panel instance data', () 
         expect.closeTo(0.4),
     ])
     expect(Array.from(floats.slice(image_size_float_offset, image_size_float_offset + 2))).toEqual([40, 20])
+    expect(floats[image_size_float_offset + 2]).toBe(3)
 })
 
 test('RendererWebGPU batches consecutive solid panels together', () => {
-    const page = createTexturePage('default')
-    const renderer = createRenderer(createTextureManager({ default_page: page }))
+    const bind_group = createBindGroup('atlas')
+    const renderer = createRenderer(createTextureManager({ bind_group }))
     const batches = (renderer as any).buildBatches([
-        createRenderItem('panel', page),
-        createRenderItem('panel', page),
+        createRenderItem('panel', bind_group),
+        createRenderItem('panel', bind_group),
     ])
 
     expect(batches).toEqual([
         {
-            kind: 'panel',
             pipeline: (renderer as any).pipeline,
-            bind_group: page.bind_group,
+            bind_group,
             first_instance: 0,
             instance_count: 2,
         },
     ])
 })
 
-test('RendererWebGPU batches consecutive images on the same atlas page', () => {
-    const page = createTexturePage('atlas')
+test('RendererWebGPU batches consecutive atlas images together', () => {
+    const bind_group = createBindGroup('atlas')
     const renderer = createRenderer()
     const batches = (renderer as any).buildBatches([
-        createRenderItem('image_panel', page),
-        createRenderItem('image_panel', page),
+        createRenderItem('image_panel', bind_group),
+        createRenderItem('image_panel', bind_group),
     ])
 
     expect(batches).toHaveLength(1)
     expect(batches[0].first_instance).toBe(0)
     expect(batches[0].instance_count).toBe(2)
-    expect(batches[0].bind_group).toBe(page.bind_group)
+    expect(batches[0].bind_group).toBe(bind_group)
 })
 
 test('RendererWebGPU breaks batches for dedicated textures', () => {
-    const atlas_page = createTexturePage('atlas')
-    const dedicated_page = createTexturePage('dedicated')
+    const atlas_bind_group = createBindGroup('atlas')
+    const dedicated_bind_group = createBindGroup('dedicated')
     const renderer = createRenderer()
     const batches = (renderer as any).buildBatches([
-        createRenderItem('image_panel', atlas_page),
-        createRenderItem('image_panel', dedicated_page),
-        createRenderItem('image_panel', atlas_page),
+        createRenderItem('image_panel', atlas_bind_group),
+        createRenderItem('image_panel', dedicated_bind_group),
+        createRenderItem('image_panel', atlas_bind_group),
     ])
 
     expect(batches.map((batch) => batch.first_instance)).toEqual([0, 1, 2])
     expect(batches.map((batch) => batch.instance_count)).toEqual([1, 1, 1])
 })
 
-test('RendererWebGPU preserves order when panel and image batches alternate', () => {
-    const default_page = createTexturePage('default')
-    const atlas_page = createTexturePage('atlas')
+test('RendererWebGPU batches atlas panels and images together', () => {
+    const bind_group = createBindGroup('atlas')
     const renderer = createRenderer()
     const batches = (renderer as any).buildBatches([
-        createRenderItem('panel', default_page),
-        createRenderItem('image_panel', atlas_page),
-        createRenderItem('panel', default_page),
+        createRenderItem('panel', bind_group),
+        createRenderItem('image_panel', bind_group),
+        createRenderItem('panel', bind_group),
     ])
 
-    expect(batches.map((batch) => batch.kind)).toEqual(['panel', 'image_panel', 'panel'])
-    expect(batches.map((batch) => batch.first_instance)).toEqual([0, 1, 2])
+    expect(batches).toHaveLength(1)
+    expect(batches[0].first_instance).toBe(0)
+    expect(batches[0].instance_count).toBe(3)
+    expect(batches[0].bind_group).toBe(bind_group)
 })
 
 test('TextureManager reuses resources by src', () => {
@@ -215,20 +215,24 @@ test('TextureManager reuses resources by src', () => {
     expect(device.copies).toHaveLength(copy_count)
 })
 
-test('TextureManager packs small images into atlas pages', () => {
+test('TextureManager packs small images into atlas layers', () => {
     const device = createFakeDevice()
     const texture_manager = createRealTextureManager(device)
     const resource = texture_manager.getImage(createImage('small.png', 32, 16))
 
     expect(resource.kind).toBe('atlas')
-    expect(resource.page.width).toBe(ATLAS_SIZE)
-    expect(resource.page.height).toBe(ATLAS_SIZE)
+    expect(resource.layer).toBe(0)
     expect(resource.image_size).toEqual([32, 16])
     expect(resource.uv_rect[0]).toBeGreaterThan(0)
     expect(resource.uv_rect[1]).toBeGreaterThan(0)
     expect(resource.uv_rect[2]).toBeGreaterThan(0)
     expect(resource.uv_rect[3]).toBeGreaterThan(0)
-    expect(device.copies[0].destination.origin).toEqual([ATLAS_PADDING, ATLAS_PADDING])
+    expect(device.textures[0].descriptor.size).toEqual({
+        width: ATLAS_SIZE,
+        height: ATLAS_SIZE,
+        depthOrArrayLayers: ATLAS_LAYERS,
+    })
+    expect(device.copies[0].destination.origin).toEqual([ATLAS_PADDING, ATLAS_PADDING, 0])
 })
 
 test('TextureManager uses dedicated textures for large images', () => {
@@ -239,11 +243,12 @@ test('TextureManager uses dedicated textures for large images', () => {
     expect(resource.kind).toBe('dedicated')
     expect(resource.page.width).toBe(2048)
     expect(resource.page.height).toBe(128)
+    expect(resource.layer).toBe(0)
     expect(resource.uv_rect).toEqual([0, 0, 1, 1])
-    expect(device.copies[0].destination.origin).toBeUndefined()
+    expect(device.copies[0].destination.origin).toEqual([0, 0, 0])
 })
 
-test('TextureManager creates another atlas page when the current one is full', () => {
+test('TextureManager allocates another atlas layer when the current one is full', () => {
     const device = createFakeDevice()
     const texture_manager = createRealTextureManager(device)
     const first = texture_manager.getImage(createImage('image-0.png', 512, 512))
@@ -255,7 +260,7 @@ test('TextureManager creates another atlas page when the current one is full', (
 
     expect(first.kind).toBe('atlas')
     expect(last.kind).toBe('atlas')
-    expect(last.page).not.toBe(first.page)
+    expect(last.layer).toBeGreaterThan(first.layer)
 })
 
 function createNodesBufferData(renderer, nodes) {
@@ -272,9 +277,9 @@ function createRenderer(texture_manager = createTextureManager()) {
     return renderer
 }
 
-function createTextureManager({ default_page = createTexturePage('default'), resources = {} } = {}) {
+function createTextureManager({ bind_group = createBindGroup('atlas'), resources = {} } = {}) {
     return {
-        default_page,
+        bind_group,
         getImage(image) {
             return resources[image.src]
         },
@@ -290,21 +295,16 @@ function createRealTextureManager(device) {
     })
 }
 
-function createRenderItem(kind, page) {
+function createRenderItem(kind, bind_group) {
     return {
         kind,
-        page,
+        bind_group,
         instance_data: {},
     }
 }
 
-function createTexturePage(id) {
-    return {
-        texture: { id },
-        bind_group: { id },
-        width: 1,
-        height: 1,
-    }
+function createBindGroup(id) {
+    return { id }
 }
 
 function createImage(src, width, height) {

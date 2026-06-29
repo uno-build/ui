@@ -1,7 +1,6 @@
 export const ATLAS_SIZE = 2048
+export const ATLAS_LAYERS = 8
 export const ATLAS_PADDING = 2
-export const MAX_ATLAS_IMAGE_SIZE = 1024
-export const MAX_ATLAS_IMAGE_AREA = 512 * 512
 
 export type TexturePage = {
     texture: any
@@ -13,39 +12,42 @@ export type TexturePage = {
 export type TextureResource =
     | {
           kind: 'atlas'
-          page: TexturePage
+          layer: number
           uv_rect: [number, number, number, number]
           image_size: [number, number]
       }
     | {
           kind: 'dedicated'
           page: TexturePage
+          layer: 0
           uv_rect: [0, 0, 1, 1]
           image_size: [number, number]
       }
 
-type AtlasPage = {
-    page: TexturePage
+type AtlasLayer = {
+    layer: number
     x: number
     y: number
     row_height: number
 }
 
 export class TextureManager {
-    public default_page: TexturePage
+    public bind_group
     private device
     private bind_group_layout
     private viewport_buffer
     private sampler
+    private atlas_texture
     private resources = new Map<string, TextureResource>()
-    private atlas_pages: AtlasPage[] = []
+    private atlas_layers: AtlasLayer[] = []
 
     constructor({ device, bind_group_layout, viewport_buffer, sampler }) {
         this.device = device
         this.bind_group_layout = bind_group_layout
         this.viewport_buffer = viewport_buffer
         this.sampler = sampler
-        this.default_page = this.createDefaultPage()
+        this.atlas_texture = this.createAtlasTexture()
+        this.bind_group = this.createBindGroup(this.atlas_texture)
     }
 
     public getImage(image): TextureResource {
@@ -54,39 +56,49 @@ export class TextureManager {
             return resource
         }
 
-        const next_resource = this.isAtlasCandidate(image)
-            ? this.createAtlasResource(image)
-            : this.createDedicatedResource(image)
+        const next_resource = this.createTextureResource(image)
         this.resources.set(image.src, next_resource)
 
         return next_resource
     }
 
+    private createTextureResource(image): TextureResource {
+        if (this.isAtlasCandidate(image)) {
+            const atlas_resource = this.createAtlasResource(image)
+            if (atlas_resource !== null) {
+                return atlas_resource
+            }
+        }
+
+        return this.createDedicatedResource(image)
+    }
+
     private isAtlasCandidate(image) {
         return (
-            image.width <= MAX_ATLAS_IMAGE_SIZE &&
-            image.height <= MAX_ATLAS_IMAGE_SIZE &&
-            image.width * image.height <= MAX_ATLAS_IMAGE_AREA &&
             image.width + ATLAS_PADDING * 2 <= ATLAS_SIZE &&
             image.height + ATLAS_PADDING * 2 <= ATLAS_SIZE
         )
     }
 
-    private createAtlasResource(image): TextureResource {
+    private createAtlasResource(image): TextureResource | null {
         const allocation = this.allocateAtlasRect(image.width, image.height)
+        if (allocation === null) {
+            return null
+        }
+
         this.device.queue.copyExternalImageToTexture(
             { source: image.bitmap },
             {
-                texture: allocation.atlas_page.page.texture,
-                origin: [allocation.x + ATLAS_PADDING, allocation.y + ATLAS_PADDING],
+                texture: this.atlas_texture,
+                origin: [allocation.x + ATLAS_PADDING, allocation.y + ATLAS_PADDING, allocation.atlas_layer.layer],
             },
-            [image.width, image.height],
+            [image.width, image.height, 1],
         )
-        this.copyImagePadding(image, allocation.atlas_page.page.texture, allocation.x, allocation.y)
+        this.copyImagePadding(image, this.atlas_texture, allocation.x, allocation.y, allocation.atlas_layer.layer)
 
         return {
             kind: 'atlas',
-            page: allocation.atlas_page.page,
+            layer: allocation.atlas_layer.layer,
             uv_rect: this.createAtlasUvRect(allocation.x, allocation.y, image.width, image.height),
             image_size: [image.width, image.height],
         }
@@ -96,13 +108,14 @@ export class TextureManager {
         const page = this.createTexturePage(image.width, image.height)
         this.device.queue.copyExternalImageToTexture(
             { source: image.bitmap },
-            { texture: page.texture },
-            [image.width, image.height],
+            { texture: page.texture, origin: [0, 0, 0] },
+            [image.width, image.height, 1],
         )
 
         return {
             kind: 'dedicated',
             page,
+            layer: 0,
             uv_rect: [0, 0, 1, 1],
             image_size: [image.width, image.height],
         }
@@ -112,65 +125,78 @@ export class TextureManager {
         const padded_width = width + ATLAS_PADDING * 2
         const padded_height = height + ATLAS_PADDING * 2
 
-        for (const atlas_page of this.atlas_pages) {
-            const allocation = this.tryAllocateAtlasRect(atlas_page, padded_width, padded_height)
+        for (const atlas_layer of this.atlas_layers) {
+            const allocation = this.tryAllocateAtlasRect(atlas_layer, padded_width, padded_height)
             if (allocation !== null) {
                 return allocation
             }
         }
 
-        const atlas_page = this.createAtlasPage()
-        this.atlas_pages.push(atlas_page)
-
-        return this.tryAllocateAtlasRect(atlas_page, padded_width, padded_height)
-    }
-
-    private tryAllocateAtlasRect(atlas_page, padded_width, padded_height) {
-        if (atlas_page.x + padded_width > atlas_page.page.width) {
-            atlas_page.x = 0
-            atlas_page.y += atlas_page.row_height
-            atlas_page.row_height = 0
+        if (this.atlas_layers.length >= ATLAS_LAYERS) {
+            return null
         }
 
-        if (atlas_page.y + padded_height > atlas_page.page.height) {
+        const atlas_layer = this.createAtlasLayer(this.atlas_layers.length)
+        this.atlas_layers.push(atlas_layer)
+
+        return this.tryAllocateAtlasRect(atlas_layer, padded_width, padded_height)
+    }
+
+    private tryAllocateAtlasRect(atlas_layer, padded_width, padded_height) {
+        if (atlas_layer.x + padded_width > ATLAS_SIZE) {
+            atlas_layer.x = 0
+            atlas_layer.y += atlas_layer.row_height
+            atlas_layer.row_height = 0
+        }
+
+        if (atlas_layer.y + padded_height > ATLAS_SIZE) {
             return null
         }
 
         const allocation = {
-            atlas_page,
-            x: atlas_page.x,
-            y: atlas_page.y,
+            atlas_layer,
+            x: atlas_layer.x,
+            y: atlas_layer.y,
         }
-        atlas_page.x += padded_width
-        atlas_page.row_height = Math.max(atlas_page.row_height, padded_height)
+        atlas_layer.x += padded_width
+        atlas_layer.row_height = Math.max(atlas_layer.row_height, padded_height)
 
         return allocation
     }
 
-    private createAtlasPage(): AtlasPage {
+    private createAtlasLayer(layer): AtlasLayer {
         return {
-            page: this.createTexturePage(ATLAS_SIZE, ATLAS_SIZE),
+            layer,
             x: 0,
             y: 0,
             row_height: 0,
         }
     }
 
-    private createDefaultPage() {
-        const page = this.createTexturePage(1, 1)
-        this.device.queue.writeTexture(
-            { texture: page.texture },
-            new Uint8Array([255, 255, 255, 255]),
-            { bytesPerRow: 4 },
-            [1, 1],
-        )
-
-        return page
+    private createAtlasTexture() {
+        return this.device.createTexture({
+            size: {
+                width: ATLAS_SIZE,
+                height: ATLAS_SIZE,
+                depthOrArrayLayers: ATLAS_LAYERS,
+            },
+            dimension: '2d',
+            format: 'rgba8unorm',
+            usage:
+                GPUTextureUsage.TEXTURE_BINDING |
+                GPUTextureUsage.COPY_DST |
+                GPUTextureUsage.RENDER_ATTACHMENT,
+        })
     }
 
     private createTexturePage(width, height): TexturePage {
         const texture = this.device.createTexture({
-            size: [width, height],
+            size: {
+                width,
+                height,
+                depthOrArrayLayers: 1,
+            },
+            dimension: '2d',
             format: 'rgba8unorm',
             usage:
                 GPUTextureUsage.TEXTURE_BINDING |
@@ -202,50 +228,52 @@ export class TextureManager {
                 },
                 {
                     binding: 2,
-                    resource: texture.createView(),
+                    resource: texture.createView({
+                        dimension: '2d-array',
+                    }),
                 },
             ],
         })
     }
 
-    private copyImagePadding(image, texture, x, y) {
+    private copyImagePadding(image, texture, x, y, layer) {
         for (let index = 0; index < ATLAS_PADDING; index++) {
             this.device.queue.copyExternalImageToTexture(
                 { source: image.bitmap, origin: [0, 0] },
-                { texture, origin: [x + ATLAS_PADDING, y + index] },
-                [image.width, 1],
+                { texture, origin: [x + ATLAS_PADDING, y + index, layer] },
+                [image.width, 1, 1],
             )
             this.device.queue.copyExternalImageToTexture(
                 { source: image.bitmap, origin: [0, image.height - 1] },
-                { texture, origin: [x + ATLAS_PADDING, y + ATLAS_PADDING + image.height + index] },
-                [image.width, 1],
+                { texture, origin: [x + ATLAS_PADDING, y + ATLAS_PADDING + image.height + index, layer] },
+                [image.width, 1, 1],
             )
             this.device.queue.copyExternalImageToTexture(
                 { source: image.bitmap, origin: [0, 0] },
-                { texture, origin: [x + index, y + ATLAS_PADDING] },
-                [1, image.height],
+                { texture, origin: [x + index, y + ATLAS_PADDING, layer] },
+                [1, image.height, 1],
             )
             this.device.queue.copyExternalImageToTexture(
                 { source: image.bitmap, origin: [image.width - 1, 0] },
-                { texture, origin: [x + ATLAS_PADDING + image.width + index, y + ATLAS_PADDING] },
-                [1, image.height],
+                { texture, origin: [x + ATLAS_PADDING + image.width + index, y + ATLAS_PADDING, layer] },
+                [1, image.height, 1],
             )
 
             for (let corner_index = 0; corner_index < ATLAS_PADDING; corner_index++) {
                 this.device.queue.copyExternalImageToTexture(
                     { source: image.bitmap, origin: [0, 0] },
-                    { texture, origin: [x + index, y + corner_index] },
-                    [1, 1],
+                    { texture, origin: [x + index, y + corner_index, layer] },
+                    [1, 1, 1],
                 )
                 this.device.queue.copyExternalImageToTexture(
                     { source: image.bitmap, origin: [image.width - 1, 0] },
-                    { texture, origin: [x + ATLAS_PADDING + image.width + index, y + corner_index] },
-                    [1, 1],
+                    { texture, origin: [x + ATLAS_PADDING + image.width + index, y + corner_index, layer] },
+                    [1, 1, 1],
                 )
                 this.device.queue.copyExternalImageToTexture(
                     { source: image.bitmap, origin: [0, image.height - 1] },
-                    { texture, origin: [x + index, y + ATLAS_PADDING + image.height + corner_index] },
-                    [1, 1],
+                    { texture, origin: [x + index, y + ATLAS_PADDING + image.height + corner_index, layer] },
+                    [1, 1, 1],
                 )
                 this.device.queue.copyExternalImageToTexture(
                     { source: image.bitmap, origin: [image.width - 1, image.height - 1] },
@@ -254,9 +282,10 @@ export class TextureManager {
                         origin: [
                             x + ATLAS_PADDING + image.width + index,
                             y + ATLAS_PADDING + image.height + corner_index,
+                            layer,
                         ],
                     },
-                    [1, 1],
+                    [1, 1, 1],
                 )
             }
         }
