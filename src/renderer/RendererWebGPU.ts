@@ -151,9 +151,9 @@ export default class RendererWebGPU extends Renderer {
                                 format: ATTRIBUTES.BACKGROUNDCOLOR.FORMAT,
                             },
                             {
-                                shaderLocation: ATTRIBUTES.BACKGROUND_IMAGE_MODE.LOCATION,
-                                offset: ATTRIBUTES.BACKGROUND_IMAGE_MODE.OFFSET,
-                                format: ATTRIBUTES.BACKGROUND_IMAGE_MODE.FORMAT,
+                                shaderLocation: ATTRIBUTES.BACKGROUND_IMAGE_MODE_DATA.LOCATION,
+                                offset: ATTRIBUTES.BACKGROUND_IMAGE_MODE_DATA.OFFSET,
+                                format: ATTRIBUTES.BACKGROUND_IMAGE_MODE_DATA.FORMAT,
                             },
                             {
                                 shaderLocation: ATTRIBUTES.BACKGROUND_UV_RECT.LOCATION,
@@ -255,12 +255,9 @@ export default class RendererWebGPU extends Renderer {
             if (background_image !== undefined) {
                 const texture = this.texture_manager.getImage(background_image)
                 render_items.push({
-                    kind: 'image_panel',
                     node,
                     order: node.order,
-                    bind_group:
-                        texture.kind === 'dedicated' ? texture.page.bind_group : this.texture_manager.bind_group,
-                    texture,
+                    bind_group: this.texture_manager.bind_group,
                     instance_data: {
                         ...drawing_data,
                         background_image_mode: 1,
@@ -273,7 +270,6 @@ export default class RendererWebGPU extends Renderer {
             }
 
             render_items.push({
-                kind: 'panel',
                 node,
                 order: node.order,
                 bind_group: this.texture_manager.bind_group,
@@ -285,6 +281,10 @@ export default class RendererWebGPU extends Renderer {
                     background_atlas_layer: 0,
                 },
             })
+        }
+
+        for (const render_item of render_items) {
+            render_item.bind_group = this.texture_manager.bind_group
         }
 
         return render_items
@@ -431,9 +431,10 @@ export default class RendererWebGPU extends Renderer {
 
         this.nodes_bytes.set(background_color, bytes_offset + ATTRIBUTES.BACKGROUNDCOLOR.OFFSET)
 
-        const background_image_mode_float_offset =
-            (bytes_offset + ATTRIBUTES.BACKGROUND_IMAGE_MODE.OFFSET) / FLOAT32_SIZE
-        this.nodes_floats[background_image_mode_float_offset] = background_image_mode
+        const background_image_mode_data_float_offset =
+            (bytes_offset + ATTRIBUTES.BACKGROUND_IMAGE_MODE_DATA.OFFSET) / FLOAT32_SIZE
+        this.nodes_floats[background_image_mode_data_float_offset] = background_image_mode
+        this.nodes_floats[background_image_mode_data_float_offset + 1] = background_atlas_layer
 
         const background_uv_rect_float_offset = (bytes_offset + ATTRIBUTES.BACKGROUND_UV_RECT.OFFSET) / FLOAT32_SIZE
         this.nodes_floats.set(background_uv_rect, background_uv_rect_float_offset)
@@ -441,6 +442,5 @@ export default class RendererWebGPU extends Renderer {
         const background_image_size_float_offset =
             (bytes_offset + ATTRIBUTES.BACKGROUND_IMAGE_SIZE.OFFSET) / FLOAT32_SIZE
         this.nodes_floats.set(background_image_size, background_image_size_float_offset)
-        this.nodes_floats[background_image_size_float_offset + 2] = background_atlas_layer
     }
 }

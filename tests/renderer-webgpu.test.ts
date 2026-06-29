@@ -2,12 +2,17 @@ import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { OVERFLOW, UNIT } from '../src/style/consts.ts'
 import { ATTRIBUTES_SIZE, ATTRIBUTES, FLOAT32_SIZE } from '../src/renderer/webgpu/buffers.ts'
-import { ATLAS_LAYERS, ATLAS_PADDING, ATLAS_SIZE, TextureManager } from '../src/renderer/webgpu/textures.ts'
+import {
+    ATLAS_MIN_ARRAY_TEXTURE_LAYERS,
+    ATLAS_SIZE,
+    TextureManager,
+} from '../src/renderer/webgpu/textures.ts'
 
 ;(globalThis as any).GPUTextureUsage = {
     TEXTURE_BINDING: 1,
-    COPY_DST: 2,
-    RENDER_ATTACHMENT: 4,
+    COPY_SRC: 2,
+    COPY_DST: 4,
+    RENDER_ATTACHMENT: 8,
 }
 
 test('RendererWebGPU accumulates opacity into panel instance data', () => {
@@ -111,7 +116,7 @@ test('RendererWebGPU writes background image data into panel instance data', () 
     const texture_manager = createTextureManager({
         resources: {
             [image.src]: {
-                kind: 'atlas',
+                src: image.src,
                 layer: 3,
                 uv_rect: [0.1, 0.2, 0.3, 0.4],
                 image_size: [image.width, image.height],
@@ -128,11 +133,11 @@ test('RendererWebGPU writes background image data into panel instance data', () 
     })
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const mode_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_MODE.OFFSET / FLOAT32_SIZE
+    const mode_data_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_MODE_DATA.OFFSET / FLOAT32_SIZE
     const uv_rect_float_offset = ATTRIBUTES.BACKGROUND_UV_RECT.OFFSET / FLOAT32_SIZE
     const image_size_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_SIZE.OFFSET / FLOAT32_SIZE
 
-    expect(floats[mode_float_offset]).toBe(1)
+    expect(Array.from(floats.slice(mode_data_float_offset, mode_data_float_offset + 2))).toEqual([1, 3])
     expect(Array.from(floats.slice(uv_rect_float_offset, uv_rect_float_offset + 4))).toEqual([
         expect.closeTo(0.1),
         expect.closeTo(0.2),
@@ -140,15 +145,14 @@ test('RendererWebGPU writes background image data into panel instance data', () 
         expect.closeTo(0.4),
     ])
     expect(Array.from(floats.slice(image_size_float_offset, image_size_float_offset + 2))).toEqual([40, 20])
-    expect(floats[image_size_float_offset + 2]).toBe(3)
 })
 
 test('RendererWebGPU batches consecutive solid panels together', () => {
     const bind_group = createBindGroup('atlas')
     const renderer = createRenderer(createTextureManager({ bind_group }))
     const batches = (renderer as any).buildBatches([
-        createRenderItem('panel', bind_group),
-        createRenderItem('panel', bind_group),
+        createRenderItem(bind_group),
+        createRenderItem(bind_group),
     ])
 
     expect(batches).toEqual([
@@ -165,8 +169,8 @@ test('RendererWebGPU batches consecutive atlas images together', () => {
     const bind_group = createBindGroup('atlas')
     const renderer = createRenderer()
     const batches = (renderer as any).buildBatches([
-        createRenderItem('image_panel', bind_group),
-        createRenderItem('image_panel', bind_group),
+        createRenderItem(bind_group),
+        createRenderItem(bind_group),
     ])
 
     expect(batches).toHaveLength(1)
@@ -175,27 +179,61 @@ test('RendererWebGPU batches consecutive atlas images together', () => {
     expect(batches[0].bind_group).toBe(bind_group)
 })
 
-test('RendererWebGPU breaks batches for dedicated textures', () => {
-    const atlas_bind_group = createBindGroup('atlas')
-    const dedicated_bind_group = createBindGroup('dedicated')
-    const renderer = createRenderer()
-    const batches = (renderer as any).buildBatches([
-        createRenderItem('image_panel', atlas_bind_group),
-        createRenderItem('image_panel', dedicated_bind_group),
-        createRenderItem('image_panel', atlas_bind_group),
+test('RendererWebGPU batches panels and images across atlas layers together', () => {
+    const bind_group = createBindGroup('atlas')
+    const first_image = createImage('first.png', 40, 20)
+    const second_image = createImage('second.png', 40, 20)
+    const renderer = createRenderer(
+        createTextureManager({
+            bind_group,
+            resources: {
+                [first_image.src]: {
+                    src: first_image.src,
+                    layer: 0,
+                    uv_rect: [0, 0, 0.1, 0.1],
+                    image_size: [first_image.width, first_image.height],
+                },
+                [second_image.src]: {
+                    src: second_image.src,
+                    layer: 1,
+                    uv_rect: [0.2, 0.2, 0.1, 0.1],
+                    image_size: [second_image.width, second_image.height],
+                },
+            },
+        }),
+    )
+    const render_items = (renderer as any).collectRenderItems([
+        createNode(),
+        createNode({
+            styles: {
+                backgroundImage: {
+                    parsed: first_image,
+                },
+            },
+        }),
+        createNode({
+            styles: {
+                backgroundImage: {
+                    parsed: second_image,
+                },
+            },
+        }),
     ])
+    const batches = (renderer as any).buildBatches(render_items)
 
-    expect(batches.map((batch) => batch.first_instance)).toEqual([0, 1, 2])
-    expect(batches.map((batch) => batch.instance_count)).toEqual([1, 1, 1])
+    expect(batches).toHaveLength(1)
+    expect(batches[0].first_instance).toBe(0)
+    expect(batches[0].instance_count).toBe(3)
+    expect(batches[0].bind_group).toBe(bind_group)
 })
 
 test('RendererWebGPU batches atlas panels and images together', () => {
     const bind_group = createBindGroup('atlas')
     const renderer = createRenderer()
     const batches = (renderer as any).buildBatches([
-        createRenderItem('panel', bind_group),
-        createRenderItem('image_panel', bind_group),
-        createRenderItem('panel', bind_group),
+        createRenderItem(bind_group),
+        createRenderItem(bind_group),
+        createRenderItem(bind_group),
     ])
 
     expect(batches).toHaveLength(1)
@@ -220,47 +258,77 @@ test('TextureManager packs small images into atlas layers', () => {
     const texture_manager = createRealTextureManager(device)
     const resource = texture_manager.getImage(createImage('small.png', 32, 16))
 
-    expect(resource.kind).toBe('atlas')
     expect(resource.layer).toBe(0)
     expect(resource.image_size).toEqual([32, 16])
-    expect(resource.uv_rect[0]).toBeGreaterThan(0)
-    expect(resource.uv_rect[1]).toBeGreaterThan(0)
+    expect(resource.uv_rect[0]).toBe(0)
+    expect(resource.uv_rect[1]).toBe(0)
     expect(resource.uv_rect[2]).toBeGreaterThan(0)
     expect(resource.uv_rect[3]).toBeGreaterThan(0)
     expect(device.textures[0].descriptor.size).toEqual({
         width: ATLAS_SIZE,
         height: ATLAS_SIZE,
-        depthOrArrayLayers: ATLAS_LAYERS,
+        depthOrArrayLayers: ATLAS_MIN_ARRAY_TEXTURE_LAYERS,
     })
-    expect(device.copies[0].destination.origin).toEqual([ATLAS_PADDING, ATLAS_PADDING, 0])
+    expect(device.textures[0].descriptor.usage & GPUTextureUsage.COPY_SRC).toBe(GPUTextureUsage.COPY_SRC)
+    expect(device.copies[0].destination.origin).toEqual([0, 0, 0])
 })
 
-test('TextureManager uses dedicated textures for large images', () => {
+test('TextureManager stores full-width images in the atlas', () => {
     const device = createFakeDevice()
     const texture_manager = createRealTextureManager(device)
-    const resource = texture_manager.getImage(createImage('large.png', 2048, 128))
+    const resource = texture_manager.getImage(createImage('large.png', ATLAS_SIZE, 128))
 
-    expect(resource.kind).toBe('dedicated')
-    expect(resource.page.width).toBe(2048)
-    expect(resource.page.height).toBe(128)
     expect(resource.layer).toBe(0)
-    expect(resource.uv_rect).toEqual([0, 0, 1, 1])
+    expect(resource.uv_rect).toEqual([0, 0, 1, 128 / ATLAS_SIZE])
     expect(device.copies[0].destination.origin).toEqual([0, 0, 0])
+    expect(device.textures).toHaveLength(1)
+})
+
+test('TextureManager throws for images larger than one atlas layer', () => {
+    const device = createFakeDevice()
+    const texture_manager = createRealTextureManager(device)
+
+    expect(() => texture_manager.getImage(createImage('too-large.png', ATLAS_SIZE + 1, 1))).toThrow(
+        /exceeds the 2048x2048 UI atlas layer size/,
+    )
 })
 
 test('TextureManager allocates another atlas layer when the current one is full', () => {
     const device = createFakeDevice()
     const texture_manager = createRealTextureManager(device)
-    const first = texture_manager.getImage(createImage('image-0.png', 512, 512))
-    let last = first
+    const first = texture_manager.getImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
+    const second = texture_manager.getImage(createImage('image-1.png', 1, 1))
 
-    for (let index = 1; index < 10; index++) {
-        last = texture_manager.getImage(createImage(`image-${index}.png`, 512, 512))
-    }
+    expect(first.layer).toBe(0)
+    expect(second.layer).toBe(1)
+    expect(device.textures).toHaveLength(1)
+    expect(device.bind_groups).toHaveLength(1)
+})
 
-    expect(first.kind).toBe('atlas')
-    expect(last.kind).toBe('atlas')
-    expect(last.layer).toBeGreaterThan(first.layer)
+test('TextureManager grows the atlas texture when physical layer capacity is full', () => {
+    const device = createFakeDevice()
+    const texture_manager = createRealTextureManager(device)
+    texture_manager.getImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
+    texture_manager.getImage(createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
+    const third = texture_manager.getImage(createImage('image-2.png', 1, 1))
+
+    expect(third.layer).toBe(2)
+    expect(device.textures).toHaveLength(2)
+    expect(device.textures[0].destroyed).toBe(true)
+    expect(device.textures[1].descriptor.size.depthOrArrayLayers).toBe(ATLAS_MIN_ARRAY_TEXTURE_LAYERS + 1)
+    expect(device.texture_copies[0].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, ATLAS_MIN_ARRAY_TEXTURE_LAYERS])
+    expect(device.bind_groups).toHaveLength(2)
+})
+
+test('TextureManager throws when atlas growth exceeds the device layer limit', () => {
+    const device = createFakeDevice({ max_texture_array_layers: 2 })
+    const texture_manager = createRealTextureManager(device)
+
+    texture_manager.getImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
+    texture_manager.getImage(createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
+    expect(() => texture_manager.getImage(createImage('image-2.png', 1, 1))).toThrow(
+        /this device supports 2/,
+    )
 })
 
 function createNodesBufferData(renderer, nodes) {
@@ -295,9 +363,8 @@ function createRealTextureManager(device) {
     })
 }
 
-function createRenderItem(kind, bind_group) {
+function createRenderItem(bind_group) {
     return {
-        kind,
         bind_group,
         instance_data: {},
     }
@@ -316,23 +383,34 @@ function createImage(src, width, height) {
     }
 }
 
-function createFakeDevice() {
+function createFakeDevice({ max_texture_array_layers = 8 } = {}) {
     const textures: any[] = []
     const bind_groups: any[] = []
     const copies: any[] = []
+    const texture_copies: any[] = []
+    const command_buffers: any[] = []
     const writes: any[] = []
     const device = {
+        limits: {
+            maxTextureArrayLayers: max_texture_array_layers,
+        },
         textures,
         bind_groups,
         copies,
+        texture_copies,
+        command_buffers,
         writes,
         createTexture(descriptor) {
             const view = { id: `view-${textures.length}` }
             const texture = {
                 id: `texture-${textures.length}`,
                 descriptor,
+                destroyed: false,
                 createView() {
                     return view
+                },
+                destroy() {
+                    texture.destroyed = true
                 },
             }
             textures.push(texture)
@@ -348,9 +426,22 @@ function createFakeDevice() {
 
             return bind_group
         },
+        createCommandEncoder() {
+            return {
+                copyTextureToTexture(source, destination, size) {
+                    texture_copies.push({ source, destination, size })
+                },
+                finish() {
+                    return { texture_copies }
+                },
+            }
+        },
         queue: {
             copyExternalImageToTexture(source, destination, size) {
                 copies.push({ source, destination, size })
+            },
+            submit(next_command_buffers) {
+                command_buffers.push(...next_command_buffers)
             },
             writeTexture(destination, data, layout, size) {
                 writes.push({ destination, data, layout, size })
