@@ -18,6 +18,9 @@ struct VertexOutput {
     @location(9) border_left_color: vec4f,
     @location(10) border_widths: vec4f,
     @location(11) background_color: vec4f,
+    @location(12) background_image_mode: f32,
+    @location(13) background_uv_rect: vec4f,
+    @location(14) background_image_size: vec2f,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -36,6 +39,9 @@ fn main(
     @location(9) border_left_color: vec4f,
     @location(10) border_widths: vec4f,
     @location(11) background_color: vec4f,
+    @location(12) background_image_mode: f32,
+    @location(13) background_uv_rect: vec4f,
+    @location(14) background_image_size: vec2f,
 ) -> VertexOutput {
     let local_position = position * layout_node.zw;
     let pixel = layout_node.xy + local_position;
@@ -58,6 +64,9 @@ fn main(
     output.border_left_color = border_left_color;
     output.border_widths = border_widths;
     output.background_color = background_color;
+    output.background_image_mode = background_image_mode;
+    output.background_uv_rect = background_uv_rect;
+    output.background_image_size = background_image_size;
     return output;
 }
 `
@@ -76,7 +85,13 @@ struct FragmentInput {
     @location(9) border_left_color: vec4f,
     @location(10) border_widths: vec4f,
     @location(11) background_color: vec4f,
+    @location(12) background_image_mode: f32,
+    @location(13) background_uv_rect: vec4f,
+    @location(14) background_image_size: vec2f,
 }
+
+@group(0) @binding(1) var background_image_sampler: sampler;
+@group(0) @binding(2) var background_image_texture: texture_2d<f32>;
 
 fn cornerRadius(
     local_position: vec2f,
@@ -154,6 +169,19 @@ fn borderColorForPosition(input: FragmentInput) -> vec4f {
     return select(vertical_color, horizontal_color, horizontal_distance < vertical_distance);
 }
 
+fn backgroundImageColor(input: FragmentInput, local_position: vec2f, rect_size: vec2f) -> vec4f {
+    let scale = max(
+        rect_size.x / input.background_image_size.x,
+        rect_size.y / input.background_image_size.y,
+    );
+    let scaled_size = input.background_image_size * scale;
+    let offset = (scaled_size - rect_size) * 0.5;
+    let image_uv = (local_position + offset) / scaled_size;
+    let texture_uv = input.background_uv_rect.xy + image_uv * input.background_uv_rect.zw;
+
+    return textureSampleLevel(background_image_texture, background_image_sampler, texture_uv, 0.0);
+}
+
 @fragment
 fn main(input: FragmentInput) -> @location(0) vec4f {
     if (
@@ -210,9 +238,15 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
     );
 
     var color = input.background_color;
+    if (input.background_image_mode > 0.5 && all(inner_size > vec2f(0.0))) {
+        color = compositeOver(
+            backgroundImageColor(input, inner_position, inner_size),
+            input.background_color,
+        );
+    }
     if (any(input.border_widths > vec4f(0.0))) {
-        let border_color = compositeOver(borderColorForPosition(input), input.background_color);
-        color = mix(border_color, input.background_color, inner_coverage);
+        let border_color = compositeOver(borderColorForPosition(input), color);
+        color = mix(border_color, color, inner_coverage);
     }
     color.a *= outer_coverage * input.opacity;
 

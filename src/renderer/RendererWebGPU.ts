@@ -2,6 +2,7 @@ import Renderer from '../Renderer'
 import createEngine, { YOGA_SETTER } from '../engine/yoga'
 import { getNodeDrawingData } from './utils/node'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders'
+import { TextureManager } from './webgpu/textures'
 import {
     FLOAT32_SIZE,
     VIEWPORT_SIZE,
@@ -20,7 +21,8 @@ export default class RendererWebGPU extends Renderer {
     private context
     private format
     private pipeline
-    private bind_group
+    private image_sampler
+    private texture_manager
     private position_buffer
     private viewport_buffer
     private nodes_buffer
@@ -55,7 +57,23 @@ export default class RendererWebGPU extends Renderer {
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
         this.device.queue.writeBuffer(this.position_buffer, 0, POSITION_VERTICES)
-        this.pipeline = this.device.createRenderPipeline({
+        this.pipeline = this.createPipeline()
+        this.image_sampler = this.device.createSampler({
+            minFilter: 'linear',
+            magFilter: 'linear',
+            addressModeU: 'clamp-to-edge',
+            addressModeV: 'clamp-to-edge',
+        })
+        this.texture_manager = new TextureManager({
+            device: this.device,
+            bind_group_layout: this.pipeline.getBindGroupLayout(0),
+            viewport_buffer: this.viewport_buffer,
+            sampler: this.image_sampler,
+        })
+    }
+
+    private createPipeline() {
+        return this.device.createRenderPipeline({
             layout: 'auto',
             vertex: {
                 module: this.device.createShaderModule({
@@ -132,6 +150,21 @@ export default class RendererWebGPU extends Renderer {
                                 offset: ATTRIBUTES.BACKGROUNDCOLOR.OFFSET,
                                 format: ATTRIBUTES.BACKGROUNDCOLOR.FORMAT,
                             },
+                            {
+                                shaderLocation: ATTRIBUTES.BACKGROUND_IMAGE_MODE.LOCATION,
+                                offset: ATTRIBUTES.BACKGROUND_IMAGE_MODE.OFFSET,
+                                format: ATTRIBUTES.BACKGROUND_IMAGE_MODE.FORMAT,
+                            },
+                            {
+                                shaderLocation: ATTRIBUTES.BACKGROUND_UV_RECT.LOCATION,
+                                offset: ATTRIBUTES.BACKGROUND_UV_RECT.OFFSET,
+                                format: ATTRIBUTES.BACKGROUND_UV_RECT.FORMAT,
+                            },
+                            {
+                                shaderLocation: ATTRIBUTES.BACKGROUND_IMAGE_SIZE.LOCATION,
+                                offset: ATTRIBUTES.BACKGROUND_IMAGE_SIZE.OFFSET,
+                                format: ATTRIBUTES.BACKGROUND_IMAGE_SIZE.FORMAT,
+                            },
                         ],
                     },
                 ],
@@ -163,23 +196,10 @@ export default class RendererWebGPU extends Renderer {
                 topology: 'triangle-list',
             },
         })
-        this.bind_group = this.device.createBindGroup({
-            layout: this.pipeline.getBindGroupLayout(0),
-            entries: [
-                {
-                    binding: 0,
-                    resource: {
-                        buffer: this.viewport_buffer,
-                    },
-                },
-            ],
-        })
     }
 
     public createElement(node) {
-        const element = this.engine.createElement(node)
-        // this.node_states.set(node, {})
-        return element
+        return this.engine.createElement(node)
     }
 
     public getChildIndex(node) {
@@ -192,16 +212,12 @@ export default class RendererWebGPU extends Renderer {
 
     public removeChild(parent, node) {
         this.engine.removeChild(parent, node)
-        // this.node_states.delete(node)
     }
 
     protected updateStyle(node, style) {
         if (YOGA_SETTER.hasOwnProperty(style.name)) {
             YOGA_SETTER[style.name](node.element, style)
         }
-        // if (style.name === 'backgroundColor') {
-        //     this.node_states.get(node).backgroundColor = style.parsed.rgba
-        // }
     }
 
     public beforeUpdate(nodes) {
@@ -219,8 +235,88 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private draw(nodes) {
-        const nodes_buffer_data = this.createNodesBufferData(nodes)
-        const nodes_drawable_count = nodes_buffer_data.bytes_offset / ATTRIBUTES_SIZE
+        const render_items = this.collectRenderItems(nodes)
+        const batches = this.buildBatches(render_items)
+        const nodes_buffer_data = this.createNodesBufferData(render_items)
+
+        this.drawBatches(batches, nodes_buffer_data)
+    }
+
+    private collectRenderItems(nodes) {
+        const render_items = []
+
+        for (const node of nodes) {
+            const drawing_data = getNodeDrawingData(node)
+            if (drawing_data === null) {
+                continue
+            }
+
+            const background_image = node.styles.backgroundImage?.parsed
+            if (background_image !== undefined) {
+                const texture = this.texture_manager.getImage(background_image)
+                render_items.push({
+                    kind: 'image_panel',
+                    node,
+                    order: node.order,
+                    page: texture.page,
+                    texture,
+                    instance_data: {
+                        ...drawing_data,
+                        background_image_mode: 1,
+                        background_uv_rect: texture.uv_rect,
+                        background_image_size: texture.image_size,
+                    },
+                })
+                continue
+            }
+
+            render_items.push({
+                kind: 'panel',
+                node,
+                order: node.order,
+                page: this.texture_manager.default_page,
+                instance_data: {
+                    ...drawing_data,
+                    background_image_mode: 0,
+                    background_uv_rect: [0, 0, 1, 1],
+                    background_image_size: [1, 1],
+                },
+            })
+        }
+
+        return render_items
+    }
+
+    private buildBatches(render_items) {
+        const batches = []
+
+        for (let index = 0; index < render_items.length; index++) {
+            const render_item = render_items[index]
+            const bind_group = render_item.page.bind_group
+            const last_batch = batches[batches.length - 1]
+
+            if (
+                last_batch?.kind === render_item.kind &&
+                last_batch.pipeline === this.pipeline &&
+                last_batch.bind_group === bind_group
+            ) {
+                last_batch.instance_count++
+                continue
+            }
+
+            batches.push({
+                kind: render_item.kind,
+                pipeline: this.pipeline,
+                bind_group,
+                first_instance: index,
+                instance_count: 1,
+            })
+        }
+
+        return batches
+    }
+
+    private drawBatches(batches, nodes_buffer_data) {
         const command_encoder = this.device.createCommandEncoder()
         const texture_view = this.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
@@ -234,10 +330,7 @@ export default class RendererWebGPU extends Renderer {
             ],
         })
 
-        // If there are no drawable nodes, we skip the draw call.
-        if (nodes_drawable_count > 0) {
-            // If the buffer is too small to hold all the nodes buffer data
-            // we destroy the old buffer and create a new one with the required size.
+        if (nodes_buffer_data.bytes_offset > 0) {
             if (this.nodes_buffer_size < nodes_buffer_data.bytes_offset || !this.nodes_buffer) {
                 this.nodes_buffer_size = nodes_buffer_data.bytes_offset
                 this.nodes_buffer?.destroy()
@@ -261,18 +354,20 @@ export default class RendererWebGPU extends Renderer {
             )
             pass_encoder.setVertexBuffer(0, this.position_buffer)
             pass_encoder.setVertexBuffer(1, this.nodes_buffer)
-            pass_encoder.setPipeline(this.pipeline)
-            pass_encoder.setBindGroup(0, this.bind_group)
-            pass_encoder.draw(POSITION_VERTEX_COUNT, nodes_drawable_count)
+
+            for (const batch of batches) {
+                pass_encoder.setPipeline(batch.pipeline)
+                pass_encoder.setBindGroup(0, batch.bind_group)
+                pass_encoder.draw(POSITION_VERTEX_COUNT, batch.instance_count, 0, batch.first_instance)
+            }
         }
 
         pass_encoder.end()
         this.device.queue.submit([command_encoder.finish()])
     }
 
-    // This function creates a buffer containing all the data prepared for the GPU to render the nodes.
-    private createNodesBufferData(nodes) {
-        const nodes_array_buffer_size = nodes.length * ATTRIBUTES_SIZE
+    private createNodesBufferData(render_items) {
+        const nodes_array_buffer_size = render_items.length * ATTRIBUTES_SIZE
         let bytes_offset = 0
 
         if (this.nodes_array_buffer_size < nodes_array_buffer_size || !this.nodes_array_buffer) {
@@ -282,63 +377,65 @@ export default class RendererWebGPU extends Renderer {
             this.nodes_bytes = new Uint8Array(this.nodes_array_buffer)
         }
 
-        for (const node of nodes) {
-            const drawing_data = getNodeDrawingData(node)
-
-            // If the node is not drawable, we skip it and move to the next one.
-            if (drawing_data === null) {
-                continue
-            }
-
-            const {
-                layout,
-                clipping,
-                opacity,
-                border_radius_x,
-                border_radius_y,
-                border_color_top,
-                border_color_right,
-                border_color_bottom,
-                border_color_left,
-                border_widths,
-                background_color,
-            } = drawing_data
-
-            // layout: x, y, width, height
-            const layout_float_offset = (bytes_offset + ATTRIBUTES.LAYOUT.OFFSET) / FLOAT32_SIZE
-            this.nodes_floats.set(layout, layout_float_offset)
-
-            // overflow/clipping: hidden
-            const clipping_float_offset = (bytes_offset + ATTRIBUTES.CLIPPING.OFFSET) / FLOAT32_SIZE
-            this.nodes_floats.set(clipping, clipping_float_offset)
-
-            // opacity
-            const opacity_float_offset = (bytes_offset + ATTRIBUTES.OPACITY.OFFSET) / FLOAT32_SIZE
-            this.nodes_floats[opacity_float_offset] = opacity
-
-            // borderRadius: top-left, top-right, bottom-right, bottom-left
-            const border_radius_x_float_offset = (bytes_offset + ATTRIBUTES.BORDERRADIUS_X.OFFSET) / FLOAT32_SIZE
-            const border_radius_y_float_offset = (bytes_offset + ATTRIBUTES.BORDERRADIUS_Y.OFFSET) / FLOAT32_SIZE
-            this.nodes_floats.set(border_radius_x, border_radius_x_float_offset)
-            this.nodes_floats.set(border_radius_y, border_radius_y_float_offset)
-
-            // borderColor: top, right, bottom, left
-            this.nodes_bytes.set(border_color_top, bytes_offset + ATTRIBUTES.BORDERCOLOR_TOP.OFFSET)
-            this.nodes_bytes.set(border_color_right, bytes_offset + ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET)
-            this.nodes_bytes.set(border_color_bottom, bytes_offset + ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET)
-            this.nodes_bytes.set(border_color_left, bytes_offset + ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET)
-
-            // borderWidth: top, right, bottom, left
-            const border_widths_float_offset = (bytes_offset + ATTRIBUTES.BORDERWIDTHS.OFFSET) / FLOAT32_SIZE
-            this.nodes_floats.set(border_widths, border_widths_float_offset)
-
-            // backgroundColor: r, g, b, a
-            this.nodes_bytes.set(background_color, bytes_offset + ATTRIBUTES.BACKGROUNDCOLOR.OFFSET)
-
-            // Move the offset to the next drawable node
+        for (const render_item of render_items) {
+            this.writePanelInstanceData(render_item.instance_data, bytes_offset)
             bytes_offset += ATTRIBUTES_SIZE
         }
 
         return { bytes: this.nodes_bytes, bytes_offset }
+    }
+
+    private writePanelInstanceData(instance_data, bytes_offset) {
+        const {
+            layout,
+            clipping,
+            opacity,
+            border_radius_x,
+            border_radius_y,
+            border_color_top,
+            border_color_right,
+            border_color_bottom,
+            border_color_left,
+            border_widths,
+            background_color,
+            background_image_mode,
+            background_uv_rect,
+            background_image_size,
+        } = instance_data
+
+        const layout_float_offset = (bytes_offset + ATTRIBUTES.LAYOUT.OFFSET) / FLOAT32_SIZE
+        this.nodes_floats.set(layout, layout_float_offset)
+
+        const clipping_float_offset = (bytes_offset + ATTRIBUTES.CLIPPING.OFFSET) / FLOAT32_SIZE
+        this.nodes_floats.set(clipping, clipping_float_offset)
+
+        const opacity_float_offset = (bytes_offset + ATTRIBUTES.OPACITY.OFFSET) / FLOAT32_SIZE
+        this.nodes_floats[opacity_float_offset] = opacity
+
+        const border_radius_x_float_offset = (bytes_offset + ATTRIBUTES.BORDERRADIUS_X.OFFSET) / FLOAT32_SIZE
+        const border_radius_y_float_offset = (bytes_offset + ATTRIBUTES.BORDERRADIUS_Y.OFFSET) / FLOAT32_SIZE
+        this.nodes_floats.set(border_radius_x, border_radius_x_float_offset)
+        this.nodes_floats.set(border_radius_y, border_radius_y_float_offset)
+
+        this.nodes_bytes.set(border_color_top, bytes_offset + ATTRIBUTES.BORDERCOLOR_TOP.OFFSET)
+        this.nodes_bytes.set(border_color_right, bytes_offset + ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET)
+        this.nodes_bytes.set(border_color_bottom, bytes_offset + ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET)
+        this.nodes_bytes.set(border_color_left, bytes_offset + ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET)
+
+        const border_widths_float_offset = (bytes_offset + ATTRIBUTES.BORDERWIDTHS.OFFSET) / FLOAT32_SIZE
+        this.nodes_floats.set(border_widths, border_widths_float_offset)
+
+        this.nodes_bytes.set(background_color, bytes_offset + ATTRIBUTES.BACKGROUNDCOLOR.OFFSET)
+
+        const background_image_mode_float_offset =
+            (bytes_offset + ATTRIBUTES.BACKGROUND_IMAGE_MODE.OFFSET) / FLOAT32_SIZE
+        this.nodes_floats[background_image_mode_float_offset] = background_image_mode
+
+        const background_uv_rect_float_offset = (bytes_offset + ATTRIBUTES.BACKGROUND_UV_RECT.OFFSET) / FLOAT32_SIZE
+        this.nodes_floats.set(background_uv_rect, background_uv_rect_float_offset)
+
+        const background_image_size_float_offset =
+            (bytes_offset + ATTRIBUTES.BACKGROUND_IMAGE_SIZE.OFFSET) / FLOAT32_SIZE
+        this.nodes_floats.set(background_image_size, background_image_size_float_offset)
     }
 }

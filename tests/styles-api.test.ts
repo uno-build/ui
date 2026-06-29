@@ -11,7 +11,7 @@ test('resolveStyle', () => {
 
     expect(() => {
         Style.resolveStyle('backgroundColor')
-    }).toThrow(/style value must be a string, got 'undefined'/)
+    }).toThrow(/style value must be a string or an object, got 'undefined'/)
 })
 
 test('resolveStyle should always normalize name', () => {

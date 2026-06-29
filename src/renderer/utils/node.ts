@@ -11,6 +11,7 @@ export function getNodeDrawingData(node) {
 
     const background_color = node.styles.backgroundColor?.parsed.rgba
     const has_background = background_color !== undefined && background_color[3] > 0
+    const has_background_image = node.styles.backgroundImage !== undefined
     const border_width_top = getNodeBorderWidth(node, 'Top')
     const border_width_right = getNodeBorderWidth(node, 'Right')
     const border_width_bottom = getNodeBorderWidth(node, 'Bottom')
@@ -18,7 +19,7 @@ export function getNodeDrawingData(node) {
     const has_border =
         border_width_top > 0 || border_width_right > 0 || border_width_bottom > 0 || border_width_left > 0
 
-    if (!has_background && !has_border) {
+    if (!has_background && !has_background_image && !has_border) {
         return null
     }
 
