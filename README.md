@@ -22,7 +22,7 @@ image is scaled up or sampled near its atlas edge, linear filtering can blend it
 with neighboring atlas pixels and produce a thin halo.
 
 By default, images are copied into the atlas without edge padding. Pass
-`bleeding: false` on the loaded image object when an image should duplicate its
+`preventBleeding: true` on the loaded image object when an image should duplicate its
 edge pixels into the atlas padding area:
 
 ```ts
@@ -31,15 +31,15 @@ const icon = await loadImage('/assets/icon.png')
 const image = ui.create()
 image.style('width', '200px')
 image.style('height', '200px')
-image.style('backgroundImage', '/assets/icon.png', { ...icon, bleeding: false })
+image.style('backgroundImage', '/assets/icon.png', { ...icon, preventBleeding: true })
 ```
 
-Use `bleeding: false` for small images, icons, sprites, or high-contrast assets
+Use `preventBleeding: true` for small images, icons, sprites, or high-contrast assets
 where edge artifacts are visible. Keep the default behavior for larger images
 where the extra padding copies are unlikely to matter.
 
-Atlas resources are cached by `src`, so use one bleeding mode per image source.
-If the same `src` is used with different `bleeding` values, whichever version is
+Atlas resources are cached by `src`, so use one preventBleeding mode per image source.
+If the same `src` is used with different `preventBleeding` values, whichever version is
 loaded first defines the atlas resource reused by later nodes.
 
 ## RendererWebGPU overflow and border radius

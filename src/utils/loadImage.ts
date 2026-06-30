@@ -13,7 +13,7 @@ export async function loadImage(src, createImageBitmap = globalThis.createImageB
         bitmap: image,
         width: image.width,
         height: image.height,
-        bleeding: true,
+        preventBleeding: false,
     }
 }
 
