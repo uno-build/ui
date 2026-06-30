@@ -68,7 +68,12 @@ export class TextureManager {
             },
             [image.width, image.height, 1],
         )
-        this.copyImagePadding(image, this.atlas_texture, allocation.x, allocation.y, allocation.atlas_layer.layer)
+
+        // If bleeding===false, we need to copy the padding pixels around the image
+        // to avoid bleeding artifacts when sampling the texture.
+        if (image.bleeding === false) {
+            this.copyImagePadding(image, this.atlas_texture, allocation.x, allocation.y, allocation.atlas_layer.layer)
+        }
 
         return {
             src: image.src,

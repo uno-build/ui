@@ -282,7 +282,7 @@ test('TextureManager stores full-width images in the atlas', () => {
     expect(resource.layer).toBe(0)
     expect(resource.uv_rect).toEqual([0, 0, 1, 128 / ATLAS_SIZE])
     expect(device.copies[0].destination.origin).toEqual([0, 0, 0])
-    expect(device.textures).toHaveLength(1)
+    expect(getAtlasTextures(device)).toHaveLength(1)
 })
 
 test('TextureManager packs images into the lowest skyline gap', () => {
@@ -318,7 +318,7 @@ test('TextureManager allocates another atlas layer when the current one is full'
 
     expect(first.layer).toBe(0)
     expect(second.layer).toBe(1)
-    expect(device.textures).toHaveLength(1)
+    expect(getAtlasTextures(device)).toHaveLength(1)
     expect(device.bind_groups).toHaveLength(1)
 })
 
@@ -330,9 +330,10 @@ test('TextureManager grows the atlas texture when physical layer capacity is ful
     const third = texture_manager.getImage(createImage('image-2.png', 1, 1))
 
     expect(third.layer).toBe(2)
-    expect(device.textures).toHaveLength(2)
-    expect(device.textures[0].destroyed).toBe(true)
-    expect(device.textures[1].descriptor.size.depthOrArrayLayers).toBe(ATLAS_MIN_ARRAY_TEXTURE_LAYERS + 1)
+    const atlas_textures = getAtlasTextures(device)
+    expect(atlas_textures).toHaveLength(2)
+    expect(atlas_textures[0].destroyed).toBe(true)
+    expect(atlas_textures[1].descriptor.size.depthOrArrayLayers).toBe(ATLAS_MIN_ARRAY_TEXTURE_LAYERS + 1)
     expect(device.texture_copies[0].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, ATLAS_MIN_ARRAY_TEXTURE_LAYERS])
     expect(device.bind_groups).toHaveLength(2)
 })
@@ -467,6 +468,10 @@ function createFakeDevice({ max_texture_array_layers = 8 } = {}) {
     }
 
     return device
+}
+
+function getAtlasTextures(device) {
+    return device.textures.filter((texture) => texture.descriptor.usage & GPUTextureUsage.TEXTURE_BINDING)
 }
 
 function createNode({
