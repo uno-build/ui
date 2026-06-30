@@ -26,7 +26,7 @@ export default class UI {
         node.element = this.renderer.createElement(node)
 
         // Object.keys(styles).forEach((name) => {
-        //     this.setStyle(node, name, styles[name])
+        //     this.style(node, name, styles[name])
         // })
 
         return node
@@ -46,7 +46,7 @@ export default class UI {
         this.renderer.afterUpdate(this.nodes)
     }
 
-    public setStyle(node, name, value, parsed?) {
+    public style(node, name, value, parsed?) {
         const styles = Style.resolveStyle(name, value, parsed)
         for (const style of styles) {
             node.styles[style.name] = {

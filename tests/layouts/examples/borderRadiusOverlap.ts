@@ -78,33 +78,32 @@ export default function createBorderRadiusOverlapLayout({ ui, rendererName }) {
     ]
 
     const stage = ui.create()
-    stage.setStyle('flex', '1')
-    stage.setStyle('padding', '40px')
-    stage.setStyle('backgroundColor', '#f6f7f8')
+    stage.style('flex', '1')
+    stage.style('padding', '40px')
+    stage.style('backgroundColor', '#f6f7f8')
     ui.root.add(stage)
 
     const frame = ui.create()
-    frame.setStyle('width', '440px')
-    frame.setStyle('height', '320px')
-    frame.setStyle('position', 'relative')
-    frame.setStyle('backgroundColor', '#fff')
+    frame.style('width', '440px')
+    frame.style('height', '320px')
+    frame.style('position', 'relative')
+    frame.style('backgroundColor', '#fff')
     stage.add(frame)
 
     for (const item of ITEMS) {
         const frame_child_1 = ui.create()
-        frame_child_1.setStyle('position', 'absolute')
-        frame_child_1.setStyle('borderTopWidth', '4px')
-        frame_child_1.setStyle('borderLeftWidth', '4px')
-        frame_child_1.setStyle('borderRightWidth', '4px')
-        frame_child_1.setStyle('borderBottomWidth', '4px')
-        frame_child_1.setStyle('borderTopStyle', 'solid')
-        frame_child_1.setStyle('borderLeftStyle', 'solid')
-        frame_child_1.setStyle('borderRightStyle', 'solid')
-        frame_child_1.setStyle('borderBottomStyle', 'solid')
+        frame_child_1.style('position', 'absolute')
+        frame_child_1.style('borderTopWidth', '4px')
+        frame_child_1.style('borderLeftWidth', '4px')
+        frame_child_1.style('borderRightWidth', '4px')
+        frame_child_1.style('borderBottomWidth', '4px')
+        frame_child_1.style('borderTopStyle', 'solid')
+        frame_child_1.style('borderLeftStyle', 'solid')
+        frame_child_1.style('borderRightStyle', 'solid')
+        frame_child_1.style('borderBottomStyle', 'solid')
 
         for (const name of Object.keys(item)) {
-            frame_child_1.setStyle(name, item[name])
-
+            frame_child_1.style(name, item[name])
         }
 
         frame.add(frame_child_1)

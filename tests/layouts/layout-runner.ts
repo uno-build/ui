@@ -77,8 +77,8 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
 }
 
 function syncRootSize({ ui, root, canvas }) {
-    ui.root.setStyle('width', `${root.clientWidth}px`)
-    ui.root.setStyle('height', `${root.clientHeight}px`)
+    ui.root.style('width', `${root.clientWidth}px`)
+    ui.root.style('height', `${root.clientHeight}px`)
 
     if (canvas.tagName === 'CANVAS') {
         const device_pixel_ratio = window.devicePixelRatio
@@ -323,9 +323,9 @@ function createAddRandomNode(rendered_layouts) {
         for (const { rendererName, ui } of rendered_layouts) {
             const target_parent = findNodeByPath(ui, parent_path)
             const item = ui.create()
-            item.setStyle('width', '24px')
-            item.setStyle('height', '24px')
-            item.setStyle('backgroundColor', background_color)
+            item.style('width', '24px')
+            item.style('height', '24px')
+            item.style('backgroundColor', background_color)
 
             target_parent.add(item)
             ui.update()

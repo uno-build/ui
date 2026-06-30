@@ -29,9 +29,9 @@ edge pixels into the atlas padding area:
 const icon = await loadImage('/assets/icon.png')
 
 const image = ui.create()
-image.setStyle('width', '200px')
-image.setStyle('height', '200px')
-image.setStyle('backgroundImage', '/assets/icon.png', { ...icon, bleeding: false })
+image.style('width', '200px')
+image.style('height', '200px')
+image.style('backgroundImage', '/assets/icon.png', { ...icon, bleeding: false })
 ```
 
 Use `bleeding: false` for small images, icons, sprites, or high-contrast assets

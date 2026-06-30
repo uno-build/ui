@@ -21,9 +21,7 @@ const LAYOUT_VIEWPORTS = [
 
 for (const layout of layoutNames) {
     for (const viewport of LAYOUT_VIEWPORTS) {
-        test(`Layout: ${layout} ${viewport.width}x${viewport.height}`, async ({
-            page,
-        }) => {
+        test(`Layout: ${layout} ${viewport.width}x${viewport.height}`, async ({ page }) => {
             await page.setViewportSize(viewport)
             const results = await renderLayout(page, layout)
             const [baseline, ...comparisons] = results
@@ -36,10 +34,7 @@ for (const layout of layoutNames) {
                 for (const [rowIndex, row] of result.entries()) {
                     for (const key of comparedLayoutKeys) {
                         expect
-                            .soft(
-                                Number.isFinite(row[key]),
-                                `${layout} ${rendererName} row ${rowIndex} ${key}`,
-                            )
+                            .soft(Number.isFinite(row[key]), `${layout} ${rendererName} row ${rowIndex} ${key}`)
                             .toBe(true)
                     }
                 }
@@ -47,20 +42,14 @@ for (const layout of layoutNames) {
 
             for (const comparison of compareLayoutResults(results)) {
                 expect
-                    .soft(
-                        comparison.matches,
-                        `${layout} ${comparison.rendererA} vs ${comparison.rendererB}`,
-                    )
+                    .soft(comparison.matches, `${layout} ${comparison.rendererA} vs ${comparison.rendererB}`)
                     .toBe(true)
             }
 
             for (const comparison of comparisons) {
                 expect(comparison.result).toHaveLength(baseline.result.length)
 
-                for (const [
-                    rowIndex,
-                    baselineRow,
-                ] of baseline.result.entries()) {
+                for (const [rowIndex, baselineRow] of baseline.result.entries()) {
                     const comparisonRow = comparison.result[rowIndex]
                     expect(comparisonRow).toBeDefined()
 
@@ -70,21 +59,11 @@ for (const layout of layoutNames) {
 
                     for (const key of comparedLayoutKeys) {
                         expect
-                            .soft(
-                                comparisonRow[key],
-                                `${layout} ${comparison.rendererName} row ${rowIndex} ${key}`,
-                            )
-                            .toBeGreaterThanOrEqual(
-                                baselineRow[key] - layoutComparisonTolerance,
-                            )
+                            .soft(comparisonRow[key], `${layout} ${comparison.rendererName} row ${rowIndex} ${key}`)
+                            .toBeGreaterThanOrEqual(baselineRow[key] - layoutComparisonTolerance)
                         expect
-                            .soft(
-                                comparisonRow[key],
-                                `${layout} ${comparison.rendererName} row ${rowIndex} ${key}`,
-                            )
-                            .toBeLessThanOrEqual(
-                                baselineRow[key] + layoutComparisonTolerance,
-                            )
+                            .soft(comparisonRow[key], `${layout} ${comparison.rendererName} row ${rowIndex} ${key}`)
+                            .toBeLessThanOrEqual(baselineRow[key] + layoutComparisonTolerance)
                     }
 
                     for (const key of comparedLayoutKeys) {
@@ -109,10 +88,7 @@ test('Layout: zIndex updates repaint order', async ({ page }) => {
 
     const results = await page.evaluate(
         async ({ layoutRunnerUrl, renderers, uiUrl }) => {
-            const [{ SETUPS }, { default: UI }] = await Promise.all([
-                import(layoutRunnerUrl),
-                import(uiUrl),
-            ])
+            const [{ SETUPS }, { default: UI }] = await Promise.all([import(layoutRunnerUrl), import(uiUrl)])
             const root = document.getElementById('root')
 
             if (root == null) {
@@ -147,13 +123,8 @@ test('Layout: zIndex updates repaint order', async ({ page }) => {
 
             function readTopPath(canvas, nodes, x, y) {
                 const canvasRect = canvas.getBoundingClientRect()
-                const nodesByElementId = new Map(
-                    [...nodes].map((node) => [`node-${node.id}`, node]),
-                )
-                const elements = document.elementsFromPoint(
-                    canvasRect.left + x,
-                    canvasRect.top + y,
-                )
+                const nodesByElementId = new Map([...nodes].map((node) => [`node-${node.id}`, node]))
+                const elements = document.elementsFromPoint(canvasRect.left + x, canvasRect.top + y)
 
                 for (const element of elements) {
                     if (!canvas.contains(element)) {
@@ -180,33 +151,33 @@ test('Layout: zIndex updates repaint order', async ({ page }) => {
                 const ui = new UI({ renderer })
 
                 await ui.init()
-                ui.root.setStyle('width', '220px')
-                ui.root.setStyle('height', '220px')
+                ui.root.style('width', '220px')
+                ui.root.style('height', '220px')
 
                 const lower = ui.create()
-                lower.setStyle('width', '120px')
-                lower.setStyle('height', '120px')
-                lower.setStyle('position', 'absolute')
-                lower.setStyle('left', '40px')
-                lower.setStyle('top', '40px')
-                lower.setStyle('backgroundColor', '#f00')
-                lower.setStyle('zIndex', '1')
+                lower.style('width', '120px')
+                lower.style('height', '120px')
+                lower.style('position', 'absolute')
+                lower.style('left', '40px')
+                lower.style('top', '40px')
+                lower.style('backgroundColor', '#f00')
+                lower.style('zIndex', '1')
                 ui.root.add(lower)
 
                 const higher = ui.create()
-                higher.setStyle('width', '120px')
-                higher.setStyle('height', '120px')
-                higher.setStyle('position', 'absolute')
-                higher.setStyle('left', '70px')
-                higher.setStyle('top', '70px')
-                higher.setStyle('backgroundColor', '#00f')
-                higher.setStyle('zIndex', '2')
+                higher.style('width', '120px')
+                higher.style('height', '120px')
+                higher.style('position', 'absolute')
+                higher.style('left', '70px')
+                higher.style('top', '70px')
+                higher.style('backgroundColor', '#00f')
+                higher.style('zIndex', '2')
                 ui.root.add(higher)
 
                 ui.update()
                 const initialTop = readTopPath(canvas, ui.nodes, 100, 100)
 
-                lower.setStyle('zIndex', '3')
+                lower.style('zIndex', '3')
                 ui.update()
                 const updatedTop = readTopPath(canvas, ui.nodes, 100, 100)
 
@@ -227,26 +198,20 @@ test('Layout: zIndex updates repaint order', async ({ page }) => {
     )
 
     for (const result of results) {
-        expect(
-            result.initialTop,
-            `${result.rendererName} initial zIndex paint order`,
-        ).toBe(result.expectedInitialTop)
-        expect(
-            result.updatedTop,
-            `${result.rendererName} updated zIndex paint order`,
-        ).toBe(result.expectedUpdatedTop)
+        expect(result.initialTop, `${result.rendererName} initial zIndex paint order`).toBe(result.expectedInitialTop)
+        expect(result.updatedTop, `${result.rendererName} updated zIndex paint order`).toBe(result.expectedUpdatedTop)
     }
 })
 
-test('Layout: RendererDivs clears overflow clipping updates', async ({
-    page,
-}) => {
+test('Layout: RendererDivs clears overflow clipping updates', async ({ page }) => {
     await page.goto(layoutHarnessUrl)
 
     const result = await page.evaluate(
         async ({ rendererDivsUrl, uiUrl }) => {
-            const [{ default: RendererDivs }, { default: UI }] =
-                await Promise.all([import(rendererDivsUrl), import(uiUrl)])
+            const [{ default: RendererDivs }, { default: UI }] = await Promise.all([
+                import(rendererDivsUrl),
+                import(uiUrl),
+            ])
             const root = document.getElementById('root')
 
             if (root == null) {
@@ -268,26 +233,26 @@ test('Layout: RendererDivs clears overflow clipping updates', async ({
             const ui = new UI({ renderer })
 
             await ui.init()
-            ui.root.setStyle('width', '220px')
-            ui.root.setStyle('height', '220px')
+            ui.root.style('width', '220px')
+            ui.root.style('height', '220px')
 
             const host = ui.create()
-            host.setStyle('width', '80px')
-            host.setStyle('height', '80px')
-            host.setStyle('position', 'absolute')
-            host.setStyle('left', '20px')
-            host.setStyle('top', '20px')
-            host.setStyle('overflow', 'hidden')
-            host.setStyle('backgroundColor', '#fff')
+            host.style('width', '80px')
+            host.style('height', '80px')
+            host.style('position', 'absolute')
+            host.style('left', '20px')
+            host.style('top', '20px')
+            host.style('overflow', 'hidden')
+            host.style('backgroundColor', '#fff')
             ui.root.add(host)
 
             const child = ui.create()
-            child.setStyle('width', '80px')
-            child.setStyle('height', '80px')
-            child.setStyle('position', 'absolute')
-            child.setStyle('left', '60px')
-            child.setStyle('top', '0px')
-            child.setStyle('backgroundColor', '#000')
+            child.style('width', '80px')
+            child.style('height', '80px')
+            child.style('position', 'absolute')
+            child.style('left', '60px')
+            child.style('top', '0px')
+            child.style('backgroundColor', '#000')
             host.add(child)
 
             ui.update()
@@ -300,7 +265,7 @@ test('Layout: RendererDivs clears overflow clipping updates', async ({
 
             const hiddenClipPath = (div as HTMLElement).style.clipPath
 
-            host.setStyle('overflow', 'visible')
+            host.style('overflow', 'visible')
             ui.update()
 
             return {
@@ -319,17 +284,10 @@ function assertPaintedRectsMatchLayout({ layout, baseline, comparisons }) {
     const baselinePaths = baseline.paintedRects.map(({ path }) => path)
 
     for (const comparison of comparisons) {
-        expect(comparison.paintedRects).toHaveLength(
-            baseline.paintedRects.length,
-        )
-        expect(comparison.paintedRects.map(({ path }) => path)).toEqual(
-            baselinePaths,
-        )
+        expect(comparison.paintedRects).toHaveLength(baseline.paintedRects.length)
+        expect(comparison.paintedRects.map(({ path }) => path)).toEqual(baselinePaths)
 
-        for (const [
-            rowIndex,
-            baselineRect,
-        ] of baseline.paintedRects.entries()) {
+        for (const [rowIndex, baselineRect] of baseline.paintedRects.entries()) {
             const comparisonRect = comparison.paintedRects[rowIndex]
             expect(comparisonRect).toBeDefined()
 
@@ -346,17 +304,13 @@ function assertPaintedRectsMatchLayout({ layout, baseline, comparisons }) {
                         comparisonRect[key],
                         `${layout} ${comparison.rendererName} painted ${baselineRect.path} ${key}`,
                     )
-                    .toBeGreaterThanOrEqual(
-                        baselineRect[key] - layoutComparisonTolerance,
-                    )
+                    .toBeGreaterThanOrEqual(baselineRect[key] - layoutComparisonTolerance)
                 expect
                     .soft(
                         comparisonRect[key],
                         `${layout} ${comparison.rendererName} painted ${baselineRect.path} ${key}`,
                     )
-                    .toBeLessThanOrEqual(
-                        baselineRect[key] + layoutComparisonTolerance,
-                    )
+                    .toBeLessThanOrEqual(baselineRect[key] + layoutComparisonTolerance)
             }
         }
     }
@@ -366,16 +320,10 @@ function assertPaintSamples(layout, results) {
     for (const { rendererName, paintSamples } of results) {
         for (const sample of paintSamples) {
             expect
-                .soft(
-                    sample.actualPath,
-                    `${layout} ${rendererName} paint sample '${sample.name}'`,
-                )
+                .soft(sample.actualPath, `${layout} ${rendererName} paint sample '${sample.name}'`)
                 .toBe(sample.expectedPath)
             expect
-                .soft(
-                    sample.actualStack,
-                    `${layout} ${rendererName} paint stack '${sample.name}'`,
-                )
+                .soft(sample.actualStack, `${layout} ${rendererName} paint stack '${sample.name}'`)
                 .toEqual(sample.expectedStack)
         }
     }

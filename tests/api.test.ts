@@ -8,12 +8,12 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     const ui = new UI({ renderer })
 
     await ui.init()
-    ui.root.setStyle('width', '200px')
-    ui.root.setStyle('height', '200px')
+    ui.root.style('width', '200px')
+    ui.root.style('height', '200px')
 
     const child = ui.create()
-    child.setStyle('width', '120px')
-    child.setStyle('backgroundColor', '#123')
+    child.style('width', '120px')
+    child.style('backgroundColor', '#123')
     const sibling = ui.create()
     const grandchild = ui.create()
 
@@ -21,14 +21,14 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     ui.root.add(sibling)
     child.add(grandchild)
 
-    child.setStyle('height', '40px')
-    sibling.setStyle('marginLeft', '10%')
+    child.style('height', '40px')
+    sibling.style('marginLeft', '10%')
 
     expect(() => {
-        ui.create().setStyle('backgroundColor', 'red')
+        ui.create().style('backgroundColor', 'red')
     }).toThrow(/invalid value 'red' for property 'backgroundColor': expected hex color/)
     expect(() => {
-        child.setStyle('width', true)
+        child.style('width', true)
     }).toThrow(/style value must be a string/)
 
     expect(child.styles).toMatchObject({
@@ -177,8 +177,8 @@ test('Node remove discards pending styles', async () => {
     await ui.init()
 
     const child = ui.create()
-    child.setStyle('width', '120px')
-    child.setStyle('backgroundColor', '#123')
+    child.style('width', '120px')
+    child.style('backgroundColor', '#123')
 
     ui.root.add(child)
     ui.root.remove(child)

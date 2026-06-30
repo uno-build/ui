@@ -20,7 +20,7 @@ export default class Node {
         this.ui.removeChild(child)
     }
 
-    public setStyle(name, value, parsed?) {
-        this.ui.setStyle(this, name, value, parsed)
+    public style(name, value, parsed?) {
+        this.ui.style(this, name, value, parsed)
     }
 }

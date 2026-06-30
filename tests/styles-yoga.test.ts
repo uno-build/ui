@@ -7,15 +7,15 @@ test('width', async () => {
     expect(root.layout.width).toBe(200)
     expect(child.layout.width).toBe(0)
 
-    child.setStyle('width', '50px')
+    child.style('width', '50px')
     ui.update()
     expect(child.layout.width).toBe(50)
 
-    child.setStyle('width', '50%')
+    child.style('width', '50%')
     ui.update()
     expect(child.layout.width).toBe(100)
 
-    child.setStyle('width', 'auto')
+    child.style('width', 'auto')
     ui.update()
     expect(child.layout.width).toBe(0)
 })
@@ -25,15 +25,15 @@ test('height', async () => {
     expect(root.layout.height).toBe(200)
     expect(child.layout.height).toBe(200)
 
-    child.setStyle('height', '50px')
+    child.style('height', '50px')
     ui.update()
     expect(child.layout.height).toBe(50)
 
-    child.setStyle('height', '50%')
+    child.style('height', '50%')
     ui.update()
     expect(child.layout.height).toBe(100)
 
-    child.setStyle('height', 'auto')
+    child.style('height', 'auto')
     ui.update()
     expect(child.layout.height).toBe(200)
 })
@@ -43,15 +43,15 @@ test('minWidth', async () => {
     expect(root.layout.width).toBe(200)
     expect(child.layout.width).toBe(0)
 
-    child.setStyle('minWidth', '50px')
+    child.style('minWidth', '50px')
     ui.update()
     expect(child.layout.width).toBe(50)
 
-    child.setStyle('minWidth', '50%')
+    child.style('minWidth', '50%')
     ui.update()
     expect(child.layout.width).toBe(100)
 
-    child.setStyle('minWidth', 'unset')
+    child.style('minWidth', 'unset')
     ui.update()
     expect(child.layout.width).toBe(0)
 })
@@ -64,15 +64,15 @@ test('minHeight', async () => {
     expect(root.layout.height).toBe(200)
     expect(child.layout.height).toBe(0)
 
-    child.setStyle('minHeight', '50px')
+    child.style('minHeight', '50px')
     ui.update()
     expect(child.layout.height).toBe(50)
 
-    child.setStyle('minHeight', '50%')
+    child.style('minHeight', '50%')
     ui.update()
     expect(child.layout.height).toBe(100)
 
-    child.setStyle('minHeight', 'unset')
+    child.style('minHeight', 'unset')
     ui.update()
     expect(child.layout.height).toBe(0)
 })
@@ -82,19 +82,19 @@ test('maxWidth', async () => {
     expect(root.layout.width).toBe(200)
     expect(child.layout.width).toBe(0)
 
-    child.setStyle('width', '150px')
+    child.style('width', '150px')
     ui.update()
     expect(child.layout.width).toBe(150)
 
-    child.setStyle('maxWidth', '50px')
+    child.style('maxWidth', '50px')
     ui.update()
     expect(child.layout.width).toBe(50)
 
-    child.setStyle('maxWidth', '50%')
+    child.style('maxWidth', '50%')
     ui.update()
     expect(child.layout.width).toBe(100)
 
-    child.setStyle('maxWidth', 'unset')
+    child.style('maxWidth', 'unset')
     ui.update()
     expect(child.layout.width).toBe(150)
 })
@@ -107,19 +107,19 @@ test('maxHeight', async () => {
     expect(root.layout.height).toBe(200)
     expect(child.layout.height).toBe(0)
 
-    child.setStyle('height', '150px')
+    child.style('height', '150px')
     ui.update()
     expect(child.layout.height).toBe(150)
 
-    child.setStyle('maxHeight', '50px')
+    child.style('maxHeight', '50px')
     ui.update()
     expect(child.layout.height).toBe(50)
 
-    child.setStyle('maxHeight', '50%')
+    child.style('maxHeight', '50%')
     ui.update()
     expect(child.layout.height).toBe(100)
 
-    child.setStyle('maxHeight', 'unset')
+    child.style('maxHeight', 'unset')
     ui.update()
     expect(child.layout.height).toBe(150)
 })
@@ -132,45 +132,45 @@ test('position', async () => {
     expect(root.layout.width).toBe(200)
     expect(root.layout.height).toBe(200)
 
-    child.setStyle('width', '50px')
-    child.setStyle('height', '40px')
+    child.style('width', '50px')
+    child.style('height', '40px')
     ui.update()
     expect(child.layout.x).toBe(0)
     expect(child.layout.y).toBe(0)
 
-    child.setStyle('position', 'static')
-    child.setStyle('left', '20px')
-    child.setStyle('top', '30px')
+    child.style('position', 'static')
+    child.style('left', '20px')
+    child.style('top', '30px')
     ui.update()
     expect(child.layout.x).toBe(0)
     expect(child.layout.y).toBe(0)
 
-    child.setStyle('position', 'relative')
+    child.style('position', 'relative')
     ui.update()
     expect(child.layout.x).toBe(20)
     expect(child.layout.y).toBe(30)
 
-    child.setStyle('position', 'absolute')
-    child.setStyle('left', '25%')
-    child.setStyle('top', '10%')
+    child.style('position', 'absolute')
+    child.style('left', '25%')
+    child.style('top', '10%')
     ui.update()
     expect(child.layout.x).toBe(50)
     expect(child.layout.y).toBe(20)
 
-    child.setStyle('left', 'unset')
-    child.setStyle('top', 'unset')
+    child.style('left', 'unset')
+    child.style('top', 'unset')
     ui.update()
     expect(child.layout.x).toBe(0)
     expect(child.layout.y).toBe(0)
 
-    child.setStyle('right', '25%')
-    child.setStyle('bottom', '10%')
+    child.style('right', '25%')
+    child.style('bottom', '10%')
     ui.update()
     expect(child.layout.x).toBe(100)
     expect(child.layout.y).toBe(140)
 
-    child.setStyle('right', 'unset')
-    child.setStyle('bottom', 'unset')
+    child.style('right', 'unset')
+    child.style('bottom', 'unset')
     ui.update()
     expect(child.layout.x).toBe(0)
     expect(child.layout.y).toBe(0)
@@ -181,11 +181,11 @@ test('flex', async () => {
     expect(root.layout.width).toBe(200)
     expect(child.layout.width).toBe(0)
 
-    child.setStyle('flex', '1')
+    child.style('flex', '1')
     ui.update()
     expect(child.layout.width).toBe(200)
 
-    child.setStyle('flex', 'unset')
+    child.style('flex', 'unset')
     ui.update()
     expect(child.layout.width).toBe(0)
 })
@@ -200,14 +200,14 @@ test('flexDirection', async () => {
         ['column-reverse', 0, 150, 0, 100],
     ] as const
 
-    child.setStyle('width', '50px')
-    child.setStyle('height', '50px')
-    sibling.setStyle('width', '50px')
-    sibling.setStyle('height', '50px')
+    child.style('width', '50px')
+    child.style('height', '50px')
+    sibling.style('width', '50px')
+    sibling.style('height', '50px')
     root.add(sibling)
 
     for (const [flexDirection, childX, childY, siblingX, siblingY] of cases) {
-        root.setStyle('flexDirection', flexDirection)
+        root.style('flexDirection', flexDirection)
         ui.update()
         expect(child.layout.x).toBe(childX)
         expect(child.layout.y).toBe(childY)
@@ -225,21 +225,14 @@ test('flexWrap', async () => {
         ['wrap-reverse', 150, 50, 150, 0, 0],
     ] as const
 
-    child.setStyle('width', '150px')
-    child.setStyle('height', '50px')
-    sibling.setStyle('width', '150px')
-    sibling.setStyle('height', '50px')
+    child.style('width', '150px')
+    child.style('height', '50px')
+    sibling.style('width', '150px')
+    sibling.style('height', '50px')
     root.add(sibling)
 
-    for (const [
-        flexWrap,
-        childWidth,
-        childY,
-        siblingWidth,
-        siblingX,
-        siblingY,
-    ] of cases) {
-        root.setStyle('flexWrap', flexWrap)
+    for (const [flexWrap, childWidth, childY, siblingWidth, siblingX, siblingY] of cases) {
+        root.style('flexWrap', flexWrap)
         ui.update()
         expect(child.layout.width).toBe(childWidth)
         expect(child.layout.y).toBe(childY)
@@ -260,12 +253,12 @@ test('wrapped relative percent offsets use border side widths', async () => {
     })
     const sibling = ui.create()
 
-    child.setStyle('width', '150px')
-    child.setStyle('height', '50px')
-    sibling.setStyle('width', '150px')
-    sibling.setStyle('height', '50px')
-    sibling.setStyle('position', 'relative')
-    sibling.setStyle('top', '10%')
+    child.style('width', '150px')
+    child.style('height', '50px')
+    sibling.style('width', '150px')
+    sibling.style('height', '50px')
+    sibling.style('position', 'relative')
+    sibling.style('top', '10%')
     root.add(sibling)
     ui.update()
 
@@ -290,14 +283,14 @@ test('alignContent', async () => {
         ['space-evenly', 33, 117],
     ] as const
 
-    child.setStyle('width', '150px')
-    child.setStyle('height', '50px')
-    sibling.setStyle('width', '150px')
-    sibling.setStyle('height', '50px')
+    child.style('width', '150px')
+    child.style('height', '50px')
+    sibling.style('width', '150px')
+    sibling.style('height', '50px')
     root.add(sibling)
 
     for (const [alignContent, childY, siblingY] of cases) {
-        root.setStyle('alignContent', alignContent)
+        root.style('alignContent', alignContent)
         ui.update()
         expect(child.layout.y).toBe(childY)
         expect(sibling.layout.y).toBe(siblingY)
@@ -319,13 +312,13 @@ test('alignItems', async () => {
         ['baseline', 80, 0, 0],
     ] as const
 
-    child.setStyle('width', '50px')
-    sibling.setStyle('width', '50px')
-    sibling.setStyle('height', '80px')
+    child.style('width', '50px')
+    sibling.style('width', '50px')
+    sibling.style('height', '80px')
     root.add(sibling)
 
     for (const [alignItems, childY, childHeight, siblingY] of cases) {
-        root.setStyle('alignItems', alignItems)
+        root.style('alignItems', alignItems)
         ui.update()
         expect(child.layout.y).toBe(childY)
         expect(child.layout.height).toBe(childHeight)
@@ -350,13 +343,13 @@ test('alignSelf', async () => {
         ['baseline', 0, 0, 0],
     ] as const
 
-    child.setStyle('width', '50px')
-    sibling.setStyle('width', '50px')
-    sibling.setStyle('height', '80px')
+    child.style('width', '50px')
+    sibling.style('width', '50px')
+    sibling.style('height', '80px')
     root.add(sibling)
 
     for (const [alignSelf, childY, childHeight, siblingY] of cases) {
-        child.setStyle('alignSelf', alignSelf)
+        child.style('alignSelf', alignSelf)
         ui.update()
         expect(child.layout.y).toBe(childY)
         expect(child.layout.height).toBe(childHeight)
@@ -376,14 +369,14 @@ test('justifyContent', async () => {
         ['space-evenly', 33, 117],
     ] as const
 
-    child.setStyle('width', '50px')
-    child.setStyle('height', '50px')
-    sibling.setStyle('width', '50px')
-    sibling.setStyle('height', '50px')
+    child.style('width', '50px')
+    child.style('height', '50px')
+    sibling.style('width', '50px')
+    sibling.style('height', '50px')
     root.add(sibling)
 
     for (const [justifyContent, childX, siblingX] of cases) {
-        root.setStyle('justifyContent', justifyContent)
+        root.style('justifyContent', justifyContent)
         ui.update()
         expect(child.layout.x).toBe(childX)
         expect(sibling.layout.x).toBe(siblingX)
@@ -402,28 +395,28 @@ test('display', async () => {
     const child = ui.create()
     const sibling = ui.create()
 
-    wrapper.setStyle('width', '100px')
-    wrapper.setStyle('height', '100px')
-    child.setStyle('width', '40px')
-    child.setStyle('height', '40px')
-    sibling.setStyle('width', '50px')
-    sibling.setStyle('height', '50px')
+    wrapper.style('width', '100px')
+    wrapper.style('height', '100px')
+    child.style('width', '40px')
+    child.style('height', '40px')
+    sibling.style('width', '50px')
+    sibling.style('height', '50px')
     wrapper.add(child)
     root.add(sibling)
 
-    wrapper.setStyle('display', 'flex')
+    wrapper.style('display', 'flex')
     ui.update()
     expect(wrapper.layout.width).toBe(100)
     expect(child.layout.width).toBe(40)
     expect(sibling.layout.x).toBe(100)
 
-    wrapper.setStyle('display', 'none')
+    wrapper.style('display', 'none')
     ui.update()
     expect(wrapper.layout.width).toBe(0)
     expect(child.layout.width).toBe(0)
     expect(sibling.layout.x).toBe(0)
 
-    wrapper.setStyle('display', 'contents')
+    wrapper.style('display', 'contents')
     ui.update()
     expect(wrapper.layout.width).toBe(0)
     expect(child.layout.width).toBe(40)
@@ -434,19 +427,19 @@ test('flexGrow', async () => {
     const { ui, root, child } = await createUI({ width: '200px' })
     const sibling = ui.create()
 
-    child.setStyle('width', '50px')
-    sibling.setStyle('width', '50px')
+    child.style('width', '50px')
+    sibling.style('width', '50px')
     root.add(sibling)
     ui.update()
     expect(child.layout.width).toBe(50)
     expect(sibling.layout.x).toBe(50)
 
-    child.setStyle('flexGrow', '1')
+    child.style('flexGrow', '1')
     ui.update()
     expect(child.layout.width).toBe(150)
     expect(sibling.layout.x).toBe(150)
 
-    child.setStyle('flexGrow', 'unset')
+    child.style('flexGrow', 'unset')
     ui.update()
     expect(child.layout.width).toBe(50)
     expect(sibling.layout.x).toBe(50)
@@ -456,19 +449,19 @@ test('flexShrink', async () => {
     const { ui, root, child } = await createUI({ width: '200px' })
     const sibling = ui.create()
 
-    child.setStyle('width', '150px')
-    sibling.setStyle('width', '150px')
+    child.style('width', '150px')
+    sibling.style('width', '150px')
     root.add(sibling)
     ui.update()
     expect(child.layout.width).toBe(100)
     expect(sibling.layout.width).toBe(100)
 
-    child.setStyle('flexShrink', '0')
+    child.style('flexShrink', '0')
     ui.update()
     expect(child.layout.width).toBe(150)
     expect(sibling.layout.width).toBe(50)
 
-    child.setStyle('flexShrink', 'unset')
+    child.style('flexShrink', 'unset')
     ui.update()
     expect(child.layout.width).toBe(100)
     expect(sibling.layout.width).toBe(100)
@@ -479,20 +472,20 @@ test('flexBasis', async () => {
     expect(root.layout.width).toBe(200)
     expect(child.layout.width).toBe(0)
 
-    child.setStyle('flexBasis', '50px')
+    child.style('flexBasis', '50px')
     ui.update()
     expect(child.layout.width).toBe(50)
 
-    child.setStyle('flexBasis', '50%')
+    child.style('flexBasis', '50%')
     ui.update()
     expect(child.layout.width).toBe(100)
 
-    child.setStyle('width', '75px')
-    child.setStyle('flexBasis', 'auto')
+    child.style('width', '75px')
+    child.style('flexBasis', 'auto')
     ui.update()
     expect(child.layout.width).toBe(75)
 
-    child.setStyle('flexBasis', 'unset')
+    child.style('flexBasis', 'unset')
     ui.update()
     expect(child.layout.width).toBe(75)
 })
@@ -503,13 +496,13 @@ test('aspectRatio', async () => {
         alignItems: 'flex-start',
     })
 
-    child.setStyle('width', '100px')
-    child.setStyle('aspectRatio', '2')
+    child.style('width', '100px')
+    child.style('aspectRatio', '2')
     ui.update()
     expect(child.layout.width).toBe(100)
     expect(child.layout.height).toBe(50)
 
-    child.setStyle('aspectRatio', 'unset')
+    child.style('aspectRatio', 'unset')
     ui.update()
     expect(child.layout.width).toBe(100)
     expect(child.layout.height).toBe(0)
@@ -519,8 +512,8 @@ test('aspectRatio', async () => {
         alignItems: 'flex-start',
     })
 
-    heightChild.setStyle('height', '80px')
-    heightChild.setStyle('aspectRatio', '2')
+    heightChild.style('height', '80px')
+    heightChild.style('aspectRatio', '2')
     heightUi.update()
     expect(heightChild.layout.width).toBe(160)
     expect(heightChild.layout.height).toBe(80)
@@ -532,28 +525,22 @@ test('boxSizing', async () => {
         ['content-box', 130, 130, 100, 100],
     ] as const
 
-    for (const [
-        boxSizing,
-        boxWidth,
-        boxHeight,
-        innerWidth,
-        innerHeight,
-    ] of cases) {
+    for (const [boxSizing, boxWidth, boxHeight, innerWidth, innerHeight] of cases) {
         const { ui, child: box } = await createUI({
             height: '200px',
             alignItems: 'flex-start',
         })
         const inner = ui.create()
 
-        box.setStyle('boxSizing', boxSizing)
-        box.setStyle('width', '100px')
-        box.setStyle('height', '100px')
-        box.setStyle('padding', '10px')
-        box.setStyle('borderTopWidth', '5px')
-        box.setStyle('borderLeftWidth', '5px')
-        box.setStyle('borderRightWidth', '5px')
-        box.setStyle('borderBottomWidth', '5px')
-        inner.setStyle('flex', '1')
+        box.style('boxSizing', boxSizing)
+        box.style('width', '100px')
+        box.style('height', '100px')
+        box.style('padding', '10px')
+        box.style('borderTopWidth', '5px')
+        box.style('borderLeftWidth', '5px')
+        box.style('borderRightWidth', '5px')
+        box.style('borderBottomWidth', '5px')
+        inner.style('flex', '1')
         box.add(inner)
         ui.update()
 
@@ -592,7 +579,7 @@ test('border width', async () => {
             ...styles,
         })
 
-        child.setStyle('flex', '1')
+        child.style('flex', '1')
         ui.update()
         expect(child.layout.x).toBe(x)
         expect(child.layout.y).toBe(y)
@@ -610,14 +597,14 @@ test('direction', async () => {
         ['rtl', 150, 100],
     ] as const
 
-    child.setStyle('width', '50px')
-    child.setStyle('height', '50px')
-    sibling.setStyle('width', '50px')
-    sibling.setStyle('height', '50px')
+    child.style('width', '50px')
+    child.style('height', '50px')
+    sibling.style('width', '50px')
+    sibling.style('height', '50px')
     root.add(sibling)
 
     for (const [direction, childX, siblingX] of cases) {
-        root.setStyle('direction', direction)
+        root.style('direction', direction)
         ui.update()
         expect(child.layout.x).toBe(childX)
         expect(sibling.layout.x).toBe(siblingX)
@@ -628,43 +615,43 @@ test('gap', async () => {
     const { ui, root, child } = await createUI({ width: '200px' })
     const sibling = ui.create()
 
-    child.setStyle('width', '50px')
-    child.setStyle('height', '50px')
-    sibling.setStyle('width', '50px')
-    sibling.setStyle('height', '50px')
+    child.style('width', '50px')
+    child.style('height', '50px')
+    sibling.style('width', '50px')
+    sibling.style('height', '50px')
     root.add(sibling)
     ui.update()
     expect(sibling.layout.x).toBe(50)
 
-    root.setStyle('gap', '10px')
+    root.style('gap', '10px')
     ui.update()
     expect(sibling.layout.x).toBe(60)
 
-    root.setStyle('gap', '0px')
+    root.style('gap', '0px')
     ui.update()
     expect(sibling.layout.x).toBe(50)
 
-    root.setStyle('gap', '10%')
+    root.style('gap', '10%')
     ui.update()
     expect(sibling.layout.x).toBe(70)
 
-    root.setStyle('gap', '0px')
+    root.style('gap', '0px')
     ui.update()
     expect(sibling.layout.x).toBe(50)
 
-    root.setStyle('columnGap', '10px')
+    root.style('columnGap', '10px')
     ui.update()
     expect(sibling.layout.x).toBe(60)
 
-    root.setStyle('columnGap', '0px')
+    root.style('columnGap', '0px')
     ui.update()
     expect(sibling.layout.x).toBe(50)
 
-    root.setStyle('columnGap', '10%')
+    root.style('columnGap', '10%')
     ui.update()
     expect(sibling.layout.x).toBe(70)
 
-    root.setStyle('columnGap', '0px')
+    root.style('columnGap', '0px')
     ui.update()
     expect(sibling.layout.x).toBe(50)
 
@@ -680,27 +667,27 @@ test('gap', async () => {
     })
     const rowSibling = rowUi.create()
 
-    rowChild.setStyle('width', '150px')
-    rowChild.setStyle('height', '50px')
-    rowSibling.setStyle('width', '150px')
-    rowSibling.setStyle('height', '50px')
+    rowChild.style('width', '150px')
+    rowChild.style('height', '50px')
+    rowSibling.style('width', '150px')
+    rowSibling.style('height', '50px')
     rowRoot.add(rowSibling)
     rowUi.update()
     expect(rowSibling.layout.y).toBe(50)
 
-    rowRoot.setStyle('rowGap', '10px')
+    rowRoot.style('rowGap', '10px')
     rowUi.update()
     expect(rowSibling.layout.y).toBe(60)
 
-    rowRoot.setStyle('rowGap', '0px')
+    rowRoot.style('rowGap', '0px')
     rowUi.update()
     expect(rowSibling.layout.y).toBe(50)
 
-    rowRoot.setStyle('rowGap', '10%')
+    rowRoot.style('rowGap', '10%')
     rowUi.update()
     expect(rowSibling.layout.y).toBe(70)
 
-    rowRoot.setStyle('rowGap', '0px')
+    rowRoot.style('rowGap', '0px')
     rowUi.update()
     expect(rowSibling.layout.y).toBe(50)
 })
@@ -720,11 +707,11 @@ test('margin', async () => {
         })
         const sibling = ui.create()
 
-        child.setStyle('width', '50px')
-        child.setStyle('height', '50px')
-        child.setStyle(name, '10px')
-        sibling.setStyle('width', '50px')
-        sibling.setStyle('height', '50px')
+        child.style('width', '50px')
+        child.style('height', '50px')
+        child.style(name, '10px')
+        sibling.style('width', '50px')
+        sibling.style('height', '50px')
         root.add(sibling)
         ui.update()
         expect(child.layout.x).toBe(childX)
@@ -737,9 +724,9 @@ test('margin', async () => {
         alignItems: 'flex-end',
     })
 
-    child.setStyle('width', '50px')
-    child.setStyle('height', '50px')
-    child.setStyle('marginBottom', '10px')
+    child.style('width', '50px')
+    child.style('height', '50px')
+    child.style('marginBottom', '10px')
     ui.update()
     expect(child.layout.y).toBe(140)
 })
@@ -759,7 +746,7 @@ test('padding', async () => {
             [name]: '10px',
         })
 
-        child.setStyle('flex', '1')
+        child.style('flex', '1')
         ui.update()
         expect(child.layout.x).toBe(x)
         expect(child.layout.y).toBe(y)
@@ -767,18 +754,15 @@ test('padding', async () => {
         expect(child.layout.height).toBe(height)
     }
 
-    const {
-        ui,
-        child: wrapper,
-    } = await createUI({
+    const { ui, child: wrapper } = await createUI({
         height: '200px',
     })
     const child = ui.create()
 
-    wrapper.setStyle('width', '200px')
-    wrapper.setStyle('height', '200px')
-    wrapper.setStyle('padding', '10%')
-    child.setStyle('flex', '1')
+    wrapper.style('width', '200px')
+    wrapper.style('height', '200px')
+    wrapper.style('padding', '10%')
+    child.style('flex', '1')
     wrapper.add(child)
     ui.update()
     expect(child.layout.x).toBe(20)
@@ -794,10 +778,10 @@ async function createUI(styles = {}) {
     await ui.init()
     const root = ui.root
     Object.keys(styles).forEach((name) => {
-        root.setStyle(name, styles[name])
+        root.style(name, styles[name])
     })
     const child = ui.create()
-    root.setStyle('width', '200px')
+    root.style('width', '200px')
     root.add(child)
     ui.update()
     return { ui, root, child }
