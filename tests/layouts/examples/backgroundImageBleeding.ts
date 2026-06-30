@@ -9,7 +9,7 @@ export default async function createBackgroundImageBleedingLayout({ ui }) {
     stage.style('width', '100%')
     stage.style('height', '100%')
     stage.style('position', 'relative')
-    stage.style('backgroundColor', '#101010')
+    stage.style('backgroundColor', '#000')
     ui.root.add(stage)
 
     const image_a = ui.create()

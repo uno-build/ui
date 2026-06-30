@@ -362,7 +362,7 @@ export default class RendererWebGPU extends Renderer {
                 // draws++
                 // instances += batch.instance_count
             }
-            // console.log(`Draws: ${draws}, Instances: ${instances}`)
+            // console.log(`Draws: ${draws}, Instances: ${instances}`, this.texture_manager.atlas_layer_count)
         }
 
         pass_encoder.end()
