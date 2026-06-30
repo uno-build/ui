@@ -11,7 +11,7 @@ test('resolveStyle', () => {
 
     expect(() => {
         Style.resolveStyle('backgroundColor')
-    }).toThrow(/style value must be a string or an object, got 'undefined'/)
+    }).toThrow(/style value must be a string, got 'undefined'/)
 })
 
 test('resolveStyle should always normalize name', () => {
@@ -285,17 +285,7 @@ test('size constraint styles reject none', () => {
 })
 
 test('resettable unit styles accept unset', () => {
-    const styles = [
-        'top',
-        'left',
-        'right',
-        'bottom',
-        'flexBasis',
-        'minWidth',
-        'minHeight',
-        'maxWidth',
-        'maxHeight',
-    ]
+    const styles = ['top', 'left', 'right', 'bottom', 'flexBasis', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight']
 
     for (const name of styles) {
         expect(Style.resolveStyle(name, ' Unset ')).toEqual([

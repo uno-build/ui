@@ -17,7 +17,7 @@ export default async function createBackgroundImageBleedingLayout({ ui }) {
     coin.setStyle('width', `1px`)
     coin.setStyle('height', `1px`)
     coin.setStyle('position', 'absolute')
-    coin.setStyle('backgroundImage', asset_coin.value, asset_coin.parsed)
+    coin.setStyle('backgroundImage', asset_coin.src, asset_coin)
     stage.add(coin)
 
     const image_a = ui.create()
@@ -26,7 +26,7 @@ export default async function createBackgroundImageBleedingLayout({ ui }) {
     image_a.setStyle('position', 'absolute')
     image_a.setStyle('left', '40px')
     image_a.setStyle('top', '40px')
-    image_a.setStyle('backgroundImage', asset_a.value, asset_a.parsed)
+    image_a.setStyle('backgroundImage', asset_a.src, asset_a)
     stage.add(image_a)
 
     const image_b = ui.create()
@@ -35,6 +35,6 @@ export default async function createBackgroundImageBleedingLayout({ ui }) {
     image_b.setStyle('position', 'absolute')
     image_b.setStyle('left', '450px')
     image_b.setStyle('top', '40px')
-    image_b.setStyle('backgroundImage', asset_b.value, { ...asset_b.parsed, bleeding: false })
+    image_b.setStyle('backgroundImage', asset_b.src, { ...asset_b, bleeding: false })
     stage.add(image_b)
 }

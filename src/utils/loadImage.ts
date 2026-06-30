@@ -9,14 +9,11 @@ export async function loadImage(src, createImageBitmap = globalThis.createImageB
         image_cache.set(src, image)
     }
     return {
-        value: src,
-        parsed: {
-            src,
-            bitmap: image,
-            width: image.width,
-            height: image.height,
-            bleeding: true,
-        },
+        src,
+        bitmap: image,
+        width: image.width,
+        height: image.height,
+        bleeding: true,
     }
 }
 

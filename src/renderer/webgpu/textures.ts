@@ -26,7 +26,7 @@ export class TextureManager {
     private atlas_texture
     private atlas_layer_count = ATLAS_INITIAL_LAYERS
     private atlas_texture_layer_count = ATLAS_MIN_ARRAY_TEXTURE_LAYERS
-    private resources = new Map<string, TextureResource>()
+    private resources = new Map<ImageBitmap, TextureResource>()
     private atlas_layers: AtlasLayer[] = []
 
     constructor({ device, bind_group_layout, viewport_buffer, sampler }) {
@@ -40,13 +40,13 @@ export class TextureManager {
     }
 
     public getImage(image): TextureResource {
-        const resource = this.resources.get(image.src)
+        const resource = this.resources.get(image.bitmap)
         if (resource !== undefined) {
             return resource
         }
 
         const next_resource = this.createAtlasResource(image)
-        this.resources.set(image.src, next_resource)
+        this.resources.set(image.bitmap, next_resource)
 
         return next_resource
     }

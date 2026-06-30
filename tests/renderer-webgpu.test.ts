@@ -243,12 +243,13 @@ test('RendererWebGPU batches atlas panels and images together', () => {
     expect(batches[0].bind_group).toBe(bind_group)
 })
 
-test('TextureManager reuses resources by src', () => {
+test('TextureManager reuses resources by bitmap', () => {
     const device = createFakeDevice()
     const texture_manager = createRealTextureManager(device)
-    const first = texture_manager.getImage(createImage('same.png', 32, 32))
+    const first_image = createImage('first.png', 32, 32)
+    const first = texture_manager.getImage(first_image)
     const copy_count = device.copies.length
-    const second = texture_manager.getImage(createImage('same.png', 64, 64))
+    const second = texture_manager.getImage({ ...createImage('second.png', 32, 32), bitmap: first_image.bitmap })
 
     expect(second).toBe(first)
     expect(device.copies).toHaveLength(copy_count)

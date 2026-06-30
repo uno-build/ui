@@ -35,7 +35,7 @@ export default async function createBackgroundImageLayout({ ui }) {
             node.setStyle('width', width)
             node.setStyle('height', height)
             node.setStyle('backgroundColor', BACKGROUND_COLORS[column_index])
-            node.setStyle('backgroundImage', background_image.value, background_image.parsed)
+            node.setStyle('backgroundImage', background_image.src, background_image)
             node.setStyle('border', '2px solid #000')
             node.setStyle('borderRadius', '16px')
             row.add(node)
