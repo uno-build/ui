@@ -4,6 +4,7 @@ export default async function createBackgroundImageLayout({ ui }) {
     const size = 150
     const asset_coin = await loadImage('/assets/coin.png')
     const asset_texture = await loadImage('/assets/texture.jpg')
+    const asset_card = await loadImage('/assets/card.png')
     const CARD_SIZES = [
         [`${size}px`, `${size}px`],
         [`${size}px`, `${size / 2}px`],
@@ -11,7 +12,7 @@ export default async function createBackgroundImageLayout({ ui }) {
         [`${size / 2}px`, `${size / 2}px`],
     ]
     const BACKGROUND_COLORS = ['#f8cdd3', '#cfe8d5', '#cfe0f8', '#f8e7bf']
-    const BACKGROUND_IMAGES = [asset_coin, asset_texture]
+    const BACKGROUND_IMAGES = [asset_coin, asset_texture, asset_card]
 
     const grid = ui.create({
         width: '100%',

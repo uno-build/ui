@@ -1,6 +1,8 @@
-export const ATLAS_SIZE = 2048
+import { SkylineAllocator } from './SkylineAllocator'
+
 export const ATLAS_INITIAL_LAYERS = 1
 export const ATLAS_MIN_ARRAY_TEXTURE_LAYERS = 2
+export const ATLAS_SIZE = 2048
 export const ATLAS_PADDING = 2
 
 export type TextureResource = {
@@ -12,9 +14,7 @@ export type TextureResource = {
 
 type AtlasLayer = {
     layer: number
-    x: number
-    y: number
-    row_height: number
+    allocator: SkylineAllocator
 }
 
 export class TextureManager {
@@ -97,33 +97,23 @@ export class TextureManager {
     }
 
     private tryAllocateAtlasRect(atlas_layer, width, height) {
-        if (atlas_layer.x + width > ATLAS_SIZE) {
-            atlas_layer.x = 0
-            atlas_layer.y += atlas_layer.row_height
-            atlas_layer.row_height = 0
-        }
+        const allocation = atlas_layer.allocator.allocate(width, height)
 
-        if (atlas_layer.y + height > ATLAS_SIZE) {
+        if (allocation === null) {
             return null
         }
 
-        const allocation = {
+        return {
             atlas_layer,
-            x: atlas_layer.x,
-            y: atlas_layer.y,
+            x: allocation.x,
+            y: allocation.y,
         }
-        atlas_layer.x += width + ATLAS_PADDING
-        atlas_layer.row_height = Math.max(atlas_layer.row_height, height + ATLAS_PADDING)
-
-        return allocation
     }
 
     private createAtlasLayer(layer): AtlasLayer {
         return {
             layer,
-            x: 0,
-            y: 0,
-            row_height: 0,
+            allocator: new SkylineAllocator(ATLAS_SIZE, ATLAS_PADDING),
         }
     }
 

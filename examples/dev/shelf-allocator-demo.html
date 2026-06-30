@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shelf Allocator</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: system-ui, sans-serif;
+        background: #f4f4f0;
+        color: #1d2525;
+      }
+
+      main {
+        display: grid;
+        gap: 12px;
+        justify-items: start;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      button,
+      select {
+        border: 1px solid #1d2525;
+        border-radius: 6px;
+        padding: 8px 14px;
+        font: inherit;
+        background: #ffffff;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #e9f1ef;
+      }
+
+      #status {
+        font-size: 14px;
+      }
+
+      #atlas {
+        position: relative;
+        width: 1024px;
+        height: 1024px;
+        border: 1px solid #1d2525;
+        background:
+          linear-gradient(#d8ddda 1px, transparent 1px),
+          linear-gradient(90deg, #d8ddda 1px, transparent 1px),
+          #ffffff;
+        background-size: 64px 64px;
+        overflow: hidden;
+      }
+
+      .rect {
+        position: absolute;
+        border: 1px solid rgba(0, 0, 0, 0.45);
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.7);
+        user-select: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="toolbar">
+        <select id="algorithm" aria-label="Algoritmo">
+          <option value="shelf">Shelf</option>
+          <option value="skyline">Skyline</option>
+          <option value="guillotine">Guillotine</option>
+        </select>
+        <button id="add">Add</button>
+        <span id="status">0 rectángulos</span>
+      </div>
+      <div id="atlas" aria-label="Atlas 1024 por 1024"></div>
+    </main>
+
+    <script>
+      const ATLAS_SIZE = 1024;
+      const MIN_RECT_SIZE = 32;
+      const MAX_RECT_SIZE = 180;
+
+      const atlas = document.querySelector("#atlas");
+      const algorithm_select = document.querySelector("#algorithm");
+      const add_button = document.querySelector("#add");
+      const status = document.querySelector("#status");
+
+      let current_x = 0;
+      let current_y = 0;
+      let shelf_height = 0;
+      let skyline = [{ x: 0, y: 0, width: ATLAS_SIZE }];
+      let free_rects = [{ x: 0, y: 0, width: ATLAS_SIZE, height: ATLAS_SIZE }];
+      let rect_count = 0;
+
+      function randomSize() {
+        return Math.floor(Math.random() * (MAX_RECT_SIZE - MIN_RECT_SIZE + 1)) + MIN_RECT_SIZE;
+      }
+
+      function randomColor() {
+        const hue = Math.floor(Math.random() * 360);
+        return `hsl(${hue} 70% 78%)`;
+      }
+
+      function allocateShelf(width, height) {
+        if (current_x + width > ATLAS_SIZE) {
+          current_x = 0;
+          current_y += shelf_height;
+          shelf_height = 0;
+        }
+
+        if (current_y + height > ATLAS_SIZE) {
+          return null;
+        }
+
+        const placement = {
+          x: current_x,
+          y: current_y,
+          width,
+          height,
+        };
+
+        current_x += width;
+        shelf_height = Math.max(shelf_height, height);
+
+        return placement;
+      }
+
+      function getSkylineY(index, width, height) {
+        const x = skyline[index].x;
+        let y = skyline[index].y;
+        let width_left = width;
+
+        if (x + width > ATLAS_SIZE) {
+          return null;
+        }
+
+        while (width_left > 0) {
+          const node = skyline[index];
+          y = Math.max(y, node.y);
+
+          if (y + height > ATLAS_SIZE) {
+            return null;
+          }
+
+          width_left -= node.width;
+          index += 1;
+        }
+
+        return y;
+      }
+
+      function mergeSkyline() {
+        for (let index = 0; index < skyline.length - 1; index += 1) {
+          const node = skyline[index];
+          const next_node = skyline[index + 1];
+
+          if (node.y === next_node.y) {
+            node.width += next_node.width;
+            skyline.splice(index + 1, 1);
+            index -= 1;
+          }
+        }
+      }
+
+      function addSkylineNode(index, placement) {
+        skyline.splice(index, 0, {
+          x: placement.x,
+          y: placement.y + placement.height,
+          width: placement.width,
+        });
+
+        for (let node_index = index + 1; node_index < skyline.length; node_index += 1) {
+          const previous_node = skyline[node_index - 1];
+          const node = skyline[node_index];
+          const overlap = previous_node.x + previous_node.width - node.x;
+
+          if (overlap <= 0) {
+            break;
+          }
+
+          node.x += overlap;
+          node.width -= overlap;
+
+          if (node.width <= 0) {
+            skyline.splice(node_index, 1);
+            node_index -= 1;
+          }
+        }
+
+        mergeSkyline();
+      }
+
+      function allocateSkyline(width, height) {
+        let best_index = -1;
+        let best_x = 0;
+        let best_y = ATLAS_SIZE + 1;
+
+        for (let index = 0; index < skyline.length; index += 1) {
+          const y = getSkylineY(index, width, height);
+
+          if (y !== null && (y < best_y || (y === best_y && skyline[index].x < best_x))) {
+            best_index = index;
+            best_x = skyline[index].x;
+            best_y = y;
+          }
+        }
+
+        if (best_index === -1) {
+          return null;
+        }
+
+        const placement = {
+          x: best_x,
+          y: best_y,
+          width,
+          height,
+        };
+
+        addSkylineNode(best_index, placement);
+
+        return placement;
+      }
+
+      function addFreeRect(rect) {
+        if (rect.width > 0 && rect.height > 0) {
+          free_rects.push(rect);
+        }
+      }
+
+      function splitFreeRect(free_rect, width, height) {
+        const remaining_width = free_rect.width - width;
+        const remaining_height = free_rect.height - height;
+
+        if (remaining_width > remaining_height) {
+          addFreeRect({
+            x: free_rect.x + width,
+            y: free_rect.y,
+            width: remaining_width,
+            height: free_rect.height,
+          });
+          addFreeRect({
+            x: free_rect.x,
+            y: free_rect.y + height,
+            width,
+            height: remaining_height,
+          });
+          return;
+        }
+
+        addFreeRect({
+          x: free_rect.x,
+          y: free_rect.y + height,
+          width: free_rect.width,
+          height: remaining_height,
+        });
+        addFreeRect({
+          x: free_rect.x + width,
+          y: free_rect.y,
+          width: remaining_width,
+          height,
+        });
+      }
+
+      function allocateGuillotine(width, height) {
+        let best_index = -1;
+        let best_score = ATLAS_SIZE * ATLAS_SIZE + 1;
+
+        for (let index = 0; index < free_rects.length; index += 1) {
+          const free_rect = free_rects[index];
+
+          if (width <= free_rect.width && height <= free_rect.height) {
+            const score = free_rect.width * free_rect.height - width * height;
+
+            if (score < best_score) {
+              best_index = index;
+              best_score = score;
+            }
+          }
+        }
+
+        if (best_index === -1) {
+          return null;
+        }
+
+        const free_rect = free_rects.splice(best_index, 1)[0];
+        const placement = {
+          x: free_rect.x,
+          y: free_rect.y,
+          width,
+          height,
+        };
+
+        splitFreeRect(free_rect, width, height);
+
+        return placement;
+      }
+
+      function allocate(width, height) {
+        if (algorithm_select.value === "skyline") {
+          return allocateSkyline(width, height);
+        }
+
+        if (algorithm_select.value === "guillotine") {
+          return allocateGuillotine(width, height);
+        }
+
+        return allocateShelf(width, height);
+      }
+
+      function resetAllocator() {
+        current_x = 0;
+        current_y = 0;
+        shelf_height = 0;
+        skyline = [{ x: 0, y: 0, width: ATLAS_SIZE }];
+        free_rects = [{ x: 0, y: 0, width: ATLAS_SIZE, height: ATLAS_SIZE }];
+        rect_count = 0;
+        atlas.replaceChildren();
+        add_button.disabled = false;
+        status.textContent = "0 rectángulos";
+      }
+
+      function addRectangle() {
+        const width = randomSize();
+        const height = randomSize();
+        const placement = allocate(width, height);
+
+        if (!placement) {
+          status.textContent = `No cabe ${width}x${height}`;
+          add_button.disabled = true;
+          return;
+        }
+
+        rect_count += 1;
+
+        const rect = document.createElement("div");
+        rect.className = "rect";
+        rect.style.left = `${placement.x}px`;
+        rect.style.top = `${placement.y}px`;
+        rect.style.width = `${placement.width}px`;
+        rect.style.height = `${placement.height}px`;
+        rect.style.background = randomColor();
+        rect.textContent = `${placement.width}x${placement.height}`;
+
+        atlas.append(rect);
+        status.textContent = `${rect_count} rectángulos`;
+      }
+
+      algorithm_select.addEventListener("change", resetAllocator);
+      add_button.addEventListener("click", addRectangle);
+    </script>
+  </body>
+</html>

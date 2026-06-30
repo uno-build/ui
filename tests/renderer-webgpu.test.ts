@@ -4,6 +4,7 @@ import { OVERFLOW, UNIT } from '../src/style/consts.ts'
 import { ATTRIBUTES_SIZE, ATTRIBUTES, FLOAT32_SIZE } from '../src/renderer/webgpu/buffers.ts'
 import {
     ATLAS_MIN_ARRAY_TEXTURE_LAYERS,
+    ATLAS_PADDING,
     ATLAS_SIZE,
     TextureManager,
 } from '../src/renderer/webgpu/textures.ts'
@@ -282,6 +283,22 @@ test('TextureManager stores full-width images in the atlas', () => {
     expect(resource.uv_rect).toEqual([0, 0, 1, 128 / ATLAS_SIZE])
     expect(device.copies[0].destination.origin).toEqual([0, 0, 0])
     expect(device.textures).toHaveLength(1)
+})
+
+test('TextureManager packs images into the lowest skyline gap', () => {
+    const device = createFakeDevice()
+    const texture_manager = createRealTextureManager(device)
+    texture_manager.getImage(createImage('tall.png', 800, 300))
+    texture_manager.getImage(createImage('short.png', 1200, 100))
+    const resource = texture_manager.getImage(createImage('gap.png', 700, 150))
+
+    expect(resource.layer).toBe(0)
+    expect(resource.uv_rect).toEqual([
+        (800 + ATLAS_PADDING) / ATLAS_SIZE,
+        (100 + ATLAS_PADDING) / ATLAS_SIZE,
+        700 / ATLAS_SIZE,
+        150 / ATLAS_SIZE,
+    ])
 })
 
 test('TextureManager throws for images larger than one atlas layer', () => {
