@@ -19,48 +19,45 @@ export default function createBorderRadiusCornersLayout({ ui, rendererName }) {
         '#e1e6d8',
     ]
 
-    const stage = ui.create({
-        flex: '1',
-        padding: '32px',
-        backgroundColor: '#f6f7f8',
-    })
+    const stage = ui.create()
+    stage.setStyle('flex', '1')
+    stage.setStyle('padding', '32px')
+    stage.setStyle('backgroundColor', '#f6f7f8')
     ui.root.add(stage)
 
-    const grid = ui.create({
-        width: '800px',
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: '12px',
-        padding: '12px',
-        backgroundColor: '#fff',
-    })
+    const grid = ui.create()
+    grid.setStyle('width', '800px')
+    grid.setStyle('flexDirection', 'row')
+    grid.setStyle('flexWrap', 'wrap')
+    grid.setStyle('gap', '12px')
+    grid.setStyle('padding', '12px')
+    grid.setStyle('backgroundColor', '#fff')
     stage.add(grid)
 
     for (const radius of RADII) {
         for (let mask = 0; mask < 16; mask++) {
-            grid.add(
-                ui.create({
-                    width: '100px',
-                    height: '100px',
-                    borderTopLeftRadius: mask & 1 ? radius : '0px',
-                    borderTopRightRadius: mask & 2 ? radius : '0px',
-                    borderBottomLeftRadius: mask & 4 ? radius : '0px',
-                    borderBottomRightRadius: mask & 8 ? radius : '0px',
-                    borderTopWidth: '4px',
-                    borderLeftWidth: '4px',
-                    borderRightWidth: '4px',
-                    borderBottomWidth: '4px',
-                    borderTopStyle: 'solid',
-                    borderLeftStyle: 'solid',
-                    borderRightStyle: 'solid',
-                    borderBottomStyle: 'solid',
-                    borderTopColor: '#222222cc',
-                    borderLeftColor: '#222222cc',
-                    borderRightColor: '#222222cc',
-                    borderBottomColor: '#222222cc',
-                    backgroundColor: COLORS[mask],
-                }),
-            )
+            const grid_child_1 = ui.create()
+            grid_child_1.setStyle('width', '100px')
+            grid_child_1.setStyle('height', '100px')
+            grid_child_1.setStyle('borderTopLeftRadius', mask & 1 ? radius : '0px')
+            grid_child_1.setStyle('borderTopRightRadius', mask & 2 ? radius : '0px')
+            grid_child_1.setStyle('borderBottomLeftRadius', mask & 4 ? radius : '0px')
+            grid_child_1.setStyle('borderBottomRightRadius', mask & 8 ? radius : '0px')
+            grid_child_1.setStyle('borderTopWidth', '4px')
+            grid_child_1.setStyle('borderLeftWidth', '4px')
+            grid_child_1.setStyle('borderRightWidth', '4px')
+            grid_child_1.setStyle('borderBottomWidth', '4px')
+            grid_child_1.setStyle('borderTopStyle', 'solid')
+            grid_child_1.setStyle('borderLeftStyle', 'solid')
+            grid_child_1.setStyle('borderRightStyle', 'solid')
+            grid_child_1.setStyle('borderBottomStyle', 'solid')
+            grid_child_1.setStyle('borderTopColor', '#222222cc')
+            grid_child_1.setStyle('borderLeftColor', '#222222cc')
+            grid_child_1.setStyle('borderRightColor', '#222222cc')
+            grid_child_1.setStyle('borderBottomColor', '#222222cc')
+            grid_child_1.setStyle('backgroundColor', COLORS[mask])
+
+            grid.add(grid_child_1)
         }
     }
 }

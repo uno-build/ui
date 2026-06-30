@@ -19,5 +19,5 @@ export function normalizeStyleKey(name: string) {
 }
 
 export function normalizeStyleValue(value: string, name: any) {
-    return typeof value === 'string' ? value.trim().toLowerCase() : value
+    return value.trim().toLowerCase()
 }

@@ -1,171 +1,159 @@
 export default function createNestedMarginsLayout({ ui, rendererName }) {
-    const stage = ui.create({
-        flex: '1',
-        flexDirection: 'row',
-        padding: '40px',
-        gap: '32px',
-    })
+    const stage = ui.create()
+    stage.setStyle('flex', '1')
+    stage.setStyle('flexDirection', 'row')
+    stage.setStyle('padding', '40px')
+    stage.setStyle('gap', '32px')
     ui.root.add(stage)
 
-    const stack = ui.create({
-        width: '260px',
-        height: '220px',
-        flexDirection: 'column',
-        padding: '16px',
-        borderTopWidth: '2px',
-        borderLeftWidth: '2px',
-        borderRightWidth: '2px',
-        borderBottomWidth: '2px',
-        borderTopStyle: 'solid',
-        borderLeftStyle: 'solid',
-        borderRightStyle: 'solid',
-        borderBottomStyle: 'solid',
-        borderTopColor: '#464',
-        borderLeftColor: '#464',
-        borderRightColor: '#464',
-        borderBottomColor: '#464',
-        backgroundColor: '#eef7ee',
-    })
+    const stack = ui.create()
+    stack.setStyle('width', '260px')
+    stack.setStyle('height', '220px')
+    stack.setStyle('flexDirection', 'column')
+    stack.setStyle('padding', '16px')
+    stack.setStyle('borderTopWidth', '2px')
+    stack.setStyle('borderLeftWidth', '2px')
+    stack.setStyle('borderRightWidth', '2px')
+    stack.setStyle('borderBottomWidth', '2px')
+    stack.setStyle('borderTopStyle', 'solid')
+    stack.setStyle('borderLeftStyle', 'solid')
+    stack.setStyle('borderRightStyle', 'solid')
+    stack.setStyle('borderBottomStyle', 'solid')
+    stack.setStyle('borderTopColor', '#464')
+    stack.setStyle('borderLeftColor', '#464')
+    stack.setStyle('borderRightColor', '#464')
+    stack.setStyle('borderBottomColor', '#464')
+    stack.setStyle('backgroundColor', '#eef7ee')
     stage.add(stack)
 
-    stack.add(
-        ui.create({
-            width: '120px',
-            height: '34px',
-            backgroundColor: '#d3e7d3',
-        }),
-    )
+    const stack_child_1 = ui.create()
+    stack_child_1.setStyle('width', '120px')
+    stack_child_1.setStyle('height', '34px')
+    stack_child_1.setStyle('backgroundColor', '#d3e7d3')
 
-    const marginParent = ui.create({
-        width: '160px',
-        height: '120px',
-        marginTop: '17px',
-        marginLeft: '23px',
-        padding: '14px',
-        borderTopWidth: '2px',
-        borderLeftWidth: '2px',
-        borderRightWidth: '2px',
-        borderBottomWidth: '2px',
-        borderTopStyle: 'solid',
-        borderLeftStyle: 'solid',
-        borderRightStyle: 'solid',
-        borderBottomStyle: 'solid',
-        borderTopColor: '#595',
-        borderLeftColor: '#595',
-        borderRightColor: '#595',
-        borderBottomColor: '#595',
-        backgroundColor: '#dff0df',
-    })
+    stack.add(stack_child_1)
+
+    const marginParent = ui.create()
+    marginParent.setStyle('width', '160px')
+    marginParent.setStyle('height', '120px')
+    marginParent.setStyle('marginTop', '17px')
+    marginParent.setStyle('marginLeft', '23px')
+    marginParent.setStyle('padding', '14px')
+    marginParent.setStyle('borderTopWidth', '2px')
+    marginParent.setStyle('borderLeftWidth', '2px')
+    marginParent.setStyle('borderRightWidth', '2px')
+    marginParent.setStyle('borderBottomWidth', '2px')
+    marginParent.setStyle('borderTopStyle', 'solid')
+    marginParent.setStyle('borderLeftStyle', 'solid')
+    marginParent.setStyle('borderRightStyle', 'solid')
+    marginParent.setStyle('borderBottomStyle', 'solid')
+    marginParent.setStyle('borderTopColor', '#595')
+    marginParent.setStyle('borderLeftColor', '#595')
+    marginParent.setStyle('borderRightColor', '#595')
+    marginParent.setStyle('borderBottomColor', '#595')
+    marginParent.setStyle('backgroundColor', '#dff0df')
     stack.add(marginParent)
 
-    const marginChild = ui.create({
-        width: '96px',
-        height: '64px',
-        marginTop: '11px',
-        marginLeft: '9px',
-        padding: '8px',
-        borderTopWidth: '2px',
-        borderLeftWidth: '2px',
-        borderRightWidth: '2px',
-        borderBottomWidth: '2px',
-        borderTopStyle: 'solid',
-        borderLeftStyle: 'solid',
-        borderRightStyle: 'solid',
-        borderBottomStyle: 'solid',
-        borderTopColor: '#696',
-        borderLeftColor: '#696',
-        borderRightColor: '#696',
-        borderBottomColor: '#696',
-        backgroundColor: '#c9e6c9',
-    })
+    const marginChild = ui.create()
+    marginChild.setStyle('width', '96px')
+    marginChild.setStyle('height', '64px')
+    marginChild.setStyle('marginTop', '11px')
+    marginChild.setStyle('marginLeft', '9px')
+    marginChild.setStyle('padding', '8px')
+    marginChild.setStyle('borderTopWidth', '2px')
+    marginChild.setStyle('borderLeftWidth', '2px')
+    marginChild.setStyle('borderRightWidth', '2px')
+    marginChild.setStyle('borderBottomWidth', '2px')
+    marginChild.setStyle('borderTopStyle', 'solid')
+    marginChild.setStyle('borderLeftStyle', 'solid')
+    marginChild.setStyle('borderRightStyle', 'solid')
+    marginChild.setStyle('borderBottomStyle', 'solid')
+    marginChild.setStyle('borderTopColor', '#696')
+    marginChild.setStyle('borderLeftColor', '#696')
+    marginChild.setStyle('borderRightColor', '#696')
+    marginChild.setStyle('borderBottomColor', '#696')
+    marginChild.setStyle('backgroundColor', '#c9e6c9')
     marginParent.add(marginChild)
 
-    const nestedMarginMarker = ui.create({
-        width: '18px',
-        height: '18px',
-        backgroundColor: '#008800',
-    })
+    const nestedMarginMarker = ui.create()
+    nestedMarginMarker.setStyle('width', '18px')
+    nestedMarginMarker.setStyle('height', '18px')
+    nestedMarginMarker.setStyle('backgroundColor', '#008800')
     marginChild.add(nestedMarginMarker)
 
-    const rowHost = ui.create({
-        width: '300px',
-        height: '120px',
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        padding: '12px',
-        borderTopWidth: '2px',
-        borderLeftWidth: '2px',
-        borderRightWidth: '2px',
-        borderBottomWidth: '2px',
-        borderTopStyle: 'solid',
-        borderLeftStyle: 'solid',
-        borderRightStyle: 'solid',
-        borderBottomStyle: 'solid',
-        borderTopColor: '#745',
-        borderLeftColor: '#745',
-        borderRightColor: '#745',
-        borderBottomColor: '#745',
-        backgroundColor: '#f8edf2',
-    })
+    const rowHost = ui.create()
+    rowHost.setStyle('width', '300px')
+    rowHost.setStyle('height', '120px')
+    rowHost.setStyle('flexDirection', 'row')
+    rowHost.setStyle('alignItems', 'flex-start')
+    rowHost.setStyle('padding', '12px')
+    rowHost.setStyle('borderTopWidth', '2px')
+    rowHost.setStyle('borderLeftWidth', '2px')
+    rowHost.setStyle('borderRightWidth', '2px')
+    rowHost.setStyle('borderBottomWidth', '2px')
+    rowHost.setStyle('borderTopStyle', 'solid')
+    rowHost.setStyle('borderLeftStyle', 'solid')
+    rowHost.setStyle('borderRightStyle', 'solid')
+    rowHost.setStyle('borderBottomStyle', 'solid')
+    rowHost.setStyle('borderTopColor', '#745')
+    rowHost.setStyle('borderLeftColor', '#745')
+    rowHost.setStyle('borderRightColor', '#745')
+    rowHost.setStyle('borderBottomColor', '#745')
+    rowHost.setStyle('backgroundColor', '#f8edf2')
     stage.add(rowHost)
 
-    rowHost.add(
-        ui.create({
-            width: '56px',
-            height: '40px',
-            marginTop: '15px',
-            marginLeft: '19px',
-            marginRight: '27px',
-            backgroundColor: '#ebccd8',
-        }),
-    )
+    const rowHost_child_2 = ui.create()
+    rowHost_child_2.setStyle('width', '56px')
+    rowHost_child_2.setStyle('height', '40px')
+    rowHost_child_2.setStyle('marginTop', '15px')
+    rowHost_child_2.setStyle('marginLeft', '19px')
+    rowHost_child_2.setStyle('marginRight', '27px')
+    rowHost_child_2.setStyle('backgroundColor', '#ebccd8')
 
-    const afterMarginMarker = ui.create({
-        width: '22px',
-        height: '22px',
-        marginTop: '21px',
-        backgroundColor: '#cc3366',
-    })
+    rowHost.add(rowHost_child_2)
+
+    const afterMarginMarker = ui.create()
+    afterMarginMarker.setStyle('width', '22px')
+    afterMarginMarker.setStyle('height', '22px')
+    afterMarginMarker.setStyle('marginTop', '21px')
+    afterMarginMarker.setStyle('backgroundColor', '#cc3366')
     rowHost.add(afterMarginMarker)
 
-    const endAlignedMarginHost = ui.create({
-        width: '90px',
-        height: '150px',
-        flexDirection: 'column',
-        justifyContent: 'flex-end',
-        alignItems: 'flex-end',
-        padding: '12px',
-        borderTopWidth: '2px',
-        borderLeftWidth: '2px',
-        borderRightWidth: '2px',
-        borderBottomWidth: '2px',
-        borderTopStyle: 'solid',
-        borderLeftStyle: 'solid',
-        borderRightStyle: 'solid',
-        borderBottomStyle: 'solid',
-        borderTopColor: '#764',
-        borderLeftColor: '#764',
-        borderRightColor: '#764',
-        borderBottomColor: '#764',
-        backgroundColor: '#fff0df',
-    })
+    const endAlignedMarginHost = ui.create()
+    endAlignedMarginHost.setStyle('width', '90px')
+    endAlignedMarginHost.setStyle('height', '150px')
+    endAlignedMarginHost.setStyle('flexDirection', 'column')
+    endAlignedMarginHost.setStyle('justifyContent', 'flex-end')
+    endAlignedMarginHost.setStyle('alignItems', 'flex-end')
+    endAlignedMarginHost.setStyle('padding', '12px')
+    endAlignedMarginHost.setStyle('borderTopWidth', '2px')
+    endAlignedMarginHost.setStyle('borderLeftWidth', '2px')
+    endAlignedMarginHost.setStyle('borderRightWidth', '2px')
+    endAlignedMarginHost.setStyle('borderBottomWidth', '2px')
+    endAlignedMarginHost.setStyle('borderTopStyle', 'solid')
+    endAlignedMarginHost.setStyle('borderLeftStyle', 'solid')
+    endAlignedMarginHost.setStyle('borderRightStyle', 'solid')
+    endAlignedMarginHost.setStyle('borderBottomStyle', 'solid')
+    endAlignedMarginHost.setStyle('borderTopColor', '#764')
+    endAlignedMarginHost.setStyle('borderLeftColor', '#764')
+    endAlignedMarginHost.setStyle('borderRightColor', '#764')
+    endAlignedMarginHost.setStyle('borderBottomColor', '#764')
+    endAlignedMarginHost.setStyle('backgroundColor', '#fff0df')
     stage.add(endAlignedMarginHost)
 
-    endAlignedMarginHost.add(
-        ui.create({
-            width: '52px',
-            height: '30px',
-            backgroundColor: '#f3d2b0',
-        }),
-    )
+    const endAlignedMarginHost_child_3 = ui.create()
+    endAlignedMarginHost_child_3.setStyle('width', '52px')
+    endAlignedMarginHost_child_3.setStyle('height', '30px')
+    endAlignedMarginHost_child_3.setStyle('backgroundColor', '#f3d2b0')
 
-    const endAlignedMarginMarker = ui.create({
-        width: '24px',
-        height: '24px',
-        marginTop: '13px',
-        marginLeft: '17px',
-        marginRight: '19px',
-        backgroundColor: '#dd7700',
-    })
+    endAlignedMarginHost.add(endAlignedMarginHost_child_3)
+
+    const endAlignedMarginMarker = ui.create()
+    endAlignedMarginMarker.setStyle('width', '24px')
+    endAlignedMarginMarker.setStyle('height', '24px')
+    endAlignedMarginMarker.setStyle('marginTop', '13px')
+    endAlignedMarginMarker.setStyle('marginLeft', '17px')
+    endAlignedMarginMarker.setStyle('marginRight', '19px')
+    endAlignedMarginMarker.setStyle('backgroundColor', '#dd7700')
     endAlignedMarginHost.add(endAlignedMarginMarker)
 }

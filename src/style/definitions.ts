@@ -16,7 +16,6 @@ import {
     validateColor,
     validateAuto,
     validateUnset,
-    validateImage,
     validateInteger,
     validateNumber,
     validatePx,
@@ -24,16 +23,7 @@ import {
     validateNonNegative,
     validateMaxOne,
 } from './validators'
-import {
-    parseColor,
-    parseAuto,
-    parseUnset,
-    parseImage,
-    parseInteger,
-    parseNumber,
-    parsePx,
-    parsePercent,
-} from './parsers'
+import { parseColor, parseAuto, parseUnset, parseInteger, parseNumber, parsePx, parsePercent } from './parsers'
 import { createEnumValidator, createEnumParser } from './utils'
 
 export const INTEGER_DEFINITION = [
@@ -229,12 +219,5 @@ export const DIRECTION_DEFINITION = [
     {
         validate: [createEnumValidator(DIRECTION)],
         parse: [createEnumParser(DIRECTION)],
-    },
-]
-
-export const BACKGROUND_IMAGE_DEFINITION = [
-    {
-        validate: [validateImage],
-        parse: [parseImage],
     },
 ]

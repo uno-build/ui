@@ -6,42 +6,35 @@ export default async function createBackgroundImageBleedingLayout({ ui }) {
     const asset_a = await loadImage('/assets/bleeding_a.png')
     const asset_b = await loadImage('/assets/bleeding_b.png')
 
-    const stage = ui.create({
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-        backgroundColor: '#101010',
-    })
+    const stage = ui.create()
+    stage.setStyle('width', '100%')
+    stage.setStyle('height', '100%')
+    stage.setStyle('position', 'relative')
+    stage.setStyle('backgroundColor', '#101010')
     ui.root.add(stage)
 
-    stage.add(
-        ui.create({
-            width: `1px`,
-            height: `1px`,
-            position: 'absolute',
-            backgroundImage: asset_coin,
-        }),
-    )
+    const coin = ui.create()
+    coin.setStyle('width', `1px`)
+    coin.setStyle('height', `1px`)
+    coin.setStyle('position', 'absolute')
+    coin.setStyle('backgroundImage', asset_coin.value, asset_coin.parsed)
+    stage.add(coin)
 
-    stage.add(
-        ui.create({
-            width: `${TARGET_SIZE}px`,
-            height: `${TARGET_SIZE}px`,
-            position: 'absolute',
-            left: '40px',
-            top: '40px',
-            backgroundImage: asset_a,
-        }),
-    )
+    const image_a = ui.create()
+    image_a.setStyle('width', `${TARGET_SIZE}px`)
+    image_a.setStyle('height', `${TARGET_SIZE}px`)
+    image_a.setStyle('position', 'absolute')
+    image_a.setStyle('left', '40px')
+    image_a.setStyle('top', '40px')
+    image_a.setStyle('backgroundImage', asset_a.value, asset_a.parsed)
+    stage.add(image_a)
 
-    stage.add(
-        ui.create({
-            width: `${TARGET_SIZE}px`,
-            height: `${TARGET_SIZE}px`,
-            position: 'absolute',
-            left: '450px',
-            top: '40px',
-            backgroundImage: { ...asset_b, bleeding: false },
-        }),
-    )
+    const image_b = ui.create()
+    image_b.setStyle('width', `${TARGET_SIZE}px`)
+    image_b.setStyle('height', `${TARGET_SIZE}px`)
+    image_b.setStyle('position', 'absolute')
+    image_b.setStyle('left', '450px')
+    image_b.setStyle('top', '40px')
+    image_b.setStyle('backgroundImage', asset_b.value, { ...asset_b.parsed, bleeding: false })
+    stage.add(image_b)
 }

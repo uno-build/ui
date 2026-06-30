@@ -1,57 +1,50 @@
 export default function createDisplayLayout({ ui, rendererName }) {
-    const container = ui.create({
-        flex: '1',
-        flexDirection: 'row',
-        gap: '16px',
-        padding: '32px',
-        backgroundColor: '#f4f5f7',
-    })
+    const container = ui.create()
+    container.setStyle('flex', '1')
+    container.setStyle('flexDirection', 'row')
+    container.setStyle('gap', '16px')
+    container.setStyle('padding', '32px')
+    container.setStyle('backgroundColor', '#f4f5f7')
     ui.root.add(container)
 
-    const flex = ui.create({
-        width: '120px',
-        height: '120px',
-        display: 'flex',
-        padding: '16px',
-        backgroundColor: '#2f80ed',
-    })
+    const flex = ui.create()
+    flex.setStyle('width', '120px')
+    flex.setStyle('height', '120px')
+    flex.setStyle('display', 'flex')
+    flex.setStyle('padding', '16px')
+    flex.setStyle('backgroundColor', '#2f80ed')
     container.add(flex)
-    flex.add(
-        ui.create({
-            width: '48px',
-            height: '48px',
-            backgroundColor: '#56ccf2',
-        }),
-    )
+    const flex_child_1 = ui.create()
+    flex_child_1.setStyle('width', '48px')
+    flex_child_1.setStyle('height', '48px')
+    flex_child_1.setStyle('backgroundColor', '#56ccf2')
 
-    const none = ui.create({
-        width: '120px',
-        height: '120px',
-        display: 'none',
-        backgroundColor: '#eb5757',
-    })
+    flex.add(flex_child_1)
+
+    const none = ui.create()
+    none.setStyle('width', '120px')
+    none.setStyle('height', '120px')
+    none.setStyle('display', 'none')
+    none.setStyle('backgroundColor', '#eb5757')
     container.add(none)
-    none.add(
-        ui.create({
-            width: '48px',
-            height: '48px',
-            backgroundColor: '#fb6897',
-        }),
-    )
+    const none_child_2 = ui.create()
+    none_child_2.setStyle('width', '48px')
+    none_child_2.setStyle('height', '48px')
+    none_child_2.setStyle('backgroundColor', '#fb6897')
 
-    const contents = ui.create({
-        width: '120px',
-        height: '120px',
-        display: 'contents',
-        padding: '16px',
-        backgroundColor: '#27ae60',
-    })
+    none.add(none_child_2)
+
+    const contents = ui.create()
+    contents.setStyle('width', '120px')
+    contents.setStyle('height', '120px')
+    contents.setStyle('display', 'contents')
+    contents.setStyle('padding', '16px')
+    contents.setStyle('backgroundColor', '#27ae60')
     container.add(contents)
-    contents.add(
-        ui.create({
-            width: '48px',
-            height: '48px',
-            backgroundColor: '#6fcf97',
-        }),
-    )
+    const contents_child_3 = ui.create()
+    contents_child_3.setStyle('width', '48px')
+    contents_child_3.setStyle('height', '48px')
+    contents_child_3.setStyle('backgroundColor', '#6fcf97')
+
+    contents.add(contents_child_3)
 }

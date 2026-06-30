@@ -6,15 +6,14 @@ const PANEL_STYLE = {
 }
 
 export default function createOpacityLayout({ ui, rendererName }) {
-    const stage = ui.create({
-        flex: '1',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '28px',
-        padding: '32px',
-        backgroundColor: '#edf1f4',
-    })
+    const stage = ui.create()
+    stage.setStyle('flex', '1')
+    stage.setStyle('flexDirection', 'row')
+    stage.setStyle('justifyContent', 'center')
+    stage.setStyle('alignItems', 'center')
+    stage.setStyle('gap', '28px')
+    stage.setStyle('padding', '32px')
+    stage.setStyle('backgroundColor', '#edf1f4')
     ui.root.add(stage)
 
     const opaque_panel = createPanel(ui, {
@@ -34,23 +33,26 @@ export default function createOpacityLayout({ ui, rendererName }) {
     })
     stage.add(nested_panel)
 
-    const nested_group = ui.create({
-        width: '136px',
-        height: '204px',
-        position: 'absolute',
-        left: '32px',
-        top: '38px',
-        opacity: '0.5',
-    })
+    const nested_group = ui.create()
+    nested_group.setStyle('width', '136px')
+    nested_group.setStyle('height', '204px')
+    nested_group.setStyle('position', 'absolute')
+    nested_group.setStyle('left', '32px')
+    nested_group.setStyle('top', '38px')
+    nested_group.setStyle('opacity', '0.5')
     nested_panel.add(nested_group)
     addBlocks(ui, nested_group, 'compact')
 }
 
 function createPanel(ui, styles) {
-    return ui.create({
-        ...PANEL_STYLE,
-        ...styles,
-    })
+    const panel = ui.create()
+    for (const name of Object.keys(PANEL_STYLE)) {
+        panel.setStyle(name, PANEL_STYLE[name])
+    }
+    for (const name of Object.keys(styles)) {
+        panel.setStyle(name, styles[name])
+    }
+    return panel
 }
 
 function addBlocks(ui, parent, variant) {
@@ -72,35 +74,32 @@ function addBlocks(ui, parent, variant) {
         ],
     }[variant]
 
-    parent.add(
-        ui.create({
-            width: '92px',
-            height: '64px',
-            position: 'absolute',
-            left: positions[0][0],
-            top: positions[0][1],
-            backgroundColor: '#ff3b30',
-        }),
-    )
-    parent.add(
-        ui.create({
-            width: '92px',
-            height: '64px',
-            position: 'absolute',
-            left: positions[1][0],
-            top: positions[1][1],
-            backgroundColor: '#007aff',
-        }),
-    )
-    parent.add(
-        ui.create({
-            width: '92px',
-            height: '64px',
-            position: 'absolute',
-            left: positions[2][0],
-            top: positions[2][1],
-            opacity: '0.65',
-            backgroundColor: '#34c759',
-        }),
-    )
+    const parent_child_1 = ui.create()
+    parent_child_1.setStyle('width', '92px')
+    parent_child_1.setStyle('height', '64px')
+    parent_child_1.setStyle('position', 'absolute')
+    parent_child_1.setStyle('left', positions[0][0])
+    parent_child_1.setStyle('top', positions[0][1])
+    parent_child_1.setStyle('backgroundColor', '#ff3b30')
+
+    parent.add(parent_child_1)
+    const parent_child_2 = ui.create()
+    parent_child_2.setStyle('width', '92px')
+    parent_child_2.setStyle('height', '64px')
+    parent_child_2.setStyle('position', 'absolute')
+    parent_child_2.setStyle('left', positions[1][0])
+    parent_child_2.setStyle('top', positions[1][1])
+    parent_child_2.setStyle('backgroundColor', '#007aff')
+
+    parent.add(parent_child_2)
+    const parent_child_3 = ui.create()
+    parent_child_3.setStyle('width', '92px')
+    parent_child_3.setStyle('height', '64px')
+    parent_child_3.setStyle('position', 'absolute')
+    parent_child_3.setStyle('left', positions[2][0])
+    parent_child_3.setStyle('top', positions[2][1])
+    parent_child_3.setStyle('opacity', '0.65')
+    parent_child_3.setStyle('backgroundColor', '#34c759')
+
+    parent.add(parent_child_3)
 }

@@ -77,35 +77,36 @@ export default function createBorderRadiusOverlapLayout({ ui, rendererName }) {
         },
     ]
 
-    const stage = ui.create({
-        flex: '1',
-        padding: '40px',
-        backgroundColor: '#f6f7f8',
-    })
+    const stage = ui.create()
+    stage.setStyle('flex', '1')
+    stage.setStyle('padding', '40px')
+    stage.setStyle('backgroundColor', '#f6f7f8')
     ui.root.add(stage)
 
-    const frame = ui.create({
-        width: '440px',
-        height: '320px',
-        position: 'relative',
-        backgroundColor: '#fff',
-    })
+    const frame = ui.create()
+    frame.setStyle('width', '440px')
+    frame.setStyle('height', '320px')
+    frame.setStyle('position', 'relative')
+    frame.setStyle('backgroundColor', '#fff')
     stage.add(frame)
 
     for (const item of ITEMS) {
-        frame.add(
-            ui.create({
-                position: 'absolute',
-                borderTopWidth: '4px',
-                borderLeftWidth: '4px',
-                borderRightWidth: '4px',
-                borderBottomWidth: '4px',
-                borderTopStyle: 'solid',
-                borderLeftStyle: 'solid',
-                borderRightStyle: 'solid',
-                borderBottomStyle: 'solid',
-                ...item,
-            }),
-        )
+        const frame_child_1 = ui.create()
+        frame_child_1.setStyle('position', 'absolute')
+        frame_child_1.setStyle('borderTopWidth', '4px')
+        frame_child_1.setStyle('borderLeftWidth', '4px')
+        frame_child_1.setStyle('borderRightWidth', '4px')
+        frame_child_1.setStyle('borderBottomWidth', '4px')
+        frame_child_1.setStyle('borderTopStyle', 'solid')
+        frame_child_1.setStyle('borderLeftStyle', 'solid')
+        frame_child_1.setStyle('borderRightStyle', 'solid')
+        frame_child_1.setStyle('borderBottomStyle', 'solid')
+
+        for (const name of Object.keys(item)) {
+            frame_child_1.setStyle(name, item[name])
+
+        }
+
+        frame.add(frame_child_1)
     }
 }

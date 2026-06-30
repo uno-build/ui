@@ -1,84 +1,76 @@
 export default function createOverflowScrollLayout({ ui, rendererName }) {
-    const frame = ui.create({
-        width: '420px',
-        height: '360px',
-        position: 'relative',
-        margin: '40px',
-        backgroundColor: '#f5f5f5',
-    })
+    const frame = ui.create()
+    frame.setStyle('width', '420px')
+    frame.setStyle('height', '360px')
+    frame.setStyle('position', 'relative')
+    frame.setStyle('margin', '40px')
+    frame.setStyle('backgroundColor', '#f5f5f5')
     ui.root.add(frame)
 
-    const background = ui.create({
-        width: '420px',
-        height: '360px',
-        position: 'absolute',
-        left: '0px',
-        top: '0px',
-        backgroundColor: '#ddd',
-    })
+    const background = ui.create()
+    background.setStyle('width', '420px')
+    background.setStyle('height', '360px')
+    background.setStyle('position', 'absolute')
+    background.setStyle('left', '0px')
+    background.setStyle('top', '0px')
+    background.setStyle('backgroundColor', '#ddd')
     frame.add(background)
 
-    const scrollHost = ui.create({
-        width: '120px',
-        height: '100px',
-        position: 'absolute',
-        left: '80px',
-        top: '50px',
-        overflow: 'scroll',
-        backgroundColor: '#d8ebff',
-    })
+    const scrollHost = ui.create()
+    scrollHost.setStyle('width', '120px')
+    scrollHost.setStyle('height', '100px')
+    scrollHost.setStyle('position', 'absolute')
+    scrollHost.setStyle('left', '80px')
+    scrollHost.setStyle('top', '50px')
+    scrollHost.setStyle('overflow', 'scroll')
+    scrollHost.setStyle('backgroundColor', '#d8ebff')
     frame.add(scrollHost)
 
-    const scrollInner = ui.create({
-        width: '80px',
-        height: '60px',
-        position: 'absolute',
-        left: '20px',
-        top: '20px',
-        backgroundColor: '#9dccff',
-    })
+    const scrollInner = ui.create()
+    scrollInner.setStyle('width', '80px')
+    scrollInner.setStyle('height', '60px')
+    scrollInner.setStyle('position', 'absolute')
+    scrollInner.setStyle('left', '20px')
+    scrollInner.setStyle('top', '20px')
+    scrollInner.setStyle('backgroundColor', '#9dccff')
     scrollHost.add(scrollInner)
 
-    const scrollChild = ui.create({
-        width: '80px',
-        height: '60px',
-        position: 'absolute',
-        left: '60px',
-        top: '20px',
-        backgroundColor: '#1479ff',
-    })
+    const scrollChild = ui.create()
+    scrollChild.setStyle('width', '80px')
+    scrollChild.setStyle('height', '60px')
+    scrollChild.setStyle('position', 'absolute')
+    scrollChild.setStyle('left', '60px')
+    scrollChild.setStyle('top', '20px')
+    scrollChild.setStyle('backgroundColor', '#1479ff')
     scrollInner.add(scrollChild)
 
-    const intermediateHost = ui.create({
-        width: '120px',
-        height: '100px',
-        position: 'absolute',
-        left: '80px',
-        top: '190px',
-        overflow: 'visible',
-        backgroundColor: '#fff1cc',
-    })
+    const intermediateHost = ui.create()
+    intermediateHost.setStyle('width', '120px')
+    intermediateHost.setStyle('height', '100px')
+    intermediateHost.setStyle('position', 'absolute')
+    intermediateHost.setStyle('left', '80px')
+    intermediateHost.setStyle('top', '190px')
+    intermediateHost.setStyle('overflow', 'visible')
+    intermediateHost.setStyle('backgroundColor', '#fff1cc')
     frame.add(intermediateHost)
 
-    const scrollIntermediate = ui.create({
-        width: '80px',
-        height: '60px',
-        position: 'absolute',
-        left: '20px',
-        top: '20px',
-        overflow: 'scroll',
-        backgroundColor: '#ffd66f',
-    })
+    const scrollIntermediate = ui.create()
+    scrollIntermediate.setStyle('width', '80px')
+    scrollIntermediate.setStyle('height', '60px')
+    scrollIntermediate.setStyle('position', 'absolute')
+    scrollIntermediate.setStyle('left', '20px')
+    scrollIntermediate.setStyle('top', '20px')
+    scrollIntermediate.setStyle('overflow', 'scroll')
+    scrollIntermediate.setStyle('backgroundColor', '#ffd66f')
     intermediateHost.add(scrollIntermediate)
 
-    const intermediateChild = ui.create({
-        width: '80px',
-        height: '60px',
-        position: 'absolute',
-        left: '60px',
-        top: '20px',
-        backgroundColor: '#c58700',
-    })
+    const intermediateChild = ui.create()
+    intermediateChild.setStyle('width', '80px')
+    intermediateChild.setStyle('height', '60px')
+    intermediateChild.setStyle('position', 'absolute')
+    intermediateChild.setStyle('left', '60px')
+    intermediateChild.setStyle('top', '20px')
+    intermediateChild.setStyle('backgroundColor', '#c58700')
     scrollIntermediate.add(intermediateChild)
 
     return {

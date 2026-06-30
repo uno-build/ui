@@ -32,7 +32,7 @@ import {
 //     window.resolveStyle = resolveStyle
 // }
 
-export function resolveStyle(name: string, value: any) {
+export function resolveStyle(name: string, value: any, parsed?: any) {
     if (typeof name !== 'string') {
         throw new Error(`style name must be a string, got '${typeof name}'`)
     }
@@ -46,11 +46,20 @@ export function resolveStyle(name: string, value: any) {
     }
 
     const typeof_value = typeof value
-    if (typeof_value !== 'string' && typeof_value !== 'object') {
-        throw new Error(`style value must be a string or an object, got '${typeof_value}'`)
+    if (typeof_value !== 'string') {
+        throw new Error(`style value must be a string, got '${typeof_value}'`)
     }
-
     const normalized_value = normalizeStyleValue(value, normalized_name)
+
+    if (parsed !== undefined) {
+        return [
+            {
+                name: normalized_name,
+                value: normalized_value,
+                parsed,
+            },
+        ]
+    }
 
     try {
         return StyleParser.resolve(normalized_value)
@@ -183,7 +192,7 @@ export const STYLE = {
         { name, value, definition: COLOR_DEFINITION },
     ]),
     BACKGROUNDIMAGE: createStyle('backgroundImage', (name, value) => [
-        { name, value, definition: BACKGROUND_IMAGE_DEFINITION },
+        { name, value, definition: [] },
     ]),
 
     // YOGA PROPERTIES

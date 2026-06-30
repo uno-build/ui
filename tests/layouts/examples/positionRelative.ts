@@ -1,11 +1,7 @@
 export default function createRelativeLayout({ ui, rendererName }) {
-    const container = ui.create({
-        // flexDirection: 'row',
-        // flexWrap: 'wrap',
-        // alignContent: 'flex-start',
-        flex: '1',
-        padding: '100px',
-    })
+    const container = ui.create()
+    container.setStyle('flex', '1')
+    container.setStyle('padding', '100px')
     ui.root.add(container)
 
     for (const props of [
@@ -16,26 +12,28 @@ export default function createRelativeLayout({ ui, rendererName }) {
         { left: '10%', top: '5%' },
         { right: '5%', bottom: '10%' },
     ]) {
-        container.add(
-            ui.create({
-                width: '50%',
-                height: '200px',
-                position: 'relative',
-                backgroundColor: '#eee',
-                borderTopWidth: '1px',
-                borderLeftWidth: '1px',
-                borderRightWidth: '1px',
-                borderBottomWidth: '1px',
-                borderTopStyle: 'solid',
-                borderLeftStyle: 'solid',
-                borderRightStyle: 'solid',
-                borderBottomStyle: 'solid',
-                borderTopColor: '#333',
-                borderLeftColor: '#333',
-                borderRightColor: '#333',
-                borderBottomColor: '#333',
-                ...props,
-            }),
-        )
+        const child = ui.create()
+        child.setStyle('width', '50%')
+        child.setStyle('height', '200px')
+        child.setStyle('position', 'relative')
+        child.setStyle('backgroundColor', '#eee')
+        child.setStyle('borderTopWidth', '1px')
+        child.setStyle('borderLeftWidth', '1px')
+        child.setStyle('borderRightWidth', '1px')
+        child.setStyle('borderBottomWidth', '1px')
+        child.setStyle('borderTopStyle', 'solid')
+        child.setStyle('borderLeftStyle', 'solid')
+        child.setStyle('borderRightStyle', 'solid')
+        child.setStyle('borderBottomStyle', 'solid')
+        child.setStyle('borderTopColor', '#333')
+        child.setStyle('borderLeftColor', '#333')
+        child.setStyle('borderRightColor', '#333')
+        child.setStyle('borderBottomColor', '#333')
+
+        for (const name of Object.keys(props)) {
+            child.setStyle(name, props[name])
+        }
+
+        container.add(child)
     }
 }

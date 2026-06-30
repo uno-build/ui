@@ -183,26 +183,24 @@ test('Layout: zIndex updates repaint order', async ({ page }) => {
                 ui.root.setStyle('width', '220px')
                 ui.root.setStyle('height', '220px')
 
-                const lower = ui.create({
-                    width: '120px',
-                    height: '120px',
-                    position: 'absolute',
-                    left: '40px',
-                    top: '40px',
-                    backgroundColor: '#f00',
-                    zIndex: '1',
-                })
+                const lower = ui.create()
+                lower.setStyle('width', '120px')
+                lower.setStyle('height', '120px')
+                lower.setStyle('position', 'absolute')
+                lower.setStyle('left', '40px')
+                lower.setStyle('top', '40px')
+                lower.setStyle('backgroundColor', '#f00')
+                lower.setStyle('zIndex', '1')
                 ui.root.add(lower)
 
-                const higher = ui.create({
-                    width: '120px',
-                    height: '120px',
-                    position: 'absolute',
-                    left: '70px',
-                    top: '70px',
-                    backgroundColor: '#00f',
-                    zIndex: '2',
-                })
+                const higher = ui.create()
+                higher.setStyle('width', '120px')
+                higher.setStyle('height', '120px')
+                higher.setStyle('position', 'absolute')
+                higher.setStyle('left', '70px')
+                higher.setStyle('top', '70px')
+                higher.setStyle('backgroundColor', '#00f')
+                higher.setStyle('zIndex', '2')
                 ui.root.add(higher)
 
                 ui.update()
@@ -273,25 +271,23 @@ test('Layout: RendererDivs clears overflow clipping updates', async ({
             ui.root.setStyle('width', '220px')
             ui.root.setStyle('height', '220px')
 
-            const host = ui.create({
-                width: '80px',
-                height: '80px',
-                position: 'absolute',
-                left: '20px',
-                top: '20px',
-                overflow: 'hidden',
-                backgroundColor: '#fff',
-            })
+            const host = ui.create()
+            host.setStyle('width', '80px')
+            host.setStyle('height', '80px')
+            host.setStyle('position', 'absolute')
+            host.setStyle('left', '20px')
+            host.setStyle('top', '20px')
+            host.setStyle('overflow', 'hidden')
+            host.setStyle('backgroundColor', '#fff')
             ui.root.add(host)
 
-            const child = ui.create({
-                width: '80px',
-                height: '80px',
-                position: 'absolute',
-                left: '60px',
-                top: '0px',
-                backgroundColor: '#000',
-            })
+            const child = ui.create()
+            child.setStyle('width', '80px')
+            child.setStyle('height', '80px')
+            child.setStyle('position', 'absolute')
+            child.setStyle('left', '60px')
+            child.setStyle('top', '0px')
+            child.setStyle('backgroundColor', '#000')
             host.add(child)
 
             ui.update()

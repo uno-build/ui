@@ -11,10 +11,9 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     ui.root.setStyle('width', '200px')
     ui.root.setStyle('height', '200px')
 
-    const child = ui.create({
-        width: '120px',
-        backgroundColor: '#123',
-    })
+    const child = ui.create()
+    child.setStyle('width', '120px')
+    child.setStyle('backgroundColor', '#123')
     const sibling = ui.create()
     const grandchild = ui.create()
 
@@ -26,7 +25,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     sibling.setStyle('marginLeft', '10%')
 
     expect(() => {
-        ui.create({ backgroundColor: 'red' })
+        ui.create().setStyle('backgroundColor', 'red')
     }).toThrow(/invalid value 'red' for property 'backgroundColor': expected hex color/)
     expect(() => {
         child.setStyle('width', true)
@@ -177,10 +176,9 @@ test('Node remove discards pending styles', async () => {
 
     await ui.init()
 
-    const child = ui.create({
-        width: '120px',
-        backgroundColor: '#123',
-    })
+    const child = ui.create()
+    child.setStyle('width', '120px')
+    child.setStyle('backgroundColor', '#123')
 
     ui.root.add(child)
     ui.root.remove(child)

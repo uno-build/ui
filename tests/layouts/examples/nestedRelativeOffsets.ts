@@ -2,89 +2,80 @@ export default function createNestedRelativeOffsetsLayout({
     ui,
     rendererName,
 }) {
-    const stage = ui.create({
-        flex: '1',
-        flexDirection: 'row',
-        padding: '40px',
-        gap: '32px',
-    })
+    const stage = ui.create()
+    stage.setStyle('flex', '1')
+    stage.setStyle('flexDirection', 'row')
+    stage.setStyle('padding', '40px')
+    stage.setStyle('gap', '32px')
     ui.root.add(stage)
 
-    const positiveParent = ui.create({
-        width: '220px',
-        height: '220px',
-        position: 'relative',
-        left: '24px',
-        top: '18px',
-        padding: '20px',
-        backgroundColor: '#ddeeff',
-    })
+    const positiveParent = ui.create()
+    positiveParent.setStyle('width', '220px')
+    positiveParent.setStyle('height', '220px')
+    positiveParent.setStyle('position', 'relative')
+    positiveParent.setStyle('left', '24px')
+    positiveParent.setStyle('top', '18px')
+    positiveParent.setStyle('padding', '20px')
+    positiveParent.setStyle('backgroundColor', '#ddeeff')
     stage.add(positiveParent)
 
-    const positiveChild = ui.create({
-        width: '150px',
-        height: '150px',
-        position: 'relative',
-        left: '13px',
-        top: '9px',
-        padding: '16px',
-        backgroundColor: '#bbddff',
-    })
+    const positiveChild = ui.create()
+    positiveChild.setStyle('width', '150px')
+    positiveChild.setStyle('height', '150px')
+    positiveChild.setStyle('position', 'relative')
+    positiveChild.setStyle('left', '13px')
+    positiveChild.setStyle('top', '9px')
+    positiveChild.setStyle('padding', '16px')
+    positiveChild.setStyle('backgroundColor', '#bbddff')
     positiveParent.add(positiveChild)
 
-    const positiveGrandchild = ui.create({
-        width: '72px',
-        height: '72px',
-        position: 'relative',
-        left: '8px',
-        top: '6px',
-        backgroundColor: '#99ccff',
-    })
+    const positiveGrandchild = ui.create()
+    positiveGrandchild.setStyle('width', '72px')
+    positiveGrandchild.setStyle('height', '72px')
+    positiveGrandchild.setStyle('position', 'relative')
+    positiveGrandchild.setStyle('left', '8px')
+    positiveGrandchild.setStyle('top', '6px')
+    positiveGrandchild.setStyle('backgroundColor', '#99ccff')
     positiveChild.add(positiveGrandchild)
 
-    const positiveMarker = ui.create({
-        width: '20px',
-        height: '20px',
-        backgroundColor: '#0066ff',
-    })
+    const positiveMarker = ui.create()
+    positiveMarker.setStyle('width', '20px')
+    positiveMarker.setStyle('height', '20px')
+    positiveMarker.setStyle('backgroundColor', '#0066ff')
     positiveGrandchild.add(positiveMarker)
 
-    const mixedParent = ui.create({
-        width: '220px',
-        height: '220px',
-        position: 'relative',
-        left: '-18px',
-        top: '-11px',
-        padding: '20px',
-        backgroundColor: '#ffe8dd',
-    })
+    const mixedParent = ui.create()
+    mixedParent.setStyle('width', '220px')
+    mixedParent.setStyle('height', '220px')
+    mixedParent.setStyle('position', 'relative')
+    mixedParent.setStyle('left', '-18px')
+    mixedParent.setStyle('top', '-11px')
+    mixedParent.setStyle('padding', '20px')
+    mixedParent.setStyle('backgroundColor', '#ffe8dd')
     stage.add(mixedParent)
 
-    const mixedChild = ui.create({
-        width: '150px',
-        height: '150px',
-        position: 'relative',
-        right: '-12px',
-        bottom: '10px',
-        padding: '16px',
-        backgroundColor: '#ffc9aa',
-    })
+    const mixedChild = ui.create()
+    mixedChild.setStyle('width', '150px')
+    mixedChild.setStyle('height', '150px')
+    mixedChild.setStyle('position', 'relative')
+    mixedChild.setStyle('right', '-12px')
+    mixedChild.setStyle('bottom', '10px')
+    mixedChild.setStyle('padding', '16px')
+    mixedChild.setStyle('backgroundColor', '#ffc9aa')
     mixedParent.add(mixedChild)
 
-    const mixedGrandchild = ui.create({
-        width: '72px',
-        height: '72px',
-        position: 'relative',
-        left: '-7px',
-        bottom: '-5px',
-        backgroundColor: '#ffaa77',
-    })
+    const mixedGrandchild = ui.create()
+    mixedGrandchild.setStyle('width', '72px')
+    mixedGrandchild.setStyle('height', '72px')
+    mixedGrandchild.setStyle('position', 'relative')
+    mixedGrandchild.setStyle('left', '-7px')
+    mixedGrandchild.setStyle('bottom', '-5px')
+    mixedGrandchild.setStyle('backgroundColor', '#ffaa77')
     mixedChild.add(mixedGrandchild)
 
-    const mixedMarker = ui.create({
-        width: '20px',
-        height: '20px',
-        backgroundColor: '#ff5500',
-    })
+    const mixedMarker = ui.create()
+    mixedMarker.setStyle('width', '20px')
+    mixedMarker.setStyle('height', '20px')
+    mixedMarker.setStyle('backgroundColor', '#ff5500')
     mixedGrandchild.add(mixedMarker)
 }

@@ -61,19 +61,3 @@ export function validateMaxOne(value: any) {
         throw new Error('expected value between 0 and 1')
     }
 }
-
-export function validateImage(value: string) {
-    const is_valid =
-        value != null &&
-        typeof value === 'object' &&
-        typeof value.src === 'string' &&
-        value.src.length > 0 &&
-        Number.isFinite(value.width) &&
-        Number.isFinite(value.height) &&
-        value.bitmap != null &&
-        typeof value.bitmap === 'object'
-
-    if (!is_valid) {
-        throw new Error('expected loaded image')
-    }
-}

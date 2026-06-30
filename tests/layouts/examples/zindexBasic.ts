@@ -1,47 +1,41 @@
 export default function createZIndexLayout({ ui, rendererName }) {
-    const frame = ui.create({
-        width: '240px',
-        height: '180px',
-        position: 'relative',
-        margin: '100px',
-        backgroundColor: '#eee',
-    })
+    const frame = ui.create()
+    frame.setStyle('width', '240px')
+    frame.setStyle('height', '180px')
+    frame.setStyle('position', 'relative')
+    frame.setStyle('margin', '100px')
+    frame.setStyle('backgroundColor', '#eee')
     ui.root.add(frame)
 
-    frame.add(
-        ui.create({
-            width: '120px',
-            height: '120px',
-            position: 'absolute',
-            left: '40px',
-            top: '30px',
-            backgroundColor: '#f00',
-            zIndex: '1',
-        }),
-    )
+    const bottom = ui.create()
+    bottom.setStyle('width', '120px')
+    bottom.setStyle('height', '120px')
+    bottom.setStyle('position', 'absolute')
+    bottom.setStyle('left', '40px')
+    bottom.setStyle('top', '30px')
+    bottom.setStyle('backgroundColor', '#f00')
+    bottom.setStyle('zIndex', '1')
+    frame.add(bottom)
 
-    const top = ui.create({
-        width: '120px',
-        height: '120px',
-        position: 'absolute',
-        left: '70px',
-        top: '50px',
-        backgroundColor: '#0f0',
-        zIndex: '3',
-    })
+    const top = ui.create()
+    top.setStyle('width', '120px')
+    top.setStyle('height', '120px')
+    top.setStyle('position', 'absolute')
+    top.setStyle('left', '70px')
+    top.setStyle('top', '50px')
+    top.setStyle('backgroundColor', '#0f0')
+    top.setStyle('zIndex', '3')
     frame.add(top)
 
-    frame.add(
-        ui.create({
-            width: '120px',
-            height: '120px',
-            position: 'absolute',
-            left: '100px',
-            top: '70px',
-            backgroundColor: '#00f',
-            zIndex: '2',
-        }),
-    )
+    const middle = ui.create()
+    middle.setStyle('width', '120px')
+    middle.setStyle('height', '120px')
+    middle.setStyle('position', 'absolute')
+    middle.setStyle('left', '100px')
+    middle.setStyle('top', '70px')
+    middle.setStyle('backgroundColor', '#00f')
+    middle.setStyle('zIndex', '2')
+    frame.add(middle)
 
     return {
         paintSamples: [

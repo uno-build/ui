@@ -2,122 +2,114 @@ export default function createNestedPercentDimensionsLayout({
     ui,
     rendererName,
 }) {
-    const stage = ui.create({
-        flex: '1',
-        padding: '40px',
-    })
+    const stage = ui.create()
+    stage.setStyle('flex', '1')
+    stage.setStyle('padding', '40px')
     ui.root.add(stage)
 
-    const frame = ui.create({
-        width: '360px',
-        height: '260px',
-        position: 'relative',
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        padding: '20px',
-        borderTopWidth: '4px',
-        borderLeftWidth: '4px',
-        borderRightWidth: '4px',
-        borderBottomWidth: '4px',
-        borderTopStyle: 'solid',
-        borderLeftStyle: 'solid',
-        borderRightStyle: 'solid',
-        borderBottomStyle: 'solid',
-        borderTopColor: '#345',
-        borderLeftColor: '#345',
-        borderRightColor: '#345',
-        borderBottomColor: '#345',
-        gap: '16px',
-        backgroundColor: '#eef1f8',
-    })
+    const frame = ui.create()
+    frame.setStyle('width', '360px')
+    frame.setStyle('height', '260px')
+    frame.setStyle('position', 'relative')
+    frame.setStyle('flexDirection', 'row')
+    frame.setStyle('alignItems', 'flex-start')
+    frame.setStyle('padding', '20px')
+    frame.setStyle('borderTopWidth', '4px')
+    frame.setStyle('borderLeftWidth', '4px')
+    frame.setStyle('borderRightWidth', '4px')
+    frame.setStyle('borderBottomWidth', '4px')
+    frame.setStyle('borderTopStyle', 'solid')
+    frame.setStyle('borderLeftStyle', 'solid')
+    frame.setStyle('borderRightStyle', 'solid')
+    frame.setStyle('borderBottomStyle', 'solid')
+    frame.setStyle('borderTopColor', '#345')
+    frame.setStyle('borderLeftColor', '#345')
+    frame.setStyle('borderRightColor', '#345')
+    frame.setStyle('borderBottomColor', '#345')
+    frame.setStyle('gap', '16px')
+    frame.setStyle('backgroundColor', '#eef1f8')
     stage.add(frame)
 
-    const percentHost = ui.create({
-        width: '60%',
-        height: '70%',
-        flexDirection: 'column',
-        padding: '12px',
-        borderTopWidth: '2px',
-        borderLeftWidth: '2px',
-        borderRightWidth: '2px',
-        borderBottomWidth: '2px',
-        borderTopStyle: 'solid',
-        borderLeftStyle: 'solid',
-        borderRightStyle: 'solid',
-        borderBottomStyle: 'solid',
-        borderTopColor: '#467',
-        borderLeftColor: '#467',
-        borderRightColor: '#467',
-        borderBottomColor: '#467',
-        backgroundColor: '#d9e7ff',
-    })
+    const percentHost = ui.create()
+    percentHost.setStyle('width', '60%')
+    percentHost.setStyle('height', '70%')
+    percentHost.setStyle('flexDirection', 'column')
+    percentHost.setStyle('padding', '12px')
+    percentHost.setStyle('borderTopWidth', '2px')
+    percentHost.setStyle('borderLeftWidth', '2px')
+    percentHost.setStyle('borderRightWidth', '2px')
+    percentHost.setStyle('borderBottomWidth', '2px')
+    percentHost.setStyle('borderTopStyle', 'solid')
+    percentHost.setStyle('borderLeftStyle', 'solid')
+    percentHost.setStyle('borderRightStyle', 'solid')
+    percentHost.setStyle('borderBottomStyle', 'solid')
+    percentHost.setStyle('borderTopColor', '#467')
+    percentHost.setStyle('borderLeftColor', '#467')
+    percentHost.setStyle('borderRightColor', '#467')
+    percentHost.setStyle('borderBottomColor', '#467')
+    percentHost.setStyle('backgroundColor', '#d9e7ff')
     frame.add(percentHost)
 
-    const percentSizeMarker = ui.create({
-        width: '50%',
-        height: '40%',
-        backgroundColor: '#1166dd',
-    })
+    const percentSizeMarker = ui.create()
+    percentSizeMarker.setStyle('width', '50%')
+    percentSizeMarker.setStyle('height', '40%')
+    percentSizeMarker.setStyle('backgroundColor', '#1166dd')
     percentHost.add(percentSizeMarker)
 
-    const endAlignedPercentHost = ui.create({
-        width: '80%',
-        height: '50%',
-        flexDirection: 'column',
-        justifyContent: 'flex-end',
-        alignItems: 'flex-end',
-        padding: '8px',
-        borderTopWidth: '2px',
-        borderLeftWidth: '2px',
-        borderRightWidth: '2px',
-        borderBottomWidth: '2px',
-        borderTopStyle: 'solid',
-        borderLeftStyle: 'solid',
-        borderRightStyle: 'solid',
-        borderBottomStyle: 'solid',
-        borderTopColor: '#358',
-        borderLeftColor: '#358',
-        borderRightColor: '#358',
-        borderBottomColor: '#358',
-        backgroundColor: '#c8dcff',
-    })
+    const endAlignedPercentHost = ui.create()
+    endAlignedPercentHost.setStyle('width', '80%')
+    endAlignedPercentHost.setStyle('height', '50%')
+    endAlignedPercentHost.setStyle('flexDirection', 'column')
+    endAlignedPercentHost.setStyle('justifyContent', 'flex-end')
+    endAlignedPercentHost.setStyle('alignItems', 'flex-end')
+    endAlignedPercentHost.setStyle('padding', '8px')
+    endAlignedPercentHost.setStyle('borderTopWidth', '2px')
+    endAlignedPercentHost.setStyle('borderLeftWidth', '2px')
+    endAlignedPercentHost.setStyle('borderRightWidth', '2px')
+    endAlignedPercentHost.setStyle('borderBottomWidth', '2px')
+    endAlignedPercentHost.setStyle('borderTopStyle', 'solid')
+    endAlignedPercentHost.setStyle('borderLeftStyle', 'solid')
+    endAlignedPercentHost.setStyle('borderRightStyle', 'solid')
+    endAlignedPercentHost.setStyle('borderBottomStyle', 'solid')
+    endAlignedPercentHost.setStyle('borderTopColor', '#358')
+    endAlignedPercentHost.setStyle('borderLeftColor', '#358')
+    endAlignedPercentHost.setStyle('borderRightColor', '#358')
+    endAlignedPercentHost.setStyle('borderBottomColor', '#358')
+    endAlignedPercentHost.setStyle('backgroundColor', '#c8dcff')
     percentHost.add(endAlignedPercentHost)
 
-    const endAlignedPercentMarker = ui.create({
-        width: '35%',
-        height: '30%',
-        backgroundColor: '#003c99',
-    })
+    const endAlignedPercentMarker = ui.create()
+    endAlignedPercentMarker.setStyle('width', '35%')
+    endAlignedPercentMarker.setStyle('height', '30%')
+    endAlignedPercentMarker.setStyle('backgroundColor', '#003c99')
     endAlignedPercentHost.add(endAlignedPercentMarker)
 
-    const absoluteHost = ui.create({
-        width: '120px',
-        height: '140px',
-        position: 'relative',
-        padding: '10px',
-        borderTopWidth: '2px',
-        borderLeftWidth: '2px',
-        borderRightWidth: '2px',
-        borderBottomWidth: '2px',
-        borderTopStyle: 'solid',
-        borderLeftStyle: 'solid',
-        borderRightStyle: 'solid',
-        borderBottomStyle: 'solid',
-        borderTopColor: '#975',
-        borderLeftColor: '#975',
-        borderRightColor: '#975',
-        borderBottomColor: '#975',
-        backgroundColor: '#fde9d5',
-    })
+    const absoluteHost = ui.create()
+    absoluteHost.setStyle('width', '120px')
+    absoluteHost.setStyle('height', '140px')
+    absoluteHost.setStyle('position', 'relative')
+    absoluteHost.setStyle('padding', '10px')
+    absoluteHost.setStyle('borderTopWidth', '2px')
+    absoluteHost.setStyle('borderLeftWidth', '2px')
+    absoluteHost.setStyle('borderRightWidth', '2px')
+    absoluteHost.setStyle('borderBottomWidth', '2px')
+    absoluteHost.setStyle('borderTopStyle', 'solid')
+    absoluteHost.setStyle('borderLeftStyle', 'solid')
+    absoluteHost.setStyle('borderRightStyle', 'solid')
+    absoluteHost.setStyle('borderBottomStyle', 'solid')
+    absoluteHost.setStyle('borderTopColor', '#975')
+    absoluteHost.setStyle('borderLeftColor', '#975')
+    absoluteHost.setStyle('borderRightColor', '#975')
+    absoluteHost.setStyle('borderBottomColor', '#975')
+    absoluteHost.setStyle('backgroundColor', '#fde9d5')
     frame.add(absoluteHost)
 
-    const percentOffsetMarker = ui.create({
-        width: '30px',
-        height: '24px',
-        position: 'absolute',
-        left: '25%',
-        top: '20%',
-        backgroundColor: '#ff6b00',
-    })
+    const percentOffsetMarker = ui.create()
+    percentOffsetMarker.setStyle('width', '30px')
+    percentOffsetMarker.setStyle('height', '24px')
+    percentOffsetMarker.setStyle('position', 'absolute')
+    percentOffsetMarker.setStyle('left', '25%')
+    percentOffsetMarker.setStyle('top', '20%')
+    percentOffsetMarker.setStyle('backgroundColor', '#ff6b00')
     absoluteHost.add(percentOffsetMarker)
 }

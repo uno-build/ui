@@ -2,127 +2,114 @@ export default function createWrappedColumnRelativeOffsetsLayout({
     ui,
     rendererName,
 }) {
-    const stage = ui.create({
-        flex: '1',
-        flexDirection: 'row',
-        padding: '40px',
-        gap: '16px',
-    })
+    const stage = ui.create()
+    stage.setStyle('flex', '1')
+    stage.setStyle('flexDirection', 'row')
+    stage.setStyle('padding', '40px')
+    stage.setStyle('gap', '16px')
     ui.root.add(stage)
 
-    const columnLeft = ui.create({
-        width: '120px',
-        height: '120px',
-        flexDirection: 'column',
-        flexWrap: 'wrap',
-        alignContent: 'flex-start',
-        padding: '8px',
-        gap: '6px',
-        backgroundColor: '#eef5ee',
-    })
+    const columnLeft = ui.create()
+    columnLeft.setStyle('width', '120px')
+    columnLeft.setStyle('height', '120px')
+    columnLeft.setStyle('flexDirection', 'column')
+    columnLeft.setStyle('flexWrap', 'wrap')
+    columnLeft.setStyle('alignContent', 'flex-start')
+    columnLeft.setStyle('padding', '8px')
+    columnLeft.setStyle('gap', '6px')
+    columnLeft.setStyle('backgroundColor', '#eef5ee')
     stage.add(columnLeft)
 
-    columnLeft.add(
-        ui.create({
-            width: '34px',
-            height: '70px',
-            backgroundColor: '#cde8cd',
-        }),
-    )
+    const columnLeft_child_1 = ui.create()
+    columnLeft_child_1.setStyle('width', '34px')
+    columnLeft_child_1.setStyle('height', '70px')
+    columnLeft_child_1.setStyle('backgroundColor', '#cde8cd')
 
-    const columnLeftRelative = ui.create({
-        width: '34px',
-        height: '70px',
-        position: 'relative',
-        left: '11px',
-        backgroundColor: '#00aa00',
-    })
+    columnLeft.add(columnLeft_child_1)
+
+    const columnLeftRelative = ui.create()
+    columnLeftRelative.setStyle('width', '34px')
+    columnLeftRelative.setStyle('height', '70px')
+    columnLeftRelative.setStyle('position', 'relative')
+    columnLeftRelative.setStyle('left', '11px')
+    columnLeftRelative.setStyle('backgroundColor', '#00aa00')
     columnLeft.add(columnLeftRelative)
 
-    const columnRight = ui.create({
-        width: '120px',
-        height: '120px',
-        flexDirection: 'column',
-        flexWrap: 'wrap',
-        alignContent: 'flex-start',
-        padding: '8px',
-        gap: '6px',
-        backgroundColor: '#f5eeee',
-    })
+    const columnRight = ui.create()
+    columnRight.setStyle('width', '120px')
+    columnRight.setStyle('height', '120px')
+    columnRight.setStyle('flexDirection', 'column')
+    columnRight.setStyle('flexWrap', 'wrap')
+    columnRight.setStyle('alignContent', 'flex-start')
+    columnRight.setStyle('padding', '8px')
+    columnRight.setStyle('gap', '6px')
+    columnRight.setStyle('backgroundColor', '#f5eeee')
     stage.add(columnRight)
 
-    columnRight.add(
-        ui.create({
-            width: '34px',
-            height: '70px',
-            backgroundColor: '#e8cdcd',
-        }),
-    )
+    const columnRight_child_2 = ui.create()
+    columnRight_child_2.setStyle('width', '34px')
+    columnRight_child_2.setStyle('height', '70px')
+    columnRight_child_2.setStyle('backgroundColor', '#e8cdcd')
 
-    const columnRightRelative = ui.create({
-        width: '34px',
-        height: '70px',
-        position: 'relative',
-        right: '9px',
-        backgroundColor: '#cc3300',
-    })
+    columnRight.add(columnRight_child_2)
+
+    const columnRightRelative = ui.create()
+    columnRightRelative.setStyle('width', '34px')
+    columnRightRelative.setStyle('height', '70px')
+    columnRightRelative.setStyle('position', 'relative')
+    columnRightRelative.setStyle('right', '9px')
+    columnRightRelative.setStyle('backgroundColor', '#cc3300')
     columnRight.add(columnRightRelative)
 
-    const columnReverseLeft = ui.create({
-        width: '120px',
-        height: '120px',
-        flexDirection: 'column-reverse',
-        flexWrap: 'wrap',
-        alignContent: 'flex-start',
-        padding: '8px',
-        gap: '6px',
-        backgroundColor: '#f2eaff',
-    })
+    const columnReverseLeft = ui.create()
+    columnReverseLeft.setStyle('width', '120px')
+    columnReverseLeft.setStyle('height', '120px')
+    columnReverseLeft.setStyle('flexDirection', 'column-reverse')
+    columnReverseLeft.setStyle('flexWrap', 'wrap')
+    columnReverseLeft.setStyle('alignContent', 'flex-start')
+    columnReverseLeft.setStyle('padding', '8px')
+    columnReverseLeft.setStyle('gap', '6px')
+    columnReverseLeft.setStyle('backgroundColor', '#f2eaff')
     stage.add(columnReverseLeft)
 
-    columnReverseLeft.add(
-        ui.create({
-            width: '34px',
-            height: '70px',
-            backgroundColor: '#decfff',
-        }),
-    )
+    const columnReverseLeft_child_3 = ui.create()
+    columnReverseLeft_child_3.setStyle('width', '34px')
+    columnReverseLeft_child_3.setStyle('height', '70px')
+    columnReverseLeft_child_3.setStyle('backgroundColor', '#decfff')
 
-    const columnReverseLeftRelative = ui.create({
-        width: '34px',
-        height: '70px',
-        position: 'relative',
-        left: '11px',
-        backgroundColor: '#aa00ff',
-    })
+    columnReverseLeft.add(columnReverseLeft_child_3)
+
+    const columnReverseLeftRelative = ui.create()
+    columnReverseLeftRelative.setStyle('width', '34px')
+    columnReverseLeftRelative.setStyle('height', '70px')
+    columnReverseLeftRelative.setStyle('position', 'relative')
+    columnReverseLeftRelative.setStyle('left', '11px')
+    columnReverseLeftRelative.setStyle('backgroundColor', '#aa00ff')
     columnReverseLeft.add(columnReverseLeftRelative)
 
-    const columnReverseRight = ui.create({
-        width: '120px',
-        height: '120px',
-        flexDirection: 'column-reverse',
-        flexWrap: 'wrap',
-        alignContent: 'flex-start',
-        padding: '8px',
-        gap: '6px',
-        backgroundColor: '#fff0df',
-    })
+    const columnReverseRight = ui.create()
+    columnReverseRight.setStyle('width', '120px')
+    columnReverseRight.setStyle('height', '120px')
+    columnReverseRight.setStyle('flexDirection', 'column-reverse')
+    columnReverseRight.setStyle('flexWrap', 'wrap')
+    columnReverseRight.setStyle('alignContent', 'flex-start')
+    columnReverseRight.setStyle('padding', '8px')
+    columnReverseRight.setStyle('gap', '6px')
+    columnReverseRight.setStyle('backgroundColor', '#fff0df')
     stage.add(columnReverseRight)
 
-    columnReverseRight.add(
-        ui.create({
-            width: '34px',
-            height: '70px',
-            backgroundColor: '#f3d2b0',
-        }),
-    )
+    const columnReverseRight_child_4 = ui.create()
+    columnReverseRight_child_4.setStyle('width', '34px')
+    columnReverseRight_child_4.setStyle('height', '70px')
+    columnReverseRight_child_4.setStyle('backgroundColor', '#f3d2b0')
 
-    const columnReverseRightRelative = ui.create({
-        width: '34px',
-        height: '70px',
-        position: 'relative',
-        right: '9px',
-        backgroundColor: '#dd7700',
-    })
+    columnReverseRight.add(columnReverseRight_child_4)
+
+    const columnReverseRightRelative = ui.create()
+    columnReverseRightRelative.setStyle('width', '34px')
+    columnReverseRightRelative.setStyle('height', '70px')
+    columnReverseRightRelative.setStyle('position', 'relative')
+    columnReverseRightRelative.setStyle('right', '9px')
+    columnReverseRightRelative.setStyle('backgroundColor', '#dd7700')
     columnReverseRight.add(columnReverseRightRelative)
 }

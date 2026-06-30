@@ -2,127 +2,110 @@ export default function createWrappedAlignContentRelativeOffsetsLayout({
     ui,
     rendererName,
 }) {
-    const stage = ui.create({
-        flex: '1',
-        flexDirection: 'row',
-        padding: '40px',
-        gap: '16px',
-    })
+    const stage = ui.create()
+    stage.setStyle('flex', '1')
+    stage.setStyle('flexDirection', 'row')
+    stage.setStyle('padding', '40px')
+    stage.setStyle('gap', '16px')
     ui.root.add(stage)
 
-    const centerTop = ui.create({
-        width: '120px',
-        height: '170px',
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignContent: 'center',
-        padding: '8px',
-        gap: '6px',
-        backgroundColor: '#eef5ee',
-    })
+    const centerTop = ui.create()
+    centerTop.setStyle('width', '120px')
+    centerTop.setStyle('height', '170px')
+    centerTop.setStyle('flexDirection', 'row')
+    centerTop.setStyle('flexWrap', 'wrap')
+    centerTop.setStyle('alignContent', 'center')
+    centerTop.setStyle('padding', '8px')
+    centerTop.setStyle('gap', '6px')
+    centerTop.setStyle('backgroundColor', '#eef5ee')
     stage.add(centerTop)
 
-    centerTop.add(
-        ui.create({
-            width: '70px',
-            height: '34px',
-            backgroundColor: '#cde8cd',
-        }),
-    )
+    const centerTopBase = ui.create()
+    centerTopBase.setStyle('width', '70px')
+    centerTopBase.setStyle('height', '34px')
+    centerTopBase.setStyle('backgroundColor', '#cde8cd')
+    centerTop.add(centerTopBase)
 
-    const centerTopRelative = ui.create({
-        width: '70px',
-        height: '34px',
-        position: 'relative',
-        top: '11px',
-        backgroundColor: '#00aa00',
-    })
+    const centerTopRelative = ui.create()
+    centerTopRelative.setStyle('width', '70px')
+    centerTopRelative.setStyle('height', '34px')
+    centerTopRelative.setStyle('position', 'relative')
+    centerTopRelative.setStyle('top', '11px')
+    centerTopRelative.setStyle('backgroundColor', '#00aa00')
     centerTop.add(centerTopRelative)
 
-    const centerBottom = ui.create({
-        width: '120px',
-        height: '170px',
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignContent: 'center',
-        padding: '8px',
-        gap: '6px',
-        backgroundColor: '#f5eeee',
-    })
+    const centerBottom = ui.create()
+    centerBottom.setStyle('width', '120px')
+    centerBottom.setStyle('height', '170px')
+    centerBottom.setStyle('flexDirection', 'row')
+    centerBottom.setStyle('flexWrap', 'wrap')
+    centerBottom.setStyle('alignContent', 'center')
+    centerBottom.setStyle('padding', '8px')
+    centerBottom.setStyle('gap', '6px')
+    centerBottom.setStyle('backgroundColor', '#f5eeee')
     stage.add(centerBottom)
 
-    centerBottom.add(
-        ui.create({
-            width: '70px',
-            height: '34px',
-            backgroundColor: '#e8cdcd',
-        }),
-    )
+    const centerBottomBase = ui.create()
+    centerBottomBase.setStyle('width', '70px')
+    centerBottomBase.setStyle('height', '34px')
+    centerBottomBase.setStyle('backgroundColor', '#e8cdcd')
+    centerBottom.add(centerBottomBase)
 
-    const centerBottomRelative = ui.create({
-        width: '70px',
-        height: '34px',
-        position: 'relative',
-        bottom: '9px',
-        backgroundColor: '#cc3300',
-    })
+    const centerBottomRelative = ui.create()
+    centerBottomRelative.setStyle('width', '70px')
+    centerBottomRelative.setStyle('height', '34px')
+    centerBottomRelative.setStyle('position', 'relative')
+    centerBottomRelative.setStyle('bottom', '9px')
+    centerBottomRelative.setStyle('backgroundColor', '#cc3300')
     centerBottom.add(centerBottomRelative)
 
-    const flexEndTop = ui.create({
-        width: '120px',
-        height: '170px',
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignContent: 'flex-end',
-        padding: '8px',
-        gap: '6px',
-        backgroundColor: '#f2eaff',
-    })
+    const flexEndTop = ui.create()
+    flexEndTop.setStyle('width', '120px')
+    flexEndTop.setStyle('height', '170px')
+    flexEndTop.setStyle('flexDirection', 'row')
+    flexEndTop.setStyle('flexWrap', 'wrap')
+    flexEndTop.setStyle('alignContent', 'flex-end')
+    flexEndTop.setStyle('padding', '8px')
+    flexEndTop.setStyle('gap', '6px')
+    flexEndTop.setStyle('backgroundColor', '#f2eaff')
     stage.add(flexEndTop)
 
-    flexEndTop.add(
-        ui.create({
-            width: '70px',
-            height: '34px',
-            backgroundColor: '#decfff',
-        }),
-    )
+    const flexEndTopBase = ui.create()
+    flexEndTopBase.setStyle('width', '70px')
+    flexEndTopBase.setStyle('height', '34px')
+    flexEndTopBase.setStyle('backgroundColor', '#decfff')
+    flexEndTop.add(flexEndTopBase)
 
-    const flexEndTopRelative = ui.create({
-        width: '70px',
-        height: '34px',
-        position: 'relative',
-        top: '11px',
-        backgroundColor: '#aa00ff',
-    })
+    const flexEndTopRelative = ui.create()
+    flexEndTopRelative.setStyle('width', '70px')
+    flexEndTopRelative.setStyle('height', '34px')
+    flexEndTopRelative.setStyle('position', 'relative')
+    flexEndTopRelative.setStyle('top', '11px')
+    flexEndTopRelative.setStyle('backgroundColor', '#aa00ff')
     flexEndTop.add(flexEndTopRelative)
 
-    const flexEndBottom = ui.create({
-        width: '120px',
-        height: '170px',
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        alignContent: 'flex-end',
-        padding: '8px',
-        gap: '6px',
-        backgroundColor: '#fff0df',
-    })
+    const flexEndBottom = ui.create()
+    flexEndBottom.setStyle('width', '120px')
+    flexEndBottom.setStyle('height', '170px')
+    flexEndBottom.setStyle('flexDirection', 'row')
+    flexEndBottom.setStyle('flexWrap', 'wrap')
+    flexEndBottom.setStyle('alignContent', 'flex-end')
+    flexEndBottom.setStyle('padding', '8px')
+    flexEndBottom.setStyle('gap', '6px')
+    flexEndBottom.setStyle('backgroundColor', '#fff0df')
     stage.add(flexEndBottom)
 
-    flexEndBottom.add(
-        ui.create({
-            width: '70px',
-            height: '34px',
-            backgroundColor: '#f3d2b0',
-        }),
-    )
+    const flexEndBottomBase = ui.create()
+    flexEndBottomBase.setStyle('width', '70px')
+    flexEndBottomBase.setStyle('height', '34px')
+    flexEndBottomBase.setStyle('backgroundColor', '#f3d2b0')
+    flexEndBottom.add(flexEndBottomBase)
 
-    const flexEndBottomRelative = ui.create({
-        width: '70px',
-        height: '34px',
-        position: 'relative',
-        bottom: '9px',
-        backgroundColor: '#dd7700',
-    })
+    const flexEndBottomRelative = ui.create()
+    flexEndBottomRelative.setStyle('width', '70px')
+    flexEndBottomRelative.setStyle('height', '34px')
+    flexEndBottomRelative.setStyle('position', 'relative')
+    flexEndBottomRelative.setStyle('bottom', '9px')
+    flexEndBottomRelative.setStyle('backgroundColor', '#dd7700')
     flexEndBottom.add(flexEndBottomRelative)
 }

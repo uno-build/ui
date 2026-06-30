@@ -322,11 +322,10 @@ function createAddRandomNode(rendered_layouts) {
 
         for (const { rendererName, ui } of rendered_layouts) {
             const target_parent = findNodeByPath(ui, parent_path)
-            const item = ui.create({
-                width: '24px',
-                height: '24px',
-                backgroundColor: background_color,
-            })
+            const item = ui.create()
+            item.setStyle('width', '24px')
+            item.setStyle('height', '24px')
+            item.setStyle('backgroundColor', background_color)
 
             target_parent.add(item)
             ui.update()

@@ -1,23 +1,28 @@
 const image_cache = new Map()
 
 export async function loadImage(src, createImageBitmap = globalThis.createImageBitmap) {
+    let image = null
     if (image_cache.has(src)) {
-        return image_cache.get(src)
+        image = image_cache.get(src)
+    } else {
+        image = await loadImageFromSrc(src, createImageBitmap)
+        image_cache.set(src, image)
     }
-    const image = await loadImageFromSrc(src, createImageBitmap)
-    image_cache.set(src, image)
-    return image
+    return {
+        value: src,
+        parsed: {
+            src,
+            bitmap: image,
+            width: image.width,
+            height: image.height,
+            bleeding: true,
+        },
+    }
 }
 
 async function loadImageFromSrc(src, createImageBitmap) {
     const response = await fetch(src)
     const blob = await response.blob()
     const image_bitmap = await createImageBitmap(blob)
-    return {
-        src,
-        bitmap: image_bitmap,
-        width: image_bitmap.width,
-        height: image_bitmap.height,
-        bleeding: true,
-    }
+    return image_bitmap
 }

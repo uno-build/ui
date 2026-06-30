@@ -2,127 +2,114 @@ export default function createWrappedRelativeWrapReverseLayout({
     ui,
     rendererName,
 }) {
-    const stage = ui.create({
-        flex: '1',
-        flexDirection: 'row',
-        padding: '40px',
-        gap: '16px',
-    })
+    const stage = ui.create()
+    stage.setStyle('flex', '1')
+    stage.setStyle('flexDirection', 'row')
+    stage.setStyle('padding', '40px')
+    stage.setStyle('gap', '16px')
     ui.root.add(stage)
 
-    const rowTop = ui.create({
-        width: '120px',
-        height: '120px',
-        flexDirection: 'row',
-        flexWrap: 'wrap-reverse',
-        alignContent: 'flex-start',
-        padding: '8px',
-        gap: '6px',
-        backgroundColor: '#eef5ee',
-    })
+    const rowTop = ui.create()
+    rowTop.setStyle('width', '120px')
+    rowTop.setStyle('height', '120px')
+    rowTop.setStyle('flexDirection', 'row')
+    rowTop.setStyle('flexWrap', 'wrap-reverse')
+    rowTop.setStyle('alignContent', 'flex-start')
+    rowTop.setStyle('padding', '8px')
+    rowTop.setStyle('gap', '6px')
+    rowTop.setStyle('backgroundColor', '#eef5ee')
     stage.add(rowTop)
 
-    rowTop.add(
-        ui.create({
-            width: '70px',
-            height: '34px',
-            backgroundColor: '#cde8cd',
-        }),
-    )
+    const rowTop_child_1 = ui.create()
+    rowTop_child_1.setStyle('width', '70px')
+    rowTop_child_1.setStyle('height', '34px')
+    rowTop_child_1.setStyle('backgroundColor', '#cde8cd')
 
-    const rowTopRelative = ui.create({
-        width: '70px',
-        height: '34px',
-        position: 'relative',
-        top: '11px',
-        backgroundColor: '#00aa00',
-    })
+    rowTop.add(rowTop_child_1)
+
+    const rowTopRelative = ui.create()
+    rowTopRelative.setStyle('width', '70px')
+    rowTopRelative.setStyle('height', '34px')
+    rowTopRelative.setStyle('position', 'relative')
+    rowTopRelative.setStyle('top', '11px')
+    rowTopRelative.setStyle('backgroundColor', '#00aa00')
     rowTop.add(rowTopRelative)
 
-    const rowBottom = ui.create({
-        width: '120px',
-        height: '120px',
-        flexDirection: 'row',
-        flexWrap: 'wrap-reverse',
-        alignContent: 'flex-start',
-        padding: '8px',
-        gap: '6px',
-        backgroundColor: '#f5eeee',
-    })
+    const rowBottom = ui.create()
+    rowBottom.setStyle('width', '120px')
+    rowBottom.setStyle('height', '120px')
+    rowBottom.setStyle('flexDirection', 'row')
+    rowBottom.setStyle('flexWrap', 'wrap-reverse')
+    rowBottom.setStyle('alignContent', 'flex-start')
+    rowBottom.setStyle('padding', '8px')
+    rowBottom.setStyle('gap', '6px')
+    rowBottom.setStyle('backgroundColor', '#f5eeee')
     stage.add(rowBottom)
 
-    rowBottom.add(
-        ui.create({
-            width: '70px',
-            height: '34px',
-            backgroundColor: '#e8cdcd',
-        }),
-    )
+    const rowBottom_child_2 = ui.create()
+    rowBottom_child_2.setStyle('width', '70px')
+    rowBottom_child_2.setStyle('height', '34px')
+    rowBottom_child_2.setStyle('backgroundColor', '#e8cdcd')
 
-    const rowBottomRelative = ui.create({
-        width: '70px',
-        height: '34px',
-        position: 'relative',
-        bottom: '9px',
-        backgroundColor: '#cc3300',
-    })
+    rowBottom.add(rowBottom_child_2)
+
+    const rowBottomRelative = ui.create()
+    rowBottomRelative.setStyle('width', '70px')
+    rowBottomRelative.setStyle('height', '34px')
+    rowBottomRelative.setStyle('position', 'relative')
+    rowBottomRelative.setStyle('bottom', '9px')
+    rowBottomRelative.setStyle('backgroundColor', '#cc3300')
     rowBottom.add(rowBottomRelative)
 
-    const rowReverseTop = ui.create({
-        width: '120px',
-        height: '120px',
-        flexDirection: 'row-reverse',
-        flexWrap: 'wrap-reverse',
-        alignContent: 'flex-start',
-        padding: '8px',
-        gap: '6px',
-        backgroundColor: '#f2eaff',
-    })
+    const rowReverseTop = ui.create()
+    rowReverseTop.setStyle('width', '120px')
+    rowReverseTop.setStyle('height', '120px')
+    rowReverseTop.setStyle('flexDirection', 'row-reverse')
+    rowReverseTop.setStyle('flexWrap', 'wrap-reverse')
+    rowReverseTop.setStyle('alignContent', 'flex-start')
+    rowReverseTop.setStyle('padding', '8px')
+    rowReverseTop.setStyle('gap', '6px')
+    rowReverseTop.setStyle('backgroundColor', '#f2eaff')
     stage.add(rowReverseTop)
 
-    rowReverseTop.add(
-        ui.create({
-            width: '70px',
-            height: '34px',
-            backgroundColor: '#decfff',
-        }),
-    )
+    const rowReverseTop_child_3 = ui.create()
+    rowReverseTop_child_3.setStyle('width', '70px')
+    rowReverseTop_child_3.setStyle('height', '34px')
+    rowReverseTop_child_3.setStyle('backgroundColor', '#decfff')
 
-    const rowReverseTopRelative = ui.create({
-        width: '70px',
-        height: '34px',
-        position: 'relative',
-        top: '11px',
-        backgroundColor: '#aa00ff',
-    })
+    rowReverseTop.add(rowReverseTop_child_3)
+
+    const rowReverseTopRelative = ui.create()
+    rowReverseTopRelative.setStyle('width', '70px')
+    rowReverseTopRelative.setStyle('height', '34px')
+    rowReverseTopRelative.setStyle('position', 'relative')
+    rowReverseTopRelative.setStyle('top', '11px')
+    rowReverseTopRelative.setStyle('backgroundColor', '#aa00ff')
     rowReverseTop.add(rowReverseTopRelative)
 
-    const rowReverseBottom = ui.create({
-        width: '120px',
-        height: '120px',
-        flexDirection: 'row-reverse',
-        flexWrap: 'wrap-reverse',
-        alignContent: 'flex-start',
-        padding: '8px',
-        gap: '6px',
-        backgroundColor: '#fff0df',
-    })
+    const rowReverseBottom = ui.create()
+    rowReverseBottom.setStyle('width', '120px')
+    rowReverseBottom.setStyle('height', '120px')
+    rowReverseBottom.setStyle('flexDirection', 'row-reverse')
+    rowReverseBottom.setStyle('flexWrap', 'wrap-reverse')
+    rowReverseBottom.setStyle('alignContent', 'flex-start')
+    rowReverseBottom.setStyle('padding', '8px')
+    rowReverseBottom.setStyle('gap', '6px')
+    rowReverseBottom.setStyle('backgroundColor', '#fff0df')
     stage.add(rowReverseBottom)
 
-    rowReverseBottom.add(
-        ui.create({
-            width: '70px',
-            height: '34px',
-            backgroundColor: '#f3d2b0',
-        }),
-    )
+    const rowReverseBottom_child_4 = ui.create()
+    rowReverseBottom_child_4.setStyle('width', '70px')
+    rowReverseBottom_child_4.setStyle('height', '34px')
+    rowReverseBottom_child_4.setStyle('backgroundColor', '#f3d2b0')
 
-    const rowReverseBottomRelative = ui.create({
-        width: '70px',
-        height: '34px',
-        position: 'relative',
-        bottom: '9px',
-        backgroundColor: '#dd7700',
-    })
+    rowReverseBottom.add(rowReverseBottom_child_4)
+
+    const rowReverseBottomRelative = ui.create()
+    rowReverseBottomRelative.setStyle('width', '70px')
+    rowReverseBottomRelative.setStyle('height', '34px')
+    rowReverseBottomRelative.setStyle('position', 'relative')
+    rowReverseBottomRelative.setStyle('bottom', '9px')
+    rowReverseBottomRelative.setStyle('backgroundColor', '#dd7700')
     rowReverseBottom.add(rowReverseBottomRelative)
 }
