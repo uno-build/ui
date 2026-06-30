@@ -2,7 +2,7 @@ import Renderer from '../Renderer'
 import createEngine, { YOGA_SETTER } from '../engine/yoga'
 import { getNodeDrawingData } from './utils/node'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders'
-import { TextureManager } from './webgpu/textures'
+import { ImageManager } from './webgpu/ImageManager'
 import {
     FLOAT32_SIZE,
     VIEWPORT_SIZE,
@@ -22,7 +22,7 @@ export default class RendererWebGPU extends Renderer {
     private format
     private pipeline
     private image_sampler
-    private texture_manager
+    private image_manager
     private position_buffer
     private viewport_buffer
     private nodes_buffer
@@ -64,7 +64,7 @@ export default class RendererWebGPU extends Renderer {
             addressModeU: 'clamp-to-edge',
             addressModeV: 'clamp-to-edge',
         })
-        this.texture_manager = new TextureManager({
+        this.image_manager = new ImageManager({
             device: this.device,
             bind_group_layout: this.pipeline.getBindGroupLayout(0),
             viewport_buffer: this.viewport_buffer,
@@ -253,17 +253,17 @@ export default class RendererWebGPU extends Renderer {
 
             const background_image = node.styles.backgroundImage?.parsed
             if (background_image !== undefined) {
-                const texture = this.texture_manager.getImage(background_image)
+                const image_resource = this.image_manager.getImage(background_image)
                 render_items.push({
                     node,
                     order: node.order,
-                    bind_group: this.texture_manager.bind_group,
+                    bind_group: this.image_manager.bind_group,
                     instance_data: {
                         ...drawing_data,
                         background_image_mode: 1,
-                        background_uv_rect: texture.uv_rect,
-                        background_image_size: texture.image_size,
-                        background_atlas_layer: texture.layer,
+                        background_uv_rect: image_resource.uv_rect,
+                        background_image_size: image_resource.image_size,
+                        background_atlas_layer: image_resource.layer,
                     },
                 })
                 continue
@@ -272,7 +272,7 @@ export default class RendererWebGPU extends Renderer {
             render_items.push({
                 node,
                 order: node.order,
-                bind_group: this.texture_manager.bind_group,
+                bind_group: this.image_manager.bind_group,
                 instance_data: {
                     ...drawing_data,
                     background_image_mode: 0,
@@ -284,7 +284,7 @@ export default class RendererWebGPU extends Renderer {
         }
 
         for (const render_item of render_items) {
-            render_item.bind_group = this.texture_manager.bind_group
+            render_item.bind_group = this.image_manager.bind_group
         }
 
         return render_items
@@ -362,7 +362,7 @@ export default class RendererWebGPU extends Renderer {
                 // draws++
                 // instances += batch.instance_count
             }
-            // console.log(`Draws: ${draws}, Instances: ${instances}`, this.texture_manager.atlas_layer_count)
+            // console.log(`Draws: ${draws}, Instances: ${instances}`, this.image_manager.atlas_layer_count)
         }
 
         pass_encoder.end()

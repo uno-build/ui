@@ -3,7 +3,7 @@ import { SkylineAllocator } from './SkylineAllocator'
 export const ATLAS_SIZE = 2048
 export const ATLAS_PADDING = 2
 
-export type TextureResource = {
+export type ImageResource = {
     src: string
     layer: number
     uv_rect: [number, number, number, number]
@@ -15,7 +15,7 @@ type AtlasLayer = {
     allocator: SkylineAllocator
 }
 
-export class TextureManager {
+export class ImageManager {
     public bind_group
     private device
     private bind_group_layout
@@ -23,8 +23,8 @@ export class TextureManager {
     private sampler
     private atlas_texture
     private atlas_layer_count = 1
-    private atlas_texture_layer_count = 2
-    private resources = new Map<ImageBitmap, TextureResource>()
+    private atlas_texture_layer_count = 1
+    private resources = new WeakMap<ImageBitmap, ImageResource>()
     private atlas_layers: AtlasLayer[] = []
 
     constructor({ device, bind_group_layout, viewport_buffer, sampler }) {
@@ -37,7 +37,7 @@ export class TextureManager {
         this.bind_group = this.createBindGroup(this.atlas_texture)
     }
 
-    public getImage(image): TextureResource {
+    public getImage(image): ImageResource {
         const resource = this.resources.get(image.bitmap)
         if (resource !== undefined) {
             return resource
@@ -49,7 +49,7 @@ export class TextureManager {
         return next_resource
     }
 
-    private createAtlasResource(image): TextureResource {
+    private createAtlasResource(image): ImageResource {
         if (image.width > ATLAS_SIZE || image.height > ATLAS_SIZE) {
             throw new Error(
                 `Image "${image.src}" is ${image.width}x${image.height}, which exceeds the ${ATLAS_SIZE}x${ATLAS_SIZE} UI atlas layer size.`,
@@ -168,11 +168,13 @@ export class TextureManager {
     }
 
     private createAtlasTexture(layer_count) {
+        const texture_layer_count = Math.max(2, layer_count)
+
         return this.device.createTexture({
             size: {
                 width: ATLAS_SIZE,
                 height: ATLAS_SIZE,
-                depthOrArrayLayers: layer_count,
+                depthOrArrayLayers: texture_layer_count,
             },
             dimension: '2d',
             format: 'rgba8unorm',

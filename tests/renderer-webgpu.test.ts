@@ -2,12 +2,7 @@ import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { OVERFLOW, UNIT } from '../src/style/consts.ts'
 import { ATTRIBUTES_SIZE, ATTRIBUTES, FLOAT32_SIZE } from '../src/renderer/webgpu/buffers.ts'
-import {
-    ATLAS_MIN_ARRAY_TEXTURE_LAYERS,
-    ATLAS_PADDING,
-    ATLAS_SIZE,
-    TextureManager,
-} from '../src/renderer/webgpu/textures.ts'
+import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
 
 ;(globalThis as any).GPUTextureUsage = {
     TEXTURE_BINDING: 1,
@@ -114,7 +109,7 @@ test('RendererWebGPU writes border drawing data into panel instance data', () =>
 
 test('RendererWebGPU writes background image data into panel instance data', () => {
     const image = createImage('coin.png', 40, 20)
-    const texture_manager = createTextureManager({
+    const image_manager = createImageManager({
         resources: {
             [image.src]: {
                 src: image.src,
@@ -124,7 +119,7 @@ test('RendererWebGPU writes background image data into panel instance data', () 
             },
         },
     })
-    const renderer = createRenderer(texture_manager)
+    const renderer = createRenderer(image_manager)
     const node = createNode({
         styles: {
             backgroundImage: {
@@ -150,7 +145,7 @@ test('RendererWebGPU writes background image data into panel instance data', () 
 
 test('RendererWebGPU batches consecutive solid panels together', () => {
     const bind_group = createBindGroup('atlas')
-    const renderer = createRenderer(createTextureManager({ bind_group }))
+    const renderer = createRenderer(createImageManager({ bind_group }))
     const batches = (renderer as any).buildBatches([
         createRenderItem(bind_group),
         createRenderItem(bind_group),
@@ -185,7 +180,7 @@ test('RendererWebGPU batches panels and images across atlas layers together', ()
     const first_image = createImage('first.png', 40, 20)
     const second_image = createImage('second.png', 40, 20)
     const renderer = createRenderer(
-        createTextureManager({
+        createImageManager({
             bind_group,
             resources: {
                 [first_image.src]: {
@@ -243,22 +238,22 @@ test('RendererWebGPU batches atlas panels and images together', () => {
     expect(batches[0].bind_group).toBe(bind_group)
 })
 
-test('TextureManager reuses resources by bitmap', () => {
+test('ImageManager reuses resources by bitmap', () => {
     const device = createFakeDevice()
-    const texture_manager = createRealTextureManager(device)
+    const image_manager = createRealImageManager(device)
     const first_image = createImage('first.png', 32, 32)
-    const first = texture_manager.getImage(first_image)
+    const first = image_manager.getImage(first_image)
     const copy_count = device.copies.length
-    const second = texture_manager.getImage({ ...createImage('second.png', 32, 32), bitmap: first_image.bitmap })
+    const second = image_manager.getImage({ ...createImage('second.png', 32, 32), bitmap: first_image.bitmap })
 
     expect(second).toBe(first)
     expect(device.copies).toHaveLength(copy_count)
 })
 
-test('TextureManager packs small images into atlas layers', () => {
+test('ImageManager packs small images into atlas layers', () => {
     const device = createFakeDevice()
-    const texture_manager = createRealTextureManager(device)
-    const resource = texture_manager.getImage(createImage('small.png', 32, 16))
+    const image_manager = createRealImageManager(device)
+    const resource = image_manager.getImage(createImage('small.png', 32, 16))
 
     expect(resource.layer).toBe(0)
     expect(resource.image_size).toEqual([32, 16])
@@ -269,16 +264,16 @@ test('TextureManager packs small images into atlas layers', () => {
     expect(device.textures[0].descriptor.size).toEqual({
         width: ATLAS_SIZE,
         height: ATLAS_SIZE,
-        depthOrArrayLayers: ATLAS_MIN_ARRAY_TEXTURE_LAYERS,
+        depthOrArrayLayers: 2,
     })
     expect(device.textures[0].descriptor.usage & GPUTextureUsage.COPY_SRC).toBe(GPUTextureUsage.COPY_SRC)
     expect(device.copies[0].destination.origin).toEqual([0, 0, 0])
 })
 
-test('TextureManager stores full-width images in the atlas', () => {
+test('ImageManager stores full-width images in the atlas', () => {
     const device = createFakeDevice()
-    const texture_manager = createRealTextureManager(device)
-    const resource = texture_manager.getImage(createImage('large.png', ATLAS_SIZE, 128))
+    const image_manager = createRealImageManager(device)
+    const resource = image_manager.getImage(createImage('large.png', ATLAS_SIZE, 128))
 
     expect(resource.layer).toBe(0)
     expect(resource.uv_rect).toEqual([0, 0, 1, 128 / ATLAS_SIZE])
@@ -286,12 +281,12 @@ test('TextureManager stores full-width images in the atlas', () => {
     expect(getAtlasTextures(device)).toHaveLength(1)
 })
 
-test('TextureManager packs images into the lowest skyline gap', () => {
+test('ImageManager packs images into the lowest skyline gap', () => {
     const device = createFakeDevice()
-    const texture_manager = createRealTextureManager(device)
-    texture_manager.getImage(createImage('tall.png', 800, 300))
-    texture_manager.getImage(createImage('short.png', 1200, 100))
-    const resource = texture_manager.getImage(createImage('gap.png', 700, 150))
+    const image_manager = createRealImageManager(device)
+    image_manager.getImage(createImage('tall.png', 800, 300))
+    image_manager.getImage(createImage('short.png', 1200, 100))
+    const resource = image_manager.getImage(createImage('gap.png', 700, 150))
 
     expect(resource.layer).toBe(0)
     expect(resource.uv_rect).toEqual([
@@ -302,50 +297,52 @@ test('TextureManager packs images into the lowest skyline gap', () => {
     ])
 })
 
-test('TextureManager throws for images larger than one atlas layer', () => {
+test('ImageManager throws for images larger than one atlas layer', () => {
     const device = createFakeDevice()
-    const texture_manager = createRealTextureManager(device)
+    const image_manager = createRealImageManager(device)
 
-    expect(() => texture_manager.getImage(createImage('too-large.png', ATLAS_SIZE + 1, 1))).toThrow(
+    expect(() => image_manager.getImage(createImage('too-large.png', ATLAS_SIZE + 1, 1))).toThrow(
         /exceeds the 2048x2048 UI atlas layer size/,
     )
 })
 
-test('TextureManager allocates another atlas layer when the current one is full', () => {
+test('ImageManager grows the atlas texture when the current layer is full', () => {
     const device = createFakeDevice()
-    const texture_manager = createRealTextureManager(device)
-    const first = texture_manager.getImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
-    const second = texture_manager.getImage(createImage('image-1.png', 1, 1))
+    const image_manager = createRealImageManager(device)
+    const first = image_manager.getImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
+    const second = image_manager.getImage(createImage('image-1.png', 1, 1))
 
     expect(first.layer).toBe(0)
     expect(second.layer).toBe(1)
-    expect(getAtlasTextures(device)).toHaveLength(1)
-    expect(device.bind_groups).toHaveLength(1)
-})
-
-test('TextureManager grows the atlas texture when physical layer capacity is full', () => {
-    const device = createFakeDevice()
-    const texture_manager = createRealTextureManager(device)
-    texture_manager.getImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
-    texture_manager.getImage(createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
-    const third = texture_manager.getImage(createImage('image-2.png', 1, 1))
-
-    expect(third.layer).toBe(2)
-    const atlas_textures = getAtlasTextures(device)
-    expect(atlas_textures).toHaveLength(2)
-    expect(atlas_textures[0].destroyed).toBe(true)
-    expect(atlas_textures[1].descriptor.size.depthOrArrayLayers).toBe(ATLAS_MIN_ARRAY_TEXTURE_LAYERS + 1)
-    expect(device.texture_copies[0].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, ATLAS_MIN_ARRAY_TEXTURE_LAYERS])
+    expect(getAtlasTextures(device)).toHaveLength(2)
     expect(device.bind_groups).toHaveLength(2)
 })
 
-test('TextureManager throws when atlas growth exceeds the device layer limit', () => {
-    const device = createFakeDevice({ max_texture_array_layers: 2 })
-    const texture_manager = createRealTextureManager(device)
+test('ImageManager grows the atlas texture when physical layer capacity is full', () => {
+    const device = createFakeDevice()
+    const image_manager = createRealImageManager(device)
+    image_manager.getImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
+    image_manager.getImage(createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
+    const third = image_manager.getImage(createImage('image-2.png', 1, 1))
 
-    texture_manager.getImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
-    texture_manager.getImage(createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
-    expect(() => texture_manager.getImage(createImage('image-2.png', 1, 1))).toThrow(
+    expect(third.layer).toBe(2)
+    const atlas_textures = getAtlasTextures(device)
+    expect(atlas_textures).toHaveLength(3)
+    expect(atlas_textures[0].destroyed).toBe(true)
+    expect(atlas_textures[1].destroyed).toBe(true)
+    expect(atlas_textures[2].descriptor.size.depthOrArrayLayers).toBe(3)
+    expect(device.texture_copies[0].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, 1])
+    expect(device.texture_copies[1].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, 2])
+    expect(device.bind_groups).toHaveLength(3)
+})
+
+test('ImageManager throws when atlas growth exceeds the device layer limit', () => {
+    const device = createFakeDevice({ max_texture_array_layers: 2 })
+    const image_manager = createRealImageManager(device)
+
+    image_manager.getImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
+    image_manager.getImage(createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
+    expect(() => image_manager.getImage(createImage('image-2.png', 1, 1))).toThrow(
         /this device supports 2/,
     )
 })
@@ -356,15 +353,15 @@ function createNodesBufferData(renderer, nodes) {
     return (renderer as any).createNodesBufferData(render_items)
 }
 
-function createRenderer(texture_manager = createTextureManager()) {
+function createRenderer(image_manager = createImageManager()) {
     const renderer = new RendererWebGPU({ canvas: {} })
     ;(renderer as any).pipeline = { id: 'pipeline' }
-    ;(renderer as any).texture_manager = texture_manager
+    ;(renderer as any).image_manager = image_manager
 
     return renderer
 }
 
-function createTextureManager({ bind_group = createBindGroup('atlas'), resources = {} } = {}) {
+function createImageManager({ bind_group = createBindGroup('atlas'), resources = {} } = {}) {
     return {
         bind_group,
         getImage(image) {
@@ -373,8 +370,8 @@ function createTextureManager({ bind_group = createBindGroup('atlas'), resources
     }
 }
 
-function createRealTextureManager(device) {
-    return new TextureManager({
+function createRealImageManager(device) {
+    return new ImageManager({
         device,
         bind_group_layout: { id: 'layout' },
         viewport_buffer: { id: 'viewport' },
