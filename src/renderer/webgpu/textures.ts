@@ -1,7 +1,5 @@
 import { SkylineAllocator } from './SkylineAllocator'
 
-export const ATLAS_INITIAL_LAYERS = 1
-export const ATLAS_MIN_ARRAY_TEXTURE_LAYERS = 2
 export const ATLAS_SIZE = 2048
 export const ATLAS_PADDING = 2
 
@@ -24,8 +22,8 @@ export class TextureManager {
     private viewport_buffer
     private sampler
     private atlas_texture
-    private atlas_layer_count = ATLAS_INITIAL_LAYERS
-    private atlas_texture_layer_count = ATLAS_MIN_ARRAY_TEXTURE_LAYERS
+    private atlas_layer_count = 1
+    private atlas_texture_layer_count = 2
     private resources = new Map<ImageBitmap, TextureResource>()
     private atlas_layers: AtlasLayer[] = []
 

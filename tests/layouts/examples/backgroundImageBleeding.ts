@@ -18,7 +18,7 @@ export default async function createBackgroundImageBleedingLayout({ ui }) {
     image_a.style('position', 'absolute')
     image_a.style('left', '40px')
     image_a.style('top', '40px')
-    image_a.style('backgroundImage', '/asset/a.png', asset_bleeding)
+    image_a.style('backgroundImage', '/assets/bleeding.png', asset_bleeding)
     stage.add(image_a)
 
     const image_b = ui.create()
@@ -27,7 +27,7 @@ export default async function createBackgroundImageBleedingLayout({ ui }) {
     image_b.style('position', 'absolute')
     image_b.style('left', '350px')
     image_b.style('top', '40px')
-    image_b.style('backgroundImage', '/asset/b.png', {
+    image_b.style('backgroundImage', '/assets/bleeding.png', {
         ...asset_bleeding,
         bitmap: copy_bitmap, // We need a copy because @texture.ts caches by bitmap and we want to test bleeding with the same image but different preventBleeding settings
         preventBleeding: true,
