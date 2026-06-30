@@ -2,7 +2,7 @@ import Renderer from '../Renderer'
 import createEngine, { YOGA_SETTER } from '../engine/yoga'
 import { getNodeDrawingData } from './utils/node'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders'
-import { ImageManager } from './webgpu/ImageManager'
+import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from './webgpu/ImageManager'
 import {
     FLOAT32_SIZE,
     VIEWPORT_SIZE,
@@ -31,10 +31,14 @@ export default class RendererWebGPU extends Renderer {
     private nodes_array_buffer_size = 0
     private nodes_floats
     private nodes_bytes
+    private atlas_size
+    private atlas_padding
 
-    constructor({ canvas }) {
+    constructor({ canvas, atlas_size = ATLAS_SIZE, atlas_padding = ATLAS_PADDING }) {
         super()
         this.canvas = canvas
+        this.atlas_size = atlas_size
+        this.atlas_padding = atlas_padding
     }
 
     public async init() {
@@ -69,6 +73,8 @@ export default class RendererWebGPU extends Renderer {
             bind_group_layout: this.pipeline.getBindGroupLayout(0),
             viewport_buffer: this.viewport_buffer,
             sampler: this.image_sampler,
+            atlas_size: this.atlas_size,
+            atlas_padding: this.atlas_padding,
         })
     }
 

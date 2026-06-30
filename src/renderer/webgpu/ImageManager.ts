@@ -21,17 +21,21 @@ export class ImageManager {
     private bind_group_layout
     private viewport_buffer
     private sampler
+    private atlas_size
+    private atlas_padding
     private atlas_texture
     private atlas_layer_count = 1
     private atlas_texture_layer_count = 1
     private resources = new WeakMap<ImageBitmap, ImageResource>()
     private atlas_layers: AtlasLayer[] = []
 
-    constructor({ device, bind_group_layout, viewport_buffer, sampler }) {
+    constructor({ device, bind_group_layout, viewport_buffer, sampler, atlas_size = ATLAS_SIZE, atlas_padding = ATLAS_PADDING }) {
         this.device = device
         this.bind_group_layout = bind_group_layout
         this.viewport_buffer = viewport_buffer
         this.sampler = sampler
+        this.atlas_size = atlas_size
+        this.atlas_padding = atlas_padding
         this.atlas_texture = this.createAtlasTexture(this.atlas_texture_layer_count)
         this.atlas_layers.push(this.createAtlasLayer(0))
         this.bind_group = this.createBindGroup(this.atlas_texture)
@@ -50,9 +54,9 @@ export class ImageManager {
     }
 
     private createAtlasResource(image): ImageResource {
-        if (image.width > ATLAS_SIZE || image.height > ATLAS_SIZE) {
+        if (image.width > this.atlas_size || image.height > this.atlas_size) {
             throw new Error(
-                `Image "${image.src}" is ${image.width}x${image.height}, which exceeds the ${ATLAS_SIZE}x${ATLAS_SIZE} UI atlas layer size.`,
+                `Image "${image.src}" is ${image.width}x${image.height}, which exceeds the ${this.atlas_size}x${this.atlas_size} UI atlas layer size.`,
             )
         }
 
@@ -116,7 +120,7 @@ export class ImageManager {
     private createAtlasLayer(layer): AtlasLayer {
         return {
             layer,
-            allocator: new SkylineAllocator(ATLAS_SIZE, ATLAS_PADDING),
+            allocator: new SkylineAllocator(this.atlas_size, this.atlas_padding),
         }
     }
 
@@ -151,7 +155,7 @@ export class ImageManager {
                 texture: new_texture,
                 origin: [0, 0, 0],
             },
-            [ATLAS_SIZE, ATLAS_SIZE, old_layer_count],
+            [this.atlas_size, this.atlas_size, old_layer_count],
         )
         this.device.queue.submit([command_encoder.finish()])
         old_texture.destroy()
@@ -172,8 +176,8 @@ export class ImageManager {
 
         return this.device.createTexture({
             size: {
-                width: ATLAS_SIZE,
-                height: ATLAS_SIZE,
+                width: this.atlas_size,
+                height: this.atlas_size,
                 depthOrArrayLayers: texture_layer_count,
             },
             dimension: '2d',
@@ -211,12 +215,12 @@ export class ImageManager {
     }
 
     private copyImagePadding(image, texture, x, y, layer) {
-        const leading_padding = Math.floor(ATLAS_PADDING / 2)
-        const trailing_padding = ATLAS_PADDING - leading_padding
+        const leading_padding = Math.floor(this.atlas_padding / 2)
+        const trailing_padding = this.atlas_padding - leading_padding
         const left_padding = Math.min(leading_padding, x)
         const top_padding = Math.min(leading_padding, y)
-        const right_padding = Math.min(trailing_padding, ATLAS_SIZE - x - image.width)
-        const bottom_padding = Math.min(trailing_padding, ATLAS_SIZE - y - image.height)
+        const right_padding = Math.min(trailing_padding, this.atlas_size - x - image.width)
+        const bottom_padding = Math.min(trailing_padding, this.atlas_size - y - image.height)
 
         for (let index = 1; index <= left_padding; index++) {
             this.device.queue.copyExternalImageToTexture(
@@ -282,8 +286,8 @@ export class ImageManager {
     }
 
     private createAtlasUvRect(x, y, width, height): [number, number, number, number] {
-        const page_width = ATLAS_SIZE
-        const page_height = ATLAS_SIZE
+        const page_width = this.atlas_size
+        const page_height = this.atlas_size
 
         return [x / page_width, y / page_height, width / page_width, height / page_height]
     }
