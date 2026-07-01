@@ -33,7 +33,6 @@ export default class RendererWebGPU extends Renderer {
     private nodes_floats
     private nodes_bytes
     private atlas_size
-    private nodes_image = new WeakMap()
 
     constructor({ canvas, atlas_size = ATLAS_SIZE }) {
         super()
@@ -217,6 +216,9 @@ export default class RendererWebGPU extends Renderer {
 
     public removeChild(parent, node) {
         this.engine.removeChild(parent, node)
+        if (node.styles.hasOwnProperty('backgroundImage')) {
+            this.image_manager.removeNode(node)
+        }
     }
 
     protected updateStyle(node, style) {
@@ -226,15 +228,10 @@ export default class RendererWebGPU extends Renderer {
 
         if (style.name === 'backgroundImage') {
             // console.log('backgroundImage', style.value, style.parsed)
-            if (style.parsed.unit === UNIT.UNSET) {
-                // if (this.nodes_image.has(node)) {
-                //     const { image } = this.nodes_image.get(node)
-                //     this.image_manager.releaseImage(image)
-                //     this.nodes_image.delete(node)
-                // }
-            } else {
-                this.image_manager.insertImage(style.parsed)
-                // this.nodes_image.set(node, { image: style.parsed })
+            const resource = this.image_manager.removeNode(node)
+            if (style.parsed.hasOwnProperty('bitmap')) {
+                const resource = this.image_manager.insertImage(style.parsed)
+                this.image_manager.addNode(resource, node)
             }
         }
     }
@@ -374,17 +371,25 @@ export default class RendererWebGPU extends Renderer {
             pass_encoder.setVertexBuffer(0, this.position_buffer)
             pass_encoder.setVertexBuffer(1, this.nodes_buffer)
 
-            let draws = 0
-            let instances = 0
+            // let draws = 0
+            // let instances = 0
             for (const batch of batches) {
                 pass_encoder.setPipeline(batch.pipeline)
                 pass_encoder.setBindGroup(0, batch.bind_group)
                 pass_encoder.draw(POSITION_VERTEX_COUNT, batch.instance_count, 0, batch.first_instance)
-                draws++
-                instances += batch.instance_count
+                // draws++
+                // instances += batch.instance_count
             }
-            console.log(`Draws: ${draws}, Instances: ${instances}`, this.image_manager.atlas_layer_count)
+            // console.log(`Draws: ${draws}, Instances: ${instances}`, this.image_manager.atlas_layer_count)
         }
+
+        // for (const [bitmap, resource] of this.image_manager.resources) {
+        //     console.log(resource.src, resource.nodes.size)
+        //     if (resource.nodes.size === 0) {
+        //         this.image_manager.releaseImage({ bitmap })
+        //     }
+        // }
+        // console.log('----')
 
         pass_encoder.end()
         this.device.queue.submit([command_encoder.finish()])

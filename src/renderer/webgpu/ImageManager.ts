@@ -29,6 +29,7 @@ type ManagedImageResource = ImageResource & {
     y: number
     width: number
     height: number
+    nodes: Set<any>
 }
 
 export class ImageManager {
@@ -59,7 +60,7 @@ export class ImageManager {
         return this.resources.get(image.bitmap)
     }
 
-    public insertImage(image): ImageResource {
+    public insertImage(image, node): ImageResource {
         const resource = this.resources.get(image.bitmap)
         if (resource !== undefined) {
             return resource
@@ -98,6 +99,7 @@ export class ImageManager {
             y: allocation.y,
             width: allocation.width,
             height: allocation.height,
+            nodes: new Set(),
         }
 
         this.resources.set(image.bitmap, new_resource)
@@ -114,6 +116,19 @@ export class ImageManager {
             width: resource.width,
             height: resource.height,
         })
+    }
+
+    public addNode(resource, node) {
+        resource.nodes.add(node)
+    }
+
+    public removeNode(node) {
+        for (const resource of this.resources.values()) {
+            if (resource.nodes.has(node)) {
+                resource.nodes.delete(node)
+                return resource
+            }
+        }
     }
 
     private allocateAtlasRect(width, height) {
