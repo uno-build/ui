@@ -228,10 +228,10 @@ export default class RendererWebGPU extends Renderer {
 
         if (style.name === 'backgroundImage') {
             // console.log('backgroundImage', style.value, style.parsed)
-            const resource = this.image_manager.removeNode(node)
+            this.image_manager.removeNode(node)
             if (style.parsed.hasOwnProperty('bitmap')) {
-                const resource = this.image_manager.insertImage(style.parsed)
-                this.image_manager.addNode(resource, node)
+                const atlas_image = this.image_manager.insertImage(style.parsed)
+                this.image_manager.addNode(node, atlas_image)
             }
         }
     }
@@ -268,8 +268,8 @@ export default class RendererWebGPU extends Renderer {
 
             const background_image = node.styles.backgroundImage?.parsed
             if (background_image !== undefined && background_image.unit !== UNIT.UNSET) {
-                const image_resource = this.image_manager.getImage(background_image)
-                if (image_resource === undefined) {
+                const atlas_image = this.image_manager.getImage(background_image)
+                if (atlas_image === undefined) {
                     continue
                 }
                 render_items.push({
@@ -279,9 +279,9 @@ export default class RendererWebGPU extends Renderer {
                     instance_data: {
                         ...drawing_data,
                         background_image_mode: 1,
-                        background_uv_rect: image_resource.uv_rect,
-                        background_image_size: image_resource.image_size,
-                        background_atlas_layer: image_resource.layer,
+                        background_uv_rect: atlas_image.uv_rect,
+                        background_image_size: atlas_image.image_size,
+                        background_atlas_layer: atlas_image.layer,
                     },
                 })
                 continue
@@ -383,10 +383,10 @@ export default class RendererWebGPU extends Renderer {
             // console.log(`Draws: ${draws}, Instances: ${instances}`, this.image_manager.atlas_layer_count)
         }
 
-        // for (const [bitmap, resource] of this.image_manager.resources) {
-        //     console.log(resource.src, resource.nodes.size)
-        //     if (resource.nodes.size === 0) {
-        //         this.image_manager.releaseImage({ bitmap })
+        // for (const [bitmap, atlas_image] of this.image_manager.images) {
+        //     console.log(atlas_image.src, atlas_image.nodes.size)
+        //     if (atlas_image.nodes.size === 0) {
+        //         this.image_manager.releaseImage(bitmap)
         //     }
         // }
         // console.log('----')
