@@ -5,7 +5,8 @@ export async function loadImage(src, createImageBitmap = globalThis.createImageB
     if (image_cache.has(src)) {
         image = image_cache.get(src)
     } else {
-        image = await loadImageFromSrc(src, createImageBitmap)
+        const blob = await loadAsset(src)
+        image = await createImageBitmap(blob)
         image_cache.set(src, image)
     }
     return {
@@ -13,13 +14,11 @@ export async function loadImage(src, createImageBitmap = globalThis.createImageB
         bitmap: image,
         width: image.width,
         height: image.height,
-        preventBleeding: false,
+        preventBleeding: image.width < 32 || image.height < 32,
     }
 }
 
-async function loadImageFromSrc(src, createImageBitmap) {
+async function loadAsset(src) {
     const response = await fetch(src)
-    const blob = await response.blob()
-    const image_bitmap = await createImageBitmap(blob)
-    return image_bitmap
+    return await response.blob()
 }

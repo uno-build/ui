@@ -17,25 +17,23 @@ type AtlasLayer = {
 
 export class ImageManager {
     public bind_group
+    public resources = new Map<ImageBitmap, ImageResource>()
     private device
     private bind_group_layout
     private viewport_buffer
     private sampler
     private atlas_size
-    private atlas_padding
     private atlas_texture
     private atlas_layer_count = 1
     private atlas_texture_layer_count = 1
-    private resources = new WeakMap<ImageBitmap, ImageResource>()
     private atlas_layers: AtlasLayer[] = []
 
-    constructor({ device, bind_group_layout, viewport_buffer, sampler, atlas_size = ATLAS_SIZE, atlas_padding = ATLAS_PADDING }) {
+    constructor({ device, bind_group_layout, viewport_buffer, sampler, atlas_size = ATLAS_SIZE }) {
         this.device = device
         this.bind_group_layout = bind_group_layout
         this.viewport_buffer = viewport_buffer
         this.sampler = sampler
         this.atlas_size = atlas_size
-        this.atlas_padding = atlas_padding
         this.atlas_texture = this.createAtlasTexture(this.atlas_texture_layer_count)
         this.atlas_layers.push(this.createAtlasLayer(0))
         this.bind_group = this.createBindGroup(this.atlas_texture)
@@ -120,7 +118,7 @@ export class ImageManager {
     private createAtlasLayer(layer): AtlasLayer {
         return {
             layer,
-            allocator: new SkylineAllocator(this.atlas_size, this.atlas_padding),
+            allocator: new SkylineAllocator(this.atlas_size, ATLAS_PADDING),
         }
     }
 
@@ -215,8 +213,8 @@ export class ImageManager {
     }
 
     private copyImagePadding(image, texture, x, y, layer) {
-        const leading_padding = Math.floor(this.atlas_padding / 2)
-        const trailing_padding = this.atlas_padding - leading_padding
+        const leading_padding = Math.floor(ATLAS_PADDING / 2)
+        const trailing_padding = ATLAS_PADDING - leading_padding
         const left_padding = Math.min(leading_padding, x)
         const top_padding = Math.min(leading_padding, y)
         const right_padding = Math.min(trailing_padding, this.atlas_size - x - image.width)

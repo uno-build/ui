@@ -221,3 +221,10 @@ export const DIRECTION_DEFINITION = [
         parse: [createEnumParser(DIRECTION)],
     },
 ]
+
+export const BACKGROUNDIMAGE_DEFINITION = [
+    {
+        validate: [validateUnset],
+        parse: [parseUnset],
+    },
+]

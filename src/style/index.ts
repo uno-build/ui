@@ -26,6 +26,7 @@ import {
     PX_PERCENT_DEFINITION,
     SIZE_DEFINITION,
     INTEGER_DEFINITION,
+    BACKGROUNDIMAGE_DEFINITION,
 } from './definitions'
 
 // if (typeof window !== 'undefined') {
@@ -192,7 +193,7 @@ export const STYLE = {
         { name, value, definition: COLOR_DEFINITION },
     ]),
     BACKGROUNDIMAGE: createStyle('backgroundImage', (name, value) => [
-        { name, value, definition: [] },
+        { name, value, definition: BACKGROUNDIMAGE_DEFINITION },
     ]),
 
     // YOGA PROPERTIES

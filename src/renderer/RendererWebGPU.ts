@@ -2,7 +2,7 @@ import Renderer from '../Renderer'
 import createEngine, { YOGA_SETTER } from '../engine/yoga'
 import { getNodeDrawingData } from './utils/node'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders'
-import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from './webgpu/ImageManager'
+import { ATLAS_SIZE, ImageManager } from './webgpu/ImageManager'
 import {
     FLOAT32_SIZE,
     VIEWPORT_SIZE,
@@ -32,13 +32,11 @@ export default class RendererWebGPU extends Renderer {
     private nodes_floats
     private nodes_bytes
     private atlas_size
-    private atlas_padding
 
-    constructor({ canvas, atlas_size = ATLAS_SIZE, atlas_padding = ATLAS_PADDING }) {
+    constructor({ canvas, atlas_size = ATLAS_SIZE }) {
         super()
         this.canvas = canvas
         this.atlas_size = atlas_size
-        this.atlas_padding = atlas_padding
     }
 
     public async init() {
@@ -74,7 +72,6 @@ export default class RendererWebGPU extends Renderer {
             viewport_buffer: this.viewport_buffer,
             sampler: this.image_sampler,
             atlas_size: this.atlas_size,
-            atlas_padding: this.atlas_padding,
         })
     }
 
@@ -224,6 +221,10 @@ export default class RendererWebGPU extends Renderer {
         if (YOGA_SETTER.hasOwnProperty(style.name)) {
             YOGA_SETTER[style.name](node.element, style)
         }
+
+        if (style.name === 'backgroundImage') {
+            console.log('backgroundImage', style.value, style.parsed)
+        }
     }
 
     public beforeUpdate(nodes) {
@@ -244,7 +245,6 @@ export default class RendererWebGPU extends Renderer {
         const render_items = this.collectRenderItems(nodes)
         const batches = this.buildBatches(render_items)
         const nodes_buffer_data = this.createNodesBufferData(render_items)
-
         this.drawBatches(batches, nodes_buffer_data)
     }
 
