@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Atlas Allocator</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: system-ui, sans-serif;
+        background: #f4f4f0;
+        color: #1d2525;
+      }
+
+      main {
+        display: grid;
+        gap: 12px;
+        justify-items: start;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      button {
+        border: 1px solid #1d2525;
+        border-radius: 6px;
+        padding: 8px 14px;
+        font: inherit;
+        background: #ffffff;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #e9f1ef;
+      }
+
+      #status {
+        font-size: 14px;
+      }
+
+      #atlas {
+        position: relative;
+        width: 1024px;
+        height: 1024px;
+        border: 1px solid #1d2525;
+        background:
+          linear-gradient(#d8ddda 1px, transparent 1px),
+          linear-gradient(90deg, #d8ddda 1px, transparent 1px),
+          #ffffff;
+        background-size: 64px 64px;
+        overflow: hidden;
+      }
+
+      .rect {
+        position: absolute;
+        border: 1px solid rgba(0, 0, 0, 0.45);
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.7);
+        cursor: pointer;
+        user-select: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="toolbar">
+        <button id="add">Add</button>
+        <button data-size-range="8,128">8-128px</button>
+        <button data-size-range="48,128">48-128px</button>
+        <button data-size-range="128,256">128-256px</button>
+        <button data-size-range="256,512">256-512px</button>
+        <button id="fill">Fill</button>
+        <button id="reset">Reset</button>
+        <span id="status">0 rectángulos; 0% ocupado</span>
+      </div>
+      <div id="atlas" aria-label="Atlas 1024 por 1024"></div>
+    </main>
+
+    <script type="module" src="./atlas-allocator-demo.ts"></script>
+  </body>
+</html>

@@ -267,6 +267,26 @@ test('ImageManager reuses resources by bitmap', () => {
     expect(device.copies).toHaveLength(copy_count)
 })
 
+test('ImageManager releases atlas space without clearing texture data', () => {
+    const device = createFakeDevice()
+    const image_manager = createRealImageManager(device)
+    const first_image = createImage('first.png', 32, 32)
+    const first = image_manager.insertImage(first_image)
+    const copy_count = device.copies.length
+    const write_count = device.writes.length
+
+    image_manager.releaseImage(first_image)
+    const second = image_manager.insertImage(createImage('second.png', 32, 32))
+
+    expect(image_manager.getImage(first_image)).toBeUndefined()
+    expect(second.layer).toBe(first.layer)
+    expect(second.uv_rect[0]).toBe(first.uv_rect[0])
+    expect(second.uv_rect[1]).toBe(first.uv_rect[1])
+    expect(device.copies).toHaveLength(copy_count + 1)
+    expect(device.writes).toHaveLength(write_count)
+    expect(device.copies[copy_count].destination.origin).toEqual([0, 0, 0])
+})
+
 test('ImageManager packs small images into atlas layers', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)

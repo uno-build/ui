@@ -1,4 +1,11 @@
-import { SkylineAllocator } from './SkylineAllocator'
+import {
+    allocateFreeRect,
+    allocateSkylineRect,
+    createSkyline,
+    releaseAtlasRect,
+    type AtlasRect,
+    type SkylineNode,
+} from '../utils/AtlasAllocator'
 
 export const ATLAS_SIZE = 2048
 export const ATLAS_PADDING = 2
@@ -12,12 +19,21 @@ export type ImageResource = {
 
 type AtlasLayer = {
     layer: number
-    allocator: SkylineAllocator
+    skyline: SkylineNode[]
+    free_rects: AtlasRect[]
+}
+
+type ManagedImageResource = ImageResource & {
+    atlas_layer: AtlasLayer
+    x: number
+    y: number
+    width: number
+    height: number
 }
 
 export class ImageManager {
     public bind_group
-    public resources = new Map<ImageBitmap, ImageResource>()
+    public resources = new Map<ImageBitmap, ManagedImageResource>()
     private device
     private bind_group_layout
     private viewport_buffer
@@ -44,8 +60,9 @@ export class ImageManager {
     }
 
     public insertImage(image): ImageResource {
-        if (this.resources.has(image.bitmap)) {
-            return this.resources.get(image.bitmap)
+        const resource = this.resources.get(image.bitmap)
+        if (resource !== undefined) {
+            return resource
         }
 
         if (image.width > this.atlas_size || image.height > this.atlas_size) {
@@ -71,16 +88,32 @@ export class ImageManager {
             this.copyImagePadding(image, this.atlas_texture, allocation.x, allocation.y, allocation.atlas_layer.layer)
         }
 
-        const resource = {
+        const new_resource: ManagedImageResource = {
             src: image.src,
             layer: allocation.atlas_layer.layer,
             uv_rect: this.createAtlasUvRect(allocation.x, allocation.y, image.width, image.height),
             image_size: [image.width, image.height],
+            atlas_layer: allocation.atlas_layer,
+            x: allocation.x,
+            y: allocation.y,
+            width: allocation.width,
+            height: allocation.height,
         }
 
-        this.resources.set(image.bitmap, resource)
+        this.resources.set(image.bitmap, new_resource)
 
-        return resource
+        return new_resource
+    }
+
+    public releaseImage(image) {
+        const resource = this.resources.get(image.bitmap)!
+        this.resources.delete(image.bitmap)
+        resource.atlas_layer.free_rects = releaseAtlasRect(resource.atlas_layer.free_rects, {
+            x: resource.x,
+            y: resource.y,
+            width: resource.width,
+            height: resource.height,
+        })
     }
 
     private allocateAtlasRect(width, height) {
@@ -102,23 +135,49 @@ export class ImageManager {
     }
 
     private tryAllocateAtlasRect(atlas_layer, width, height) {
-        const allocation = atlas_layer.allocator.allocate(width, height)
+        const allocation_width = Math.min(width + ATLAS_PADDING, this.atlas_size)
+        const allocation_height = Math.min(height + ATLAS_PADDING, this.atlas_size)
+        const free_rect_allocation = allocateFreeRect(atlas_layer.free_rects, allocation_width, allocation_height)
+
+        if (free_rect_allocation !== null) {
+            atlas_layer.free_rects = free_rect_allocation.free_rects
+
+            return {
+                atlas_layer,
+                x: free_rect_allocation.rect.x,
+                y: free_rect_allocation.rect.y,
+                width: free_rect_allocation.rect.width,
+                height: free_rect_allocation.rect.height,
+            }
+        }
+
+        const allocation = allocateSkylineRect(
+            atlas_layer.skyline,
+            allocation_width,
+            allocation_height,
+            this.atlas_size,
+        )
 
         if (allocation === null) {
             return null
         }
 
+        atlas_layer.skyline = allocation.skyline
+
         return {
             atlas_layer,
-            x: allocation.x,
-            y: allocation.y,
+            x: allocation.rect.x,
+            y: allocation.rect.y,
+            width: allocation.rect.width,
+            height: allocation.rect.height,
         }
     }
 
     private createAtlasLayer(layer): AtlasLayer {
         return {
             layer,
-            allocator: new SkylineAllocator(this.atlas_size, ATLAS_PADDING),
+            skyline: createSkyline(this.atlas_size),
+            free_rects: [],
         }
     }
 
