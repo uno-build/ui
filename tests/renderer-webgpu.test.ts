@@ -242,9 +242,9 @@ test('ImageManager reuses resources by bitmap', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
     const first_image = createImage('first.png', 32, 32)
-    const first = image_manager.getImage(first_image)
+    const first = image_manager.insertImage(first_image)
     const copy_count = device.copies.length
-    const second = image_manager.getImage({ ...createImage('second.png', 32, 32), bitmap: first_image.bitmap })
+    const second = image_manager.insertImage({ ...createImage('second.png', 32, 32), bitmap: first_image.bitmap })
 
     expect(second).toBe(first)
     expect(device.copies).toHaveLength(copy_count)
@@ -253,7 +253,7 @@ test('ImageManager reuses resources by bitmap', () => {
 test('ImageManager packs small images into atlas layers', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    const resource = image_manager.getImage(createImage('small.png', 32, 16))
+    const resource = image_manager.insertImage(createImage('small.png', 32, 16))
 
     expect(resource.layer).toBe(0)
     expect(resource.image_size).toEqual([32, 16])
@@ -273,7 +273,7 @@ test('ImageManager packs small images into atlas layers', () => {
 test('ImageManager stores full-width images in the atlas', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    const resource = image_manager.getImage(createImage('large.png', ATLAS_SIZE, 128))
+    const resource = image_manager.insertImage(createImage('large.png', ATLAS_SIZE, 128))
 
     expect(resource.layer).toBe(0)
     expect(resource.uv_rect).toEqual([0, 0, 1, 128 / ATLAS_SIZE])
@@ -284,9 +284,9 @@ test('ImageManager stores full-width images in the atlas', () => {
 test('ImageManager packs images into the lowest skyline gap', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    image_manager.getImage(createImage('tall.png', 800, 300))
-    image_manager.getImage(createImage('short.png', 1200, 100))
-    const resource = image_manager.getImage(createImage('gap.png', 700, 150))
+    image_manager.insertImage(createImage('tall.png', 800, 300))
+    image_manager.insertImage(createImage('short.png', 1200, 100))
+    const resource = image_manager.insertImage(createImage('gap.png', 700, 150))
 
     expect(resource.layer).toBe(0)
     expect(resource.uv_rect).toEqual([
@@ -301,7 +301,7 @@ test('ImageManager throws for images larger than one atlas layer', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
 
-    expect(() => image_manager.getImage(createImage('too-large.png', ATLAS_SIZE + 1, 1))).toThrow(
+    expect(() => image_manager.insertImage(createImage('too-large.png', ATLAS_SIZE + 1, 1))).toThrow(
         /exceeds the 2048x2048 UI atlas layer size/,
     )
 })
@@ -309,8 +309,8 @@ test('ImageManager throws for images larger than one atlas layer', () => {
 test('ImageManager grows the atlas texture when the current layer is full', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    const first = image_manager.getImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
-    const second = image_manager.getImage(createImage('image-1.png', 1, 1))
+    const first = image_manager.insertImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
+    const second = image_manager.insertImage(createImage('image-1.png', 1, 1))
 
     expect(first.layer).toBe(0)
     expect(second.layer).toBe(1)
@@ -321,9 +321,9 @@ test('ImageManager grows the atlas texture when the current layer is full', () =
 test('ImageManager grows the atlas texture when physical layer capacity is full', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    image_manager.getImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
-    image_manager.getImage(createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
-    const third = image_manager.getImage(createImage('image-2.png', 1, 1))
+    image_manager.insertImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
+    image_manager.insertImage(createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
+    const third = image_manager.insertImage(createImage('image-2.png', 1, 1))
 
     expect(third.layer).toBe(2)
     const atlas_textures = getAtlasTextures(device)
@@ -340,9 +340,9 @@ test('ImageManager throws when atlas growth exceeds the device layer limit', () 
     const device = createFakeDevice({ max_texture_array_layers: 2 })
     const image_manager = createRealImageManager(device)
 
-    image_manager.getImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
-    image_manager.getImage(createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
-    expect(() => image_manager.getImage(createImage('image-2.png', 1, 1))).toThrow(
+    image_manager.insertImage(createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
+    image_manager.insertImage(createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
+    expect(() => image_manager.insertImage(createImage('image-2.png', 1, 1))).toThrow(
         /this device supports 2/,
     )
 })

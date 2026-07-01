@@ -35,6 +35,12 @@ test('backgroundColor', () => {
     }
 })
 
+test('backgroundImage', () => {
+    expectKeywordUnit('backgroundImage', ' Unset ', 'unset')
+    expectInvalid('backgroundImage', '/assets/icon.png', /expected unset/)
+    expectInvalid('backgroundImage', true, /style value must be a string/)
+})
+
 test('opacity', () => {
     const valid_cases = [
         ['0', '0', 0],

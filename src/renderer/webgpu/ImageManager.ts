@@ -40,18 +40,14 @@ export class ImageManager {
     }
 
     public getImage(image): ImageResource {
-        const resource = this.resources.get(image.bitmap)
-        if (resource !== undefined) {
-            return resource
-        }
-
-        const next_resource = this.createAtlasResource(image)
-        this.resources.set(image.bitmap, next_resource)
-
-        return next_resource
+        return this.resources.get(image.bitmap)
     }
 
-    private createAtlasResource(image): ImageResource {
+    public insertImage(image): ImageResource {
+        if (this.resources.has(image.bitmap)) {
+            return this.resources.get(image.bitmap)
+        }
+
         if (image.width > this.atlas_size || image.height > this.atlas_size) {
             throw new Error(
                 `Image "${image.src}" is ${image.width}x${image.height}, which exceeds the ${this.atlas_size}x${this.atlas_size} UI atlas layer size.`,
@@ -75,12 +71,16 @@ export class ImageManager {
             this.copyImagePadding(image, this.atlas_texture, allocation.x, allocation.y, allocation.atlas_layer.layer)
         }
 
-        return {
+        const resource = {
             src: image.src,
             layer: allocation.atlas_layer.layer,
             uv_rect: this.createAtlasUvRect(allocation.x, allocation.y, image.width, image.height),
             image_size: [image.width, image.height],
         }
+
+        this.resources.set(image.bitmap, resource)
+
+        return resource
     }
 
     private allocateAtlasRect(width, height) {

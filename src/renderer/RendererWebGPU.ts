@@ -1,4 +1,5 @@
 import Renderer from '../Renderer'
+import { UNIT } from '../style/consts'
 import createEngine, { YOGA_SETTER } from '../engine/yoga'
 import { getNodeDrawingData } from './utils/node'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders'
@@ -32,6 +33,7 @@ export default class RendererWebGPU extends Renderer {
     private nodes_floats
     private nodes_bytes
     private atlas_size
+    private nodes_image = new WeakMap()
 
     constructor({ canvas, atlas_size = ATLAS_SIZE }) {
         super()
@@ -223,7 +225,17 @@ export default class RendererWebGPU extends Renderer {
         }
 
         if (style.name === 'backgroundImage') {
-            console.log('backgroundImage', style.value, style.parsed)
+            // console.log('backgroundImage', style.value, style.parsed)
+            if (style.parsed.unit === UNIT.UNSET) {
+                // if (this.nodes_image.has(node)) {
+                //     const { image } = this.nodes_image.get(node)
+                //     this.image_manager.releaseImage(image)
+                //     this.nodes_image.delete(node)
+                // }
+            } else {
+                this.image_manager.insertImage(style.parsed)
+                // this.nodes_image.set(node, { image: style.parsed })
+            }
         }
     }
 
@@ -260,6 +272,10 @@ export default class RendererWebGPU extends Renderer {
             const background_image = node.styles.backgroundImage?.parsed
             if (background_image !== undefined) {
                 const image_resource = this.image_manager.getImage(background_image)
+                if (image_resource === undefined) {
+                    console.warn(`Image "${background_image.src}" is not in the atlas yet.`)
+                    continue
+                }
                 render_items.push({
                     node,
                     order: node.order,
