@@ -1,5 +1,6 @@
 import Renderer from '../Renderer'
 import createEngine, { YOGA_SETTER } from '../engine/yoga'
+import { UNIT } from '../style/consts'
 import { getAncestorClipping } from './utils/node'
 
 export default class RendererDivs extends Renderer {
@@ -60,6 +61,11 @@ export default class RendererDivs extends Renderer {
             YOGA_SETTER[style.name](node.element, style)
         }
         if (style.name === 'backgroundImage') {
+            if (style.parsed.unit === UNIT.UNSET) {
+                div.style.backgroundImage = 'none'
+                return
+            }
+
             div.style.backgroundImage = `url(${style.value})`
             div.style.backgroundSize = 'cover'
             div.style.backgroundPosition = 'center'

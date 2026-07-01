@@ -3,6 +3,7 @@ import borderRadiusCorners from './examples/borderRadiusCorners'
 import borderRadiusOverlap from './examples/borderRadiusOverlap'
 import backgroundImage from './examples/backgroundImage'
 import backgroundImageBleeding from './examples/backgroundImageBleeding'
+import backgroundImageUnset from './examples/backgroundImageUnset'
 import positionRelative from './examples/positionRelative'
 import deepNestedPaint from './examples/deepNestedPaint'
 import nestedFlexDirections from './examples/nestedFlexDirections'
@@ -26,6 +27,7 @@ import zindexEdgeCases from './examples/zindexEdgeCases'
 export const LAYOUTS = {
     backgroundImage,
     backgroundImageBleeding,
+    backgroundImageUnset,
     borderRadius,
     borderRadiusCorners,
     borderRadiusOverlap,

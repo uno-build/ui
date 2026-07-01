@@ -270,10 +270,9 @@ export default class RendererWebGPU extends Renderer {
             }
 
             const background_image = node.styles.backgroundImage?.parsed
-            if (background_image !== undefined) {
+            if (background_image !== undefined && background_image.unit !== UNIT.UNSET) {
                 const image_resource = this.image_manager.getImage(background_image)
                 if (image_resource === undefined) {
-                    console.warn(`Image "${background_image.src}" is not in the atlas yet.`)
                     continue
                 }
                 render_items.push({
@@ -375,16 +374,16 @@ export default class RendererWebGPU extends Renderer {
             pass_encoder.setVertexBuffer(0, this.position_buffer)
             pass_encoder.setVertexBuffer(1, this.nodes_buffer)
 
-            // let draws = 0
-            // let instances = 0
+            let draws = 0
+            let instances = 0
             for (const batch of batches) {
                 pass_encoder.setPipeline(batch.pipeline)
                 pass_encoder.setBindGroup(0, batch.bind_group)
                 pass_encoder.draw(POSITION_VERTEX_COUNT, batch.instance_count, 0, batch.first_instance)
-                // draws++
-                // instances += batch.instance_count
+                draws++
+                instances += batch.instance_count
             }
-            // console.log(`Draws: ${draws}, Instances: ${instances}`, this.image_manager.atlas_layer_count)
+            console.log(`Draws: ${draws}, Instances: ${instances}`, this.image_manager.atlas_layer_count)
         }
 
         pass_encoder.end()

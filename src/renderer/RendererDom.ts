@@ -1,5 +1,6 @@
 import Renderer from '../Renderer'
 import { calculateLayoutRect, getParentLayout } from '../engine/utils'
+import { UNIT } from '../style/consts'
 
 export default class RendererDom extends Renderer {
     private canvas
@@ -33,6 +34,11 @@ export default class RendererDom extends Renderer {
 
     protected updateStyle(node, style) {
         if (style.name === 'backgroundImage') {
+            if (style.parsed.unit === UNIT.UNSET) {
+                node.element.style.backgroundImage = 'none'
+                return
+            }
+
             node.element.style.backgroundImage = `url(${style.value})`
             node.element.style.backgroundSize = 'cover'
             node.element.style.backgroundPosition = 'center'

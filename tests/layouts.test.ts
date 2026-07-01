@@ -12,6 +12,7 @@ import {
 const layoutRunnerUrl = `/@fs${path.resolve('tests/layouts/layout-runner.ts')}`
 const layoutHarnessUrl = `/@fs${path.resolve('tests/layouts/layout-harness.html')}`
 const uiUrl = `/@fs${path.resolve('src/UI.ts')}`
+const loadImageUrl = `/@fs${path.resolve('src/utils/loadImage.ts')}`
 const rendererDivsUrl = `/@fs${path.resolve('src/renderer/RendererDivs.ts')}`
 const LAYOUT_VIEWPORTS = [
     // { width: 360, height: 640 },
@@ -200,6 +201,108 @@ test('Layout: zIndex updates repaint order', async ({ page }) => {
     for (const result of results) {
         expect(result.initialTop, `${result.rendererName} initial zIndex paint order`).toBe(result.expectedInitialTop)
         expect(result.updatedTop, `${result.rendererName} updated zIndex paint order`).toBe(result.expectedUpdatedTop)
+    }
+})
+
+test('Layout: backgroundImage updates and clears with unset', async ({ page }) => {
+    await page.goto(layoutHarnessUrl)
+
+    const results = await page.evaluate(
+        async ({ layoutRunnerUrl, loadImageUrl, renderers, uiUrl }) => {
+            const [{ SETUPS }, { default: UI }, { loadImage }] = await Promise.all([
+                import(layoutRunnerUrl),
+                import(uiUrl),
+                import(loadImageUrl),
+            ])
+            const root = document.getElementById('root')
+
+            if (root == null) {
+                throw new Error("Missing '#root' element")
+            }
+
+            function createCanvasElement(root, rendererName, setup) {
+                const canvas = document.createElement(setup.elementType)
+
+                root.appendChild(canvas)
+                canvas.id = rendererName
+                Object.assign(canvas.style, {
+                    display: 'flex',
+                    position: 'absolute',
+                    left: '0',
+                    top: '0',
+                    width: '220px',
+                    height: '220px',
+                    zIndex: '0',
+                    opacity: '1',
+                })
+
+                canvas.width = canvas.clientWidth
+                canvas.height = canvas.clientHeight
+
+                Object.entries(setup.attributes).forEach(([key, value]) => {
+                    canvas.setAttribute(key, value)
+                })
+
+                return canvas
+            }
+
+            function readBackgroundImage(canvas, node_id) {
+                const element = canvas.querySelector(`#node-${node_id}`)
+
+                if (element == null) {
+                    throw new Error(`Missing node '${node_id}'`)
+                }
+
+                return getComputedStyle(element).backgroundImage
+            }
+
+            const asset_logo = await loadImage('/assets/logo.jpg')
+            const asset_coin = await loadImage('/assets/coin.png')
+            const results = []
+
+            for (const rendererName of renderers) {
+                const setup = SETUPS[rendererName]
+                const canvas = createCanvasElement(root, rendererName, setup)
+                const Renderer = setup.renderer
+                const renderer = new Renderer({ canvas })
+                const ui = new UI({ renderer })
+
+                await ui.init()
+                ui.root.style('width', '220px')
+                ui.root.style('height', '220px')
+
+                const node = ui.create()
+                node.style('width', '120px')
+                node.style('height', '120px')
+                node.style('backgroundColor', '#f00')
+                ui.root.add(node)
+
+                node.style('backgroundImage', asset_logo.src, asset_logo)
+                ui.update()
+                const first = readBackgroundImage(canvas, node.id)
+
+                node.style('backgroundImage', asset_coin.src, asset_coin)
+                ui.update()
+                const second = readBackgroundImage(canvas, node.id)
+
+                node.style('backgroundImage', 'unset')
+                ui.update()
+                const unset = readBackgroundImage(canvas, node.id)
+
+                root.removeChild(canvas)
+
+                results.push({ rendererName, first, second, unset })
+            }
+
+            return results
+        },
+        { layoutRunnerUrl, loadImageUrl, renderers: defaultRendererNames, uiUrl },
+    )
+
+    for (const result of results) {
+        expect(result.first, `${result.rendererName} first backgroundImage`).toContain('logo.jpg')
+        expect(result.second, `${result.rendererName} second backgroundImage`).toContain('coin.png')
+        expect(result.unset, `${result.rendererName} unset backgroundImage`).toBe('none')
     }
 })
 

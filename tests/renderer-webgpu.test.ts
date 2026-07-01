@@ -143,6 +143,23 @@ test('RendererWebGPU writes background image data into panel instance data', () 
     expect(Array.from(floats.slice(image_size_float_offset, image_size_float_offset + 2))).toEqual([40, 20])
 })
 
+test('RendererWebGPU treats unset background images as solid panels', () => {
+    const renderer = createRenderer()
+    const node = createNode({
+        styles: {
+            backgroundImage: {
+                parsed: { unit: UNIT.UNSET },
+            },
+        },
+    })
+    const nodes_buffer_data = createNodesBufferData(renderer, [node])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
+    const mode_data_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_MODE_DATA.OFFSET / FLOAT32_SIZE
+
+    expect(nodes_buffer_data.bytes_offset).toBe(ATTRIBUTES_SIZE)
+    expect(Array.from(floats.slice(mode_data_float_offset, mode_data_float_offset + 2))).toEqual([0, 0])
+})
+
 test('RendererWebGPU batches consecutive solid panels together', () => {
     const bind_group = createBindGroup('atlas')
     const renderer = createRenderer(createImageManager({ bind_group }))
