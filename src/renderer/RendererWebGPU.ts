@@ -222,11 +222,11 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public imageUpload(src: string, image: any): void {
-        this.image_manager.uploadImage(src, image)
+        this.image_manager.imageUpload(src, image)
     }
 
     public imageDispose(src: string): void {
-        this.image_manager.disposeImage(src)
+        this.image_manager.imageDispose(src)
     }
 
     public imageList(): any[] {

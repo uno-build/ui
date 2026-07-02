@@ -256,9 +256,9 @@ test('ImageManager creates separate resources for separate srcs with the same bi
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
     const first_image = createImage('first.png', 32, 32)
-    const first = image_manager.uploadImage('first', first_image)
+    const first = image_manager.imageUpload('first', first_image)
     const copy_count = device.copies.length
-    const second = image_manager.uploadImage('second', {
+    const second = image_manager.imageUpload('second', {
         ...createImage('second.png', 32, 32),
         bitmap: first_image.bitmap,
     })
@@ -271,12 +271,12 @@ test('ImageManager releases atlas space without clearing texture data', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
     const first_image = createImage('first.png', 32, 32)
-    const first = image_manager.uploadImage('first', first_image)
+    const first = image_manager.imageUpload('first', first_image)
     const copy_count = device.copies.length
     const write_count = device.writes.length
 
-    image_manager.disposeImage('first')
-    const second = image_manager.uploadImage('second', createImage('second.png', 32, 32))
+    image_manager.imageDispose('first')
+    const second = image_manager.imageUpload('second', createImage('second.png', 32, 32))
 
     expect(image_manager.getImage('first')).toBeUndefined()
     expect(second.layer).toBe(first.layer)
@@ -287,12 +287,37 @@ test('ImageManager releases atlas space without clearing texture data', () => {
     expect(device.copies[copy_count].destination.origin).toEqual([0, 0, 0])
 })
 
+test('ImageManager reuses disposed atlas space before growing the atlas', () => {
+    const ATLAS_TEST_SIZE = 64
+    const device = createFakeDevice()
+    const image_manager = createRealImageManager(device, ATLAS_TEST_SIZE)
+
+    image_manager.imageUpload('image-0', createImage('image-0.png', 30, 30))
+    image_manager.imageUpload('image-1', createImage('image-1.png', 30, 30))
+    const disposed = image_manager.imageUpload('image-2', createImage('image-2.png', 30, 30))
+    image_manager.imageUpload('image-3', createImage('image-3.png', 30, 30))
+
+    const atlas_texture_count = getAtlasTextures(device).length
+    const bind_group_count = device.bind_groups.length
+    const texture_copy_count = device.texture_copies.length
+
+    image_manager.imageDispose('image-2')
+    const replacement = image_manager.imageUpload('replacement', createImage('replacement.png', 30, 30))
+
+    expect(replacement.layer).toBe(disposed.layer)
+    expect(replacement.uv_rect[0]).toBe(disposed.uv_rect[0])
+    expect(replacement.uv_rect[1]).toBe(disposed.uv_rect[1])
+    expect(getAtlasTextures(device)).toHaveLength(atlas_texture_count)
+    expect(device.bind_groups).toHaveLength(bind_group_count)
+    expect(device.texture_copies).toHaveLength(texture_copy_count)
+})
+
 test('ImageManager replaces resources uploaded with the same src', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    const first = image_manager.uploadImage('avatar', createImage('avatar-small.png', 32, 32))
+    const first = image_manager.imageUpload('avatar', createImage('avatar-small.png', 32, 32))
     const copy_count = device.copies.length
-    const second = image_manager.uploadImage('avatar', createImage('avatar-large.png', 64, 16))
+    const second = image_manager.imageUpload('avatar', createImage('avatar-large.png', 64, 16))
 
     expect(second).not.toBe(first)
     expect(image_manager.getImage('avatar')).toBe(second)
@@ -306,22 +331,22 @@ test('ImageManager lists uploaded images', () => {
     const first_image = createImage('first.png', 32, 32)
     const second_image = createImage('second.png', 64, 16)
 
-    image_manager.uploadImage('first', first_image)
-    image_manager.uploadImage('second', second_image)
+    image_manager.imageUpload('first', first_image)
+    image_manager.imageUpload('second', second_image)
 
     expect(image_manager.imageList()).toEqual([
         { src: 'first', image: first_image, nodes: expect.any(Set) },
         { src: 'second', image: second_image, nodes: expect.any(Set) },
     ])
 
-    image_manager.disposeImage('first')
+    image_manager.imageDispose('first')
     expect(image_manager.imageList()).toEqual([{ src: 'second', image: second_image, nodes: expect.any(Set) }])
 })
 
 test('ImageManager packs small images into atlas layers', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    const resource = image_manager.uploadImage('small', createImage('small.png', 32, 16))
+    const resource = image_manager.imageUpload('small', createImage('small.png', 32, 16))
 
     expect(resource.layer).toBe(0)
     expect(resource.image_size).toEqual([32, 16])
@@ -341,7 +366,7 @@ test('ImageManager packs small images into atlas layers', () => {
 test('ImageManager stores full-width images in the atlas', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    const resource = image_manager.uploadImage('large', createImage('large.png', ATLAS_SIZE, 128))
+    const resource = image_manager.imageUpload('large', createImage('large.png', ATLAS_SIZE, 128))
 
     expect(resource.layer).toBe(0)
     expect(resource.uv_rect).toEqual([0, 0, 1, 128 / ATLAS_SIZE])
@@ -352,9 +377,9 @@ test('ImageManager stores full-width images in the atlas', () => {
 test('ImageManager packs images into the lowest skyline gap', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    image_manager.uploadImage('tall', createImage('tall.png', 800, 300))
-    image_manager.uploadImage('short', createImage('short.png', 1200, 100))
-    const resource = image_manager.uploadImage('gap', createImage('gap.png', 700, 150))
+    image_manager.imageUpload('tall', createImage('tall.png', 800, 300))
+    image_manager.imageUpload('short', createImage('short.png', 1200, 100))
+    const resource = image_manager.imageUpload('gap', createImage('gap.png', 700, 150))
 
     expect(resource.layer).toBe(0)
     expect(resource.uv_rect).toEqual([
@@ -369,7 +394,7 @@ test('ImageManager throws for images larger than one atlas layer', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
 
-    expect(() => image_manager.uploadImage('too-large', createImage('too-large.png', ATLAS_SIZE + 1, 1))).toThrow(
+    expect(() => image_manager.imageUpload('too-large', createImage('too-large.png', ATLAS_SIZE + 1, 1))).toThrow(
         /exceeds the 2048x2048 UI atlas layer size/,
     )
 })
@@ -377,8 +402,8 @@ test('ImageManager throws for images larger than one atlas layer', () => {
 test('ImageManager grows the atlas texture when the current layer is full', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    const first = image_manager.uploadImage('image-0', createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
-    const second = image_manager.uploadImage('image-1', createImage('image-1.png', 1, 1))
+    const first = image_manager.imageUpload('image-0', createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
+    const second = image_manager.imageUpload('image-1', createImage('image-1.png', 1, 1))
 
     expect(first.layer).toBe(0)
     expect(second.layer).toBe(1)
@@ -389,9 +414,9 @@ test('ImageManager grows the atlas texture when the current layer is full', () =
 test('ImageManager grows the atlas texture when physical layer capacity is full', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    image_manager.uploadImage('image-0', createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
-    image_manager.uploadImage('image-1', createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
-    const third = image_manager.uploadImage('image-2', createImage('image-2.png', 1, 1))
+    image_manager.imageUpload('image-0', createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
+    image_manager.imageUpload('image-1', createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
+    const third = image_manager.imageUpload('image-2', createImage('image-2.png', 1, 1))
 
     expect(third.layer).toBe(2)
     const atlas_textures = getAtlasTextures(device)
@@ -408,9 +433,9 @@ test('ImageManager throws when atlas growth exceeds the device layer limit', () 
     const device = createFakeDevice({ max_texture_array_layers: 2 })
     const image_manager = createRealImageManager(device)
 
-    image_manager.uploadImage('image-0', createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
-    image_manager.uploadImage('image-1', createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
-    expect(() => image_manager.uploadImage('image-2', createImage('image-2.png', 1, 1))).toThrow(
+    image_manager.imageUpload('image-0', createImage('image-0.png', ATLAS_SIZE, ATLAS_SIZE))
+    image_manager.imageUpload('image-1', createImage('image-1.png', ATLAS_SIZE, ATLAS_SIZE))
+    expect(() => image_manager.imageUpload('image-2', createImage('image-2.png', 1, 1))).toThrow(
         /this device supports 2/,
     )
 })
@@ -438,12 +463,13 @@ function createImageManager({ bind_group = createBindGroup('atlas'), resources =
     }
 }
 
-function createRealImageManager(device) {
+function createRealImageManager(device, atlas_size = ATLAS_SIZE) {
     return new ImageManager({
         device,
         bind_group_layout: { id: 'layout' },
         viewport_buffer: { id: 'viewport' },
         sampler: { id: 'sampler' },
+        atlas_size,
     })
 }
 

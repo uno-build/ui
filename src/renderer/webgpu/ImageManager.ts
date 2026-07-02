@@ -70,14 +70,14 @@ export class ImageManager {
         }))
     }
 
-    public uploadImage(src: string, image: any): ManagedAtlasImage {
+    public imageUpload(src: string, image: any): ManagedAtlasImage {
         if (image.width > this.atlas_size || image.height > this.atlas_size) {
             throw new Error(
                 `Image "${image.src}" is ${image.width}x${image.height}, which exceeds the ${this.atlas_size}x${this.atlas_size} UI atlas layer size.`,
             )
         }
 
-        this.disposeImage(src)
+        this.imageDispose(src)
 
         const allocation = this.allocateAtlasRect(image.width, image.height)
 
@@ -115,7 +115,7 @@ export class ImageManager {
         return new_atlas_image
     }
 
-    public disposeImage(src: string): void {
+    public imageDispose(src: string): void {
         const atlas_image = this.images.get(src)
 
         if (atlas_image === undefined) {
