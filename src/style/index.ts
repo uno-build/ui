@@ -1,5 +1,5 @@
-import { normalizeStyleName, normalizeStyleKey, normalizeStyleValue } from './normalizers'
-import { runValidators, runParsePipeline } from './utils'
+import { normalizeStyleName, normalizeStyleKey } from './normalizers'
+import { runPipeline, runValidators } from './utils'
 import { expandProperty } from './expand'
 import {
     ALIGN_CONTENT_DEFINITION,
@@ -33,7 +33,7 @@ import {
 //     window.resolveStyle = resolveStyle
 // }
 
-export function resolveStyle(name: string, value: any, parsed?: any) {
+export function resolveStyle(name: string, value: any) {
     if (typeof name !== 'string') {
         throw new Error(`style name must be a string, got '${typeof name}'`)
     }
@@ -50,20 +50,9 @@ export function resolveStyle(name: string, value: any, parsed?: any) {
     if (typeof_value !== 'string') {
         throw new Error(`style value must be a string, got '${typeof_value}'`)
     }
-    const normalized_value = normalizeStyleValue(value, normalized_name)
-
-    if (parsed !== undefined) {
-        return [
-            {
-                name: normalized_name,
-                value: normalized_value,
-                parsed,
-            },
-        ]
-    }
 
     try {
-        return StyleParser.resolve(normalized_value)
+        return StyleParser.resolve(value)
     } catch (err) {
         const message = err instanceof Error ? err.message : err
         const suffix = message ? `: ${message}` : ''
@@ -83,19 +72,17 @@ function createStyle(name, shorthandCallback) {
                 let resolved = false
 
                 for (const definition_item of definition) {
+                    const normalized_value = runPipeline(definition_item.normalize, value)
+
                     try {
-                        runValidators(definition_item.validate, value)
+                        runValidators(definition_item.validate, normalized_value)
                     } catch (err) {
                         first_error ??= err
                         continue
                     }
 
-                    const result = runParsePipeline(definition_item.parse, value)
-                    styles.push({
-                        name,
-                        ...result,
-                        value: String(result.value),
-                    })
+                    const parsed_value = runPipeline(definition_item.parse, normalized_value)
+                    styles.push({ name, ...parsed_value })
                     resolved = true
                 }
 

@@ -62,14 +62,14 @@ function readUnitMatch(value: string, pattern: RegExp) {
     return Number.isFinite(number) ? number : undefined
 }
 
+export function runPipeline(fns: [] = [], value: any) {
+    return fns.reduce((current, fn) => fn(current), value)
+}
+
 export function runValidators(fns: [] = [], value: any) {
     for (const fn of fns) {
         fn(value)
     }
-}
-
-export function runParsePipeline(fns: ParseFn[], value: any) {
-    return fns.reduce((current, fn) => fn(current), value)
 }
 
 export function createEnumValidator(values: Record<string, any>) {

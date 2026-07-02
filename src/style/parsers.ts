@@ -1,6 +1,13 @@
 import { UNIT } from './consts'
 import { readInteger, readNumber, readPercent, readPx } from './utils'
 
+export function parseString(value: string) {
+    return {
+        value,
+        parsed: {},
+    }
+}
+
 export function parseAuto(value: string) {
     return {
         value,

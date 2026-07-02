@@ -12,6 +12,7 @@ import {
     POSITION,
     WRAP,
 } from './consts'
+import { normalizeTrim, normalizeToLowercase } from './normalizers'
 import {
     validateColor,
     validateAuto,
@@ -23,11 +24,21 @@ import {
     validateNonNegative,
     validateMaxOne,
 } from './validators'
-import { parseColor, parseAuto, parseUnset, parseInteger, parseNumber, parsePx, parsePercent } from './parsers'
+import {
+    parseString,
+    parseColor,
+    parseAuto,
+    parseUnset,
+    parseInteger,
+    parseNumber,
+    parsePx,
+    parsePercent,
+} from './parsers'
 import { createEnumValidator, createEnumParser } from './utils'
 
 export const INTEGER_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateInteger],
         parse: [parseInteger],
     },
@@ -35,6 +46,7 @@ export const INTEGER_DEFINITION = [
 
 export const COLOR_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateColor],
         parse: [parseColor],
     },
@@ -42,6 +54,7 @@ export const COLOR_DEFINITION = [
 
 export const OPACITY_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNumber, validateNonNegative, validateMaxOne],
         parse: [parseNumber],
     },
@@ -49,10 +62,12 @@ export const OPACITY_DEFINITION = [
 
 export const PX_PERCENT_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNonNegative, validatePx],
         parse: [parsePx],
     },
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNonNegative, validatePercent],
         parse: [parsePercent],
     },
@@ -60,18 +75,22 @@ export const PX_PERCENT_DEFINITION = [
 
 export const OFFSET_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validatePx],
         parse: [parsePx],
     },
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validatePercent],
         parse: [parsePercent],
     },
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateAuto],
         parse: [parseAuto],
     },
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateUnset],
         parse: [parseUnset],
     },
@@ -79,6 +98,7 @@ export const OFFSET_DEFINITION = [
 
 export const OVERFLOW_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(OVERFLOW)],
         parse: [createEnumParser(OVERFLOW)],
     },
@@ -86,6 +106,7 @@ export const OVERFLOW_DEFINITION = [
 
 export const POSITION_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(POSITION)],
         parse: [createEnumParser(POSITION)],
     },
@@ -93,6 +114,7 @@ export const POSITION_DEFINITION = [
 
 export const ALIGN_CONTENT_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(ALIGN_CONTENT)],
         parse: [createEnumParser(ALIGN_CONTENT)],
     },
@@ -100,6 +122,7 @@ export const ALIGN_CONTENT_DEFINITION = [
 
 export const ALIGN_ITEMS_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(ALIGN_ITEMS)],
         parse: [createEnumParser(ALIGN_ITEMS)],
     },
@@ -107,6 +130,7 @@ export const ALIGN_ITEMS_DEFINITION = [
 
 export const ALIGN_SELF_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(ALIGN_SELF)],
         parse: [createEnumParser(ALIGN_SELF)],
     },
@@ -114,6 +138,7 @@ export const ALIGN_SELF_DEFINITION = [
 
 export const FLEX_DIRECTION_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(FLEX_DIRECTION)],
         parse: [createEnumParser(FLEX_DIRECTION)],
     },
@@ -121,6 +146,7 @@ export const FLEX_DIRECTION_DEFINITION = [
 
 export const FLEX_WRAP_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(WRAP)],
         parse: [createEnumParser(WRAP)],
     },
@@ -128,6 +154,7 @@ export const FLEX_WRAP_DEFINITION = [
 
 export const JUSTIFY_CONTENT_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(JUSTIFY)],
         parse: [createEnumParser(JUSTIFY)],
     },
@@ -135,14 +162,17 @@ export const JUSTIFY_CONTENT_DEFINITION = [
 
 export const MARGIN_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validatePx],
         parse: [parsePx],
     },
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validatePercent],
         parse: [parsePercent],
     },
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateAuto],
         parse: [parseAuto],
     },
@@ -150,10 +180,12 @@ export const MARGIN_DEFINITION = [
 
 export const NUMBER_UNSET_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNumber, validateNonNegative],
         parse: [parseNumber],
     },
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateUnset],
         parse: [parseUnset],
     },
@@ -162,10 +194,12 @@ export const NUMBER_UNSET_DEFINITION = [
 export const FLEX_BASIS_DEFINITION = [
     ...PX_PERCENT_DEFINITION,
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateAuto],
         parse: [parseAuto],
     },
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateUnset],
         parse: [parseUnset],
     },
@@ -174,6 +208,7 @@ export const FLEX_BASIS_DEFINITION = [
 export const SIZE_DEFINITION = [
     ...PX_PERCENT_DEFINITION,
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateAuto],
         parse: [parseAuto],
     },
@@ -182,6 +217,7 @@ export const SIZE_DEFINITION = [
 export const MIN_MAX_SIZE_DEFINITION = [
     ...PX_PERCENT_DEFINITION,
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateUnset],
         parse: [parseUnset],
     },
@@ -189,6 +225,7 @@ export const MIN_MAX_SIZE_DEFINITION = [
 
 export const BORDER_WIDTH_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNonNegative, validatePx],
         parse: [parsePx],
     },
@@ -196,6 +233,7 @@ export const BORDER_WIDTH_DEFINITION = [
 
 export const BORDER_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(BORDER_STYLE)],
         parse: [createEnumParser(BORDER_STYLE)],
     },
@@ -203,6 +241,7 @@ export const BORDER_DEFINITION = [
 
 export const BOX_SIZING_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(BOX_SIZING)],
         parse: [createEnumParser(BOX_SIZING)],
     },
@@ -210,6 +249,7 @@ export const BOX_SIZING_DEFINITION = [
 
 export const DISPLAY_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(DISPLAY)],
         parse: [createEnumParser(DISPLAY)],
     },
@@ -217,6 +257,7 @@ export const DISPLAY_DEFINITION = [
 
 export const DIRECTION_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(DIRECTION)],
         parse: [createEnumParser(DIRECTION)],
     },
@@ -224,7 +265,13 @@ export const DIRECTION_DEFINITION = [
 
 export const BACKGROUNDIMAGE_DEFINITION = [
     {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateUnset],
         parse: [parseUnset],
+    },
+    {
+        normalize: [normalizeTrim],
+        validate: [],
+        parse: [parseString],
     },
 ]
