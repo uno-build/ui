@@ -67,9 +67,15 @@ export default class RendererDivs extends Renderer {
             }
 
             div.style.backgroundImage = toCssBackgroundImage(style.value)
-            div.style.backgroundSize = 'cover'
-            div.style.backgroundPosition = 'center'
             div.style.backgroundRepeat = 'no-repeat'
+            return
+        }
+        if (style.name === 'backgroundSizeWidth' || style.name === 'backgroundSizeHeight') {
+            div.style.backgroundSize = toCssBackgroundSize(node)
+            return
+        }
+        if (style.name === 'backgroundPositionX' || style.name === 'backgroundPositionY') {
+            div.style.backgroundPosition = toCssBackgroundPosition(node)
             return
         }
         if (!is_yoga_style || MANDATORY_STYLES.includes(style.name)) {
@@ -120,4 +126,22 @@ function createDivFactory() {
 
 function toCssBackgroundImage(value) {
     return value === UNIT.UNSET ? 'unset' : `url(${JSON.stringify(value)})`
+}
+
+function toCssBackgroundSize(node) {
+    const width = node.styles.backgroundSizeWidth?.value
+    const height = node.styles.backgroundSizeHeight?.value
+
+    if (height === undefined) {
+        return width ?? ''
+    }
+
+    return `${width ?? 'auto'} ${height}`
+}
+
+function toCssBackgroundPosition(node) {
+    const x = node.styles.backgroundPositionX?.value ?? '0px'
+    const y = node.styles.backgroundPositionY?.value ?? '0px'
+
+    return `${x} ${y}`
 }

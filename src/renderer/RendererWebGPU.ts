@@ -165,9 +165,9 @@ export default class RendererWebGPU extends Renderer {
                                 format: ATTRIBUTES.BACKGROUND_UV_RECT.FORMAT,
                             },
                             {
-                                shaderLocation: ATTRIBUTES.BACKGROUND_IMAGE_SIZE.LOCATION,
-                                offset: ATTRIBUTES.BACKGROUND_IMAGE_SIZE.OFFSET,
-                                format: ATTRIBUTES.BACKGROUND_IMAGE_SIZE.FORMAT,
+                                shaderLocation: ATTRIBUTES.BACKGROUND_IMAGE_RECT.LOCATION,
+                                offset: ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET,
+                                format: ATTRIBUTES.BACKGROUND_IMAGE_RECT.FORMAT,
                             },
                         ],
                     },
@@ -285,7 +285,7 @@ export default class RendererWebGPU extends Renderer {
                 ...drawing_data,
                 background_image_mode: 0,
                 background_uv_rect: [0, 0, 1, 1],
-                background_image_size: [1, 1],
+                background_image_rect: [0, 0, 0, 0],
                 background_atlas_layer: 0,
             }
 
@@ -294,7 +294,7 @@ export default class RendererWebGPU extends Renderer {
             if (atlas_image !== undefined) {
                 instance_data.background_image_mode = 1
                 instance_data.background_uv_rect = atlas_image.uv_rect
-                instance_data.background_image_size = atlas_image.image_size
+                instance_data.background_image_rect = getBackgroundImageRect(node, atlas_image.image_size)
                 instance_data.background_atlas_layer = atlas_image.layer
             }
 
@@ -426,7 +426,7 @@ export default class RendererWebGPU extends Renderer {
             background_color,
             background_image_mode,
             background_uv_rect,
-            background_image_size,
+            background_image_rect,
             background_atlas_layer,
         } = instance_data
 
@@ -462,8 +462,20 @@ export default class RendererWebGPU extends Renderer {
         const background_uv_rect_float_offset = (bytes_offset + ATTRIBUTES.BACKGROUND_UV_RECT.OFFSET) / FLOAT32_SIZE
         this.nodes_floats.set(background_uv_rect, background_uv_rect_float_offset)
 
-        const background_image_size_float_offset =
-            (bytes_offset + ATTRIBUTES.BACKGROUND_IMAGE_SIZE.OFFSET) / FLOAT32_SIZE
-        this.nodes_floats.set(background_image_size, background_image_size_float_offset)
+        const background_image_rect_float_offset =
+            (bytes_offset + ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET) / FLOAT32_SIZE
+        this.nodes_floats.set(background_image_rect, background_image_rect_float_offset)
     }
+}
+
+function getBackgroundImageRect(node, image_size) {
+    const [image_width, image_height] = image_size
+    const size_width = node.styles.backgroundSizeWidth?.parsed.value
+    const size_height = node.styles.backgroundSizeHeight?.parsed.value
+    const width = size_width ?? (size_height === undefined ? image_width : image_width * (size_height / image_height))
+    const height = size_height ?? image_height * (width / image_width)
+    const x = node.styles.backgroundPositionX?.parsed.value ?? 0
+    const y = node.styles.backgroundPositionY?.parsed.value ?? 0
+
+    return [x, y, width, height]
 }

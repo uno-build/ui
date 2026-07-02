@@ -85,11 +85,11 @@ export const ATTRIBUTES = {
         SIZE: 4 * FLOAT32_SIZE,
         FORMAT: 'float32x4',
     },
-    BACKGROUND_IMAGE_SIZE: {
+    BACKGROUND_IMAGE_RECT: {
         LOCATION: 14,
         OFFSET: 26 * FLOAT32_SIZE + 6 * RGBA8_SIZE,
-        SIZE: 2 * FLOAT32_SIZE,
-        FORMAT: 'float32x2',
+        SIZE: 4 * FLOAT32_SIZE,
+        FORMAT: 'float32x4',
     },
 }
 export const ATTRIBUTES_SIZE = Math.max(...Object.values(ATTRIBUTES).map((attrb) => attrb.OFFSET + attrb.SIZE))

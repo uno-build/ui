@@ -20,7 +20,7 @@ struct VertexOutput {
     @location(11) background_color: vec4f,
     @location(12) background_image_mode_data: vec2f,
     @location(13) background_uv_rect: vec4f,
-    @location(14) background_image_size: vec2f,
+    @location(14) background_image_rect: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
@@ -41,7 +41,7 @@ fn main(
     @location(11) background_color: vec4f,
     @location(12) background_image_mode_data: vec2f,
     @location(13) background_uv_rect: vec4f,
-    @location(14) background_image_size: vec2f,
+    @location(14) background_image_rect: vec4f,
 ) -> VertexOutput {
     let local_position = position * layout_node.zw;
     let pixel = layout_node.xy + local_position;
@@ -66,7 +66,7 @@ fn main(
     output.background_color = background_color;
     output.background_image_mode_data = background_image_mode_data;
     output.background_uv_rect = background_uv_rect;
-    output.background_image_size = background_image_size;
+    output.background_image_rect = background_image_rect;
     return output;
 }
 `
@@ -87,7 +87,7 @@ struct FragmentInput {
     @location(11) background_color: vec4f,
     @location(12) background_image_mode_data: vec2f,
     @location(13) background_uv_rect: vec4f,
-    @location(14) background_image_size: vec2f,
+    @location(14) background_image_rect: vec4f,
 }
 
 @group(0) @binding(1) var background_image_sampler: sampler;
@@ -169,15 +169,20 @@ fn borderColorForPosition(input: FragmentInput) -> vec4f {
     return select(vertical_color, horizontal_color, horizontal_distance < vertical_distance);
 }
 
-fn backgroundImageColor(input: FragmentInput, local_position: vec2f, rect_size: vec2f) -> vec4f {
-    let scale = max(
-        rect_size.x / input.background_image_size.x,
-        rect_size.y / input.background_image_size.y,
-    );
-    let image_size = input.background_image_size;
-    let scaled_size = image_size * scale;
-    let offset = (scaled_size - rect_size) * 0.5;
-    let image_uv = (local_position + offset) / scaled_size;
+fn backgroundImageColor(input: FragmentInput, local_position: vec2f) -> vec4f {
+    let image_position = input.background_image_rect.xy;
+    let image_size = input.background_image_rect.zw;
+    let image_position_local = local_position - image_position;
+
+    if (
+        any(image_size <= vec2f(0.0)) ||
+        any(image_position_local < vec2f(0.0)) ||
+        any(image_position_local > image_size)
+    ) {
+        return vec4f(0.0);
+    }
+
+    let image_uv = image_position_local / image_size;
     let texture_uv = input.background_uv_rect.xy + image_uv * input.background_uv_rect.zw;
 
     return textureSampleLevel(
@@ -247,7 +252,7 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
     var color = input.background_color;
     if (input.background_image_mode_data.x > 0.5 && all(inner_size > vec2f(0.0))) {
         color = compositeOver(
-            backgroundImageColor(input, inner_position, inner_size),
+            backgroundImageColor(input, inner_position),
             input.background_color,
         );
     }

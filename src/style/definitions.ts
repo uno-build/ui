@@ -276,3 +276,19 @@ export const BACKGROUNDIMAGE_DEFINITION = [
         parse: [parseString],
     },
 ]
+
+export const BACKGROUND_SIZE_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validatePx],
+        parse: [parsePx],
+    },
+]
+
+export const BACKGROUND_POSITION_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validatePx],
+        parse: [parsePx],
+    },
+]

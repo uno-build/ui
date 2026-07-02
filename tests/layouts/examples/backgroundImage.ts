@@ -39,10 +39,10 @@ export default async function createBackgroundImageLayout({ ui }) {
             const node = ui.create()
             node.style('width', width)
             node.style('height', height)
-            node.style('backgroundColor', BACKGROUND_COLORS[column_index])
-            node.style('backgroundImage', background_image.src)
             node.style('border', '2px solid #000')
             node.style('borderRadius', '16px')
+            node.style('backgroundColor', BACKGROUND_COLORS[column_index])
+            node.style('backgroundImage', background_image.src)
             row.add(node)
         }
     }

@@ -203,10 +203,14 @@ test('RendererDivs image api hooks are no-ops', async () => {
 
     const child = ui.create()
     child.style('backgroundImage', '/assets/Avatar.png')
+    child.style('backgroundSize', '100px 50px')
+    child.style('backgroundPosition', '4px 6px')
     ui.root.add(child)
 
     ui.render()
     expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
+    expect(canvas.children[0].style.backgroundSize).toBe('100px 50px')
+    expect(canvas.children[0].style.backgroundPosition).toBe('4px 6px')
 
     ui.imageUpload('/assets/Avatar.png', second_image)
     expect(ui.imageList()).toEqual([])

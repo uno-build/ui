@@ -40,9 +40,15 @@ export default class RendererDom extends Renderer {
             }
 
             node.element.style.backgroundImage = toCssBackgroundImage(style.value)
-            node.element.style.backgroundSize = 'cover'
-            node.element.style.backgroundPosition = 'center'
             node.element.style.backgroundRepeat = 'no-repeat'
+            return
+        }
+        if (style.name === 'backgroundSizeWidth' || style.name === 'backgroundSizeHeight') {
+            node.element.style.backgroundSize = toCssBackgroundSize(node)
+            return
+        }
+        if (style.name === 'backgroundPositionX' || style.name === 'backgroundPositionY') {
+            node.element.style.backgroundPosition = toCssBackgroundPosition(node)
             return
         }
 
@@ -82,4 +88,22 @@ const DEFAULT_NODE_STYLE = {
 
 function toCssBackgroundImage(value) {
     return `url(${JSON.stringify(value)})`
+}
+
+function toCssBackgroundSize(node) {
+    const width = node.styles.backgroundSizeWidth?.value
+    const height = node.styles.backgroundSizeHeight?.value
+
+    if (height === undefined) {
+        return width ?? ''
+    }
+
+    return `${width ?? 'auto'} ${height}`
+}
+
+function toCssBackgroundPosition(node) {
+    const x = node.styles.backgroundPositionX?.value ?? '0px'
+    const y = node.styles.backgroundPositionY?.value ?? '0px'
+
+    return `${x} ${y}`
 }

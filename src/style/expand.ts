@@ -49,6 +49,14 @@ function expand(property: string, value: string) {
     if (property === 'borderRadius') {
         return parseBorderRadius(value)
     }
+
+    if (property === 'backgroundSize') {
+        return parseBackgroundSize(value)
+    }
+
+    if (property === 'backgroundPosition') {
+        return parseBackgroundPosition(value)
+    }
 }
 
 function splitShorthand(value: string) {
@@ -144,6 +152,38 @@ function parseBorderRadius(value: string) {
         borderTopRightRadius: [Right, Right2].filter(Boolean).join(' '),
         borderBottomRightRadius: [Bottom, Bottom2].filter(Boolean).join(' '),
         borderBottomLeftRadius: [Left, Left2].filter(Boolean).join(' '),
+    }
+}
+
+function parseBackgroundSize(value: string) {
+    const [width, height, ...rest] = splitShorthand(value)
+
+    if (width === undefined || width === '' || rest.length > 0) {
+        throw new Error('expected one or two px values')
+    }
+
+    if (height === undefined) {
+        return {
+            backgroundSizeWidth: width,
+        }
+    }
+
+    return {
+        backgroundSizeWidth: width,
+        backgroundSizeHeight: height,
+    }
+}
+
+function parseBackgroundPosition(value: string) {
+    const [x, y, ...rest] = splitShorthand(value)
+
+    if (x === undefined || x === '' || y === undefined || y === '' || rest.length > 0) {
+        throw new Error('expected two px values')
+    }
+
+    return {
+        backgroundPositionX: x,
+        backgroundPositionY: y,
     }
 }
 

@@ -41,6 +41,66 @@ test('backgroundImage', () => {
     expectInvalid('backgroundImage', true, /style value must be a string/)
 })
 
+test('backgroundSize', () => {
+    expectUnit('backgroundSizeWidth', ' 100PX ', '100px', 100, 'px')
+    expectUnit('backgroundSizeHeight', '50px', '50px', 50, 'px')
+    expect(Style.resolveStyle('backgroundSize', ' 100PX ')).toEqual([
+        {
+            name: 'backgroundSizeWidth',
+            value: '100px',
+            parsed: { value: 100, unit: 'px' },
+        },
+    ])
+    expect(Style.resolveStyle('backgroundSize', '100px 50px')).toEqual([
+        {
+            name: 'backgroundSizeWidth',
+            value: '100px',
+            parsed: { value: 100, unit: 'px' },
+        },
+        {
+            name: 'backgroundSizeHeight',
+            value: '50px',
+            parsed: { value: 50, unit: 'px' },
+        },
+    ])
+    expectInvalid('backgroundSize', 'cover', /expected px unit/)
+    expectInvalid('backgroundSize', '50%', /expected px unit/)
+    expectInvalid('backgroundSize', '-1px', /expected non-negative value/)
+    expectInvalid('backgroundSize', '1px 2px 3px', /expected one or two px values/)
+})
+
+test('backgroundPosition', () => {
+    expectUnit('backgroundPositionX', ' 10PX ', '10px', 10, 'px')
+    expectUnit('backgroundPositionY', '-20px', '-20px', -20, 'px')
+    expect(Style.resolveStyle('backgroundPosition', ' 10PX 20px ')).toEqual([
+        {
+            name: 'backgroundPositionX',
+            value: '10px',
+            parsed: { value: 10, unit: 'px' },
+        },
+        {
+            name: 'backgroundPositionY',
+            value: '20px',
+            parsed: { value: 20, unit: 'px' },
+        },
+    ])
+    expect(Style.resolveStyle('backgroundPosition', '-10px 20px')).toEqual([
+        {
+            name: 'backgroundPositionX',
+            value: '-10px',
+            parsed: { value: -10, unit: 'px' },
+        },
+        {
+            name: 'backgroundPositionY',
+            value: '20px',
+            parsed: { value: 20, unit: 'px' },
+        },
+    ])
+    expectInvalid('backgroundPosition', '10px', /expected two px values/)
+    expectInvalid('backgroundPosition', 'center', /expected two px values/)
+    expectInvalid('backgroundPosition', '10% 20%', /expected px unit/)
+})
+
 test('opacity', () => {
     const valid_cases = [
         ['0', '0', 0],

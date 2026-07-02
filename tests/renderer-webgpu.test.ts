@@ -131,7 +131,7 @@ test('RendererWebGPU writes background image data into panel instance data', () 
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
     const mode_data_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_MODE_DATA.OFFSET / FLOAT32_SIZE
     const uv_rect_float_offset = ATTRIBUTES.BACKGROUND_UV_RECT.OFFSET / FLOAT32_SIZE
-    const image_size_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_SIZE.OFFSET / FLOAT32_SIZE
+    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
 
     expect(Array.from(floats.slice(mode_data_float_offset, mode_data_float_offset + 2))).toEqual([1, 3])
     expect(Array.from(floats.slice(uv_rect_float_offset, uv_rect_float_offset + 4))).toEqual([
@@ -140,7 +140,47 @@ test('RendererWebGPU writes background image data into panel instance data', () 
         expect.closeTo(0.3),
         expect.closeTo(0.4),
     ])
-    expect(Array.from(floats.slice(image_size_float_offset, image_size_float_offset + 2))).toEqual([40, 20])
+    expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 40, 20])
+})
+
+test('RendererWebGPU writes background image size and position into panel instance data', () => {
+    const image = createImage('coin.png', 40, 20)
+    const image_manager = createImageManager({
+        resources: {
+            [image.src]: {
+                src: image.src,
+                layer: 0,
+                uv_rect: [0, 0, 1, 1],
+                image_size: [image.width, image.height],
+            },
+        },
+    })
+    const renderer = createRenderer(image_manager)
+    const node = createNode({
+        styles: {
+            backgroundImage: {
+                value: image.src,
+                parsed: {},
+            },
+            backgroundSizeWidth: {
+                value: '100px',
+                parsed: { value: 100, unit: UNIT.PX },
+            },
+            backgroundPositionX: {
+                value: '4px',
+                parsed: { value: 4, unit: UNIT.PX },
+            },
+            backgroundPositionY: {
+                value: '6px',
+                parsed: { value: 6, unit: UNIT.PX },
+            },
+        },
+    })
+    const nodes_buffer_data = createNodesBufferData(renderer, [node])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
+    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+
+    expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([4, 6, 100, 50])
 })
 
 test('RendererWebGPU treats unset background images as solid panels', () => {

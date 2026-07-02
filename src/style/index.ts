@@ -27,6 +27,8 @@ import {
     SIZE_DEFINITION,
     INTEGER_DEFINITION,
     BACKGROUNDIMAGE_DEFINITION,
+    BACKGROUND_SIZE_DEFINITION,
+    BACKGROUND_POSITION_DEFINITION,
 } from './definitions'
 
 // if (typeof window !== 'undefined') {
@@ -181,6 +183,30 @@ export const STYLE = {
     ]),
     BACKGROUNDIMAGE: createStyle('backgroundImage', (name, value) => [
         { name, value, definition: BACKGROUNDIMAGE_DEFINITION },
+    ]),
+    BACKGROUNDSIZE: createStyle('backgroundSize', (name, value) =>
+        expandHelper(name, value, {
+            backgroundSizeWidth: BACKGROUND_SIZE_DEFINITION,
+            backgroundSizeHeight: BACKGROUND_SIZE_DEFINITION,
+        })
+    ),
+    BACKGROUNDSIZEWIDTH: createStyle('backgroundSizeWidth', (name, value) => [
+        { name, value, definition: BACKGROUND_SIZE_DEFINITION },
+    ]),
+    BACKGROUNDSIZEHEIGHT: createStyle('backgroundSizeHeight', (name, value) => [
+        { name, value, definition: BACKGROUND_SIZE_DEFINITION },
+    ]),
+    BACKGROUNDPOSITION: createStyle('backgroundPosition', (name, value) =>
+        expandHelper(name, value, {
+            backgroundPositionX: BACKGROUND_POSITION_DEFINITION,
+            backgroundPositionY: BACKGROUND_POSITION_DEFINITION,
+        })
+    ),
+    BACKGROUNDPOSITIONX: createStyle('backgroundPositionX', (name, value) => [
+        { name, value, definition: BACKGROUND_POSITION_DEFINITION },
+    ]),
+    BACKGROUNDPOSITIONY: createStyle('backgroundPositionY', (name, value) => [
+        { name, value, definition: BACKGROUND_POSITION_DEFINITION },
     ]),
 
     // YOGA PROPERTIES
