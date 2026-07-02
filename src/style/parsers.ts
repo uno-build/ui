@@ -11,14 +11,14 @@ export function parseString(value: string) {
 export function parseAuto(value: string) {
     return {
         value,
-        parsed: { unit: KEYWORD.AUTO },
+        parsed: { kind: KEYWORD.AUTO },
     }
 }
 
 export function parseUnset(value: string) {
     return {
         value,
-        parsed: { unit: KEYWORD.UNSET },
+        parsed: { kind: KEYWORD.UNSET },
     }
 }
 
@@ -56,7 +56,7 @@ export function parseEnum(value: string, values: Record<string, any>) {
 export function parsePx(value: string) {
     const unit = readPx(value)!
     return {
-        value: `${String(unit.value)}${unit.unit}`,
+        value: `${String(unit.value)}${unit.kind}`,
         parsed: unit,
     }
 }
@@ -64,7 +64,7 @@ export function parsePx(value: string) {
 export function parsePercent(value: string) {
     const unit = readPercent(value)!
     return {
-        value: `${String(unit.value)}${unit.unit}`,
+        value: `${String(unit.value)}${unit.kind}`,
         parsed: unit,
     }
 }

@@ -240,7 +240,7 @@ export default class RendererWebGPU extends Renderer {
 
         if (style.name === 'backgroundImage') {
             this.image_manager.removeNode(node)
-            if (style.parsed.unit !== KEYWORD.UNSET) {
+            if (style.parsed.kind !== KEYWORD.UNSET) {
                 const atlas_image = this.image_manager.getImage(style.value)
 
                 if (atlas_image === undefined) {

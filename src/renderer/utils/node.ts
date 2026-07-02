@@ -97,7 +97,7 @@ function getBorderRadius(border_radius, width, height) {
     if (border_radius === undefined) {
         return [0, 0]
     }
-    if (border_radius.unit === UNIT.PERCENT) {
+    if (border_radius.kind === UNIT.PERCENT) {
         return [(width * border_radius.value) / 100, (height * border_radius.value) / 100]
     }
 

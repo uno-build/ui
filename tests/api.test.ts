@@ -34,7 +34,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     expect(child.styles).toMatchObject({
         width: {
             value: '120px',
-            parsed: { value: 120, unit: 'px' },
+            parsed: { value: 120, kind: 'px' },
         },
         backgroundColor: {
             value: '#123',
@@ -42,12 +42,12 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
         },
         height: {
             value: '40px',
-            parsed: { value: 40, unit: 'px' },
+            parsed: { value: 40, kind: 'px' },
         },
     })
     expect(sibling.styles.marginLeft).toEqual({
         value: '10%',
-        parsed: { value: 10, unit: '%' },
+        parsed: { value: 10, kind: '%' },
     })
 
     expect([...ui.nodes]).toEqual([child, sibling, grandchild])

@@ -34,7 +34,7 @@ export default class RendererDom extends Renderer {
 
     protected updateStyle(node, style) {
         if (style.name === 'backgroundImage') {
-            if (style.parsed.unit === KEYWORD.UNSET) {
+            if (style.parsed.kind === KEYWORD.UNSET) {
                 node.element.style.backgroundImage = 'none'
                 return
             }
@@ -93,8 +93,8 @@ function toCssBackgroundImage(value) {
 function toCssBackgroundSize(node) {
     const width_style = node.styles.backgroundSizeWidth
     const height_style = node.styles.backgroundSizeHeight
-    const width_unset = width_style?.parsed.unit === KEYWORD.UNSET
-    const height_unset = height_style?.parsed.unit === KEYWORD.UNSET
+    const width_unset = width_style?.parsed.kind === KEYWORD.UNSET
+    const height_unset = height_style?.parsed.kind === KEYWORD.UNSET
 
     if (width_unset && height_unset) {
         return 'unset'

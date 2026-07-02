@@ -50,31 +50,31 @@ test('backgroundSize', () => {
         {
             name: 'backgroundSizeWidth',
             value: '100px',
-            parsed: { value: 100, unit: 'px' },
+            parsed: { value: 100, kind: 'px' },
         },
     ])
     expect(Style.resolveStyle('backgroundSize', '100px 50px')).toEqual([
         {
             name: 'backgroundSizeWidth',
             value: '100px',
-            parsed: { value: 100, unit: 'px' },
+            parsed: { value: 100, kind: 'px' },
         },
         {
             name: 'backgroundSizeHeight',
             value: '50px',
-            parsed: { value: 50, unit: 'px' },
+            parsed: { value: 50, kind: 'px' },
         },
     ])
     expect(Style.resolveStyle('backgroundSize', ' unset ')).toEqual([
         {
             name: 'backgroundSizeWidth',
             value: 'unset',
-            parsed: { unit: 'unset' },
+            parsed: { kind: 'unset' },
         },
         {
             name: 'backgroundSizeHeight',
             value: 'unset',
-            parsed: { unit: 'unset' },
+            parsed: { kind: 'unset' },
         },
     ])
     expectInvalid('backgroundSize', 'cover', /expected px unit/)
@@ -90,24 +90,24 @@ test('backgroundPosition', () => {
         {
             name: 'backgroundPositionX',
             value: '10px',
-            parsed: { value: 10, unit: 'px' },
+            parsed: { value: 10, kind: 'px' },
         },
         {
             name: 'backgroundPositionY',
             value: '20px',
-            parsed: { value: 20, unit: 'px' },
+            parsed: { value: 20, kind: 'px' },
         },
     ])
     expect(Style.resolveStyle('backgroundPosition', '-10px 20px')).toEqual([
         {
             name: 'backgroundPositionX',
             value: '-10px',
-            parsed: { value: -10, unit: 'px' },
+            parsed: { value: -10, kind: 'px' },
         },
         {
             name: 'backgroundPositionY',
             value: '20px',
-            parsed: { value: 20, unit: 'px' },
+            parsed: { value: 20, kind: 'px' },
         },
     ])
     expectInvalid('backgroundPosition', '10px', /expected two px values/)
@@ -687,11 +687,11 @@ function expectUnit(
     parsedValue: number,
     unit: string,
 ) {
-    expectResolved(name, value, expectedValue, { value: parsedValue, unit })
+    expectResolved(name, value, expectedValue, { value: parsedValue, kind: unit })
 }
 
 function expectKeywordUnit(name: string, value: unknown, keyword: string) {
-    expectResolved(name, value, keyword, { unit: keyword })
+    expectResolved(name, value, keyword, { kind: keyword })
 }
 
 function expectNumber(name: string, value: unknown, expectedValue: string, parsedValue: number) {

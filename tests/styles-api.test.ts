@@ -61,21 +61,21 @@ test('unitPixelStyle', () => {
         {
             name: 'borderTopWidth',
             value: '2px',
-            parsed: { value: 2, unit: 'px' },
+            parsed: { value: 2, kind: 'px' },
         },
     ])
     expect(Style.resolveStyle('borderTopWidth', '1px')).toEqual([
         {
             name: 'borderTopWidth',
             value: '1px',
-            parsed: { value: 1, unit: 'px' },
+            parsed: { value: 1, kind: 'px' },
         },
     ])
     expect(Style.resolveStyle('borderTopWidth', ' 1PX ')).toEqual([
         {
             name: 'borderTopWidth',
             value: '1px',
-            parsed: { value: 1, unit: 'px' },
+            parsed: { value: 1, kind: 'px' },
         },
     ])
 })
@@ -92,49 +92,49 @@ test('unitOrAutoStyle', () => {
         {
             name: 'width',
             value: 'auto',
-            parsed: { unit: 'auto' },
+            parsed: { kind: 'auto' },
         },
     ])
     expect(Style.resolveStyle('width', '10px')).toEqual([
         {
             name: 'width',
             value: '10px',
-            parsed: { value: 10, unit: 'px' },
+            parsed: { value: 10, kind: 'px' },
         },
     ])
     expect(Style.resolveStyle('width', '10%')).toEqual([
         {
             name: 'width',
             value: '10%',
-            parsed: { value: 10, unit: '%' },
+            parsed: { value: 10, kind: '%' },
         },
     ])
     expect(Style.resolveStyle('height', ' 10PX ')).toEqual([
         {
             name: 'height',
             value: '10px',
-            parsed: { value: 10, unit: 'px' },
+            parsed: { value: 10, kind: 'px' },
         },
     ])
     expect(Style.resolveStyle('height', '10%')).toEqual([
         {
             name: 'height',
             value: '10%',
-            parsed: { value: 10, unit: '%' },
+            parsed: { value: 10, kind: '%' },
         },
     ])
     expect(Style.resolveStyle('left', '-10px')).toEqual([
         {
             name: 'left',
             value: '-10px',
-            parsed: { value: -10, unit: 'px' },
+            parsed: { value: -10, kind: 'px' },
         },
     ])
     expect(Style.resolveStyle('left', '-10%')).toEqual([
         {
             name: 'left',
             value: '-10%',
-            parsed: { value: -10, unit: '%' },
+            parsed: { value: -10, kind: '%' },
         },
     ])
 })
@@ -268,7 +268,7 @@ test('non-negative unit styles reject negative values', () => {
             {
                 name,
                 value: '1px',
-                parsed: { value: 1, unit: 'px' },
+                parsed: { value: 1, kind: 'px' },
             },
         ])
     }
@@ -292,7 +292,7 @@ test('resettable unit styles accept unset', () => {
             {
                 name,
                 value: 'unset',
-                parsed: { unit: 'unset' },
+                parsed: { kind: 'unset' },
             },
         ])
     }
@@ -322,14 +322,14 @@ test('border width styles are px-only and non-negative', () => {
             {
                 name,
                 value: '2px',
-                parsed: { value: 2, unit: 'px' },
+                parsed: { value: 2, kind: 'px' },
             },
         ])
         expect(Style.resolveStyle(name, '1px')).toEqual([
             {
                 name,
                 value: '1px',
-                parsed: { value: 1, unit: 'px' },
+                parsed: { value: 1, kind: 'px' },
             },
         ])
         expect(() => {
@@ -370,7 +370,7 @@ test('unitOrAutoStyle accepts auto across all auto-capable styles', () => {
             {
                 name,
                 value: 'auto',
-                parsed: { unit: 'auto' },
+                parsed: { kind: 'auto' },
             },
         ])
     }

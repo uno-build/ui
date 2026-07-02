@@ -8,7 +8,7 @@ export function readPx(value: string) {
         return undefined
     }
 
-    return { value: match, unit: UNIT.PX }
+    return { value: match, kind: UNIT.PX }
 }
 
 export function readPercent(value: string) {
@@ -17,7 +17,7 @@ export function readPercent(value: string) {
         return undefined
     }
 
-    return { value: match, unit: UNIT.PERCENT }
+    return { value: match, kind: UNIT.PERCENT }
 }
 
 export function readNumber(value: any) {

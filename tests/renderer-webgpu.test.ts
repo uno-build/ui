@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
-import { OVERFLOW, UNIT } from '../src/style/consts.ts'
+import { KEYWORD, OVERFLOW, UNIT } from '../src/style/consts.ts'
 import { ATTRIBUTES_SIZE, ATTRIBUTES, FLOAT32_SIZE } from '../src/renderer/webgpu/buffers.ts'
 import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
 ;(globalThis as any).GPUTextureUsage = {
@@ -58,10 +58,10 @@ test('RendererWebGPU writes border drawing data into panel instance data', () =>
     const node = createNode({
         layout: { x: 0, y: 0, width: 20, height: 10 },
         styles: {
-            borderTopLeftRadius: { parsed: { unit: UNIT.PERCENT, value: 50 } },
-            borderTopRightRadius: { parsed: { unit: UNIT.PX, value: 2 } },
-            borderBottomRightRadius: { parsed: { unit: UNIT.PX, value: 3 } },
-            borderBottomLeftRadius: { parsed: { unit: UNIT.PX, value: 4 } },
+            borderTopLeftRadius: { parsed: { kind: UNIT.PERCENT, value: 50 } },
+            borderTopRightRadius: { parsed: { kind: UNIT.PX, value: 2 } },
+            borderBottomRightRadius: { parsed: { kind: UNIT.PX, value: 3 } },
+            borderBottomLeftRadius: { parsed: { kind: UNIT.PX, value: 4 } },
             borderTopStyle: { value: 'solid' },
             borderRightStyle: { value: 'solid' },
             borderBottomStyle: { value: 'solid' },
@@ -164,15 +164,15 @@ test('RendererWebGPU writes background image size and position into panel instan
             },
             backgroundSizeWidth: {
                 value: '100px',
-                parsed: { value: 100, unit: UNIT.PX },
+                parsed: { value: 100, kind: UNIT.PX },
             },
             backgroundPositionX: {
                 value: '4px',
-                parsed: { value: 4, unit: UNIT.PX },
+                parsed: { value: 4, kind: UNIT.PX },
             },
             backgroundPositionY: {
                 value: '6px',
-                parsed: { value: 6, unit: UNIT.PX },
+                parsed: { value: 6, kind: UNIT.PX },
             },
         },
     })
@@ -204,11 +204,11 @@ test('RendererWebGPU treats unset background image size as natural image size', 
             },
             backgroundSizeWidth: {
                 value: 'unset',
-                parsed: { unit: UNIT.UNSET },
+                parsed: { kind: KEYWORD.UNSET },
             },
             backgroundSizeHeight: {
                 value: 'unset',
-                parsed: { unit: UNIT.UNSET },
+                parsed: { kind: KEYWORD.UNSET },
             },
         },
     })
@@ -225,7 +225,7 @@ test('RendererWebGPU treats unset background images as solid panels', () => {
         styles: {
             backgroundImage: {
                 value: 'unset',
-                parsed: { unit: UNIT.UNSET },
+                parsed: { kind: KEYWORD.UNSET },
             },
         },
     })
