@@ -17,7 +17,7 @@ export default class UI {
         this.root = this.create()
     }
 
-    public create(styles = {}) {
+    public create() {
         const node = new Node({
             id: this.next_node_id++,
             ui: this,
