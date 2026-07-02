@@ -1,4 +1,4 @@
-import { UNIT } from './consts'
+import { KEYWORD } from './consts'
 import { readInteger, readNumber, readPercent, readPx } from './utils'
 
 export function parseString(value: string) {
@@ -11,21 +11,14 @@ export function parseString(value: string) {
 export function parseAuto(value: string) {
     return {
         value,
-        parsed: { unit: UNIT.AUTO },
-    }
-}
-
-export function parseNone(value: string) {
-    return {
-        value,
-        parsed: { unit: 'none' },
+        parsed: { unit: KEYWORD.AUTO },
     }
 }
 
 export function parseUnset(value: string) {
     return {
         value,
-        parsed: { unit: UNIT.UNSET },
+        parsed: { unit: KEYWORD.UNSET },
     }
 }
 

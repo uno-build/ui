@@ -1,4 +1,4 @@
-import { UNIT } from './consts'
+import { KEYWORD } from './consts'
 import { readInteger, readNumber, readPercent, readPx } from './utils'
 
 export function validateColor(value: string) {
@@ -12,19 +12,19 @@ export function validateEnum(value: string, values: Record<string, any>) {
     }
 }
 export function validateAuto(value: any) {
-    if (value !== UNIT.AUTO) {
+    if (value !== KEYWORD.AUTO) {
         throw new Error('expected auto')
     }
 }
 
 export function validateUnset(value: any) {
-    if (value !== UNIT.UNSET) {
+    if (value !== KEYWORD.UNSET) {
         throw new Error('expected unset')
     }
 }
 
 export function validateImageSrc(value: string) {
-    if (value.toLowerCase() === UNIT.UNSET) {
+    if (value.toLowerCase() === KEYWORD.UNSET) {
         throw new Error('expected image src')
     }
 }

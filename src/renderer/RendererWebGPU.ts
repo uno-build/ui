@@ -1,5 +1,5 @@
 import Renderer from '../Renderer'
-import { UNIT } from '../style/consts'
+import { KEYWORD } from '../style/consts'
 import createEngine, { YOGA_SETTER } from '../engine/yoga'
 import { getNodeDrawingData } from './utils/node'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders'
@@ -240,7 +240,7 @@ export default class RendererWebGPU extends Renderer {
 
         if (style.name === 'backgroundImage') {
             this.image_manager.removeNode(node)
-            if (style.parsed.unit !== UNIT.UNSET) {
+            if (style.parsed.unit !== KEYWORD.UNSET) {
                 const atlas_image = this.image_manager.getImage(style.value)
 
                 if (atlas_image === undefined) {

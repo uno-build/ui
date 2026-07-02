@@ -1,5 +1,5 @@
 // https://github.com/robinweser/inline-style-expand-shorthand/blob/master/src/expand.js
-import { BORDER_STYLE, UNIT } from './consts'
+import { BORDER_STYLE, KEYWORD } from './consts'
 import { normalizeTrim, normalizeToLowercase } from './normalizers'
 const NUMBER = /^-?(?:\d+|\d*\.\d+)$/
 const BORDER_WIDTH = /^-?(?:\d+|\d*\.\d+)px$|^0$/
@@ -156,10 +156,10 @@ function expandBorderRadius(value: string) {
 }
 
 function expandBackgroundSize(value: string) {
-    if (normalizeToLowercase(normalizeTrim(value)) === UNIT.UNSET) {
+    if (normalizeToLowercase(normalizeTrim(value)) === KEYWORD.UNSET) {
         return {
-            backgroundSizeWidth: UNIT.UNSET,
-            backgroundSizeHeight: UNIT.UNSET,
+            backgroundSizeWidth: KEYWORD.UNSET,
+            backgroundSizeHeight: KEYWORD.UNSET,
         }
     }
 
@@ -199,11 +199,11 @@ function expandFlex(value: string) {
 
     // https://developer.mozilla.org/en-US/docs/Web/CSS/flex#values
     switch (normalizeToLowercase(normalizeTrim(value))) {
-        case UNIT.UNSET:
+        case KEYWORD.UNSET:
             values = splitShorthand('unset unset unset')
             break
 
-        case UNIT.AUTO:
+        case KEYWORD.AUTO:
             values = splitShorthand('1 1 auto')
             break
 

@@ -1,6 +1,6 @@
 import Renderer from '../Renderer'
 import createEngine, { YOGA_SETTER } from '../engine/yoga'
-import { UNIT } from '../style/consts'
+import { KEYWORD } from '../style/consts'
 import { getAncestorClipping } from './utils/node'
 
 export default class RendererDivs extends Renderer {
@@ -61,7 +61,7 @@ export default class RendererDivs extends Renderer {
             YOGA_SETTER[style.name](node.element, style)
         }
         if (style.name === 'backgroundImage') {
-            if (style.parsed.unit === UNIT.UNSET) {
+            if (style.parsed.unit === KEYWORD.UNSET) {
                 div.style.backgroundImage = 'none'
                 return
             }
@@ -125,14 +125,14 @@ function createDivFactory() {
 }
 
 function toCssBackgroundImage(value) {
-    return value === UNIT.UNSET ? 'unset' : `url(${JSON.stringify(value)})`
+    return value === KEYWORD.UNSET ? 'unset' : `url(${JSON.stringify(value)})`
 }
 
 function toCssBackgroundSize(node) {
     const width_style = node.styles.backgroundSizeWidth
     const height_style = node.styles.backgroundSizeHeight
-    const width_unset = width_style?.parsed.unit === UNIT.UNSET
-    const height_unset = height_style?.parsed.unit === UNIT.UNSET
+    const width_unset = width_style?.parsed.unit === KEYWORD.UNSET
+    const height_unset = height_style?.parsed.unit === KEYWORD.UNSET
 
     if (width_unset && height_unset) {
         return 'unset'
