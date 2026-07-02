@@ -44,6 +44,8 @@ test('backgroundImage', () => {
 test('backgroundSize', () => {
     expectUnit('backgroundSizeWidth', ' 100PX ', '100px', 100, 'px')
     expectUnit('backgroundSizeHeight', '50px', '50px', 50, 'px')
+    expectKeywordUnit('backgroundSizeWidth', ' unset ', 'unset')
+    expectKeywordUnit('backgroundSizeHeight', 'unset', 'unset')
     expect(Style.resolveStyle('backgroundSize', ' 100PX ')).toEqual([
         {
             name: 'backgroundSizeWidth',
@@ -61,6 +63,18 @@ test('backgroundSize', () => {
             name: 'backgroundSizeHeight',
             value: '50px',
             parsed: { value: 50, unit: 'px' },
+        },
+    ])
+    expect(Style.resolveStyle('backgroundSize', ' unset ')).toEqual([
+        {
+            name: 'backgroundSizeWidth',
+            value: 'unset',
+            parsed: { unit: 'unset' },
+        },
+        {
+            name: 'backgroundSizeHeight',
+            value: 'unset',
+            parsed: { unit: 'unset' },
         },
     ])
     expectInvalid('backgroundSize', 'cover', /expected px unit/)

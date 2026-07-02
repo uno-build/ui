@@ -283,6 +283,11 @@ export const BACKGROUND_SIZE_DEFINITION = [
         validate: [validateNonNegative, validatePx],
         parse: [parsePx],
     },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateUnset],
+        parse: [parseUnset],
+    },
 ]
 
 export const BACKGROUND_POSITION_DEFINITION = [

@@ -1,6 +1,6 @@
 // https://github.com/robinweser/inline-style-expand-shorthand/blob/master/src/expand.js
-import { BORDER_STYLE } from './consts'
-
+import { BORDER_STYLE, UNIT } from './consts'
+import { normalizeTrim, normalizeToLowercase } from './normalizers'
 const NUMBER = /^-?(?:\d+|\d*\.\d+)$/
 const BORDER_WIDTH = /^-?(?:\d+|\d*\.\d+)px$|^0$/
 
@@ -31,15 +31,15 @@ export function expandProperty(property: string, value: string | string[]) {
 
 function expand(property: string, value: string) {
     if (property === 'flex') {
-        return parseFlex(value)
+        return expandFlex(value)
     }
 
     if (property === 'padding') {
-        return parseEdges(value, (key) => 'padding' + key)
+        return expandEdges(value, (key) => 'padding' + key)
     }
 
     if (property === 'margin') {
-        return parseEdges(value, (key) => 'margin' + key)
+        return expandEdges(value, (key) => 'margin' + key)
     }
 
     if (property === 'border') {
@@ -47,15 +47,15 @@ function expand(property: string, value: string) {
     }
 
     if (property === 'borderRadius') {
-        return parseBorderRadius(value)
+        return expandBorderRadius(value)
     }
 
     if (property === 'backgroundSize') {
-        return parseBackgroundSize(value)
+        return expandBackgroundSize(value)
     }
 
     if (property === 'backgroundPosition') {
-        return parseBackgroundPosition(value)
+        return expandBackgroundPosition(value)
     }
 }
 
@@ -63,7 +63,7 @@ function splitShorthand(value: string) {
     let values = ['']
     let openParensCount = 0
 
-    const trimmedValue = value.trim()
+    const trimmedValue = normalizeTrim(value)
 
     for (let index = 0; index < trimmedValue.length; index += 1) {
         if (trimmedValue.charAt(index) === ' ' && openParensCount === 0) {
@@ -117,7 +117,7 @@ function expandBorder(value: string) {
     return result
 }
 
-function parseEdges(value: string, resolve) {
+function expandEdges(value: string, resolve) {
     const [Top, Right = Top, Bottom = Top, Left = Right] = splitShorthand(value)
 
     return {
@@ -142,7 +142,7 @@ function groupBy(values: string[], divider: string) {
     return groups
 }
 
-function parseBorderRadius(value: string) {
+function expandBorderRadius(value: string) {
     const [first = [], second = []] = groupBy(splitShorthand(value), '/')
     const [Top, Right = Top, Bottom = Top, Left = Right] = first
     const [Top2, Right2 = Top2, Bottom2 = Top2, Left2 = Right2] = second
@@ -155,7 +155,14 @@ function parseBorderRadius(value: string) {
     }
 }
 
-function parseBackgroundSize(value: string) {
+function expandBackgroundSize(value: string) {
+    if (normalizeToLowercase(normalizeTrim(value)) === UNIT.UNSET) {
+        return {
+            backgroundSizeWidth: UNIT.UNSET,
+            backgroundSizeHeight: UNIT.UNSET,
+        }
+    }
+
     const [width, height, ...rest] = splitShorthand(value)
 
     if (width === undefined || width === '' || rest.length > 0) {
@@ -174,7 +181,7 @@ function parseBackgroundSize(value: string) {
     }
 }
 
-function parseBackgroundPosition(value: string) {
+function expandBackgroundPosition(value: string) {
     const [x, y, ...rest] = splitShorthand(value)
 
     if (x === undefined || x === '' || y === undefined || y === '' || rest.length > 0) {
@@ -187,22 +194,22 @@ function parseBackgroundPosition(value: string) {
     }
 }
 
-function parseFlex(value: string) {
+function expandFlex(value: string) {
     let values = ['']
 
     // https://developer.mozilla.org/en-US/docs/Web/CSS/flex#values
-    switch (value.trim().toLowerCase()) {
-        case 'unset':
+    switch (normalizeToLowercase(normalizeTrim(value))) {
+        case UNIT.UNSET:
             values = splitShorthand('unset unset unset')
             break
 
-        case 'auto':
+        case UNIT.AUTO:
             values = splitShorthand('1 1 auto')
             break
 
-        case 'none':
-            values = splitShorthand('0 0 auto')
-            break
+        // case 'none':
+        //     values = splitShorthand('0 0 auto')
+        //     break
 
         default:
             values = splitShorthand(value)

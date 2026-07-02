@@ -91,14 +91,23 @@ function toCssBackgroundImage(value) {
 }
 
 function toCssBackgroundSize(node) {
-    const width = node.styles.backgroundSizeWidth?.value
-    const height = node.styles.backgroundSizeHeight?.value
+    const width_style = node.styles.backgroundSizeWidth
+    const height_style = node.styles.backgroundSizeHeight
+    const width_unset = width_style?.parsed.unit === UNIT.UNSET
+    const height_unset = height_style?.parsed.unit === UNIT.UNSET
 
-    if (height === undefined) {
-        return width ?? ''
+    if (width_unset && height_unset) {
+        return 'unset'
     }
 
-    return `${width ?? 'auto'} ${height}`
+    if (height_style === undefined) {
+        return width_unset ? 'unset' : (width_style?.value ?? '')
+    }
+
+    const width = width_unset || width_style === undefined ? 'auto' : width_style.value
+    const height = height_unset ? 'auto' : height_style.value
+
+    return `${width} ${height}`
 }
 
 function toCssBackgroundPosition(node) {
