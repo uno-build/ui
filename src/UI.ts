@@ -32,7 +32,7 @@ export default class UI {
         return node
     }
 
-    public update() {
+    public render() {
         this.nodes.sort(sortPaintingOrder)
         this.renderer.beforeUpdate(this.nodes)
         this.root.layout = this.renderer.getLayout(this.root)

@@ -62,7 +62,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     expect(sibling.path).toEqual([1])
     expect(grandchild.path).toEqual([0, 0])
 
-    ui.update()
+    ui.render()
 
     expect([...ui.nodes].toSorted(byId)).toEqual([child, sibling, grandchild])
     expect([...ui.nodes]).toEqual([child, grandchild, sibling])
@@ -101,7 +101,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     expect(child.parent).toBe(null)
     expect(grandchild.parent).toBe(null)
 
-    ui.update()
+    ui.render()
 
     expect(sibling.layout).toMatchObject({ x: 20, y: 0, width: 0, height: 200 })
 })
@@ -183,7 +183,7 @@ test('Node remove discards pending styles', async () => {
     ui.root.add(child)
     ui.root.remove(child)
 
-    expect(() => ui.update()).not.toThrow()
+    expect(() => ui.render()).not.toThrow()
     expect([...ui.nodes]).toEqual([])
     expect(canvas.children).toEqual([])
     expect(child.element).toBe(null)
@@ -205,19 +205,19 @@ test('RendererDivs image api hooks are no-ops', async () => {
     child.style('backgroundImage', '/assets/Avatar.png')
     ui.root.add(child)
 
-    ui.update()
+    ui.render()
     expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
 
     ui.imageUpload('/assets/Avatar.png', second_image)
     expect(ui.imageList()).toEqual([])
 
-    ui.update()
+    ui.render()
     expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
 
     ui.imageDispose('/assets/Avatar.png')
     expect(ui.imageList()).toEqual([])
 
-    ui.update()
+    ui.render()
     expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
     expect(() => ui.imageDispose('/assets/Avatar.png')).not.toThrow()
 })

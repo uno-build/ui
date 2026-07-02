@@ -45,7 +45,7 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
         syncRootSize({ ui, root, canvas })
         const layoutResult = await createLayout({ ui, rendererName })
 
-        ui.update()
+        ui.render()
         observeRootSize({ ui, root, canvas })
 
         const result = readPaintLayout(ui)
@@ -99,7 +99,7 @@ function observeRootSize({ ui, root, canvas }) {
         width = root.clientWidth
         height = root.clientHeight
         syncRootSize({ ui, root, canvas })
-        ui.update()
+        ui.render()
     })
 
     observer.observe(root)
@@ -328,7 +328,7 @@ function createAddRandomNode(rendered_layouts) {
             item.style('backgroundColor', background_color)
 
             target_parent.add(item)
-            ui.update()
+            ui.render()
 
             added_nodes.push({
                 rendererName,
@@ -352,7 +352,7 @@ function createRemoveRandomNode(rendered_layouts) {
             const target_node = findNodeByPath(ui, node_path)
 
             target_node.parent.remove(target_node)
-            ui.update()
+            ui.render()
 
             removed_nodes.push({
                 rendererName,

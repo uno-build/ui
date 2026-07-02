@@ -175,11 +175,11 @@ test('Layout: zIndex updates repaint order', async ({ page }) => {
                 higher.style('zIndex', '2')
                 ui.root.add(higher)
 
-                ui.update()
+                ui.render()
                 const initialTop = readTopPath(canvas, ui.nodes, 100, 100)
 
                 lower.style('zIndex', '3')
-                ui.update()
+                ui.render()
                 const updatedTop = readTopPath(canvas, ui.nodes, 100, 100)
 
                 root.removeChild(canvas)
@@ -281,15 +281,15 @@ test('Layout: backgroundImage updates and clears with unset', async ({ page }) =
                 ui.imageUpload(asset_coin.src, asset_coin)
 
                 node.style('backgroundImage', asset_logo.src)
-                ui.update()
+                ui.render()
                 const first = readBackgroundImage(canvas, node.id)
 
                 node.style('backgroundImage', asset_coin.src)
-                ui.update()
+                ui.render()
                 const second = readBackgroundImage(canvas, node.id)
 
                 node.style('backgroundImage', 'unset')
-                ui.update()
+                ui.render()
                 const unset = readBackgroundImage(canvas, node.id)
 
                 root.removeChild(canvas)
@@ -361,7 +361,7 @@ test('Layout: RendererDivs clears overflow clipping updates', async ({ page }) =
             child.style('backgroundColor', '#000')
             host.add(child)
 
-            ui.update()
+            ui.render()
 
             const div = canvas.querySelector(`#node-${child.id}`)
 
@@ -372,7 +372,7 @@ test('Layout: RendererDivs clears overflow clipping updates', async ({ page }) =
             const hiddenClipPath = (div as HTMLElement).style.clipPath
 
             host.style('overflow', 'visible')
-            ui.update()
+            ui.render()
 
             return {
                 hiddenClipPath,

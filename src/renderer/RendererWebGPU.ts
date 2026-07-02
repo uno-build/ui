@@ -282,24 +282,23 @@ export default class RendererWebGPU extends Renderer {
                 continue
             }
 
+            const instance_data = {
+                ...drawing_data,
+                background_image_mode: 0,
+                background_uv_rect: [0, 0, 1, 1],
+                background_image_size: [1, 1],
+                background_atlas_layer: 0,
+            }
+
+            // Check if the node has a background image and if it is uploaded to the atlas
             const background_image = node.styles.backgroundImage
             if (background_image !== undefined && background_image.parsed.unit !== UNIT.UNSET) {
                 const atlas_image = this.image_manager.getImage(background_image.value)
-
                 if (atlas_image !== undefined) {
-                    render_items.push({
-                        node,
-                        order: node.order,
-                        bind_group: this.image_manager.bind_group,
-                        instance_data: {
-                            ...drawing_data,
-                            background_image_mode: 1,
-                            background_uv_rect: atlas_image.uv_rect,
-                            background_image_size: atlas_image.image_size,
-                            background_atlas_layer: atlas_image.layer,
-                        },
-                    })
-                    continue
+                    instance_data.background_image_mode = 1
+                    instance_data.background_uv_rect = atlas_image.uv_rect
+                    instance_data.background_image_size = atlas_image.image_size
+                    instance_data.background_atlas_layer = atlas_image.layer
                 }
             }
 
@@ -307,13 +306,7 @@ export default class RendererWebGPU extends Renderer {
                 node,
                 order: node.order,
                 bind_group: this.image_manager.bind_group,
-                instance_data: {
-                    ...drawing_data,
-                    background_image_mode: 0,
-                    background_uv_rect: [0, 0, 1, 1],
-                    background_image_size: [1, 1],
-                    background_atlas_layer: 0,
-                },
+                instance_data,
             })
         }
 
