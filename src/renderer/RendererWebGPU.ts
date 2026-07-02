@@ -233,7 +233,13 @@ export default class RendererWebGPU extends Renderer {
         return this.image_manager.imageList()
     }
 
-    protected updateStyle(node, style) {
+    protected updateStyle(node, resolved_style) {
+        for (const style of resolved_style.expanded) {
+            this.updateResolvedStyle(node, style)
+        }
+    }
+
+    private updateResolvedStyle(node, style) {
         if (YOGA_SETTER.hasOwnProperty(style.name)) {
             YOGA_SETTER[style.name](node.element, style)
         }

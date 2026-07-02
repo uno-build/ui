@@ -218,7 +218,7 @@ test('RendererDivs image api hooks are no-ops', async () => {
 
     child.style('backgroundSize', '50%')
     ui.render()
-    expect(canvas.children[0].style.backgroundSize).toBe('50% auto')
+    expect(canvas.children[0].style.backgroundSize).toBe('50%')
 
     child.style('backgroundSize', 'cover')
     ui.render()

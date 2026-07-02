@@ -16,6 +16,7 @@ test('resolveStyle', () => {
 
 test('resolveStyle should always normalize name', () => {
     const red = '#f00'
+    const resolved = Style.resolveStyle('  background-color  ', red)
     const toBe = [
         {
             name: 'backgroundColor',
@@ -23,13 +24,16 @@ test('resolveStyle should always normalize name', () => {
             parsed: { rgba: [255, 0, 0, 255] },
         },
     ]
-    expect(Style.resolveStyle('backgroundColor', red)).toEqual(toBe)
-    expect(Style.resolveStyle(' backgroundColor ', red)).toEqual(toBe)
-    expect(Style.resolveStyle('  background-color  ', red)).toEqual(toBe)
-    expect(Style.resolveStyle('BACKGROUND-COLOR', red)).toEqual(toBe)
-    expect(Style.resolveStyle('Background-Color', red)).toEqual(toBe)
-    expect(Style.resolveStyle('Background-Color', red)).toEqual(toBe)
-    expect(Style.resolveStyle('BACKGROUNDCOLOR', red)).toEqual(toBe)
+    expect(resolved.name).toBe('backgroundColor')
+    expect(resolved.value).toBe(red)
+    expect(resolved.expanded).toEqual(toBe)
+    expect(Style.resolveStyle('backgroundColor', red).expanded).toEqual(toBe)
+    expect(Style.resolveStyle(' backgroundColor ', red).expanded).toEqual(toBe)
+    expect(Style.resolveStyle('  background-color  ', red).expanded).toEqual(toBe)
+    expect(Style.resolveStyle('BACKGROUND-COLOR', red).expanded).toEqual(toBe)
+    expect(Style.resolveStyle('Background-Color', red).expanded).toEqual(toBe)
+    expect(Style.resolveStyle('Background-Color', red).expanded).toEqual(toBe)
+    expect(Style.resolveStyle('BACKGROUNDCOLOR', red).expanded).toEqual(toBe)
 })
 
 test('unitPixelStyle', () => {
@@ -57,21 +61,21 @@ test('unitPixelStyle', () => {
     expect(() => {
         Style.resolveStyle('borderTopWidth', '2')
     }).toThrow(/expected px unit/)
-    expect(Style.resolveStyle('borderTopWidth', '2px')).toEqual([
+    expect(Style.resolveStyle('borderTopWidth', '2px').expanded).toEqual([
         {
             name: 'borderTopWidth',
             value: '2px',
             parsed: { value: 2, kind: 'px' },
         },
     ])
-    expect(Style.resolveStyle('borderTopWidth', '1px')).toEqual([
+    expect(Style.resolveStyle('borderTopWidth', '1px').expanded).toEqual([
         {
             name: 'borderTopWidth',
             value: '1px',
             parsed: { value: 1, kind: 'px' },
         },
     ])
-    expect(Style.resolveStyle('borderTopWidth', ' 1PX ')).toEqual([
+    expect(Style.resolveStyle('borderTopWidth', ' 1PX ').expanded).toEqual([
         {
             name: 'borderTopWidth',
             value: '1px',
@@ -88,49 +92,49 @@ test('unitOrAutoStyle', () => {
         Style.resolveStyle('width', '12em')
     }).toThrow(/expected px unit/)
 
-    expect(Style.resolveStyle('width', 'auto')).toEqual([
+    expect(Style.resolveStyle('width', 'auto').expanded).toEqual([
         {
             name: 'width',
             value: 'auto',
             parsed: { kind: 'auto' },
         },
     ])
-    expect(Style.resolveStyle('width', '10px')).toEqual([
+    expect(Style.resolveStyle('width', '10px').expanded).toEqual([
         {
             name: 'width',
             value: '10px',
             parsed: { value: 10, kind: 'px' },
         },
     ])
-    expect(Style.resolveStyle('width', '10%')).toEqual([
+    expect(Style.resolveStyle('width', '10%').expanded).toEqual([
         {
             name: 'width',
             value: '10%',
             parsed: { value: 10, kind: '%' },
         },
     ])
-    expect(Style.resolveStyle('height', ' 10PX ')).toEqual([
+    expect(Style.resolveStyle('height', ' 10PX ').expanded).toEqual([
         {
             name: 'height',
             value: '10px',
             parsed: { value: 10, kind: 'px' },
         },
     ])
-    expect(Style.resolveStyle('height', '10%')).toEqual([
+    expect(Style.resolveStyle('height', '10%').expanded).toEqual([
         {
             name: 'height',
             value: '10%',
             parsed: { value: 10, kind: '%' },
         },
     ])
-    expect(Style.resolveStyle('left', '-10px')).toEqual([
+    expect(Style.resolveStyle('left', '-10px').expanded).toEqual([
         {
             name: 'left',
             value: '-10px',
             parsed: { value: -10, kind: 'px' },
         },
     ])
-    expect(Style.resolveStyle('left', '-10%')).toEqual([
+    expect(Style.resolveStyle('left', '-10%').expanded).toEqual([
         {
             name: 'left',
             value: '-10%',
@@ -147,28 +151,28 @@ test('enumStyle', () => {
         Style.resolveStyle('alignItems', 'space-between')
     }).toThrow(/expected one of normal, flex-start, center, flex-end, stretch, baseline/)
 
-    expect(Style.resolveStyle('flexWrap', ' Nowrap ')).toEqual([
+    expect(Style.resolveStyle('flexWrap', ' Nowrap ').expanded).toEqual([
         {
             name: 'flexWrap',
             value: 'nowrap',
             parsed: { enum: 0 },
         },
     ])
-    expect(Style.resolveStyle('justifyContent', 'space-evenly')).toEqual([
+    expect(Style.resolveStyle('justifyContent', 'space-evenly').expanded).toEqual([
         {
             name: 'justifyContent',
             value: 'space-evenly',
             parsed: { enum: 5 },
         },
     ])
-    expect(Style.resolveStyle('alignContent', 'space-between')).toEqual([
+    expect(Style.resolveStyle('alignContent', 'space-between').expanded).toEqual([
         {
             name: 'alignContent',
             value: 'space-between',
             parsed: { enum: 6 },
         },
     ])
-    expect(Style.resolveStyle('alignSelf', 'auto')).toEqual([
+    expect(Style.resolveStyle('alignSelf', 'auto').expanded).toEqual([
         {
             name: 'alignSelf',
             value: 'auto',
@@ -182,7 +186,7 @@ test('colorStyle', () => {
         Style.resolveStyle('backgroundColor', 'rgb(255, 0, 0)')
     }).toThrow(/expected hex color/)
 
-    expect(Style.resolveStyle('backgroundColor', ' #0A1B2C ')).toEqual([
+    expect(Style.resolveStyle('backgroundColor', ' #0A1B2C ').expanded).toEqual([
         {
             name: 'backgroundColor',
             value: '#0a1b2c',
@@ -192,14 +196,14 @@ test('colorStyle', () => {
 })
 
 test('integerStyle', () => {
-    expect(Style.resolveStyle('zIndex', '-1')).toEqual([
+    expect(Style.resolveStyle('zIndex', '-1').expanded).toEqual([
         {
             name: 'zIndex',
             value: '-1',
             parsed: { value: -1 },
         },
     ])
-    expect(Style.resolveStyle('zIndex', '2')).toEqual([
+    expect(Style.resolveStyle('zIndex', '2').expanded).toEqual([
         {
             name: 'zIndex',
             value: '2',
@@ -222,7 +226,7 @@ test('non-negative number styles reject negative values', () => {
             Style.resolveStyle(name, '-1')
         }).toThrow(/expected non-negative value/)
 
-        expect(Style.resolveStyle(name, '1')).toEqual([
+        expect(Style.resolveStyle(name, '1').expanded).toEqual([
             {
                 name,
                 value: '1',
@@ -264,7 +268,7 @@ test('non-negative unit styles reject negative values', () => {
         expect(() => {
             Style.resolveStyle(name, '-1%')
         }).toThrow(/expected non-negative value/)
-        expect(Style.resolveStyle(name, '1px')).toEqual([
+        expect(Style.resolveStyle(name, '1px').expanded).toEqual([
             {
                 name,
                 value: '1px',
@@ -288,7 +292,7 @@ test('resettable unit styles accept unset', () => {
     const styles = ['top', 'left', 'right', 'bottom', 'flexBasis', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight']
 
     for (const name of styles) {
-        expect(Style.resolveStyle(name, ' Unset ')).toEqual([
+        expect(Style.resolveStyle(name, ' Unset ').expanded).toEqual([
             {
                 name,
                 value: 'unset',
@@ -318,14 +322,14 @@ test('border width styles are px-only and non-negative', () => {
     const styles = ['borderTopWidth', 'borderLeftWidth', 'borderRightWidth', 'borderBottomWidth']
 
     for (const name of styles) {
-        expect(Style.resolveStyle(name, '2px')).toEqual([
+        expect(Style.resolveStyle(name, '2px').expanded).toEqual([
             {
                 name,
                 value: '2px',
                 parsed: { value: 2, kind: 'px' },
             },
         ])
-        expect(Style.resolveStyle(name, '1px')).toEqual([
+        expect(Style.resolveStyle(name, '1px').expanded).toEqual([
             {
                 name,
                 value: '1px',
@@ -366,7 +370,7 @@ test('unitOrAutoStyle accepts auto across all auto-capable styles', () => {
     ]
 
     for (const name of styles) {
-        expect(Style.resolveStyle(name, ' Auto ')).toEqual([
+        expect(Style.resolveStyle(name, ' Auto ').expanded).toEqual([
             {
                 name,
                 value: 'auto',
@@ -392,7 +396,7 @@ test('enumStyle maps all enum properties', () => {
     ]
 
     for (const [name, value, parsed] of styles) {
-        expect(Style.resolveStyle(name, value)).toEqual([
+        expect(Style.resolveStyle(name, value).expanded).toEqual([
             {
                 name,
                 value,

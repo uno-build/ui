@@ -53,14 +53,17 @@ export default class RendererDivs extends Renderer {
         this.divs.delete(node)
     }
 
-    protected updateStyle(node, style) {
+    protected updateStyle(node, resolved_style) {
         const div = this.divs.get(node)
-        const is_yoga_style = YOGA_SETTER.hasOwnProperty(style.name)
 
-        if (is_yoga_style) {
-            YOGA_SETTER[style.name](node.element, style)
+        for (const style of resolved_style.expanded) {
+            if (YOGA_SETTER.hasOwnProperty(style.name)) {
+                YOGA_SETTER[style.name](node.element, style)
+            }
         }
-        if (style.name === 'backgroundImage') {
+
+        if (resolved_style.name === 'backgroundImage') {
+            const style = resolved_style.expanded[0]
             if (style.parsed.kind === KEYWORD.UNSET) {
                 div.style.backgroundImage = 'none'
                 return
@@ -70,16 +73,23 @@ export default class RendererDivs extends Renderer {
             div.style.backgroundRepeat = 'no-repeat'
             return
         }
-        if (style.name === 'backgroundSizeWidth' || style.name === 'backgroundSizeHeight') {
+
+        if (resolved_style.name === 'backgroundSizeWidth' || resolved_style.name === 'backgroundSizeHeight') {
             div.style.backgroundSize = toCssBackgroundSize(node)
             return
         }
-        if (style.name === 'backgroundPositionX' || style.name === 'backgroundPositionY') {
-            div.style.backgroundPosition = toCssBackgroundPosition(node)
+
+        if (NATIVE_SOURCE_STYLES.includes(resolved_style.name)) {
+            div.style[resolved_style.name] = resolved_style.value
             return
         }
-        if (!is_yoga_style || MANDATORY_STYLES.includes(style.name)) {
-            div.style[style.name] = style.value
+
+        for (const style of resolved_style.expanded) {
+            const is_yoga_style = YOGA_SETTER.hasOwnProperty(style.name)
+
+            if (!is_yoga_style || MANDATORY_STYLES.includes(style.name)) {
+                div.style[style.name] = style.value
+            }
         }
     }
 
@@ -118,6 +128,14 @@ const DEFAULT_NODE_STYLE = {
     zIndex: '0',
 }
 
+const NATIVE_SOURCE_STYLES = [
+    'backgroundColor',
+    'backgroundSize',
+    'backgroundPosition',
+    'border',
+    'borderRadius',
+    'opacity',
+]
 const MANDATORY_STYLES = ['borderTopWidth', 'borderLeftWidth', 'borderRightWidth', 'borderBottomWidth']
 
 function createDivFactory() {
@@ -152,11 +170,4 @@ function toCssBackgroundSize(node) {
     const height = height_unset ? 'auto' : height_style.value
 
     return `${width} ${height}`
-}
-
-function toCssBackgroundPosition(node) {
-    const x = node.styles.backgroundPositionX?.value ?? '0px'
-    const y = node.styles.backgroundPositionY?.value ?? '0px'
-
-    return `${x} ${y}`
 }

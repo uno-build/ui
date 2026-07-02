@@ -54,7 +54,11 @@ export function resolveStyle(name: string, value: any) {
     }
 
     try {
-        return StyleParser.resolve(value)
+        return {
+            name: normalized_name,
+            value: value,
+            expanded: StyleParser.resolve(value),
+        }
     } catch (err) {
         const message = err instanceof Error ? err.message : err
         const suffix = message ? `: ${message}` : ''

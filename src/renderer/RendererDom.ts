@@ -32,8 +32,9 @@ export default class RendererDom extends Renderer {
         return node.element.children.length
     }
 
-    protected updateStyle(node, style) {
-        if (style.name === 'backgroundImage') {
+    protected updateStyle(node, resolved_style) {
+        if (resolved_style.name === 'backgroundImage') {
+            const style = resolved_style.expanded[0]
             if (style.parsed.kind === KEYWORD.UNSET) {
                 node.element.style.backgroundImage = 'none'
                 return
@@ -43,16 +44,13 @@ export default class RendererDom extends Renderer {
             node.element.style.backgroundRepeat = 'no-repeat'
             return
         }
-        if (style.name === 'backgroundSizeWidth' || style.name === 'backgroundSizeHeight') {
+
+        if (resolved_style.name === 'backgroundSizeWidth' || resolved_style.name === 'backgroundSizeHeight') {
             node.element.style.backgroundSize = toCssBackgroundSize(node)
             return
         }
-        if (style.name === 'backgroundPositionX' || style.name === 'backgroundPositionY') {
-            node.element.style.backgroundPosition = toCssBackgroundPosition(node)
-            return
-        }
 
-        node.element.style[style.name] = style.value
+        node.element.style[resolved_style.name] = resolved_style.value
     }
 
     // prettier-ignore
@@ -114,11 +112,4 @@ function toCssBackgroundSize(node) {
     const height = height_unset ? 'auto' : height_style.value
 
     return `${width} ${height}`
-}
-
-function toCssBackgroundPosition(node) {
-    const x = node.styles.backgroundPositionX?.value ?? '0px'
-    const y = node.styles.backgroundPositionY?.value ?? '0px'
-
-    return `${x} ${y}`
 }

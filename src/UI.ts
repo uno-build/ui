@@ -48,14 +48,14 @@ export default class UI {
     }
 
     public style(node, name, value) {
-        const styles = Style.resolveStyle(name, value)
-        for (const style of styles) {
+        const resolved_style = Style.resolveStyle(name, value)
+        for (const style of resolved_style.expanded) {
             node.styles[style.name] = {
                 value: style.value,
                 parsed: style.parsed,
             }
-            this.renderer.addPendingStyle(node, style)
         }
+        this.renderer.addPendingStyle(node, resolved_style)
     }
 
     public imageUpload(src: string, image: any): void {

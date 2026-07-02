@@ -50,14 +50,14 @@ test('backgroundSize', () => {
     expectEnum('backgroundSizeHeight', 'contain', 'contain', 1)
     expectKeywordUnit('backgroundSizeWidth', ' unset ', 'unset')
     expectKeywordUnit('backgroundSizeHeight', 'unset', 'unset')
-    expect(Style.resolveStyle('backgroundSize', ' 100PX ')).toEqual([
+    expect(Style.resolveStyle('backgroundSize', ' 100PX ').expanded).toEqual([
         {
             name: 'backgroundSizeWidth',
             value: '100px',
             parsed: { value: 100, kind: 'px' },
         },
     ])
-    expect(Style.resolveStyle('backgroundSize', '100px 50px')).toEqual([
+    expect(Style.resolveStyle('backgroundSize', '100px 50px').expanded).toEqual([
         {
             name: 'backgroundSizeWidth',
             value: '100px',
@@ -69,7 +69,7 @@ test('backgroundSize', () => {
             parsed: { value: 50, kind: 'px' },
         },
     ])
-    expect(Style.resolveStyle('backgroundSize', '50% 25%')).toEqual([
+    expect(Style.resolveStyle('backgroundSize', '50% 25%').expanded).toEqual([
         {
             name: 'backgroundSizeWidth',
             value: '50%',
@@ -81,7 +81,7 @@ test('backgroundSize', () => {
             parsed: { value: 25, kind: '%' },
         },
     ])
-    expect(Style.resolveStyle('backgroundSize', ' cover ')).toEqual([
+    expect(Style.resolveStyle('backgroundSize', ' cover ').expanded).toEqual([
         {
             name: 'backgroundSizeWidth',
             value: 'cover',
@@ -93,7 +93,7 @@ test('backgroundSize', () => {
             parsed: { enum: 0 },
         },
     ])
-    expect(Style.resolveStyle('backgroundSize', 'contain')).toEqual([
+    expect(Style.resolveStyle('backgroundSize', 'contain').expanded).toEqual([
         {
             name: 'backgroundSizeWidth',
             value: 'contain',
@@ -105,7 +105,7 @@ test('backgroundSize', () => {
             parsed: { enum: 1 },
         },
     ])
-    expect(Style.resolveStyle('backgroundSize', ' unset ')).toEqual([
+    expect(Style.resolveStyle('backgroundSize', ' unset ').expanded).toEqual([
         {
             name: 'backgroundSizeWidth',
             value: 'unset',
@@ -127,7 +127,7 @@ test('backgroundSize', () => {
 test('backgroundPosition', () => {
     expectUnit('backgroundPositionX', ' 10PX ', '10px', 10, 'px')
     expectUnit('backgroundPositionY', '-20px', '-20px', -20, 'px')
-    expect(Style.resolveStyle('backgroundPosition', ' 10PX 20px ')).toEqual([
+    expect(Style.resolveStyle('backgroundPosition', ' 10PX 20px ').expanded).toEqual([
         {
             name: 'backgroundPositionX',
             value: '10px',
@@ -139,7 +139,7 @@ test('backgroundPosition', () => {
             parsed: { value: 20, kind: 'px' },
         },
     ])
-    expect(Style.resolveStyle('backgroundPosition', '-10px 20px')).toEqual([
+    expect(Style.resolveStyle('backgroundPosition', '-10px 20px').expanded).toEqual([
         {
             name: 'backgroundPositionX',
             value: '-10px',
@@ -704,7 +704,7 @@ function expectResolved(
     parsed: Record<string, unknown>,
     expectedName = name,
 ) {
-    expect(Style.resolveStyle(name, value)).toEqual([
+    expect(Style.resolveStyle(name, value).expanded).toEqual([
         {
             name: expectedName,
             value: expectedValue,
