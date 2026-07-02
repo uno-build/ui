@@ -252,6 +252,10 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
+    public getLayout(node) {
+        return this.engine.getLayout(node)
+    }
+
     public beforeUpdate(nodes) {
         super.beforeUpdate(nodes)
         this.engine.update()
@@ -259,11 +263,6 @@ export default class RendererWebGPU extends Renderer {
 
     public afterUpdate(nodes) {
         super.afterUpdate(nodes)
-        this.draw(nodes)
-    }
-
-    public getLayout(node) {
-        return this.engine.getLayout(node)
     }
 
     private draw(nodes) {
@@ -291,15 +290,12 @@ export default class RendererWebGPU extends Renderer {
             }
 
             // Check if the node has a background image and if it is uploaded to the atlas
-            const background_image = node.styles.backgroundImage
-            if (background_image !== undefined && background_image.parsed.unit !== UNIT.UNSET) {
-                const atlas_image = this.image_manager.getImage(background_image.value)
-                if (atlas_image !== undefined) {
-                    instance_data.background_image_mode = 1
-                    instance_data.background_uv_rect = atlas_image.uv_rect
-                    instance_data.background_image_size = atlas_image.image_size
-                    instance_data.background_atlas_layer = atlas_image.layer
-                }
+            const atlas_image = this.image_manager.getImage(node.styles.backgroundImage?.value)
+            if (atlas_image !== undefined) {
+                instance_data.background_image_mode = 1
+                instance_data.background_uv_rect = atlas_image.uv_rect
+                instance_data.background_image_size = atlas_image.image_size
+                instance_data.background_atlas_layer = atlas_image.layer
             }
 
             render_items.push({

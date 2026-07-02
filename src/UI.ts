@@ -44,6 +44,7 @@ export default class UI {
         }
 
         this.renderer.afterUpdate(this.nodes)
+        this.renderer.draw(this.nodes)
     }
 
     public style(node, name, value) {
