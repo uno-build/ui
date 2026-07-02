@@ -1,7 +1,7 @@
 import Renderer from '../Renderer'
-import { KEYWORD } from '../style/consts'
+import { BACKGROUND_SIZE, KEYWORD, UNIT } from '../style/consts'
 import createEngine, { YOGA_SETTER } from '../engine/yoga'
-import { getNodeDrawingData } from './utils/node'
+import { getNodeBorderWidth, getNodeDrawingData } from './utils/node'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders'
 import { ATLAS_SIZE, ImageManager } from './webgpu/ImageManager'
 import {
@@ -470,12 +470,50 @@ export default class RendererWebGPU extends Renderer {
 
 function getBackgroundImageRect(node, image_size) {
     const [image_width, image_height] = image_size
-    const size_width = node.styles.backgroundSizeWidth?.parsed.value
-    const size_height = node.styles.backgroundSizeHeight?.parsed.value
-    const width = size_width ?? (size_height === undefined ? image_width : image_width * (size_height / image_height))
-    const height = size_height ?? image_height * (width / image_width)
+    const [background_width, background_height] = getBackgroundAreaSize(node)
+    const width_style = node.styles.backgroundSizeWidth
+    const height_style = node.styles.backgroundSizeHeight
     const x = node.styles.backgroundPositionX?.parsed.value ?? 0
     const y = node.styles.backgroundPositionY?.parsed.value ?? 0
+    const background_size_mode = width_style?.parsed.enum ?? height_style?.parsed.enum
+
+    if (background_size_mode === BACKGROUND_SIZE.cover || background_size_mode === BACKGROUND_SIZE.contain) {
+        const scale =
+            background_size_mode === BACKGROUND_SIZE.cover
+                ? Math.max(background_width / image_width, background_height / image_height)
+                : Math.min(background_width / image_width, background_height / image_height)
+
+        return [x, y, image_width * scale, image_height * scale]
+    }
+
+    const size_width = readBackgroundSize(width_style, background_width)
+    const size_height = readBackgroundSize(height_style, background_height)
+    const width = size_width ?? (size_height === undefined ? image_width : image_width * (size_height / image_height))
+    const height = size_height ?? image_height * (width / image_width)
 
     return [x, y, width, height]
+}
+
+function getBackgroundAreaSize(node) {
+    const border_width_top = getNodeBorderWidth(node, 'Top')
+    const border_width_right = getNodeBorderWidth(node, 'Right')
+    const border_width_bottom = getNodeBorderWidth(node, 'Bottom')
+    const border_width_left = getNodeBorderWidth(node, 'Left')
+
+    return [
+        node.layout.width - border_width_left - border_width_right,
+        node.layout.height - border_width_top - border_width_bottom,
+    ]
+}
+
+function readBackgroundSize(style, reference_size) {
+    if (style?.parsed.kind === UNIT.PERCENT) {
+        return (reference_size * style.parsed.value) / 100
+    }
+
+    if (style?.parsed.kind === UNIT.PX) {
+        return style.parsed.value
+    }
+
+    return undefined
 }

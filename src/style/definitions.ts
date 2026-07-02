@@ -2,6 +2,7 @@ import {
     ALIGN_CONTENT,
     ALIGN_ITEMS,
     ALIGN_SELF,
+    BACKGROUND_SIZE,
     BORDER_STYLE,
     BOX_SIZING,
     DIRECTION,
@@ -282,6 +283,16 @@ export const BACKGROUND_SIZE_DEFINITION = [
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNonNegative, validatePx],
         parse: [parsePx],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validatePercent],
+        parse: [parsePercent],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [createEnumValidator(BACKGROUND_SIZE)],
+        parse: [createEnumParser(BACKGROUND_SIZE)],
     },
     {
         normalize: [normalizeTrim, normalizeToLowercase],

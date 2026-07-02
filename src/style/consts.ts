@@ -96,3 +96,7 @@ export const BORDER_STYLE = {
     none: 0,
     solid: 1,
 }
+export const BACKGROUND_SIZE = {
+    cover: 0,
+    contain: 1,
+}

@@ -44,6 +44,10 @@ test('backgroundImage', () => {
 test('backgroundSize', () => {
     expectUnit('backgroundSizeWidth', ' 100PX ', '100px', 100, 'px')
     expectUnit('backgroundSizeHeight', '50px', '50px', 50, 'px')
+    expectUnit('backgroundSizeWidth', ' 50% ', '50%', 50, '%')
+    expectUnit('backgroundSizeHeight', '25%', '25%', 25, '%')
+    expectEnum('backgroundSizeWidth', ' Cover ', 'cover', 0)
+    expectEnum('backgroundSizeHeight', 'contain', 'contain', 1)
     expectKeywordUnit('backgroundSizeWidth', ' unset ', 'unset')
     expectKeywordUnit('backgroundSizeHeight', 'unset', 'unset')
     expect(Style.resolveStyle('backgroundSize', ' 100PX ')).toEqual([
@@ -65,6 +69,42 @@ test('backgroundSize', () => {
             parsed: { value: 50, kind: 'px' },
         },
     ])
+    expect(Style.resolveStyle('backgroundSize', '50% 25%')).toEqual([
+        {
+            name: 'backgroundSizeWidth',
+            value: '50%',
+            parsed: { value: 50, kind: '%' },
+        },
+        {
+            name: 'backgroundSizeHeight',
+            value: '25%',
+            parsed: { value: 25, kind: '%' },
+        },
+    ])
+    expect(Style.resolveStyle('backgroundSize', ' cover ')).toEqual([
+        {
+            name: 'backgroundSizeWidth',
+            value: 'cover',
+            parsed: { enum: 0 },
+        },
+        {
+            name: 'backgroundSizeHeight',
+            value: 'cover',
+            parsed: { enum: 0 },
+        },
+    ])
+    expect(Style.resolveStyle('backgroundSize', 'contain')).toEqual([
+        {
+            name: 'backgroundSizeWidth',
+            value: 'contain',
+            parsed: { enum: 1 },
+        },
+        {
+            name: 'backgroundSizeHeight',
+            value: 'contain',
+            parsed: { enum: 1 },
+        },
+    ])
     expect(Style.resolveStyle('backgroundSize', ' unset ')).toEqual([
         {
             name: 'backgroundSizeWidth',
@@ -77,10 +117,11 @@ test('backgroundSize', () => {
             parsed: { kind: 'unset' },
         },
     ])
-    expectInvalid('backgroundSize', 'cover', /expected px unit/)
-    expectInvalid('backgroundSize', '50%', /expected px unit/)
     expectInvalid('backgroundSize', '-1px', /expected non-negative value/)
-    expectInvalid('backgroundSize', '1px 2px 3px', /expected one or two px values/)
+    expectInvalid('backgroundSize', '-1%', /expected non-negative value/)
+    expectInvalid('backgroundSize', 'cover 50px', /expected cover or contain alone/)
+    expectInvalid('backgroundSize', '50px contain', /expected cover or contain alone/)
+    expectInvalid('backgroundSize', '1px 2px 3px', /expected one or two background size values/)
 })
 
 test('backgroundPosition', () => {

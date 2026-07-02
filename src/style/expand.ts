@@ -1,5 +1,5 @@
 // https://github.com/robinweser/inline-style-expand-shorthand/blob/master/src/expand.js
-import { BORDER_STYLE, KEYWORD } from './consts'
+import { BACKGROUND_SIZE, BORDER_STYLE, KEYWORD } from './consts'
 import { normalizeTrim, normalizeToLowercase } from './normalizers'
 const NUMBER = /^-?(?:\d+|\d*\.\d+)$/
 const BORDER_WIDTH = /^-?(?:\d+|\d*\.\d+)px$|^0$/
@@ -156,17 +156,36 @@ function expandBorderRadius(value: string) {
 }
 
 function expandBackgroundSize(value: string) {
-    if (normalizeToLowercase(normalizeTrim(value)) === KEYWORD.UNSET) {
+    const normalized_value = normalizeToLowercase(normalizeTrim(value))
+
+    if (normalized_value === KEYWORD.UNSET) {
         return {
             backgroundSizeWidth: KEYWORD.UNSET,
             backgroundSizeHeight: KEYWORD.UNSET,
         }
     }
 
+    if (BACKGROUND_SIZE.hasOwnProperty(normalized_value)) {
+        return {
+            backgroundSizeWidth: normalized_value,
+            backgroundSizeHeight: normalized_value,
+        }
+    }
+
     const [width, height, ...rest] = splitShorthand(value)
 
     if (width === undefined || width === '' || rest.length > 0) {
-        throw new Error('expected one or two px values')
+        throw new Error('expected one or two background size values')
+    }
+
+    const normalized_width = normalizeToLowercase(width)
+    const normalized_height = height === undefined ? undefined : normalizeToLowercase(height)
+
+    if (
+        BACKGROUND_SIZE.hasOwnProperty(normalized_width) ||
+        (normalized_height !== undefined && BACKGROUND_SIZE.hasOwnProperty(normalized_height))
+    ) {
+        throw new Error('expected cover or contain alone')
     }
 
     if (height === undefined) {

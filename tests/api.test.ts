@@ -216,6 +216,14 @@ test('RendererDivs image api hooks are no-ops', async () => {
     ui.render()
     expect(canvas.children[0].style.backgroundSize).toBe('unset')
 
+    child.style('backgroundSize', '50%')
+    ui.render()
+    expect(canvas.children[0].style.backgroundSize).toBe('50% auto')
+
+    child.style('backgroundSize', 'cover')
+    ui.render()
+    expect(canvas.children[0].style.backgroundSize).toBe('cover')
+
     ui.imageUpload('/assets/Avatar.png', second_image)
     expect(ui.imageList()).toEqual([])
 

@@ -1,10 +1,20 @@
 import { loadImage } from '../../../src/utils/loadImage'
 
 export default async function createBackgroundImageLayout({ ui }) {
-    const size = 150
-    const asset_texture = await loadImage('/assets/texture.jpg')
+    const size = 100
+    const asset_texture = await loadImage('/assets/card.png')
     const BACKGROUND_COLOR = '#f8cdd3'
-    const IMAGE_SIZES = [`unset`, `${size}px`, `${size}px ${size / 2}px`, `${size / 2}px ${size}px`]
+    const IMAGE_SIZES = [
+        `unset`,
+        `${size}px`,
+        `${size}px ${size / 2}px`,
+        `${size / 2}px ${size}px`,
+        `50%`,
+        `100% 50%`,
+        `100% 100%`,
+        `cover`,
+        `contain`,
+    ]
 
     ui.imageUpload(asset_texture.src, asset_texture)
 
@@ -14,23 +24,27 @@ export default async function createBackgroundImageLayout({ ui }) {
     grid.style('flexDirection', 'row')
     grid.style('flexWrap', 'wrap')
     grid.style('alignContent', 'flex-start')
-    grid.style('gap', '20px')
-    grid.style('padding', '20px')
+    grid.style('gap', '16px')
+    grid.style('padding', '16px')
     ui.root.add(grid)
 
     for (let column_index = 0; column_index < IMAGE_SIZES.length; column_index++) {
         const image_size = IMAGE_SIZES[column_index]
 
-        const node = ui.create()
-        node.style('width', `${size}px`)
-        node.style('height', `${size}px`)
-        node.style('border', '2px solid #000')
-        node.style('borderRadius', '16px')
-        node.style('backgroundColor', BACKGROUND_COLOR)
-        node.style('backgroundImage', asset_texture.src)
-        if (image_size !== null) {
-            node.style('backgroundSize', image_size)
+        for (const has_border of [false, true]) {
+            const node = ui.create()
+            node.style('width', `${size}px`)
+            node.style('height', `${size}px`)
+            node.style('borderRadius', '12px')
+            node.style('backgroundColor', BACKGROUND_COLOR)
+            node.style('backgroundImage', asset_texture.src)
+            if (has_border) {
+                node.style('border', '4px solid #000')
+            }
+            if (image_size !== null) {
+                node.style('backgroundSize', image_size)
+            }
+            grid.add(node)
         }
-        grid.add(node)
     }
 }

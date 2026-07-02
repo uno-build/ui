@@ -133,9 +133,15 @@ function toCssBackgroundSize(node) {
     const height_style = node.styles.backgroundSizeHeight
     const width_unset = width_style?.parsed.kind === KEYWORD.UNSET
     const height_unset = height_style?.parsed.kind === KEYWORD.UNSET
+    const width_mode = width_style?.parsed.enum !== undefined
+    const height_mode = height_style?.parsed.enum !== undefined
 
     if (width_unset && height_unset) {
         return 'unset'
+    }
+
+    if (width_mode || height_mode) {
+        return width_mode ? width_style.value : height_style.value
     }
 
     if (height_style === undefined) {
