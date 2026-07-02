@@ -151,7 +151,7 @@ function parseFlex(value: string) {
     let values = ['']
 
     // https://developer.mozilla.org/en-US/docs/Web/CSS/flex#values
-    switch (value.trim()) {
+    switch (value.trim().toLowerCase()) {
         case 'unset':
             values = splitShorthand('unset unset unset')
             break

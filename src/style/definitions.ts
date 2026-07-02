@@ -23,6 +23,7 @@ import {
     validatePercent,
     validateNonNegative,
     validateMaxOne,
+    validateImageSrc,
 } from './validators'
 import {
     parseString,
@@ -271,7 +272,7 @@ export const BACKGROUNDIMAGE_DEFINITION = [
     },
     {
         normalize: [normalizeTrim],
-        validate: [],
+        validate: [validateImageSrc],
         parse: [parseString],
     },
 ]

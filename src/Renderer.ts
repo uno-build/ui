@@ -10,9 +10,15 @@ export default abstract class Renderer {
     }
 
     public discardPendingStyles(node) {
-        this.pending_styles = this.pending_styles.filter(
-            (pending_style) => pending_style.node !== node,
-        )
+        this.pending_styles = this.pending_styles.filter((pending_style) => pending_style.node !== node)
+    }
+
+    public imageUpload(src: string, image: any): void {}
+
+    public imageDispose(src: string): void {}
+
+    public imageList(): any[] {
+        return []
     }
 
     public addChild(parent, node) {

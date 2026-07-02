@@ -3,7 +3,17 @@ import { loadImage } from '../../../src/utils/loadImage'
 export default async function createBackgroundImageBleedingLayout({ ui }) {
     const TARGET_SIZE = 200
     const asset_bleeding = await loadImage('/assets/bleeding.png')
-    const copy_bitmap = await createImageBitmap(asset_bleeding.bitmap)
+    const padded_src = `${asset_bleeding.src}#padded`
+    const plain_src = `${asset_bleeding.src}#plain`
+
+    ui.imageUpload(padded_src, {
+        ...asset_bleeding,
+        preventBleeding: true,
+    })
+    ui.imageUpload(plain_src, {
+        ...asset_bleeding,
+        preventBleeding: false,
+    })
 
     const stage = ui.create()
     stage.style('width', '100%')
@@ -18,11 +28,7 @@ export default async function createBackgroundImageBleedingLayout({ ui }) {
     image_a.style('position', 'absolute')
     image_a.style('left', '40px')
     image_a.style('top', '40px')
-    image_a.style('backgroundImage', '/assets/bleeding.png', {
-        ...asset_bleeding,
-        bitmap: asset_bleeding.bitmap,
-        preventBleeding: true,
-    })
+    image_a.style('backgroundImage', padded_src)
     stage.add(image_a)
 
     const image_b = ui.create()
@@ -31,10 +37,6 @@ export default async function createBackgroundImageBleedingLayout({ ui }) {
     image_b.style('position', 'absolute')
     image_b.style('left', '350px')
     image_b.style('top', '40px')
-    image_b.style('backgroundImage', '/assets/bleeding.png', {
-        ...asset_bleeding,
-        bitmap: copy_bitmap, // We need a copy because @texture.ts caches by bitmap and we want to test bleeding with the same image but different preventBleeding settings
-        preventBleeding: false,
-    })
+    image_b.style('backgroundImage', plain_src)
     stage.add(image_b)
 }

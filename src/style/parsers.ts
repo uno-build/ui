@@ -31,12 +31,12 @@ export function parseUnset(value: string) {
 
 export function parseNumber(value: string) {
     const number = readNumber(value)!
-    return { value: number, parsed: { value: number } }
+    return { value: String(number), parsed: { value: number } }
 }
 
 export function parseInteger(value: string) {
     const integer = readInteger(value)!
-    return { value: integer, parsed: { value: integer } }
+    return { value: String(integer), parsed: { value: integer } }
 }
 
 export function parseRgba(value: string) {

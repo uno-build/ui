@@ -26,21 +26,23 @@ By default, images are copied into the atlas without edge padding. Pass
 edge pixels into the atlas padding area:
 
 ```ts
-const icon = await loadImage('/assets/icon.png')
+const icon_path = '/assets/icon.png'
+const icon = await loadImage(icon_path)
+
+ui.imageUpload(icon_path, { ...icon, preventBleeding: true })
 
 const image = ui.create()
 image.style('width', '200px')
 image.style('height', '200px')
-image.style('backgroundImage', '/assets/icon.png', { ...icon, preventBleeding: true })
+image.style('backgroundImage', icon_path)
 ```
 
 Use `preventBleeding: true` for small images, icons, sprites, or high-contrast assets
 where edge artifacts are visible. Keep the default behavior for larger images
 where the extra padding copies are unlikely to matter.
 
-Atlas resources are cached by `src`, so use one preventBleeding mode per image source.
-If the same `src` is used with different `preventBleeding` values, whichever version is
-loaded first defines the atlas resource reused by later nodes.
+Atlas resources are keyed by the `src` passed to `ui.imageUpload`, so use separate srcs
+when the same source needs different `preventBleeding` modes.
 
 ## RendererWebGPU overflow and border radius
 

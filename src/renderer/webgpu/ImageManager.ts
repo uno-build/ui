@@ -11,14 +11,6 @@ import {
 export const ATLAS_SIZE = 2048
 export const ATLAS_PADDING = 2
 
-export type LoadedImage = {
-    src: string
-    bitmap: ImageBitmap
-    width: number
-    height: number
-    preventBleeding: boolean
-}
-
 export type AtlasImage = {
     src: string
     layer: number
@@ -33,6 +25,7 @@ type AtlasLayer = {
 }
 
 export type ManagedAtlasImage = AtlasImage & {
+    image: any
     atlas_layer: AtlasLayer
     x: number
     y: number
@@ -43,7 +36,7 @@ export type ManagedAtlasImage = AtlasImage & {
 
 export class ImageManager {
     public bind_group
-    public images = new Map<ImageBitmap, ManagedAtlasImage>()
+    public images = new Map<string, ManagedAtlasImage>()
     private device
     private bind_group_layout
     private viewport_buffer
@@ -65,21 +58,26 @@ export class ImageManager {
         this.bind_group = this.createBindGroup(this.atlas_texture)
     }
 
-    public getImage(image: LoadedImage): AtlasImage | undefined {
-        return this.images.get(image.bitmap)
+    public getImage(src: string): AtlasImage | undefined {
+        return this.images.get(src)
     }
 
-    public insertImage(image: LoadedImage): ManagedAtlasImage {
-        const atlas_image = this.images.get(image.bitmap)
-        if (atlas_image !== undefined) {
-            return atlas_image
-        }
+    public imageList(): any[] {
+        return Array.from(this.images, ([src, atlas_image]) => ({
+            src,
+            image: atlas_image.image,
+            nodes: atlas_image.nodes,
+        }))
+    }
 
+    public uploadImage(src: string, image: any): ManagedAtlasImage {
         if (image.width > this.atlas_size || image.height > this.atlas_size) {
             throw new Error(
                 `Image "${image.src}" is ${image.width}x${image.height}, which exceeds the ${this.atlas_size}x${this.atlas_size} UI atlas layer size.`,
             )
         }
+
+        this.disposeImage(src)
 
         const allocation = this.allocateAtlasRect(image.width, image.height)
 
@@ -99,7 +97,8 @@ export class ImageManager {
         }
 
         const new_atlas_image: ManagedAtlasImage = {
-            src: image.src,
+            src,
+            image,
             layer: allocation.atlas_layer.layer,
             uv_rect: this.createAtlasUvRect(allocation.x, allocation.y, image.width, image.height),
             image_size: [image.width, image.height],
@@ -111,14 +110,19 @@ export class ImageManager {
             nodes: new Set(),
         }
 
-        this.images.set(image.bitmap, new_atlas_image)
+        this.images.set(src, new_atlas_image)
 
         return new_atlas_image
     }
 
-    public releaseImage(bitmap: ImageBitmap): void {
-        const atlas_image = this.images.get(bitmap)!
-        this.images.delete(bitmap)
+    public disposeImage(src: string): void {
+        const atlas_image = this.images.get(src)
+
+        if (atlas_image === undefined) {
+            return
+        }
+
+        this.images.delete(src)
         atlas_image.atlas_layer.free_rects = releaseAtlasRect(atlas_image.atlas_layer.free_rects, {
             x: atlas_image.x,
             y: atlas_image.y,

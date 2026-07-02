@@ -277,11 +277,14 @@ test('Layout: backgroundImage updates and clears with unset', async ({ page }) =
                 node.style('backgroundColor', '#f00')
                 ui.root.add(node)
 
-                node.style('backgroundImage', asset_logo.src, asset_logo)
+                ui.imageUpload(asset_logo.src, asset_logo)
+                ui.imageUpload(asset_coin.src, asset_coin)
+
+                node.style('backgroundImage', asset_logo.src)
                 ui.update()
                 const first = readBackgroundImage(canvas, node.id)
 
-                node.style('backgroundImage', asset_coin.src, asset_coin)
+                node.style('backgroundImage', asset_coin.src)
                 ui.update()
                 const second = readBackgroundImage(canvas, node.id)
 

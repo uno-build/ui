@@ -37,7 +37,7 @@ test('backgroundColor', () => {
 
 test('backgroundImage', () => {
     expectKeywordUnit('backgroundImage', ' Unset ', 'unset')
-    expectInvalid('backgroundImage', '/assets/icon.png', /expected unset/)
+    expectResolved('backgroundImage', '/assets/Avatar/Icon.png', '/assets/Avatar/Icon.png', {})
     expectInvalid('backgroundImage', true, /style value must be a string/)
 })
 

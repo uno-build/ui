@@ -221,16 +221,32 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
+    public imageUpload(src: string, image: any): void {
+        this.image_manager.uploadImage(src, image)
+    }
+
+    public imageDispose(src: string): void {
+        this.image_manager.disposeImage(src)
+    }
+
+    public imageList(): any[] {
+        return this.image_manager.imageList()
+    }
+
     protected updateStyle(node, style) {
         if (YOGA_SETTER.hasOwnProperty(style.name)) {
             YOGA_SETTER[style.name](node.element, style)
         }
 
         if (style.name === 'backgroundImage') {
-            // console.log('backgroundImage', style.value, style.parsed)
             this.image_manager.removeNode(node)
-            if (style.parsed.hasOwnProperty('bitmap')) {
-                const atlas_image = this.image_manager.insertImage(style.parsed)
+            if (style.parsed.unit !== UNIT.UNSET) {
+                const atlas_image = this.image_manager.getImage(style.value)
+
+                if (atlas_image === undefined) {
+                    return
+                }
+
                 this.image_manager.addNode(node, atlas_image)
             }
         }
@@ -266,25 +282,25 @@ export default class RendererWebGPU extends Renderer {
                 continue
             }
 
-            const background_image = node.styles.backgroundImage?.parsed
-            if (background_image !== undefined && background_image.unit !== UNIT.UNSET) {
-                const atlas_image = this.image_manager.getImage(background_image)
-                if (atlas_image === undefined) {
+            const background_image = node.styles.backgroundImage
+            if (background_image !== undefined && background_image.parsed.unit !== UNIT.UNSET) {
+                const atlas_image = this.image_manager.getImage(background_image.value)
+
+                if (atlas_image !== undefined) {
+                    render_items.push({
+                        node,
+                        order: node.order,
+                        bind_group: this.image_manager.bind_group,
+                        instance_data: {
+                            ...drawing_data,
+                            background_image_mode: 1,
+                            background_uv_rect: atlas_image.uv_rect,
+                            background_image_size: atlas_image.image_size,
+                            background_atlas_layer: atlas_image.layer,
+                        },
+                    })
                     continue
                 }
-                render_items.push({
-                    node,
-                    order: node.order,
-                    bind_group: this.image_manager.bind_group,
-                    instance_data: {
-                        ...drawing_data,
-                        background_image_mode: 1,
-                        background_uv_rect: atlas_image.uv_rect,
-                        background_image_size: atlas_image.image_size,
-                        background_atlas_layer: atlas_image.layer,
-                    },
-                })
-                continue
             }
 
             render_items.push({
@@ -382,14 +398,6 @@ export default class RendererWebGPU extends Renderer {
             }
             // console.log(`Draws: ${draws}, Instances: ${instances}`, this.image_manager.atlas_layer_count)
         }
-
-        // for (const [bitmap, atlas_image] of this.image_manager.images) {
-        //     console.log(atlas_image.src, atlas_image.nodes.size)
-        //     if (atlas_image.nodes.size === 0) {
-        //         this.image_manager.releaseImage(bitmap)
-        //     }
-        // }
-        // console.log('----')
 
         pass_encoder.end()
         this.device.queue.submit([command_encoder.finish()])

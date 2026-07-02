@@ -189,6 +189,39 @@ test('Node remove discards pending styles', async () => {
     expect(child.element).toBe(null)
 })
 
+test('RendererDivs image api hooks are no-ops', async () => {
+    const canvas = createDiv()
+    const renderer = new RendererDivs({ canvas, createDiv })
+    const ui = new UI({ renderer })
+    const first_image = createImage('/assets/first.png', 32, 32)
+    const second_image = createImage('/assets/second.png', 64, 16)
+
+    await ui.init()
+
+    ui.imageUpload('/assets/Avatar.png', first_image)
+    expect(ui.imageList()).toEqual([])
+
+    const child = ui.create()
+    child.style('backgroundImage', '/assets/Avatar.png')
+    ui.root.add(child)
+
+    ui.update()
+    expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
+
+    ui.imageUpload('/assets/Avatar.png', second_image)
+    expect(ui.imageList()).toEqual([])
+
+    ui.update()
+    expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
+
+    ui.imageDispose('/assets/Avatar.png')
+    expect(ui.imageList()).toEqual([])
+
+    ui.update()
+    expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
+    expect(() => ui.imageDispose('/assets/Avatar.png')).not.toThrow()
+})
+
 function createDiv() {
     return {
         children: [],
@@ -205,4 +238,14 @@ function createDiv() {
 
 function byId(a, b) {
     return a.id - b.id
+}
+
+function createImage(src, width, height) {
+    return {
+        src,
+        width,
+        height,
+        bitmap: { src },
+        preventBleeding: false,
+    }
 }

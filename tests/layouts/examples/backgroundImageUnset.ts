@@ -5,11 +5,10 @@ export default async function createBackgroundImageUnsetLayout({ ui }) {
     const SWITCH_INTERVAL = 1200
     const asset_texture = await loadImage('/assets/texture.jpg')
     const asset_coin = await loadImage('/assets/coin.png')
-    const states = [
-        { value: asset_texture.src, parsed: asset_texture },
-        { value: asset_coin.src, parsed: asset_coin },
-        { value: 'unset' },
-    ]
+    ui.imageUpload(asset_texture.src, asset_texture)
+    ui.imageUpload(asset_coin.src, asset_coin)
+
+    const states = [{ value: asset_texture.src }, { value: asset_coin.src }, { value: 'unset' }]
 
     const container = ui.create()
     container.style('width', '100%')
@@ -36,6 +35,15 @@ export default async function createBackgroundImageUnsetLayout({ ui }) {
         state_index = (state_index + 1) % states.length
         setBackgroundImage(live, states[state_index])
         ui.update()
+
+        const imagelist = ui.imageList()
+        for (const img of imagelist) {
+            console.log(img.src, img.nodes.size)
+            // if (img.nodes.size=== 0) {
+            //     ui.imageDispose(img.src)
+            // }
+        }
+        console.log('----')
     }, SWITCH_INTERVAL)
 }
 
@@ -50,10 +58,5 @@ function createCard(ui, size, background_color) {
 }
 
 function setBackgroundImage(node, state) {
-    if (state.parsed === undefined) {
-        node.style('backgroundImage', state.value)
-        return
-    }
-
-    node.style('backgroundImage', state.value, state.parsed)
+    node.style('backgroundImage', state.value)
 }

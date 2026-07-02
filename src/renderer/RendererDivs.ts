@@ -66,7 +66,7 @@ export default class RendererDivs extends Renderer {
                 return
             }
 
-            div.style.backgroundImage = `url(${style.value})`
+            div.style.backgroundImage = toCssBackgroundImage(style.value)
             div.style.backgroundSize = 'cover'
             div.style.backgroundPosition = 'center'
             div.style.backgroundRepeat = 'no-repeat'
@@ -116,4 +116,8 @@ const MANDATORY_STYLES = ['borderTopWidth', 'borderLeftWidth', 'borderRightWidth
 
 function createDivFactory() {
     return document.createElement('div')
+}
+
+function toCssBackgroundImage(value) {
+    return value === UNIT.UNSET ? 'unset' : `url(${JSON.stringify(value)})`
 }

@@ -46,8 +46,8 @@ export default class UI {
         this.renderer.afterUpdate(this.nodes)
     }
 
-    public style(node, name, value, parsed?) {
-        const styles = Style.resolveStyle(name, value, parsed)
+    public style(node, name, value) {
+        const styles = Style.resolveStyle(name, value)
         for (const style of styles) {
             node.styles[style.name] = {
                 value: style.value,
@@ -55,6 +55,18 @@ export default class UI {
             }
             this.renderer.addPendingStyle(node, style)
         }
+    }
+
+    public imageUpload(src: string, image: any): void {
+        this.renderer.imageUpload(src, image)
+    }
+
+    public imageDispose(src: string): void {
+        this.renderer.imageDispose(src)
+    }
+
+    public imageList(): any[] {
+        return this.renderer.imageList()
     }
 
     private addChild(parent, child) {

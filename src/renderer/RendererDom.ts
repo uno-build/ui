@@ -39,7 +39,7 @@ export default class RendererDom extends Renderer {
                 return
             }
 
-            node.element.style.backgroundImage = `url(${style.value})`
+            node.element.style.backgroundImage = toCssBackgroundImage(style.value)
             node.element.style.backgroundSize = 'cover'
             node.element.style.backgroundPosition = 'center'
             node.element.style.backgroundRepeat = 'no-repeat'

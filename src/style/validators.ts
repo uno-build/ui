@@ -1,3 +1,4 @@
+import { UNIT } from './consts'
 import { readInteger, readNumber, readPercent, readPx } from './utils'
 
 export function validateColor(value: string) {
@@ -11,14 +12,20 @@ export function validateEnum(value: string, values: Record<string, any>) {
     }
 }
 export function validateAuto(value: any) {
-    if (value !== 'auto') {
+    if (value !== UNIT.AUTO) {
         throw new Error('expected auto')
     }
 }
 
 export function validateUnset(value: any) {
-    if (value !== 'unset') {
+    if (value !== UNIT.UNSET) {
         throw new Error('expected unset')
+    }
+}
+
+export function validateImageSrc(value: string) {
+    if (value.toLowerCase() === UNIT.UNSET) {
+        throw new Error('expected image src')
     }
 }
 

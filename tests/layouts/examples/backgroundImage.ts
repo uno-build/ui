@@ -15,6 +15,10 @@ export default async function createBackgroundImageLayout({ ui }) {
     const BACKGROUND_COLORS = ['#f8cdd3', '#cfe8d5', '#cfe0f8', '#f8e7bf']
     const BACKGROUND_IMAGES = [asset_logo, asset_coin, asset_texture, asset_card]
 
+    for (const background_image of BACKGROUND_IMAGES) {
+        ui.imageUpload(background_image.src, background_image)
+    }
+
     const grid = ui.create()
     grid.style('width', '100%')
     grid.style('height', '100%')
@@ -36,7 +40,7 @@ export default async function createBackgroundImageLayout({ ui }) {
             node.style('width', width)
             node.style('height', height)
             node.style('backgroundColor', BACKGROUND_COLORS[column_index])
-            node.style('backgroundImage', background_image.src, background_image)
+            node.style('backgroundImage', background_image.src)
             node.style('border', '2px solid #000')
             node.style('borderRadius', '16px')
             row.add(node)
