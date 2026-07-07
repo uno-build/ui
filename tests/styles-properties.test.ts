@@ -129,12 +129,6 @@ test('backgroundPosition', () => {
     expectUnit('backgroundPositionY', '-20px', '-20px', -20, 'px')
     expectUnit('backgroundPositionX', ' 10% ', '10%', 10, '%')
     expectUnit('backgroundPositionY', '-20%', '-20%', -20, '%')
-    expectResolved('backgroundPositionX', ' Left ', 'left', { value: 0, kind: '%' })
-    expectResolved('backgroundPositionX', 'center', 'center', { value: 50, kind: '%' })
-    expectResolved('backgroundPositionX', 'right', 'right', { value: 100, kind: '%' })
-    expectResolved('backgroundPositionY', ' Top ', 'top', { value: 0, kind: '%' })
-    expectResolved('backgroundPositionY', 'center', 'center', { value: 50, kind: '%' })
-    expectResolved('backgroundPositionY', 'bottom', 'bottom', { value: 100, kind: '%' })
     expect(Style.resolveStyle('backgroundPosition', ' 10PX 20px ').expanded).toEqual([
         {
             name: 'backgroundPositionX',
@@ -155,7 +149,7 @@ test('backgroundPosition', () => {
         },
         {
             name: 'backgroundPositionY',
-            value: 'center',
+            value: '50%',
             parsed: { value: 50, kind: '%' },
         },
     ])
@@ -171,66 +165,6 @@ test('backgroundPosition', () => {
             parsed: { value: 20, kind: '%' },
         },
     ])
-    expect(Style.resolveStyle('backgroundPosition', 'center').expanded).toEqual([
-        {
-            name: 'backgroundPositionX',
-            value: 'center',
-            parsed: { value: 50, kind: '%' },
-        },
-        {
-            name: 'backgroundPositionY',
-            value: 'center',
-            parsed: { value: 50, kind: '%' },
-        },
-    ])
-    expect(Style.resolveStyle('backgroundPosition', 'top').expanded).toEqual([
-        {
-            name: 'backgroundPositionX',
-            value: 'center',
-            parsed: { value: 50, kind: '%' },
-        },
-        {
-            name: 'backgroundPositionY',
-            value: 'top',
-            parsed: { value: 0, kind: '%' },
-        },
-    ])
-    expect(Style.resolveStyle('backgroundPosition', 'center top').expanded).toEqual([
-        {
-            name: 'backgroundPositionX',
-            value: 'center',
-            parsed: { value: 50, kind: '%' },
-        },
-        {
-            name: 'backgroundPositionY',
-            value: 'top',
-            parsed: { value: 0, kind: '%' },
-        },
-    ])
-    expect(Style.resolveStyle('backgroundPosition', 'left center').expanded).toEqual([
-        {
-            name: 'backgroundPositionX',
-            value: 'left',
-            parsed: { value: 0, kind: '%' },
-        },
-        {
-            name: 'backgroundPositionY',
-            value: 'center',
-            parsed: { value: 50, kind: '%' },
-        },
-    ])
-    expect(Style.resolveStyle('backgroundPosition', 'top left').expanded).toEqual([
-        {
-            name: 'backgroundPositionX',
-            value: 'left',
-            parsed: { value: 0, kind: '%' },
-        },
-        {
-            name: 'backgroundPositionY',
-            value: 'top',
-            parsed: { value: 0, kind: '%' },
-        },
-    ])
     expect(Style.resolveStyle('backgroundPosition', '-10px 20px').expanded).toEqual([
         {
             name: 'backgroundPositionX',
@@ -243,10 +177,10 @@ test('backgroundPosition', () => {
             parsed: { value: 20, kind: 'px' },
         },
     ])
-    expectInvalid('backgroundPositionX', 'top', /invalid value/)
-    expectInvalid('backgroundPositionY', 'left', /invalid value/)
-    expectInvalid('backgroundPosition', 'left right', /expected one horizontal and one vertical/)
-    expectInvalid('backgroundPosition', 'top bottom', /expected one horizontal and one vertical/)
+    expectInvalid('backgroundPositionX', 'center', /expected px unit/)
+    expectInvalid('backgroundPositionY', 'center', /expected px unit/)
+    expectInvalid('backgroundPosition', 'center', /expected px unit/)
+    expectInvalid('backgroundPosition', 'left right', /expected px unit/)
     expectInvalid('backgroundPosition', '1px 2px 3px', /expected one or two background position values/)
 })
 

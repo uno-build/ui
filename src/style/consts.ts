@@ -100,13 +100,3 @@ export const BACKGROUND_SIZE = {
     cover: 0,
     contain: 1,
 }
-export const BACKGROUND_POSITION_X = {
-    left: 0,
-    center: 50,
-    right: 100,
-}
-export const BACKGROUND_POSITION_Y = {
-    top: 0,
-    center: 50,
-    bottom: 100,
-}

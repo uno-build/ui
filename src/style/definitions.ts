@@ -2,8 +2,6 @@ import {
     ALIGN_CONTENT,
     ALIGN_ITEMS,
     ALIGN_SELF,
-    BACKGROUND_POSITION_X,
-    BACKGROUND_POSITION_Y,
     BACKGROUND_SIZE,
     BORDER_STYLE,
     BOX_SIZING,
@@ -13,7 +11,6 @@ import {
     JUSTIFY,
     OVERFLOW,
     POSITION,
-    UNIT,
     WRAP,
 } from './consts'
 import { normalizeTrim, normalizeToLowercase } from './normalizers'
@@ -40,13 +37,6 @@ import {
     parsePercent,
 } from './parsers'
 import { createEnumValidator, createEnumParser } from './utils'
-
-function createBackgroundPositionKeywordParser(values: Record<string, number>) {
-    return (value: string) => ({
-        value,
-        parsed: { value: values[value], kind: UNIT.PERCENT },
-    })
-}
 
 export const INTEGER_DEFINITION = [
     {
@@ -311,7 +301,7 @@ export const BACKGROUND_SIZE_DEFINITION = [
     },
 ]
 
-export const BACKGROUND_POSITION_X_DEFINITION = [
+export const BACKGROUND_POSITION_DEFINITION = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validatePx],
@@ -322,29 +312,4 @@ export const BACKGROUND_POSITION_X_DEFINITION = [
         validate: [validatePercent],
         parse: [parsePercent],
     },
-    {
-        normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [createEnumValidator(BACKGROUND_POSITION_X)],
-        parse: [createBackgroundPositionKeywordParser(BACKGROUND_POSITION_X)],
-    },
 ]
-
-export const BACKGROUND_POSITION_Y_DEFINITION = [
-    {
-        normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [validatePx],
-        parse: [parsePx],
-    },
-    {
-        normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [validatePercent],
-        parse: [parsePercent],
-    },
-    {
-        normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [createEnumValidator(BACKGROUND_POSITION_Y)],
-        parse: [createBackgroundPositionKeywordParser(BACKGROUND_POSITION_Y)],
-    },
-]
-
-export const BACKGROUND_POSITION_DEFINITION = BACKGROUND_POSITION_X_DEFINITION

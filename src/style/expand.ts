@@ -1,5 +1,5 @@
 // https://github.com/robinweser/inline-style-expand-shorthand/blob/master/src/expand.js
-import { BACKGROUND_POSITION_X, BACKGROUND_POSITION_Y, BACKGROUND_SIZE, BORDER_STYLE, KEYWORD } from './consts'
+import { BACKGROUND_SIZE, BORDER_STYLE, KEYWORD } from './consts'
 import { normalizeTrim, normalizeToLowercase } from './normalizers'
 const NUMBER = /^-?(?:\d+|\d*\.\d+)$/
 const BORDER_WIDTH = /^-?(?:\d+|\d*\.\d+)px$|^0$/
@@ -201,62 +201,16 @@ function expandBackgroundSize(value: string) {
 }
 
 function expandBackgroundPosition(value: string) {
-    const values = splitShorthand(value)
+    const [x, y = '50%', ...rest] = splitShorthand(value)
 
-    if (values.length < 1 || values.length > 2 || values.some((val) => val === '')) {
+    if (x === undefined || x === '' || y === '' || rest.length > 0) {
         throw new Error('expected one or two background position values')
     }
 
-    if (values.length === 1) {
-        const value = values[0]
-        const normalized_value = normalizeToLowercase(value)
-
-        if (isVerticalPositionOnly(normalized_value)) {
-            return {
-                backgroundPositionX: 'center',
-                backgroundPositionY: value,
-            }
-        }
-
-        return {
-            backgroundPositionX: value,
-            backgroundPositionY: 'center',
-        }
-    }
-
-    const [first, second] = values
-    const normalized_first = normalizeToLowercase(first)
-    const normalized_second = normalizeToLowercase(second)
-
-    if (
-        (isHorizontalPositionOnly(normalized_first) && isHorizontalPositionOnly(normalized_second)) ||
-        (isVerticalPositionOnly(normalized_first) && isVerticalPositionOnly(normalized_second))
-    ) {
-        throw new Error('expected one horizontal and one vertical background position value')
-    }
-
-    if (
-        isVerticalPositionOnly(normalized_first) ||
-        (normalized_first === 'center' && isHorizontalPositionOnly(normalized_second))
-    ) {
-        return {
-            backgroundPositionX: second,
-            backgroundPositionY: first,
-        }
-    }
-
     return {
-        backgroundPositionX: first,
-        backgroundPositionY: second,
+        backgroundPositionX: x,
+        backgroundPositionY: y,
     }
-}
-
-function isHorizontalPositionOnly(value: string) {
-    return BACKGROUND_POSITION_X.hasOwnProperty(value) && value !== 'center'
-}
-
-function isVerticalPositionOnly(value: string) {
-    return BACKGROUND_POSITION_Y.hasOwnProperty(value) && value !== 'center'
 }
 
 function expandFlex(value: string) {

@@ -28,8 +28,7 @@ import {
     INTEGER_DEFINITION,
     BACKGROUNDIMAGE_DEFINITION,
     BACKGROUND_SIZE_DEFINITION,
-    BACKGROUND_POSITION_X_DEFINITION,
-    BACKGROUND_POSITION_Y_DEFINITION,
+    BACKGROUND_POSITION_DEFINITION,
 } from './definitions'
 
 // if (typeof window !== 'undefined') {
@@ -203,15 +202,15 @@ export const STYLE = {
     ]),
     BACKGROUNDPOSITION: createStyle('backgroundPosition', (name, value) =>
         expandHelper(name, value, {
-            backgroundPositionX: BACKGROUND_POSITION_X_DEFINITION,
-            backgroundPositionY: BACKGROUND_POSITION_Y_DEFINITION,
+            backgroundPositionX: BACKGROUND_POSITION_DEFINITION,
+            backgroundPositionY: BACKGROUND_POSITION_DEFINITION,
         })
     ),
     BACKGROUNDPOSITIONX: createStyle('backgroundPositionX', (name, value) => [
-        { name, value, definition: BACKGROUND_POSITION_X_DEFINITION },
+        { name, value, definition: BACKGROUND_POSITION_DEFINITION },
     ]),
     BACKGROUNDPOSITIONY: createStyle('backgroundPositionY', (name, value) => [
-        { name, value, definition: BACKGROUND_POSITION_Y_DEFINITION },
+        { name, value, definition: BACKGROUND_POSITION_DEFINITION },
     ]),
 
     // YOGA PROPERTIES

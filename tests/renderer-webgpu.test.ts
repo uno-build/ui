@@ -204,11 +204,11 @@ test('RendererWebGPU resolves percentage background image position against avail
                 parsed: {},
             },
             backgroundPositionX: {
-                value: 'center',
+                value: '50%',
                 parsed: { value: 50, kind: UNIT.PERCENT },
             },
             backgroundPositionY: {
-                value: 'bottom',
+                value: '100%',
                 parsed: { value: 100, kind: UNIT.PERCENT },
             },
         },
@@ -388,7 +388,7 @@ test('RendererWebGPU resolves cover background image size against node layout', 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 160, 80])
 })
 
-test('RendererWebGPU resolves centered cover background image position', () => {
+test('RendererWebGPU resolves 50 percent cover background image position', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -417,11 +417,11 @@ test('RendererWebGPU resolves centered cover background image position', () => {
                 parsed: { enum: BACKGROUND_SIZE.cover },
             },
             backgroundPositionX: {
-                value: 'center',
+                value: '50%',
                 parsed: { value: 50, kind: UNIT.PERCENT },
             },
             backgroundPositionY: {
-                value: 'center',
+                value: '50%',
                 parsed: { value: 50, kind: UNIT.PERCENT },
             },
         },
