@@ -341,8 +341,8 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
         (
             input.local_position.x < input.clipping.w ||
             input.local_position.y < input.clipping.x ||
-            input.local_position.x > input.rect_size.x - input.clipping.y ||
-            input.local_position.y > input.rect_size.y - input.clipping.z
+            input.local_position.x > input.clipping.y ||
+            input.local_position.y > input.clipping.z
         )
     ) {
         discard;

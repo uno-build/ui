@@ -82,14 +82,7 @@ function addPanel(ui, parent, styles) {
     panel.style('overflow', styles.overflow)
     panel.style('backgroundColor', styles.backgroundColor)
     panel.style('borderRadius', '14px')
-    panel.style('borderTopWidth', '2px')
-    panel.style('borderRightWidth', '2px')
-    panel.style('borderBottomWidth', '2px')
-    panel.style('borderLeftWidth', '2px')
-    panel.style('borderTopColor', '#ffffff')
-    panel.style('borderRightColor', '#ffffff')
-    panel.style('borderBottomColor', '#ffffff')
-    panel.style('borderLeftColor', '#ffffff')
+
     parent.add(panel)
 
     addCard(ui, panel, {

@@ -35,10 +35,8 @@ export function getNodeDrawingData(node) {
     const clip = getAncestorClipping(node)
     const normalized_clipping = clip === null ? [0, 0, 0, 0] : [clip.top, clip.right, clip.bottom, clip.left]
     if (
-        normalized_clipping[0] >= height ||
-        normalized_clipping[1] >= width ||
-        normalized_clipping[2] >= height ||
-        normalized_clipping[3] >= width
+        clip !== null &&
+        (clip.right <= 0 || clip.bottom <= 0 || clip.left >= width || clip.top >= height)
     ) {
         return null
     }
@@ -156,16 +154,16 @@ export function getAncestorClipping(node) {
     if (clip.width <= 0 || clip.height <= 0) {
         return {
             top: 0,
-            right: layout.width,
-            bottom: layout.height,
+            right: 0,
+            bottom: 0,
             left: 0,
         }
     }
 
-    const top = Math.max(clip.y - layout.y, 0)
-    const right = Math.max(layout.x + layout.width - (clip.x + clip.width), 0)
-    const bottom = Math.max(layout.y + layout.height - (clip.y + clip.height), 0)
-    const left = Math.max(clip.x - layout.x, 0)
+    const top = clip.y - layout.y
+    const right = clip.x + clip.width - layout.x
+    const bottom = clip.y + clip.height - layout.y
+    const left = clip.x - layout.x
 
     return {
         top,

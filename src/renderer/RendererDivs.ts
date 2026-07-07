@@ -110,10 +110,7 @@ export default class RendererDivs extends Renderer {
             div.style.width = `${layout.width}px`
             div.style.height = `${layout.height}px`
             div.style.zIndex = `${node.order}`
-            div.style.clipPath =
-                clipping === null
-                    ? ''
-                    : `inset(${clipping.top}px ${clipping.right}px ${clipping.bottom}px ${clipping.left}px)`
+            div.style.clipPath = clipping === null ? '' : toCssClipPath(clipping, layout)
         }
     }
 
@@ -140,6 +137,13 @@ const MANDATORY_STYLES = ['borderTopWidth', 'borderLeftWidth', 'borderRightWidth
 
 function createDivFactory() {
     return document.createElement('div')
+}
+
+function toCssClipPath(clipping, layout) {
+    const right = layout.width - clipping.right
+    const bottom = layout.height - clipping.bottom
+
+    return `inset(${clipping.top}px ${right}px ${bottom}px ${clipping.left}px)`
 }
 
 function toCssBackgroundImage(value) {

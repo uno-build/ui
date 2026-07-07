@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const benchmarkUrl = '/benchmarks/webgpuBoxShadowBenchmark.html'
+const benchmarkUrl = '/webgpuBoxShadowBenchmark.html'
 
 test.use({
     launchOptions: {
@@ -10,7 +10,7 @@ test.use({
 
 test('RendererWebGPU boxShadow benchmark', async ({ page }) => {
     test.skip(process.env.RUN_BENCHMARKS !== '1', 'Set RUN_BENCHMARKS=1 to run benchmarks')
-    test.setTimeout(120_000)
+    test.setTimeout(45_000)
     await page.goto(`${benchmarkUrl}?nodes=400&frames=60&warmup=10`)
 
     const result = await page.waitForFunction(() => {
@@ -27,7 +27,7 @@ test('RendererWebGPU boxShadow benchmark', async ({ page }) => {
         }
 
         return null
-    })
+    }, null, { timeout: 40_000 })
     const value = await result.jsonValue()
 
     if (value.error != null) {

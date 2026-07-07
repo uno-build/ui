@@ -1,5 +1,5 @@
-import UI from '../../../src/UI'
-import RendererWebGPU from '../../../src/renderer/RendererWebGPU'
+import UI from '../../src/UI'
+import RendererWebGPU from '../../src/renderer/RendererWebGPU'
 
 const DEFAULT_NODES = 400
 const DEFAULT_FRAMES = 60

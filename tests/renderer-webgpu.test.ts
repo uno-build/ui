@@ -32,7 +32,7 @@ test('RendererWebGPU skips fully transparent panel instance data', () => {
     expect(nodes_buffer_data.bytes_offset).toBe(0)
 })
 
-test('RendererWebGPU writes layout and clipping into panel instance data', () => {
+test('RendererWebGPU writes layout and clipping bounds into panel instance data', () => {
     const root = createNode()
     const parent = createNode({
         parent: root,
@@ -51,7 +51,7 @@ test('RendererWebGPU writes layout and clipping into panel instance data', () =>
 
     expect(nodes_buffer_data.bytes_offset).toBe(ATTRIBUTES_SIZE)
     expect(Array.from(floats.slice(layout_float_offset, layout_float_offset + 4))).toEqual([0, 0, 10, 10])
-    expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([3, 3, 3, 2])
+    expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([3, 7, 7, 2])
 })
 
 test('RendererWebGPU writes border drawing data into panel instance data', () => {
