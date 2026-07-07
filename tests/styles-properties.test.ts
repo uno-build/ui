@@ -127,6 +127,14 @@ test('backgroundSize', () => {
 test('backgroundPosition', () => {
     expectUnit('backgroundPositionX', ' 10PX ', '10px', 10, 'px')
     expectUnit('backgroundPositionY', '-20px', '-20px', -20, 'px')
+    expectUnit('backgroundPositionX', ' 10% ', '10%', 10, '%')
+    expectUnit('backgroundPositionY', '-20%', '-20%', -20, '%')
+    expectResolved('backgroundPositionX', ' Left ', 'left', { value: 0, kind: '%' })
+    expectResolved('backgroundPositionX', 'center', 'center', { value: 50, kind: '%' })
+    expectResolved('backgroundPositionX', 'right', 'right', { value: 100, kind: '%' })
+    expectResolved('backgroundPositionY', ' Top ', 'top', { value: 0, kind: '%' })
+    expectResolved('backgroundPositionY', 'center', 'center', { value: 50, kind: '%' })
+    expectResolved('backgroundPositionY', 'bottom', 'bottom', { value: 100, kind: '%' })
     expect(Style.resolveStyle('backgroundPosition', ' 10PX 20px ').expanded).toEqual([
         {
             name: 'backgroundPositionX',
@@ -137,6 +145,90 @@ test('backgroundPosition', () => {
             name: 'backgroundPositionY',
             value: '20px',
             parsed: { value: 20, kind: 'px' },
+        },
+    ])
+    expect(Style.resolveStyle('backgroundPosition', '10px').expanded).toEqual([
+        {
+            name: 'backgroundPositionX',
+            value: '10px',
+            parsed: { value: 10, kind: 'px' },
+        },
+        {
+            name: 'backgroundPositionY',
+            value: 'center',
+            parsed: { value: 50, kind: '%' },
+        },
+    ])
+    expect(Style.resolveStyle('backgroundPosition', '10% 20%').expanded).toEqual([
+        {
+            name: 'backgroundPositionX',
+            value: '10%',
+            parsed: { value: 10, kind: '%' },
+        },
+        {
+            name: 'backgroundPositionY',
+            value: '20%',
+            parsed: { value: 20, kind: '%' },
+        },
+    ])
+    expect(Style.resolveStyle('backgroundPosition', 'center').expanded).toEqual([
+        {
+            name: 'backgroundPositionX',
+            value: 'center',
+            parsed: { value: 50, kind: '%' },
+        },
+        {
+            name: 'backgroundPositionY',
+            value: 'center',
+            parsed: { value: 50, kind: '%' },
+        },
+    ])
+    expect(Style.resolveStyle('backgroundPosition', 'top').expanded).toEqual([
+        {
+            name: 'backgroundPositionX',
+            value: 'center',
+            parsed: { value: 50, kind: '%' },
+        },
+        {
+            name: 'backgroundPositionY',
+            value: 'top',
+            parsed: { value: 0, kind: '%' },
+        },
+    ])
+    expect(Style.resolveStyle('backgroundPosition', 'center top').expanded).toEqual([
+        {
+            name: 'backgroundPositionX',
+            value: 'center',
+            parsed: { value: 50, kind: '%' },
+        },
+        {
+            name: 'backgroundPositionY',
+            value: 'top',
+            parsed: { value: 0, kind: '%' },
+        },
+    ])
+    expect(Style.resolveStyle('backgroundPosition', 'left center').expanded).toEqual([
+        {
+            name: 'backgroundPositionX',
+            value: 'left',
+            parsed: { value: 0, kind: '%' },
+        },
+        {
+            name: 'backgroundPositionY',
+            value: 'center',
+            parsed: { value: 50, kind: '%' },
+        },
+    ])
+    expect(Style.resolveStyle('backgroundPosition', 'top left').expanded).toEqual([
+        {
+            name: 'backgroundPositionX',
+            value: 'left',
+            parsed: { value: 0, kind: '%' },
+        },
+        {
+            name: 'backgroundPositionY',
+            value: 'top',
+            parsed: { value: 0, kind: '%' },
         },
     ])
     expect(Style.resolveStyle('backgroundPosition', '-10px 20px').expanded).toEqual([
@@ -151,9 +243,11 @@ test('backgroundPosition', () => {
             parsed: { value: 20, kind: 'px' },
         },
     ])
-    expectInvalid('backgroundPosition', '10px', /expected two px values/)
-    expectInvalid('backgroundPosition', 'center', /expected two px values/)
-    expectInvalid('backgroundPosition', '10% 20%', /expected px unit/)
+    expectInvalid('backgroundPositionX', 'top', /invalid value/)
+    expectInvalid('backgroundPositionY', 'left', /invalid value/)
+    expectInvalid('backgroundPosition', 'left right', /expected one horizontal and one vertical/)
+    expectInvalid('backgroundPosition', 'top bottom', /expected one horizontal and one vertical/)
+    expectInvalid('backgroundPosition', '1px 2px 3px', /expected one or two background position values/)
 })
 
 test('opacity', () => {

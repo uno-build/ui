@@ -2,6 +2,7 @@ import borderRadius from './examples/borderRadius'
 import borderRadiusCorners from './examples/borderRadiusCorners'
 import borderRadiusOverlap from './examples/borderRadiusOverlap'
 import backgroundImage from './examples/backgroundImage'
+import backgroundPosition from './examples/backgroundPosition'
 import backgroundSize from './examples/backgroundSize'
 import backgroundImageBleeding from './examples/backgroundImageBleeding'
 import backgroundImageUnset from './examples/backgroundImageUnset'
@@ -26,6 +27,7 @@ import zindexGrid from './examples/zindexGrid'
 import zindexEdgeCases from './examples/zindexEdgeCases'
 
 export const LAYOUTS = {
+    backgroundPosition,
     backgroundSize,
     backgroundImage,
     backgroundImageBleeding,

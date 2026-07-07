@@ -479,9 +479,9 @@ function getBackgroundImageRect(node, image_size) {
     const [background_width, background_height] = getBackgroundAreaSize(node)
     const width_style = node.styles.backgroundSizeWidth
     const height_style = node.styles.backgroundSizeHeight
-    const x = node.styles.backgroundPositionX?.parsed.value ?? 0
-    const y = node.styles.backgroundPositionY?.parsed.value ?? 0
     const background_size_mode = width_style?.parsed.enum ?? height_style?.parsed.enum
+    let width
+    let height
 
     if (background_size_mode === BACKGROUND_SIZE.cover || background_size_mode === BACKGROUND_SIZE.contain) {
         const scale =
@@ -489,13 +489,17 @@ function getBackgroundImageRect(node, image_size) {
                 ? Math.max(background_width / image_width, background_height / image_height)
                 : Math.min(background_width / image_width, background_height / image_height)
 
-        return [x, y, image_width * scale, image_height * scale]
+        width = image_width * scale
+        height = image_height * scale
+    } else {
+        const size_width = readBackgroundSize(width_style, background_width)
+        const size_height = readBackgroundSize(height_style, background_height)
+        width = size_width ?? (size_height === undefined ? image_width : image_width * (size_height / image_height))
+        height = size_height ?? image_height * (width / image_width)
     }
 
-    const size_width = readBackgroundSize(width_style, background_width)
-    const size_height = readBackgroundSize(height_style, background_height)
-    const width = size_width ?? (size_height === undefined ? image_width : image_width * (size_height / image_height))
-    const height = size_height ?? image_height * (width / image_width)
+    const x = readBackgroundPosition(node.styles.backgroundPositionX, background_width, width)
+    const y = readBackgroundPosition(node.styles.backgroundPositionY, background_height, height)
 
     return [x, y, width, height]
 }
@@ -522,4 +526,16 @@ function readBackgroundSize(style, reference_size) {
     }
 
     return undefined
+}
+
+function readBackgroundPosition(style, background_size, image_size) {
+    if (style?.parsed.kind === UNIT.PERCENT) {
+        return ((background_size - image_size) * style.parsed.value) / 100
+    }
+
+    if (style?.parsed.kind === UNIT.PX) {
+        return style.parsed.value
+    }
+
+    return 0
 }

@@ -183,6 +183,88 @@ test('RendererWebGPU writes background image size and position into panel instan
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([4, 6, 100, 50])
 })
 
+test('RendererWebGPU resolves percentage background image position against available space', () => {
+    const image = createImage('coin.png', 40, 20)
+    const image_manager = createImageManager({
+        resources: {
+            [image.src]: {
+                src: image.src,
+                layer: 0,
+                uv_rect: [0, 0, 1, 1],
+                image_size: [image.width, image.height],
+            },
+        },
+    })
+    const renderer = createRenderer(image_manager)
+    const node = createNode({
+        layout: { x: 0, y: 0, width: 100, height: 80 },
+        styles: {
+            backgroundImage: {
+                value: image.src,
+                parsed: {},
+            },
+            backgroundPositionX: {
+                value: 'center',
+                parsed: { value: 50, kind: UNIT.PERCENT },
+            },
+            backgroundPositionY: {
+                value: 'bottom',
+                parsed: { value: 100, kind: UNIT.PERCENT },
+            },
+        },
+    })
+    const nodes_buffer_data = createNodesBufferData(renderer, [node])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
+    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+
+    expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([30, 60, 40, 20])
+})
+
+test('RendererWebGPU resolves percentage background image position after background size', () => {
+    const image = createImage('coin.png', 40, 20)
+    const image_manager = createImageManager({
+        resources: {
+            [image.src]: {
+                src: image.src,
+                layer: 0,
+                uv_rect: [0, 0, 1, 1],
+                image_size: [image.width, image.height],
+            },
+        },
+    })
+    const renderer = createRenderer(image_manager)
+    const node = createNode({
+        layout: { x: 0, y: 0, width: 200, height: 120 },
+        styles: {
+            backgroundImage: {
+                value: image.src,
+                parsed: {},
+            },
+            backgroundSizeWidth: {
+                value: '50%',
+                parsed: { value: 50, kind: UNIT.PERCENT },
+            },
+            backgroundSizeHeight: {
+                value: '25%',
+                parsed: { value: 25, kind: UNIT.PERCENT },
+            },
+            backgroundPositionX: {
+                value: '50%',
+                parsed: { value: 50, kind: UNIT.PERCENT },
+            },
+            backgroundPositionY: {
+                value: '50%',
+                parsed: { value: 50, kind: UNIT.PERCENT },
+            },
+        },
+    })
+    const nodes_buffer_data = createNodesBufferData(renderer, [node])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
+    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+
+    expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([50, 45, 100, 30])
+})
+
 test('RendererWebGPU resolves percentage background image size against node layout', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
@@ -304,6 +386,51 @@ test('RendererWebGPU resolves cover background image size against node layout', 
     const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 160, 80])
+})
+
+test('RendererWebGPU resolves centered cover background image position', () => {
+    const image = createImage('coin.png', 40, 20)
+    const image_manager = createImageManager({
+        resources: {
+            [image.src]: {
+                src: image.src,
+                layer: 0,
+                uv_rect: [0, 0, 1, 1],
+                image_size: [image.width, image.height],
+            },
+        },
+    })
+    const renderer = createRenderer(image_manager)
+    const node = createNode({
+        layout: { x: 0, y: 0, width: 100, height: 80 },
+        styles: {
+            backgroundImage: {
+                value: image.src,
+                parsed: {},
+            },
+            backgroundSizeWidth: {
+                value: 'cover',
+                parsed: { enum: BACKGROUND_SIZE.cover },
+            },
+            backgroundSizeHeight: {
+                value: 'cover',
+                parsed: { enum: BACKGROUND_SIZE.cover },
+            },
+            backgroundPositionX: {
+                value: 'center',
+                parsed: { value: 50, kind: UNIT.PERCENT },
+            },
+            backgroundPositionY: {
+                value: 'center',
+                parsed: { value: 50, kind: UNIT.PERCENT },
+            },
+        },
+    })
+    const nodes_buffer_data = createNodesBufferData(renderer, [node])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
+    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+
+    expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([-30, 0, 160, 80])
 })
 
 test('RendererWebGPU resolves contain background image size against node layout', () => {
