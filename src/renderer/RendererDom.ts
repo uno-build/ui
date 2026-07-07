@@ -1,5 +1,5 @@
 import Renderer from '../Renderer'
-import { calculateLayoutRect, getParentLayout } from '../engine/utils'
+import { calculateLayoutRect, getParentLayout } from '../layouter/utils'
 import { KEYWORD } from '../style/consts'
 
 export default class RendererDom extends Renderer {

@@ -3,7 +3,7 @@ import { loadImage } from '../../../src/utils/loadImage'
 export default async function createBackgroundImageLayout({ ui }) {
     const size = 100
     const asset_texture = await loadImage('/assets/card.png')
-    const BACKGROUND_COLOR = '#f8cdd3'
+    const BACKGROUND_COLOR = '#cdd3f8'
     const IMAGE_SIZES = [
         `unset`,
         `${size}px`,
@@ -38,11 +38,9 @@ export default async function createBackgroundImageLayout({ ui }) {
             node.style('borderRadius', '12px')
             node.style('backgroundColor', BACKGROUND_COLOR)
             node.style('backgroundImage', asset_texture.src)
+            node.style('backgroundSize', image_size)
             if (has_border) {
                 node.style('border', '4px solid #000')
-            }
-            if (image_size !== null) {
-                node.style('backgroundSize', image_size)
             }
             grid.add(node)
         }

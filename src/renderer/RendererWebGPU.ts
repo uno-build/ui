@@ -1,6 +1,6 @@
 import Renderer from '../Renderer'
 import { BACKGROUND_SIZE, KEYWORD, UNIT } from '../style/consts'
-import createEngine, { YOGA_SETTER } from '../engine/yoga'
+import createEngine, { YOGA_SETTER } from '../layouter/yoga'
 import { getNodeBorderWidth, getNodeDrawingData } from './utils/node'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders'
 import { ATLAS_SIZE, ImageManager } from './webgpu/ImageManager'
