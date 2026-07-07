@@ -49,6 +49,38 @@ export function parseRgba(value: string) {
 export function parseColor(value: string) {
     return { value, parsed: { rgba: parseRgba(value) } }
 }
+
+export function parseBoxShadow(value: string) {
+    if (value === KEYWORD.UNSET) {
+        return {
+            value,
+            parsed: {
+                box_shadow: {
+                    offset_x: 0,
+                    offset_y: 0,
+                    blur: 0,
+                    spread: 0,
+                    color: [0, 0, 0, 0],
+                },
+            },
+        }
+    }
+
+    const values = value.split(/\s+/)
+
+    return {
+        value,
+        parsed: {
+            box_shadow: {
+                offset_x: readPx(values[0])!.value,
+                offset_y: readPx(values[1])!.value,
+                blur: readPx(values[2])!.value,
+                spread: readPx(values[3])!.value,
+                color: parseRgba(values[4] ?? '#000000FF'),
+            },
+        },
+    }
+}
 export function parseEnum(value: string, values: Record<string, any>) {
     return { value, parsed: { enum: values[value] } }
 }

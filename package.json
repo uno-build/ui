@@ -1,6 +1,7 @@
 {
     "scripts": {
         "dev": "vite ./examples/dev/",
+        "benchmark:box-shadow": "RUN_BENCHMARKS=1 playwright test tests/benchmarks/webgpuBoxShadowBenchmark.benchmark.test.ts",
         "test": "playwright test"
     },
     "dependencies": {

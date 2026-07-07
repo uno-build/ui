@@ -31,6 +31,7 @@ export default class RendererWebGPU extends Renderer {
     private nodes_array_buffer
     private nodes_array_buffer_size = 0
     private nodes_floats
+    private nodes_u32
     private nodes_bytes
     private atlas_size
 
@@ -168,6 +169,11 @@ export default class RendererWebGPU extends Renderer {
                                 shaderLocation: ATTRIBUTES.BACKGROUND_IMAGE_RECT.LOCATION,
                                 offset: ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET,
                                 format: ATTRIBUTES.BACKGROUND_IMAGE_RECT.FORMAT,
+                            },
+                            {
+                                shaderLocation: ATTRIBUTES.BOXSHADOW.LOCATION,
+                                offset: ATTRIBUTES.BOXSHADOW.OFFSET,
+                                format: ATTRIBUTES.BOXSHADOW.FORMAT,
                             },
                         ],
                     },
@@ -406,6 +412,7 @@ export default class RendererWebGPU extends Renderer {
             this.nodes_array_buffer_size = nodes_array_buffer_size
             this.nodes_array_buffer = new ArrayBuffer(nodes_array_buffer_size)
             this.nodes_floats = new Float32Array(this.nodes_array_buffer)
+            this.nodes_u32 = new Uint32Array(this.nodes_array_buffer)
             this.nodes_bytes = new Uint8Array(this.nodes_array_buffer)
         }
 
@@ -434,6 +441,7 @@ export default class RendererWebGPU extends Renderer {
             background_uv_rect,
             background_image_rect,
             background_atlas_layer,
+            box_shadow,
         } = instance_data
 
         const layout_float_offset = (bytes_offset + ATTRIBUTES.LAYOUT.OFFSET) / FLOAT32_SIZE
@@ -471,6 +479,9 @@ export default class RendererWebGPU extends Renderer {
         const background_image_rect_float_offset =
             (bytes_offset + ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET) / FLOAT32_SIZE
         this.nodes_floats.set(background_image_rect, background_image_rect_float_offset)
+
+        const box_shadow_u32_offset = (bytes_offset + ATTRIBUTES.BOXSHADOW.OFFSET) / FLOAT32_SIZE
+        this.nodes_u32.set(box_shadow, box_shadow_u32_offset)
     }
 }
 

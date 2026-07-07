@@ -30,6 +30,7 @@ import {
     BACKGROUND_SIZE_DEFINITION,
     BACKGROUND_POSITION_DEFINITION,
     BACKGROUND_REPEAT_DEFINITION,
+    BOX_SHADOW_DEFINITION,
 } from './definitions'
 
 // if (typeof window !== 'undefined') {
@@ -122,6 +123,9 @@ export const STYLE = {
     ]),
     OPACITY: createStyle('opacity', (name, value) => [
         { name, value, definition: OPACITY_DEFINITION },
+    ]),
+    BOXSHADOW: createStyle('boxShadow', (name, value) => [
+        { name, value, definition: BOX_SHADOW_DEFINITION },
     ]),
     BORDER: createStyle('border', (name, value) => 
         expandHelper(name, value, {

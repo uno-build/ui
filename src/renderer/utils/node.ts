@@ -1,6 +1,8 @@
 import { DISPLAY, OVERFLOW, UNIT } from '../../style/consts'
 import { TRANSPARENT_COLOR } from '../webgpu/buffers'
 
+const EMPTY_BOX_SHADOW = [0, 0, 0, 0]
+
 // If null is returned, the node should not be drawn
 export function getNodeDrawingData(node) {
     const { x, y, width, height } = node.layout
@@ -18,8 +20,10 @@ export function getNodeDrawingData(node) {
     const border_width_left = getNodeBorderWidth(node, 'Left')
     const has_border =
         border_width_top > 0 || border_width_right > 0 || border_width_bottom > 0 || border_width_left > 0
+    const box_shadow = getNodeBoxShadow(node)
+    const has_box_shadow = (box_shadow[2] >>> 24) > 0 && (box_shadow[0] !== 0 || box_shadow[1] !== 0)
 
-    if (!has_background && !has_background_image && !has_border) {
+    if (!has_background && !has_background_image && !has_border && !has_box_shadow) {
         return null
     }
 
@@ -66,6 +70,7 @@ export function getNodeDrawingData(node) {
         border_color_left: node.styles.borderLeftColor?.parsed.rgba ?? TRANSPARENT_COLOR,
         border_widths: [border_width_top, border_width_right, border_width_bottom, border_width_left],
         background_color: background_color ?? TRANSPARENT_COLOR,
+        box_shadow,
     }
 }
 
@@ -102,6 +107,32 @@ function getBorderRadius(border_radius, width, height) {
     }
 
     return [border_radius.value, border_radius.value]
+}
+
+function getNodeBoxShadow(node) {
+    const box_shadow = node.styles.boxShadow?.parsed.box_shadow
+    if (box_shadow === undefined || box_shadow.color[3] === 0) {
+        return EMPTY_BOX_SHADOW
+    }
+
+    return [
+        packSigned16Pair(box_shadow.offset_x, box_shadow.offset_y),
+        packSigned16Pair(box_shadow.blur, box_shadow.spread),
+        packColor(box_shadow.color),
+        0,
+    ]
+}
+
+function packSigned16Pair(first, second) {
+    return (packSigned16(first) | (packSigned16(second) << 16)) >>> 0
+}
+
+function packSigned16(value) {
+    return Math.max(-32768, Math.min(32767, Math.round(value))) & 0xffff
+}
+
+function packColor(color) {
+    return ((color[0] & 255) | ((color[1] & 255) << 8) | ((color[2] & 255) << 16) | ((color[3] & 255) << 24)) >>> 0
 }
 
 export function getAncestorClipping(node) {

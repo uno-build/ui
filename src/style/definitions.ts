@@ -18,6 +18,7 @@ import { normalizeTrim, normalizeToLowercase } from './normalizers'
 import {
     validateColor,
     validateAuto,
+    validateBoxShadow,
     validateUnset,
     validateInteger,
     validateNumber,
@@ -29,6 +30,7 @@ import {
 } from './validators'
 import {
     parseString,
+    parseBoxShadow,
     parseColor,
     parseAuto,
     parseUnset,
@@ -60,6 +62,14 @@ export const OPACITY_DEFINITION = [
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNumber, validateNonNegative, validateMaxOne],
         parse: [parseNumber],
+    },
+]
+
+export const BOX_SHADOW_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateBoxShadow],
+        parse: [parseBoxShadow],
     },
 ]
 

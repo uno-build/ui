@@ -91,5 +91,11 @@ export const ATTRIBUTES = {
         SIZE: 4 * FLOAT32_SIZE,
         FORMAT: 'float32x4',
     },
+    BOXSHADOW: {
+        LOCATION: 15,
+        OFFSET: 30 * FLOAT32_SIZE + 6 * RGBA8_SIZE,
+        SIZE: 4 * FLOAT32_SIZE,
+        FORMAT: 'uint32x4',
+    },
 }
 export const ATTRIBUTES_SIZE = Math.max(...Object.values(ATTRIBUTES).map((attrb) => attrb.OFFSET + attrb.SIZE))
