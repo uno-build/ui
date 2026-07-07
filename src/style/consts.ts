@@ -100,3 +100,9 @@ export const BACKGROUND_SIZE = {
     cover: 0,
     contain: 1,
 }
+export const BACKGROUND_REPEAT = {
+    'no-repeat': 0,
+    repeat: 1,
+    'repeat-x': 2,
+    'repeat-y': 3,
+}

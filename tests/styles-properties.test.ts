@@ -184,6 +184,15 @@ test('backgroundPosition', () => {
     expectInvalid('backgroundPosition', '1px 2px 3px', /expected one or two background position values/)
 })
 
+test('backgroundRepeat', () => {
+    expectEnum('backgroundRepeat', ' No-Repeat ', 'no-repeat', 0)
+    expectEnum('backgroundRepeat', 'repeat', 'repeat', 1)
+    expectEnum('backgroundRepeat', 'repeat-x', 'repeat-x', 2)
+    expectEnum('backgroundRepeat', 'repeat-y', 'repeat-y', 3)
+    expectInvalid('backgroundRepeat', 'space', /expected one of no-repeat, repeat, repeat-x, repeat-y/)
+    expectInvalid('backgroundRepeat', true, /style value must be a string/)
+})
+
 test('opacity', () => {
     const valid_cases = [
         ['0', '0', 0],

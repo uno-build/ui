@@ -29,6 +29,7 @@ import {
     BACKGROUNDIMAGE_DEFINITION,
     BACKGROUND_SIZE_DEFINITION,
     BACKGROUND_POSITION_DEFINITION,
+    BACKGROUND_REPEAT_DEFINITION,
 } from './definitions'
 
 // if (typeof window !== 'undefined') {
@@ -211,6 +212,9 @@ export const STYLE = {
     ]),
     BACKGROUNDPOSITIONY: createStyle('backgroundPositionY', (name, value) => [
         { name, value, definition: BACKGROUND_POSITION_DEFINITION },
+    ]),
+    BACKGROUNDREPEAT: createStyle('backgroundRepeat', (name, value) => [
+        { name, value, definition: BACKGROUND_REPEAT_DEFINITION },
     ]),
 
     // YOGA PROPERTIES

@@ -1,5 +1,5 @@
 import Renderer from '../Renderer'
-import { BACKGROUND_SIZE, KEYWORD, UNIT } from '../style/consts'
+import { BACKGROUND_REPEAT, BACKGROUND_SIZE, KEYWORD, UNIT } from '../style/consts'
 import createEngine, { YOGA_SETTER } from '../layouter/yoga'
 import { getNodeBorderWidth, getNodeDrawingData } from './utils/node'
 import { nodeVertexWGSL, nodeFragmentWGSL } from './webgpu/shaders'
@@ -298,7 +298,7 @@ export default class RendererWebGPU extends Renderer {
             // Check if the node has a background image and if it is uploaded to the atlas
             const atlas_image = this.image_manager.getImage(node.styles.backgroundImage?.value)
             if (atlas_image !== undefined) {
-                instance_data.background_image_mode = 1
+                instance_data.background_image_mode = readBackgroundImageMode(node)
                 instance_data.background_uv_rect = atlas_image.uv_rect
                 instance_data.background_image_rect = getBackgroundImageRect(node, atlas_image.image_size)
                 instance_data.background_atlas_layer = atlas_image.layer
@@ -538,4 +538,8 @@ function readBackgroundPosition(style, background_size, image_size) {
     }
 
     return 0
+}
+
+function readBackgroundImageMode(node) {
+    return 1 + (node.styles.backgroundRepeat?.parsed.enum ?? BACKGROUND_REPEAT['no-repeat'])
 }

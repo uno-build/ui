@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
-import { BACKGROUND_SIZE, KEYWORD, OVERFLOW, UNIT } from '../src/style/consts.ts'
+import { BACKGROUND_REPEAT, BACKGROUND_SIZE, KEYWORD, OVERFLOW, UNIT } from '../src/style/consts.ts'
 import { ATTRIBUTES_SIZE, ATTRIBUTES, FLOAT32_SIZE } from '../src/renderer/webgpu/buffers.ts'
 import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
 ;(globalThis as any).GPUTextureUsage = {
@@ -141,6 +141,68 @@ test('RendererWebGPU writes background image data into panel instance data', () 
         expect.closeTo(0.4),
     ])
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 40, 20])
+})
+
+test('RendererWebGPU writes background repeat mode into panel instance data', () => {
+    const image = createImage('coin.png', 40, 20)
+    const image_manager = createImageManager({
+        resources: {
+            [image.src]: {
+                src: image.src,
+                layer: 3,
+                uv_rect: [0, 0, 1, 1],
+                image_size: [image.width, image.height],
+            },
+        },
+    })
+    const renderer = createRenderer(image_manager)
+    const nodes = [
+        createNode({
+            styles: {
+                backgroundImage: {
+                    value: image.src,
+                    parsed: {},
+                },
+                backgroundRepeat: {
+                    value: 'repeat',
+                    parsed: { enum: BACKGROUND_REPEAT.repeat },
+                },
+            },
+        }),
+        createNode({
+            styles: {
+                backgroundImage: {
+                    value: image.src,
+                    parsed: {},
+                },
+                backgroundRepeat: {
+                    value: 'repeat-x',
+                    parsed: { enum: BACKGROUND_REPEAT['repeat-x'] },
+                },
+            },
+        }),
+        createNode({
+            styles: {
+                backgroundImage: {
+                    value: image.src,
+                    parsed: {},
+                },
+                backgroundRepeat: {
+                    value: 'repeat-y',
+                    parsed: { enum: BACKGROUND_REPEAT['repeat-y'] },
+                },
+            },
+        }),
+    ]
+    const nodes_buffer_data = createNodesBufferData(renderer, nodes)
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
+    const mode_data_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_MODE_DATA.OFFSET / FLOAT32_SIZE
+
+    expect([
+        floats[mode_data_float_offset],
+        floats[ATTRIBUTES_SIZE / FLOAT32_SIZE + mode_data_float_offset],
+        floats[(ATTRIBUTES_SIZE * 2) / FLOAT32_SIZE + mode_data_float_offset],
+    ]).toEqual([2, 3, 4])
 })
 
 test('RendererWebGPU writes background image size and position into panel instance data', () => {

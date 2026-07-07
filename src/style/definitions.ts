@@ -2,6 +2,7 @@ import {
     ALIGN_CONTENT,
     ALIGN_ITEMS,
     ALIGN_SELF,
+    BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
     BORDER_STYLE,
     BOX_SIZING,
@@ -298,6 +299,14 @@ export const BACKGROUND_SIZE_DEFINITION = [
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateUnset],
         parse: [parseUnset],
+    },
+]
+
+export const BACKGROUND_REPEAT_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [createEnumValidator(BACKGROUND_REPEAT)],
+        parse: [createEnumParser(BACKGROUND_REPEAT)],
     },
 ]
 

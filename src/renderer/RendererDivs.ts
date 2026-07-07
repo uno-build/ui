@@ -70,7 +70,7 @@ export default class RendererDivs extends Renderer {
             }
 
             div.style.backgroundImage = toCssBackgroundImage(style.value)
-            div.style.backgroundRepeat = 'no-repeat'
+            div.style.backgroundRepeat = node.styles.backgroundRepeat?.value ?? 'no-repeat'
             return
         }
 

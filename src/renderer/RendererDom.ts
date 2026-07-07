@@ -41,7 +41,7 @@ export default class RendererDom extends Renderer {
             }
 
             node.element.style.backgroundImage = toCssBackgroundImage(style.value)
-            node.element.style.backgroundRepeat = 'no-repeat'
+            node.element.style.backgroundRepeat = node.styles.backgroundRepeat?.value ?? 'no-repeat'
             return
         }
 

@@ -172,12 +172,25 @@ fn borderColorForPosition(input: FragmentInput) -> vec4f {
 fn backgroundImageColor(input: FragmentInput, local_position: vec2f) -> vec4f {
     let image_position = input.background_image_rect.xy;
     let image_size = input.background_image_rect.zw;
-    let image_position_local = local_position - image_position;
 
+    if (any(image_size <= vec2f(0.0))) {
+        return vec4f(0.0);
+    }
+
+    let repeat_mode = input.background_image_mode_data.x;
+    let repeat_x = repeat_mode == 2.0 || repeat_mode == 3.0;
+    let repeat_y = repeat_mode == 2.0 || repeat_mode == 4.0;
+    var image_position_local = local_position - image_position;
+
+    if (repeat_x) {
+        image_position_local.x = image_position_local.x - floor(image_position_local.x / image_size.x) * image_size.x;
+    }
+    if (repeat_y) {
+        image_position_local.y = image_position_local.y - floor(image_position_local.y / image_size.y) * image_size.y;
+    }
     if (
-        any(image_size <= vec2f(0.0)) ||
-        any(image_position_local < vec2f(0.0)) ||
-        any(image_position_local > image_size)
+        (!repeat_x && (image_position_local.x < 0.0 || image_position_local.x > image_size.x)) ||
+        (!repeat_y && (image_position_local.y < 0.0 || image_position_local.y > image_size.y))
     ) {
         return vec4f(0.0);
     }
