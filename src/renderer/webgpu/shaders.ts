@@ -128,28 +128,20 @@ fn cornerRadius(
 
 fn roundedRectCoverage(
     local_position: vec2f,
+    local_position_width: vec2f,
     rect_size: vec2f,
     border_radius_x: vec4f,
     border_radius_y: vec4f,
 ) -> f32 {
-    let border_radius = cornerRadius(
+    let distance = roundedRectSignedDistance(
         local_position,
         rect_size,
         border_radius_x,
         border_radius_y,
     );
-    let radius = min(border_radius, rect_size * 0.5);
-    let rect_distance = min(
-        min(local_position.x, local_position.y),
-        min(rect_size.x - local_position.x, rect_size.y - local_position.y),
-    );
-    let corner_distance = min(local_position, rect_size - local_position);
-    let corner_delta = max(radius - corner_distance, vec2f(0.0));
-    let rounded_distance = 1.0 - length(corner_delta / max(radius, vec2f(0.0001)));
-    let distance = select(rect_distance, rounded_distance, all(radius > vec2f(0.0)));
-    let antialias = max(fwidth(distance) * 0.5, 0.0001);
+    let antialias = max(max(local_position_width.x, local_position_width.y) * 0.5, 0.0001);
 
-    return smoothstep(-antialias, antialias, distance);
+    return 1.0 - smoothstep(-antialias, antialias, distance);
 }
 
 fn roundedRectSignedDistance(
@@ -315,7 +307,7 @@ fn vertexMain(
     return output;
 }
 
-fn panelColor(input: VertexOutput) -> vec4f {
+fn panelColor(input: VertexOutput, local_position_width: vec2f) -> vec4f {
     let panel = panel_data[u32(input.panel_index)];
     let visible = !(
         any(panel.clipping > vec4f(0.0)) &&
@@ -330,6 +322,7 @@ fn panelColor(input: VertexOutput) -> vec4f {
     let rect_size = panel.rect.zw;
     let outer_coverage = roundedRectCoverage(
         input.local_position,
+        local_position_width,
         rect_size,
         panel.border_radius_x,
         panel.border_radius_y,
@@ -365,6 +358,7 @@ fn panelColor(input: VertexOutput) -> vec4f {
         0.0,
         roundedRectCoverage(
             inner_position,
+            local_position_width,
             inner_size,
             inner_border_radius_x,
             inner_border_radius_y,
@@ -402,7 +396,7 @@ fn panelColor(input: VertexOutput) -> vec4f {
     return color;
 }
 
-fn glyphColor(input: VertexOutput) -> vec4f {
+fn glyphColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
     let glyph = glyph_data[u32(input.glyph_index)];
     let run = text_runs[glyph.run_data.x];
     let visible = !(
@@ -423,8 +417,11 @@ fn glyphColor(input: VertexOutput) -> vec4f {
         0.0,
     );
     let signed_distance = median(sample.r, sample.g, sample.b);
-    let smoothing = fwidth(signed_distance);
-    let alpha = smoothstep(0.5 - smoothing, 0.5 + smoothing, signed_distance) *
+    let unit_range = vec2f(run.font_data.z / run.font_data.w);
+    let screen_tex_size = vec2f(1.0) / max(uv_width, vec2f(0.000001));
+    let screen_px_range = max(0.5 * dot(unit_range, screen_tex_size), 1.0);
+    let distance_alpha = clamp(screen_px_range * (signed_distance - 0.5) + 0.5, 0.0, 1.0);
+    let alpha = distance_alpha *
         run.color.a *
         run.font_data.y *
         select(0.0, 1.0, visible);
@@ -434,9 +431,13 @@ fn glyphColor(input: VertexOutput) -> vec4f {
 
 @fragment
 fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
-    let panel_color = panelColor(input);
-    let glyph_color = glyphColor(input);
+    let local_position_width = fwidth(input.local_position);
+    let uv_width = fwidth(input.uv);
 
-    return select(glyph_color, panel_color, u32(input.kind) == COMMAND_KIND_PANEL);
+    if (u32(input.kind) == COMMAND_KIND_PANEL) {
+        return panelColor(input, local_position_width);
+    }
+
+    return glyphColor(input, uv_width);
 }
 `

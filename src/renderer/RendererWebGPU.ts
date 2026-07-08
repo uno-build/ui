@@ -479,7 +479,7 @@ export default class RendererWebGPU extends Renderer {
             glyphs,
             run: {
                 color: DEFAULT_TEXT_COLOR,
-                font_data: [font.layer, opacity, 0, 0],
+                font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.atlas_size],
                 clipping,
             },
         }

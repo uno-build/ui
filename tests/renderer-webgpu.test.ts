@@ -731,7 +731,7 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
     expect((renderer as any).text_runs).toEqual([
         {
             color: [0, 0, 0, 255],
-            font_data: [2, 1, 0, 0],
+            font_data: [2, 1, 6, ATLAS_SIZE],
             clipping: [0, 0, 0, 0],
         },
     ])
@@ -785,7 +785,7 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
         Array.from(
             floats.slice(TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE, TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE + 4),
         ),
-    ).toEqual([2, 1, 0, 0])
+    ).toEqual([2, 1, 6, ATLAS_SIZE])
     expect(
         Array.from(floats.slice(TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE, TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE + 4)),
     ).toEqual([0, 0, 0, 0])
@@ -1225,6 +1225,11 @@ function createManagedFont() {
     return {
         name: 'Poppins',
         layer: 2,
+        json: {
+            atlas: {
+                distanceRange: 6,
+            },
+        },
         metrics: {
             ascender: 1,
         },
@@ -1262,6 +1267,7 @@ function createFontJson() {
     return {
         atlas: {
             type: 'mtsdf',
+            distanceRange: 6,
             width: 484,
             height: 484,
             yOrigin: 'bottom',
