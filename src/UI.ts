@@ -32,7 +32,7 @@ export default class UI {
         return node
     }
 
-    public render() {
+    public update() {
         this.nodes.sort(sortPaintingOrder)
         this.renderer.beforeUpdate(this.nodes)
         this.root.layout = this.renderer.getLayout(this.root)
@@ -44,7 +44,16 @@ export default class UI {
         }
 
         this.renderer.afterUpdate(this.nodes)
-        this.renderer.draw(this.nodes)
+        this.renderer.update(this.nodes)
+    }
+
+    public draw() {
+        this.renderer.draw()
+    }
+
+    public render() {
+        this.update()
+        this.draw()
     }
 
     public style(node, name, value) {

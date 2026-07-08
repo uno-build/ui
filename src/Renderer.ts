@@ -39,7 +39,9 @@ export default abstract class Renderer {
         this.pending_styles.length = 0
     }
 
-    public draw(nodes) {}
+    public update(nodes) {}
+
+    public draw() {}
 
     public abstract createElement(node)
     public abstract getChildIndex(node)

@@ -16,6 +16,7 @@ import {
 
 export default class RendererWebGPU extends Renderer {
     private canvas
+    private atlas_size
     private engine
     private adapter
     private device
@@ -26,6 +27,7 @@ export default class RendererWebGPU extends Renderer {
     private image_manager
     private position_buffer
     private viewport_buffer
+    private batches = []
     private nodes_buffer
     private nodes_buffer_size = 0
     private nodes_array_buffer
@@ -33,7 +35,7 @@ export default class RendererWebGPU extends Renderer {
     private nodes_floats
     private nodes_u32
     private nodes_bytes
-    private atlas_size
+    private nodes_buffer_bytes_offset = 0
 
     constructor({ canvas, atlas_size = ATLAS_SIZE }) {
         super()
@@ -277,11 +279,45 @@ export default class RendererWebGPU extends Renderer {
         super.afterUpdate(nodes)
     }
 
-    private draw(nodes) {
+    public update(nodes) {
         const render_items = this.collectRenderItems(nodes)
-        const batches = this.buildBatches(render_items)
         const nodes_buffer_data = this.createNodesBufferData(render_items)
-        this.drawBatches(batches, nodes_buffer_data)
+        this.batches = this.buildBatches(render_items)
+        this.updateBuffers(nodes_buffer_data)
+    }
+
+    public draw() {
+        const command_encoder = this.device.createCommandEncoder()
+        const texture_view = this.context.getCurrentTexture().createView()
+        const pass_encoder = command_encoder.beginRenderPass({
+            colorAttachments: [
+                {
+                    view: texture_view,
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: 'clear',
+                    storeOp: 'store',
+                },
+            ],
+        })
+
+        if (this.nodes_buffer_bytes_offset > 0) {
+            pass_encoder.setVertexBuffer(0, this.position_buffer)
+            pass_encoder.setVertexBuffer(1, this.nodes_buffer)
+
+            // let draws = 0
+            // let instances = 0
+            for (const batch of this.batches) {
+                pass_encoder.setPipeline(batch.pipeline)
+                pass_encoder.setBindGroup(0, batch.bind_group)
+                pass_encoder.draw(POSITION_VERTEX_COUNT, batch.instance_count, 0, batch.first_instance)
+                // draws++
+                // instances += batch.instance_count
+            }
+            // console.log(`Draws: ${draws}, Instances: ${instances}`, this.image_manager.atlas_layer_count)
+        }
+
+        pass_encoder.end()
+        this.device.queue.submit([command_encoder.finish()])
     }
 
     private collectRenderItems(nodes) {
@@ -349,59 +385,28 @@ export default class RendererWebGPU extends Renderer {
         return batches
     }
 
-    private drawBatches(batches, nodes_buffer_data) {
-        const command_encoder = this.device.createCommandEncoder()
-        const texture_view = this.context.getCurrentTexture().createView()
-        const pass_encoder = command_encoder.beginRenderPass({
-            colorAttachments: [
-                {
-                    view: texture_view,
-                    clearValue: [0, 0, 0, 0],
-                    loadOp: 'clear',
-                    storeOp: 'store',
-                },
-            ],
-        })
+    private updateBuffers(nodes_buffer_data) {
+        this.nodes_buffer_bytes_offset = nodes_buffer_data.bytes_offset
 
-        if (nodes_buffer_data.bytes_offset > 0) {
-            if (this.nodes_buffer_size < nodes_buffer_data.bytes_offset || !this.nodes_buffer) {
-                this.nodes_buffer_size = nodes_buffer_data.bytes_offset
-                this.nodes_buffer?.destroy()
-                this.nodes_buffer = this.device.createBuffer({
-                    size: nodes_buffer_data.bytes_offset,
-                    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-                })
-            }
-
-            this.device.queue.writeBuffer(
-                this.nodes_buffer,
-                0,
-                nodes_buffer_data.bytes,
-                0,
-                nodes_buffer_data.bytes_offset,
-            )
-            this.device.queue.writeBuffer(
-                this.viewport_buffer,
-                0,
-                new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, 0, 0]),
-            )
-            pass_encoder.setVertexBuffer(0, this.position_buffer)
-            pass_encoder.setVertexBuffer(1, this.nodes_buffer)
-
-            // let draws = 0
-            // let instances = 0
-            for (const batch of batches) {
-                pass_encoder.setPipeline(batch.pipeline)
-                pass_encoder.setBindGroup(0, batch.bind_group)
-                pass_encoder.draw(POSITION_VERTEX_COUNT, batch.instance_count, 0, batch.first_instance)
-                // draws++
-                // instances += batch.instance_count
-            }
-            // console.log(`Draws: ${draws}, Instances: ${instances}`, this.image_manager.atlas_layer_count)
+        if (nodes_buffer_data.bytes_offset === 0) {
+            return
         }
 
-        pass_encoder.end()
-        this.device.queue.submit([command_encoder.finish()])
+        if (this.nodes_buffer_size < nodes_buffer_data.bytes_offset || !this.nodes_buffer) {
+            this.nodes_buffer_size = nodes_buffer_data.bytes_offset
+            this.nodes_buffer?.destroy()
+            this.nodes_buffer = this.device.createBuffer({
+                size: nodes_buffer_data.bytes_offset,
+                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            })
+        }
+
+        this.device.queue.writeBuffer(this.nodes_buffer, 0, nodes_buffer_data.bytes, 0, nodes_buffer_data.bytes_offset)
+        this.device.queue.writeBuffer(
+            this.viewport_buffer,
+            0,
+            new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, 0, 0]),
+        )
     }
 
     private createNodesBufferData(render_items) {
