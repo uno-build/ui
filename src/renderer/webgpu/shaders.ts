@@ -418,3 +418,94 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
     return compositeOver(box_color, shadow_color);
 }
 `
+
+export const textVertexWGSL = /* wgsl */ `
+struct Viewport {
+    size: vec2f,
+    padding: vec2f,
+}
+
+struct VertexOutput {
+    @builtin(position) position: vec4f,
+    @location(0) uv: vec2f,
+    @location(1) run_index: f32,
+    @location(2) pixel: vec2f,
+}
+
+@group(0) @binding(0) var<uniform> viewport: Viewport;
+
+@vertex
+fn main(
+    @location(0) position: vec2f,
+    @location(1) glyph_rect: vec4f,
+    @location(2) glyph_uv_rect: vec4f,
+    @location(3) run_index: f32,
+) -> VertexOutput {
+    let pixel = glyph_rect.xy + position * glyph_rect.zw;
+    let clip = vec2f(
+        pixel.x / viewport.size.x * 2.0 - 1.0,
+        1.0 - pixel.y / viewport.size.y * 2.0,
+    );
+
+    var output: VertexOutput;
+    output.position = vec4f(clip, 0.0, 1.0);
+    output.uv = glyph_uv_rect.xy + position * glyph_uv_rect.zw;
+    output.run_index = run_index;
+    output.pixel = pixel;
+    return output;
+}
+`
+
+export const textFragmentWGSL = /* wgsl */ `
+struct FragmentInput {
+    @location(0) uv: vec2f,
+    @location(1) run_index: f32,
+    @location(2) pixel: vec2f,
+}
+
+struct TextRun {
+    color: vec4f,
+    font_data: vec4f,
+    clipping: vec4f,
+}
+
+@group(0) @binding(1) var font_sampler: sampler;
+@group(0) @binding(2) var font_texture: texture_2d_array<f32>;
+@group(0) @binding(3) var<storage, read> text_runs: array<TextRun>;
+
+fn median(r: f32, g: f32, b: f32) -> f32 {
+    return max(min(r, g), min(max(r, g), b));
+}
+
+@fragment
+fn main(input: FragmentInput) -> @location(0) vec4f {
+    let run = text_runs[u32(input.run_index)];
+
+    if (
+        any(run.clipping > vec4f(0.0)) &&
+        (
+            input.pixel.x < run.clipping.w ||
+            input.pixel.y < run.clipping.x ||
+            input.pixel.x > run.clipping.y ||
+            input.pixel.y > run.clipping.z
+        )
+    ) {
+        discard;
+    }
+
+    let sample = textureSampleLevel(
+        font_texture,
+        font_sampler,
+        input.uv,
+        u32(run.font_data.x),
+        0.0,
+    );
+    let signed_distance = median(sample.r, sample.g, sample.b);
+    let smoothing = fwidth(signed_distance);
+    let alpha = smoothstep(0.5 - smoothing, 0.5 + smoothing, signed_distance) *
+        run.color.a *
+        run.font_data.y;
+
+    return vec4f(run.color.rgb, alpha);
+}
+`

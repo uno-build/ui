@@ -99,3 +99,41 @@ export const ATTRIBUTES = {
     },
 }
 export const ATTRIBUTES_SIZE = Math.max(...Object.values(ATTRIBUTES).map((attrb) => attrb.OFFSET + attrb.SIZE))
+export const TEXT_ATTRIBUTES = {
+    LAYOUT: {
+        LOCATION: 1,
+        OFFSET: 0,
+        SIZE: 4 * FLOAT32_SIZE,
+        FORMAT: 'float32x4',
+    },
+    UV_RECT: {
+        LOCATION: 2,
+        OFFSET: 4 * FLOAT32_SIZE,
+        SIZE: 4 * FLOAT32_SIZE,
+        FORMAT: 'float32x4',
+    },
+    RUN_INDEX: {
+        LOCATION: 3,
+        OFFSET: 8 * FLOAT32_SIZE,
+        SIZE: FLOAT32_SIZE,
+        FORMAT: 'float32',
+    },
+}
+export const TEXT_ATTRIBUTES_SIZE = Math.max(
+    ...Object.values(TEXT_ATTRIBUTES).map((attrb) => attrb.OFFSET + attrb.SIZE),
+)
+export const TEXT_RUN = {
+    COLOR: {
+        OFFSET: 0,
+        SIZE: 4 * FLOAT32_SIZE,
+    },
+    FONT_DATA: {
+        OFFSET: 4 * FLOAT32_SIZE,
+        SIZE: 4 * FLOAT32_SIZE,
+    },
+    CLIPPING: {
+        OFFSET: 8 * FLOAT32_SIZE,
+        SIZE: 4 * FLOAT32_SIZE,
+    },
+}
+export const TEXT_RUN_SIZE = Math.max(...Object.values(TEXT_RUN).map((attrb) => attrb.OFFSET + attrb.SIZE))

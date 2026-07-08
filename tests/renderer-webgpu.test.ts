@@ -1,7 +1,16 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { BACKGROUND_REPEAT, BACKGROUND_SIZE, KEYWORD, OVERFLOW, UNIT } from '../src/style/consts.ts'
-import { ATTRIBUTES_SIZE, ATTRIBUTES, FLOAT32_SIZE } from '../src/renderer/webgpu/buffers.ts'
+import {
+    ATTRIBUTES_SIZE,
+    ATTRIBUTES,
+    FLOAT32_SIZE,
+    TEXT_ATTRIBUTES,
+    TEXT_ATTRIBUTES_SIZE,
+    TEXT_RUN,
+    TEXT_RUN_SIZE,
+} from '../src/renderer/webgpu/buffers.ts'
+import { FontManager } from '../src/renderer/webgpu/FontManager.ts'
 import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
 ;(globalThis as any).GPUTextureUsage = {
     TEXTURE_BINDING: 1,
@@ -9,6 +18,9 @@ import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from '../src/renderer/webgpu/
     COPY_DST: 4,
     RENDER_ATTACHMENT: 8,
 }
+
+const TEST_PANEL_PIPELINE = { id: 'panel-pipeline' }
+const TEST_TEXT_PIPELINE = { id: 'text-pipeline' }
 
 test('RendererWebGPU accumulates opacity into panel instance data', () => {
     const root = createNode({ opacity: 0.5 })
@@ -589,12 +601,13 @@ test('RendererWebGPU treats unset background images as solid panels', () => {
 test('RendererWebGPU batches consecutive solid panels together', () => {
     const bind_group = createBindGroup('atlas')
     const renderer = createRenderer(createImageManager({ bind_group }))
-    const batches = (renderer as any).buildBatches([createRenderItem(bind_group), createRenderItem(bind_group)])
+    const batches = (renderer as any).buildBatches([createRenderItem(bind_group, 0), createRenderItem(bind_group, 1)])
 
     expect(batches).toEqual([
         {
             pipeline: (renderer as any).pipeline,
             bind_group,
+            buffer_kind: 'panel',
             first_instance: 0,
             instance_count: 2,
         },
@@ -604,12 +617,13 @@ test('RendererWebGPU batches consecutive solid panels together', () => {
 test('RendererWebGPU batches consecutive atlas images together', () => {
     const bind_group = createBindGroup('atlas')
     const renderer = createRenderer()
-    const batches = (renderer as any).buildBatches([createRenderItem(bind_group), createRenderItem(bind_group)])
+    const batches = (renderer as any).buildBatches([createRenderItem(bind_group, 0), createRenderItem(bind_group, 1)])
 
     expect(batches).toHaveLength(1)
     expect(batches[0].first_instance).toBe(0)
     expect(batches[0].instance_count).toBe(2)
     expect(batches[0].bind_group).toBe(bind_group)
+    expect(batches[0].buffer_kind).toBe('panel')
 })
 
 test('RendererWebGPU batches panels and images across atlas layers together', () => {
@@ -660,21 +674,169 @@ test('RendererWebGPU batches panels and images across atlas layers together', ()
     expect(batches[0].first_instance).toBe(0)
     expect(batches[0].instance_count).toBe(3)
     expect(batches[0].bind_group).toBe(bind_group)
+    expect(batches[0].buffer_kind).toBe('panel')
 })
 
 test('RendererWebGPU batches atlas panels and images together', () => {
     const bind_group = createBindGroup('atlas')
     const renderer = createRenderer()
     const batches = (renderer as any).buildBatches([
-        createRenderItem(bind_group),
-        createRenderItem(bind_group),
-        createRenderItem(bind_group),
+        createRenderItem(bind_group, 0),
+        createRenderItem(bind_group, 1),
+        createRenderItem(bind_group, 2),
     ])
 
     expect(batches).toHaveLength(1)
     expect(batches[0].first_instance).toBe(0)
     expect(batches[0].instance_count).toBe(3)
     expect(batches[0].bind_group).toBe(bind_group)
+    expect(batches[0].buffer_kind).toBe('panel')
+})
+
+test('RendererWebGPU creates text render items from node text content', () => {
+    const font_manager = createFontManager({
+        default_font: createManagedFont(),
+    })
+    const renderer = createRenderer(createImageManager(), font_manager)
+    const node = createNode({
+        text_content: 'A B',
+        layout: { x: 10, y: 20, width: 200, height: 60 },
+        styles: {
+            backgroundColor: {
+                parsed: {
+                    rgba: [0, 0, 0, 0],
+                },
+            },
+        },
+    })
+    const render_items = (renderer as any).collectRenderItems([node])
+
+    expect(render_items).toHaveLength(2)
+    expect(render_items.map((item) => item.buffer_kind)).toEqual(['text', 'text'])
+    expect(render_items.map((item) => item.buffer_index)).toEqual([0, 1])
+    expect(render_items[0].instance_data.layout).toEqual([10, 20, 16, 32])
+    expect(render_items[0].instance_data.uv_rect).toEqual([0.1, 0.2, 0.3, 0.4])
+    expect(render_items[0].instance_data.run_index).toBe(0)
+    expect(render_items[1].instance_data.layout).toEqual([expect.closeTo(40.4), expect.closeTo(26.4), 16, 32])
+    expect((renderer as any).text_runs).toEqual([
+        {
+            color: [0, 0, 0, 255],
+            font_data: [2, 1, 0, 0],
+            clipping: [0, 0, 0, 0],
+        },
+    ])
+})
+
+test('RendererWebGPU writes glyph instance data into a text buffer', () => {
+    const font_manager = createFontManager({
+        default_font: createManagedFont(),
+    })
+    const renderer = createRenderer(createImageManager(), font_manager)
+    const node = createNode({
+        text_content: 'A',
+        layout: { x: 10, y: 20, width: 200, height: 60 },
+        styles: {},
+    })
+    const render_items = (renderer as any).collectRenderItems([node])
+    const text_buffer_data = (renderer as any).createTextBufferData(render_items)
+    const floats = new Float32Array(text_buffer_data.bytes.buffer)
+
+    expect(text_buffer_data.bytes_offset).toBe(TEXT_ATTRIBUTES_SIZE)
+    expect(Array.from(floats.slice(TEXT_ATTRIBUTES.LAYOUT.OFFSET / FLOAT32_SIZE, 4))).toEqual([10, 20, 16, 32])
+    expect(
+        Array.from(
+            floats.slice(
+                TEXT_ATTRIBUTES.UV_RECT.OFFSET / FLOAT32_SIZE,
+                TEXT_ATTRIBUTES.UV_RECT.OFFSET / FLOAT32_SIZE + 4,
+            ),
+        ),
+    ).toEqual([expect.closeTo(0.1), expect.closeTo(0.2), expect.closeTo(0.3), expect.closeTo(0.4)])
+    expect(floats[TEXT_ATTRIBUTES.RUN_INDEX.OFFSET / FLOAT32_SIZE]).toBe(0)
+})
+
+test('RendererWebGPU writes shared text run data once per text node', () => {
+    const font_manager = createFontManager({
+        default_font: createManagedFont(),
+    })
+    const renderer = createRenderer(createImageManager(), font_manager)
+    const node = createNode({
+        text_content: 'AB',
+        layout: { x: 10, y: 20, width: 200, height: 60 },
+        styles: {},
+    })
+    ;(renderer as any).collectRenderItems([node])
+    const text_run_buffer_data = (renderer as any).createTextRunBufferData()
+    const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
+
+    expect(text_run_buffer_data.bytes_offset).toBe(TEXT_RUN_SIZE)
+    expect(Array.from(floats.slice(TEXT_RUN.COLOR.OFFSET / FLOAT32_SIZE, 4))).toEqual([0, 0, 0, 1])
+    expect(
+        Array.from(
+            floats.slice(TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE, TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE + 4),
+        ),
+    ).toEqual([2, 1, 0, 0])
+    expect(
+        Array.from(floats.slice(TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE, TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE + 4)),
+    ).toEqual([0, 0, 0, 0])
+})
+
+test('RendererWebGPU preserves panel then text order for a text node with background', () => {
+    const font_manager = createFontManager({
+        default_font: createManagedFont(),
+    })
+    const renderer = createRenderer(createImageManager(), font_manager)
+    const node = createNode({
+        text_content: 'A',
+    })
+    const render_items = (renderer as any).collectRenderItems([node])
+
+    expect(render_items.map((item) => item.buffer_kind)).toEqual(['panel', 'text'])
+    expect(render_items.map((item) => item.buffer_index)).toEqual([0, 0])
+})
+
+test('RendererWebGPU batches consecutive glyphs together', () => {
+    const font_manager = createFontManager({
+        default_font: createManagedFont(),
+    })
+    const renderer = createRenderer(createImageManager(), font_manager)
+    const node = createNode({
+        text_content: 'AB',
+        styles: {
+            backgroundColor: {
+                parsed: {
+                    rgba: [0, 0, 0, 0],
+                },
+            },
+        },
+    })
+    const render_items = (renderer as any).collectRenderItems([node])
+    const batches = (renderer as any).buildBatches(render_items)
+
+    expect(batches).toHaveLength(1)
+    expect(batches[0]).toMatchObject({
+        pipeline: TEST_TEXT_PIPELINE,
+        bind_group: font_manager.bind_group,
+        buffer_kind: 'text',
+        first_instance: 0,
+        instance_count: 2,
+    })
+})
+
+test('RendererWebGPU keeps interleaved panel and text batches separate', () => {
+    const font_manager = createFontManager({
+        default_font: createManagedFont(),
+    })
+    const renderer = createRenderer(createImageManager(), font_manager)
+    const first = createNode({
+        text_content: 'A',
+    })
+    const second = createNode()
+    const render_items = (renderer as any).collectRenderItems([first, second])
+    const batches = (renderer as any).buildBatches(render_items)
+
+    expect(render_items.map((item) => item.buffer_kind)).toEqual(['panel', 'text', 'panel'])
+    expect(batches.map((batch) => batch.buffer_kind)).toEqual(['panel', 'text', 'panel'])
+    expect(batches.map((batch) => batch.first_instance)).toEqual([0, 0, 1])
 })
 
 test('ImageManager creates separate resources for separate srcs with the same bitmap', () => {
@@ -865,16 +1027,122 @@ test('ImageManager throws when atlas growth exceeds the device layer limit', () 
     )
 })
 
+test('FontManager registers a font in the first texture layer', () => {
+    const device = createFakeDevice()
+    const font_manager = createRealFontManager(device)
+    const image = createImage('Poppins.png', 484, 484)
+    const json = createFontJson()
+    const font = font_manager.fontRegister('Poppins', image, json)
+
+    expect(font).toMatchObject({
+        name: 'Poppins',
+        image,
+        json,
+        layer: 0,
+        uv_rect: [0, 0, 484 / ATLAS_SIZE, 484 / ATLAS_SIZE],
+        image_size: [484, 484],
+        metrics: json.metrics,
+    })
+    expect(font.glyphs_by_unicode.get(65)).toEqual({
+        unicode: 65,
+        advance: 0.5,
+        plane_bounds: [0, 0, 0.5, 1],
+        uv_rect: [10 / ATLAS_SIZE, 10 / ATLAS_SIZE, 20 / ATLAS_SIZE, 20 / ATLAS_SIZE],
+    })
+    expect(font_manager.getDefaultFont()).toBe(font)
+    expect(font_manager.fonts.get('Poppins')).toBe(font)
+    expect(device.textures[0].descriptor.size).toEqual({
+        width: ATLAS_SIZE,
+        height: ATLAS_SIZE,
+        depthOrArrayLayers: 2,
+    })
+    expect(device.textures[0].descriptor.usage & GPUTextureUsage.RENDER_ATTACHMENT).toBe(
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    )
+    expect(device.copies[0].destination.origin).toEqual([0, 0, 0])
+})
+
+test('FontManager registers separate fonts in separate texture layers', () => {
+    const device = createFakeDevice()
+    const font_manager = createRealFontManager(device)
+    const first = font_manager.fontRegister('Poppins', createImage('Poppins.png', 484, 484), createFontJson())
+    const second = font_manager.fontRegister('ChangaOne', createImage('ChangaOne.png', 512, 512), createFontJson())
+
+    expect(first.layer).toBe(0)
+    expect(second.layer).toBe(1)
+    expect(font_manager.getDefaultFont()).toBe(first)
+    expect(device.copies[0].destination.origin).toEqual([0, 0, 0])
+    expect(device.copies[1].destination.origin).toEqual([0, 0, 1])
+    expect(getAtlasTextures(device)).toHaveLength(1)
+})
+
+test('FontManager replaces a registered font in the same texture layer', () => {
+    const device = createFakeDevice()
+    const font_manager = createRealFontManager(device)
+    const first = font_manager.fontRegister('Poppins', createImage('Poppins-small.png', 256, 256), createFontJson())
+    const second_image = createImage('Poppins-large.png', 512, 128)
+    const second = font_manager.fontRegister('Poppins', second_image, createFontJson())
+
+    expect(second).not.toBe(first)
+    expect(second.layer).toBe(first.layer)
+    expect(second.image).toBe(second_image)
+    expect(second.image_size).toEqual([512, 128])
+    expect(font_manager.getDefaultFont()).toBe(second)
+    expect(device.copies[1].destination.origin).toEqual([0, 0, 0])
+    expect(getAtlasTextures(device)).toHaveLength(1)
+})
+
+test('FontManager grows the font texture when physical layer capacity is full', () => {
+    const device = createFakeDevice()
+    const font_manager = createRealFontManager(device)
+    font_manager.fontRegister('font-0', createImage('font-0.png', 64, 64), createFontJson())
+    font_manager.fontRegister('font-1', createImage('font-1.png', 64, 64), createFontJson())
+    const bind_group_count = device.bind_groups.length
+    const third = font_manager.fontRegister('font-2', createImage('font-2.png', 64, 64), createFontJson())
+
+    expect(third.layer).toBe(2)
+    const atlas_textures = getAtlasTextures(device)
+    expect(atlas_textures).toHaveLength(2)
+    expect(atlas_textures[0].destroyed).toBe(true)
+    expect(atlas_textures[1].descriptor.size.depthOrArrayLayers).toBe(3)
+    expect(device.texture_copies[0].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, 2])
+    expect(device.copies[2].destination.origin).toEqual([0, 0, 2])
+    expect(device.bind_groups).toHaveLength(bind_group_count + 1)
+    expect(font_manager.bind_group).toBe(device.bind_groups[device.bind_groups.length - 1])
+})
+
+test('FontManager throws for font atlases larger than one texture layer', () => {
+    const device = createFakeDevice()
+    const font_manager = createRealFontManager(device)
+
+    expect(() =>
+        font_manager.fontRegister('too-large', createImage('too-large.png', ATLAS_SIZE + 1, 1), createFontJson()),
+    ).toThrow(/exceeds the 2048x2048 UI font atlas layer size/)
+})
+
+test('FontManager throws when font texture growth exceeds the device layer limit', () => {
+    const device = createFakeDevice({ max_texture_array_layers: 2 })
+    const font_manager = createRealFontManager(device)
+
+    font_manager.fontRegister('font-0', createImage('font-0.png', 64, 64), createFontJson())
+    font_manager.fontRegister('font-1', createImage('font-1.png', 64, 64), createFontJson())
+    expect(() => font_manager.fontRegister('font-2', createImage('font-2.png', 64, 64), createFontJson())).toThrow(
+        /this device supports 2/,
+    )
+})
+
 function createNodesBufferData(renderer, nodes) {
     const render_items = (renderer as any).collectRenderItems(nodes)
 
     return (renderer as any).createNodesBufferData(render_items)
 }
 
-function createRenderer(image_manager = createImageManager()) {
+function createRenderer(image_manager = createImageManager(), font_manager = createFontManager()) {
     const renderer = new RendererWebGPU({ canvas: {} })
-    ;(renderer as any).pipeline = { id: 'pipeline' }
+    ;(renderer as any).pipeline = TEST_PANEL_PIPELINE
+    ;(renderer as any).text_pipeline = TEST_TEXT_PIPELINE
     ;(renderer as any).image_manager = image_manager
+    ;(renderer as any).font_manager = font_manager
 
     return renderer
 }
@@ -898,10 +1166,110 @@ function createRealImageManager(device, atlas_size = ATLAS_SIZE) {
     })
 }
 
-function createRenderItem(bind_group) {
+function createRealFontManager(device, atlas_size = ATLAS_SIZE) {
+    return new FontManager({
+        device,
+        bind_group_layout: { id: 'font-layout' },
+        viewport_buffer: { id: 'viewport' },
+        sampler: { id: 'sampler' },
+        text_run_buffer: { id: 'text-runs' },
+        atlas_size,
+    })
+}
+
+function createFontManager({ bind_group = createBindGroup('font-atlas'), default_font = undefined } = {}) {
     return {
         bind_group,
+        getDefaultFont() {
+            return default_font
+        },
+        setTextRunBuffer() {},
+    }
+}
+
+function createRenderItem(bind_group, buffer_index = 0) {
+    return {
+        pipeline: TEST_PANEL_PIPELINE,
+        bind_group,
+        buffer_kind: 'panel',
+        buffer_index,
         instance_data: {},
+    }
+}
+
+function createManagedFont() {
+    return {
+        name: 'Poppins',
+        layer: 2,
+        metrics: {
+            ascender: 1,
+        },
+        glyphs_by_unicode: new Map([
+            [
+                65,
+                {
+                    unicode: 65,
+                    advance: 0.6,
+                    plane_bounds: [0, 0, 0.5, 1],
+                    uv_rect: [0.1, 0.2, 0.3, 0.4],
+                },
+            ],
+            [
+                32,
+                {
+                    unicode: 32,
+                    advance: 0.25,
+                },
+            ],
+            [
+                66,
+                {
+                    unicode: 66,
+                    advance: 0.7,
+                    plane_bounds: [0.1, -0.2, 0.6, 0.8],
+                    uv_rect: [0.5, 0.6, 0.2, 0.3],
+                },
+            ],
+        ]),
+    }
+}
+
+function createFontJson() {
+    return {
+        atlas: {
+            type: 'mtsdf',
+            width: 484,
+            height: 484,
+            yOrigin: 'bottom',
+        },
+        metrics: {
+            ascender: 1,
+            descender: -0.25,
+            lineHeight: 1.25,
+        },
+        glyphs: [
+            {
+                unicode: 65,
+                advance: 0.5,
+                planeBounds: {
+                    left: 0,
+                    bottom: 0,
+                    right: 0.5,
+                    top: 1,
+                },
+                atlasBounds: {
+                    left: 10,
+                    bottom: 454,
+                    right: 30,
+                    top: 474,
+                },
+            },
+            {
+                unicode: 32,
+                advance: 0.25,
+            },
+        ],
+        kerning: [],
     }
 }
 
@@ -1002,16 +1370,19 @@ function createNode({
     },
     overflow,
     styles = {},
+    text_content = '',
 }: {
     parent?: any
     opacity?: number
     layout?: { x: number; y: number; width: number; height: number }
     overflow?: number
     styles?: Record<string, any>
+    text_content?: string
 } = {}) {
     return {
         parent,
         layout,
+        text_content,
         styles: {
             backgroundColor: {
                 parsed: {

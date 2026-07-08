@@ -13,6 +13,7 @@ import backgroundImageBleeding from './examples/backgroundImageBleeding'
 import backgroundImageUnset from './examples/backgroundImageUnset'
 import positionRelative from './examples/positionRelative'
 import deepNestedPaint from './examples/deepNestedPaint'
+import fonts from './examples/fonts'
 import nestedFlexDirections from './examples/nestedFlexDirections'
 import nestedMargins from './examples/nestedMargins'
 import nestedPercentDimensions from './examples/nestedPercentDimensions'
@@ -46,6 +47,7 @@ export const LAYOUTS = {
     boxShadow2,
     boxShadow3,
     deepNestedPaint,
+    fonts,
     nestedFlexDirections,
     nestedMargins,
     nestedPercentDimensions,

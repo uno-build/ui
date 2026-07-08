@@ -2,7 +2,8 @@
     "scripts": {
         "dev": "vite ./examples/dev/",
         "benchmark:box-shadow": "RUN_BENCHMARKS=1 playwright test tests/benchmarks/webgpuBoxShadowBenchmark.benchmark.test.ts",
-        "test": "playwright test"
+        "test": "playwright test",
+        "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"
     },
     "dependencies": {
         "yoga-layout": "^3.2.1"

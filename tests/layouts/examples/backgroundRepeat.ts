@@ -1,4 +1,4 @@
-import { loadImage } from '../../../src/utils/loadImage'
+import { loadImage } from '../../../src/utils/loadAssets'
 
 export default async function createBackgroundRepeatLayout({ ui }) {
     const size = 120

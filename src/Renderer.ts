@@ -21,6 +21,8 @@ export default abstract class Renderer {
         return []
     }
 
+    public fontRegister(name: string, image: any, json: any): void {}
+
     public addChild(parent, node) {
         this.insertChild(parent, node, this.getChildIndex(parent))
     }

@@ -79,6 +79,10 @@ export default class UI {
         return this.renderer.imageList()
     }
 
+    public fontRegister(name: string, image: any, json: any): void {
+        this.renderer.fontRegister(name, image, json)
+    }
+
     private addChild(parent, child) {
         if (this.nodes.includes(child) === true) {
             throw new Error('child already added')

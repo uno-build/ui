@@ -22,3 +22,8 @@ async function loadAsset(src) {
     const response = await fetch(src)
     return await response.blob()
 }
+
+export async function loadJson(src) {
+    const response = await fetch(src)
+    return await response.json()
+}

@@ -6,6 +6,7 @@ export default class Node {
     public styles = {}
     public layout = {}
     public order = 0
+    public text_content = ''
 
     constructor({ id, ui }) {
         this.id = id
@@ -22,5 +23,9 @@ export default class Node {
 
     public style(name, value, parsed?) {
         this.ui.style(this, name, value, parsed)
+    }
+
+    public text(value: string) {
+        this.text_content = value
     }
 }

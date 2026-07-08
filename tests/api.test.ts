@@ -189,6 +189,24 @@ test('Node remove discards pending styles', async () => {
     expect(child.element).toBe(null)
 })
 
+test('Node text stores, replaces, and clears text content', async () => {
+    const canvas = createDiv()
+    const renderer = new RendererDivs({ canvas, createDiv })
+    const ui = new UI({ renderer })
+
+    await ui.init()
+
+    const child = ui.create()
+    child.text('Hello')
+    expect(child.text_content).toBe('Hello')
+
+    child.text('World')
+    expect(child.text_content).toBe('World')
+
+    child.text('')
+    expect(child.text_content).toBe('')
+})
+
 test('RendererDivs image api hooks are no-ops', async () => {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })
@@ -236,6 +254,22 @@ test('RendererDivs image api hooks are no-ops', async () => {
     ui.render()
     expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
     expect(() => ui.imageDispose('/assets/Avatar.png')).not.toThrow()
+})
+
+test('UI fontRegister delegates to renderer', () => {
+    const calls = []
+    const renderer = {
+        fontRegister(name, image, json) {
+            calls.push({ name, image, json })
+        },
+    }
+    const ui = new UI({ renderer })
+    const image = createImage('/assets/fonts/Poppins.png', 484, 484)
+    const json = { atlas: { type: 'msdf' } }
+
+    ui.fontRegister('Poppins', image, json)
+
+    expect(calls).toEqual([{ name: 'Poppins', image, json }])
 })
 
 function createDiv() {
