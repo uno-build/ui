@@ -1,28 +1,54 @@
-export const nodeVertexWGSL = /* wgsl */ `
+export const uiWGSL = /* wgsl */ `
+const COMMAND_KIND_PANEL = 0u;
+
 struct Viewport {
     size: vec2f,
     padding: vec2f,
 }
 
+struct PanelData {
+    rect: vec4f,
+    clipping: vec4f,
+    border_radius_x: vec4f,
+    border_radius_y: vec4f,
+    border_widths: vec4f,
+    background_uv_rect: vec4f,
+    background_image_rect: vec4f,
+    image_data: vec4f,
+    border_colors: vec4u,
+    background_color: vec4u,
+    box_shadow: vec4u,
+}
+
+struct GlyphData {
+    rect: vec4f,
+    uv_rect: vec4f,
+    run_data: vec4u,
+}
+
+struct TextRun {
+    color: vec4f,
+    font_data: vec4f,
+    clipping: vec4f,
+}
+
 struct VertexOutput {
     @builtin(position) position: vec4f,
     @location(0) local_position: vec2f,
-    @location(1) rect_size: vec2f,
-    @location(2) clipping: vec4f,
-    @location(3) opacity_image_mode_data: vec4f,
-    @location(4) border_radius_x: vec4f,
-    @location(5) border_radius_y: vec4f,
-    @location(6) border_top_right_color: vec4f,
-    @location(7) border_bottom_left_color: vec4f,
-    @location(8) border_widths: vec4f,
-    @location(9) background_color: vec4f,
-    @location(10) box_shadow_rect: vec4f,
-    @location(11) box_shadow_color: vec4f,
-    @location(12) background_uv_rect: vec4f,
-    @location(13) background_image_rect: vec4f,
+    @location(1) pixel: vec2f,
+    @location(2) uv: vec2f,
+    @location(3) kind: f32,
+    @location(4) panel_index: f32,
+    @location(5) glyph_index: f32,
 }
 
 @group(0) @binding(0) var<uniform> viewport: Viewport;
+@group(0) @binding(1) var ui_sampler: sampler;
+@group(0) @binding(2) var image_texture: texture_2d_array<f32>;
+@group(0) @binding(3) var font_texture: texture_2d_array<f32>;
+@group(0) @binding(4) var<storage, read> panel_data: array<PanelData>;
+@group(0) @binding(5) var<storage, read> glyph_data: array<GlyphData>;
+@group(0) @binding(6) var<storage, read> text_runs: array<TextRun>;
 
 fn unpackBoxShadowI16(value: u32, shift: u32) -> f32 {
     let raw = (value >> shift) & 65535u;
@@ -71,8 +97,7 @@ fn boxShadowRect(box_shadow: vec4u) -> vec4f {
     return vec4f(offset, blur_spread);
 }
 
-fn boxShadowColor(box_shadow: vec4u) -> vec4f {
-    let color = box_shadow.z;
+fn unpackColor(color: u32) -> vec4f {
     return vec4f(
         f32(color & 255u),
         f32((color >> 8u) & 255u),
@@ -80,85 +105,6 @@ fn boxShadowColor(box_shadow: vec4u) -> vec4f {
         f32((color >> 24u) & 255u),
     ) / 255.0;
 }
-
-fn packColorPair(first: vec4f, second: vec4f) -> vec4f {
-    return round(clamp(first, vec4f(0.0), vec4f(1.0)) * 255.0) +
-        round(clamp(second, vec4f(0.0), vec4f(1.0)) * 255.0) * 256.0;
-}
-
-@vertex
-fn main(
-    @location(0) position: vec2f,
-    @location(1) layout_node: vec4f,
-    @location(2) clipping: vec4f,
-    @location(3) opacity: f32,
-    @location(4) border_radius_x: vec4f,
-    @location(5) border_radius_y: vec4f,
-    @location(6) border_top_color: vec4f,
-    @location(7) border_right_color: vec4f,
-    @location(8) border_bottom_color: vec4f,
-    @location(9) border_left_color: vec4f,
-    @location(10) border_widths: vec4f,
-    @location(11) background_color: vec4f,
-    @location(12) background_image_mode_data: vec2f,
-    @location(13) background_uv_rect: vec4f,
-    @location(14) background_image_rect: vec4f,
-    @location(15) box_shadow: vec4u,
-) -> VertexOutput {
-    let shadow_padding = boxShadowPadding(box_shadow);
-    let expanded_size = layout_node.zw + shadow_padding.xy + shadow_padding.zw;
-    let local_position = position * expanded_size - shadow_padding.xy;
-    let pixel = layout_node.xy + local_position;
-    let clip = vec2f(
-        pixel.x / viewport.size.x * 2.0 - 1.0,
-        1.0 - pixel.y / viewport.size.y * 2.0,
-    );
-
-    var output: VertexOutput;
-    output.position = vec4f(clip, 0.0, 1.0);
-    output.local_position = local_position;
-    output.rect_size = layout_node.zw;
-    output.clipping = clipping;
-    output.opacity_image_mode_data = vec4f(
-        opacity,
-        background_image_mode_data.x,
-        background_image_mode_data.y,
-        0.0,
-    );
-    output.border_radius_x = border_radius_x;
-    output.border_radius_y = border_radius_y;
-    output.border_top_right_color = packColorPair(border_top_color, border_right_color);
-    output.border_bottom_left_color = packColorPair(border_bottom_color, border_left_color);
-    output.border_widths = border_widths;
-    output.background_color = background_color;
-    output.box_shadow_rect = boxShadowRect(box_shadow);
-    output.box_shadow_color = boxShadowColor(box_shadow);
-    output.background_uv_rect = background_uv_rect;
-    output.background_image_rect = background_image_rect;
-    return output;
-}
-`
-
-export const nodeFragmentWGSL = /* wgsl */ `
-struct FragmentInput {
-    @location(0) local_position: vec2f,
-    @location(1) rect_size: vec2f,
-    @location(2) clipping: vec4f,
-    @location(3) opacity_image_mode_data: vec4f,
-    @location(4) border_radius_x: vec4f,
-    @location(5) border_radius_y: vec4f,
-    @location(6) border_top_right_color: vec4f,
-    @location(7) border_bottom_left_color: vec4f,
-    @location(8) border_widths: vec4f,
-    @location(9) background_color: vec4f,
-    @location(10) box_shadow_rect: vec4f,
-    @location(11) box_shadow_color: vec4f,
-    @location(12) background_uv_rect: vec4f,
-    @location(13) background_image_rect: vec4f,
-}
-
-@group(0) @binding(1) var background_image_sampler: sampler;
-@group(0) @binding(2) var background_image_texture: texture_2d_array<f32>;
 
 fn cornerRadius(
     local_position: vec2f,
@@ -238,17 +184,18 @@ fn compositeOver(top: vec4f, bottom: vec4f) -> vec4f {
     return vec4f(color, alpha);
 }
 
-fn boxShadowCoverage(input: FragmentInput, outer_coverage: f32) -> vec4f {
-    let shadow_color = input.box_shadow_color;
-    let shadow_offset = input.box_shadow_rect.xy;
-    let blur = max(input.box_shadow_rect.z, 0.0);
-    let spread = input.box_shadow_rect.w;
-    let shadow_size = input.rect_size + vec2f(spread * 2.0);
+fn boxShadowCoverage(panel: PanelData, local_position: vec2f, outer_coverage: f32) -> vec4f {
+    let shadow_color = unpackColor(panel.box_shadow.z);
+    let shadow_rect = boxShadowRect(panel.box_shadow);
+    let shadow_offset = shadow_rect.xy;
+    let blur = max(shadow_rect.z, 0.0);
+    let spread = shadow_rect.w;
+    let shadow_size = panel.rect.zw + vec2f(spread * 2.0);
     let safe_shadow_size = max(shadow_size, vec2f(0.0001));
 
-    let shadow_position = input.local_position - shadow_offset + vec2f(spread);
-    let shadow_radius_x = max(input.border_radius_x + vec4f(spread), vec4f(0.0));
-    let shadow_radius_y = max(input.border_radius_y + vec4f(spread), vec4f(0.0));
+    let shadow_position = local_position - shadow_offset + vec2f(spread);
+    let shadow_radius_x = max(panel.border_radius_x + vec4f(spread), vec4f(0.0));
+    let shadow_radius_y = max(panel.border_radius_y + vec4f(spread), vec4f(0.0));
     let distance = roundedRectSignedDistance(
         shadow_position,
         safe_shadow_size,
@@ -262,24 +209,16 @@ fn boxShadowCoverage(input: FragmentInput, outer_coverage: f32) -> vec4f {
     return vec4f(shadow_color.rgb, shadow_color.a * alpha);
 }
 
-fn unpackFirstColor(packed_color: vec4f) -> vec4f {
-    let value = round(packed_color);
-    return (value - floor(value / 256.0) * 256.0) / 255.0;
-}
-
-fn unpackSecondColor(packed_color: vec4f) -> vec4f {
-    return floor(round(packed_color) / 256.0) / 255.0;
-}
-
-fn borderColorForPosition(input: FragmentInput) -> vec4f {
-    let left_distance = input.local_position.x;
-    let right_distance = input.rect_size.x - input.local_position.x;
-    let top_distance = input.local_position.y;
-    let bottom_distance = input.rect_size.y - input.local_position.y;
-    let border_top_color = unpackFirstColor(input.border_top_right_color);
-    let border_right_color = unpackSecondColor(input.border_top_right_color);
-    let border_bottom_color = unpackFirstColor(input.border_bottom_left_color);
-    let border_left_color = unpackSecondColor(input.border_bottom_left_color);
+fn borderColorForPosition(panel: PanelData, local_position: vec2f) -> vec4f {
+    let rect_size = panel.rect.zw;
+    let left_distance = local_position.x;
+    let right_distance = rect_size.x - local_position.x;
+    let top_distance = local_position.y;
+    let bottom_distance = rect_size.y - local_position.y;
+    let border_top_color = unpackColor(panel.border_colors.x);
+    let border_right_color = unpackColor(panel.border_colors.y);
+    let border_bottom_color = unpackColor(panel.border_colors.z);
+    let border_left_color = unpackColor(panel.border_colors.w);
     let horizontal_color = select(
         border_left_color,
         border_right_color,
@@ -296,15 +235,15 @@ fn borderColorForPosition(input: FragmentInput) -> vec4f {
     return select(vertical_color, horizontal_color, horizontal_distance < vertical_distance);
 }
 
-fn backgroundImageColor(input: FragmentInput, local_position: vec2f) -> vec4f {
-    let image_position = input.background_image_rect.xy;
-    let image_size = input.background_image_rect.zw;
+fn backgroundImageColor(panel: PanelData, local_position: vec2f) -> vec4f {
+    let image_position = panel.background_image_rect.xy;
+    let image_size = panel.background_image_rect.zw;
 
     if (any(image_size <= vec2f(0.0))) {
         return vec4f(0.0);
     }
 
-    let repeat_mode = input.opacity_image_mode_data.y;
+    let repeat_mode = panel.image_data.y;
     let repeat_x = repeat_mode == 2.0 || repeat_mode == 3.0;
     let repeat_y = repeat_mode == 2.0 || repeat_mode == 4.0;
     var image_position_local = local_position - image_position;
@@ -323,48 +262,89 @@ fn backgroundImageColor(input: FragmentInput, local_position: vec2f) -> vec4f {
     }
 
     let image_uv = image_position_local / image_size;
-    let texture_uv = input.background_uv_rect.xy + image_uv * input.background_uv_rect.zw;
+    let texture_uv = panel.background_uv_rect.xy + image_uv * panel.background_uv_rect.zw;
 
     return textureSampleLevel(
-        background_image_texture,
-        background_image_sampler,
+        image_texture,
+        ui_sampler,
         texture_uv,
-        u32(input.opacity_image_mode_data.z),
+        u32(panel.image_data.z),
         0.0,
     );
 }
 
-@fragment
-fn main(input: FragmentInput) -> @location(0) vec4f {
-    if (
-        any(input.clipping > vec4f(0.0)) &&
-        (
-            input.local_position.x < input.clipping.w ||
-            input.local_position.y < input.clipping.x ||
-            input.local_position.x > input.clipping.y ||
-            input.local_position.y > input.clipping.z
-        )
-    ) {
-        discard;
+fn median(r: f32, g: f32, b: f32) -> f32 {
+    return max(min(r, g), min(max(r, g), b));
+}
+
+@vertex
+fn vertexMain(
+    @location(0) position: vec2f,
+    @location(1) command: vec4u,
+) -> VertexOutput {
+    var pixel: vec2f;
+    var local_position: vec2f;
+    var uv = vec2f(0.0);
+
+    if (command.x == COMMAND_KIND_PANEL) {
+        let panel = panel_data[command.y];
+        let shadow_padding = boxShadowPadding(panel.box_shadow);
+        let expanded_size = panel.rect.zw + shadow_padding.xy + shadow_padding.zw;
+        local_position = position * expanded_size - shadow_padding.xy;
+        pixel = panel.rect.xy + local_position;
+    } else {
+        let glyph = glyph_data[command.z];
+        local_position = position * glyph.rect.zw;
+        pixel = glyph.rect.xy + local_position;
+        uv = glyph.uv_rect.xy + position * glyph.uv_rect.zw;
     }
 
+    let clip = vec2f(
+        pixel.x / viewport.size.x * 2.0 - 1.0,
+        1.0 - pixel.y / viewport.size.y * 2.0,
+    );
+
+    var output: VertexOutput;
+    output.position = vec4f(clip, 0.0, 1.0);
+    output.local_position = local_position;
+    output.pixel = pixel;
+    output.uv = uv;
+    output.kind = f32(command.x);
+    output.panel_index = f32(command.y);
+    output.glyph_index = f32(command.z);
+    return output;
+}
+
+fn panelColor(input: VertexOutput) -> vec4f {
+    let panel = panel_data[u32(input.panel_index)];
+    let visible = !(
+        any(panel.clipping > vec4f(0.0)) &&
+        (
+            input.local_position.x < panel.clipping.w ||
+            input.local_position.y < panel.clipping.x ||
+            input.local_position.x > panel.clipping.y ||
+            input.local_position.y > panel.clipping.z
+        )
+    );
+
+    let rect_size = panel.rect.zw;
     let outer_coverage = roundedRectCoverage(
         input.local_position,
-        input.rect_size,
-        input.border_radius_x,
-        input.border_radius_y,
+        rect_size,
+        panel.border_radius_x,
+        panel.border_radius_y,
     );
-    let border_top_width = input.border_widths.x;
-    let border_right_width = input.border_widths.y;
-    let border_bottom_width = input.border_widths.z;
-    let border_left_width = input.border_widths.w;
-    let inner_size = input.rect_size - vec2f(
+    let border_top_width = panel.border_widths.x;
+    let border_right_width = panel.border_widths.y;
+    let border_bottom_width = panel.border_widths.z;
+    let border_left_width = panel.border_widths.w;
+    let inner_size = rect_size - vec2f(
         border_left_width + border_right_width,
         border_top_width + border_bottom_width,
     );
     let inner_position = input.local_position - vec2f(border_left_width, border_top_width);
     let inner_border_radius_x = max(
-        input.border_radius_x - vec4f(
+        panel.border_radius_x - vec4f(
             border_left_width,
             border_right_width,
             border_right_width,
@@ -373,7 +353,7 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
         vec4f(0.0),
     );
     let inner_border_radius_y = max(
-        input.border_radius_y - vec4f(
+        panel.border_radius_y - vec4f(
             border_top_width,
             border_top_width,
             border_bottom_width,
@@ -392,96 +372,40 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
         all(inner_size > vec2f(0.0)),
     );
 
-    var box_color = input.background_color;
+    var box_color = unpackColor(panel.background_color.x);
     if (outer_coverage > 0.0) {
-        if (input.opacity_image_mode_data.y > 0.5 && all(inner_size > vec2f(0.0))) {
+        if (panel.image_data.y > 0.5 && all(inner_size > vec2f(0.0))) {
             box_color = compositeOver(
-                backgroundImageColor(input, inner_position),
-                input.background_color,
+                backgroundImageColor(panel, inner_position),
+                box_color,
             );
         }
-        if (any(input.border_widths > vec4f(0.0))) {
-            let border_color = compositeOver(borderColorForPosition(input), box_color);
+        if (any(panel.border_widths > vec4f(0.0))) {
+            let border_color = compositeOver(borderColorForPosition(panel, input.local_position), box_color);
             box_color = mix(border_color, box_color, inner_coverage);
         }
     }
-    box_color.a *= outer_coverage * input.opacity_image_mode_data.x;
+    box_color.a *= outer_coverage * panel.image_data.x;
 
-    let shadow_size = input.rect_size + vec2f(input.box_shadow_rect.w * 2.0);
-    if (input.box_shadow_color.a <= 0.0 || any(shadow_size <= vec2f(0.0))) {
+    let shadow_rect = boxShadowRect(panel.box_shadow);
+    let shadow_size = rect_size + vec2f(shadow_rect.w * 2.0);
+    if (!boxShadowHasColor(panel.box_shadow) || any(shadow_size <= vec2f(0.0))) {
+        box_color.a *= select(0.0, 1.0, visible);
         return box_color;
     }
 
-    var shadow_color = boxShadowCoverage(input, outer_coverage);
-    shadow_color.a *= input.opacity_image_mode_data.x;
+    var shadow_color = boxShadowCoverage(panel, input.local_position, outer_coverage);
+    shadow_color.a *= panel.image_data.x;
 
-    return compositeOver(box_color, shadow_color);
-}
-`
-
-export const textVertexWGSL = /* wgsl */ `
-struct Viewport {
-    size: vec2f,
-    padding: vec2f,
+    var color = compositeOver(box_color, shadow_color);
+    color.a *= select(0.0, 1.0, visible);
+    return color;
 }
 
-struct VertexOutput {
-    @builtin(position) position: vec4f,
-    @location(0) uv: vec2f,
-    @location(1) run_index: f32,
-    @location(2) pixel: vec2f,
-}
-
-@group(0) @binding(0) var<uniform> viewport: Viewport;
-
-@vertex
-fn main(
-    @location(0) position: vec2f,
-    @location(1) glyph_rect: vec4f,
-    @location(2) glyph_uv_rect: vec4f,
-    @location(3) run_index: f32,
-) -> VertexOutput {
-    let pixel = glyph_rect.xy + position * glyph_rect.zw;
-    let clip = vec2f(
-        pixel.x / viewport.size.x * 2.0 - 1.0,
-        1.0 - pixel.y / viewport.size.y * 2.0,
-    );
-
-    var output: VertexOutput;
-    output.position = vec4f(clip, 0.0, 1.0);
-    output.uv = glyph_uv_rect.xy + position * glyph_uv_rect.zw;
-    output.run_index = run_index;
-    output.pixel = pixel;
-    return output;
-}
-`
-
-export const textFragmentWGSL = /* wgsl */ `
-struct FragmentInput {
-    @location(0) uv: vec2f,
-    @location(1) run_index: f32,
-    @location(2) pixel: vec2f,
-}
-
-struct TextRun {
-    color: vec4f,
-    font_data: vec4f,
-    clipping: vec4f,
-}
-
-@group(0) @binding(1) var font_sampler: sampler;
-@group(0) @binding(2) var font_texture: texture_2d_array<f32>;
-@group(0) @binding(3) var<storage, read> text_runs: array<TextRun>;
-
-fn median(r: f32, g: f32, b: f32) -> f32 {
-    return max(min(r, g), min(max(r, g), b));
-}
-
-@fragment
-fn main(input: FragmentInput) -> @location(0) vec4f {
-    let run = text_runs[u32(input.run_index)];
-
-    if (
+fn glyphColor(input: VertexOutput) -> vec4f {
+    let glyph = glyph_data[u32(input.glyph_index)];
+    let run = text_runs[glyph.run_data.x];
+    let visible = !(
         any(run.clipping > vec4f(0.0)) &&
         (
             input.pixel.x < run.clipping.w ||
@@ -489,13 +413,11 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
             input.pixel.x > run.clipping.y ||
             input.pixel.y > run.clipping.z
         )
-    ) {
-        discard;
-    }
+    );
 
     let sample = textureSampleLevel(
         font_texture,
-        font_sampler,
+        ui_sampler,
         input.uv,
         u32(run.font_data.x),
         0.0,
@@ -504,8 +426,17 @@ fn main(input: FragmentInput) -> @location(0) vec4f {
     let smoothing = fwidth(signed_distance);
     let alpha = smoothstep(0.5 - smoothing, 0.5 + smoothing, signed_distance) *
         run.color.a *
-        run.font_data.y;
+        run.font_data.y *
+        select(0.0, 1.0, visible);
 
     return vec4f(run.color.rgb, alpha);
+}
+
+@fragment
+fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
+    let panel_color = panelColor(input);
+    let glyph_color = glyphColor(input);
+
+    return select(glyph_color, panel_color, u32(input.kind) == COMMAND_KIND_PANEL);
 }
 `

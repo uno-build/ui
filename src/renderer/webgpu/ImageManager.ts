@@ -35,27 +35,19 @@ export type ManagedAtlasImage = AtlasImage & {
 }
 
 export class ImageManager {
-    public bind_group
     public images = new Map<string, ManagedAtlasImage>()
     private device
-    private bind_group_layout
-    private viewport_buffer
-    private sampler
     private atlas_size
     private atlas_texture
     private atlas_layer_count = 1
     private atlas_texture_layer_count = 1
     private atlas_layers: AtlasLayer[] = []
 
-    constructor({ device, bind_group_layout, viewport_buffer, sampler, atlas_size = ATLAS_SIZE }) {
+    constructor({ device, atlas_size = ATLAS_SIZE }) {
         this.device = device
-        this.bind_group_layout = bind_group_layout
-        this.viewport_buffer = viewport_buffer
-        this.sampler = sampler
         this.atlas_size = atlas_size
         this.atlas_texture = this.createAtlasTexture(this.atlas_texture_layer_count)
         this.atlas_layers.push(this.createAtlasLayer(0))
-        this.bind_group = this.createBindGroup(this.atlas_texture)
     }
 
     public getImage(src: string): AtlasImage | undefined {
@@ -68,6 +60,12 @@ export class ImageManager {
             image: atlas_image.image,
             nodes: atlas_image.nodes,
         }))
+    }
+
+    public getTextureView() {
+        return this.atlas_texture.createView({
+            dimension: '2d-array',
+        })
     }
 
     public imageUpload(src: string, image: any): ManagedAtlasImage {
@@ -248,7 +246,6 @@ export class ImageManager {
         this.atlas_layer_count = next_layer_count
         this.atlas_texture_layer_count = next_layer_count
         this.atlas_texture = new_texture
-        this.bind_group = this.createBindGroup(this.atlas_texture)
 
         const atlas_layer = this.createAtlasLayer(old_layer_count)
         this.atlas_layers.push(atlas_layer)
@@ -272,30 +269,6 @@ export class ImageManager {
                 GPUTextureUsage.COPY_SRC |
                 GPUTextureUsage.COPY_DST |
                 GPUTextureUsage.RENDER_ATTACHMENT,
-        })
-    }
-
-    private createBindGroup(texture) {
-        return this.device.createBindGroup({
-            layout: this.bind_group_layout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: {
-                        buffer: this.viewport_buffer,
-                    },
-                },
-                {
-                    binding: 1,
-                    resource: this.sampler,
-                },
-                {
-                    binding: 2,
-                    resource: texture.createView({
-                        dimension: '2d-array',
-                    }),
-                },
-            ],
         })
     }
 

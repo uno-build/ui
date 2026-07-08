@@ -19,28 +19,18 @@ export type ManagedGlyph = {
 }
 
 export class FontManager {
-    public bind_group
     public fonts = new Map<string, ManagedFont>()
     private device
-    private bind_group_layout
-    private viewport_buffer
-    private sampler
-    private text_run_buffer
     private atlas_size
     private font_texture
     private font_layer_count = 0
     private font_texture_layer_count = 2
     private default_font_name = null
 
-    constructor({ device, bind_group_layout, viewport_buffer, sampler, text_run_buffer, atlas_size = ATLAS_SIZE }) {
+    constructor({ device, atlas_size = ATLAS_SIZE }) {
         this.device = device
-        this.bind_group_layout = bind_group_layout
-        this.viewport_buffer = viewport_buffer
-        this.sampler = sampler
-        this.text_run_buffer = text_run_buffer
         this.atlas_size = atlas_size
         this.font_texture = this.createFontTexture(this.font_texture_layer_count)
-        this.bind_group = this.createBindGroup(this.font_texture)
     }
 
     public fontRegister(name: string, image: any, json: any): ManagedFont {
@@ -83,9 +73,10 @@ export class FontManager {
         return this.fonts.get(this.default_font_name)
     }
 
-    public setTextRunBuffer(text_run_buffer): void {
-        this.text_run_buffer = text_run_buffer
-        this.bind_group = this.createBindGroup(this.font_texture)
+    public getTextureView() {
+        return this.font_texture.createView({
+            dimension: '2d-array',
+        })
     }
 
     private allocateFontLayer(): number {
@@ -127,7 +118,6 @@ export class FontManager {
 
         this.font_texture = new_texture
         this.font_texture_layer_count = next_layer_count
-        this.bind_group = this.createBindGroup(this.font_texture)
     }
 
     private createFontTexture(layer_count) {
@@ -146,36 +136,6 @@ export class FontManager {
                 GPUTextureUsage.COPY_SRC |
                 GPUTextureUsage.COPY_DST |
                 GPUTextureUsage.RENDER_ATTACHMENT,
-        })
-    }
-
-    private createBindGroup(texture) {
-        return this.device.createBindGroup({
-            layout: this.bind_group_layout,
-            entries: [
-                {
-                    binding: 0,
-                    resource: {
-                        buffer: this.viewport_buffer,
-                    },
-                },
-                {
-                    binding: 1,
-                    resource: this.sampler,
-                },
-                {
-                    binding: 2,
-                    resource: texture.createView({
-                        dimension: '2d-array',
-                    }),
-                },
-                {
-                    binding: 3,
-                    resource: {
-                        buffer: this.text_run_buffer,
-                    },
-                },
-            ],
         })
     }
 

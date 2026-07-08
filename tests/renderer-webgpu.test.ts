@@ -2,13 +2,18 @@ import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { BACKGROUND_REPEAT, BACKGROUND_SIZE, KEYWORD, OVERFLOW, UNIT } from '../src/style/consts.ts'
 import {
-    ATTRIBUTES_SIZE,
-    ATTRIBUTES,
+    COMMAND,
+    COMMAND_KIND_GLYPH,
+    COMMAND_KIND_PANEL,
+    COMMAND_SIZE,
     FLOAT32_SIZE,
-    TEXT_ATTRIBUTES,
-    TEXT_ATTRIBUTES_SIZE,
+    GLYPH_DATA,
+    GLYPH_DATA_SIZE,
+    PANEL_DATA,
+    PANEL_DATA_SIZE,
     TEXT_RUN,
     TEXT_RUN_SIZE,
+    UINT32_SIZE,
 } from '../src/renderer/webgpu/buffers.ts'
 import { FontManager } from '../src/renderer/webgpu/FontManager.ts'
 import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
@@ -19,9 +24,6 @@ import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from '../src/renderer/webgpu/
     RENDER_ATTACHMENT: 8,
 }
 
-const TEST_PANEL_PIPELINE = { id: 'panel-pipeline' }
-const TEST_TEXT_PIPELINE = { id: 'text-pipeline' }
-
 test('RendererWebGPU accumulates opacity into panel instance data', () => {
     const root = createNode({ opacity: 0.5 })
     const parent = createNode({ parent: root, opacity: 0.5 })
@@ -29,9 +31,9 @@ test('RendererWebGPU accumulates opacity into panel instance data', () => {
     const renderer = createRenderer()
     const nodes_buffer_data = createNodesBufferData(renderer, [child])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const opacity_float_offset = ATTRIBUTES.OPACITY.OFFSET / FLOAT32_SIZE
+    const opacity_float_offset = PANEL_DATA.IMAGE_DATA.OFFSET / FLOAT32_SIZE
 
-    expect(nodes_buffer_data.bytes_offset).toBe(ATTRIBUTES_SIZE)
+    expect(nodes_buffer_data.bytes_offset).toBe(PANEL_DATA_SIZE)
     expect(floats[opacity_float_offset]).toBeCloseTo(0.2)
 })
 
@@ -58,10 +60,10 @@ test('RendererWebGPU writes layout and clipping bounds into panel instance data'
     const renderer = createRenderer()
     const nodes_buffer_data = createNodesBufferData(renderer, [child])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const layout_float_offset = ATTRIBUTES.LAYOUT.OFFSET / FLOAT32_SIZE
-    const clipping_float_offset = ATTRIBUTES.CLIPPING.OFFSET / FLOAT32_SIZE
+    const layout_float_offset = PANEL_DATA.LAYOUT.OFFSET / FLOAT32_SIZE
+    const clipping_float_offset = PANEL_DATA.CLIPPING.OFFSET / FLOAT32_SIZE
 
-    expect(nodes_buffer_data.bytes_offset).toBe(ATTRIBUTES_SIZE)
+    expect(nodes_buffer_data.bytes_offset).toBe(PANEL_DATA_SIZE)
     expect(Array.from(floats.slice(layout_float_offset, layout_float_offset + 4))).toEqual([0, 0, 10, 10])
     expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([3, 7, 7, 2])
 })
@@ -92,11 +94,11 @@ test('RendererWebGPU writes border drawing data into panel instance data', () =>
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
     const bytes = nodes_buffer_data.bytes
-    const border_radius_x_float_offset = ATTRIBUTES.BORDERRADIUS_X.OFFSET / FLOAT32_SIZE
-    const border_radius_y_float_offset = ATTRIBUTES.BORDERRADIUS_Y.OFFSET / FLOAT32_SIZE
-    const border_widths_float_offset = ATTRIBUTES.BORDERWIDTHS.OFFSET / FLOAT32_SIZE
+    const border_radius_x_float_offset = PANEL_DATA.BORDER_RADIUS_X.OFFSET / FLOAT32_SIZE
+    const border_radius_y_float_offset = PANEL_DATA.BORDER_RADIUS_Y.OFFSET / FLOAT32_SIZE
+    const border_widths_float_offset = PANEL_DATA.BORDER_WIDTHS.OFFSET / FLOAT32_SIZE
 
-    expect(nodes_buffer_data.bytes_offset).toBe(ATTRIBUTES_SIZE)
+    expect(nodes_buffer_data.bytes_offset).toBe(PANEL_DATA_SIZE)
     expect(Array.from(floats.slice(border_radius_x_float_offset, border_radius_x_float_offset + 4))).toEqual([
         10, 2, 3, 4,
     ])
@@ -104,18 +106,33 @@ test('RendererWebGPU writes border drawing data into panel instance data', () =>
         5, 2, 3, 4,
     ])
     expect(Array.from(floats.slice(border_widths_float_offset, border_widths_float_offset + 4))).toEqual([5, 6, 7, 8])
-    expect(Array.from(bytes.slice(ATTRIBUTES.BORDERCOLOR_TOP.OFFSET, ATTRIBUTES.BORDERCOLOR_TOP.OFFSET + 4))).toEqual([
+    expect(Array.from(bytes.slice(PANEL_DATA.BORDER_COLORS.OFFSET, PANEL_DATA.BORDER_COLORS.OFFSET + 4))).toEqual([
         1, 2, 3, 4,
     ])
     expect(
-        Array.from(bytes.slice(ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET, ATTRIBUTES.BORDERCOLOR_RIGHT.OFFSET + 4)),
+        Array.from(
+            bytes.slice(
+                PANEL_DATA.BORDER_COLORS.OFFSET + UINT32_SIZE,
+                PANEL_DATA.BORDER_COLORS.OFFSET + 2 * UINT32_SIZE,
+            ),
+        ),
     ).toEqual([5, 6, 7, 8])
     expect(
-        Array.from(bytes.slice(ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET, ATTRIBUTES.BORDERCOLOR_BOTTOM.OFFSET + 4)),
+        Array.from(
+            bytes.slice(
+                PANEL_DATA.BORDER_COLORS.OFFSET + 2 * UINT32_SIZE,
+                PANEL_DATA.BORDER_COLORS.OFFSET + 3 * UINT32_SIZE,
+            ),
+        ),
     ).toEqual([9, 10, 11, 12])
-    expect(Array.from(bytes.slice(ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET, ATTRIBUTES.BORDERCOLOR_LEFT.OFFSET + 4))).toEqual(
-        [13, 14, 15, 16],
-    )
+    expect(
+        Array.from(
+            bytes.slice(
+                PANEL_DATA.BORDER_COLORS.OFFSET + 3 * UINT32_SIZE,
+                PANEL_DATA.BORDER_COLORS.OFFSET + 4 * UINT32_SIZE,
+            ),
+        ),
+    ).toEqual([13, 14, 15, 16])
 })
 
 test('RendererWebGPU writes background image data into panel instance data', () => {
@@ -141,9 +158,9 @@ test('RendererWebGPU writes background image data into panel instance data', () 
     })
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const mode_data_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_MODE_DATA.OFFSET / FLOAT32_SIZE
-    const uv_rect_float_offset = ATTRIBUTES.BACKGROUND_UV_RECT.OFFSET / FLOAT32_SIZE
-    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+    const mode_data_float_offset = (PANEL_DATA.IMAGE_DATA.OFFSET + FLOAT32_SIZE) / FLOAT32_SIZE
+    const uv_rect_float_offset = PANEL_DATA.BACKGROUND_UV_RECT.OFFSET / FLOAT32_SIZE
+    const image_rect_float_offset = PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
 
     expect(Array.from(floats.slice(mode_data_float_offset, mode_data_float_offset + 2))).toEqual([1, 3])
     expect(Array.from(floats.slice(uv_rect_float_offset, uv_rect_float_offset + 4))).toEqual([
@@ -208,12 +225,12 @@ test('RendererWebGPU writes background repeat mode into panel instance data', ()
     ]
     const nodes_buffer_data = createNodesBufferData(renderer, nodes)
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const mode_data_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_MODE_DATA.OFFSET / FLOAT32_SIZE
+    const mode_data_float_offset = (PANEL_DATA.IMAGE_DATA.OFFSET + FLOAT32_SIZE) / FLOAT32_SIZE
 
     expect([
         floats[mode_data_float_offset],
-        floats[ATTRIBUTES_SIZE / FLOAT32_SIZE + mode_data_float_offset],
-        floats[(ATTRIBUTES_SIZE * 2) / FLOAT32_SIZE + mode_data_float_offset],
+        floats[PANEL_DATA_SIZE / FLOAT32_SIZE + mode_data_float_offset],
+        floats[(PANEL_DATA_SIZE * 2) / FLOAT32_SIZE + mode_data_float_offset],
     ]).toEqual([2, 3, 4])
 })
 
@@ -252,7 +269,7 @@ test('RendererWebGPU writes background image size and position into panel instan
     })
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+    const image_rect_float_offset = PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([4, 6, 100, 50])
 })
@@ -289,7 +306,7 @@ test('RendererWebGPU resolves percentage background image position against avail
     })
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+    const image_rect_float_offset = PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([30, 60, 40, 20])
 })
@@ -334,7 +351,7 @@ test('RendererWebGPU resolves percentage background image position after backgro
     })
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+    const image_rect_float_offset = PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([50, 45, 100, 30])
 })
@@ -371,7 +388,7 @@ test('RendererWebGPU resolves percentage background image size against node layo
     })
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+    const image_rect_float_offset = PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 100, 30])
 })
@@ -420,7 +437,7 @@ test('RendererWebGPU resolves percentage background image size against bordered 
     })
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+    const image_rect_float_offset = PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 85, 25])
 })
@@ -457,7 +474,7 @@ test('RendererWebGPU resolves cover background image size against node layout', 
     })
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+    const image_rect_float_offset = PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 160, 80])
 })
@@ -502,7 +519,7 @@ test('RendererWebGPU resolves 50 percent cover background image position', () =>
     })
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+    const image_rect_float_offset = PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([-30, 0, 160, 80])
 })
@@ -539,7 +556,7 @@ test('RendererWebGPU resolves contain background image size against node layout'
     })
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+    const image_rect_float_offset = PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 100, 50])
 })
@@ -575,7 +592,7 @@ test('RendererWebGPU treats unset background image size as natural image size', 
     })
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const image_rect_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+    const image_rect_float_offset = PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 40, 20])
 })
@@ -592,47 +609,54 @@ test('RendererWebGPU treats unset background images as solid panels', () => {
     })
     const nodes_buffer_data = createNodesBufferData(renderer, [node])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
-    const mode_data_float_offset = ATTRIBUTES.BACKGROUND_IMAGE_MODE_DATA.OFFSET / FLOAT32_SIZE
+    const mode_data_float_offset = (PANEL_DATA.IMAGE_DATA.OFFSET + FLOAT32_SIZE) / FLOAT32_SIZE
 
-    expect(nodes_buffer_data.bytes_offset).toBe(ATTRIBUTES_SIZE)
+    expect(nodes_buffer_data.bytes_offset).toBe(PANEL_DATA_SIZE)
     expect(Array.from(floats.slice(mode_data_float_offset, mode_data_float_offset + 2))).toEqual([0, 0])
 })
 
-test('RendererWebGPU batches consecutive solid panels together', () => {
-    const bind_group = createBindGroup('atlas')
-    const renderer = createRenderer(createImageManager({ bind_group }))
-    const batches = (renderer as any).buildBatches([createRenderItem(bind_group, 0), createRenderItem(bind_group, 1)])
+test('RendererWebGPU creates panel commands for consecutive panels', () => {
+    const renderer = createRenderer()
+    const render_data = collectRenderData(renderer, [createNode(), createNode()])
 
-    expect(batches).toEqual([
+    expect(render_data.commands).toEqual([
         {
-            pipeline: (renderer as any).pipeline,
-            bind_group,
-            buffer_kind: 'panel',
-            first_instance: 0,
-            instance_count: 2,
+            kind: COMMAND_KIND_PANEL,
+            panel_index: 0,
+            glyph_index: 0,
         },
+        {
+            kind: COMMAND_KIND_PANEL,
+            panel_index: 1,
+            glyph_index: 0,
+        },
+    ])
+    expect(render_data.panels).toHaveLength(2)
+    expect(render_data.glyphs).toHaveLength(0)
+})
+
+test('RendererWebGPU writes panel commands into command buffer data', () => {
+    const renderer = createRenderer()
+    const render_data = collectRenderData(renderer, [createNode(), createNode()])
+    const command_buffer_data = (renderer as any).createCommandBufferData(render_data.commands)
+    const u32 = new Uint32Array(command_buffer_data.bytes.buffer)
+    const command_u32_offset = COMMAND.KIND_DATA.OFFSET / UINT32_SIZE
+
+    expect(command_buffer_data.bytes_offset).toBe(2 * COMMAND_SIZE)
+    expect(Array.from(u32.slice(command_u32_offset, command_u32_offset + 4))).toEqual([COMMAND_KIND_PANEL, 0, 0, 0])
+    expect(Array.from(u32.slice(COMMAND_SIZE / UINT32_SIZE, COMMAND_SIZE / UINT32_SIZE + 4))).toEqual([
+        COMMAND_KIND_PANEL,
+        1,
+        0,
+        0,
     ])
 })
 
-test('RendererWebGPU batches consecutive atlas images together', () => {
-    const bind_group = createBindGroup('atlas')
-    const renderer = createRenderer()
-    const batches = (renderer as any).buildBatches([createRenderItem(bind_group, 0), createRenderItem(bind_group, 1)])
-
-    expect(batches).toHaveLength(1)
-    expect(batches[0].first_instance).toBe(0)
-    expect(batches[0].instance_count).toBe(2)
-    expect(batches[0].bind_group).toBe(bind_group)
-    expect(batches[0].buffer_kind).toBe('panel')
-})
-
-test('RendererWebGPU batches panels and images across atlas layers together', () => {
-    const bind_group = createBindGroup('atlas')
+test('RendererWebGPU keeps panels and images across atlas layers in one panel stream', () => {
     const first_image = createImage('first.png', 40, 20)
     const second_image = createImage('second.png', 40, 20)
     const renderer = createRenderer(
         createImageManager({
-            bind_group,
             resources: {
                 [first_image.src]: {
                     src: first_image.src,
@@ -649,7 +673,7 @@ test('RendererWebGPU batches panels and images across atlas layers together', ()
             },
         }),
     )
-    const render_items = (renderer as any).collectRenderItems([
+    const render_data = collectRenderData(renderer, [
         createNode(),
         createNode({
             styles: {
@@ -668,32 +692,17 @@ test('RendererWebGPU batches panels and images across atlas layers together', ()
             },
         }),
     ])
-    const batches = (renderer as any).buildBatches(render_items)
 
-    expect(batches).toHaveLength(1)
-    expect(batches[0].first_instance).toBe(0)
-    expect(batches[0].instance_count).toBe(3)
-    expect(batches[0].bind_group).toBe(bind_group)
-    expect(batches[0].buffer_kind).toBe('panel')
-})
-
-test('RendererWebGPU batches atlas panels and images together', () => {
-    const bind_group = createBindGroup('atlas')
-    const renderer = createRenderer()
-    const batches = (renderer as any).buildBatches([
-        createRenderItem(bind_group, 0),
-        createRenderItem(bind_group, 1),
-        createRenderItem(bind_group, 2),
+    expect(render_data.commands.map((command) => command.kind)).toEqual([
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_PANEL,
     ])
-
-    expect(batches).toHaveLength(1)
-    expect(batches[0].first_instance).toBe(0)
-    expect(batches[0].instance_count).toBe(3)
-    expect(batches[0].bind_group).toBe(bind_group)
-    expect(batches[0].buffer_kind).toBe('panel')
+    expect(render_data.commands.map((command) => command.panel_index)).toEqual([0, 1, 2])
+    expect(render_data.panels.map((panel) => panel.background_atlas_layer)).toEqual([0, 0, 1])
 })
 
-test('RendererWebGPU creates text render items from node text content', () => {
+test('RendererWebGPU creates glyph render data from node text content', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -709,15 +718,16 @@ test('RendererWebGPU creates text render items from node text content', () => {
             },
         },
     })
-    const render_items = (renderer as any).collectRenderItems([node])
+    const render_data = collectRenderData(renderer, [node])
 
-    expect(render_items).toHaveLength(2)
-    expect(render_items.map((item) => item.buffer_kind)).toEqual(['text', 'text'])
-    expect(render_items.map((item) => item.buffer_index)).toEqual([0, 1])
-    expect(render_items[0].instance_data.layout).toEqual([10, 20, 16, 32])
-    expect(render_items[0].instance_data.uv_rect).toEqual([0.1, 0.2, 0.3, 0.4])
-    expect(render_items[0].instance_data.run_index).toBe(0)
-    expect(render_items[1].instance_data.layout).toEqual([expect.closeTo(40.4), expect.closeTo(26.4), 16, 32])
+    expect(render_data.panels).toHaveLength(0)
+    expect(render_data.glyphs).toHaveLength(2)
+    expect(render_data.commands.map((command) => command.kind)).toEqual([COMMAND_KIND_GLYPH, COMMAND_KIND_GLYPH])
+    expect(render_data.commands.map((command) => command.glyph_index)).toEqual([0, 1])
+    expect(render_data.glyphs[0].layout).toEqual([10, 20, 16, 32])
+    expect(render_data.glyphs[0].uv_rect).toEqual([0.1, 0.2, 0.3, 0.4])
+    expect(render_data.glyphs[0].run_index).toBe(0)
+    expect(render_data.glyphs[1].layout).toEqual([expect.closeTo(40.4), expect.closeTo(26.4), 16, 32])
     expect((renderer as any).text_runs).toEqual([
         {
             color: [0, 0, 0, 255],
@@ -727,7 +737,7 @@ test('RendererWebGPU creates text render items from node text content', () => {
     ])
 })
 
-test('RendererWebGPU writes glyph instance data into a text buffer', () => {
+test('RendererWebGPU writes glyph instance data into a glyph buffer', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -737,21 +747,22 @@ test('RendererWebGPU writes glyph instance data into a text buffer', () => {
         layout: { x: 10, y: 20, width: 200, height: 60 },
         styles: {},
     })
-    const render_items = (renderer as any).collectRenderItems([node])
-    const text_buffer_data = (renderer as any).createTextBufferData(render_items)
-    const floats = new Float32Array(text_buffer_data.bytes.buffer)
+    const render_data = collectRenderData(renderer, [node])
+    const glyph_buffer_data = (renderer as any).createGlyphDataBufferData(render_data.glyphs)
+    const floats = new Float32Array(glyph_buffer_data.bytes.buffer)
+    const u32 = new Uint32Array(glyph_buffer_data.bytes.buffer)
 
-    expect(text_buffer_data.bytes_offset).toBe(TEXT_ATTRIBUTES_SIZE)
-    expect(Array.from(floats.slice(TEXT_ATTRIBUTES.LAYOUT.OFFSET / FLOAT32_SIZE, 4))).toEqual([10, 20, 16, 32])
+    expect(glyph_buffer_data.bytes_offset).toBe(GLYPH_DATA_SIZE)
+    expect(Array.from(floats.slice(GLYPH_DATA.LAYOUT.OFFSET / FLOAT32_SIZE, 4))).toEqual([10, 20, 16, 32])
     expect(
         Array.from(
             floats.slice(
-                TEXT_ATTRIBUTES.UV_RECT.OFFSET / FLOAT32_SIZE,
-                TEXT_ATTRIBUTES.UV_RECT.OFFSET / FLOAT32_SIZE + 4,
+                GLYPH_DATA.UV_RECT.OFFSET / FLOAT32_SIZE,
+                GLYPH_DATA.UV_RECT.OFFSET / FLOAT32_SIZE + 4,
             ),
         ),
     ).toEqual([expect.closeTo(0.1), expect.closeTo(0.2), expect.closeTo(0.3), expect.closeTo(0.4)])
-    expect(floats[TEXT_ATTRIBUTES.RUN_INDEX.OFFSET / FLOAT32_SIZE]).toBe(0)
+    expect(u32[GLYPH_DATA.RUN_DATA.OFFSET / UINT32_SIZE]).toBe(0)
 })
 
 test('RendererWebGPU writes shared text run data once per text node', () => {
@@ -764,7 +775,7 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
         layout: { x: 10, y: 20, width: 200, height: 60 },
         styles: {},
     })
-    ;(renderer as any).collectRenderItems([node])
+    collectRenderData(renderer, [node])
     const text_run_buffer_data = (renderer as any).createTextRunBufferData()
     const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
 
@@ -788,13 +799,16 @@ test('RendererWebGPU preserves panel then text order for a text node with backgr
     const node = createNode({
         text_content: 'A',
     })
-    const render_items = (renderer as any).collectRenderItems([node])
+    const render_data = collectRenderData(renderer, [node])
 
-    expect(render_items.map((item) => item.buffer_kind)).toEqual(['panel', 'text'])
-    expect(render_items.map((item) => item.buffer_index)).toEqual([0, 0])
+    expect(render_data.commands.map((command) => command.kind)).toEqual([COMMAND_KIND_PANEL, COMMAND_KIND_GLYPH])
+    expect(render_data.commands.map((command) => [command.panel_index, command.glyph_index])).toEqual([
+        [0, 0],
+        [0, 0],
+    ])
 })
 
-test('RendererWebGPU batches consecutive glyphs together', () => {
+test('RendererWebGPU creates consecutive glyph commands', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -809,20 +823,43 @@ test('RendererWebGPU batches consecutive glyphs together', () => {
             },
         },
     })
-    const render_items = (renderer as any).collectRenderItems([node])
-    const batches = (renderer as any).buildBatches(render_items)
+    const render_data = collectRenderData(renderer, [node])
 
-    expect(batches).toHaveLength(1)
-    expect(batches[0]).toMatchObject({
-        pipeline: TEST_TEXT_PIPELINE,
-        bind_group: font_manager.bind_group,
-        buffer_kind: 'text',
-        first_instance: 0,
-        instance_count: 2,
-    })
+    expect(render_data.commands.map((command) => command.kind)).toEqual([COMMAND_KIND_GLYPH, COMMAND_KIND_GLYPH])
+    expect(render_data.commands.map((command) => command.glyph_index)).toEqual([0, 1])
+    expect(render_data.glyphs).toHaveLength(2)
 })
 
-test('RendererWebGPU keeps interleaved panel and text batches separate', () => {
+test('RendererWebGPU writes glyph commands into command buffer data', () => {
+    const font_manager = createFontManager({
+        default_font: createManagedFont(),
+    })
+    const renderer = createRenderer(createImageManager(), font_manager)
+    const node = createNode({
+        text_content: 'AB',
+        styles: {
+            backgroundColor: {
+                parsed: {
+                    rgba: [0, 0, 0, 0],
+                },
+            },
+        },
+    })
+    const render_data = collectRenderData(renderer, [node])
+    const command_buffer_data = (renderer as any).createCommandBufferData(render_data.commands)
+    const u32 = new Uint32Array(command_buffer_data.bytes.buffer)
+
+    expect(command_buffer_data.bytes_offset).toBe(2 * COMMAND_SIZE)
+    expect(Array.from(u32.slice(0, 4))).toEqual([COMMAND_KIND_GLYPH, 0, 0, 0])
+    expect(Array.from(u32.slice(COMMAND_SIZE / UINT32_SIZE, COMMAND_SIZE / UINT32_SIZE + 4))).toEqual([
+        COMMAND_KIND_GLYPH,
+        0,
+        1,
+        0,
+    ])
+})
+
+test('RendererWebGPU keeps interleaved panel and text command order', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -831,12 +868,18 @@ test('RendererWebGPU keeps interleaved panel and text batches separate', () => {
         text_content: 'A',
     })
     const second = createNode()
-    const render_items = (renderer as any).collectRenderItems([first, second])
-    const batches = (renderer as any).buildBatches(render_items)
+    const render_data = collectRenderData(renderer, [first, second])
 
-    expect(render_items.map((item) => item.buffer_kind)).toEqual(['panel', 'text', 'panel'])
-    expect(batches.map((batch) => batch.buffer_kind)).toEqual(['panel', 'text', 'panel'])
-    expect(batches.map((batch) => batch.first_instance)).toEqual([0, 0, 1])
+    expect(render_data.commands.map((command) => command.kind)).toEqual([
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_GLYPH,
+        COMMAND_KIND_PANEL,
+    ])
+    expect(render_data.commands.map((command) => [command.panel_index, command.glyph_index])).toEqual([
+        [0, 0],
+        [0, 0],
+        [1, 0],
+    ])
 })
 
 test('ImageManager creates separate resources for separate srcs with the same bitmap', () => {
@@ -885,7 +928,6 @@ test('ImageManager reuses disposed atlas space before growing the atlas', () => 
     image_manager.imageUpload('image-3', createImage('image-3.png', 30, 30))
 
     const atlas_texture_count = getAtlasTextures(device).length
-    const bind_group_count = device.bind_groups.length
     const texture_copy_count = device.texture_copies.length
 
     image_manager.imageDispose('image-2')
@@ -895,7 +937,6 @@ test('ImageManager reuses disposed atlas space before growing the atlas', () => 
     expect(replacement.uv_rect[0]).toBe(disposed.uv_rect[0])
     expect(replacement.uv_rect[1]).toBe(disposed.uv_rect[1])
     expect(getAtlasTextures(device)).toHaveLength(atlas_texture_count)
-    expect(device.bind_groups).toHaveLength(bind_group_count)
     expect(device.texture_copies).toHaveLength(texture_copy_count)
 })
 
@@ -995,7 +1036,6 @@ test('ImageManager grows the atlas texture when the current layer is full', () =
     expect(first.layer).toBe(0)
     expect(second.layer).toBe(1)
     expect(getAtlasTextures(device)).toHaveLength(2)
-    expect(device.bind_groups).toHaveLength(2)
 })
 
 test('ImageManager grows the atlas texture when physical layer capacity is full', () => {
@@ -1013,7 +1053,6 @@ test('ImageManager grows the atlas texture when physical layer capacity is full'
     expect(atlas_textures[2].descriptor.size.depthOrArrayLayers).toBe(3)
     expect(device.texture_copies[0].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, 1])
     expect(device.texture_copies[1].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, 2])
-    expect(device.bind_groups).toHaveLength(3)
 })
 
 test('ImageManager throws when atlas growth exceeds the device layer limit', () => {
@@ -1097,7 +1136,6 @@ test('FontManager grows the font texture when physical layer capacity is full', 
     const font_manager = createRealFontManager(device)
     font_manager.fontRegister('font-0', createImage('font-0.png', 64, 64), createFontJson())
     font_manager.fontRegister('font-1', createImage('font-1.png', 64, 64), createFontJson())
-    const bind_group_count = device.bind_groups.length
     const third = font_manager.fontRegister('font-2', createImage('font-2.png', 64, 64), createFontJson())
 
     expect(third.layer).toBe(2)
@@ -1107,8 +1145,6 @@ test('FontManager grows the font texture when physical layer capacity is full', 
     expect(atlas_textures[1].descriptor.size.depthOrArrayLayers).toBe(3)
     expect(device.texture_copies[0].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, 2])
     expect(device.copies[2].destination.origin).toEqual([0, 0, 2])
-    expect(device.bind_groups).toHaveLength(bind_group_count + 1)
-    expect(font_manager.bind_group).toBe(device.bind_groups[device.bind_groups.length - 1])
 })
 
 test('FontManager throws for font atlases larger than one texture layer', () => {
@@ -1132,26 +1168,30 @@ test('FontManager throws when font texture growth exceeds the device layer limit
 })
 
 function createNodesBufferData(renderer, nodes) {
-    const render_items = (renderer as any).collectRenderItems(nodes)
+    const render_data = collectRenderData(renderer, nodes)
 
-    return (renderer as any).createNodesBufferData(render_items)
+    return (renderer as any).createPanelDataBufferData(render_data.panels)
+}
+
+function collectRenderData(renderer, nodes) {
+    return (renderer as any).collectRenderData(nodes)
 }
 
 function createRenderer(image_manager = createImageManager(), font_manager = createFontManager()) {
     const renderer = new RendererWebGPU({ canvas: {} })
-    ;(renderer as any).pipeline = TEST_PANEL_PIPELINE
-    ;(renderer as any).text_pipeline = TEST_TEXT_PIPELINE
     ;(renderer as any).image_manager = image_manager
     ;(renderer as any).font_manager = font_manager
 
     return renderer
 }
 
-function createImageManager({ bind_group = createBindGroup('atlas'), resources = {} } = {}) {
+function createImageManager({ resources = {} } = {}) {
     return {
-        bind_group,
         getImage(src) {
             return resources[src]
+        },
+        getTextureView() {
+            return { id: 'atlas-view' }
         },
     }
 }
@@ -1159,9 +1199,6 @@ function createImageManager({ bind_group = createBindGroup('atlas'), resources =
 function createRealImageManager(device, atlas_size = ATLAS_SIZE) {
     return new ImageManager({
         device,
-        bind_group_layout: { id: 'layout' },
-        viewport_buffer: { id: 'viewport' },
-        sampler: { id: 'sampler' },
         atlas_size,
     })
 }
@@ -1169,31 +1206,18 @@ function createRealImageManager(device, atlas_size = ATLAS_SIZE) {
 function createRealFontManager(device, atlas_size = ATLAS_SIZE) {
     return new FontManager({
         device,
-        bind_group_layout: { id: 'font-layout' },
-        viewport_buffer: { id: 'viewport' },
-        sampler: { id: 'sampler' },
-        text_run_buffer: { id: 'text-runs' },
         atlas_size,
     })
 }
 
-function createFontManager({ bind_group = createBindGroup('font-atlas'), default_font = undefined } = {}) {
+function createFontManager({ default_font = undefined } = {}) {
     return {
-        bind_group,
         getDefaultFont() {
             return default_font
         },
-        setTextRunBuffer() {},
-    }
-}
-
-function createRenderItem(bind_group, buffer_index = 0) {
-    return {
-        pipeline: TEST_PANEL_PIPELINE,
-        bind_group,
-        buffer_kind: 'panel',
-        buffer_index,
-        instance_data: {},
+        getTextureView() {
+            return { id: 'font-view' }
+        },
     }
 }
 
@@ -1271,10 +1295,6 @@ function createFontJson() {
         ],
         kerning: [],
     }
-}
-
-function createBindGroup(id) {
-    return { id }
 }
 
 function createImage(src, width, height) {
