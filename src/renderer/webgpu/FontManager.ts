@@ -1,5 +1,3 @@
-import { ATLAS_SIZE } from './ImageManager'
-
 export type ManagedFont = {
     name: string
     image: any
@@ -27,7 +25,7 @@ export class FontManager {
     private font_texture_layer_count = 2
     private default_font_name = null
 
-    constructor({ device, atlas_size = ATLAS_SIZE }) {
+    constructor({ device, atlas_size }) {
         this.device = device
         this.atlas_size = atlas_size
         this.font_texture = this.createFontTexture(this.font_texture_layer_count)
@@ -159,12 +157,7 @@ function createPlaneBounds(glyph): [number, number, number, number] | undefined 
         return undefined
     }
 
-    return [
-        glyph.planeBounds.left,
-        glyph.planeBounds.bottom,
-        glyph.planeBounds.right,
-        glyph.planeBounds.top,
-    ]
+    return [glyph.planeBounds.left, glyph.planeBounds.bottom, glyph.planeBounds.right, glyph.planeBounds.top]
 }
 
 function createGlyphUvRect(glyph, atlas, image, atlas_size): [number, number, number, number] | undefined {

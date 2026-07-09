@@ -43,7 +43,7 @@ export class ImageManager {
     private atlas_texture_layer_count = 1
     private atlas_layers: AtlasLayer[] = []
 
-    constructor({ device, atlas_size = ATLAS_SIZE }) {
+    constructor({ device, atlas_size }) {
         this.device = device
         this.atlas_size = atlas_size
         this.atlas_texture = this.createAtlasTexture(this.atlas_texture_layer_count)

@@ -9,7 +9,7 @@ if (!font_path) {
     process.exit(1);
 }
 
-const type = 'msdf'; // mtsdf | msdf | sdf
+const type = 'mtsdf'; // mtsdf | msdf | sdf
 const parsed_path = path.parse(font_path);
 const output_base = path.join(parsed_path.dir, `${parsed_path.name}.${type}`);
 const script_dir = path.dirname(fileURLToPath(import.meta.url));

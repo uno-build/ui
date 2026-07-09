@@ -95,6 +95,11 @@ export default class RendererDivs extends Renderer {
 
     public beforeUpdate(nodes) {
         super.beforeUpdate(nodes)
+
+        for (const node of nodes) {
+            this.divs.get(node).innerHTML = node.text_content
+        }
+
         this.engine.update()
     }
 

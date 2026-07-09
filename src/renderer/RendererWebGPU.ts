@@ -3,8 +3,8 @@ import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, KEYWORD, UNIT } from '../s
 import createEngine, { YOGA_SETTER } from '../layouter/yoga'
 import { getAncestorClipping, getNodeBorderWidth, getNodeDrawingData, getNodeOpacity } from './utils/node'
 import { uiWGSL } from './webgpu/shaders'
+import { ImageManager } from './webgpu/ImageManager'
 import { FontManager } from './webgpu/FontManager'
-import { ATLAS_SIZE, ImageManager } from './webgpu/ImageManager'
 import {
     FLOAT32_SIZE,
     UINT32_SIZE,
@@ -26,10 +26,16 @@ import {
 
 const DEFAULT_TEXT_SIZE = 32
 const DEFAULT_TEXT_COLOR = [0, 0, 0, 255]
+const IMAGE_ATLAS_SIZE = 2048
+const FONT_ATLAS_SIZE = 1024
 
 export default class RendererWebGPU extends Renderer {
     private canvas
-    private atlas_size
+    private image_atlas_size
+    private font_atlas_size
+    private image_min_filter
+    private image_mag_filter
+    // props
     private engine
     private adapter
     private device
@@ -70,10 +76,19 @@ export default class RendererWebGPU extends Renderer {
     private text_run_array_buffer_size = 0
     private text_run_floats
 
-    constructor({ canvas, atlas_size = ATLAS_SIZE }) {
+    constructor({
+        canvas,
+        image_atlas_size = IMAGE_ATLAS_SIZE,
+        font_atlas_size = FONT_ATLAS_SIZE,
+        image_min_filter = 'linear',
+        image_mag_filter = 'linear',
+    }) {
         super()
         this.canvas = canvas
-        this.atlas_size = atlas_size
+        this.image_atlas_size = image_atlas_size
+        this.font_atlas_size = font_atlas_size
+        this.image_min_filter = image_min_filter
+        this.image_mag_filter = image_mag_filter
     }
 
     public async init() {
@@ -122,18 +137,18 @@ export default class RendererWebGPU extends Renderer {
         this.device.queue.writeBuffer(this.position_buffer, 0, POSITION_VERTICES)
         this.pipeline = this.createPipeline()
         this.image_sampler = this.device.createSampler({
-            minFilter: 'linear',
-            magFilter: 'linear',
+            minFilter: this.image_min_filter,
+            magFilter: this.image_mag_filter,
             addressModeU: 'clamp-to-edge',
             addressModeV: 'clamp-to-edge',
         })
         this.image_manager = new ImageManager({
             device: this.device,
-            atlas_size: this.atlas_size,
+            atlas_size: this.image_atlas_size,
         })
         this.font_manager = new FontManager({
             device: this.device,
-            atlas_size: this.atlas_size,
+            atlas_size: this.font_atlas_size,
         })
         this.bind_group = this.createBindGroup()
     }
@@ -479,7 +494,7 @@ export default class RendererWebGPU extends Renderer {
             glyphs,
             run: {
                 color: DEFAULT_TEXT_COLOR,
-                font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.atlas_size],
+                font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.font_atlas_size],
                 clipping,
             },
         }

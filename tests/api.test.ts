@@ -197,14 +197,22 @@ test('Node text stores, replaces, and clears text content', async () => {
     await ui.init()
 
     const child = ui.create()
+    ui.root.add(child)
+
     child.text('Hello')
+    ui.render()
     expect(child.text_content).toBe('Hello')
+    expect(canvas.children[0].innerHTML).toBe('Hello')
 
     child.text('World')
+    ui.render()
     expect(child.text_content).toBe('World')
+    expect(canvas.children[0].innerHTML).toBe('World')
 
     child.text('')
+    ui.render()
     expect(child.text_content).toBe('')
+    expect(canvas.children[0].innerHTML).toBe('')
 })
 
 test('RendererDivs image api hooks are no-ops', async () => {

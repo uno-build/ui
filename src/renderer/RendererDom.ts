@@ -4,6 +4,7 @@ import { KEYWORD } from '../style/consts'
 
 export default class RendererDom extends Renderer {
     private canvas
+    private text_elements = new WeakMap()
 
     constructor({ canvas }) {
         super()
@@ -51,6 +52,32 @@ export default class RendererDom extends Renderer {
         }
 
         node.element.style[resolved_style.name] = resolved_style.value
+    }
+
+    public beforeUpdate(nodes) {
+        super.beforeUpdate(nodes)
+
+        for (const node of nodes) {
+            this.updateText(node)
+        }
+    }
+
+    private updateText(node) {
+        let text_element = this.text_elements.get(node)
+
+        if (node.text_content === '') {
+            text_element?.remove()
+            this.text_elements.delete(node)
+            return
+        }
+
+        if (text_element === undefined) {
+            text_element = document.createElement('span')
+            this.text_elements.set(node, text_element)
+            node.element.insertBefore(text_element, node.element.firstChild)
+        }
+
+        text_element.innerHTML = node.text_content
     }
 
     // prettier-ignore
