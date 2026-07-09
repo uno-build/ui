@@ -44,16 +44,11 @@ export default class UI {
         }
 
         this.renderer.afterUpdate(this.nodes)
-        this.renderer.update(this.nodes)
+        return this.renderer.update(this.nodes)
     }
 
     public draw() {
-        this.renderer.draw()
-    }
-
-    public render() {
-        this.update()
-        this.draw()
+        return this.renderer.draw()
     }
 
     public style(node, name, value) {

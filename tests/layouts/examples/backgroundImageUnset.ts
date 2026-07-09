@@ -34,7 +34,8 @@ export default async function createBackgroundImageUnsetLayout({ ui }) {
     setInterval(() => {
         state_index = (state_index + 1) % states.length
         setBackgroundImage(live, states[state_index])
-        ui.render()
+        ui.update()
+        ui.draw()
 
         // console.log(ui.renderer.image_manager?.atlas_layer_count)
 

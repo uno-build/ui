@@ -62,7 +62,8 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     expect(sibling.path).toEqual([1])
     expect(grandchild.path).toEqual([0, 0])
 
-    ui.render()
+    ui.update()
+    ui.draw()
 
     expect([...ui.nodes].toSorted(byId)).toEqual([child, sibling, grandchild])
     expect([...ui.nodes]).toEqual([child, grandchild, sibling])
@@ -101,7 +102,8 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     expect(child.parent).toBe(null)
     expect(grandchild.parent).toBe(null)
 
-    ui.render()
+    ui.update()
+    ui.draw()
 
     expect(sibling.layout).toMatchObject({ x: 20, y: 0, width: 0, height: 200 })
 })
@@ -183,7 +185,10 @@ test('Node remove discards pending styles', async () => {
     ui.root.add(child)
     ui.root.remove(child)
 
-    expect(() => ui.render()).not.toThrow()
+    expect(() => {
+        ui.update()
+        ui.draw()
+    }).not.toThrow()
     expect([...ui.nodes]).toEqual([])
     expect(canvas.children).toEqual([])
     expect(child.element).toBe(null)
@@ -200,17 +205,20 @@ test('Node text stores, replaces, and clears text content', async () => {
     ui.root.add(child)
 
     child.text('Hello')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.text_content).toBe('Hello')
     expect(canvas.children[0].innerHTML).toBe('Hello')
 
     child.text('World')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.text_content).toBe('World')
     expect(canvas.children[0].innerHTML).toBe('World')
 
     child.text('')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.text_content).toBe('')
     expect(canvas.children[0].innerHTML).toBe('')
 })
@@ -233,33 +241,39 @@ test('RendererDivs image api hooks are no-ops', async () => {
     child.style('backgroundPosition', '4px 6px')
     ui.root.add(child)
 
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
     expect(canvas.children[0].style.backgroundSize).toBe('100px 50px')
     expect(canvas.children[0].style.backgroundPosition).toBe('4px 6px')
 
     child.style('backgroundSize', 'unset')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(canvas.children[0].style.backgroundSize).toBe('unset')
 
     child.style('backgroundSize', '50%')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(canvas.children[0].style.backgroundSize).toBe('50%')
 
     child.style('backgroundSize', 'cover')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(canvas.children[0].style.backgroundSize).toBe('cover')
 
     ui.imageUpload('/assets/Avatar.png', second_image)
     expect(ui.imageList()).toEqual([])
 
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
 
     ui.imageDispose('/assets/Avatar.png')
     expect(ui.imageList()).toEqual([])
 
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
     expect(() => ui.imageDispose('/assets/Avatar.png')).not.toThrow()
 })

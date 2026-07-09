@@ -8,15 +8,18 @@ test('width', async () => {
     expect(child.layout.width).toBe(0)
 
     child.style('width', '50px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(50)
 
     child.style('width', '50%')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(100)
 
     child.style('width', 'auto')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(0)
 })
 
@@ -26,15 +29,18 @@ test('height', async () => {
     expect(child.layout.height).toBe(200)
 
     child.style('height', '50px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.height).toBe(50)
 
     child.style('height', '50%')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.height).toBe(100)
 
     child.style('height', 'auto')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.height).toBe(200)
 })
 
@@ -44,15 +50,18 @@ test('minWidth', async () => {
     expect(child.layout.width).toBe(0)
 
     child.style('minWidth', '50px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(50)
 
     child.style('minWidth', '50%')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(100)
 
     child.style('minWidth', 'unset')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(0)
 })
 
@@ -65,15 +74,18 @@ test('minHeight', async () => {
     expect(child.layout.height).toBe(0)
 
     child.style('minHeight', '50px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.height).toBe(50)
 
     child.style('minHeight', '50%')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.height).toBe(100)
 
     child.style('minHeight', 'unset')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.height).toBe(0)
 })
 
@@ -83,19 +95,23 @@ test('maxWidth', async () => {
     expect(child.layout.width).toBe(0)
 
     child.style('width', '150px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(150)
 
     child.style('maxWidth', '50px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(50)
 
     child.style('maxWidth', '50%')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(100)
 
     child.style('maxWidth', 'unset')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(150)
 })
 
@@ -108,19 +124,23 @@ test('maxHeight', async () => {
     expect(child.layout.height).toBe(0)
 
     child.style('height', '150px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.height).toBe(150)
 
     child.style('maxHeight', '50px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.height).toBe(50)
 
     child.style('maxHeight', '50%')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.height).toBe(100)
 
     child.style('maxHeight', 'unset')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.height).toBe(150)
 })
 
@@ -134,44 +154,51 @@ test('position', async () => {
 
     child.style('width', '50px')
     child.style('height', '40px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.x).toBe(0)
     expect(child.layout.y).toBe(0)
 
     child.style('position', 'static')
     child.style('left', '20px')
     child.style('top', '30px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.x).toBe(0)
     expect(child.layout.y).toBe(0)
 
     child.style('position', 'relative')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.x).toBe(20)
     expect(child.layout.y).toBe(30)
 
     child.style('position', 'absolute')
     child.style('left', '25%')
     child.style('top', '10%')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.x).toBe(50)
     expect(child.layout.y).toBe(20)
 
     child.style('left', 'unset')
     child.style('top', 'unset')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.x).toBe(0)
     expect(child.layout.y).toBe(0)
 
     child.style('right', '25%')
     child.style('bottom', '10%')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.x).toBe(100)
     expect(child.layout.y).toBe(140)
 
     child.style('right', 'unset')
     child.style('bottom', 'unset')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.x).toBe(0)
     expect(child.layout.y).toBe(0)
 })
@@ -182,11 +209,13 @@ test('flex', async () => {
     expect(child.layout.width).toBe(0)
 
     child.style('flex', '1')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(200)
 
     child.style('flex', 'unset')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(0)
 })
 
@@ -208,7 +237,8 @@ test('flexDirection', async () => {
 
     for (const [flexDirection, childX, childY, siblingX, siblingY] of cases) {
         root.style('flexDirection', flexDirection)
-        ui.render()
+        ui.update()
+        ui.draw()
         expect(child.layout.x).toBe(childX)
         expect(child.layout.y).toBe(childY)
         expect(sibling.layout.x).toBe(siblingX)
@@ -233,7 +263,8 @@ test('flexWrap', async () => {
 
     for (const [flexWrap, childWidth, childY, siblingWidth, siblingX, siblingY] of cases) {
         root.style('flexWrap', flexWrap)
-        ui.render()
+        ui.update()
+        ui.draw()
         expect(child.layout.width).toBe(childWidth)
         expect(child.layout.y).toBe(childY)
         expect(sibling.layout.width).toBe(siblingWidth)
@@ -260,7 +291,8 @@ test('wrapped relative percent offsets use border side widths', async () => {
     sibling.style('position', 'relative')
     sibling.style('top', '10%')
     root.add(sibling)
-    ui.render()
+    ui.update()
+    ui.draw()
 
     expect(sibling.layout.y).toBe(78)
 })
@@ -291,7 +323,8 @@ test('alignContent', async () => {
 
     for (const [alignContent, childY, siblingY] of cases) {
         root.style('alignContent', alignContent)
-        ui.render()
+        ui.update()
+        ui.draw()
         expect(child.layout.y).toBe(childY)
         expect(sibling.layout.y).toBe(siblingY)
     }
@@ -319,7 +352,8 @@ test('alignItems', async () => {
 
     for (const [alignItems, childY, childHeight, siblingY] of cases) {
         root.style('alignItems', alignItems)
-        ui.render()
+        ui.update()
+        ui.draw()
         expect(child.layout.y).toBe(childY)
         expect(child.layout.height).toBe(childHeight)
         expect(sibling.layout.y).toBe(siblingY)
@@ -350,7 +384,8 @@ test('alignSelf', async () => {
 
     for (const [alignSelf, childY, childHeight, siblingY] of cases) {
         child.style('alignSelf', alignSelf)
-        ui.render()
+        ui.update()
+        ui.draw()
         expect(child.layout.y).toBe(childY)
         expect(child.layout.height).toBe(childHeight)
         expect(sibling.layout.y).toBe(siblingY)
@@ -377,7 +412,8 @@ test('justifyContent', async () => {
 
     for (const [justifyContent, childX, siblingX] of cases) {
         root.style('justifyContent', justifyContent)
-        ui.render()
+        ui.update()
+        ui.draw()
         expect(child.layout.x).toBe(childX)
         expect(sibling.layout.x).toBe(siblingX)
     }
@@ -405,19 +441,22 @@ test('display', async () => {
     root.add(sibling)
 
     wrapper.style('display', 'flex')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(wrapper.layout.width).toBe(100)
     expect(child.layout.width).toBe(40)
     expect(sibling.layout.x).toBe(100)
 
     wrapper.style('display', 'none')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(wrapper.layout.width).toBe(0)
     expect(child.layout.width).toBe(0)
     expect(sibling.layout.x).toBe(0)
 
     wrapper.style('display', 'contents')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(wrapper.layout.width).toBe(0)
     expect(child.layout.width).toBe(40)
     expect(sibling.layout.x).toBe(40)
@@ -430,17 +469,20 @@ test('flexGrow', async () => {
     child.style('width', '50px')
     sibling.style('width', '50px')
     root.add(sibling)
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(50)
     expect(sibling.layout.x).toBe(50)
 
     child.style('flexGrow', '1')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(150)
     expect(sibling.layout.x).toBe(150)
 
     child.style('flexGrow', 'unset')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(50)
     expect(sibling.layout.x).toBe(50)
 })
@@ -452,17 +494,20 @@ test('flexShrink', async () => {
     child.style('width', '150px')
     sibling.style('width', '150px')
     root.add(sibling)
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(100)
     expect(sibling.layout.width).toBe(100)
 
     child.style('flexShrink', '0')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(150)
     expect(sibling.layout.width).toBe(50)
 
     child.style('flexShrink', 'unset')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(100)
     expect(sibling.layout.width).toBe(100)
 })
@@ -473,20 +518,24 @@ test('flexBasis', async () => {
     expect(child.layout.width).toBe(0)
 
     child.style('flexBasis', '50px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(50)
 
     child.style('flexBasis', '50%')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(100)
 
     child.style('width', '75px')
     child.style('flexBasis', 'auto')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(75)
 
     child.style('flexBasis', 'unset')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(75)
 })
 
@@ -498,12 +547,14 @@ test('aspectRatio', async () => {
 
     child.style('width', '100px')
     child.style('aspectRatio', '2')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(100)
     expect(child.layout.height).toBe(50)
 
     child.style('aspectRatio', 'unset')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.width).toBe(100)
     expect(child.layout.height).toBe(0)
 
@@ -514,7 +565,8 @@ test('aspectRatio', async () => {
 
     heightChild.style('height', '80px')
     heightChild.style('aspectRatio', '2')
-    heightUi.render()
+    heightUi.update()
+    heightUi.draw()
     expect(heightChild.layout.width).toBe(160)
     expect(heightChild.layout.height).toBe(80)
 })
@@ -542,7 +594,8 @@ test('boxSizing', async () => {
         box.style('borderBottomWidth', '5px')
         inner.style('flex', '1')
         box.add(inner)
-        ui.render()
+        ui.update()
+        ui.draw()
 
         expect(box.layout.width).toBe(boxWidth)
         expect(box.layout.height).toBe(boxHeight)
@@ -580,7 +633,8 @@ test('border width', async () => {
         })
 
         child.style('flex', '1')
-        ui.render()
+        ui.update()
+        ui.draw()
         expect(child.layout.x).toBe(x)
         expect(child.layout.y).toBe(y)
         expect(child.layout.width).toBe(width)
@@ -605,7 +659,8 @@ test('direction', async () => {
 
     for (const [direction, childX, siblingX] of cases) {
         root.style('direction', direction)
-        ui.render()
+        ui.update()
+        ui.draw()
         expect(child.layout.x).toBe(childX)
         expect(sibling.layout.x).toBe(siblingX)
     }
@@ -620,39 +675,48 @@ test('gap', async () => {
     sibling.style('width', '50px')
     sibling.style('height', '50px')
     root.add(sibling)
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(sibling.layout.x).toBe(50)
 
     root.style('gap', '10px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(sibling.layout.x).toBe(60)
 
     root.style('gap', '0px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(sibling.layout.x).toBe(50)
 
     root.style('gap', '10%')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(sibling.layout.x).toBe(70)
 
     root.style('gap', '0px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(sibling.layout.x).toBe(50)
 
     root.style('columnGap', '10px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(sibling.layout.x).toBe(60)
 
     root.style('columnGap', '0px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(sibling.layout.x).toBe(50)
 
     root.style('columnGap', '10%')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(sibling.layout.x).toBe(70)
 
     root.style('columnGap', '0px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(sibling.layout.x).toBe(50)
 
     const {
@@ -672,23 +736,28 @@ test('gap', async () => {
     rowSibling.style('width', '150px')
     rowSibling.style('height', '50px')
     rowRoot.add(rowSibling)
-    rowUi.render()
+    rowUi.update()
+    rowUi.draw()
     expect(rowSibling.layout.y).toBe(50)
 
     rowRoot.style('rowGap', '10px')
-    rowUi.render()
+    rowUi.update()
+    rowUi.draw()
     expect(rowSibling.layout.y).toBe(60)
 
     rowRoot.style('rowGap', '0px')
-    rowUi.render()
+    rowUi.update()
+    rowUi.draw()
     expect(rowSibling.layout.y).toBe(50)
 
     rowRoot.style('rowGap', '10%')
-    rowUi.render()
+    rowUi.update()
+    rowUi.draw()
     expect(rowSibling.layout.y).toBe(70)
 
     rowRoot.style('rowGap', '0px')
-    rowUi.render()
+    rowUi.update()
+    rowUi.draw()
     expect(rowSibling.layout.y).toBe(50)
 })
 
@@ -713,7 +782,8 @@ test('margin', async () => {
         sibling.style('width', '50px')
         sibling.style('height', '50px')
         root.add(sibling)
-        ui.render()
+        ui.update()
+        ui.draw()
         expect(child.layout.x).toBe(childX)
         expect(child.layout.y).toBe(childY)
         expect(sibling.layout.x).toBe(siblingX)
@@ -727,7 +797,8 @@ test('margin', async () => {
     child.style('width', '50px')
     child.style('height', '50px')
     child.style('marginBottom', '10px')
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.y).toBe(140)
 })
 
@@ -747,7 +818,8 @@ test('padding', async () => {
         })
 
         child.style('flex', '1')
-        ui.render()
+        ui.update()
+        ui.draw()
         expect(child.layout.x).toBe(x)
         expect(child.layout.y).toBe(y)
         expect(child.layout.width).toBe(width)
@@ -764,7 +836,8 @@ test('padding', async () => {
     wrapper.style('padding', '10%')
     child.style('flex', '1')
     wrapper.add(child)
-    ui.render()
+    ui.update()
+    ui.draw()
     expect(child.layout.x).toBe(20)
     expect(child.layout.y).toBe(20)
     expect(child.layout.width).toBe(160)
@@ -783,7 +856,8 @@ async function createUI(styles = {}) {
     const child = ui.create()
     root.style('width', '200px')
     root.add(child)
-    ui.render()
+    ui.update()
+    ui.draw()
     return { ui, root, child }
 }
 

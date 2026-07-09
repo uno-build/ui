@@ -67,7 +67,8 @@ async function runScene({ root, scene, nodes, frames, warmup }) {
     createGrid({ ui, scene, nodes, width: root.clientWidth })
 
     for (let i = 0; i < warmup; i++) {
-        ui.render()
+        ui.update()
+        ui.draw()
         await (renderer as any).device.queue.onSubmittedWorkDone()
     }
 
@@ -76,7 +77,8 @@ async function runScene({ root, scene, nodes, frames, warmup }) {
 
     for (let i = 0; i < frames; i++) {
         const render_start = performance.now()
-        ui.render()
+        ui.update()
+        ui.draw()
         const render_end = performance.now()
         await (renderer as any).device.queue.onSubmittedWorkDone()
         const submitted_end = performance.now()

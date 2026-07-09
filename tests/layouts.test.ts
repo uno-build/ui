@@ -175,11 +175,13 @@ test('Layout: zIndex updates repaint order', async ({ page }) => {
                 higher.style('zIndex', '2')
                 ui.root.add(higher)
 
-                ui.render()
+                ui.update()
+                ui.draw()
                 const initialTop = readTopPath(canvas, ui.nodes, 100, 100)
 
                 lower.style('zIndex', '3')
-                ui.render()
+                ui.update()
+                ui.draw()
                 const updatedTop = readTopPath(canvas, ui.nodes, 100, 100)
 
                 root.removeChild(canvas)
@@ -281,15 +283,18 @@ test('Layout: backgroundImage updates and clears with unset', async ({ page }) =
                 ui.imageUpload(asset_coin.src, asset_coin)
 
                 node.style('backgroundImage', asset_logo.src)
-                ui.render()
+                ui.update()
+                ui.draw()
                 const first = readBackgroundImage(canvas, node.id)
 
                 node.style('backgroundImage', asset_coin.src)
-                ui.render()
+                ui.update()
+                ui.draw()
                 const second = readBackgroundImage(canvas, node.id)
 
                 node.style('backgroundImage', 'unset')
-                ui.render()
+                ui.update()
+                ui.draw()
                 const unset = readBackgroundImage(canvas, node.id)
 
                 root.removeChild(canvas)
@@ -361,7 +366,8 @@ test('Layout: RendererDivs clears overflow clipping updates', async ({ page }) =
             child.style('backgroundColor', '#000')
             host.add(child)
 
-            ui.render()
+            ui.update()
+            ui.draw()
 
             const div = canvas.querySelector(`#node-${child.id}`)
 
@@ -372,7 +378,8 @@ test('Layout: RendererDivs clears overflow clipping updates', async ({ page }) =
             const hiddenClipPath = (div as HTMLElement).style.clipPath
 
             host.style('overflow', 'visible')
-            ui.render()
+            ui.update()
+            ui.draw()
 
             return {
                 hiddenClipPath,
