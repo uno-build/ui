@@ -73,6 +73,22 @@ export const BOX_SHADOW_DEFINITION = [
     },
 ]
 
+export const FONT_FAMILY_DEFINITION = [
+    {
+        normalize: [normalizeTrim],
+        validate: [],
+        parse: [parseString],
+    },
+]
+
+export const FONT_SIZE_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validatePx],
+        parse: [parsePx],
+    },
+]
+
 export const PX_PERCENT_DEFINITION = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],

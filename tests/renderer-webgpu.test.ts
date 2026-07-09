@@ -24,6 +24,8 @@ import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from '../src/renderer/webgpu/
     RENDER_ATTACHMENT: 8,
 }
 
+const FONT_ATLAS_SIZE = 1024
+
 test('RendererWebGPU accumulates opacity into panel instance data', () => {
     const root = createNode({ opacity: 0.5 })
     const parent = createNode({ parent: root, opacity: 0.5 })
@@ -724,17 +726,107 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
     expect(render_data.glyphs).toHaveLength(2)
     expect(render_data.commands.map((command) => command.kind)).toEqual([COMMAND_KIND_GLYPH, COMMAND_KIND_GLYPH])
     expect(render_data.commands.map((command) => command.glyph_index)).toEqual([0, 1])
-    expect(render_data.glyphs[0].layout).toEqual([10, 20, 16, 32])
+    expect(render_data.glyphs[0].layout).toEqual([10, 20, 8, 16])
     expect(render_data.glyphs[0].uv_rect).toEqual([0.1, 0.2, 0.3, 0.4])
     expect(render_data.glyphs[0].run_index).toBe(0)
-    expect(render_data.glyphs[1].layout).toEqual([expect.closeTo(40.4), expect.closeTo(26.4), 16, 32])
+    expect(render_data.glyphs[1].layout).toEqual([expect.closeTo(25.2), expect.closeTo(23.2), 8, 16])
     expect((renderer as any).text_runs).toEqual([
         {
             color: [0, 0, 0, 255],
-            font_data: [2, 1, 6, ATLAS_SIZE],
+            font_data: [2, 1, 6, FONT_ATLAS_SIZE],
             clipping: [0, 0, 0, 0],
         },
     ])
+})
+
+test('RendererWebGPU scales glyph render data with fontSize', () => {
+    const font_manager = createFontManager({
+        default_font: createManagedFont(),
+    })
+    const renderer = createRenderer(createImageManager(), font_manager)
+    const node = createNode({
+        text_content: 'AB',
+        layout: { x: 10, y: 20, width: 200, height: 60 },
+        styles: {
+            fontSize: {
+                value: '20px',
+                parsed: { value: 20, kind: UNIT.PX },
+            },
+            backgroundColor: {
+                parsed: {
+                    rgba: [0, 0, 0, 0],
+                },
+            },
+        },
+    })
+    const render_data = collectRenderData(renderer, [node])
+
+    expect(render_data.glyphs[0].layout).toEqual([10, 20, 10, 20])
+    expect(render_data.glyphs[1].layout).toEqual([24, 24, 10, 20])
+})
+
+test('RendererWebGPU resolves text font from fontFamily', () => {
+    const alternate_font = {
+        ...createManagedFont(),
+        name: 'ChangaOne',
+        layer: 5,
+        glyphs_by_unicode: new Map([
+            [
+                65,
+                {
+                    unicode: 65,
+                    advance: 1,
+                    plane_bounds: [0, 0, 1, 1],
+                    uv_rect: [0.6, 0.7, 0.1, 0.2],
+                },
+            ],
+        ]),
+    }
+    const font_manager = createFontManager({
+        default_font: createManagedFont(),
+        fonts: {
+            ChangaOne: alternate_font,
+        },
+    })
+    const renderer = createRenderer(createImageManager(), font_manager)
+    const node = createNode({
+        text_content: 'A',
+        layout: { x: 10, y: 20, width: 200, height: 60 },
+        styles: {
+            fontFamily: {
+                value: 'ChangaOne',
+                parsed: {},
+            },
+            backgroundColor: {
+                parsed: {
+                    rgba: [0, 0, 0, 0],
+                },
+            },
+        },
+    })
+    const render_data = collectRenderData(renderer, [node])
+
+    expect(render_data.glyphs[0].layout).toEqual([10, 20, 16, 16])
+    expect(render_data.glyphs[0].uv_rect).toEqual([0.6, 0.7, 0.1, 0.2])
+    expect((renderer as any).text_runs[0].font_data).toEqual([5, 1, 6, FONT_ATLAS_SIZE])
+})
+
+test('RendererWebGPU throws when fontFamily is not registered', () => {
+    const font_manager = createFontManager({
+        default_font: createManagedFont(),
+    })
+    const renderer = createRenderer(createImageManager(), font_manager)
+    const node = createNode({
+        text_content: 'A',
+        styles: {
+            fontFamily: {
+                value: 'Missing',
+                parsed: {},
+            },
+        },
+    })
+
+    expect(() => collectRenderData(renderer, [node])).toThrow(/Font "Missing" is not registered/)
 })
 
 test('RendererWebGPU writes glyph instance data into a glyph buffer', () => {
@@ -753,7 +845,7 @@ test('RendererWebGPU writes glyph instance data into a glyph buffer', () => {
     const u32 = new Uint32Array(glyph_buffer_data.bytes.buffer)
 
     expect(glyph_buffer_data.bytes_offset).toBe(GLYPH_DATA_SIZE)
-    expect(Array.from(floats.slice(GLYPH_DATA.LAYOUT.OFFSET / FLOAT32_SIZE, 4))).toEqual([10, 20, 16, 32])
+    expect(Array.from(floats.slice(GLYPH_DATA.LAYOUT.OFFSET / FLOAT32_SIZE, 4))).toEqual([10, 20, 8, 16])
     expect(
         Array.from(
             floats.slice(
@@ -785,7 +877,7 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
         Array.from(
             floats.slice(TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE, TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE + 4),
         ),
-    ).toEqual([2, 1, 6, ATLAS_SIZE])
+    ).toEqual([2, 1, 6, FONT_ATLAS_SIZE])
     expect(
         Array.from(floats.slice(TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE, TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE + 4)),
     ).toEqual([0, 0, 0, 0])
@@ -1110,6 +1202,8 @@ test('FontManager registers separate fonts in separate texture layers', () => {
     expect(first.layer).toBe(0)
     expect(second.layer).toBe(1)
     expect(font_manager.getDefaultFont()).toBe(first)
+    expect(font_manager.getFont('Poppins')).toBe(first)
+    expect(font_manager.getFont('ChangaOne')).toBe(second)
     expect(device.copies[0].destination.origin).toEqual([0, 0, 0])
     expect(device.copies[1].destination.origin).toEqual([0, 0, 1])
     expect(getAtlasTextures(device)).toHaveLength(1)
@@ -1210,10 +1304,13 @@ function createRealFontManager(device, atlas_size = ATLAS_SIZE) {
     })
 }
 
-function createFontManager({ default_font = undefined } = {}) {
+function createFontManager({ default_font = undefined, fonts = {} } = {}) {
     return {
         getDefaultFont() {
             return default_font
+        },
+        getFont(name) {
+            return fonts[name]
         },
         getTextureView() {
             return { id: 'font-view' }

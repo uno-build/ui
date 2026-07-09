@@ -239,6 +239,21 @@ test('backgroundRepeat', () => {
     expectInvalid('backgroundRepeat', true, /style value must be a string/)
 })
 
+test('fontFamily', () => {
+    expectResolved('fontFamily', ' Poppins-Regular ', 'Poppins-Regular', {})
+    expectResolved(' font-family ', ' ChangaOne-Regular ', 'ChangaOne-Regular', {}, 'fontFamily')
+    expectInvalid('fontFamily', true, /style value must be a string/)
+})
+
+test('fontSize', () => {
+    expectUnit('fontSize', ' 32PX ', '32px', 32, 'px')
+    expectResolved(' font-size ', '42.5px', '42.5px', { value: 42.5, kind: 'px' }, 'fontSize')
+    expectInvalid('fontSize', '-1px', /expected non-negative value/)
+    expectInvalid('fontSize', '10%', /expected px unit/)
+    expectInvalid('fontSize', '1em', /expected px unit/)
+    expectInvalid('fontSize', true, /style value must be a string/)
+})
+
 test('opacity', () => {
     const valid_cases = [
         ['0', '0', 0],

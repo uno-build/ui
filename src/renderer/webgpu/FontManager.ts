@@ -71,6 +71,10 @@ export class FontManager {
         return this.fonts.get(this.default_font_name)
     }
 
+    public getFont(name: string): ManagedFont | undefined {
+        return this.fonts.get(name)
+    }
+
     public getTextureView() {
         return this.font_texture.createView({
             dimension: '2d-array',

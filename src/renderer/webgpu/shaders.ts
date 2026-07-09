@@ -420,7 +420,7 @@ fn glyphColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
     let unit_range = vec2f(run.font_data.z / run.font_data.w);
     let screen_tex_size = vec2f(1.0) / max(uv_width, vec2f(0.000001));
     let screen_px_range = max(0.5 * dot(unit_range, screen_tex_size), 1.0);
-    let distance_alpha = clamp(screen_px_range * (signed_distance - 0.5) + 0.5, 0.0, 1.0);
+    let distance_alpha = clamp(screen_px_range * (signed_distance - 0.45) + 0.5, 0.0, 1.0);
     let alpha = distance_alpha *
         run.color.a *
         run.font_data.y *

@@ -22,6 +22,8 @@ export default async function createFontsLayout({ ui }) {
     card.style('borderRadius', '16px')
     card.style('backgroundColor', '#ffffff')
     card.style('border', '2px solid #1b2a38')
+    card.style('fontFamily', 'Poppins-Regular')
+    card.style('fontSize', '32px')
     card.text('Poppins')
     stage.add(card)
 
@@ -31,6 +33,8 @@ export default async function createFontsLayout({ ui }) {
     card2.style('borderRadius', '16px')
     card2.style('backgroundColor', '#ffffff')
     card2.style('border', '2px solid #1b2a38')
+    card2.style('fontFamily', 'ChangaOne-Regular')
+    card2.style('fontSize', '42px')
     card2.text('ChangaOne')
     stage.add(card2)
 }

@@ -24,10 +24,10 @@ import {
     TEXT_RUN_SIZE,
 } from './webgpu/buffers'
 
-const DEFAULT_TEXT_SIZE = 32
-const DEFAULT_TEXT_COLOR = [0, 0, 0, 255]
 const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 1024
+const FONT_SIZE = 16
+const FONT_COLOR = [0, 0, 0, 255]
 
 export default class RendererWebGPU extends Renderer {
     private canvas
@@ -365,13 +365,14 @@ export default class RendererWebGPU extends Renderer {
             pass_encoder.setVertexBuffer(0, this.position_buffer)
             pass_encoder.setVertexBuffer(1, this.command_buffer)
             pass_encoder.draw(POSITION_VERTEX_COUNT, this.command_count, 0, 0)
-            draws = 1
-            instances = this.command_count
+            draws += 1
+            instances += this.command_count
         }
-        console.log('Draws', draws, 'Instances', instances)
 
         pass_encoder.end()
         this.device.queue.submit([command_encoder.finish()])
+
+        return { draws, instances }
     }
 
     private collectRenderData(nodes) {
@@ -432,10 +433,22 @@ export default class RendererWebGPU extends Renderer {
 
     private collectTextInstanceData(node, run_index) {
         const text_content = node.text_content
-        const font = this.font_manager.getDefaultFont()
         const display = node.styles.display?.parsed.enum || DISPLAY.flex
 
-        if (text_content === '' || font === undefined || display !== DISPLAY.flex) {
+        if (text_content === '' || display !== DISPLAY.flex) {
+            return null
+        }
+
+        const font_family = node.styles.fontFamily?.value
+        const font =
+            font_family === undefined ? this.font_manager.getDefaultFont() : this.font_manager.getFont(font_family)
+        const font_size = node.styles.fontSize?.parsed.value ?? FONT_SIZE
+
+        if (font === undefined) {
+            if (font_family !== undefined) {
+                throw new Error(`Font "${font_family}" is not registered.`)
+            }
+
             return null
         }
 
@@ -455,7 +468,7 @@ export default class RendererWebGPU extends Renderer {
         }
 
         const clipping = clip === null ? [0, 0, 0, 0] : [y + clip.top, x + clip.right, y + clip.bottom, x + clip.left]
-        const baseline = y + font.metrics.ascender * DEFAULT_TEXT_SIZE
+        const baseline = y + font.metrics.ascender * font_size
         const glyphs = []
         let cursor_x = x
 
@@ -473,17 +486,17 @@ export default class RendererWebGPU extends Renderer {
                 const [left, bottom, right, top] = glyph.plane_bounds
                 glyphs.push({
                     layout: [
-                        cursor_x + left * DEFAULT_TEXT_SIZE,
-                        baseline - top * DEFAULT_TEXT_SIZE,
-                        (right - left) * DEFAULT_TEXT_SIZE,
-                        (top - bottom) * DEFAULT_TEXT_SIZE,
+                        cursor_x + left * font_size,
+                        baseline - top * font_size,
+                        (right - left) * font_size,
+                        (top - bottom) * font_size,
                     ],
                     uv_rect: glyph.uv_rect,
                     run_index,
                 })
             }
 
-            cursor_x += glyph.advance * DEFAULT_TEXT_SIZE
+            cursor_x += glyph.advance * font_size
         }
 
         if (glyphs.length === 0) {
@@ -493,7 +506,7 @@ export default class RendererWebGPU extends Renderer {
         return {
             glyphs,
             run: {
-                color: DEFAULT_TEXT_COLOR,
+                color: FONT_COLOR,
                 font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.font_atlas_size],
                 clipping,
             },
@@ -689,7 +702,7 @@ export default class RendererWebGPU extends Renderer {
             text_run_buffer_data.bytes_offset +
             VIEWPORT_SIZE
 
-        console.log('GPU upload', uploaded_bytes, 'bytes', (uploaded_bytes / 1024).toFixed(2), 'KB')
+        return { uploaded_bytes }
     }
 
     private writeCommandData(command, bytes_offset) {

@@ -15,6 +15,8 @@ import {
     FLEX_BASIS_DEFINITION,
     FLEX_DIRECTION_DEFINITION,
     FLEX_WRAP_DEFINITION,
+    FONT_FAMILY_DEFINITION,
+    FONT_SIZE_DEFINITION,
     JUSTIFY_CONTENT_DEFINITION,
     MARGIN_DEFINITION,
     MIN_MAX_SIZE_DEFINITION,
@@ -219,6 +221,12 @@ export const STYLE = {
     ]),
     BACKGROUNDREPEAT: createStyle('backgroundRepeat', (name, value) => [
         { name, value, definition: BACKGROUND_REPEAT_DEFINITION },
+    ]),
+    FONTFAMILY: createStyle('fontFamily', (name, value) => [
+        { name, value, definition: FONT_FAMILY_DEFINITION },
+    ]),
+    FONTSIZE: createStyle('fontSize', (name, value) => [
+        { name, value, definition: FONT_SIZE_DEFINITION },
     ]),
 
     // YOGA PROPERTIES
