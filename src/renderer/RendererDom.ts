@@ -82,7 +82,7 @@ export default class RendererDom extends Renderer {
     private updateText(node) {
         let text_element = this.text_elements.get(node)
 
-        if (node.isTextNode() === false || node.text_content === '') {
+        if (!node.hasTextContent()) {
             text_element?.remove()
             this.text_elements.delete(node)
             return

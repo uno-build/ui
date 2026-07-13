@@ -31,10 +31,11 @@ export default async function createFontsLayout({ ui }) {
 
         for (let font_size = 3; font_size <= 50; font_size++) {
             const text = ui.create()
-            // text.style('width', '160px')
+            text.style('width', '300px')
             // text.style('height', `${font_size * 2}px`)
             text.style('flexShrink', '0')
-            // text.style('border', '1px solid #000')
+            text.style('border', '1px solid #000')
+            // text.style('padding', '1px')
             text.style('fontFamily', font_column.font_family)
             text.style('fontSize', `${font_size}px`)
             text.text(font_column.text_content)

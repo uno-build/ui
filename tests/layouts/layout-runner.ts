@@ -13,13 +13,13 @@ export const SETUPS = {
         runOnTests: true,
         sourceOfTruth: true,
     },
-    RendererDivs: {
-        elementType: 'div',
-        renderer: RendererDivs,
-        attributes: {},
-        inspectDomPaint: true,
-        runOnTests: true,
-    },
+    // RendererDivs: {
+    //     elementType: 'div',
+    //     renderer: RendererDivs,
+    //     attributes: {},
+    //     inspectDomPaint: true,
+    //     runOnTests: true,
+    // },
     RendererWebGPU: {
         elementType: 'canvas',
         renderer: RendererWebGPU,

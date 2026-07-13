@@ -26,10 +26,6 @@ export default class Node {
     }
 
     public style(name, value, parsed?) {
-        if (this.isTextNode() && isTextSizeStyle(name)) {
-            return
-        }
-
         this.ui.style(this, name, value, parsed)
 
         if (this.isTextNode() && isTextMeasureStyle(name)) {
@@ -49,19 +45,16 @@ export default class Node {
         }
 
         this.text_content = value
-        delete this.styles.width
-        delete this.styles.height
-        this.ui.renderer.discardPendingStyles(this, ['width', 'height'])
         this.ui.renderer.initializeTextNode(this)
     }
 
     public isTextNode() {
         return this.text_content !== undefined
     }
-}
 
-function isTextSizeStyle(name) {
-    return name === 'width' || name === 'height'
+    public hasTextContent() {
+        return this.isTextNode() && this.text_content.length > 0
+    }
 }
 
 function isTextMeasureStyle(name) {

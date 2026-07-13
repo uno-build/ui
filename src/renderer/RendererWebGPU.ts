@@ -1,6 +1,6 @@
 import Renderer from '../Renderer'
 import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, KEYWORD, UNIT } from '../style/consts'
-import createEngine, { YOGA_SETTER } from '../layouter/yoga'
+import createEngine, { YOGA_SETTER, MEASURE_MODE } from '../layouter/yoga'
 import { getAncestorClipping, getNodeBorderWidth, getNodeDrawingData, getNodeOpacity } from './utils/node'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
 import { uiWGSL } from './webgpu/shaders'
@@ -269,9 +269,9 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public initializeTextNode(node) {
-        node.element.setWidth(undefined)
-        node.element.setHeight(undefined)
-        node.element.setMeasureFunc((width) => this.getTextMeasure(node, width))
+        node.element.setMeasureFunc((width, width_mode, height, height_mode) =>
+            this.getTextMeasure(node, width, width_mode, height, height_mode),
+        )
     }
 
     public invalidateTextNode(node) {
@@ -279,24 +279,30 @@ export default class RendererWebGPU extends Renderer {
         node.element.markDirty()
     }
 
-    public getTextMeasure(node, available_width = Infinity) {
-        if (node.text_content === '') {
-            return { width: 0, height: 0 }
-        }
+    public getTextMeasure(
+        node,
+        available_width = NaN,
+        width_mode = Number.isNaN(available_width) ? MEASURE_MODE.UNDEFINED : MEASURE_MODE.AT_MOST,
+        available_height = NaN,
+        height_mode = Number.isNaN(available_height) ? MEASURE_MODE.UNDEFINED : MEASURE_MODE.AT_MOST,
+    ) {
+        let measured_width = 0
+        let measured_height = 0
 
-        const font = this.getTextFont(node)
-        if (font === undefined) {
-            return { width: 0, height: 0 }
+        if (node.hasTextContent()) {
+            const font = this.getTextFont(node)
+            if (font !== undefined) {
+                const font_size = this.getTextFontSize(node)
+                const max_width = width_mode === MEASURE_MODE.UNDEFINED ? Infinity : available_width
+                const text_layout = measureLineStats(this.getPreparedText(node, font, font_size), max_width)
+                measured_width = text_layout.maxLineWidth
+                measured_height = text_layout.lineCount * font.metrics.lineHeight * font_size
+            }
         }
-
-        const font_size = this.getTextFontSize(node)
-        const line_height = font.metrics.lineHeight * font_size
-        const max_width = Number.isNaN(available_width) ? Infinity : available_width
-        const text_layout = measureLineStats(this.getPreparedText(node, font, font_size), max_width)
 
         return {
-            width: Math.min(text_layout.maxLineWidth, max_width),
-            height: text_layout.lineCount * line_height,
+            width: constrainMeasuredSize(measured_width, available_width, width_mode),
+            height: constrainMeasuredSize(measured_height, available_height, height_mode),
         }
     }
 
@@ -466,10 +472,9 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private collectTextInstanceData(node, run_index) {
-        const text_content = node.text_content
         const display = node.styles.display?.parsed.enum || DISPLAY.flex
 
-        if (node.isTextNode() === false || text_content === '' || display !== DISPLAY.flex) {
+        if (!node.hasTextContent() || display !== DISPLAY.flex) {
             return null
         }
 
@@ -867,6 +872,18 @@ export default class RendererWebGPU extends Renderer {
 
 function packColor(color) {
     return ((color[0] & 255) | ((color[1] & 255) << 8) | ((color[2] & 255) << 16) | ((color[3] & 255) << 24)) >>> 0
+}
+
+function constrainMeasuredSize(measured_size, available_size, measure_mode) {
+    if (measure_mode === MEASURE_MODE.EXACTLY) {
+        return available_size
+    }
+
+    if (measure_mode === MEASURE_MODE.AT_MOST) {
+        return Math.min(measured_size, available_size)
+    }
+
+    return measured_size
 }
 
 function getTabAdvance(line_width, tab_stop_advance) {

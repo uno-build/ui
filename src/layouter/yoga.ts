@@ -2,6 +2,12 @@ import { loadYoga } from 'yoga-layout/load'
 import { UNIT, KEYWORD, EDGE, GUTTER } from '../style/consts'
 import { calculateLayoutRect, getParentLayout } from './utils'
 
+export const MEASURE_MODE = {
+    UNDEFINED: 0,
+    EXACTLY: 1,
+    AT_MOST: 2,
+}
+
 export default async function createYogaEngine() {
     const Yoga = await loadYoga()
     const yoga_config = Yoga.Config.create()
