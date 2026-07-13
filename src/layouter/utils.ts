@@ -14,14 +14,14 @@ export function getParentLayout(node) {
 }
 
 export function calculateLayoutRect(node_rect, parent_rect) {
-    const width = Math.round(node_rect.width)
-    const height = Math.round(node_rect.height)
-    const left = Math.round(node_rect.left)
-    const top = Math.round(node_rect.top)
-    const x = Math.round(parent_rect.x + left)
-    const y = Math.round(parent_rect.y + top)
-    const centerX = Math.round(left + width / 2 - parent_rect.width / 2)
-    const centerY = Math.round(-(top + height / 2 - parent_rect.height / 2))
+    const width = node_rect.width
+    const height = node_rect.height
+    const left = node_rect.left
+    const top = node_rect.top
+    const x = parent_rect.x + left
+    const y = parent_rect.y + top
+    const centerX = left + width / 2 - parent_rect.width / 2
+    const centerY = -(top + height / 2 - parent_rect.height / 2)
 
     return {
         width,

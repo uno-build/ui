@@ -1,5 +1,5 @@
 import Renderer from '../Renderer'
-import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, KEYWORD, UNIT } from '../style/consts'
+import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, EDGE, KEYWORD, UNIT } from '../style/consts'
 import createEngine, { YOGA_SETTER, MEASURE_MODE } from '../layouter/yoga'
 import { getAncestorClipping, getNodeBorderWidth, getNodeDrawingData, getNodeOpacity } from './utils/node'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
@@ -491,6 +491,16 @@ export default class RendererWebGPU extends Renderer {
             return null
         }
 
+        const border_top = getNodeBorderWidth(node, 'Top')
+        const border_right = getNodeBorderWidth(node, 'Right')
+        const border_left = getNodeBorderWidth(node, 'Left')
+        const padding_top = node.element.getComputedPadding(EDGE.top)
+        const padding_right = node.element.getComputedPadding(EDGE.right)
+        const padding_left = node.element.getComputedPadding(EDGE.left)
+        const content_x = x + border_left + padding_left
+        const content_y = y + border_top + padding_top
+        const content_width = width - border_left - border_right - padding_left - padding_right
+
         const opacity = getNodeOpacity(node)
         if (opacity <= 0) {
             return null
@@ -505,18 +515,21 @@ export default class RendererWebGPU extends Renderer {
         const line_height = this.getTextLineHeight(node, font, font_size)
         const natural_line_height = font.metrics.lineHeight * font_size
         const leading = line_height - natural_line_height
-        const text_layout = layoutWithLines(this.getPreparedText(node, font, font_size), width, line_height)
+        const text_layout = layoutWithLines(this.getPreparedText(node, font, font_size), content_width, line_height)
         const glyphs = []
 
         for (let line_index = 0; line_index < text_layout.lines.length; line_index++) {
             const line = text_layout.lines[line_index]!
             const baseline =
-                y + leading / 2 + font.metrics.ascender * font_size + line_index * line_height
-            let cursor_x = x
+                content_y + leading / 2 + font.metrics.ascender * font_size + line_index * line_height
+            let cursor_x = content_x
 
             for (const character of line.text) {
                 if (character === '\t') {
-                    cursor_x += getTabAdvance(cursor_x - x, this.measureGlyphAdvances(font, font_size, ' ') * 8)
+                    cursor_x += getTabAdvance(
+                        cursor_x - content_x,
+                        this.measureGlyphAdvances(font, font_size, ' ') * 8,
+                    )
                     continue
                 }
 

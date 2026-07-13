@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { MEASURE_MODE } from '../src/layouter/yoga.ts'
-import { BACKGROUND_REPEAT, BACKGROUND_SIZE, KEYWORD, OVERFLOW, UNIT } from '../src/style/consts.ts'
+import { BACKGROUND_REPEAT, BACKGROUND_SIZE, EDGE, KEYWORD, OVERFLOW, UNIT } from '../src/style/consts.ts'
 import {
     COMMAND,
     COMMAND_KIND_GLYPH,
@@ -737,6 +737,42 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
             font_data: [2, 1, 6, FONT_ATLAS_SIZE],
             clipping: [0, 0, 0, 0],
         },
+    ])
+})
+
+test('RendererWebGPU positions and wraps text inside the content box', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A A',
+        layout: { x: 10, y: 20, width: 30, height: 60 },
+        computed_padding: {
+            [EDGE.top]: 5,
+            [EDGE.right]: 4,
+            [EDGE.left]: 4,
+        },
+        styles: {
+            borderTopStyle: { value: 'solid' },
+            borderRightStyle: { value: 'solid' },
+            borderLeftStyle: { value: 'solid' },
+            borderTopWidth: { parsed: { value: 3 } },
+            borderRightWidth: { parsed: { value: 2 } },
+            borderLeftWidth: { parsed: { value: 2 } },
+            borderTopColor: { parsed: { rgba: [0, 0, 0, 255] } },
+            borderRightColor: { parsed: { rgba: [0, 0, 0, 255] } },
+            borderLeftColor: { parsed: { rgba: [0, 0, 0, 255] } },
+        },
+    })
+
+    const glyphs = collectRenderData(renderer, [node]).glyphs
+
+    expect(glyphs.map(({ layout }) => layout)).toEqual([
+        [16, 28, 8, 16],
+        [16, 48, 8, 16],
     ])
 })
 
@@ -1845,6 +1881,7 @@ function createNode({
         width: 10,
         height: 10,
     },
+    computed_padding = {},
     overflow,
     styles = {},
     text_content,
@@ -1852,11 +1889,17 @@ function createNode({
     parent?: any
     opacity?: number
     layout?: { x: number; y: number; width: number; height: number }
+    computed_padding?: Record<number, number>
     overflow?: number
     styles?: Record<string, any>
     text_content?: string
 } = {}) {
     return {
+        element: {
+            getComputedPadding(edge) {
+                return computed_padding[edge] ?? 0
+            },
+        },
         parent,
         layout,
         text_content,

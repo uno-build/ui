@@ -312,7 +312,7 @@ test('alignContent', async () => {
         ['baseline', 0, 50],
         ['space-between', 0, 150],
         ['space-around', 25, 125],
-        ['space-evenly', 33, 117],
+        ['space-evenly', 100 / 3, 350 / 3],
     ] as const
 
     child.style('width', '150px')
@@ -325,8 +325,8 @@ test('alignContent', async () => {
         root.style('alignContent', alignContent)
         ui.update()
         ui.draw()
-        expect(child.layout.y).toBe(childY)
-        expect(sibling.layout.y).toBe(siblingY)
+        expect(child.layout.y).toBeCloseTo(childY)
+        expect(sibling.layout.y).toBeCloseTo(siblingY)
     }
 })
 
@@ -401,7 +401,7 @@ test('justifyContent', async () => {
         ['flex-end', 100, 150],
         ['space-between', 0, 150],
         ['space-around', 25, 125],
-        ['space-evenly', 33, 117],
+        ['space-evenly', 100 / 3, 350 / 3],
     ] as const
 
     child.style('width', '50px')
@@ -414,8 +414,8 @@ test('justifyContent', async () => {
         root.style('justifyContent', justifyContent)
         ui.update()
         ui.draw()
-        expect(child.layout.x).toBe(childX)
-        expect(sibling.layout.x).toBe(siblingX)
+        expect(child.layout.x).toBeCloseTo(childX)
+        expect(sibling.layout.x).toBeCloseTo(siblingX)
     }
 })
 
