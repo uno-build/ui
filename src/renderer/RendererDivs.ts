@@ -122,6 +122,13 @@ export default class RendererDivs extends Renderer {
             }
         }
 
+        if (resolved_style.name === 'fontFamily') {
+            const font = this.fonts.get(resolved_style.value)
+            div.style.fontFamily = resolved_style.value
+            div.style.lineHeight = font === undefined ? '' : `${font.metrics.lineHeight}`
+            return
+        }
+
         if (resolved_style.name === 'backgroundImage') {
             const style = resolved_style.expanded[0]
             if (style.parsed.kind === KEYWORD.UNSET) {

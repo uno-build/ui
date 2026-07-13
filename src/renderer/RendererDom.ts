@@ -4,6 +4,7 @@ import { KEYWORD } from '../style/consts'
 
 export default class RendererDom extends Renderer {
     private canvas
+    private fonts = new Map()
     private text_elements = new WeakMap()
 
     constructor({ canvas }) {
@@ -38,7 +39,18 @@ export default class RendererDom extends Renderer {
         node.element.style.height = ''
     }
 
+    public fontRegister(name: string, image: any, json: any): void {
+        this.fonts.set(name, json.metrics)
+    }
+
     protected updateStyle(node, resolved_style) {
+        if (resolved_style.name === 'fontFamily') {
+            const font = this.fonts.get(resolved_style.value)
+            node.element.style.fontFamily = resolved_style.value
+            node.element.style.lineHeight = font === undefined ? '' : `${font.lineHeight}`
+            return
+        }
+
         if (resolved_style.name === 'backgroundImage') {
             const style = resolved_style.expanded[0]
             if (style.parsed.kind === KEYWORD.UNSET) {

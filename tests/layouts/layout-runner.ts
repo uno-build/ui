@@ -51,6 +51,8 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
         const layoutResult = await createLayout({ ui, rendererName })
 
         render({ ui })
+        await document.fonts.ready
+        render({ ui })
         observeRootSize({ ui, root, canvas })
 
         const result = readPaintLayout(ui)
