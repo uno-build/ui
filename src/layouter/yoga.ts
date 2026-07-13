@@ -8,7 +8,7 @@ export default async function createYogaEngine() {
     let root_element
 
     yoga_config.setUseWebDefaults(true)
-    // yoga_config.setPointScaleFactor(200)
+    yoga_config.setPointScaleFactor(0)
     yoga_config.setExperimentalFeatureEnabled(
         0, // ExperimentalFeature.WebFlexBasis
         true,

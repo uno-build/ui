@@ -24,6 +24,7 @@ export default async function createFontsLayout({ ui }) {
     card.style('borderRadius', '16px')
     card.style('backgroundColor', '#ffffff')
     card.style('border', '2px solid #1b2a38')
+    card.style('overflow', 'hidden')
     stage.add(card)
 
     const text = ui.create()
@@ -41,6 +42,7 @@ export default async function createFontsLayout({ ui }) {
     card2.style('borderRadius', '16px')
     card2.style('backgroundColor', '#ffffff')
     card2.style('border', '2px solid #1b2a38')
+    card2.style('overflow', 'hidden')
     stage.add(card2)
 
     const text2 = ui.create()
