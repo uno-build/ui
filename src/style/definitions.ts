@@ -89,6 +89,24 @@ export const FONT_SIZE_DEFINITION = [
     },
 ]
 
+export const LINE_HEIGHT_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validateNumber],
+        parse: [parseNumber],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validatePx],
+        parse: [parsePx],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateUnset],
+        parse: [parseUnset],
+    },
+]
+
 export const PX_PERCENT_DEFINITION = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],

@@ -17,6 +17,7 @@ import {
     FLEX_WRAP_DEFINITION,
     FONT_FAMILY_DEFINITION,
     FONT_SIZE_DEFINITION,
+    LINE_HEIGHT_DEFINITION,
     JUSTIFY_CONTENT_DEFINITION,
     MARGIN_DEFINITION,
     MIN_MAX_SIZE_DEFINITION,
@@ -227,6 +228,9 @@ export const STYLE = {
     ]),
     FONTSIZE: createStyle('fontSize', (name, value) => [
         { name, value, definition: FONT_SIZE_DEFINITION },
+    ]),
+    LINEHEIGHT: createStyle('lineHeight', (name, value) => [
+        { name, value, definition: LINE_HEIGHT_DEFINITION },
     ]),
 
     // YOGA PROPERTIES

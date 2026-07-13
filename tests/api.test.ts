@@ -310,6 +310,24 @@ test('Node text cannot have children', async () => {
     expect(() => text.add(ui.create())).toThrow(/Nodes with text cannot have children/)
 })
 
+test('Node lineHeight invalidates text measurement', async () => {
+    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const ui = new UI({ renderer })
+
+    await ui.init()
+
+    const node = ui.create()
+    node.text('Text')
+    let invalidated_node
+    renderer.invalidateTextNode = (node) => {
+        invalidated_node = node
+    }
+
+    node.style('lineHeight', '1.5')
+
+    expect(invalidated_node).toBe(node)
+})
+
 test('RendererDivs image api hooks are no-ops', async () => {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })

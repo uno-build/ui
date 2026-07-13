@@ -767,6 +767,78 @@ test('RendererWebGPU measures text from glyph metrics', () => {
     expect(renderer.getTextMeasure(node)).toEqual({ width: 31, height: 30 })
 })
 
+test('RendererWebGPU measures text with a unitless lineHeight multiplier', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A B',
+        styles: {
+            fontSize: {
+                value: '20px',
+                parsed: { value: 20, kind: UNIT.PX },
+            },
+            lineHeight: {
+                value: '1.5',
+                parsed: { value: 1.5 },
+            },
+        },
+    })
+
+    expect(renderer.getTextMeasure(node)).toEqual({ width: 31, height: 30 })
+})
+
+test('RendererWebGPU measures text with an exact pixel lineHeight', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A B',
+        styles: {
+            fontSize: {
+                value: '20px',
+                parsed: { value: 20, kind: UNIT.PX },
+            },
+            lineHeight: {
+                value: '24px',
+                parsed: { value: 24, kind: UNIT.PX },
+            },
+        },
+    })
+
+    expect(renderer.getTextMeasure(node)).toEqual({ width: 31, height: 24 })
+})
+
+test('RendererWebGPU restores natural line height with unset', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A B',
+        styles: {
+            fontSize: {
+                value: '20px',
+                parsed: { value: 20, kind: UNIT.PX },
+            },
+            lineHeight: {
+                value: 'unset',
+                parsed: { kind: KEYWORD.UNSET },
+            },
+        },
+    })
+
+    expect(renderer.getTextMeasure(node)).toEqual({ width: 31, height: 25 })
+})
+
 test('RendererWebGPU measures wrapped text with the available width', () => {
     const font = {
         ...createManagedFont(),
@@ -792,6 +864,30 @@ test('RendererWebGPU measures wrapped text with the available width', () => {
     })
 
     expect(renderer.getTextMeasure(node, 24)).toEqual({ width: 24, height: 60 })
+})
+
+test('RendererWebGPU uses resolved lineHeight for every wrapped line', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'AA AA',
+        styles: {
+            fontSize: {
+                value: '20px',
+                parsed: { value: 20, kind: UNIT.PX },
+            },
+            lineHeight: {
+                value: '24px',
+                parsed: { value: 24, kind: UNIT.PX },
+            },
+        },
+    })
+
+    expect(renderer.getTextMeasure(node, 24)).toEqual({ width: 24, height: 48 })
 })
 
 test('RendererWebGPU respects exact text measurement constraints', () => {
@@ -905,6 +1001,64 @@ test('RendererWebGPU paints wrapped glyphs on separate lines', () => {
     expect(render_data.glyphs).toHaveLength(2)
     expect(render_data.glyphs[0].layout).toEqual([10, 20, 8, 16])
     expect(render_data.glyphs[1].layout).toEqual([10, 40, 8, 16])
+})
+
+test('RendererWebGPU preserves width and line breaks when only lineHeight changes', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const natural_node = createNode({
+        text_content: 'A A',
+        layout: { x: 10, y: 20, width: 10, height: 60 },
+    })
+    const custom_node = createNode({
+        text_content: 'A A',
+        layout: { x: 10, y: 20, width: 10, height: 60 },
+        styles: {
+            lineHeight: {
+                value: '30px',
+                parsed: { value: 30, kind: UNIT.PX },
+            },
+        },
+    })
+
+    const natural_measure = renderer.getTextMeasure(natural_node, 10)
+    const custom_measure = renderer.getTextMeasure(custom_node, 10)
+
+    expect(custom_measure.width).toBe(natural_measure.width)
+
+    const natural_glyphs = collectRenderData(renderer, [natural_node]).glyphs
+    const custom_glyphs = collectRenderData(renderer, [custom_node]).glyphs
+
+    expect(natural_glyphs.map(({ layout }) => layout[0])).toEqual([10, 10])
+    expect(custom_glyphs.map(({ layout }) => layout[0])).toEqual([10, 10])
+    expect(custom_glyphs.map(({ layout }) => layout[1])).toEqual([25, 55])
+})
+
+test('RendererWebGPU distributes negative leading around natural line height', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A A',
+        layout: { x: 10, y: 20, width: 10, height: 40 },
+        styles: {
+            lineHeight: {
+                value: '16px',
+                parsed: { value: 16, kind: UNIT.PX },
+            },
+        },
+    })
+
+    const glyphs = collectRenderData(renderer, [node]).glyphs
+
+    expect(glyphs.map(({ layout }) => layout[1])).toEqual([18, 34])
 })
 
 test('RendererWebGPU invalidates prepared text', () => {

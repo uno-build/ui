@@ -47,7 +47,6 @@ export default class RendererDom extends Renderer {
         if (resolved_style.name === 'fontFamily') {
             const font = this.fonts.get(resolved_style.value)
             node.element.style.fontFamily = resolved_style.value
-            node.element.style.lineHeight = font === undefined ? '' : `${font.lineHeight}`
             return
         }
 

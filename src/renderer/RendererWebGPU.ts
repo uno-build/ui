@@ -293,10 +293,11 @@ export default class RendererWebGPU extends Renderer {
             const font = this.getTextFont(node)
             if (font !== undefined) {
                 const font_size = this.getTextFontSize(node)
+                const line_height = this.getTextLineHeight(node, font, font_size)
                 const max_width = width_mode === MEASURE_MODE.UNDEFINED ? Infinity : available_width
                 const text_layout = measureLineStats(this.getPreparedText(node, font, font_size), max_width)
                 measured_width = text_layout.maxLineWidth
-                measured_height = text_layout.lineCount * font.metrics.lineHeight * font_size
+                measured_height = text_layout.lineCount * line_height
             }
         }
 
@@ -501,13 +502,16 @@ export default class RendererWebGPU extends Renderer {
         }
 
         const clipping = clip === null ? [0, 0, 0, 0] : [y + clip.top, x + clip.right, y + clip.bottom, x + clip.left]
-        const line_height = font.metrics.lineHeight * font_size
+        const line_height = this.getTextLineHeight(node, font, font_size)
+        const natural_line_height = font.metrics.lineHeight * font_size
+        const leading = line_height - natural_line_height
         const text_layout = layoutWithLines(this.getPreparedText(node, font, font_size), width, line_height)
         const glyphs = []
 
         for (let line_index = 0; line_index < text_layout.lines.length; line_index++) {
             const line = text_layout.lines[line_index]!
-            const baseline = y + font.metrics.ascender * font_size + line_index * line_height
+            const baseline =
+                y + leading / 2 + font.metrics.ascender * font_size + line_index * line_height
             let cursor_x = x
 
             for (const character of line.text) {
@@ -567,6 +571,20 @@ export default class RendererWebGPU extends Renderer {
 
     private getTextFontSize(node) {
         return node.styles.fontSize?.parsed.value ?? FONT_SIZE
+    }
+
+    private getTextLineHeight(node, font, font_size) {
+        const line_height_style = node.styles.lineHeight
+
+        if (line_height_style === undefined || line_height_style.parsed.kind === KEYWORD.UNSET) {
+            return font.metrics.lineHeight * font_size
+        }
+
+        if (line_height_style.parsed.kind === UNIT.PX) {
+            return line_height_style.parsed.value
+        }
+
+        return line_height_style.parsed.value * font_size
     }
 
     private getPreparedText(node, font, font_size) {

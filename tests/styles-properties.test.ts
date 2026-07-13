@@ -254,6 +254,19 @@ test('fontSize', () => {
     expectInvalid('fontSize', true, /style value must be a string/)
 })
 
+test('lineHeight', () => {
+    expectResolved('lineHeight', ' 1.5 ', '1.5', { value: 1.5 })
+    expectResolved(' line-height ', '24PX', '24px', { value: 24, kind: 'px' }, 'lineHeight')
+    expectKeywordUnit('lineHeight', ' Unset ', 'unset')
+    expectInvalid('lineHeight', '-1', /expected non-negative value/)
+    expectInvalid('lineHeight', '-1px', /expected non-negative value/)
+    expectInvalid('lineHeight', 'normal', /expected number/)
+    expectInvalid('lineHeight', '150%', /expected number/)
+    expectInvalid('lineHeight', '1em', /expected number/)
+    expectInvalid('lineHeight', '1rem', /expected number/)
+    expectInvalid('lineHeight', true, /style value must be a string/)
+})
+
 test('opacity', () => {
     const valid_cases = [
         ['0', '0', 0],
