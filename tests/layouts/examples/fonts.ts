@@ -31,7 +31,7 @@ export default async function createFontsLayout({ ui }) {
     text.style('fontFamily', 'Poppins-Regular')
     text.style('fontSize', '20px')
     text.text('Poppins')
-    // text.style('border', '1px solid #ff0000')
+    text.style('border', '1px solid #ff0000')
     card.add(text)
 
     const card2 = ui.create()
@@ -49,12 +49,12 @@ export default async function createFontsLayout({ ui }) {
     text2.style('fontFamily', 'ChangaOne-Regular')
     text2.style('fontSize', '20px')
     text2.text('ChangaOne')
-    // text2.style('border', '1px solid #ff0000')
+    text2.style('border', '1px solid #ff0000')
     card2.add(text2)
     const text3 = ui.create()
     text3.style('fontFamily', 'ChangaOne-Regular')
     text3.style('fontSize', '20px')
     text3.text('-Regular')
-    // text3.style('border', '1px solid #ff0000')
+    text3.style('border', '1px solid #ff0000')
     card2.add(text3)
 }

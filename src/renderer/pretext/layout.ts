@@ -1,36 +1,14 @@
-// Text measurement for browser environments using canvas measureText.
+// Text analysis and layout with caller-provided measurements.
 //
-// Problem: DOM-based text measurement (getBoundingClientRect, offsetHeight)
-// forces synchronous layout reflow. When components independently measure text,
-// each measurement triggers a reflow of the entire document. This creates
-// read/write interleaving that can cost 30ms+ per frame for 500 text blocks.
-//
-// Solution: two-phase measurement centered around canvas measureText.
-//   prepare(text, font) — segments text via Intl.Segmenter, measures each word
-//     via canvas, caches widths, and does one cached DOM calibration read per
-//     font when emoji correction is needed. Call once when text first appears.
+//   prepare(text, options) — segments text via Intl.Segmenter, measures each word
+//     with options.measure, and caches widths. Call once when text first appears.
 //   layout(prepared, maxWidth, lineHeight) — walks cached word widths with pure
 //     arithmetic to count lines and compute height. Call on every resize.
-//     ~0.0002ms per text.
 //
 // i18n: Intl.Segmenter handles CJK (per-character breaking), Thai, Arabic, etc.
-//   Bidi: simplified rich-path metadata for mixed LTR/RTL custom rendering.
 //   Punctuation merging: "better." measured as one unit (matches CSS behavior).
 //   Trailing whitespace: hangs past line edge without triggering breaks (CSS behavior).
 //   overflow-wrap: pre-measured grapheme widths enable character-level word breaking.
-//
-// Emoji correction: Chrome/Firefox canvas measures emoji wider than DOM at font
-//   sizes <24px on macOS (Apple Color Emoji). The inflation is constant per emoji
-//   grapheme at a given size, font-independent. Auto-detected by comparing canvas
-//   vs actual DOM emoji width (one cached DOM read per font). Safari canvas and
-//   DOM agree (both wider than fontSize), so correction = 0 there.
-//
-// Limitations:
-//   - system-ui font: canvas resolves to different optical variants than DOM on macOS.
-//     Use named fonts (Helvetica, Inter, etc.) for guaranteed accuracy.
-//     See RESEARCH.md "Discovery: system-ui font resolution mismatch".
-//
-// Based on Sebastian Markbage's text-layout research (github.com/chenglou/text-layout).
 
 import {
   analyzeText,
@@ -51,12 +29,10 @@ import {
 import {
   type BreakableFitMode,
   clearMeasurementCaches,
-  getCorrectedSegmentWidth,
   getSegmentBreakableFitAdvances,
   getEngineProfile,
-  getFontMeasurementState,
   getSegmentMetrics,
-  textMayContainEmoji,
+  type MeasureText,
   type SegmentMetrics,
 } from './measurement.js'
 import {
@@ -149,6 +125,7 @@ export type LayoutLinesResult = LayoutResult & {
 export type WordBreakMode = AnalysisWordBreakMode
 
 export type PrepareOptions = {
+  measure: MeasureText
   whiteSpace?: WhiteSpaceMode
   wordBreak?: WordBreakMode
   letterSpacing?: number
@@ -384,24 +361,21 @@ function addInternalLetterSpacing(width: number, graphemeCount: number, letterSp
 
 function measureAnalysis(
   analysis: TextAnalysis,
-  font: string,
+  measure: MeasureText,
   includeSegments: boolean,
   wordBreak: WordBreakMode,
   letterSpacing: number,
 ): InternalPreparedText | PreparedTextWithSegments {
+  if (analysis.len === 0) return createEmptyPrepared(includeSegments)
+
   const engineProfile = getEngineProfile()
-  const { cache, emojiCorrection } = getFontMeasurementState(
-    font,
-    textMayContainEmoji(analysis.normalized),
-  )
+  const cache = new Map<string, SegmentMetrics>()
   const discretionaryHyphenWidth =
-    getCorrectedSegmentWidth('-', getSegmentMetrics('-', cache), emojiCorrection) +
+    getSegmentMetrics('-', cache, measure).width +
     (letterSpacing === 0 ? 0 : letterSpacing * 2)
-  const spaceWidth = getCorrectedSegmentWidth(' ', getSegmentMetrics(' ', cache), emojiCorrection)
+  const spaceWidth = getSegmentMetrics(' ', cache, measure).width
   const tabStopAdvance = spaceWidth * 8
   const hasLetterSpacing = letterSpacing !== 0
-
-  if (analysis.len === 0) return createEmptyPrepared(includeSegments)
 
   const widths: number[] = []
   const lineEndFitAdvances: number[] = []
@@ -449,7 +423,7 @@ function measureAnalysis(
       ? countRenderedSpacingGraphemes(text, kind)
       : 0
     const width = addInternalLetterSpacing(
-      getCorrectedSegmentWidth(text, textMetrics, emojiCorrection),
+      textMetrics.width,
       spacingGraphemeCount,
       letterSpacing,
     )
@@ -479,7 +453,7 @@ function measureAnalysis(
         text,
         textMetrics,
         cache,
-        emojiCorrection,
+        measure,
         fitMode,
       )
       const preferredBreaks =
@@ -555,7 +529,7 @@ function measureAnalysis(
       continue
     }
 
-    const segMetrics = getSegmentMetrics(segText, cache)
+    const segMetrics = getSegmentMetrics(segText, cache, measure)
 
     if (segKind === 'text' && segMetrics.containsCJK) {
       const baseUnits = buildBaseCjkUnits(segText, engineProfile)
@@ -565,7 +539,7 @@ function measureAnalysis(
 
       for (let i = 0; i < measuredUnits.length; i++) {
         const unit = measuredUnits[i]!
-        const unitMetrics = getSegmentMetrics(unit.text, cache)
+        const unitMetrics = getSegmentMetrics(unit.text, cache, measure)
         pushMeasuredTextSegment(
           unit.text,
           unitMetrics,
@@ -622,18 +596,18 @@ function measureAnalysis(
 
 function prepareInternal(
   text: string,
-  font: string,
   includeSegments: boolean,
-  options?: PrepareOptions,
+  options: PrepareOptions,
 ): InternalPreparedText | PreparedTextWithSegments {
-  const wordBreak = options?.wordBreak ?? 'normal'
-  const letterSpacing = options?.letterSpacing ?? 0
-  const analysis = analyzeText(text, getEngineProfile(), options?.whiteSpace, wordBreak)
-  return measureAnalysis(analysis, font, includeSegments, wordBreak, letterSpacing)
+  const wordBreak = options.wordBreak ?? 'normal'
+  const letterSpacing = options.letterSpacing ?? 0
+  const analysis = analyzeText(text, getEngineProfile(), options.whiteSpace, wordBreak)
+  return measureAnalysis(analysis, options.measure, includeSegments, wordBreak, letterSpacing)
 }
 
-// Prepare text for layout. Segments the text, measures each segment via canvas,
-// and stores the widths for fast relayout at any width. Call once per text block
+// Prepare text for layout. Segments the text, measures each segment with the
+// caller-provided measurement function, and stores the widths for fast relayout
+// at any width. Call once per text block
 // (e.g. when a comment first appears). The result is width-independent — the
 // same PreparedText can be laid out at any maxWidth and lineHeight via layout().
 //
@@ -642,17 +616,16 @@ function prepareInternal(
 //   2. Segment via Intl.Segmenter (handles CJK, Thai, etc.)
 //   3. Merge punctuation into preceding word ("better." as one unit)
 //   4. Split CJK words into individual graphemes (per-character line breaks)
-//   5. Measure each segment via canvas measureText, cache by (segment, font)
+//   5. Measure each segment with the provided function and cache it for this text
 //   6. Pre-measure graphemes of long words (for overflow-wrap: break-word)
-//   7. Correct emoji canvas inflation (auto-detected per font size)
-export function prepare(text: string, font: string, options?: PrepareOptions): PreparedText {
-  return prepareInternal(text, font, false, options) as PreparedText
+export function prepare(text: string, options: PrepareOptions): PreparedText {
+  return prepareInternal(text, false, options) as PreparedText
 }
 
 // Rich variant used by callers that need enough information to render the
 // laid-out lines themselves.
-export function prepareWithSegments(text: string, font: string, options?: PrepareOptions): PreparedTextWithSegments {
-  return prepareInternal(text, font, true, options) as PreparedTextWithSegments
+export function prepareWithSegments(text: string, options: PrepareOptions): PreparedTextWithSegments {
+  return prepareInternal(text, true, options) as PreparedTextWithSegments
 }
 
 function getInternalPrepared(prepared: PreparedText): InternalPreparedText {
@@ -660,8 +633,7 @@ function getInternalPrepared(prepared: PreparedText): InternalPreparedText {
 }
 
 // Layout prepared text at a given max width and caller-provided lineHeight.
-// Pure arithmetic on cached widths — no canvas calls, no DOM reads, no string
-// operations, no allocations.
+// Pure arithmetic on cached widths — no measurement calls, string operations, or allocations.
 // ~0.0002ms per text block. Call on every resize.
 //
 // Line breaking rules (matching CSS white-space: normal + overflow-wrap: break-word):

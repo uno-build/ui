@@ -2,6 +2,7 @@ import Renderer from '../Renderer'
 import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, KEYWORD, UNIT } from '../style/consts'
 import createEngine, { YOGA_SETTER } from '../layouter/yoga'
 import { getAncestorClipping, getNodeBorderWidth, getNodeDrawingData, getNodeOpacity } from './utils/node'
+import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
 import { uiWGSL } from './webgpu/shaders'
 import { ImageManager } from './webgpu/ImageManager'
 import { FontManager } from './webgpu/FontManager'
@@ -75,6 +76,7 @@ export default class RendererWebGPU extends Renderer {
     private text_run_array_buffer
     private text_run_array_buffer_size = 0
     private text_run_floats
+    private prepared_texts = new WeakMap()
 
     constructor({
         canvas,
@@ -269,14 +271,15 @@ export default class RendererWebGPU extends Renderer {
     public initializeTextNode(node) {
         node.element.setWidth(undefined)
         node.element.setHeight(undefined)
-        node.element.setMeasureFunc(() => this.getTextMeasure(node))
+        node.element.setMeasureFunc((width) => this.getTextMeasure(node, width))
     }
 
     public invalidateTextNode(node) {
+        this.prepared_texts.delete(node)
         node.element.markDirty()
     }
 
-    public getTextMeasure(node) {
+    public getTextMeasure(node, available_width = Infinity) {
         if (node.text_content === '') {
             return { width: 0, height: 0 }
         }
@@ -287,18 +290,13 @@ export default class RendererWebGPU extends Renderer {
         }
 
         const font_size = this.getTextFontSize(node)
-        let width = 0
-
-        for (const character of node.text_content) {
-            const glyph = font.glyphs_by_unicode.get(character.codePointAt(0))
-            if (glyph !== undefined) {
-                width += glyph.advance * font_size
-            }
-        }
+        const line_height = font.metrics.lineHeight * font_size
+        const max_width = Number.isNaN(available_width) ? Infinity : available_width
+        const text_layout = measureLineStats(this.getPreparedText(node, font, font_size), max_width)
 
         return {
-            width,
-            height: font.metrics.lineHeight * font_size,
+            width: Math.min(text_layout.maxLineWidth, max_width),
+            height: text_layout.lineCount * line_height,
         }
     }
 
@@ -498,35 +496,42 @@ export default class RendererWebGPU extends Renderer {
         }
 
         const clipping = clip === null ? [0, 0, 0, 0] : [y + clip.top, x + clip.right, y + clip.bottom, x + clip.left]
-        const baseline = y + font.metrics.ascender * font_size
+        const line_height = font.metrics.lineHeight * font_size
+        const text_layout = layoutWithLines(this.getPreparedText(node, font, font_size), width, line_height)
         const glyphs = []
-        let cursor_x = x
 
-        for (const character of text_content) {
-            if (character === '\n') {
-                continue
+        for (let line_index = 0; line_index < text_layout.lines.length; line_index++) {
+            const line = text_layout.lines[line_index]!
+            const baseline = y + font.metrics.ascender * font_size + line_index * line_height
+            let cursor_x = x
+
+            for (const character of line.text) {
+                if (character === '\t') {
+                    cursor_x += getTabAdvance(cursor_x - x, this.measureGlyphAdvances(font, font_size, ' ') * 8)
+                    continue
+                }
+
+                const glyph = font.glyphs_by_unicode.get(character.codePointAt(0))
+                if (glyph === undefined) {
+                    continue
+                }
+
+                if (glyph.plane_bounds !== undefined && glyph.uv_rect !== undefined) {
+                    const [left, bottom, right, top] = glyph.plane_bounds
+                    glyphs.push({
+                        layout: [
+                            cursor_x + left * font_size,
+                            baseline - top * font_size,
+                            (right - left) * font_size,
+                            (top - bottom) * font_size,
+                        ],
+                        uv_rect: glyph.uv_rect,
+                        run_index,
+                    })
+                }
+
+                cursor_x += glyph.advance * font_size
             }
-
-            const glyph = font.glyphs_by_unicode.get(character.codePointAt(0))
-            if (glyph === undefined) {
-                continue
-            }
-
-            if (glyph.plane_bounds !== undefined && glyph.uv_rect !== undefined) {
-                const [left, bottom, right, top] = glyph.plane_bounds
-                glyphs.push({
-                    layout: [
-                        cursor_x + left * font_size,
-                        baseline - top * font_size,
-                        (right - left) * font_size,
-                        (top - bottom) * font_size,
-                    ],
-                    uv_rect: glyph.uv_rect,
-                    run_index,
-                })
-            }
-
-            cursor_x += glyph.advance * font_size
         }
 
         if (glyphs.length === 0) {
@@ -557,6 +562,33 @@ export default class RendererWebGPU extends Renderer {
 
     private getTextFontSize(node) {
         return node.styles.fontSize?.parsed.value ?? FONT_SIZE
+    }
+
+    private getPreparedText(node, font, font_size) {
+        let prepared_text = this.prepared_texts.get(node)
+
+        if (prepared_text === undefined) {
+            prepared_text = prepareWithSegments(node.text_content, {
+                measure: (text) => this.measureGlyphAdvances(font, font_size, text),
+                whiteSpace: 'pre-wrap',
+            })
+            this.prepared_texts.set(node, prepared_text)
+        }
+
+        return prepared_text
+    }
+
+    private measureGlyphAdvances(font, font_size, text) {
+        let width = 0
+
+        for (const character of text) {
+            const glyph = font.glyphs_by_unicode.get(character.codePointAt(0))
+            if (glyph !== undefined) {
+                width += glyph.advance * font_size
+            }
+        }
+
+        return width
     }
 
     private createCommandBufferData(commands) {
@@ -835,6 +867,15 @@ export default class RendererWebGPU extends Renderer {
 
 function packColor(color) {
     return ((color[0] & 255) | ((color[1] & 255) << 8) | ((color[2] & 255) << 16) | ((color[3] & 255) << 24)) >>> 0
+}
+
+function getTabAdvance(line_width, tab_stop_advance) {
+    if (tab_stop_advance <= 0) {
+        return 0
+    }
+
+    const remainder = line_width % tab_stop_advance
+    return Math.abs(remainder) <= 1e-6 ? tab_stop_advance : tab_stop_advance - remainder
 }
 
 function getBackgroundImageRect(node, image_size) {
