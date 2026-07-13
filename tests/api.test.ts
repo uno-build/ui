@@ -290,13 +290,13 @@ test('Node text cannot have children', async () => {
     ui.root.add(parent)
     parent.add(child)
 
-    expect(() => parent.text('Parent')).toThrow(/text nodes cannot have children/)
+    expect(() => parent.text('Parent')).toThrow(/Nodes with text cannot have children/)
 
     const text = ui.create()
     text.text('Text')
     ui.root.add(text)
 
-    expect(() => text.add(ui.create())).toThrow(/text nodes cannot have children/)
+    expect(() => text.add(ui.create())).toThrow(/Nodes with text cannot have children/)
 })
 
 test('RendererDivs image api hooks are no-ops', async () => {

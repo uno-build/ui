@@ -15,7 +15,7 @@ export default class Node {
 
     public add(child) {
         if (this.isTextNode()) {
-            throw new Error('text nodes cannot have children')
+            throw new Error('Nodes with text cannot have children')
         }
 
         this.ui.addChild(this, child)
@@ -39,7 +39,7 @@ export default class Node {
 
     public text(value: string) {
         if (this.children.length > 0) {
-            throw new Error('text nodes cannot have children')
+            throw new Error('Nodes with text cannot have children')
         }
 
         if (this.isTextNode()) {
