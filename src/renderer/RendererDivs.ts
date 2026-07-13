@@ -7,6 +7,7 @@ export default class RendererDivs extends Renderer {
     private canvas
     private engine
     private divs = new WeakMap()
+    private fonts = new Map()
     private createDiv
 
     constructor({ canvas, createDiv = createDivFactory }) {
@@ -42,6 +43,7 @@ export default class RendererDivs extends Renderer {
     }
 
     public initializeTextNode(node) {
+        this.divs.get(node).style.whiteSpace = 'pre'
         node.element.setWidth(undefined)
         node.element.setHeight(undefined)
         node.element.setMeasureFunc(() => this.getTextMeasure(node))
@@ -54,6 +56,24 @@ export default class RendererDivs extends Renderer {
     public getTextMeasure(node) {
         if (node.text_content === '') {
             return { width: 0, height: 0 }
+        }
+
+        const font = this.fonts.get(node.styles.fontFamily?.value)
+        if (font !== undefined) {
+            const font_size = node.styles.fontSize?.parsed.value ?? 16
+            let width = 0
+
+            for (const character of node.text_content) {
+                const glyph = font.glyphs_by_unicode.get(character.codePointAt(0))
+                if (glyph !== undefined) {
+                    width += glyph.advance * font_size
+                }
+            }
+
+            return {
+                width,
+                height: font.metrics.lineHeight * font_size,
+            }
         }
 
         const measure_element = this.createDiv()
@@ -72,6 +92,13 @@ export default class RendererDivs extends Renderer {
         this.canvas.removeChild(measure_element)
 
         return { width: rect.width, height: rect.height }
+    }
+
+    public fontRegister(name: string, image: any, json: any): void {
+        this.fonts.set(name, {
+            metrics: json.metrics,
+            glyphs_by_unicode: new Map(json.glyphs.map((glyph) => [glyph.unicode, glyph])),
+        })
     }
 
     protected insertChild(parent, node, childIndex) {

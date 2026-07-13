@@ -212,6 +212,7 @@ test('Node text stores, replaces, and clears text content', async () => {
     expect(child.isTextNode()).toBe(true)
     expect(child.text_content).toBe('Hello')
     expect(canvas.children[0].innerHTML).toBe('Hello')
+    expect(canvas.children[0].style.whiteSpace).toBe('pre')
 
     child.text('World')
     ui.update()
@@ -367,6 +368,29 @@ test('UI fontRegister delegates to renderer', () => {
     ui.fontRegister('Poppins', image, json)
 
     expect(calls).toEqual([{ name: 'Poppins', image, json }])
+})
+
+test('RendererDivs measures registered fonts from glyph metrics', () => {
+    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+
+    renderer.fontRegister('Poppins', null, {
+        metrics: { lineHeight: 1.5 },
+        glyphs: [
+            { unicode: 65, advance: 0.5 },
+            { unicode: 32, advance: 0.25 },
+            { unicode: 66, advance: 0.8 },
+        ],
+    })
+
+    expect(
+        renderer.getTextMeasure({
+            text_content: 'A B',
+            styles: {
+                fontFamily: { value: 'Poppins' },
+                fontSize: { parsed: { value: 20 } },
+            },
+        }),
+    ).toEqual({ width: 31, height: 30 })
 })
 
 function createDiv() {

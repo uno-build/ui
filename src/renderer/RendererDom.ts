@@ -76,13 +76,13 @@ export default class RendererDom extends Renderer {
             return
         }
 
-        if (text_element === undefined) {
-            text_element = document.createElement('span')
-            this.text_elements.set(node, text_element)
-            node.element.insertBefore(text_element, node.element.firstChild)
-        }
+        // if (text_element === undefined) {
+        //     text_element = document.createElement('span')
+        //     this.text_elements.set(node, text_element)
+        //     node.element.insertBefore(text_element, node.element.firstChild)
+        // }
 
-        text_element.innerHTML = node.text_content
+        node.element.innerHTML = node.text_content
     }
 
     // prettier-ignore
