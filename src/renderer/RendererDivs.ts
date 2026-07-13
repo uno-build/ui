@@ -44,8 +44,6 @@ export default class RendererDivs extends Renderer {
 
     public initializeTextNode(node) {
         this.divs.get(node).style.whiteSpace = 'pre'
-        node.element.setWidth(undefined)
-        node.element.setHeight(undefined)
         node.element.setMeasureFunc(() => this.getTextMeasure(node))
     }
 

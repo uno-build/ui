@@ -239,12 +239,11 @@
                         return
                     }
 
-                    const rendererDisplay = renderer.style.display
                     const rendererToggle = document.createElement('input')
                     rendererToggle.type = 'checkbox'
                     rendererToggle.id = `settings-${renderer.id}`
                     rendererToggle.checked = isRendererActive(renderer.id)
-                    renderer.style.display = rendererToggle.checked ? rendererDisplay : 'none'
+                    renderer.style.visibility = rendererToggle.checked ? 'visible' : 'hidden'
 
                     const rendererLabel = document.createElement('label')
                     rendererLabel.className = 'settings-renderer'
@@ -252,7 +251,7 @@
                     rendererLabel.append(rendererToggle, renderer.id)
 
                     rendererToggle.addEventListener('change', () => {
-                        renderer.style.display = rendererToggle.checked ? rendererDisplay : 'none'
+                        renderer.style.visibility = rendererToggle.checked ? 'visible' : 'hidden'
                         saveRendererSettings()
                     })
 

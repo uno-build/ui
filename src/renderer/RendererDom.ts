@@ -35,8 +35,8 @@ export default class RendererDom extends Renderer {
     }
 
     public initializeTextNode(node) {
-        node.element.style.width = ''
-        node.element.style.height = ''
+        node.element.style.whiteSpace = 'pre-wrap'
+        node.element.style.overflowWrap = 'anywhere'
     }
 
     public fontRegister(name: string, image: any, json: any): void {

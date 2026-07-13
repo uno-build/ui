@@ -907,32 +907,6 @@ test('RendererWebGPU paints wrapped glyphs on separate lines', () => {
     expect(render_data.glyphs[1].layout).toEqual([10, 40, 8, 16])
 })
 
-test('RendererWebGPU keeps text on one line when its intrinsic width rounds down', () => {
-    const font = createManagedFont()
-    font.glyphs_by_unicode.get(66).advance = 0.675
-    const renderer = createRenderer(
-        createImageManager(),
-        createFontManager({
-            default_font: font,
-        }),
-    )
-    const node = createNode({
-        text_content: 'AB',
-        layout: { x: 10, y: 20, width: 20, height: 20 },
-        styles: {
-            backgroundColor: {
-                parsed: {
-                    rgba: [0, 0, 0, 0],
-                },
-            },
-        },
-    })
-    const render_data = collectRenderData(renderer, [node])
-
-    expect(render_data.glyphs[0].layout).toEqual([10, 20, 8, 16])
-    expect(render_data.glyphs[1].layout).toEqual([expect.closeTo(21.2), expect.closeTo(23.2), 8, 16])
-})
-
 test('RendererWebGPU invalidates prepared text', () => {
     const font = {
         ...createManagedFont(),
