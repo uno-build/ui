@@ -52,7 +52,8 @@ export default abstract class Renderer {
     public abstract createElement(node)
     public abstract getChildIndex(node)
     public abstract getLayout(node)
-    public abstract updateTextNode(node, is_text_node)
+    public abstract invalidateTextNode(node)
+    public abstract initializeTextNode(node)
 
     protected abstract updateStyle(node, style)
     protected abstract insertChild(parent, node, childIndex)

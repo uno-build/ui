@@ -266,15 +266,14 @@ export default class RendererWebGPU extends Renderer {
         return this.engine.getChildIndex(node)
     }
 
-    public updateTextNode(node, is_text_node) {
-        if (is_text_node) {
-            node.element.markDirty()
-            return
-        }
-
+    public initializeTextNode(node) {
         node.element.setWidth(undefined)
         node.element.setHeight(undefined)
         node.element.setMeasureFunc(() => this.getTextMeasure(node))
+    }
+
+    public invalidateTextNode(node) {
+        node.element.markDirty()
     }
 
     public getTextMeasure(node) {
@@ -472,7 +471,7 @@ export default class RendererWebGPU extends Renderer {
         const text_content = node.text_content
         const display = node.styles.display?.parsed.enum || DISPLAY.flex
 
-        if (text_content === undefined || text_content === '' || display !== DISPLAY.flex) {
+        if (node.isTextNode() === false || text_content === '' || display !== DISPLAY.flex) {
             return null
         }
 

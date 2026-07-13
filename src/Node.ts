@@ -14,7 +14,7 @@ export default class Node {
     }
 
     public add(child) {
-        if (this.text_content !== undefined) {
+        if (this.isTextNode()) {
             throw new Error('text nodes cannot have children')
         }
 
@@ -26,14 +26,14 @@ export default class Node {
     }
 
     public style(name, value, parsed?) {
-        if (this.text_content !== undefined && isTextSizeStyle(name)) {
+        if (this.isTextNode() && isTextSizeStyle(name)) {
             return
         }
 
         this.ui.style(this, name, value, parsed)
 
-        if (this.text_content !== undefined && isTextMeasureStyle(name)) {
-            this.ui.renderer.updateTextNode(this, true)
+        if (this.isTextNode() && isTextMeasureStyle(name)) {
+            this.ui.renderer.invalidateTextNode(this)
         }
     }
 
@@ -42,16 +42,21 @@ export default class Node {
             throw new Error('text nodes cannot have children')
         }
 
-        const is_text_node = this.text_content !== undefined
-        this.text_content = value
-
-        if (is_text_node === false) {
-            delete this.styles.width
-            delete this.styles.height
-            this.ui.renderer.discardPendingStyles(this, ['width', 'height'])
+        if (this.isTextNode()) {
+            this.text_content = value
+            this.ui.renderer.invalidateTextNode(this)
+            return
         }
 
-        this.ui.renderer.updateTextNode(this, is_text_node)
+        this.text_content = value
+        delete this.styles.width
+        delete this.styles.height
+        this.ui.renderer.discardPendingStyles(this, ['width', 'height'])
+        this.ui.renderer.initializeTextNode(this)
+    }
+
+    public isTextNode() {
+        return this.text_content !== undefined
     }
 }
 

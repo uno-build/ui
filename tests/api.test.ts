@@ -204,10 +204,12 @@ test('Node text stores, replaces, and clears text content', async () => {
 
     const child = ui.create()
     ui.root.add(child)
+    expect(child.isTextNode()).toBe(false)
 
     child.text('Hello')
     ui.update()
     ui.draw()
+    expect(child.isTextNode()).toBe(true)
     expect(child.text_content).toBe('Hello')
     expect(canvas.children[0].innerHTML).toBe('Hello')
 
@@ -220,6 +222,7 @@ test('Node text stores, replaces, and clears text content', async () => {
     child.text('')
     ui.update()
     ui.draw()
+    expect(child.isTextNode()).toBe(true)
     expect(child.text_content).toBe('')
     expect(canvas.children[0].innerHTML).toBe('')
 })

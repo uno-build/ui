@@ -1520,7 +1520,7 @@ function createNode({
     },
     overflow,
     styles = {},
-    text_content = '',
+    text_content,
 }: {
     parent?: any
     opacity?: number
@@ -1533,6 +1533,9 @@ function createNode({
         parent,
         layout,
         text_content,
+        isTextNode() {
+            return text_content !== undefined
+        },
         styles: {
             backgroundColor: {
                 parsed: {

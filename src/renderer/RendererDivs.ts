@@ -41,15 +41,14 @@ export default class RendererDivs extends Renderer {
         return this.engine.getChildIndex(node)
     }
 
-    public updateTextNode(node, is_text_node) {
-        if (is_text_node) {
-            node.element.markDirty()
-            return
-        }
-
+    public initializeTextNode(node) {
         node.element.setWidth(undefined)
         node.element.setHeight(undefined)
         node.element.setMeasureFunc(() => this.getTextMeasure(node))
+    }
+
+    public invalidateTextNode(node) {
+        node.element.markDirty()
     }
 
     public getTextMeasure(node) {
