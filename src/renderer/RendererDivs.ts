@@ -41,6 +41,40 @@ export default class RendererDivs extends Renderer {
         return this.engine.getChildIndex(node)
     }
 
+    public updateTextNode(node, is_text_node) {
+        if (is_text_node) {
+            node.element.markDirty()
+            return
+        }
+
+        node.element.setWidth(undefined)
+        node.element.setHeight(undefined)
+        node.element.setMeasureFunc(() => this.getTextMeasure(node))
+    }
+
+    public getTextMeasure(node) {
+        if (node.text_content === '') {
+            return { width: 0, height: 0 }
+        }
+
+        const measure_element = this.createDiv()
+        measure_element.textContent = node.text_content
+        Object.assign(measure_element.style, {
+            position: 'absolute',
+            visibility: 'hidden',
+            whiteSpace: 'pre',
+            width: 'max-content',
+            height: 'max-content',
+            fontFamily: node.styles.fontFamily?.value ?? '',
+            fontSize: node.styles.fontSize?.value ?? '16px',
+        })
+        this.canvas.appendChild(measure_element)
+        const rect = measure_element.getBoundingClientRect()
+        this.canvas.removeChild(measure_element)
+
+        return { width: rect.width, height: rect.height }
+    }
+
     protected insertChild(parent, node, childIndex) {
         this.engine.insertChild(parent, node, childIndex)
     }
@@ -97,7 +131,7 @@ export default class RendererDivs extends Renderer {
         super.beforeUpdate(nodes)
 
         for (const node of nodes) {
-            this.divs.get(node).innerHTML = node.text_content
+            this.divs.get(node).innerHTML = node.text_content ?? ''
         }
 
         this.engine.update()

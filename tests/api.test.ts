@@ -197,6 +197,7 @@ test('Node remove discards pending styles', async () => {
 test('Node text stores, replaces, and clears text content', async () => {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })
+    renderer.getTextMeasure = () => ({ width: 10, height: 10 })
     const ui = new UI({ renderer })
 
     await ui.init()
@@ -221,6 +222,77 @@ test('Node text stores, replaces, and clears text content', async () => {
     ui.draw()
     expect(child.text_content).toBe('')
     expect(canvas.children[0].innerHTML).toBe('')
+})
+
+test('Node text uses intrinsic size and updates when text styles change', async () => {
+    const canvas = createDiv()
+    const renderer = new RendererDivs({ canvas, createDiv })
+    renderer.getTextMeasure = (node) => {
+        const font_size = node.styles.fontSize?.parsed.value ?? 16
+        const font_scale = node.styles.fontFamily?.value === 'Wide' ? 2 : 1
+        return {
+            width: node.text_content.length * font_size * font_scale,
+            height: font_size * 2,
+        }
+    }
+    const ui = new UI({ renderer })
+
+    await ui.init()
+    ui.root.style('width', '500px')
+    ui.root.style('height', '100px')
+    ui.root.style('alignItems', 'flex-start')
+
+    const child = ui.create()
+    expect(child.text_content).toBeUndefined()
+
+    child.style('width', '300px')
+    child.style('height', '80px')
+    child.text('Hey')
+    ui.root.add(child)
+    ui.update()
+
+    expect(child.styles.width).toBeUndefined()
+    expect(child.styles.height).toBeUndefined()
+    expect(child.layout).toMatchObject({ width: 48, height: 32 })
+
+    child.style('width', '400px')
+    child.style('height', '90px')
+    child.style('fontSize', '20px')
+    ui.update()
+
+    expect(child.styles.width).toBeUndefined()
+    expect(child.styles.height).toBeUndefined()
+    expect(child.layout).toMatchObject({ width: 60, height: 40 })
+
+    child.text('Hello')
+    ui.update()
+
+    expect(child.layout).toMatchObject({ width: 100, height: 40 })
+
+    child.style('fontFamily', 'Wide')
+    ui.update()
+
+    expect(child.layout).toMatchObject({ width: 200, height: 40 })
+})
+
+test('Node text cannot have children', async () => {
+    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const ui = new UI({ renderer })
+
+    await ui.init()
+
+    const parent = ui.create()
+    const child = ui.create()
+    ui.root.add(parent)
+    parent.add(child)
+
+    expect(() => parent.text('Parent')).toThrow(/text nodes cannot have children/)
+
+    const text = ui.create()
+    text.text('Text')
+    ui.root.add(text)
+
+    expect(() => text.add(ui.create())).toThrow(/text nodes cannot have children/)
 })
 
 test('RendererDivs image api hooks are no-ops', async () => {

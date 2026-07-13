@@ -9,8 +9,12 @@ export default abstract class Renderer {
         this.pending_styles.push({ node, style })
     }
 
-    public discardPendingStyles(node) {
-        this.pending_styles = this.pending_styles.filter((pending_style) => pending_style.node !== node)
+    public discardPendingStyles(node, names?) {
+        this.pending_styles = this.pending_styles.filter(
+            (pending_style) =>
+                pending_style.node !== node ||
+                (names !== undefined && names.includes(pending_style.style.name) === false),
+        )
     }
 
     public imageUpload(src: string, image: any): void {}
@@ -48,6 +52,7 @@ export default abstract class Renderer {
     public abstract createElement(node)
     public abstract getChildIndex(node)
     public abstract getLayout(node)
+    public abstract updateTextNode(node, is_text_node)
 
     protected abstract updateStyle(node, style)
     protected abstract insertChild(parent, node, childIndex)

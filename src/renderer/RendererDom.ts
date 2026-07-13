@@ -33,6 +33,13 @@ export default class RendererDom extends Renderer {
         return node.element.children.length
     }
 
+    public updateTextNode(node, is_text_node) {
+        if (is_text_node === false) {
+            node.element.style.width = ''
+            node.element.style.height = ''
+        }
+    }
+
     protected updateStyle(node, resolved_style) {
         if (resolved_style.name === 'backgroundImage') {
             const style = resolved_style.expanded[0]
@@ -65,7 +72,7 @@ export default class RendererDom extends Renderer {
     private updateText(node) {
         let text_element = this.text_elements.get(node)
 
-        if (node.text_content === '') {
+        if (node.text_content === undefined || node.text_content === '') {
             text_element?.remove()
             this.text_elements.delete(node)
             return
