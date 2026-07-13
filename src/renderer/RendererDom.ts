@@ -65,19 +65,20 @@ export default class RendererDom extends Renderer {
     private updateText(node) {
         let text_element = this.text_elements.get(node)
 
-        if (node.text_content === '') {
+        if (node.text_content === undefined || node.text_content === '') {
             text_element?.remove()
             this.text_elements.delete(node)
             return
         }
 
-        if (text_element === undefined) {
-            text_element = document.createElement('span')
-            this.text_elements.set(node, text_element)
-            node.element.insertBefore(text_element, node.element.firstChild)
-        }
+        // if (text_element === undefined) {
+        //     text_element = document.createElement('span')
+        //     this.text_elements.set(node, text_element)
+        //     node.element.insertBefore(text_element, node.element.firstChild)
+        // }
 
-        text_element.innerHTML = node.text_content
+        // text_element.innerHTML = node.text_content
+        node.element.innerHTML = node.text_content
     }
 
     // prettier-ignore
@@ -106,8 +107,6 @@ export default class RendererDom extends Renderer {
 const DEFAULT_NODE_STYLE = {
     boxSizing: 'border-box',
     display: 'flex',
-    minWidth: '0',
-    minHeight: '0',
     zIndex: '0',
 }
 

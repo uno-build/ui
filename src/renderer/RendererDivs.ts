@@ -53,6 +53,30 @@ export default class RendererDivs extends Renderer {
         this.divs.delete(node)
     }
 
+    public getTextMeasure(node) {
+        if (
+            node.text_content === undefined ||
+            node.text_content === '' ||
+            typeof document === 'undefined' ||
+            document.body === null
+        ) {
+            return { width: 0, height: 0 }
+        }
+
+        const measure_element = document.createElement('span')
+        measure_element.textContent = node.text_content
+        measure_element.style.position = 'absolute'
+        measure_element.style.visibility = 'hidden'
+        measure_element.style.whiteSpace = 'pre'
+        measure_element.style.fontFamily = node.styles.fontFamily?.value ?? ''
+        measure_element.style.fontSize = node.styles.fontSize?.value ?? '16px'
+        document.body.appendChild(measure_element)
+        const rect = measure_element.getBoundingClientRect()
+        measure_element.remove()
+
+        return { width: rect.width, height: rect.height }
+    }
+
     protected updateStyle(node, resolved_style) {
         const div = this.divs.get(node)
 
@@ -97,7 +121,7 @@ export default class RendererDivs extends Renderer {
         super.beforeUpdate(nodes)
 
         for (const node of nodes) {
-            this.divs.get(node).innerHTML = node.text_content
+            this.divs.get(node).innerHTML = node.text_content ?? ''
         }
 
         this.engine.update()

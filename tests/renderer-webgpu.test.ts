@@ -765,6 +765,27 @@ test('RendererWebGPU scales glyph render data with fontSize', () => {
     expect(render_data.glyphs[1].layout).toEqual([24, 24, 10, 20])
 })
 
+test('RendererWebGPU measures text from glyph metrics', () => {
+    const font = createManagedFont()
+    font.metrics = {
+        ascender: 1,
+        descender: -0.25,
+        lineHeight: 1.5,
+    }
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: font }))
+    const node = createNode({
+        text_content: 'A B',
+        styles: {
+            fontSize: {
+                value: '20px',
+                parsed: { value: 20, kind: UNIT.PX },
+            },
+        },
+    })
+
+    expect(renderer.getTextMeasure(node)).toEqual({ width: 31, height: 30 })
+})
+
 test('RendererWebGPU resolves text font from fontFamily', () => {
     const alternate_font = {
         ...createManagedFont(),

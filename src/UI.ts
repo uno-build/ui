@@ -52,6 +52,23 @@ export default class UI {
     }
 
     public style(node, name, value) {
+        if (node.text_content !== undefined && (name === 'width' || name === 'height')) {
+            return
+        }
+
+        this.applyStyle(node, name, value)
+    }
+
+    public setTextSize(node, width, height) {
+        this.applyStyle(node, 'width', `${width}px`)
+        this.applyStyle(node, 'height', `${height}px`)
+    }
+
+    public getTextMeasure(node) {
+        return this.renderer.getTextMeasure?.(node)
+    }
+
+    private applyStyle(node, name, value) {
         const resolved_style = Style.resolveStyle(name, value)
         for (const style of resolved_style.expanded) {
             node.styles[style.name] = {

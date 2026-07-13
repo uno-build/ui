@@ -343,6 +343,19 @@ export default class RendererWebGPU extends Renderer {
         this.updateBuffers(command_buffer_data, panel_data_buffer_data, glyph_data_buffer_data, text_run_buffer_data)
     }
 
+    public getTextMeasure(node) {
+        if (node.text_content === undefined || node.text_content === '') {
+            return { width: 0, height: 0 }
+        }
+
+        const font = this.getTextFont(node)
+        if (font === undefined) {
+            return { width: 0, height: 0 }
+        }
+
+        return measureTextContent(node.text_content, font, this.getTextFontSize(node))
+    }
+
     public draw() {
         const command_encoder = this.device.createCommandEncoder()
         const texture_view = this.context.getCurrentTexture().createView()
@@ -435,20 +448,14 @@ export default class RendererWebGPU extends Renderer {
         const text_content = node.text_content
         const display = node.styles.display?.parsed.enum || DISPLAY.flex
 
-        if (text_content === '' || display !== DISPLAY.flex) {
+        if (text_content === undefined || text_content === '' || display !== DISPLAY.flex) {
             return null
         }
 
-        const font_family = node.styles.fontFamily?.value
-        const font =
-            font_family === undefined ? this.font_manager.getDefaultFont() : this.font_manager.getFont(font_family)
-        const font_size = node.styles.fontSize?.parsed.value ?? FONT_SIZE
+        const font = this.getTextFont(node)
+        const font_size = this.getTextFontSize(node)
 
         if (font === undefined) {
-            if (font_family !== undefined) {
-                throw new Error(`Font "${font_family}" is not registered.`)
-            }
-
             return null
         }
 
@@ -511,6 +518,22 @@ export default class RendererWebGPU extends Renderer {
                 clipping,
             },
         }
+    }
+
+    private getTextFont(node) {
+        const font_family = node.styles.fontFamily?.value
+        const font =
+            font_family === undefined ? this.font_manager.getDefaultFont() : this.font_manager.getFont(font_family)
+
+        if (font === undefined && font_family !== undefined) {
+            throw new Error(`Font "${font_family}" is not registered.`)
+        }
+
+        return font
+    }
+
+    private getTextFontSize(node) {
+        return node.styles.fontSize?.parsed.value ?? FONT_SIZE
     }
 
     private createCommandBufferData(commands) {
@@ -785,6 +808,32 @@ export default class RendererWebGPU extends Renderer {
         const clipping_float_offset = (bytes_offset + TEXT_RUN.CLIPPING.OFFSET) / FLOAT32_SIZE
         this.text_run_floats.set(clipping, clipping_float_offset)
     }
+}
+
+function measureTextContent(text_content, font, font_size) {
+    let width = 0
+
+    for (const character of text_content) {
+        if (character === '\n') {
+            continue
+        }
+
+        const glyph = font.glyphs_by_unicode.get(character.codePointAt(0))
+        if (glyph === undefined) {
+            continue
+        }
+
+        width += glyph.advance * font_size
+    }
+
+    return {
+        width,
+        height: getFontLineHeight(font) * font_size,
+    }
+}
+
+function getFontLineHeight(font) {
+    return font.metrics.lineHeight ?? font.metrics.ascender - (font.metrics.descender ?? 0)
 }
 
 function packColor(color) {

@@ -14,6 +14,7 @@ import backgroundImageUnset from './examples/backgroundImageUnset'
 import positionRelative from './examples/positionRelative'
 import deepNestedPaint from './examples/deepNestedPaint'
 import fonts from './examples/fonts'
+import fonts2 from './examples/fonts2'
 import nestedFlexDirections from './examples/nestedFlexDirections'
 import nestedMargins from './examples/nestedMargins'
 import nestedPercentDimensions from './examples/nestedPercentDimensions'
@@ -48,6 +49,7 @@ export const LAYOUTS = {
     boxShadow3,
     deepNestedPaint,
     fonts,
+    fonts2,
     nestedFlexDirections,
     nestedMargins,
     nestedPercentDimensions,

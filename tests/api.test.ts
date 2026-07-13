@@ -223,6 +223,50 @@ test('Node text stores, replaces, and clears text content', async () => {
     expect(canvas.children[0].innerHTML).toBe('')
 })
 
+test('Node text updates size from renderer text measure', async () => {
+    const canvas = createDiv()
+    const renderer = new RendererDivs({ canvas, createDiv })
+    const ui = new UI({ renderer })
+    renderer.getTextMeasure = (node) => {
+        const font_size = node.styles.fontSize?.parsed.value ?? 10
+
+        return {
+            width: node.text_content.length * font_size,
+            height: font_size * 2,
+        }
+    }
+
+    await ui.init()
+
+    const child = ui.create()
+    expect(child.text_content).toBeUndefined()
+
+    child.style('width', '200px')
+    child.style('height', '80px')
+    child.style('fontSize', '10px')
+    child.text('Hey')
+
+    expect(child.text_content).toBe('Hey')
+    expect(child.styles.width.value).toBe('30px')
+    expect(child.styles.height.value).toBe('20px')
+
+    child.style('width', '999px')
+    child.style('height', '999px')
+
+    expect(child.styles.width.value).toBe('30px')
+    expect(child.styles.height.value).toBe('20px')
+
+    child.style('fontSize', '20px')
+
+    expect(child.styles.width.value).toBe('60px')
+    expect(child.styles.height.value).toBe('40px')
+
+    child.text('Hello')
+
+    expect(child.styles.width.value).toBe('100px')
+    expect(child.styles.height.value).toBe('40px')
+})
+
 test('RendererDivs image api hooks are no-ops', async () => {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })
