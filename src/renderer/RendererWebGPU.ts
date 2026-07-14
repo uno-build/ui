@@ -30,7 +30,7 @@ const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 1024
 const FONT_SIZE = 16
 const FONT_COLOR = [0, 0, 0, 255]
-const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9
+const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 15
 
 export default class RendererWebGPU extends Renderer {
     private canvas
