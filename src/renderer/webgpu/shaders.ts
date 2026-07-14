@@ -469,9 +469,9 @@ fn glyphCoverageAtUv(
     let screen_tex_size = vec2f(1.0) / max(uv_width, vec2f(0.000001));
     let screen_px_range = max(0.5 * dot(unit_range, screen_tex_size), 1.0);
     let screen_distance = screen_px_range * (signed_distance - 0.45);
-    let range_coverage = smoothstep(0.0, 0.1, signed_distance);
+    let safe_softness = min(softness, screen_px_range * 0.45);
 
-    return smoothstep(-softness, softness, screen_distance) * range_coverage;
+    return smoothstep(-safe_softness, safe_softness, screen_distance);
 }
 
 fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
@@ -496,13 +496,27 @@ fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
         coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.5);
     } else {
         let blur_px = blur * viewport.device_pixel_ratio;
-        let sample_positions = array<f32, 5>(-1.0, -0.5, 0.0, 0.5, 1.0);
-        let sample_weights = array<f32, 5>(0.0625, 0.25, 0.375, 0.25, 0.0625);
-        let small_blur_weights = array<f32, 5>(0.25, 0.0, 0.5, 0.0, 0.25);
-        let sample_softness = max(blur_px * 0.5, 0.5);
+        let sample_positions = array<f32, 9>(-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0);
+        let sample_weights = array<f32, 9>(
+            0.00390625,
+            0.03125,
+            0.109375,
+            0.21875,
+            0.2734375,
+            0.21875,
+            0.109375,
+            0.03125,
+            0.00390625,
+        );
+        let small_blur_weights = array<f32, 9>(0.25, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.25);
+        let sample_softness = select(
+            max(blur_px / 8.0, 0.5),
+            max(blur_px * 0.5, 0.5),
+            blur <= 2.0,
+        );
 
-        for (var y = 0u; y < 5u; y++) {
-            for (var x = 0u; x < 5u; x++) {
+        for (var y = 0u; y < 9u; y++) {
+            for (var x = 0u; x < 9u; x++) {
                 let sample_weight = select(
                     sample_weights[x] * sample_weights[y],
                     small_blur_weights[x] * small_blur_weights[y],
