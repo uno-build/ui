@@ -7,9 +7,11 @@ export default class UI {
     private renderer = null
     private nodes = []
     private next_node_id = 0
+    private device_pixel_ratio = null
 
-    constructor({ renderer }) {
+    constructor({ renderer, device_pixel_ratio = 1 }) {
         this.renderer = renderer
+        this.setDevicePixelRatio(device_pixel_ratio)
     }
 
     public async init() {
@@ -49,6 +51,27 @@ export default class UI {
 
     public draw() {
         return this.renderer.draw()
+    }
+
+    public setDevicePixelRatio(device_pixel_ratio) {
+        if (Number.isFinite(device_pixel_ratio) === false || device_pixel_ratio <= 0) {
+            throw new Error('device_pixel_ratio must be a finite number greater than 0')
+        }
+        if (device_pixel_ratio === this.device_pixel_ratio) {
+            return
+        }
+
+        this.device_pixel_ratio = device_pixel_ratio
+        this.renderer.setDevicePixelRatio(device_pixel_ratio)
+
+        if (this.root?.isTextNode()) {
+            this.renderer.invalidateTextNode(this.root)
+        }
+        for (const node of this.nodes) {
+            if (node.isTextNode()) {
+                this.renderer.invalidateTextNode(node)
+            }
+        }
     }
 
     public style(node, name, value) {

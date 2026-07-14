@@ -1,9 +1,9 @@
 export default abstract class Renderer {
     protected pending_styles = []
 
-    public async init() {
-        // optional hook
-    }
+    public async init() {}
+
+    public setDevicePixelRatio(device_pixel_ratio) {}
 
     public addPendingStyle(node, style) {
         this.pending_styles.push({ node, style })

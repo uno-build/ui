@@ -44,8 +44,9 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
         const canvas = createCanvasElement(root, rendererName, setup)
         const Renderer = setup.renderer
         const renderer = new Renderer({ canvas })
-        const ui = new UI({ renderer })
+        const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
         await ui.init()
+        window.ui = ui
 
         syncRootSize({ ui, root, canvas })
         const layoutResult = await createLayout({ ui, rendererName })

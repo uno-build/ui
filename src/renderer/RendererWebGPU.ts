@@ -36,6 +36,7 @@ export default class RendererWebGPU extends Renderer {
     private font_atlas_size
     private image_min_filter
     private image_mag_filter
+    private device_pixel_ratio = 1
     // props
     private engine
     private adapter
@@ -91,6 +92,10 @@ export default class RendererWebGPU extends Renderer {
         this.font_atlas_size = font_atlas_size
         this.image_min_filter = image_min_filter
         this.image_mag_filter = image_mag_filter
+    }
+
+    public setDevicePixelRatio(device_pixel_ratio) {
+        this.device_pixel_ratio = device_pixel_ratio
     }
 
     public async init() {
@@ -293,7 +298,8 @@ export default class RendererWebGPU extends Renderer {
             const font = this.getTextFont(node)
             if (font !== undefined) {
                 const font_size = this.getTextFontSize(node)
-                const line_height = this.getTextLineHeight(node, font, font_size)
+                const natural_metrics = this.getTextNaturalMetrics(font, font_size)
+                const line_height = this.getTextLineHeight(node, natural_metrics.line_height, font_size)
                 const max_width = width_mode === MEASURE_MODE.UNDEFINED ? Infinity : available_width
                 const text_layout = measureLineStats(this.getPreparedText(node, font, font_size), max_width)
                 measured_width = text_layout.maxLineWidth
@@ -512,16 +518,16 @@ export default class RendererWebGPU extends Renderer {
         }
 
         const clipping = clip === null ? [0, 0, 0, 0] : [y + clip.top, x + clip.right, y + clip.bottom, x + clip.left]
-        const line_height = this.getTextLineHeight(node, font, font_size)
-        const natural_line_height = font.metrics.lineHeight * font_size
-        const leading = line_height - natural_line_height
+        const natural_metrics = this.getTextNaturalMetrics(font, font_size)
+        const line_height = this.getTextLineHeight(node, natural_metrics.line_height, font_size)
+        const leading = line_height - natural_metrics.ascender - natural_metrics.descender
         const text_layout = layoutWithLines(this.getPreparedText(node, font, font_size), content_width, line_height)
         const glyphs = []
 
         for (let line_index = 0; line_index < text_layout.lines.length; line_index++) {
             const line = text_layout.lines[line_index]!
             const baseline =
-                content_y + leading / 2 + font.metrics.ascender * font_size + line_index * line_height
+                content_y + leading / 2 + natural_metrics.ascender + line_index * line_height
             let cursor_x = content_x
 
             for (const character of line.text) {
@@ -586,11 +592,25 @@ export default class RendererWebGPU extends Renderer {
         return node.styles.fontSize?.parsed.value ?? FONT_SIZE
     }
 
-    private getTextLineHeight(node, font, font_size) {
+    private getTextNaturalMetrics(font, font_size) {
+        const { ascender, descender, lineHeight } = font.metrics
+        const line_gap = lineHeight - ascender + descender
+        const rounded_ascender = roundToDevicePixel(ascender * font_size, this.device_pixel_ratio)
+        const rounded_descender = roundToDevicePixel(-descender * font_size, this.device_pixel_ratio)
+        const rounded_line_gap = roundToDevicePixel(line_gap * font_size, this.device_pixel_ratio)
+
+        return {
+            ascender: rounded_ascender,
+            descender: rounded_descender,
+            line_height: rounded_ascender + rounded_descender + rounded_line_gap,
+        }
+    }
+
+    private getTextLineHeight(node, natural_line_height, font_size) {
         const line_height_style = node.styles.lineHeight
 
         if (line_height_style === undefined || line_height_style.parsed.kind === KEYWORD.UNSET) {
-            return font.metrics.lineHeight * font_size
+            return natural_line_height
         }
 
         if (line_height_style.parsed.kind === UNIT.PX) {
@@ -903,6 +923,10 @@ export default class RendererWebGPU extends Renderer {
 
 function packColor(color) {
     return ((color[0] & 255) | ((color[1] & 255) << 8) | ((color[2] & 255) << 16) | ((color[3] & 255) << 24)) >>> 0
+}
+
+function roundToDevicePixel(value, device_pixel_ratio) {
+    return Math.round(value * device_pixel_ratio) / device_pixel_ratio
 }
 
 function constrainMeasuredSize(measured_size, available_size, measure_mode) {

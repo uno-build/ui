@@ -781,6 +781,7 @@ test('RendererWebGPU measures text from glyph metrics', () => {
         ...createManagedFont(),
         metrics: {
             ascender: 1,
+            descender: -0.25,
             lineHeight: 1.5,
         },
     }
@@ -801,6 +802,36 @@ test('RendererWebGPU measures text from glyph metrics', () => {
     })
 
     expect(renderer.getTextMeasure(node)).toEqual({ width: 31, height: 30 })
+})
+
+test('RendererWebGPU snaps natural font metrics to device pixels', () => {
+    const font = {
+        ...createManagedFont(),
+        metrics: {
+            ascender: 1.05,
+            descender: -0.35000000000000003,
+            lineHeight: 1.5,
+        },
+    }
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: font,
+        }),
+    )
+    renderer.setDevicePixelRatio(2)
+    const node = createNode({
+        text_content: 'A',
+        styles: {
+            fontSize: {
+                value: '5px',
+                parsed: { value: 5, kind: UNIT.PX },
+            },
+        },
+    })
+
+    expect(renderer.getTextMeasure(node)).toEqual({ width: 3, height: 8 })
+    expect(collectRenderData(renderer, [node]).glyphs[0].layout).toEqual([0, 0.75, 2.5, 5])
 })
 
 test('RendererWebGPU measures text with a unitless lineHeight multiplier', () => {
@@ -880,6 +911,7 @@ test('RendererWebGPU measures wrapped text with the available width', () => {
         ...createManagedFont(),
         metrics: {
             ascender: 1,
+            descender: -0.25,
             lineHeight: 1.5,
         },
     }
@@ -931,6 +963,7 @@ test('RendererWebGPU respects exact text measurement constraints', () => {
         ...createManagedFont(),
         metrics: {
             ascender: 1,
+            descender: -0.25,
             lineHeight: 1.5,
         },
     }
@@ -962,6 +995,7 @@ test('RendererWebGPU caps text measurement to at-most constraints', () => {
         ...createManagedFont(),
         metrics: {
             ascender: 1,
+            descender: -0.25,
             lineHeight: 1.5,
         },
     }
@@ -992,6 +1026,7 @@ test('RendererWebGPU measures explicit line breaks', () => {
         ...createManagedFont(),
         metrics: {
             ascender: 1,
+            descender: -0.25,
             lineHeight: 1.5,
         },
     }
@@ -1102,6 +1137,7 @@ test('RendererWebGPU invalidates prepared text', () => {
         ...createManagedFont(),
         metrics: {
             ascender: 1,
+            descender: -0.25,
             lineHeight: 1.5,
         },
     }
@@ -1718,6 +1754,7 @@ function createManagedFont() {
         },
         metrics: {
             ascender: 1,
+            descender: -0.25,
             lineHeight: 1.25,
         },
         glyphs_by_unicode: new Map([
