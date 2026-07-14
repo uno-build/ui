@@ -81,6 +81,42 @@ test('boxShadow', () => {
     expectInvalid('boxShadow', true, /expected offset-x offset-y blur-radius spread-radius color/)
 })
 
+test('textShadow', () => {
+    expectResolved('textShadow', ' unset ', 'unset', {
+        text_shadow: {
+            offset_x: 0,
+            offset_y: 0,
+            blur: 0,
+            color: [0, 0, 0, 0],
+        },
+    })
+    expectResolved('textShadow', ' 0PX 4px 12PX ', '0px 4px 12px', {
+        text_shadow: {
+            offset_x: 0,
+            offset_y: 4,
+            blur: 12,
+            color: [0, 0, 0, 255],
+        },
+    })
+    expectResolved(' text-shadow ', '-8px 10px 0px #1234', '-8px 10px 0px #1234', {
+        text_shadow: {
+            offset_x: -8,
+            offset_y: 10,
+            blur: 0,
+            color: [17, 34, 51, 68],
+        },
+    }, 'textShadow')
+
+    expectInvalid('textShadow', 'none', /expected offset-x offset-y blur-radius color/)
+    expectInvalid('textShadow', '0px 4px -1px #000000ff', /expected non-negative blur radius/)
+    expectInvalid('textShadow', '0px 4px', /expected offset-x offset-y blur-radius color/)
+    expectInvalid('textShadow', '0px 4px 12px 0px #000000ff', /expected offset-x offset-y blur-radius color/)
+    expectInvalid('textShadow', '0px 4px 12px, 1px 1px 2px', /expected offset-x offset-y blur-radius color/)
+    expectInvalid('textShadow', '0px 4px 12px red', /expected hex color/)
+    expectInvalid('textShadow', '0px 4px 12%', /expected px unit/)
+    expectInvalid('textShadow', true, /style value must be a string/)
+})
+
 test('backgroundImage', () => {
     expectKeywordUnit('backgroundImage', ' Unset ', 'unset')
     expectResolved('backgroundImage', '/assets/Avatar/Icon.png', '/assets/Avatar/Icon.png', {})

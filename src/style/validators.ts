@@ -29,6 +29,29 @@ export function validateBoxShadow(value: string) {
         validateColor(values[4])
     }
 }
+
+export function validateTextShadow(value: string) {
+    if (value === KEYWORD.UNSET) {
+        return
+    }
+
+    const values = value.split(/\s+/)
+    if (values.length !== 3 && values.length !== 4) {
+        throw new Error('expected offset-x offset-y blur-radius color')
+    }
+
+    for (const shadow_value of values.slice(0, 3)) {
+        validatePx(shadow_value)
+    }
+
+    if (readPx(values[2])!.value < 0) {
+        throw new Error('expected non-negative blur radius')
+    }
+
+    if (values[3] !== undefined) {
+        validateColor(values[3])
+    }
+}
 export function validateEnum(value: string, values: Record<string, any>) {
     if (typeof value !== 'string' || !Object.prototype.hasOwnProperty.call(values, value)) {
         throw new Error(`expected one of ${Object.keys(values).join(', ')}`)

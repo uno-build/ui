@@ -15,6 +15,7 @@ import {
     POSITION_VERTICES,
     COMMAND_KIND_PANEL,
     COMMAND_KIND_GLYPH,
+    COMMAND_KIND_TEXT_SHADOW,
     COMMAND,
     COMMAND_SIZE,
     PANEL_DATA,
@@ -464,9 +465,24 @@ export default class RendererWebGPU extends Renderer {
 
             this.text_runs.push(text_data.run)
 
+            const glyph_indices = []
             for (const glyph_data of text_data.glyphs) {
                 const glyph_index = glyphs.length
                 glyphs.push(glyph_data)
+                glyph_indices.push(glyph_index)
+            }
+
+            if (text_data.run.text_shadow_color[3] > 0) {
+                for (const glyph_index of glyph_indices) {
+                    commands.push({
+                        kind: COMMAND_KIND_TEXT_SHADOW,
+                        panel_index: 0,
+                        glyph_index,
+                    })
+                }
+            }
+
+            for (const glyph_index of glyph_indices) {
                 commands.push({
                     kind: COMMAND_KIND_GLYPH,
                     panel_index: 0,
@@ -525,6 +541,12 @@ export default class RendererWebGPU extends Renderer {
         const text_layout = layoutWithLines(prepared_text, content_width, line_height)
         const text_align = node.styles.textAlign?.parsed.enum ?? TEXT_ALIGN.left
         const space_advance = this.measureGlyphAdvances(font, font_size, ' ')
+        const text_shadow = node.styles.textShadow?.parsed.text_shadow
+        const text_shadow_data = [
+            text_shadow?.offset_x ?? 0,
+            text_shadow?.offset_y ?? 0,
+            text_shadow?.blur ?? 0,
+        ]
         const glyphs = []
 
         for (let line_index = 0; line_index < text_layout.lines.length; line_index++) {
@@ -560,6 +582,7 @@ export default class RendererWebGPU extends Renderer {
                             ],
                             uv_rect: glyph.uv_rect,
                             run_index,
+                            text_shadow: text_shadow_data,
                         })
                     }
 
@@ -589,6 +612,13 @@ export default class RendererWebGPU extends Renderer {
                 color: FONT_COLOR,
                 font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.font_atlas_size],
                 clipping,
+                text_shadow: [
+                    text_shadow?.offset_x ?? 0,
+                    text_shadow?.offset_y ?? 0,
+                    text_shadow?.blur ?? 0,
+                    0,
+                ],
+                text_shadow_color: text_shadow?.color ?? [0, 0, 0, 0],
             },
         }
     }
@@ -843,7 +873,12 @@ export default class RendererWebGPU extends Renderer {
         this.device.queue.writeBuffer(
             this.viewport_buffer,
             0,
-            new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, 0, 0]),
+            new Float32Array([
+                this.canvas.clientWidth,
+                this.canvas.clientHeight,
+                this.device_pixel_ratio,
+                0,
+            ]),
         )
 
         const uploaded_bytes =
@@ -917,13 +952,11 @@ export default class RendererWebGPU extends Renderer {
 
         const run_data_u32_offset = (bytes_offset + GLYPH_DATA.RUN_DATA.OFFSET) / UINT32_SIZE
         this.glyph_data_u32[run_data_u32_offset] = glyph.run_index
-        this.glyph_data_u32[run_data_u32_offset + 1] = 0
-        this.glyph_data_u32[run_data_u32_offset + 2] = 0
-        this.glyph_data_u32[run_data_u32_offset + 3] = 0
+        this.glyph_data_floats.set(glyph.text_shadow, run_data_u32_offset + 1)
     }
 
     private writeTextRunData(text_run, bytes_offset) {
-        const { color, font_data, clipping } = text_run
+        const { color, font_data, clipping, text_shadow, text_shadow_color } = text_run
         const color_float_offset = (bytes_offset + TEXT_RUN.COLOR.OFFSET) / FLOAT32_SIZE
         this.text_run_floats[color_float_offset] = color[0] / 255
         this.text_run_floats[color_float_offset + 1] = color[1] / 255
@@ -935,6 +968,15 @@ export default class RendererWebGPU extends Renderer {
 
         const clipping_float_offset = (bytes_offset + TEXT_RUN.CLIPPING.OFFSET) / FLOAT32_SIZE
         this.text_run_floats.set(clipping, clipping_float_offset)
+
+        const text_shadow_float_offset = (bytes_offset + TEXT_RUN.TEXT_SHADOW.OFFSET) / FLOAT32_SIZE
+        this.text_run_floats.set(text_shadow, text_shadow_float_offset)
+
+        const text_shadow_color_float_offset = (bytes_offset + TEXT_RUN.TEXT_SHADOW_COLOR.OFFSET) / FLOAT32_SIZE
+        this.text_run_floats[text_shadow_color_float_offset] = text_shadow_color[0] / 255
+        this.text_run_floats[text_shadow_color_float_offset + 1] = text_shadow_color[1] / 255
+        this.text_run_floats[text_shadow_color_float_offset + 2] = text_shadow_color[2] / 255
+        this.text_run_floats[text_shadow_color_float_offset + 3] = text_shadow_color[3] / 255
     }
 }
 

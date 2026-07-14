@@ -35,6 +35,7 @@ import {
     BACKGROUND_POSITION_DEFINITION,
     BACKGROUND_REPEAT_DEFINITION,
     BOX_SHADOW_DEFINITION,
+    TEXT_SHADOW_DEFINITION,
 } from './definitions'
 
 // if (typeof window !== 'undefined') {
@@ -130,6 +131,9 @@ export const STYLE = {
     ]),
     BOXSHADOW: createStyle('boxShadow', (name, value) => [
         { name, value, definition: BOX_SHADOW_DEFINITION },
+    ]),
+    TEXTSHADOW: createStyle('textShadow', (name, value) => [
+        { name, value, definition: TEXT_SHADOW_DEFINITION },
     ]),
     BORDER: createStyle('border', (name, value) => 
         expandHelper(name, value, {

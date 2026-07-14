@@ -10,6 +10,7 @@ export const TRANSPARENT_COLOR = [0, 0, 0, 0]
 
 export const COMMAND_KIND_PANEL = 0
 export const COMMAND_KIND_GLYPH = 1
+export const COMMAND_KIND_TEXT_SHADOW = 2
 
 export const COMMAND = {
     KIND_DATA: {
@@ -94,6 +95,14 @@ export const TEXT_RUN = {
     },
     CLIPPING: {
         OFFSET: 8 * FLOAT32_SIZE,
+        SIZE: 4 * FLOAT32_SIZE,
+    },
+    TEXT_SHADOW: {
+        OFFSET: 12 * FLOAT32_SIZE,
+        SIZE: 4 * FLOAT32_SIZE,
+    },
+    TEXT_SHADOW_COLOR: {
+        OFFSET: 16 * FLOAT32_SIZE,
         SIZE: 4 * FLOAT32_SIZE,
     },
 }

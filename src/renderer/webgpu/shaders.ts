@@ -1,9 +1,11 @@
 export const uiWGSL = /* wgsl */ `
 const COMMAND_KIND_PANEL = 0u;
+const COMMAND_KIND_TEXT_SHADOW = 2u;
 
 struct Viewport {
     size: vec2f,
-    padding: vec2f,
+    device_pixel_ratio: f32,
+    padding: f32,
 }
 
 struct PanelData {
@@ -30,6 +32,8 @@ struct TextRun {
     color: vec4f,
     font_data: vec4f,
     clipping: vec4f,
+    text_shadow: vec4f,
+    text_shadow_color: vec4f,
 }
 
 struct VertexOutput {
@@ -286,9 +290,20 @@ fn vertexMain(
         pixel = panel.rect.xy + local_position;
     } else {
         let glyph = glyph_data[command.z];
-        local_position = position * glyph.rect.zw;
-        pixel = glyph.rect.xy + local_position;
-        uv = glyph.uv_rect.xy + position * glyph.uv_rect.zw;
+
+        if (command.x == COMMAND_KIND_TEXT_SHADOW) {
+            let text_shadow = bitcast<vec3f>(glyph.run_data.yzw);
+            let blur = text_shadow.z;
+            let expanded_size = glyph.rect.zw + vec2f(blur * 2.0);
+            local_position = position * expanded_size - vec2f(blur);
+            pixel = glyph.rect.xy + text_shadow.xy + local_position;
+            uv = glyph.uv_rect.xy +
+                ((pixel - text_shadow.xy - glyph.rect.xy) / glyph.rect.zw) * glyph.uv_rect.zw;
+        } else {
+            local_position = position * glyph.rect.zw;
+            pixel = glyph.rect.xy + local_position;
+            uv = glyph.uv_rect.xy + position * glyph.uv_rect.zw;
+        }
     }
 
     let clip = vec2f(
@@ -429,6 +444,92 @@ fn glyphColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
     return vec4f(run.color.rgb, alpha);
 }
 
+fn glyphCoverageAtUv(
+    glyph: GlyphData,
+    run: TextRun,
+    uv: vec2f,
+    uv_width: vec2f,
+    softness: f32,
+) -> f32 {
+    let uv_min = glyph.uv_rect.xy;
+    let uv_max = glyph.uv_rect.xy + glyph.uv_rect.zw;
+    if (any(uv < uv_min) || any(uv > uv_max)) {
+        return 0.0;
+    }
+
+    let sample = textureSampleLevel(
+        font_texture,
+        ui_sampler,
+        uv,
+        u32(run.font_data.x),
+        0.0,
+    );
+    let signed_distance = median(sample.r, sample.g, sample.b);
+    let unit_range = vec2f(run.font_data.z / run.font_data.w);
+    let screen_tex_size = vec2f(1.0) / max(uv_width, vec2f(0.000001));
+    let screen_px_range = max(0.5 * dot(unit_range, screen_tex_size), 1.0);
+    let screen_distance = screen_px_range * (signed_distance - 0.45);
+    let range_coverage = smoothstep(0.0, 0.1, signed_distance);
+
+    return smoothstep(-softness, softness, screen_distance) * range_coverage;
+}
+
+fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
+    let glyph = glyph_data[u32(input.glyph_index)];
+    let run = text_runs[glyph.run_data.x];
+    let visible = !(
+        any(run.clipping > vec4f(0.0)) &&
+        (
+            input.pixel.x < run.clipping.w ||
+            input.pixel.y < run.clipping.x ||
+            input.pixel.x > run.clipping.y ||
+            input.pixel.y > run.clipping.z
+        )
+    );
+    if (!visible) {
+        return vec4f(run.text_shadow_color.rgb, 0.0);
+    }
+
+    let blur = run.text_shadow.z;
+    var coverage = 0.0;
+    if (blur <= 0.0) {
+        coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.5);
+    } else {
+        let blur_px = blur * viewport.device_pixel_ratio;
+        let sample_positions = array<f32, 5>(-1.0, -0.5, 0.0, 0.5, 1.0);
+        let sample_weights = array<f32, 5>(0.0625, 0.25, 0.375, 0.25, 0.0625);
+        let small_blur_weights = array<f32, 5>(0.25, 0.0, 0.5, 0.0, 0.25);
+        let sample_softness = max(blur_px * 0.5, 0.5);
+
+        for (var y = 0u; y < 5u; y++) {
+            for (var x = 0u; x < 5u; x++) {
+                let sample_weight = select(
+                    sample_weights[x] * sample_weights[y],
+                    small_blur_weights[x] * small_blur_weights[y],
+                    blur <= 2.0,
+                );
+                if (sample_weight == 0.0) {
+                    continue;
+                }
+                let sample_offset = vec2f(sample_positions[x], sample_positions[y]) * blur_px * uv_width;
+                coverage += glyphCoverageAtUv(
+                    glyph,
+                    run,
+                    input.uv + sample_offset,
+                    uv_width,
+                    sample_softness,
+                ) * sample_weight;
+            }
+        }
+    }
+
+    let alpha = coverage *
+        run.text_shadow_color.a *
+        run.font_data.y;
+
+    return vec4f(run.text_shadow_color.rgb, alpha);
+}
+
 @fragment
 fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
     let local_position_width = fwidth(input.local_position);
@@ -436,6 +537,10 @@ fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
 
     if (u32(input.kind) == COMMAND_KIND_PANEL) {
         return panelColor(input, local_position_width);
+    }
+
+    if (u32(input.kind) == COMMAND_KIND_TEXT_SHADOW) {
+        return textShadowColor(input, uv_width);
     }
 
     return glyphColor(input, uv_width);

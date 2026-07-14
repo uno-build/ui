@@ -20,6 +20,7 @@ import {
     validateColor,
     validateAuto,
     validateBoxShadow,
+    validateTextShadow,
     validateUnset,
     validateInteger,
     validateNumber,
@@ -32,6 +33,7 @@ import {
 import {
     parseString,
     parseBoxShadow,
+    parseTextShadow,
     parseColor,
     parseAuto,
     parseUnset,
@@ -71,6 +73,14 @@ export const BOX_SHADOW_DEFINITION = [
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateBoxShadow],
         parse: [parseBoxShadow],
+    },
+]
+
+export const TEXT_SHADOW_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateTextShadow],
+        parse: [parseTextShadow],
     },
 ]
 

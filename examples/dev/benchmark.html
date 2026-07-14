@@ -59,18 +59,22 @@
                 {
                     name: 'unset',
                     box_shadow: 'unset',
+                    text_shadow: 'unset',
                 },
                 {
                     name: 'small',
                     box_shadow: '0px 2px 6px 0px #00000040',
+                    text_shadow: '0px 2px 6px #00000040',
                 },
                 {
                     name: 'large',
                     box_shadow: '0px 8px 22px 0px #00000040',
+                    text_shadow: '0px 8px 22px #00000040',
                 },
                 {
                     name: 'mixed',
                     box_shadow: null,
+                    text_shadow: null,
                 },
             ]
 
@@ -106,15 +110,7 @@
                 }
             }
 
-            async function runScene({
-                root,
-                scene,
-                nodes,
-                frames,
-                warmup,
-                font_image,
-                font_json,
-            }) {
+            async function runScene({ root, scene, nodes, frames, warmup, font_image, font_json }) {
                 root.textContent = ''
 
                 const canvas = document.createElement('canvas')
@@ -190,8 +186,10 @@
                     node.text(`Text ${i}`)
 
                     const box_shadow = readBoxShadow(scene, i)
+                    const text_shadow = readTextShadow(scene, i)
 
                     node.style('boxShadow', box_shadow)
+                    node.style('textShadow', text_shadow)
 
                     ui.root.add(node)
                 }
@@ -206,9 +204,19 @@
                     return 'unset'
                 }
 
-                return index % 3 === 1
-                    ? '0px 2px 6px 0px #00000040'
-                    : '0px 8px 22px 0px #00000040'
+                return index % 3 === 1 ? '0px 2px 6px 0px #00000040' : '0px 8px 22px 0px #00000040'
+            }
+
+            function readTextShadow(scene, index) {
+                if (scene.text_shadow != null) {
+                    return scene.text_shadow
+                }
+
+                if (index % 3 === 0) {
+                    return 'unset'
+                }
+
+                return index % 3 === 1 ? '0px 2px 6px #00000040' : '0px 8px 22px #00000040'
             }
 
             function syncCanvasSize({ root, canvas }) {
@@ -234,10 +242,7 @@
 
             function percentile(values, ratio) {
                 const sorted_values = [...values].sort((a, b) => a - b)
-                const index = Math.min(
-                    sorted_values.length - 1,
-                    Math.floor(sorted_values.length * ratio),
-                )
+                const index = Math.min(sorted_values.length - 1, Math.floor(sorted_values.length * ratio))
 
                 return sorted_values[index]
             }

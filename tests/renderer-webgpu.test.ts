@@ -6,6 +6,7 @@ import {
     COMMAND,
     COMMAND_KIND_GLYPH,
     COMMAND_KIND_PANEL,
+    COMMAND_KIND_TEXT_SHADOW,
     COMMAND_SIZE,
     FLOAT32_SIZE,
     GLYPH_DATA,
@@ -736,6 +737,8 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
             color: [0, 0, 0, 255],
             font_data: [2, 1, 6, FONT_ATLAS_SIZE],
             clipping: [0, 0, 0, 0],
+            text_shadow: [0, 0, 0, 0],
+            text_shadow_color: [0, 0, 0, 0],
         },
     ])
 })
@@ -974,6 +977,31 @@ test('RendererWebGPU measures text from glyph metrics', () => {
     })
 
     expect(renderer.getTextMeasure(node)).toEqual({ width: 31, height: 30 })
+})
+
+test('RendererWebGPU writes the device pixel ratio into the viewport uniform', () => {
+    const writes = []
+    const renderer = new RendererWebGPU({ canvas: { clientWidth: 320, clientHeight: 180 } })
+    const empty_buffer_data = { bytes: new Uint8Array(), bytes_offset: 0 }
+    ;(renderer as any).device = {
+        queue: {
+            writeBuffer(buffer, offset, data) {
+                writes.push({ buffer, offset, data })
+            },
+        },
+    }
+    ;(renderer as any).viewport_buffer = { id: 'viewport' }
+    renderer.setDevicePixelRatio(2)
+
+    ;(renderer as any).updateBuffers(
+        { ...empty_buffer_data, count: 0 },
+        empty_buffer_data,
+        empty_buffer_data,
+        empty_buffer_data,
+    )
+
+    expect(writes).toHaveLength(1)
+    expect(Array.from(writes[0].data)).toEqual([320, 180, 2, 0])
 })
 
 test('RendererWebGPU snaps natural font metrics to device pixels', () => {
@@ -1452,6 +1480,14 @@ test('RendererWebGPU writes glyph instance data into a glyph buffer', () => {
         ),
     ).toEqual([expect.closeTo(0.1), expect.closeTo(0.2), expect.closeTo(0.3), expect.closeTo(0.4)])
     expect(u32[GLYPH_DATA.RUN_DATA.OFFSET / UINT32_SIZE]).toBe(0)
+    expect(
+        Array.from(
+            floats.slice(
+                GLYPH_DATA.RUN_DATA.OFFSET / FLOAT32_SIZE + 1,
+                GLYPH_DATA.RUN_DATA.OFFSET / FLOAT32_SIZE + 4,
+            ),
+        ),
+    ).toEqual([0, 0, 0])
 })
 
 test('RendererWebGPU writes shared text run data once per text node', () => {
@@ -1478,6 +1514,89 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
     expect(
         Array.from(floats.slice(TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE, TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE + 4)),
     ).toEqual([0, 0, 0, 0])
+    expect(
+        Array.from(
+            floats.slice(TEXT_RUN.TEXT_SHADOW.OFFSET / FLOAT32_SIZE, TEXT_RUN.TEXT_SHADOW.OFFSET / FLOAT32_SIZE + 4),
+        ),
+    ).toEqual([0, 0, 0, 0])
+    expect(
+        Array.from(
+            floats.slice(
+                TEXT_RUN.TEXT_SHADOW_COLOR.OFFSET / FLOAT32_SIZE,
+                TEXT_RUN.TEXT_SHADOW_COLOR.OFFSET / FLOAT32_SIZE + 4,
+            ),
+        ),
+    ).toEqual([0, 0, 0, 0])
+})
+
+test('RendererWebGPU writes text shadow data into the shared text run', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const root = createNode()
+    const parent = createNode({
+        parent: root,
+        layout: { x: 2, y: 3, width: 5, height: 4 },
+        overflow: OVERFLOW.hidden,
+    })
+    const node = createNode({
+        parent,
+        opacity: 0.5,
+        text_content: 'A',
+        styles: {
+            textShadow: {
+                parsed: {
+                    text_shadow: {
+                        offset_x: -2,
+                        offset_y: 3,
+                        blur: 4,
+                        color: [17, 34, 51, 68],
+                    },
+                },
+            },
+        },
+    })
+
+    const render_data = collectRenderData(renderer, [node])
+    const glyph_buffer_data = (renderer as any).createGlyphDataBufferData(render_data.glyphs)
+    const text_run_buffer_data = (renderer as any).createTextRunBufferData()
+    const glyph_floats = new Float32Array(glyph_buffer_data.bytes.buffer)
+    const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
+
+    expect(
+        Array.from(
+            glyph_floats.slice(
+                GLYPH_DATA.RUN_DATA.OFFSET / FLOAT32_SIZE + 1,
+                GLYPH_DATA.RUN_DATA.OFFSET / FLOAT32_SIZE + 4,
+            ),
+        ),
+    ).toEqual([-2, 3, 4])
+
+    expect(
+        Array.from(
+            floats.slice(TEXT_RUN.TEXT_SHADOW.OFFSET / FLOAT32_SIZE, TEXT_RUN.TEXT_SHADOW.OFFSET / FLOAT32_SIZE + 4),
+        ),
+    ).toEqual([-2, 3, 4, 0])
+    expect(
+        Array.from(
+            floats.slice(
+                TEXT_RUN.TEXT_SHADOW_COLOR.OFFSET / FLOAT32_SIZE,
+                TEXT_RUN.TEXT_SHADOW_COLOR.OFFSET / FLOAT32_SIZE + 4,
+            ),
+        ),
+    ).toEqual([
+        expect.closeTo(17 / 255),
+        expect.closeTo(34 / 255),
+        expect.closeTo(51 / 255),
+        expect.closeTo(68 / 255),
+    ])
+    expect(floats[TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE + 1]).toBe(0.5)
+    expect(
+        Array.from(floats.slice(TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE, TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE + 4)),
+    ).toEqual([3, 7, 7, 2])
 })
 
 test('RendererWebGPU preserves panel then text order for a text node with background', () => {
@@ -1517,6 +1636,68 @@ test('RendererWebGPU creates consecutive glyph commands', () => {
     expect(render_data.commands.map((command) => command.kind)).toEqual([COMMAND_KIND_GLYPH, COMMAND_KIND_GLYPH])
     expect(render_data.commands.map((command) => command.glyph_index)).toEqual([0, 1])
     expect(render_data.glyphs).toHaveLength(2)
+})
+
+test('RendererWebGPU draws every text shadow before the node glyphs', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'AB',
+        styles: {
+            textShadow: {
+                parsed: {
+                    text_shadow: {
+                        offset_x: 0,
+                        offset_y: 0,
+                        blur: 0,
+                        color: [0, 0, 0, 255],
+                    },
+                },
+            },
+        },
+    })
+    const render_data = collectRenderData(renderer, [node])
+
+    expect(render_data.commands.map((command) => command.kind)).toEqual([
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_TEXT_SHADOW,
+        COMMAND_KIND_TEXT_SHADOW,
+        COMMAND_KIND_GLYPH,
+        COMMAND_KIND_GLYPH,
+    ])
+    expect(render_data.commands.map((command) => command.glyph_index)).toEqual([0, 0, 1, 0, 1])
+    expect(render_data.glyphs).toHaveLength(2)
+})
+
+test('RendererWebGPU skips transparent text shadow commands', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A',
+        styles: {
+            textShadow: {
+                parsed: {
+                    text_shadow: {
+                        offset_x: 2,
+                        offset_y: 3,
+                        blur: 4,
+                        color: [0, 0, 0, 0],
+                    },
+                },
+            },
+        },
+    })
+    const render_data = collectRenderData(renderer, [node])
+
+    expect(render_data.commands.map((command) => command.kind)).toEqual([COMMAND_KIND_PANEL, COMMAND_KIND_GLYPH])
 })
 
 test('RendererWebGPU writes glyph commands into command buffer data', () => {
