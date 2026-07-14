@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Atlas Allocator using Skyline and MaxRect when there is a new space available</title>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                min-height: 100vh;
+                display: grid;
+                place-items: center;
+                font-family: system-ui, sans-serif;
+                background: #f4f4f0;
+                color: #1d2525;
+            }
+
+            main {
+                display: grid;
+                gap: 12px;
+                justify-items: start;
+            }
+
+            .toolbar {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            button {
+                border: 1px solid #1d2525;
+                border-radius: 6px;
+                padding: 8px 14px;
+                font: inherit;
+                background: #ffffff;
+                cursor: pointer;
+            }
+
+            button:hover {
+                background: #e9f1ef;
+            }
+
+            #status {
+                font-size: 14px;
+            }
+
+            #atlas {
+                position: relative;
+                width: 1024px;
+                height: 1024px;
+                border: 1px solid #1d2525;
+                background:
+                    linear-gradient(#d8ddda 1px, transparent 1px), linear-gradient(90deg, #d8ddda 1px, transparent 1px),
+                    #ffffff;
+                background-size: 64px 64px;
+                overflow: hidden;
+            }
+
+            .rect {
+                position: absolute;
+                border: 1px solid rgba(0, 0, 0, 0.45);
+                display: grid;
+                place-items: center;
+                font-size: 12px;
+                color: rgba(0, 0, 0, 0.7);
+                cursor: pointer;
+                user-select: none;
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <div class="toolbar">
+                <button id="add">Add</button>
+                <button data-size-range="8,128">8-128px</button>
+                <button data-size-range="48,128">48-128px</button>
+                <button data-size-range="128,256">128-256px</button>
+                <button data-size-range="256,512">256-512px</button>
+                <button id="fill">Fill</button>
+                <button id="reset">Reset</button>
+                <span id="status">0 rectángulos; 0% ocupado</span>
+            </div>
+            <div id="atlas" aria-label="Atlas 1024 por 1024"></div>
+        </main>
+
+        <script type="module">
+            import {
+                allocateFreeRect,
+                allocateSkylineRect,
+                createSkyline,
+                releaseAtlasRect,
+            } from '../../src/renderer/utils/AtlasAllocator.ts'
+
+            const ATLAS_SIZE = 1024
+            const MIN_RECT_SIZE = 32
+            const MAX_RECT_SIZE = 180
+
+            const atlas = document.querySelector('#atlas')
+            const add_button = document.querySelector('#add')
+            const fill_button = document.querySelector('#fill')
+            const reset_button = document.querySelector('#reset')
+            const size_range_buttons = document.querySelectorAll('[data-size-range]')
+            const status = document.querySelector('#status')
+
+            let skyline = createSkyline(ATLAS_SIZE)
+            let free_rects = []
+            let placed_rects = []
+            let rect_count = 0
+            let occupied_area = 0
+
+            function randomSize(min_size = MIN_RECT_SIZE, max_size = MAX_RECT_SIZE) {
+                return Math.floor(Math.random() * (max_size - min_size + 1)) + min_size
+            }
+
+            function randomColor() {
+                const hue = Math.floor(Math.random() * 360)
+                return `hsl(${hue} 70% 78%)`
+            }
+
+            function occupiedLabel() {
+                const occupied_percent = Math.round((occupied_area / (ATLAS_SIZE * ATLAS_SIZE)) * 100)
+
+                return `${occupied_percent}% ocupado`
+            }
+
+            function updateStatus(prefix = `${rect_count} rectángulos`) {
+                status.textContent = `${prefix}; ${occupiedLabel()}`
+            }
+
+            function resetAllocator() {
+                skyline = createSkyline(ATLAS_SIZE)
+                free_rects = []
+                placed_rects = []
+                rect_count = 0
+                occupied_area = 0
+                atlas.replaceChildren()
+                add_button.disabled = false
+                fill_button.disabled = false
+                updateStatus()
+            }
+
+            function allocate(width, height) {
+                const free_rect_allocation = allocateFreeRect(free_rects, width, height)
+
+                if (free_rect_allocation !== null) {
+                    free_rects = free_rect_allocation.free_rects
+                    return free_rect_allocation.rect
+                }
+
+                const skyline_allocation = allocateSkylineRect(skyline, width, height, ATLAS_SIZE)
+
+                if (skyline_allocation === null) {
+                    return null
+                }
+
+                skyline = skyline_allocation.skyline
+                return skyline_allocation.rect
+            }
+
+            function release(placement) {
+                free_rects = releaseAtlasRect(free_rects, placement)
+            }
+
+            function removeRectangle(rect_data) {
+                const index = placed_rects.indexOf(rect_data)
+
+                if (index === -1) {
+                    return
+                }
+
+                placed_rects.splice(index, 1)
+                rect_data.element.remove()
+                release(rect_data.placement)
+                rect_count -= 1
+                occupied_area -= rect_data.placement.width * rect_data.placement.height
+                updateStatus()
+            }
+
+            function drawRectangle(rect_data, placement) {
+                const rect = document.createElement('div')
+                rect.className = 'rect'
+                rect.style.left = `${placement.x}px`
+                rect.style.top = `${placement.y}px`
+                rect.style.width = `${placement.width}px`
+                rect.style.height = `${placement.height}px`
+                rect.style.background = rect_data.color
+                rect.textContent = `${placement.width}x${placement.height}`
+                rect.addEventListener('click', () => removeRectangle(rect_data))
+
+                rect_data.element = rect
+                atlas.append(rect)
+            }
+
+            function placeRectangle(rect_data) {
+                const placement = allocate(rect_data.width, rect_data.height)
+
+                if (!placement) {
+                    updateStatus()
+                    return false
+                }
+
+                rect_count += 1
+                occupied_area += placement.width * placement.height
+                rect_data.placement = placement
+
+                drawRectangle(rect_data, placement)
+                updateStatus()
+
+                return true
+            }
+
+            function addRectangle(min_size = MIN_RECT_SIZE, max_size = MAX_RECT_SIZE) {
+                const rect_data = {
+                    width: randomSize(min_size, max_size),
+                    height: randomSize(min_size, max_size),
+                    color: randomColor(),
+                }
+
+                if (!placeRectangle(rect_data)) {
+                    return false
+                }
+
+                placed_rects.push(rect_data)
+
+                return true
+            }
+
+            function fillAtlas() {
+                const initial_count = rect_count
+
+                while (addRectangle()) {}
+
+                const added_count = rect_count - initial_count
+                const added_label = added_count === 1 ? '1 añadido' : `${added_count} añadidos`
+
+                updateStatus(added_label)
+            }
+
+            add_button.addEventListener('click', () => addRectangle())
+            reset_button.addEventListener('click', resetAllocator)
+            fill_button.addEventListener('click', fillAtlas)
+            for (const button of size_range_buttons) {
+                button.addEventListener('click', () => {
+                    const [min_size, max_size] = button.dataset.sizeRange.split(',').map(Number)
+
+                    addRectangle(min_size, max_size)
+                })
+            }
+        </script>
+    </body>
+</html>
