@@ -12,6 +12,7 @@ import {
     JUSTIFY,
     OVERFLOW,
     POSITION,
+    TEXT_ALIGN,
     WRAP,
 } from './consts'
 import { normalizeTrim, normalizeToLowercase } from './normalizers'
@@ -104,6 +105,14 @@ export const LINE_HEIGHT_DEFINITION = [
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateUnset],
         parse: [parseUnset],
+    },
+]
+
+export const TEXT_ALIGN_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [createEnumValidator(TEXT_ALIGN)],
+        parse: [createEnumParser(TEXT_ALIGN)],
     },
 ]
 

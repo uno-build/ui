@@ -16,6 +16,7 @@ import deepNestedPaint from './examples/deepNestedPaint'
 import fontLineHeight from './examples/fontLineHeight'
 import fontParagraph from './examples/fontParagraph'
 import fontSize from './examples/fontSize'
+import fontTextAlign from './examples/fontTextAlign'
 import nestedFlexDirections from './examples/nestedFlexDirections'
 import nestedMargins from './examples/nestedMargins'
 import nestedPercentDimensions from './examples/nestedPercentDimensions'
@@ -51,6 +52,7 @@ export const LAYOUTS = {
     deepNestedPaint,
     fontLineHeight,
     fontSize,
+    fontTextAlign,
     fontParagraph,
     nestedFlexDirections,
     nestedMargins,

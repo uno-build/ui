@@ -267,6 +267,17 @@ test('lineHeight', () => {
     expectInvalid('lineHeight', true, /style value must be a string/)
 })
 
+test('textAlign', () => {
+    expectEnum('textAlign', ' Left ', 'left', 0)
+    expectEnum('textAlign', 'RIGHT', 'right', 1)
+    expectEnum('textAlign', 'center', 'center', 2)
+    expectResolved(' text-align ', ' Justify ', 'justify', { enum: 3 }, 'textAlign')
+    for (const value of ['start', 'end', 'match-parent', 'justify-all', 'unset', 'unknown']) {
+        expectInvalid('textAlign', value, /expected one of left, right, center, justify/)
+    }
+    expectInvalid('textAlign', true, /style value must be a string/)
+})
+
 test('opacity', () => {
     const valid_cases = [
         ['0', '0', 0],

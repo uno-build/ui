@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { MEASURE_MODE } from '../src/layouter/yoga.ts'
-import { BACKGROUND_REPEAT, BACKGROUND_SIZE, EDGE, KEYWORD, OVERFLOW, UNIT } from '../src/style/consts.ts'
+import { BACKGROUND_REPEAT, BACKGROUND_SIZE, EDGE, KEYWORD, OVERFLOW, TEXT_ALIGN, UNIT } from '../src/style/consts.ts'
 import {
     COMMAND,
     COMMAND_KIND_GLYPH,
@@ -774,6 +774,178 @@ test('RendererWebGPU positions and wraps text inside the content box', () => {
         [16, 28, 8, 16],
         [16, 48, 8, 16],
     ])
+})
+
+test('RendererWebGPU aligns each text line inside the content box', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const createAlignedNode = (text_align) =>
+        createNode({
+            text_content: 'A\nAA',
+            layout: { x: 10, y: 20, width: 50, height: 40 },
+            computed_padding: {
+                [EDGE.left]: 4,
+                [EDGE.right]: 4,
+            },
+            styles: {
+                borderLeftStyle: { value: 'solid' },
+                borderRightStyle: { value: 'solid' },
+                borderLeftWidth: { parsed: { value: 2 } },
+                borderRightWidth: { parsed: { value: 2 } },
+                borderLeftColor: { parsed: { rgba: [0, 0, 0, 255] } },
+                borderRightColor: { parsed: { rgba: [0, 0, 0, 255] } },
+                textAlign: { parsed: { enum: text_align } },
+            },
+        })
+
+    const left_glyphs = collectRenderData(renderer, [createAlignedNode(TEXT_ALIGN.left)]).glyphs
+    const center_glyphs = collectRenderData(renderer, [createAlignedNode(TEXT_ALIGN.center)]).glyphs
+    const right_glyphs = collectRenderData(renderer, [createAlignedNode(TEXT_ALIGN.right)]).glyphs
+
+    expect(left_glyphs.map(({ layout }) => layout[0])).toEqual([16, 16, expect.closeTo(25.6)])
+    expect(center_glyphs.map(({ layout }) => layout[0])).toEqual([
+        expect.closeTo(30.2),
+        expect.closeTo(25.4),
+        expect.closeTo(35),
+    ])
+    expect(right_glyphs.map(({ layout }) => layout[0])).toEqual([
+        expect.closeTo(44.4),
+        expect.closeTo(34.8),
+        expect.closeTo(44.4),
+    ])
+})
+
+test('RendererWebGPU excludes wrapped trailing spaces from right alignment', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A A A',
+        layout: { x: 10, y: 20, width: 30, height: 40 },
+        styles: {
+            textAlign: { parsed: { enum: TEXT_ALIGN.right } },
+        },
+    })
+
+    const glyphs = collectRenderData(renderer, [node]).glyphs
+
+    expect(glyphs.map(({ layout }) => layout[0])).toEqual([
+        expect.closeTo(16.8),
+        expect.closeTo(30.4),
+        expect.closeTo(30.4),
+    ])
+})
+
+test('RendererWebGPU justifies wrapped lines and leaves the final line ragged', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A A A',
+        layout: { x: 10, y: 20, width: 30, height: 40 },
+        styles: {
+            textAlign: { parsed: { enum: TEXT_ALIGN.justify } },
+        },
+    })
+
+    const glyphs = collectRenderData(renderer, [node]).glyphs
+
+    expect(glyphs.map(({ layout }) => layout[0])).toEqual([10, expect.closeTo(30.4), 10])
+})
+
+test('RendererWebGPU does not justify explicit paragraph ends or wrapped lines without spaces', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const explicit_break = createNode({
+        text_content: 'A A\nA',
+        layout: { x: 10, y: 20, width: 100, height: 40 },
+        styles: {
+            textAlign: { parsed: { enum: TEXT_ALIGN.justify } },
+        },
+    })
+    const no_spaces = createNode({
+        text_content: 'AAAA',
+        layout: { x: 10, y: 20, width: 20, height: 40 },
+        styles: {
+            textAlign: { parsed: { enum: TEXT_ALIGN.justify } },
+        },
+    })
+
+    const explicit_break_glyphs = collectRenderData(renderer, [explicit_break]).glyphs
+    const no_space_glyphs = collectRenderData(renderer, [no_spaces]).glyphs
+
+    expect(explicit_break_glyphs.map(({ layout }) => layout[0])).toEqual([10, expect.closeTo(23.6), 10])
+    expect(no_space_glyphs.map(({ layout }) => layout[0])).toEqual([
+        10,
+        expect.closeTo(19.6),
+        10,
+        expect.closeTo(19.6),
+    ])
+})
+
+test('RendererWebGPU excludes exterior spaces and tabs from justification', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const exterior_spaces = createNode({
+        text_content: ' A A A',
+        layout: { x: 10, y: 20, width: 34, height: 40 },
+        styles: {
+            textAlign: { parsed: { enum: TEXT_ALIGN.justify } },
+        },
+    })
+    const tab = createNode({
+        text_content: 'A\tA A',
+        layout: { x: 10, y: 20, width: 50, height: 40 },
+        styles: {
+            textAlign: { parsed: { enum: TEXT_ALIGN.justify } },
+        },
+    })
+
+    const exterior_space_glyphs = collectRenderData(renderer, [exterior_spaces]).glyphs
+    const tab_glyphs = collectRenderData(renderer, [tab]).glyphs
+
+    expect(exterior_space_glyphs.map(({ layout }) => layout[0])).toEqual([
+        14,
+        expect.closeTo(34.4),
+        10,
+    ])
+    expect(tab_glyphs.map(({ layout }) => layout[0])).toEqual([10, 42, 10])
+})
+
+test('RendererWebGPU text alignment does not change text measurement', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const natural_node = createNode({ text_content: 'A A A' })
+    const aligned_node = createNode({
+        text_content: 'A A A',
+        styles: {
+            textAlign: { parsed: { enum: TEXT_ALIGN.justify } },
+        },
+    })
+
+    expect(renderer.getTextMeasure(aligned_node, 30)).toEqual(renderer.getTextMeasure(natural_node, 30))
 })
 
 test('RendererWebGPU measures text from glyph metrics', () => {

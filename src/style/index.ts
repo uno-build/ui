@@ -18,6 +18,7 @@ import {
     FONT_FAMILY_DEFINITION,
     FONT_SIZE_DEFINITION,
     LINE_HEIGHT_DEFINITION,
+    TEXT_ALIGN_DEFINITION,
     JUSTIFY_CONTENT_DEFINITION,
     MARGIN_DEFINITION,
     MIN_MAX_SIZE_DEFINITION,
@@ -231,6 +232,9 @@ export const STYLE = {
     ]),
     LINEHEIGHT: createStyle('lineHeight', (name, value) => [
         { name, value, definition: LINE_HEIGHT_DEFINITION },
+    ]),
+    TEXTALIGN: createStyle('textAlign', (name, value) => [
+        { name, value, definition: TEXT_ALIGN_DEFINITION },
     ]),
 
     // YOGA PROPERTIES

@@ -106,3 +106,9 @@ export const BACKGROUND_REPEAT = {
     'repeat-x': 2,
     'repeat-y': 3,
 }
+export const TEXT_ALIGN = {
+    left: 0,
+    right: 1,
+    center: 2,
+    justify: 3,
+}

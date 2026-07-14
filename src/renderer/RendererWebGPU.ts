@@ -1,5 +1,5 @@
 import Renderer from '../Renderer'
-import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, EDGE, KEYWORD, UNIT } from '../style/consts'
+import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, EDGE, KEYWORD, TEXT_ALIGN, UNIT } from '../style/consts'
 import createEngine, { YOGA_SETTER, MEASURE_MODE } from '../layouter/yoga'
 import { getAncestorClipping, getNodeBorderWidth, getNodeDrawingData, getNodeOpacity } from './utils/node'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
@@ -521,44 +521,61 @@ export default class RendererWebGPU extends Renderer {
         const natural_metrics = this.getTextNaturalMetrics(font, font_size)
         const line_height = this.getTextLineHeight(node, natural_metrics.line_height, font_size)
         const leading = line_height - natural_metrics.ascender - natural_metrics.descender
-        const text_layout = layoutWithLines(this.getPreparedText(node, font, font_size), content_width, line_height)
+        const prepared_text = this.getPreparedText(node, font, font_size)
+        const text_layout = layoutWithLines(prepared_text, content_width, line_height)
+        const text_align = node.styles.textAlign?.parsed.enum ?? TEXT_ALIGN.left
+        const space_advance = this.measureGlyphAdvances(font, font_size, ' ')
         const glyphs = []
 
         for (let line_index = 0; line_index < text_layout.lines.length; line_index++) {
             const line = text_layout.lines[line_index]!
             const baseline =
                 content_y + leading / 2 + natural_metrics.ascender + line_index * line_height
-            let cursor_x = content_x
+            const line_width = getTextAlignmentWidth(line, space_advance)
+            const line_x = content_x + getTextAlignOffset(text_align, content_width, line_width)
+            const justify_data = getJustifyData(text_align, prepared_text, line, content_width, line_width)
+            let cursor_x = line_x
+            let character_offset = 0
 
             for (const character of line.text) {
                 if (character === '\t') {
                     cursor_x += getTabAdvance(
-                        cursor_x - content_x,
-                        this.measureGlyphAdvances(font, font_size, ' ') * 8,
+                        cursor_x - line_x,
+                        space_advance * 8,
                     )
+                    character_offset += character.length
                     continue
                 }
 
                 const glyph = font.glyphs_by_unicode.get(character.codePointAt(0))
-                if (glyph === undefined) {
-                    continue
+                if (glyph !== undefined) {
+                    if (glyph.plane_bounds !== undefined && glyph.uv_rect !== undefined) {
+                        const [left, bottom, right, top] = glyph.plane_bounds
+                        glyphs.push({
+                            layout: [
+                                cursor_x + left * font_size,
+                                baseline - top * font_size,
+                                (right - left) * font_size,
+                                (top - bottom) * font_size,
+                            ],
+                            uv_rect: glyph.uv_rect,
+                            run_index,
+                        })
+                    }
+
+                    cursor_x += glyph.advance * font_size
                 }
 
-                if (glyph.plane_bounds !== undefined && glyph.uv_rect !== undefined) {
-                    const [left, bottom, right, top] = glyph.plane_bounds
-                    glyphs.push({
-                        layout: [
-                            cursor_x + left * font_size,
-                            baseline - top * font_size,
-                            (right - left) * font_size,
-                            (top - bottom) * font_size,
-                        ],
-                        uv_rect: glyph.uv_rect,
-                        run_index,
-                    })
+                if (
+                    character === ' ' &&
+                    justify_data !== null &&
+                    character_offset >= justify_data.start &&
+                    character_offset < justify_data.end
+                ) {
+                    cursor_x += justify_data.advance
                 }
 
-                cursor_x += glyph.advance * font_size
+                character_offset += character.length
             }
         }
 
@@ -948,6 +965,65 @@ function getTabAdvance(line_width, tab_stop_advance) {
 
     const remainder = line_width % tab_stop_advance
     return Math.abs(remainder) <= 1e-6 ? tab_stop_advance : tab_stop_advance - remainder
+}
+
+function getTextAlignOffset(text_align, content_width, line_width) {
+    if (text_align === TEXT_ALIGN.right) {
+        return content_width - line_width
+    }
+
+    if (text_align === TEXT_ALIGN.center) {
+        return (content_width - line_width) / 2
+    }
+
+    return 0
+}
+
+function getTextAlignmentWidth(line, space_advance) {
+    let end = line.text.length
+    while (end > 0 && line.text[end - 1] === ' ') {
+        end--
+    }
+
+    return line.width - (line.text.length - end) * space_advance
+}
+
+function getJustifyData(text_align, prepared_text, line, content_width, line_width) {
+    if (text_align !== TEXT_ALIGN.justify || isParagraphEnd(prepared_text, line)) {
+        return null
+    }
+
+    const start = line.text.length - line.text.trimStart().length
+    let end = line.text.length
+    while (end > start && line.text[end - 1] === ' ') {
+        end--
+    }
+    let space_count = 0
+
+    for (let index = start; index < end; index++) {
+        if (line.text[index] === ' ') {
+            space_count++
+        }
+    }
+
+    const remaining_width = content_width - line_width
+    if (space_count === 0 || remaining_width <= 0) {
+        return null
+    }
+
+    return {
+        start,
+        end,
+        advance: remaining_width / space_count,
+    }
+}
+
+function isParagraphEnd(prepared_text, line) {
+    if (line.end.segmentIndex >= prepared_text.segments.length) {
+        return true
+    }
+
+    return line.end.graphemeIndex === 0 && prepared_text.kinds[line.end.segmentIndex - 1] === 'hard-break'
 }
 
 function getBackgroundImageRect(node, image_size) {
