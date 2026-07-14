@@ -1,11 +1,42 @@
+const TEXT_SHADOW_GAUSSIAN_SIGMA = 0.353553
+
 export function createUIWGSL(text_shadow_max_samples_per_axis) {
-    return uiWGSL.replace('TEXT_SHADOW_SAMPLE_WEIGHTS_SIZE', `${text_shadow_max_samples_per_axis}`)
+    const sample_weights = createTextShadowSampleWeights(text_shadow_max_samples_per_axis)
+
+    return uiWGSL
+        .replace('TEXT_SHADOW_SAMPLE_WEIGHTS_SIZE', `${sample_weights.length}`)
+        .replace('TEXT_SHADOW_SAMPLE_WEIGHTS_VALUES', sample_weights.map((weight) => weight.toPrecision(9)).join(','))
+}
+
+function createTextShadowSampleWeights(max_samples_per_axis) {
+    const sample_weights = []
+
+    for (let sample_count = 2; sample_count <= max_samples_per_axis; sample_count++) {
+        const weights = []
+        let weight_sum = 0
+
+        for (let sample = 0; sample < sample_count; sample++) {
+            const sample_position = -1 + (sample * 2) / (sample_count - 1)
+            const gaussian_position = sample_position / TEXT_SHADOW_GAUSSIAN_SIGMA
+            const weight = Math.exp(-0.5 * gaussian_position * gaussian_position)
+
+            weights.push(weight)
+            weight_sum += weight
+        }
+
+        sample_weights.push(...weights.map((weight) => weight / weight_sum))
+    }
+
+    return sample_weights.length === 0 ? [1] : sample_weights
 }
 
 const uiWGSL = /* wgsl */ `
 const COMMAND_KIND_PANEL = 0u;
 const COMMAND_KIND_TEXT_SHADOW = 2u;
 override TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9u;
+const TEXT_SHADOW_SAMPLE_WEIGHTS = array<f32, TEXT_SHADOW_SAMPLE_WEIGHTS_SIZE>(
+    TEXT_SHADOW_SAMPLE_WEIGHTS_VALUES
+);
 
 struct Viewport {
     size: vec2f,
@@ -508,24 +539,14 @@ fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
         } else {
             let sample_step = 2.0 / f32(samples_per_axis - 1u);
             let sample_softness = max(blur_px / f32(samples_per_axis - 1u), 0.5);
-            let gaussian_sigma = 0.353553;
-            var sample_weights: array<f32, TEXT_SHADOW_SAMPLE_WEIGHTS_SIZE>;
-            var sample_weight_sum = 0.0;
-
-            for (var sample = 0u; sample < samples_per_axis; sample++) {
-                let sample_position = -1.0 + f32(sample) * sample_step;
-                let gaussian_position = sample_position / gaussian_sigma;
-                let sample_weight = exp(-0.5 * gaussian_position * gaussian_position);
-                sample_weights[sample] = sample_weight;
-                sample_weight_sum += sample_weight;
-            }
+            let sample_weights_offset = samples_per_axis * (samples_per_axis - 1u) / 2u - 1u;
 
             for (var y = 0u; y < samples_per_axis; y++) {
                 for (var x = 0u; x < samples_per_axis; x++) {
                     let sample_position = vec2f(f32(x), f32(y)) * sample_step - vec2f(1.0);
                     let sample_offset = sample_position * blur_px * uv_width;
-                    let sample_weight = sample_weights[x] * sample_weights[y] /
-                        (sample_weight_sum * sample_weight_sum);
+                    let sample_weight = TEXT_SHADOW_SAMPLE_WEIGHTS[sample_weights_offset + x] *
+                        TEXT_SHADOW_SAMPLE_WEIGHTS[sample_weights_offset + y];
                     coverage += glyphCoverageAtUv(
                         glyph,
                         run,

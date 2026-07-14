@@ -1029,7 +1029,15 @@ test('RendererWebGPU passes the text shadow sample limit to the fragment pipelin
 
         ;(renderer as any).createPipeline()
 
-        expect(shader_descriptor.code).toContain(`array<f32, ${expected_samples}>`)
+        const expected_weight_count = expected_samples === 1 ? 1 : (expected_samples * (expected_samples + 1)) / 2 - 1
+
+        expect(shader_descriptor.code).toContain(
+            `const TEXT_SHADOW_SAMPLE_WEIGHTS = array<f32, ${expected_weight_count}>`,
+        )
+        expect(shader_descriptor.code).not.toContain('TEXT_SHADOW_SAMPLE_WEIGHTS_VALUES')
+        expect(shader_descriptor.code).not.toContain('exp(')
+        expect(shader_descriptor.code).not.toContain('sample_weight_sum')
+        expect(shader_descriptor.code).not.toContain('var sample_weights')
         expect(pipeline_descriptor.fragment.constants.TEXT_SHADOW_MAX_SAMPLES_PER_AXIS).toBe(expected_samples)
     }
 })
