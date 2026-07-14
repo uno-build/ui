@@ -1,6 +1,11 @@
-export const uiWGSL = /* wgsl */ `
+export function createUIWGSL(text_shadow_max_samples_per_axis) {
+    return uiWGSL.replace('TEXT_SHADOW_SAMPLE_WEIGHTS_SIZE', `${text_shadow_max_samples_per_axis}`)
+}
+
+const uiWGSL = /* wgsl */ `
 const COMMAND_KIND_PANEL = 0u;
 const COMMAND_KIND_TEXT_SHADOW = 2u;
+override TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9u;
 
 struct Viewport {
     size: vec2f,
@@ -496,43 +501,39 @@ fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
         coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.5);
     } else {
         let blur_px = blur * viewport.device_pixel_ratio;
-        let sample_positions = array<f32, 9>(-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0);
-        let sample_weights = array<f32, 9>(
-            0.00390625,
-            0.03125,
-            0.109375,
-            0.21875,
-            0.2734375,
-            0.21875,
-            0.109375,
-            0.03125,
-            0.00390625,
-        );
-        let small_blur_weights = array<f32, 9>(0.25, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.25);
-        let sample_softness = select(
-            max(blur_px / 8.0, 0.5),
-            max(blur_px * 0.5, 0.5),
-            blur <= 2.0,
-        );
+        let required_samples_per_axis = u32(ceil(blur_px)) + 1u;
+        let samples_per_axis = min(required_samples_per_axis, TEXT_SHADOW_MAX_SAMPLES_PER_AXIS);
+        if (samples_per_axis == 1u) {
+            coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.5);
+        } else {
+            let sample_step = 2.0 / f32(samples_per_axis - 1u);
+            let sample_softness = max(blur_px / f32(samples_per_axis - 1u), 0.5);
+            let gaussian_sigma = 0.353553;
+            var sample_weights: array<f32, TEXT_SHADOW_SAMPLE_WEIGHTS_SIZE>;
+            var sample_weight_sum = 0.0;
 
-        for (var y = 0u; y < 9u; y++) {
-            for (var x = 0u; x < 9u; x++) {
-                let sample_weight = select(
-                    sample_weights[x] * sample_weights[y],
-                    small_blur_weights[x] * small_blur_weights[y],
-                    blur <= 2.0,
-                );
-                if (sample_weight == 0.0) {
-                    continue;
+            for (var sample = 0u; sample < samples_per_axis; sample++) {
+                let sample_position = -1.0 + f32(sample) * sample_step;
+                let gaussian_position = sample_position / gaussian_sigma;
+                let sample_weight = exp(-0.5 * gaussian_position * gaussian_position);
+                sample_weights[sample] = sample_weight;
+                sample_weight_sum += sample_weight;
+            }
+
+            for (var y = 0u; y < samples_per_axis; y++) {
+                for (var x = 0u; x < samples_per_axis; x++) {
+                    let sample_position = vec2f(f32(x), f32(y)) * sample_step - vec2f(1.0);
+                    let sample_offset = sample_position * blur_px * uv_width;
+                    let sample_weight = sample_weights[x] * sample_weights[y] /
+                        (sample_weight_sum * sample_weight_sum);
+                    coverage += glyphCoverageAtUv(
+                        glyph,
+                        run,
+                        input.uv + sample_offset,
+                        uv_width,
+                        sample_softness,
+                    ) * sample_weight;
                 }
-                let sample_offset = vec2f(sample_positions[x], sample_positions[y]) * blur_px * uv_width;
-                coverage += glyphCoverageAtUv(
-                    glyph,
-                    run,
-                    input.uv + sample_offset,
-                    uv_width,
-                    sample_softness,
-                ) * sample_weight;
             }
         }
     }

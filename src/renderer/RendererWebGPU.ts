@@ -3,7 +3,7 @@ import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, EDGE, KEYWORD, TEXT_ALIGN,
 import createEngine, { YOGA_SETTER, MEASURE_MODE } from '../layouter/yoga'
 import { getAncestorClipping, getNodeBorderWidth, getNodeDrawingData, getNodeOpacity } from './utils/node'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
-import { uiWGSL } from './webgpu/shaders'
+import { createUIWGSL } from './webgpu/shaders'
 import { ImageManager } from './webgpu/ImageManager'
 import { FontManager } from './webgpu/FontManager'
 import {
@@ -30,6 +30,7 @@ const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 1024
 const FONT_SIZE = 16
 const FONT_COLOR = [0, 0, 0, 255]
+const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9
 
 export default class RendererWebGPU extends Renderer {
     private canvas
@@ -37,6 +38,7 @@ export default class RendererWebGPU extends Renderer {
     private font_atlas_size
     private image_min_filter
     private image_mag_filter
+    private text_shadow_max_samples_per_axis
     private device_pixel_ratio = 1
     // props
     private engine
@@ -86,6 +88,7 @@ export default class RendererWebGPU extends Renderer {
         font_atlas_size = FONT_ATLAS_SIZE,
         image_min_filter = 'linear',
         image_mag_filter = 'linear',
+        text_shadow_max_samples_per_axis = TEXT_SHADOW_MAX_SAMPLES_PER_AXIS,
     }) {
         super()
         this.canvas = canvas
@@ -93,6 +96,7 @@ export default class RendererWebGPU extends Renderer {
         this.font_atlas_size = font_atlas_size
         this.image_min_filter = image_min_filter
         this.image_mag_filter = image_mag_filter
+        this.text_shadow_max_samples_per_axis = text_shadow_max_samples_per_axis
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
@@ -163,7 +167,7 @@ export default class RendererWebGPU extends Renderer {
 
     private createPipeline() {
         const shader_module = this.device.createShaderModule({
-            code: uiWGSL,
+            code: createUIWGSL(this.text_shadow_max_samples_per_axis),
         })
 
         return this.device.createRenderPipeline({
@@ -198,6 +202,9 @@ export default class RendererWebGPU extends Renderer {
             fragment: {
                 module: shader_module,
                 entryPoint: 'fragmentMain',
+                constants: {
+                    TEXT_SHADOW_MAX_SAMPLES_PER_AXIS: this.text_shadow_max_samples_per_axis,
+                },
                 targets: [
                     {
                         format: this.format,
@@ -542,17 +549,12 @@ export default class RendererWebGPU extends Renderer {
         const text_align = node.styles.textAlign?.parsed.enum ?? TEXT_ALIGN.left
         const space_advance = this.measureGlyphAdvances(font, font_size, ' ')
         const text_shadow = node.styles.textShadow?.parsed.text_shadow
-        const text_shadow_data = [
-            text_shadow?.offset_x ?? 0,
-            text_shadow?.offset_y ?? 0,
-            text_shadow?.blur ?? 0,
-        ]
+        const text_shadow_data = [text_shadow?.offset_x ?? 0, text_shadow?.offset_y ?? 0, text_shadow?.blur ?? 0]
         const glyphs = []
 
         for (let line_index = 0; line_index < text_layout.lines.length; line_index++) {
             const line = text_layout.lines[line_index]!
-            const baseline =
-                content_y + leading / 2 + natural_metrics.ascender + line_index * line_height
+            const baseline = content_y + leading / 2 + natural_metrics.ascender + line_index * line_height
             const line_width = getTextAlignmentWidth(line, space_advance)
             const line_x = content_x + getTextAlignOffset(text_align, content_width, line_width)
             const justify_data = getJustifyData(text_align, prepared_text, line, content_width, line_width)
@@ -561,10 +563,7 @@ export default class RendererWebGPU extends Renderer {
 
             for (const character of line.text) {
                 if (character === '\t') {
-                    cursor_x += getTabAdvance(
-                        cursor_x - line_x,
-                        space_advance * 8,
-                    )
+                    cursor_x += getTabAdvance(cursor_x - line_x, space_advance * 8)
                     character_offset += character.length
                     continue
                 }
@@ -612,12 +611,7 @@ export default class RendererWebGPU extends Renderer {
                 color: FONT_COLOR,
                 font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.font_atlas_size],
                 clipping,
-                text_shadow: [
-                    text_shadow?.offset_x ?? 0,
-                    text_shadow?.offset_y ?? 0,
-                    text_shadow?.blur ?? 0,
-                    0,
-                ],
+                text_shadow: [text_shadow?.offset_x ?? 0, text_shadow?.offset_y ?? 0, text_shadow?.blur ?? 0, 0],
                 text_shadow_color: text_shadow?.color ?? [0, 0, 0, 0],
             },
         }
@@ -873,12 +867,7 @@ export default class RendererWebGPU extends Renderer {
         this.device.queue.writeBuffer(
             this.viewport_buffer,
             0,
-            new Float32Array([
-                this.canvas.clientWidth,
-                this.canvas.clientHeight,
-                this.device_pixel_ratio,
-                0,
-            ]),
+            new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, this.device_pixel_ratio, 0]),
         )
 
         const uploaded_bytes =

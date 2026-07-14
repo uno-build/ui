@@ -1004,6 +1004,36 @@ test('RendererWebGPU writes the device pixel ratio into the viewport uniform', (
     expect(Array.from(writes[0].data)).toEqual([320, 180, 2, 0])
 })
 
+test('RendererWebGPU passes the text shadow sample limit to the fragment pipeline unchanged', () => {
+    for (const [options, expected_samples] of [
+        [{}, 9],
+        [{ text_shadow_max_samples_per_axis: 1 }, 1],
+        [{ text_shadow_max_samples_per_axis: 8 }, 8],
+        [{ text_shadow_max_samples_per_axis: 13 }, 13],
+        [{ text_shadow_max_samples_per_axis: 17 }, 17],
+    ]) {
+        let shader_descriptor
+        let pipeline_descriptor
+        const renderer = new RendererWebGPU({ canvas: {}, ...options })
+        ;(renderer as any).device = {
+            createShaderModule(descriptor) {
+                shader_descriptor = descriptor
+                return { id: 'shader' }
+            },
+            createRenderPipeline(descriptor) {
+                pipeline_descriptor = descriptor
+                return { id: 'pipeline' }
+            },
+        }
+        ;(renderer as any).format = 'rgba8unorm'
+
+        ;(renderer as any).createPipeline()
+
+        expect(shader_descriptor.code).toContain(`array<f32, ${expected_samples}>`)
+        expect(pipeline_descriptor.fragment.constants.TEXT_SHADOW_MAX_SAMPLES_PER_AXIS).toBe(expected_samples)
+    }
+})
+
 test('RendererWebGPU snaps natural font metrics to device pixels', () => {
     const font = {
         ...createManagedFont(),

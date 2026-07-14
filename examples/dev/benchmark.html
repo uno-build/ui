@@ -51,6 +51,7 @@
             const DEFAULT_NODES = 400
             const DEFAULT_FRAMES = 60
             const DEFAULT_WARMUP = 10
+            const DEFAULT_TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9
             const CARD_WIDTH = 58
             const CARD_HEIGHT = 38
             const GAP = 18
@@ -82,6 +83,9 @@
                 const nodes = readNumber(params, 'nodes', DEFAULT_NODES)
                 const frames = readNumber(params, 'frames', DEFAULT_FRAMES)
                 const warmup = readNumber(params, 'warmup', DEFAULT_WARMUP)
+                const text_shadow_max_samples_per_axis = params.has('text_shadow_max_samples_per_axis')
+                    ? Number(params.get('text_shadow_max_samples_per_axis'))
+                    : DEFAULT_TEXT_SHADOW_MAX_SAMPLES_PER_AXIS
                 const [font_image, font_json] = await Promise.all([
                     loadImage('/assets/fonts/Poppins-Regular.mtsdf.png'),
                     loadJson('/assets/fonts/Poppins-Regular.mtsdf.json'),
@@ -96,6 +100,7 @@
                             nodes,
                             frames,
                             warmup,
+                            text_shadow_max_samples_per_axis,
                             font_image,
                             font_json,
                         }),
@@ -106,11 +111,21 @@
                     nodes,
                     frames,
                     warmup,
+                    text_shadow_max_samples_per_axis,
                     scenes,
                 }
             }
 
-            async function runScene({ root, scene, nodes, frames, warmup, font_image, font_json }) {
+            async function runScene({
+                root,
+                scene,
+                nodes,
+                frames,
+                warmup,
+                text_shadow_max_samples_per_axis,
+                font_image,
+                font_json,
+            }) {
                 root.textContent = ''
 
                 const canvas = document.createElement('canvas')
@@ -121,7 +136,7 @@
 
                 syncCanvasSize({ root, canvas })
 
-                const renderer = new RendererWebGPU({ canvas })
+                const renderer = new RendererWebGPU({ canvas, text_shadow_max_samples_per_axis })
                 const ui = new UI({ renderer })
                 await ui.init()
                 ui.fontRegister('Poppins-Regular', font_image, font_json)
@@ -274,7 +289,9 @@
                 })
 
             function formatResult(result) {
-                const lines = [`nodes=${result.nodes} frames=${result.frames} warmup=${result.warmup}`]
+                const lines = [
+                    `nodes=${result.nodes} frames=${result.frames} warmup=${result.warmup} text_shadow_max_samples_per_axis=${result.text_shadow_max_samples_per_axis}`,
+                ]
 
                 for (const scene of result.scenes) {
                     lines.push(
