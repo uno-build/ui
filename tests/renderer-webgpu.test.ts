@@ -1052,7 +1052,7 @@ test('RendererWebGPU passes the text shadow sample limit to the fragment pipelin
 
 test('RendererWebGPU passes the text stroke sample limit to the fragment pipeline unchanged', () => {
     for (const [options, expected_samples] of [
-        [{}, 81],
+        [{}, 289],
         [{ text_stroke_max_samples_per_glyph: 1 }, 1],
         [{ text_stroke_max_samples_per_glyph: 8 }, 8],
         [{ text_stroke_max_samples_per_glyph: 64 }, 64],
@@ -1080,9 +1080,16 @@ test('RendererWebGPU passes the text stroke sample limit to the fragment pipelin
         )
         expect(shader_descriptor.code).toContain('let stroke_width = bitcast<f32>(command.w);')
         expect(shader_descriptor.code).toContain(
-            'let sample_dilation = stroke_width / f32(ring_count) * 0.5;',
+            'let sample_dilation = radius / f32(ring_count) * 0.5;',
         )
-        expect(shader_descriptor.code).toContain('let stroke_coverage = max(expanded_coverage - fill_coverage, 0.0);')
+        expect(shader_descriptor.code).toContain('let shadow_padding = blur + stroke_width;')
+        expect(shader_descriptor.code).toContain('sample_dilation,\n                        0.5,')
+        expect(shader_descriptor.code).toContain('stroke_width + blur_px,\n            stroke_width,')
+        expect(shader_descriptor.code).toContain(
+            'sample_weight = 1.0 - smoothstep(fade_start, radius, length(sample_offset));',
+        )
+        expect(shader_descriptor.code).toContain('let fill_alpha = fill_coverage * run.color.a * opacity;')
+        expect(shader_descriptor.code).toContain('max(1.0 - fill_alpha, 0.000001);')
         expect(shader_descriptor.code).not.toContain('screen_distance + stroke_width')
         expect(pipeline_descriptor.fragment.constants.TEXT_STROKE_MAX_SAMPLES_PER_GLYPH).toBe(expected_samples)
     }
@@ -1834,6 +1841,53 @@ test('RendererWebGPU draws every text shadow before the node glyphs', () => {
     ])
     expect(render_data.commands.map((command) => command.glyph_index)).toEqual([0, 0, 1, 0, 1])
     expect(render_data.glyphs).toHaveLength(2)
+})
+
+test('RendererWebGPU expands text shadow commands by the visible text stroke width', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'AB',
+        styles: {
+            textShadow: {
+                parsed: {
+                    text_shadow: {
+                        offset_x: 1,
+                        offset_y: 2,
+                        blur: 3,
+                        color: [0, 0, 0, 255],
+                    },
+                },
+            },
+            textStroke: {
+                parsed: {
+                    text_stroke: {
+                        width: 4,
+                        color: [255, 0, 0, 255],
+                    },
+                },
+            },
+        },
+    })
+    const render_data = collectRenderData(renderer, [node])
+    const command_buffer_data = (renderer as any).createCommandBufferData(render_data.commands)
+    const command_floats = new Float32Array(command_buffer_data.bytes.buffer)
+
+    expect(render_data.commands.map((command) => command.kind)).toEqual([
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_TEXT_SHADOW,
+        COMMAND_KIND_TEXT_SHADOW,
+        COMMAND_KIND_TEXT_STROKE,
+        COMMAND_KIND_TEXT_STROKE,
+        COMMAND_KIND_GLYPH,
+        COMMAND_KIND_GLYPH,
+    ])
+    expect(command_floats[COMMAND_SIZE / FLOAT32_SIZE + 3]).toBe(4)
+    expect(command_floats[(COMMAND_SIZE / FLOAT32_SIZE) * 2 + 3]).toBe(4)
 })
 
 test('RendererWebGPU skips transparent text shadow commands', () => {

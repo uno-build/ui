@@ -52,6 +52,7 @@
             const DEFAULT_FRAMES = 60
             const DEFAULT_WARMUP = 10
             const DEFAULT_TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9
+            const DEFAULT_TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 289
             const CARD_WIDTH = 58
             const CARD_HEIGHT = 38
             const GAP = 18
@@ -61,21 +62,25 @@
                     name: 'unset',
                     box_shadow: 'unset',
                     text_shadow: 'unset',
+                    text_stroke: 'unset',
                 },
                 {
                     name: 'small',
                     box_shadow: '0px 2px 6px 0px #00000040',
-                    text_shadow: '0px 2px 6px #00000040',
+                    text_stroke: '2px #172554',
+                    text_shadow: '2px 2px 2px #00000040',
                 },
                 {
                     name: 'large',
                     box_shadow: '0px 8px 22px 0px #00000040',
-                    text_shadow: '0px 8px 22px #00000040',
+                    text_stroke: '4px #172554',
+                    text_shadow: '4px 4px 4px #00000040',
                 },
                 {
                     name: 'mixed',
                     box_shadow: null,
                     text_shadow: null,
+                    text_stroke: null,
                 },
             ]
 
@@ -86,6 +91,9 @@
                 const text_shadow_max_samples_per_axis = params.has('text_shadow_max_samples_per_axis')
                     ? Number(params.get('text_shadow_max_samples_per_axis'))
                     : DEFAULT_TEXT_SHADOW_MAX_SAMPLES_PER_AXIS
+                const text_stroke_max_samples_per_glyph = params.has('text_stroke_max_samples_per_glyph')
+                    ? Number(params.get('text_stroke_max_samples_per_glyph'))
+                    : DEFAULT_TEXT_STROKE_MAX_SAMPLES_PER_GLYPH
                 const [font_image, font_json] = await Promise.all([
                     loadImage('/assets/fonts/Poppins-Regular.mtsdf.png'),
                     loadJson('/assets/fonts/Poppins-Regular.mtsdf.json'),
@@ -101,6 +109,7 @@
                             frames,
                             warmup,
                             text_shadow_max_samples_per_axis,
+                            text_stroke_max_samples_per_glyph,
                             font_image,
                             font_json,
                         }),
@@ -112,6 +121,7 @@
                     frames,
                     warmup,
                     text_shadow_max_samples_per_axis,
+                    text_stroke_max_samples_per_glyph,
                     scenes,
                 }
             }
@@ -123,6 +133,7 @@
                 frames,
                 warmup,
                 text_shadow_max_samples_per_axis,
+                text_stroke_max_samples_per_glyph,
                 font_image,
                 font_json,
             }) {
@@ -136,7 +147,11 @@
 
                 syncCanvasSize({ root, canvas })
 
-                const renderer = new RendererWebGPU({ canvas, text_shadow_max_samples_per_axis })
+                const renderer = new RendererWebGPU({
+                    canvas,
+                    text_shadow_max_samples_per_axis,
+                    text_stroke_max_samples_per_glyph,
+                })
                 const ui = new UI({ renderer })
                 await ui.init()
                 ui.fontRegister('Poppins-Regular', font_image, font_json)
@@ -198,13 +213,16 @@
                     node.style('backgroundColor', i % 2 === 0 ? '#ffffff' : '#eef2ff')
                     node.style('fontFamily', 'Poppins-Regular')
                     node.style('fontSize', `${8 + (i % 17)}px`)
+                    node.style('color', '#ffffff')
                     node.text(`Text ${i}`)
 
                     const box_shadow = readBoxShadow(scene, i)
                     const text_shadow = readTextShadow(scene, i)
+                    const text_stroke = readTextStroke(scene, i)
 
                     node.style('boxShadow', box_shadow)
                     node.style('textShadow', text_shadow)
+                    node.style('textStroke', text_stroke)
 
                     ui.root.add(node)
                 }
@@ -232,6 +250,18 @@
                 }
 
                 return index % 3 === 1 ? '0px 2px 6px #00000040' : '0px 8px 22px #00000040'
+            }
+
+            function readTextStroke(scene, index) {
+                if (scene.text_stroke != null) {
+                    return scene.text_stroke
+                }
+
+                if (index % 3 === 0) {
+                    return 'unset'
+                }
+
+                return index % 3 === 1 ? '1px #172554' : '4px #172554'
             }
 
             function syncCanvasSize({ root, canvas }) {
@@ -290,7 +320,7 @@
 
             function formatResult(result) {
                 const lines = [
-                    `nodes=${result.nodes} frames=${result.frames} warmup=${result.warmup} text_shadow_max_samples_per_axis=${result.text_shadow_max_samples_per_axis}`,
+                    `nodes=${result.nodes} frames=${result.frames} warmup=${result.warmup} text_shadow_max_samples_per_axis=${result.text_shadow_max_samples_per_axis} text_stroke_max_samples_per_glyph=${result.text_stroke_max_samples_per_glyph}`,
                 ]
 
                 for (const scene of result.scenes) {

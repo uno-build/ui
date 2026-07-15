@@ -21,8 +21,8 @@ export default async function createFontTextStrokeLayout({ ui }) {
 
     for (const width of STROKE_WIDTHS) {
         const card = ui.create()
-        card.style('width', '160px')
-        card.style('height', '80px')
+        card.style('width', '170px')
+        card.style('height', '100px')
         card.style('padding', '12px')
         card.style('alignItems', 'center')
         card.style('justifyContent', 'center')
@@ -35,6 +35,7 @@ export default async function createFontTextStrokeLayout({ ui }) {
         text.style('fontSize', '25px')
         text.style('color', '#f97316')
         text.style('textStroke', `${width}px #172554`)
+        // text.style('textShadow', `0px 2px 0px #172554`)
         text.text(`${width}px stroke`)
         card.add(text)
     }

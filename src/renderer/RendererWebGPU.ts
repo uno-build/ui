@@ -32,7 +32,7 @@ const FONT_ATLAS_SIZE = 1024
 const FONT_SIZE = 16
 const FONT_COLOR = [0, 0, 0, 255]
 const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9
-const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 200
+const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 289
 
 export default class RendererWebGPU extends Renderer {
     private canvas
@@ -492,6 +492,8 @@ export default class RendererWebGPU extends Renderer {
                         kind: COMMAND_KIND_TEXT_SHADOW,
                         panel_index: 0,
                         glyph_index,
+                        text_stroke_width:
+                            text_data.run.text_stroke_color[3] > 0 ? text_data.run.text_stroke_width : 0,
                     })
                 }
             }
