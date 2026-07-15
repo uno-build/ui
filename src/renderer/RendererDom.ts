@@ -121,6 +121,7 @@ export default class RendererDom extends Renderer {
 
 const DEFAULT_NODE_STYLE = {
     boxSizing: 'border-box',
+    color: '#000000',
     display: 'flex',
     minWidth: '0',
     minHeight: '0',

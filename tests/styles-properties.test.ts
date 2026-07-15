@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test'
 import Style from '../src/style'
 
-test('backgroundColor', () => {
-    const styles = ['backgroundColor']
+test('colors', () => {
+    const styles = ['backgroundColor', 'color']
     const validCases = [
         ['#123', '#123', [17, 34, 51, 255]],
         [' #ABC ', '#abc', [170, 187, 204, 255]],

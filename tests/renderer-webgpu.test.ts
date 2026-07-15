@@ -715,6 +715,11 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
         text_content: 'A B',
         layout: { x: 10, y: 20, width: 200, height: 60 },
         styles: {
+            color: {
+                parsed: {
+                    rgba: [255, 128, 0, 64],
+                },
+            },
             backgroundColor: {
                 parsed: {
                     rgba: [0, 0, 0, 0],
@@ -734,7 +739,7 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
     expect(render_data.glyphs[1].layout).toEqual([expect.closeTo(25.2), expect.closeTo(23.2), 8, 16])
     expect((renderer as any).text_runs).toEqual([
         {
-            color: [0, 0, 0, 255],
+            color: [255, 128, 0, 64],
             font_data: [2, 1, 6, FONT_ATLAS_SIZE],
             clipping: [0, 0, 0, 0],
             text_shadow: [0, 0, 0, 0],
@@ -1536,14 +1541,25 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
     const node = createNode({
         text_content: 'AB',
         layout: { x: 10, y: 20, width: 200, height: 60 },
-        styles: {},
+        styles: {
+            color: {
+                parsed: {
+                    rgba: [255, 128, 0, 64],
+                },
+            },
+        },
     })
     collectRenderData(renderer, [node])
     const text_run_buffer_data = (renderer as any).createTextRunBufferData()
     const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
 
     expect(text_run_buffer_data.bytes_offset).toBe(TEXT_RUN_SIZE)
-    expect(Array.from(floats.slice(TEXT_RUN.COLOR.OFFSET / FLOAT32_SIZE, 4))).toEqual([0, 0, 0, 1])
+    expect(Array.from(floats.slice(TEXT_RUN.COLOR.OFFSET / FLOAT32_SIZE, 4))).toEqual([
+        1,
+        expect.closeTo(128 / 255),
+        0,
+        expect.closeTo(64 / 255),
+    ])
     expect(
         Array.from(
             floats.slice(TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE, TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE + 4),

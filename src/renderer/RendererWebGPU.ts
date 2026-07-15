@@ -30,7 +30,7 @@ const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 1024
 const FONT_SIZE = 16
 const FONT_COLOR = [0, 0, 0, 255]
-const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 15
+const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9
 
 export default class RendererWebGPU extends Renderer {
     private canvas
@@ -608,7 +608,7 @@ export default class RendererWebGPU extends Renderer {
         return {
             glyphs,
             run: {
-                color: FONT_COLOR,
+                color: node.styles.color?.parsed.rgba ?? FONT_COLOR,
                 font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.font_atlas_size],
                 clipping,
                 text_shadow: [text_shadow?.offset_x ?? 0, text_shadow?.offset_y ?? 0, text_shadow?.blur ?? 0, 0],

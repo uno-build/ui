@@ -1,9 +1,9 @@
 import { loadImage, loadJson } from '../../../src/utils/loadAssets'
 
 const BLUR_LEVELS = Array.from({ length: 16 }, (_, index) => index)
-const UPDATE_INTERVAL = 100
+const UPDATE_INTERVAL = 5
 const ORBIT_RADIUS = 10
-const ORBIT_STEP = Math.PI / 30
+const ORBIT_STEP = Math.PI / 500
 
 export default async function createFontTextShadowLayout({ ui }) {
     const font_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')

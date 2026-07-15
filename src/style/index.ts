@@ -228,6 +228,9 @@ export const STYLE = {
     BACKGROUNDREPEAT: createStyle('backgroundRepeat', (name, value) => [
         { name, value, definition: BACKGROUND_REPEAT_DEFINITION },
     ]),
+    COLOR: createStyle('color', (name, value) => [
+        { name, value, definition: COLOR_DEFINITION },
+    ]),
     FONTFAMILY: createStyle('fontFamily', (name, value) => [
         { name, value, definition: FONT_FAMILY_DEFINITION },
     ]),

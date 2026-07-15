@@ -17,31 +17,25 @@ and visual comparisons should avoid overlapping descendants inside nodes with
 
 ## RendererWebGPU text shadow sampling
 
-`RendererWebGPU` approximates `textShadow` blur by sampling the font atlas with
-a square Gaussian kernel. `text_shadow_max_samples_per_axis` sets the maximum
-kernel width and height when the renderer is created. Its current default is
-`15`:
+`RendererWebGPU` approximates `textShadow` blur with a square Gaussian kernel.
+`text_shadow_max_samples_per_axis` limits its size and defaults to `9`:
 
 ```ts
 const renderer = new RendererWebGPU({
     canvas,
-    text_shadow_max_samples_per_axis: 15,
+    text_shadow_max_samples_per_axis: 9,
 })
 ```
 
-The renderer chooses the effective kernel size from the blur radius and device
-pixel ratio:
+The effective size grows with the physical blur radius until it reaches the
+configured maximum:
 
 ```text
-blur_px = blur * device_pixel_ratio
-samples_per_axis = min(ceil(blur_px) + 1, text_shadow_max_samples_per_axis)
-texture_reads_per_fragment = samples_per_axis * samples_per_axis
+samples_per_axis = min(ceil(blur * device_pixel_ratio) + 1, maximum)
+texture_reads_per_fragment = samples_per_axis²
 ```
 
-A `0px` blur uses a separate one-sample path. For positive blur values, the
-sample count grows with the physical blur radius until it reaches the configured
-maximum. With the default maximum of `15`, the cost from `0px` through `10px`
-is:
+With the default maximum of `9`, blur values from `0px` through `10px` use:
 
 | Blur | DPR 1 kernel | DPR 1 reads | DPR 2 kernel | DPR 2 reads |
 | ---: | ---: | ---: | ---: | ---: |
@@ -50,25 +44,18 @@ is:
 | `2px` | 3x3 | 9 | 5x5 | 25 |
 | `3px` | 4x4 | 16 | 7x7 | 49 |
 | `4px` | 5x5 | 25 | 9x9 | 81 |
-| `5px` | 6x6 | 36 | 11x11 | 121 |
-| `6px` | 7x7 | 49 | 13x13 | 169 |
-| `7px` | 8x8 | 64 | 15x15 | 225 |
-| `8px` | 9x9 | 81 | 15x15 | 225 |
-| `9px` | 10x10 | 100 | 15x15 | 225 |
-| `10px` | 11x11 | 121 | 15x15 | 225 |
+| `5px` | 6x6 | 36 | 9x9 | 81 |
+| `6px` | 7x7 | 49 | 9x9 | 81 |
+| `7px` | 8x8 | 64 | 9x9 | 81 |
+| `8px` | 9x9 | 81 | 9x9 | 81 |
+| `9px` | 9x9 | 81 | 9x9 | 81 |
+| `10px` | 9x9 | 81 | 9x9 | 81 |
 
-These are texture reads for each fragment covered by each shadow glyph quad,
-not totals for the complete text node. Large blur radii also expand those quads,
-and overlapping glyph quads repeat the work. High-DPR displays therefore
-increase both the processed area and the chance of reaching the configured
-sample limit.
-
-Gaussian weights are precomputed when the WGSL shader is generated, so the
-fragment shader does not calculate exponentials or normalize weights. Texture
-sampling remains the dominant cost. Because the kernel is two-dimensional, its
-cost grows quadratically: a maximum of `15` permits 225 reads per fragment,
-while `20` permits 400 and `30` permits 900. Increase the value only when large
-blurs need more fidelity and the additional GPU cost is acceptable.
+A higher maximum improves the fidelity of large blurs by reducing the distance
+between samples, but performance gets much worse because the cost grows
+quadratically: `9` allows up to 81 texture reads per shadow fragment, while `15`
+allows 225 and `20` allows 400. Large glyph quads, overlapping glyphs, and high
+device pixel ratios multiply that cost. A `0px` blur always uses one sample.
 
 ## RendererWebGPU background image bleeding
 
