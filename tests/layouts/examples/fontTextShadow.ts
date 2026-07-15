@@ -36,6 +36,7 @@ export default async function createFontTextShadowLayout({ ui }) {
         stage.add(card)
 
         const text = ui.create()
+        text.style('color', '#172554')
         text.style('fontFamily', 'ChangaOne-Regular')
         text.style('fontSize', '25px')
         text.style('textShadow', `${ORBIT_RADIUS}px 0px ${blur}px #00000099`)

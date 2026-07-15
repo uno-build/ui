@@ -29,6 +29,7 @@ export default async function createBackgroundImageBleedingLayout({ ui }) {
     image_a.style('left', '40px')
     image_a.style('top', '40px')
     image_a.style('backgroundImage', padded_src)
+    image_a.style('backgroundSize', 'cover')
     stage.add(image_a)
 
     const image_b = ui.create()
@@ -38,5 +39,6 @@ export default async function createBackgroundImageBleedingLayout({ ui }) {
     image_b.style('left', '350px')
     image_b.style('top', '40px')
     image_b.style('backgroundImage', plain_src)
+    image_b.style('backgroundSize', 'cover')
     stage.add(image_b)
 }
