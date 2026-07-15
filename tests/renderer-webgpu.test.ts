@@ -7,6 +7,7 @@ import {
     COMMAND_KIND_GLYPH,
     COMMAND_KIND_PANEL,
     COMMAND_KIND_TEXT_SHADOW,
+    COMMAND_KIND_TEXT_STROKE,
     COMMAND_SIZE,
     FLOAT32_SIZE,
     GLYPH_DATA,
@@ -744,6 +745,8 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
             clipping: [0, 0, 0, 0],
             text_shadow: [0, 0, 0, 0],
             text_shadow_color: [0, 0, 0, 0],
+            text_stroke_width: 0,
+            text_stroke_color: [0, 0, 0, 0],
         },
     ])
 })
@@ -1044,6 +1047,44 @@ test('RendererWebGPU passes the text shadow sample limit to the fragment pipelin
         expect(shader_descriptor.code).not.toContain('sample_weight_sum')
         expect(shader_descriptor.code).not.toContain('var sample_weights')
         expect(pipeline_descriptor.fragment.constants.TEXT_SHADOW_MAX_SAMPLES_PER_AXIS).toBe(expected_samples)
+    }
+})
+
+test('RendererWebGPU passes the text stroke sample limit to the fragment pipeline unchanged', () => {
+    for (const [options, expected_samples] of [
+        [{}, 81],
+        [{ text_stroke_max_samples_per_glyph: 1 }, 1],
+        [{ text_stroke_max_samples_per_glyph: 8 }, 8],
+        [{ text_stroke_max_samples_per_glyph: 64 }, 64],
+        [{ text_stroke_max_samples_per_glyph: 128 }, 128],
+    ]) {
+        let shader_descriptor
+        let pipeline_descriptor
+        const renderer = new RendererWebGPU({ canvas: {}, ...options })
+        ;(renderer as any).device = {
+            createShaderModule(descriptor) {
+                shader_descriptor = descriptor
+                return { id: 'shader' }
+            },
+            createRenderPipeline(descriptor) {
+                pipeline_descriptor = descriptor
+                return { id: 'pipeline' }
+            },
+        }
+        ;(renderer as any).format = 'rgba8unorm'
+
+        ;(renderer as any).createPipeline()
+
+        expect(shader_descriptor.code).toContain(
+            'let expanded_size = glyph.rect.zw + vec2f(stroke_width * 2.0);',
+        )
+        expect(shader_descriptor.code).toContain('let stroke_width = bitcast<f32>(command.w);')
+        expect(shader_descriptor.code).toContain(
+            'let sample_dilation = stroke_width / f32(ring_count) * 0.5;',
+        )
+        expect(shader_descriptor.code).toContain('let stroke_coverage = max(expanded_coverage - fill_coverage, 0.0);')
+        expect(shader_descriptor.code).not.toContain('screen_distance + stroke_width')
+        expect(pipeline_descriptor.fragment.constants.TEXT_STROKE_MAX_SAMPLES_PER_GLYPH).toBe(expected_samples)
     }
 })
 
@@ -1581,6 +1622,74 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
             ),
         ),
     ).toEqual([0, 0, 0, 0])
+    expect(floats[TEXT_RUN.TEXT_STROKE_WIDTH.OFFSET / FLOAT32_SIZE]).toBe(0)
+    expect(
+        Array.from(
+            floats.slice(
+                TEXT_RUN.TEXT_STROKE_COLOR.OFFSET / FLOAT32_SIZE,
+                TEXT_RUN.TEXT_STROKE_COLOR.OFFSET / FLOAT32_SIZE + 4,
+            ),
+        ),
+    ).toEqual([0, 0, 0, 0])
+})
+
+test('RendererWebGPU writes text stroke data into the shared text run', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'AB',
+        styles: {
+            textStroke: {
+                parsed: {
+                    text_stroke: {
+                        width: 4,
+                        color: [17, 34, 51, 68],
+                    },
+                },
+            },
+        },
+    })
+
+    const render_data = collectRenderData(renderer, [node])
+    const command_buffer_data = (renderer as any).createCommandBufferData(render_data.commands)
+    const text_run_buffer_data = (renderer as any).createTextRunBufferData()
+    const command_floats = new Float32Array(command_buffer_data.bytes.buffer)
+    const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
+
+    expect(
+        Array.from(
+            floats.slice(TEXT_RUN.TEXT_SHADOW.OFFSET / FLOAT32_SIZE, TEXT_RUN.TEXT_SHADOW.OFFSET / FLOAT32_SIZE + 4),
+        ),
+    ).toEqual([0, 0, 0, 0])
+    expect(floats[TEXT_RUN.TEXT_STROKE_WIDTH.OFFSET / FLOAT32_SIZE]).toBe(4)
+    expect(
+        Array.from(
+            floats.slice(
+                TEXT_RUN.TEXT_STROKE_COLOR.OFFSET / FLOAT32_SIZE,
+                TEXT_RUN.TEXT_STROKE_COLOR.OFFSET / FLOAT32_SIZE + 4,
+            ),
+        ),
+    ).toEqual([
+        expect.closeTo(17 / 255),
+        expect.closeTo(34 / 255),
+        expect.closeTo(51 / 255),
+        expect.closeTo(68 / 255),
+    ])
+    expect(render_data.commands.map((command) => command.kind)).toEqual([
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_TEXT_STROKE,
+        COMMAND_KIND_TEXT_STROKE,
+        COMMAND_KIND_GLYPH,
+        COMMAND_KIND_GLYPH,
+    ])
+    expect(command_floats[COMMAND_SIZE / FLOAT32_SIZE + 3]).toBe(4)
+    expect(command_floats[(COMMAND_SIZE / FLOAT32_SIZE) * 2 + 3]).toBe(4)
+    expect(command_floats[(COMMAND_SIZE / FLOAT32_SIZE) * 3 + 3]).toBe(0)
+    expect(command_floats[(COMMAND_SIZE / FLOAT32_SIZE) * 4 + 3]).toBe(0)
 })
 
 test('RendererWebGPU writes text shadow data into the shared text run', () => {

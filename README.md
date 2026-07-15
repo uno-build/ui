@@ -57,6 +57,23 @@ quadratically: `9` allows up to 81 texture reads per shadow fragment, while `15`
 allows 225 and `20` allows 400. Large glyph quads, overlapping glyphs, and high
 device pixel ratios multiply that cost. A `0px` blur always uses one sample.
 
+## RendererWebGPU text stroke sampling
+
+`RendererWebGPU` builds `textStroke` from shifted glyph samples. The default
+limit is 81 samples per glyph:
+
+```ts
+const renderer = new RendererWebGPU({
+    canvas,
+    text_stroke_max_samples_per_glyph: 81,
+})
+```
+
+Samples are distributed in concentric rings and combined with `max`, so their
+alpha does not accumulate within one glyph. Strokes are rendered before the
+text fill. Increasing the limit adds rings and improves thick strokes, while a
+lower limit reduces texture reads at the cost of a coarser outline.
+
 ## RendererWebGPU background image bleeding
 
 `RendererWebGPU` stores background images in a texture atlas. When a small

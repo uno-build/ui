@@ -44,6 +44,11 @@ export default class RendererDom extends Renderer {
     }
 
     protected updateStyle(node, resolved_style) {
+        if (resolved_style.name === 'textStroke') {
+            node.element.style.webkitTextStroke = resolved_style.expanded[0].value
+            return
+        }
+
         if (resolved_style.name === 'fontFamily') {
             const font = this.fonts.get(resolved_style.value)
             node.element.style.fontFamily = resolved_style.value

@@ -16,6 +16,7 @@ import {
     COMMAND_KIND_PANEL,
     COMMAND_KIND_GLYPH,
     COMMAND_KIND_TEXT_SHADOW,
+    COMMAND_KIND_TEXT_STROKE,
     COMMAND,
     COMMAND_SIZE,
     PANEL_DATA,
@@ -31,6 +32,7 @@ const FONT_ATLAS_SIZE = 1024
 const FONT_SIZE = 16
 const FONT_COLOR = [0, 0, 0, 255]
 const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9
+const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 200
 
 export default class RendererWebGPU extends Renderer {
     private canvas
@@ -39,6 +41,7 @@ export default class RendererWebGPU extends Renderer {
     private image_min_filter
     private image_mag_filter
     private text_shadow_max_samples_per_axis
+    private text_stroke_max_samples_per_glyph
     private device_pixel_ratio = 1
     // props
     private engine
@@ -58,6 +61,7 @@ export default class RendererWebGPU extends Renderer {
     private command_array_buffer
     private command_array_buffer_size = 0
     private command_u32
+    private command_floats
     private command_bytes
     private command_count = 0
     private panel_data_buffer
@@ -89,6 +93,7 @@ export default class RendererWebGPU extends Renderer {
         image_min_filter = 'linear',
         image_mag_filter = 'linear',
         text_shadow_max_samples_per_axis = TEXT_SHADOW_MAX_SAMPLES_PER_AXIS,
+        text_stroke_max_samples_per_glyph = TEXT_STROKE_MAX_SAMPLES_PER_GLYPH,
     }) {
         super()
         this.canvas = canvas
@@ -97,6 +102,7 @@ export default class RendererWebGPU extends Renderer {
         this.image_min_filter = image_min_filter
         this.image_mag_filter = image_mag_filter
         this.text_shadow_max_samples_per_axis = text_shadow_max_samples_per_axis
+        this.text_stroke_max_samples_per_glyph = text_stroke_max_samples_per_glyph
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
@@ -204,6 +210,7 @@ export default class RendererWebGPU extends Renderer {
                 entryPoint: 'fragmentMain',
                 constants: {
                     TEXT_SHADOW_MAX_SAMPLES_PER_AXIS: this.text_shadow_max_samples_per_axis,
+                    TEXT_STROKE_MAX_SAMPLES_PER_GLYPH: this.text_stroke_max_samples_per_glyph,
                 },
                 targets: [
                     {
@@ -489,6 +496,17 @@ export default class RendererWebGPU extends Renderer {
                 }
             }
 
+            if (text_data.run.text_stroke_width > 0 && text_data.run.text_stroke_color[3] > 0) {
+                for (const glyph_index of glyph_indices) {
+                    commands.push({
+                        kind: COMMAND_KIND_TEXT_STROKE,
+                        panel_index: 0,
+                        glyph_index,
+                        text_stroke_width: text_data.run.text_stroke_width,
+                    })
+                }
+            }
+
             for (const glyph_index of glyph_indices) {
                 commands.push({
                     kind: COMMAND_KIND_GLYPH,
@@ -549,6 +567,7 @@ export default class RendererWebGPU extends Renderer {
         const text_align = node.styles.textAlign?.parsed.enum ?? TEXT_ALIGN.left
         const space_advance = this.measureGlyphAdvances(font, font_size, ' ')
         const text_shadow = node.styles.textShadow?.parsed.text_shadow
+        const text_stroke = node.styles.textStroke?.parsed.text_stroke
         const text_shadow_data = [text_shadow?.offset_x ?? 0, text_shadow?.offset_y ?? 0, text_shadow?.blur ?? 0]
         const glyphs = []
 
@@ -613,6 +632,8 @@ export default class RendererWebGPU extends Renderer {
                 clipping,
                 text_shadow: [text_shadow?.offset_x ?? 0, text_shadow?.offset_y ?? 0, text_shadow?.blur ?? 0, 0],
                 text_shadow_color: text_shadow?.color ?? [0, 0, 0, 0],
+                text_stroke_width: text_stroke?.width ?? 0,
+                text_stroke_color: text_stroke?.color ?? [0, 0, 0, 0],
             },
         }
     }
@@ -696,6 +717,7 @@ export default class RendererWebGPU extends Renderer {
             this.command_array_buffer_size = command_array_buffer_size
             this.command_array_buffer = new ArrayBuffer(command_array_buffer_size)
             this.command_u32 = new Uint32Array(this.command_array_buffer)
+            this.command_floats = new Float32Array(this.command_array_buffer)
             this.command_bytes = new Uint8Array(this.command_array_buffer)
         }
 
@@ -885,7 +907,7 @@ export default class RendererWebGPU extends Renderer {
         this.command_u32[command_u32_offset] = command.kind
         this.command_u32[command_u32_offset + 1] = command.panel_index
         this.command_u32[command_u32_offset + 2] = command.glyph_index
-        this.command_u32[command_u32_offset + 3] = 0
+        this.command_floats[command_u32_offset + 3] = command.text_stroke_width ?? 0
     }
 
     private writePanelData(panel, bytes_offset) {
@@ -945,7 +967,8 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private writeTextRunData(text_run, bytes_offset) {
-        const { color, font_data, clipping, text_shadow, text_shadow_color } = text_run
+        const { color, font_data, clipping, text_shadow, text_shadow_color, text_stroke_width, text_stroke_color } =
+            text_run
         const color_float_offset = (bytes_offset + TEXT_RUN.COLOR.OFFSET) / FLOAT32_SIZE
         this.text_run_floats[color_float_offset] = color[0] / 255
         this.text_run_floats[color_float_offset + 1] = color[1] / 255
@@ -966,6 +989,15 @@ export default class RendererWebGPU extends Renderer {
         this.text_run_floats[text_shadow_color_float_offset + 1] = text_shadow_color[1] / 255
         this.text_run_floats[text_shadow_color_float_offset + 2] = text_shadow_color[2] / 255
         this.text_run_floats[text_shadow_color_float_offset + 3] = text_shadow_color[3] / 255
+
+        const text_stroke_width_float_offset = (bytes_offset + TEXT_RUN.TEXT_STROKE_WIDTH.OFFSET) / FLOAT32_SIZE
+        this.text_run_floats[text_stroke_width_float_offset] = text_stroke_width
+
+        const text_stroke_color_float_offset = (bytes_offset + TEXT_RUN.TEXT_STROKE_COLOR.OFFSET) / FLOAT32_SIZE
+        this.text_run_floats[text_stroke_color_float_offset] = text_stroke_color[0] / 255
+        this.text_run_floats[text_stroke_color_float_offset + 1] = text_stroke_color[1] / 255
+        this.text_run_floats[text_stroke_color_float_offset + 2] = text_stroke_color[2] / 255
+        this.text_run_floats[text_stroke_color_float_offset + 3] = text_stroke_color[3] / 255
     }
 }
 

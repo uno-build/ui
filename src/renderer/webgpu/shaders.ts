@@ -33,7 +33,9 @@ function createTextShadowSampleWeights(max_samples_per_axis) {
 const uiWGSL = /* wgsl */ `
 const COMMAND_KIND_PANEL = 0u;
 const COMMAND_KIND_TEXT_SHADOW = 2u;
+const COMMAND_KIND_TEXT_STROKE = 3u;
 override TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9u;
+override TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 81u;
 const TEXT_SHADOW_SAMPLE_WEIGHTS = array<f32, TEXT_SHADOW_SAMPLE_WEIGHTS_SIZE>(
     TEXT_SHADOW_SAMPLE_WEIGHTS_VALUES
 );
@@ -70,6 +72,8 @@ struct TextRun {
     clipping: vec4f,
     text_shadow: vec4f,
     text_shadow_color: vec4f,
+    text_stroke_width: f32,
+    text_stroke_color: vec4f,
 }
 
 struct VertexOutput {
@@ -336,9 +340,11 @@ fn vertexMain(
             uv = glyph.uv_rect.xy +
                 ((pixel - text_shadow.xy - glyph.rect.xy) / glyph.rect.zw) * glyph.uv_rect.zw;
         } else {
-            local_position = position * glyph.rect.zw;
+            let stroke_width = bitcast<f32>(command.w);
+            let expanded_size = glyph.rect.zw + vec2f(stroke_width * 2.0);
+            local_position = position * expanded_size - vec2f(stroke_width);
             pixel = glyph.rect.xy + local_position;
-            uv = glyph.uv_rect.xy + position * glyph.uv_rect.zw;
+            uv = glyph.uv_rect.xy + (local_position / glyph.rect.zw) * glyph.uv_rect.zw;
         }
     }
 
@@ -447,44 +453,12 @@ fn panelColor(input: VertexOutput, local_position_width: vec2f) -> vec4f {
     return color;
 }
 
-fn glyphColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
-    let glyph = glyph_data[u32(input.glyph_index)];
-    let run = text_runs[glyph.run_data.x];
-    let visible = !(
-        any(run.clipping > vec4f(0.0)) &&
-        (
-            input.pixel.x < run.clipping.w ||
-            input.pixel.y < run.clipping.x ||
-            input.pixel.x > run.clipping.y ||
-            input.pixel.y > run.clipping.z
-        )
-    );
-
-    let sample = textureSampleLevel(
-        font_texture,
-        ui_sampler,
-        input.uv,
-        u32(run.font_data.x),
-        0.0,
-    );
-    let signed_distance = median(sample.r, sample.g, sample.b);
-    let unit_range = vec2f(run.font_data.z / run.font_data.w);
-    let screen_tex_size = vec2f(1.0) / max(uv_width, vec2f(0.000001));
-    let screen_px_range = max(0.5 * dot(unit_range, screen_tex_size), 1.0);
-    let distance_alpha = clamp(screen_px_range * (signed_distance - 0.45) + 0.5, 0.0, 1.0);
-    let alpha = distance_alpha *
-        run.color.a *
-        run.font_data.y *
-        select(0.0, 1.0, visible);
-
-    return vec4f(run.color.rgb, alpha);
-}
-
 fn glyphCoverageAtUv(
     glyph: GlyphData,
     run: TextRun,
     uv: vec2f,
     uv_width: vec2f,
+    dilation: f32,
     softness: f32,
 ) -> f32 {
     let uv_min = glyph.uv_rect.xy;
@@ -504,10 +478,109 @@ fn glyphCoverageAtUv(
     let unit_range = vec2f(run.font_data.z / run.font_data.w);
     let screen_tex_size = vec2f(1.0) / max(uv_width, vec2f(0.000001));
     let screen_px_range = max(0.5 * dot(unit_range, screen_tex_size), 1.0);
-    let screen_distance = screen_px_range * (signed_distance - 0.45);
+    let screen_distance = screen_px_range * (signed_distance - 0.45) + dilation;
+    if (softness <= 0.0) {
+        return clamp(screen_distance + 0.5, 0.0, 1.0);
+    }
     let safe_softness = min(softness, screen_px_range * 0.45);
 
     return smoothstep(-safe_softness, safe_softness, screen_distance);
+}
+
+fn textStrokeColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
+    let glyph = glyph_data[u32(input.glyph_index)];
+    let run = text_runs[glyph.run_data.x];
+    let visible = !(
+        any(run.clipping > vec4f(0.0)) &&
+        (
+            input.pixel.x < run.clipping.w ||
+            input.pixel.y < run.clipping.x ||
+            input.pixel.x > run.clipping.y ||
+            input.pixel.y > run.clipping.z
+        )
+    );
+    let fill_coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.0, 0.0);
+    let stroke_width = run.text_stroke_width * viewport.device_pixel_ratio;
+    var expanded_coverage = fill_coverage;
+
+    if (
+        stroke_width > 0.0 &&
+        run.text_stroke_color.a > 0.0 &&
+        TEXT_STROKE_MAX_SAMPLES_PER_GLYPH > 1u
+    ) {
+        let max_ring_count = u32(floor(max(
+            (sqrt(f32(TEXT_STROKE_MAX_SAMPLES_PER_GLYPH)) - 1.0) * 0.5,
+            0.0,
+        )));
+        let ring_count = min(max(u32(ceil(stroke_width)), 1u), max_ring_count);
+
+        if (ring_count > 0u) {
+            let signed_ring_count = i32(ring_count);
+            let sample_dilation = stroke_width / f32(ring_count) * 0.5;
+            let sample_radius = stroke_width - sample_dilation;
+            for (var y = -signed_ring_count; y <= signed_ring_count; y++) {
+                for (var x = -signed_ring_count; x <= signed_ring_count; x++) {
+                    if (x == 0 && y == 0) {
+                        continue;
+                    }
+
+                    let grid_offset = vec2f(f32(x), f32(y));
+                    let ring = f32(max(abs(x), abs(y)));
+                    let sample_offset = normalize(grid_offset) * ring / f32(ring_count) * sample_radius;
+                    expanded_coverage = max(
+                        expanded_coverage,
+                        glyphCoverageAtUv(
+                            glyph,
+                            run,
+                            input.uv + sample_offset * uv_width,
+                            uv_width,
+                            sample_dilation,
+                            0.0,
+                        ),
+                    );
+                }
+            }
+        } else {
+            let sample_count = TEXT_STROKE_MAX_SAMPLES_PER_GLYPH - 1u;
+            for (var sample_index = 0u; sample_index < sample_count; sample_index++) {
+                let angle = 6.28318530718 * f32(sample_index) / f32(sample_count);
+                let sample_offset = vec2f(cos(angle), sin(angle)) * stroke_width;
+                expanded_coverage = max(
+                    expanded_coverage,
+                    glyphCoverageAtUv(glyph, run, input.uv + sample_offset * uv_width, uv_width, 0.0, 0.0),
+                );
+            }
+        }
+    }
+
+    let stroke_coverage = max(expanded_coverage - fill_coverage, 0.0);
+    let alpha = stroke_coverage *
+        run.text_stroke_color.a *
+        run.font_data.y *
+        select(0.0, 1.0, visible);
+
+    return vec4f(run.text_stroke_color.rgb, alpha);
+}
+
+fn glyphColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
+    let glyph = glyph_data[u32(input.glyph_index)];
+    let run = text_runs[glyph.run_data.x];
+    let visible = !(
+        any(run.clipping > vec4f(0.0)) &&
+        (
+            input.pixel.x < run.clipping.w ||
+            input.pixel.y < run.clipping.x ||
+            input.pixel.x > run.clipping.y ||
+            input.pixel.y > run.clipping.z
+        )
+    );
+    let coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.0, 0.0);
+    let alpha = coverage *
+        run.color.a *
+        run.font_data.y *
+        select(0.0, 1.0, visible);
+
+    return vec4f(run.color.rgb, alpha);
 }
 
 fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
@@ -529,13 +602,13 @@ fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
     let blur = run.text_shadow.z;
     var coverage = 0.0;
     if (blur <= 0.0) {
-        coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.5);
+        coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.0, 0.5);
     } else {
         let blur_px = blur * viewport.device_pixel_ratio;
         let required_samples_per_axis = u32(ceil(blur_px)) + 1u;
         let samples_per_axis = min(required_samples_per_axis, TEXT_SHADOW_MAX_SAMPLES_PER_AXIS);
         if (samples_per_axis == 1u) {
-            coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.5);
+            coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.0, 0.5);
         } else {
             let sample_step = 2.0 / f32(samples_per_axis - 1u);
             let sample_softness = max(blur_px / f32(samples_per_axis - 1u), 0.5);
@@ -552,6 +625,7 @@ fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
                         run,
                         input.uv + sample_offset,
                         uv_width,
+                        0.0,
                         sample_softness,
                     ) * sample_weight;
                 }
@@ -577,6 +651,10 @@ fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
 
     if (u32(input.kind) == COMMAND_KIND_TEXT_SHADOW) {
         return textShadowColor(input, uv_width);
+    }
+
+    if (u32(input.kind) == COMMAND_KIND_TEXT_STROKE) {
+        return textStrokeColor(input, uv_width);
     }
 
     return glyphColor(input, uv_width);

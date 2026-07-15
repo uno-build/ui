@@ -117,6 +117,35 @@ test('textShadow', () => {
     expectInvalid('textShadow', true, /style value must be a string/)
 })
 
+test('textStroke', () => {
+    expectResolved('textStroke', ' unset ', 'unset', {
+        text_stroke: {
+            width: 0,
+            color: [0, 0, 0, 0],
+        },
+    })
+    expectResolved('textStroke', ' 4PX #1234 ', '4px #1234', {
+        text_stroke: {
+            width: 4,
+            color: [17, 34, 51, 68],
+        },
+    })
+    expectResolved(' text-stroke ', '0.5px #12345678', '0.5px #12345678', {
+        text_stroke: {
+            width: 0.5,
+            color: [18, 52, 86, 120],
+        },
+    }, 'textStroke')
+
+    expectInvalid('textStroke', '4px', /expected width color/)
+    expectInvalid('textStroke', '4px #000 extra', /expected width color/)
+    expectInvalid('textStroke', '-1px #000', /expected non-negative width/)
+    expectInvalid('textStroke', '4% #000', /expected px unit/)
+    expectInvalid('textStroke', '4em #000', /expected px unit/)
+    expectInvalid('textStroke', '4px red', /expected hex color/)
+    expectInvalid('textStroke', true, /style value must be a string/)
+})
+
 test('backgroundImage', () => {
     expectKeywordUnit('backgroundImage', ' Unset ', 'unset')
     expectResolved('backgroundImage', '/assets/Avatar/Icon.png', '/assets/Avatar/Icon.png', {})

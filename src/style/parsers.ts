@@ -111,6 +111,32 @@ export function parseTextShadow(value: string) {
         },
     }
 }
+
+export function parseTextStroke(value: string) {
+    if (value === KEYWORD.UNSET) {
+        return {
+            value,
+            parsed: {
+                text_stroke: {
+                    width: 0,
+                    color: [0, 0, 0, 0],
+                },
+            },
+        }
+    }
+
+    const values = value.split(/\s+/)
+
+    return {
+        value,
+        parsed: {
+            text_stroke: {
+                width: readPx(values[0])!.value,
+                color: parseRgba(values[1]),
+            },
+        },
+    }
+}
 export function parseEnum(value: string, values: Record<string, any>) {
     return { value, parsed: { enum: values[value] } }
 }

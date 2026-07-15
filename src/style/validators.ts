@@ -52,6 +52,23 @@ export function validateTextShadow(value: string) {
         validateColor(values[3])
     }
 }
+
+export function validateTextStroke(value: string) {
+    if (value === KEYWORD.UNSET) {
+        return
+    }
+
+    const values = value.split(/\s+/)
+    if (values.length !== 2) {
+        throw new Error('expected width color')
+    }
+
+    validatePx(values[0])
+    if (readPx(values[0])!.value < 0) {
+        throw new Error('expected non-negative width')
+    }
+    validateColor(values[1])
+}
 export function validateEnum(value: string, values: Record<string, any>) {
     if (typeof value !== 'string' || !Object.prototype.hasOwnProperty.call(values, value)) {
         throw new Error(`expected one of ${Object.keys(values).join(', ')}`)

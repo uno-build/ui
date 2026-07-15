@@ -21,6 +21,7 @@ import {
     validateAuto,
     validateBoxShadow,
     validateTextShadow,
+    validateTextStroke,
     validateUnset,
     validateInteger,
     validateNumber,
@@ -34,6 +35,7 @@ import {
     parseString,
     parseBoxShadow,
     parseTextShadow,
+    parseTextStroke,
     parseColor,
     parseAuto,
     parseUnset,
@@ -81,6 +83,14 @@ export const TEXT_SHADOW_DEFINITION = [
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateTextShadow],
         parse: [parseTextShadow],
+    },
+]
+
+export const TEXT_STROKE_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateTextStroke],
+        parse: [parseTextStroke],
     },
 ]
 
