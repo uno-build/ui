@@ -5,7 +5,7 @@ const EMPTY_BOX_SHADOW = [0, 0, 0, 0]
 
 // If null is returned, the node should not be drawn
 export function getNodeDrawingData(node) {
-    const { x, y, width, height } = node.layout
+    const { x, y, width, height } = getNodeRenderLayout(node)
     const display = node.styles.display?.parsed.enum || DISPLAY.flex
     if (width === 0 || height === 0 || display !== DISPLAY.flex) {
         return null
@@ -91,6 +91,25 @@ export function getNodeBorderWidth(node, side) {
     }
 
     return border_width?.parsed.value ?? 0
+}
+
+export function getNodeRenderLayout(node) {
+    let x = node.layout.x
+    let y = node.layout.y
+    let ancestor = node.parent
+
+    while (ancestor !== null) {
+        x -= ancestor.scrollLeft
+        y -= ancestor.scrollTop
+        ancestor = ancestor.parent
+    }
+
+    return {
+        x,
+        y,
+        width: node.layout.width,
+        height: node.layout.height,
+    }
 }
 
 export function updateScrollMetrics(root) {
@@ -201,12 +220,35 @@ function packColor(color) {
 
 export function getAncestorClipping(node) {
     let clip = null
+    let scroll_left = 0
+    let scroll_top = 0
     let ancestor = node.parent
 
+    while (ancestor !== null) {
+        scroll_left += ancestor.scrollLeft
+        scroll_top += ancestor.scrollTop
+        ancestor = ancestor.parent
+    }
+
+    const render_x = node.layout.x - scroll_left
+    const render_y = node.layout.y - scroll_top
+    ancestor = node.parent
+
     while (ancestor?.parent != null) {
+        scroll_left -= ancestor.scrollLeft
+        scroll_top -= ancestor.scrollTop
         const overflow = ancestor.styles.overflow?.parsed.enum
         if (overflow === OVERFLOW.hidden || overflow === OVERFLOW.scroll) {
-            clip = intersectRects(clip, ancestor.layout)
+            const border_left = ancestor.element.getComputedBorder(EDGE.left)
+            const border_right = ancestor.element.getComputedBorder(EDGE.right)
+            const border_top = ancestor.element.getComputedBorder(EDGE.top)
+            const border_bottom = ancestor.element.getComputedBorder(EDGE.bottom)
+            clip = intersectRects(clip, {
+                x: ancestor.layout.x - scroll_left + border_left,
+                y: ancestor.layout.y - scroll_top + border_top,
+                width: ancestor.layout.width - border_left - border_right,
+                height: ancestor.layout.height - border_top - border_bottom,
+            })
         }
         ancestor = ancestor.parent
     }
@@ -214,8 +256,6 @@ export function getAncestorClipping(node) {
     if (clip == null) {
         return null
     }
-
-    const { layout } = node
 
     if (clip.width <= 0 || clip.height <= 0) {
         return {
@@ -226,10 +266,10 @@ export function getAncestorClipping(node) {
         }
     }
 
-    const top = clip.y - layout.y
-    const right = clip.x + clip.width - layout.x
-    const bottom = clip.y + clip.height - layout.y
-    const left = clip.x - layout.x
+    const top = clip.y - render_y
+    const right = clip.x + clip.width - render_x
+    const bottom = clip.y + clip.height - render_y
+    const left = clip.x - render_x
 
     return {
         top,

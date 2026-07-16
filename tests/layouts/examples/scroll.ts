@@ -24,32 +24,39 @@ export default async function createFontTextScrollLayout({ ui }) {
     stage.style('backgroundColor', '#eef3f7')
     ui.root.add(stage)
 
-    const scroll_container = ui.create()
-    scroll_container.style('width', '450px')
-    scroll_container.style('height', '500px')
-    scroll_container.style('overflow', 'scroll')
-    scroll_container.style('padding', '24px')
-    scroll_container.style('gap', '20px')
-    scroll_container.style('flexDirection', 'column')
-    scroll_container.style('backgroundColor', '#ffffff')
-    scroll_container.style('border', '1px solid #1b2a38')
-    stage.add(scroll_container)
+    const scroll = ui.create()
+    scroll.style('width', '450px')
+    scroll.style('height', '500px')
+    scroll.style('overflow', 'scroll')
+    scroll.style('justifyContent', 'center')
+    scroll.style('padding', '24px')
+    scroll.style('gap', '20px')
+    scroll.style('backgroundColor', '#ffffff')
+    scroll.style('border', '1px solid #1b2a38')
+    stage.add(scroll)
+
+    const container = ui.create()
+    container.style('width', '370px')
+    container.style('gap', '20px')
+    container.style('flexDirection', 'column')
+    scroll.add(container)
 
     const title = ui.create()
+    title.style('width', '100%')
     title.style('flexShrink', '0')
     title.style('fontFamily', 'ChangaOne-Regular')
     title.style('fontSize', '28px')
     title.text('A long story inside a scroll')
-    scroll_container.add(title)
+    container.add(title)
 
     const image = ui.create()
-    image.style('width', '370px')
+    image.style('width', '100%')
     image.style('height', '240px')
     image.style('flexShrink', '0')
     image.style('backgroundImage', image_asset.src)
     image.style('backgroundSize', 'cover')
     image.style('backgroundPosition', '50% 50%')
-    scroll_container.add(image)
+    container.add(image)
 
     const text = ui.create()
     text.style('width', '370px')
@@ -60,26 +67,26 @@ export default async function createFontTextScrollLayout({ ui }) {
     text.style('color', '#444444')
     text.style('lineHeight', '24px')
     text.text(TEXT)
-    scroll_container.add(text)
+    container.add(text)
 
-    setInterval(() => {
-        console.log({
-            scrollWidth:
-                scroll_container.element instanceof HTMLElement
-                    ? scroll_container.element.scrollWidth
-                    : scroll_container.scrollWidth,
-            clientWidth:
-                scroll_container.element instanceof HTMLElement
-                    ? scroll_container.element.clientWidth
-                    : scroll_container.clientWidth,
-            scrollHeight:
-                scroll_container.element instanceof HTMLElement
-                    ? scroll_container.element.scrollHeight
-                    : scroll_container.scrollHeight,
-            clientHeight:
-                scroll_container.element instanceof HTMLElement
-                    ? scroll_container.element.clientHeight
-                    : scroll_container.clientHeight,
-        })
-    }, 1000)
+    // setInterval(() => {
+    //     console.log({
+    //         scrollWidth:
+    //             scroll_container.element instanceof HTMLElement
+    //                 ? scroll_container.element.scrollWidth
+    //                 : scroll_container.scrollWidth,
+    //         clientWidth:
+    //             scroll_container.element instanceof HTMLElement
+    //                 ? scroll_container.element.clientWidth
+    //                 : scroll_container.clientWidth,
+    //         scrollHeight:
+    //             scroll_container.element instanceof HTMLElement
+    //                 ? scroll_container.element.scrollHeight
+    //                 : scroll_container.scrollHeight,
+    //         clientHeight:
+    //             scroll_container.element instanceof HTMLElement
+    //                 ? scroll_container.element.clientHeight
+    //                 : scroll_container.clientHeight,
+    //     })
+    // }, 1000)
 }

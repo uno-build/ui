@@ -6,6 +6,7 @@ import {
     getNodeBorderWidth,
     getNodeDrawingData,
     getNodeOpacity,
+    getNodeRenderLayout,
     updateScrollMetrics,
 } from './utils/node'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
@@ -561,7 +562,7 @@ export default class RendererWebGPU extends Renderer {
             return null
         }
 
-        const { x, y, width, height } = node.layout
+        const { x, y, width, height } = getNodeRenderLayout(node)
         if (width === 0 || height === 0) {
             return null
         }

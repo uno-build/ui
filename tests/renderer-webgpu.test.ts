@@ -73,6 +73,63 @@ test('RendererWebGPU writes layout and clipping bounds into panel instance data'
     expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([3, 7, 7, 2])
 })
 
+test('RendererWebGPU scrolls panel geometry inside the ancestor padding box', () => {
+    const root = createNode()
+    const parent = createNode({
+        parent: root,
+        layout: { x: 2, y: 3, width: 10, height: 10 },
+        computed_border: {
+            [EDGE.top]: 2,
+            [EDGE.right]: 3,
+            [EDGE.bottom]: 4,
+            [EDGE.left]: 1,
+        },
+        overflow: OVERFLOW.scroll,
+    })
+    const child = createNode({
+        parent,
+        layout: { x: 0, y: 0, width: 10, height: 10 },
+    })
+    parent.scrollLeft = 1
+    parent.scrollTop = 2
+    const renderer = createRenderer()
+    const nodes_buffer_data = createNodesBufferData(renderer, [child])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
+    const layout_float_offset = PANEL_DATA.LAYOUT.OFFSET / FLOAT32_SIZE
+    const clipping_float_offset = PANEL_DATA.CLIPPING.OFFSET / FLOAT32_SIZE
+
+    expect(Array.from(floats.slice(layout_float_offset, layout_float_offset + 4))).toEqual([-1, -2, 10, 10])
+    expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([7, 10, 11, 4])
+})
+
+test('RendererWebGPU accumulates nested scroll and moves nested clipping with its outer container', () => {
+    const root = createNode()
+    const outer = createNode({
+        parent: root,
+        layout: { x: 10, y: 20, width: 100, height: 100 },
+        overflow: OVERFLOW.scroll,
+    })
+    const inner = createNode({
+        parent: outer,
+        layout: { x: 20, y: 60, width: 60, height: 60 },
+        overflow: OVERFLOW.scroll,
+    })
+    const child = createNode({
+        parent: inner,
+        layout: { x: 30, y: 80, width: 20, height: 20 },
+    })
+    outer.scrollTop = 30
+    inner.scrollTop = 10
+    const renderer = createRenderer()
+    const nodes_buffer_data = createNodesBufferData(renderer, [child])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
+    const layout_float_offset = PANEL_DATA.LAYOUT.OFFSET / FLOAT32_SIZE
+    const clipping_float_offset = PANEL_DATA.CLIPPING.OFFSET / FLOAT32_SIZE
+
+    expect(Array.from(floats.slice(layout_float_offset, layout_float_offset + 4))).toEqual([30, 40, 20, 20])
+    expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([-10, 50, 50, -10])
+})
+
 test('RendererWebGPU calculates scroll metrics from descendant layout overflow', () => {
     const root = createNode({
         layout: { x: 100, y: 50, width: 120, height: 100 },
@@ -843,6 +900,32 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
             text_stroke_color: [0, 0, 0, 0],
         },
     ])
+})
+
+test('RendererWebGPU scrolls glyph geometry and keeps text clipping fixed to the ancestor', () => {
+    const root = createNode()
+    const parent = createNode({
+        parent: root,
+        layout: { x: 0, y: 0, width: 100, height: 100 },
+        overflow: OVERFLOW.scroll,
+    })
+    const node = createNode({
+        parent,
+        text_content: 'A',
+        layout: { x: 10, y: 20, width: 80, height: 40 },
+    })
+    parent.scrollLeft = 5
+    parent.scrollTop = 7
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const render_data = collectRenderData(renderer, [node])
+
+    expect(render_data.glyphs[0].layout).toEqual([5, 13, 8, 16])
+    expect((renderer as any).text_runs[0].clipping).toEqual([0, 100, 100, 0])
 })
 
 test('RendererWebGPU positions and wraps text inside the content box', () => {
