@@ -5,8 +5,14 @@ export default class Node {
     public path = []
     public styles = {}
     public layout = {}
-    public order = 0
     public text_content = undefined
+    public order = 0
+    public scrollTop = 0
+    public scrollLeft = 0
+    public scrollHeight = 0
+    public scrollWidth = 0
+    public clientHeight = 0
+    public clientWidth = 0
 
     constructor({ id, ui }) {
         this.id = id

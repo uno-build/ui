@@ -1,7 +1,13 @@
 import Renderer from '../Renderer'
-import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, EDGE, KEYWORD, TEXT_ALIGN, UNIT } from '../style/consts'
+import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, EDGE, KEYWORD, OVERFLOW, TEXT_ALIGN, UNIT } from '../style/consts'
 import createEngine, { YOGA_SETTER, MEASURE_MODE } from '../layouter/yoga'
-import { getAncestorClipping, getNodeBorderWidth, getNodeDrawingData, getNodeOpacity } from './utils/node'
+import {
+    getAncestorClipping,
+    getNodeBorderWidth,
+    getNodeDrawingData,
+    getNodeOpacity,
+    updateScrollMetrics,
+} from './utils/node'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
 import { createUIWGSL } from './webgpu/shaders'
 import { ImageManager } from './webgpu/ImageManager'
@@ -43,6 +49,7 @@ export default class RendererWebGPU extends Renderer {
     private text_shadow_max_samples_per_axis
     private text_stroke_max_samples_per_glyph
     private device_pixel_ratio = 1
+    private scrollbar_size = [0, 0]
     // props
     private engine
     private adapter
@@ -85,6 +92,7 @@ export default class RendererWebGPU extends Renderer {
     private text_run_array_buffer_size = 0
     private text_run_floats
     private prepared_texts = new WeakMap()
+    private root_node
 
     constructor({
         canvas,
@@ -110,6 +118,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public async init() {
+        this.scrollbar_size = measureScrollbarSize()
         this.engine = await createEngine()
         this.adapter = await navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
         this.device = await this.adapter.requestDevice({
@@ -281,6 +290,10 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public createElement(node) {
+        if (node.id === 0) {
+            this.root_node = node
+        }
+
         return this.engine.createElement(node)
     }
 
@@ -368,6 +381,18 @@ export default class RendererWebGPU extends Renderer {
             YOGA_SETTER[style.name](node.element, style)
         }
 
+        if (style.name === 'overflow' || style.name === 'borderRightWidth' || style.name === 'borderBottomWidth') {
+            const has_scrollbar = node.styles.overflow?.parsed.enum === OVERFLOW.scroll
+            node.element.setBorder(
+                EDGE.right,
+                (node.styles.borderRightWidth?.parsed.value ?? 0) + (has_scrollbar ? this.scrollbar_size[0] : 0),
+            )
+            node.element.setBorder(
+                EDGE.bottom,
+                (node.styles.borderBottomWidth?.parsed.value ?? 0) + (has_scrollbar ? this.scrollbar_size[1] : 0),
+            )
+        }
+
         if (style.name === 'backgroundImage') {
             this.image_manager.removeNode(node)
             if (style.parsed.kind !== KEYWORD.UNSET) {
@@ -393,6 +418,7 @@ export default class RendererWebGPU extends Renderer {
 
     public afterUpdate(nodes) {
         super.afterUpdate(nodes)
+        updateScrollMetrics(this.root_node)
     }
 
     public update(nodes) {
@@ -1009,6 +1035,21 @@ function packColor(color) {
 
 function roundToDevicePixel(value, device_pixel_ratio) {
     return Math.round(value * device_pixel_ratio) / device_pixel_ratio
+}
+
+function measureScrollbarSize() {
+    const element = document.createElement('div')
+    Object.assign(element.style, {
+        position: 'absolute',
+        width: '100px',
+        height: '100px',
+        overflow: 'scroll',
+        visibility: 'hidden',
+    })
+    document.body.appendChild(element)
+    const size = [element.offsetWidth - element.clientWidth, element.offsetHeight - element.clientHeight]
+    element.remove()
+    return size
 }
 
 function constrainMeasuredSize(measured_size, available_size, measure_mode) {

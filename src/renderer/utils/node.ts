@@ -1,4 +1,4 @@
-import { DISPLAY, OVERFLOW, UNIT } from '../../style/consts'
+import { DISPLAY, EDGE, OVERFLOW, UNIT } from '../../style/consts'
 import { TRANSPARENT_COLOR } from '../webgpu/buffers'
 
 const EMPTY_BOX_SHADOW = [0, 0, 0, 0]
@@ -21,7 +21,7 @@ export function getNodeDrawingData(node) {
     const has_border =
         border_width_top > 0 || border_width_right > 0 || border_width_bottom > 0 || border_width_left > 0
     const box_shadow = getNodeBoxShadow(node)
-    const has_box_shadow = (box_shadow[2] >>> 24) > 0 && (box_shadow[0] !== 0 || box_shadow[1] !== 0)
+    const has_box_shadow = box_shadow[2] >>> 24 > 0 && (box_shadow[0] !== 0 || box_shadow[1] !== 0)
 
     if (!has_background && !has_background_image && !has_border && !has_box_shadow) {
         return null
@@ -34,10 +34,7 @@ export function getNodeDrawingData(node) {
 
     const clip = getAncestorClipping(node)
     const normalized_clipping = clip === null ? [0, 0, 0, 0] : [clip.top, clip.right, clip.bottom, clip.left]
-    if (
-        clip !== null &&
-        (clip.right <= 0 || clip.bottom <= 0 || clip.left >= width || clip.top >= height)
-    ) {
+    if (clip !== null && (clip.right <= 0 || clip.bottom <= 0 || clip.left >= width || clip.top >= height)) {
         return null
     }
 
@@ -94,6 +91,75 @@ export function getNodeBorderWidth(node, side) {
     }
 
     return border_width?.parsed.value ?? 0
+}
+
+export function updateScrollMetrics(root) {
+    updateNodeScrollMetrics(root)
+}
+
+function updateNodeScrollMetrics(node) {
+    const display = node.styles.display?.parsed.enum ?? DISPLAY.flex
+    if (display === DISPLAY.none) {
+        resetScrollMetrics(node)
+        return { right: node.layout.x, bottom: node.layout.y }
+    }
+
+    const border_left = node.element.getComputedBorder(EDGE.left)
+    const border_right = node.element.getComputedBorder(EDGE.right)
+    const border_top = node.element.getComputedBorder(EDGE.top)
+    const border_bottom = node.element.getComputedBorder(EDGE.bottom)
+    const padding_right = node.element.getComputedPadding(EDGE.right)
+    const padding_bottom = node.element.getComputedPadding(EDGE.bottom)
+
+    node.clientWidth = Math.round(Math.max(0, node.layout.width - border_left - border_right))
+    node.clientHeight = Math.round(Math.max(0, node.layout.height - border_top - border_bottom))
+
+    let content_right = node.layout.x + border_left + node.clientWidth - padding_right
+    let content_bottom = node.layout.y + border_top + node.clientHeight - padding_bottom
+
+    for (const child of node.children) {
+        const child_overflow = updateNodeScrollMetrics(child)
+        const child_display = child.styles.display?.parsed.enum ?? DISPLAY.flex
+        if (child_display === DISPLAY.none) {
+            continue
+        }
+
+        content_right = Math.max(content_right, child.layout.x + child.layout.width)
+        content_bottom = Math.max(content_bottom, child.layout.y + child.layout.height)
+
+        const overflow = child.styles.overflow?.parsed.enum ?? OVERFLOW.visible
+        if (overflow === OVERFLOW.visible) {
+            content_right = Math.max(content_right, child_overflow.right)
+            content_bottom = Math.max(content_bottom, child_overflow.bottom)
+        }
+    }
+
+    node.scrollWidth = Math.round(
+        Math.max(node.clientWidth, content_right - node.layout.x - border_left + padding_right),
+    )
+    node.scrollHeight = Math.round(
+        Math.max(node.clientHeight, content_bottom - node.layout.y - border_top + padding_bottom),
+    )
+    node.scrollLeft = Math.max(0, Math.min(node.scrollLeft, node.scrollWidth - node.clientWidth))
+    node.scrollTop = Math.max(0, Math.min(node.scrollTop, node.scrollHeight - node.clientHeight))
+
+    return {
+        right: Math.max(node.layout.x + node.layout.width, content_right),
+        bottom: Math.max(node.layout.y + node.layout.height, content_bottom),
+    }
+}
+
+function resetScrollMetrics(node) {
+    node.clientWidth = 0
+    node.clientHeight = 0
+    node.scrollWidth = 0
+    node.scrollHeight = 0
+    node.scrollLeft = 0
+    node.scrollTop = 0
+
+    for (const child of node.children) {
+        resetScrollMetrics(child)
+    }
 }
 
 function getBorderRadius(border_radius, width, height) {

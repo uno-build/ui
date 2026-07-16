@@ -73,6 +73,100 @@ test('RendererWebGPU writes layout and clipping bounds into panel instance data'
     expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([3, 7, 7, 2])
 })
 
+test('RendererWebGPU calculates scroll metrics from descendant layout overflow', () => {
+    const root = createNode({
+        layout: { x: 100, y: 50, width: 120, height: 100 },
+        computed_border: {
+            [EDGE.top]: 5,
+            [EDGE.right]: 5,
+            [EDGE.bottom]: 5,
+            [EDGE.left]: 5,
+        },
+        computed_padding: {
+            [EDGE.right]: 10,
+            [EDGE.bottom]: 8,
+        },
+    })
+    const child = createNode({
+        parent: root,
+        layout: { x: 115, y: 65, width: 80, height: 70 },
+    })
+    const grandchild = createNode({
+        parent: child,
+        layout: { x: 180, y: 120, width: 100, height: 80 },
+    })
+    root.children.push(child)
+    child.children.push(grandchild)
+    root.scrollLeft = 100
+    root.scrollTop = 100
+    const renderer = createRenderer()
+    ;(renderer as any).root_node = root
+
+    renderer.afterUpdate([])
+
+    expect(root.clientWidth).toBe(110)
+    expect(root.clientHeight).toBe(90)
+    expect(root.scrollWidth).toBe(185)
+    expect(root.scrollHeight).toBe(153)
+    expect(root.scrollLeft).toBe(75)
+    expect(root.scrollTop).toBe(63)
+})
+
+test('RendererWebGPU does not propagate overflow through a clipping descendant', () => {
+    const root = createNode({ layout: { x: 0, y: 0, width: 100, height: 100 } })
+    const child = createNode({
+        parent: root,
+        layout: { x: 10, y: 10, width: 60, height: 60 },
+        overflow: OVERFLOW.hidden,
+    })
+    const grandchild = createNode({
+        parent: child,
+        layout: { x: 50, y: 50, width: 100, height: 100 },
+    })
+    root.children.push(child)
+    child.children.push(grandchild)
+    const renderer = createRenderer()
+    ;(renderer as any).root_node = root
+
+    renderer.afterUpdate([])
+
+    expect(child.scrollWidth).toBe(140)
+    expect(child.scrollHeight).toBe(140)
+    expect(root.scrollWidth).toBe(100)
+    expect(root.scrollHeight).toBe(100)
+})
+
+test('RendererWebGPU reserves native scrollbar space in Yoga', () => {
+    const renderer = createRenderer()
+    const borders = new Map()
+    let overflow
+    const node = {
+        styles: {
+            overflow: { parsed: { enum: OVERFLOW.scroll } },
+            borderRightWidth: { parsed: { value: 1 } },
+            borderBottomWidth: { parsed: { value: 2 } },
+        },
+        element: {
+            setOverflow(value) {
+                overflow = value
+            },
+            setBorder(edge, value) {
+                borders.set(edge, value)
+            },
+        },
+    }
+    ;(renderer as any).scrollbar_size = [15, 15]
+
+    ;(renderer as any).updateResolvedStyle(node, {
+        name: 'overflow',
+        parsed: { enum: OVERFLOW.scroll },
+    })
+
+    expect(overflow).toBe(OVERFLOW.scroll)
+    expect(borders.get(EDGE.right)).toBe(16)
+    expect(borders.get(EDGE.bottom)).toBe(17)
+})
+
 test('RendererWebGPU writes border drawing data into panel instance data', () => {
     const node = createNode({
         layout: { x: 0, y: 0, width: 20, height: 10 },
@@ -2488,6 +2582,7 @@ function createNode({
         width: 10,
         height: 10,
     },
+    computed_border = {},
     computed_padding = {},
     overflow,
     styles = {},
@@ -2496,6 +2591,7 @@ function createNode({
     parent?: any
     opacity?: number
     layout?: { x: number; y: number; width: number; height: number }
+    computed_border?: Record<number, number>
     computed_padding?: Record<number, number>
     overflow?: number
     styles?: Record<string, any>
@@ -2503,12 +2599,22 @@ function createNode({
 } = {}) {
     return {
         element: {
+            getComputedBorder(edge) {
+                return computed_border[edge] ?? 0
+            },
             getComputedPadding(edge) {
                 return computed_padding[edge] ?? 0
             },
         },
         parent,
+        children: [],
         layout,
+        scrollTop: 0,
+        scrollLeft: 0,
+        scrollHeight: 0,
+        scrollWidth: 0,
+        clientHeight: 0,
+        clientWidth: 0,
         text_content,
         isTextNode() {
             return text_content !== undefined

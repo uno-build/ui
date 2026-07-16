@@ -17,6 +17,7 @@ import fontLineHeight from './examples/fontLineHeight'
 import fontParagraph from './examples/fontParagraph'
 import fontSize from './examples/fontSize'
 import fontTextAlign from './examples/fontTextAlign'
+import scroll from './examples/scroll'
 import fontTextShadow from './examples/fontTextShadow'
 import fontTextStroke from './examples/fontTextStroke'
 import nestedFlexDirections from './examples/nestedFlexDirections'
@@ -55,6 +56,7 @@ export const LAYOUTS = {
     fontLineHeight,
     fontSize,
     fontTextAlign,
+    scroll,
     fontTextShadow,
     fontTextStroke,
     fontParagraph,

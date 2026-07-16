@@ -6,8 +6,11 @@ const FONT_SIZES = [5, 15, 25]
 export default async function createFontTextStrokeLayout({ ui }) {
     const font_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
     const font_json = await loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json')
+    const font_image2 = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
+    const font_json2 = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
 
     ui.fontRegister('ChangaOne-Regular', font_image, font_json)
+    ui.fontRegister('Poppins-Regular', font_image2, font_json2)
 
     const stage = ui.create()
     stage.style('width', '100%')
