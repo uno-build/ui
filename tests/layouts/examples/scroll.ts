@@ -6,6 +6,8 @@ Curabitur pretium tincidunt lacus, nulla gravida orci a odio. Nullam varius, tur
 
 Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Mauris accumsan eros eget libero posuere vulputate. Etiam elit elit, elementum sed varius at, adipiscing vitae est. Sed nec felis pellentesque, lacinia dui sed, ultricies sapien. Pellentesque orci lectus, consectetur vel posuere posuere, rutrum eu ipsum.`
 
+const INNER_COLORS = ['#ff8a80', '#ffd180', '#ffff8d', '#b9f6ca', '#80d8ff', '#b388ff']
+
 export default async function createFontTextScrollLayout({ ui }) {
     const changa_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
     const changa_json = await loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json')
@@ -21,6 +23,8 @@ export default async function createFontTextScrollLayout({ ui }) {
     stage.style('width', '100%')
     stage.style('height', '100%')
     stage.style('padding', '40px')
+    stage.style('flexDirection', 'row')
+    stage.style('gap', '40px')
     stage.style('backgroundColor', '#eef3f7')
     ui.root.add(stage)
 
@@ -32,7 +36,7 @@ export default async function createFontTextScrollLayout({ ui }) {
     scroll.style('padding', '24px')
     scroll.style('gap', '20px')
     scroll.style('backgroundColor', '#ffffff')
-    scroll.style('border', '1px solid #1b2a38')
+    scroll.style('border', '2px solid #1b2a38')
     stage.add(scroll)
 
     const container = ui.create()
@@ -69,11 +73,75 @@ export default async function createFontTextScrollLayout({ ui }) {
     text.text(TEXT)
     container.add(text)
 
+    const outer_scroll = ui.create()
+    outer_scroll.style('width', '500px')
+    outer_scroll.style('height', '500px')
+    outer_scroll.style('overflow', 'scroll')
+    outer_scroll.style('flexDirection', 'column')
+    outer_scroll.style('padding', '24px')
+    outer_scroll.style('gap', '24px')
+    outer_scroll.style('backgroundColor', '#ffffff')
+    outer_scroll.style('border', '2px solid #243447')
+    stage.add(outer_scroll)
+
+    const outer_header = ui.create()
+    outer_header.style('width', '100%')
+    outer_header.style('height', '180px')
+    outer_header.style('flexShrink', '0')
+    outer_header.style('backgroundColor', '#90caf9')
+    outer_scroll.add(outer_header)
+
+    const inner_scroll = ui.create()
+    inner_scroll.style('width', '100%')
+    inner_scroll.style('height', '280px')
+    inner_scroll.style('overflow', 'scroll')
+    inner_scroll.style('flexDirection', 'column')
+    inner_scroll.style('flexShrink', '0')
+    inner_scroll.style('padding', '16px')
+    inner_scroll.style('gap', '12px')
+    inner_scroll.style('backgroundColor', '#263238')
+    inner_scroll.style('border', '2px solid #0d161a')
+    outer_scroll.add(inner_scroll)
+
+    for (const color of INNER_COLORS) {
+        const row = ui.create()
+        row.style('width', '100%')
+        row.style('height', '110px')
+        row.style('flexShrink', '0')
+        row.style('backgroundColor', color)
+        inner_scroll.add(row)
+    }
+
+    const outer_footer = ui.create()
+    outer_footer.style('width', '100%')
+    outer_footer.style('height', '400px')
+    outer_footer.style('flexShrink', '0')
+    outer_footer.style('backgroundColor', '#80cbc4')
+    outer_scroll.add(outer_footer)
+
+    const scroll_states = [
+        { node: scroll, direction: 1 },
+        { node: outer_scroll, direction: 1 },
+        { node: inner_scroll, direction: 2 },
+    ]
+
     setInterval(() => {
-        console.log({
-            scrollTop: scroll.scrollTop,
-            scrollHeight: scroll.scrollHeight,
-            clientHeight: scroll.clientHeight,
-        })
-    }, 1000)
+        for (const scroll_state of scroll_states) {
+            const scroll_max = scroll_state.node.scrollHeight - scroll_state.node.clientHeight
+            let next_scroll_top = scroll_state.node.scrollTop + scroll_state.direction
+
+            if (next_scroll_top >= scroll_max) {
+                next_scroll_top = scroll_max
+                scroll_state.direction = -Math.abs(scroll_state.direction)
+            } else if (next_scroll_top <= 0) {
+                next_scroll_top = 0
+                scroll_state.direction = Math.abs(scroll_state.direction)
+            }
+
+            scroll_state.node.scrollTop = next_scroll_top
+        }
+
+        ui.update()
+        ui.draw()
+    }, 16)
 }

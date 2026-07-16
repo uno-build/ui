@@ -120,7 +120,12 @@ function updateNodeScrollMetrics(node, get_content_size) {
     const display = node.styles.display?.parsed.enum ?? DISPLAY.flex
     if (display === DISPLAY.none) {
         resetScrollMetrics(node)
-        return { right: node.layout.x, bottom: node.layout.y }
+        return {
+            left: node.layout.x,
+            top: node.layout.y,
+            right: node.layout.x,
+            bottom: node.layout.y,
+        }
     }
 
     const border_left = node.element.getComputedBorder(EDGE.left)
@@ -129,16 +134,28 @@ function updateNodeScrollMetrics(node, get_content_size) {
     const border_bottom = node.element.getComputedBorder(EDGE.bottom)
     const padding_left = node.element.getComputedPadding(EDGE.left)
     const padding_top = node.element.getComputedPadding(EDGE.top)
+    const padding_right = node.element.getComputedPadding(EDGE.right)
+    const padding_bottom = node.element.getComputedPadding(EDGE.bottom)
 
     node.client_width = Math.round(Math.max(0, node.layout.width - border_left - border_right))
     node.client_height = Math.round(Math.max(0, node.layout.height - border_top - border_bottom))
 
-    let content_right = node.layout.x + border_left + node.client_width
-    let content_bottom = node.layout.y + border_top + node.client_height
+    const overflow_rect = {
+        left: node.layout.x + border_left,
+        top: node.layout.y + border_top,
+        right: node.layout.x + border_left + node.client_width,
+        bottom: node.layout.y + border_top + node.client_height,
+    }
     const content_size = get_content_size(node)
     if (content_size !== null) {
-        content_right = Math.max(content_right, node.layout.x + border_left + padding_left + content_size.width)
-        content_bottom = Math.max(content_bottom, node.layout.y + border_top + padding_top + content_size.height)
+        overflow_rect.right = Math.max(
+            overflow_rect.right,
+            node.layout.x + border_left + padding_left + content_size.width + padding_right,
+        )
+        overflow_rect.bottom = Math.max(
+            overflow_rect.bottom,
+            node.layout.y + border_top + padding_top + content_size.height + padding_bottom,
+        )
     }
 
     for (const child of node.children) {
@@ -148,25 +165,30 @@ function updateNodeScrollMetrics(node, get_content_size) {
             continue
         }
 
-        content_right = Math.max(content_right, child.layout.x + child.layout.width)
-        content_bottom = Math.max(content_bottom, child.layout.y + child.layout.height)
+        overflow_rect.left = Math.min(overflow_rect.left, child.layout.x)
+        overflow_rect.top = Math.min(overflow_rect.top, child.layout.y)
+        overflow_rect.right = Math.max(overflow_rect.right, child.layout.x + child.layout.width + padding_right)
+        overflow_rect.bottom = Math.max(overflow_rect.bottom, child.layout.y + child.layout.height + padding_bottom)
 
         const overflow = child.styles.overflow?.parsed.enum ?? OVERFLOW.visible
         if (overflow === OVERFLOW.visible) {
-            content_right = Math.max(content_right, child_overflow.right)
-            content_bottom = Math.max(content_bottom, child_overflow.bottom)
+            overflow_rect.left = Math.min(overflow_rect.left, child_overflow.left)
+            overflow_rect.top = Math.min(overflow_rect.top, child_overflow.top)
+            overflow_rect.right = Math.max(overflow_rect.right, child_overflow.right)
+            overflow_rect.bottom = Math.max(overflow_rect.bottom, child_overflow.bottom)
         }
     }
 
-    node.scroll_width = Math.round(Math.max(node.client_width, content_right - node.layout.x - border_left))
-    node.scroll_height = Math.round(Math.max(node.client_height, content_bottom - node.layout.y - border_top))
+    node.scroll_width = Math.round(
+        Math.max(node.client_width, overflow_rect.right - node.layout.x - border_left),
+    )
+    node.scroll_height = Math.round(
+        Math.max(node.client_height, overflow_rect.bottom - node.layout.y - border_top),
+    )
     node.scroll_left = Math.max(0, Math.min(node.scroll_left, node.scroll_width - node.client_width))
     node.scroll_top = Math.max(0, Math.min(node.scroll_top, node.scroll_height - node.client_height))
 
-    return {
-        right: Math.max(node.layout.x + node.layout.width, content_right),
-        bottom: Math.max(node.layout.y + node.layout.height, content_bottom),
-    }
+    return overflow_rect
 }
 
 function resetScrollMetrics(node) {

@@ -169,11 +169,37 @@ test('RendererWebGPU calculates scroll metrics from descendant layout overflow',
     expect(root.scroll_top).toBe(55)
 })
 
+test('RendererWebGPU includes trailing padding after direct child overflow', () => {
+    const root = createNode({
+        layout: { x: 0, y: 0, width: 100, height: 100 },
+        computed_padding: {
+            [EDGE.right]: 10,
+            [EDGE.bottom]: 8,
+        },
+    })
+    const child = createNode({
+        parent: root,
+        layout: { x: 15, y: 15, width: 120, height: 120 },
+    })
+    root.children.push(child)
+    const renderer = createRenderer()
+    ;(renderer as any).root_node = root
+
+    renderer.afterUpdate([])
+
+    expect(root.scroll_width).toBe(145)
+    expect(root.scroll_height).toBe(143)
+})
+
 test('RendererWebGPU includes overflowing text content in scroll metrics', () => {
     const root = createNode({ layout: { x: 0, y: 0, width: 24, height: 50 } })
     const text = createNode({
         parent: root,
         layout: { x: 0, y: 0, width: 24, height: 20 },
+        computed_padding: {
+            [EDGE.top]: 5,
+            [EDGE.bottom]: 7,
+        },
         text_content: 'AA AA',
         styles: {
             fontSize: {
@@ -200,8 +226,8 @@ test('RendererWebGPU includes overflowing text content in scroll metrics', () =>
 
     renderer.afterUpdate([])
 
-    expect(text.scroll_height).toBe(60)
-    expect(root.scroll_height).toBe(60)
+    expect(text.scroll_height).toBe(72)
+    expect(root.scroll_height).toBe(72)
 })
 
 test('RendererWebGPU does not propagate overflow through a clipping descendant', () => {
