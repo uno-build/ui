@@ -1,6 +1,7 @@
 import { loadImage, loadJson } from '../../../src/utils/loadAssets'
 
-const BLUR_LEVELS = Array.from({ length: 16 }, (_, index) => index)
+const BLUR_LEVELS = Array.from({ length: 10 }, (_, index) => index)
+const FONT_SIZES = [5, 15, 25, 35]
 const UPDATE_INTERVAL = 5
 const ORBIT_RADIUS = 10
 const ORBIT_STEP = Math.PI / 500
@@ -24,25 +25,27 @@ export default async function createFontTextShadowLayout({ ui }) {
 
     const text_nodes = []
 
-    for (const blur of BLUR_LEVELS) {
-        const card = ui.create()
-        card.style('width', '160px')
-        card.style('height', '80px')
-        card.style('padding', '12px')
-        card.style('alignItems', 'center')
-        card.style('justifyContent', 'center')
-        card.style('backgroundColor', '#ffffff')
-        card.style('border', '1px solid #000000')
-        stage.add(card)
+    for (const font_size of FONT_SIZES) {
+        for (const blur of BLUR_LEVELS) {
+            const card = ui.create()
+            card.style('width', '160px')
+            card.style('height', '80px')
+            card.style('padding', '12px')
+            card.style('alignItems', 'center')
+            card.style('justifyContent', 'center')
+            card.style('backgroundColor', '#ffffff')
+            card.style('border', '1px solid #000000')
+            stage.add(card)
 
-        const text = ui.create()
-        text.style('color', '#172554')
-        text.style('fontFamily', 'ChangaOne-Regular')
-        text.style('fontSize', '25px')
-        text.style('textShadow', `${ORBIT_RADIUS}px 0px ${blur}px #00000099`)
-        text.text(`${blur}px blur`)
-        card.add(text)
-        text_nodes.push({ node: text, blur })
+            const text = ui.create()
+            text.style('color', '#172554')
+            text.style('fontFamily', 'ChangaOne-Regular')
+            text.style('fontSize', `${font_size}px`)
+            text.style('textShadow', `${ORBIT_RADIUS}px 0px ${blur}px #00000099`)
+            text.text(`${blur}px blur`)
+            card.add(text)
+            text_nodes.push({ node: text, blur })
+        }
     }
 
     let angle = 0

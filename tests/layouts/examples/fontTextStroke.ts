@@ -1,6 +1,7 @@
 import { loadImage, loadJson } from '../../../src/utils/loadAssets'
 
-const STROKE_WIDTHS = Array.from({ length: 16 }, (_, index) => index)
+const STROKE_WIDTHS = Array.from({ length: 10 }, (_, index) => index)
+const FONT_SIZES = [5, 15, 25]
 
 export default async function createFontTextStrokeLayout({ ui }) {
     const font_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
@@ -19,24 +20,26 @@ export default async function createFontTextStrokeLayout({ ui }) {
     stage.style('backgroundColor', '#eef3f7')
     ui.root.add(stage)
 
-    for (const width of STROKE_WIDTHS) {
-        const card = ui.create()
-        card.style('width', '170px')
-        card.style('height', '100px')
-        card.style('padding', '12px')
-        card.style('alignItems', 'center')
-        card.style('justifyContent', 'center')
-        card.style('backgroundColor', '#ffffff')
-        card.style('border', '1px solid #000000')
-        stage.add(card)
+    for (const font_size of FONT_SIZES) {
+        for (const width of STROKE_WIDTHS) {
+            const card = ui.create()
+            card.style('width', '170px')
+            card.style('height', '100px')
+            card.style('padding', '12px')
+            card.style('alignItems', 'center')
+            card.style('justifyContent', 'center')
+            card.style('backgroundColor', '#ffffff')
+            card.style('border', '1px solid #000000')
+            stage.add(card)
 
-        const text = ui.create()
-        text.style('fontFamily', 'ChangaOne-Regular')
-        text.style('fontSize', '25px')
-        text.style('color', '#f97316')
-        text.style('textStroke', `${width}px #172554`)
-        // text.style('textShadow', `0px 2px 0px #172554`)
-        text.text(`${width}px stroke`)
-        card.add(text)
+            const text = ui.create()
+            text.style('fontFamily', 'ChangaOne-Regular')
+            text.style('fontSize', `${font_size}px`)
+            text.style('color', '#f97316')
+            text.style('textStroke', `${width}px #172554`)
+            // text.style('textShadow', `0px 2px 0px #172554`)
+            text.text(`${width}px stroke`)
+            card.add(text)
+        }
     }
 }
