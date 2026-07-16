@@ -6,6 +6,7 @@ export default class RendererDom extends Renderer {
     private canvas
     private fonts = new Map()
     private text_elements = new WeakMap()
+    private root_node
 
     constructor({ canvas }) {
         super()
@@ -14,6 +15,7 @@ export default class RendererDom extends Renderer {
 
     public createElement(node) {
         if (node.id === 0) {
+            this.root_node = node
             return this.canvas
         }
         const element = document.createElement('div')
@@ -81,6 +83,36 @@ export default class RendererDom extends Renderer {
         for (const node of nodes) {
             this.updateText(node)
         }
+
+        this.applyNodeScroll(this.root_node)
+        for (const node of nodes) {
+            this.applyNodeScroll(node)
+        }
+    }
+
+    public afterUpdate(nodes) {
+        super.afterUpdate(nodes)
+        this.readNodeScroll(this.root_node)
+
+        for (const node of nodes) {
+            this.readNodeScroll(node)
+        }
+    }
+
+    private applyNodeScroll(node) {
+        const { element } = node
+        element.scrollLeft = node.scroll_left
+        element.scrollTop = node.scroll_top
+    }
+
+    private readNodeScroll(node) {
+        const { element } = node
+        node.scroll_left = element.scrollLeft
+        node.scroll_top = element.scrollTop
+        node.scroll_width = element.scrollWidth
+        node.scroll_height = element.scrollHeight
+        node.client_width = element.clientWidth
+        node.client_height = element.clientHeight
     }
 
     private updateText(node) {
@@ -112,8 +144,8 @@ export default class RendererDom extends Renderer {
             {
                 width: node_rect.width,
                 height: node_rect.height,
-                left: node_rect.left - parent_rect.left,
-                top: node_rect.top - parent_rect.top,
+                left: node_rect.left - parent_rect.left + (parent?.element.scrollLeft ?? 0),
+                top: node_rect.top - parent_rect.top + (parent?.element.scrollTop ?? 0),
             },
             {
                 ...parent_layout,

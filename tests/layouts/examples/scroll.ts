@@ -69,24 +69,11 @@ export default async function createFontTextScrollLayout({ ui }) {
     text.text(TEXT)
     container.add(text)
 
-    // setInterval(() => {
-    //     console.log({
-    //         scrollWidth:
-    //             scroll_container.element instanceof HTMLElement
-    //                 ? scroll_container.element.scrollWidth
-    //                 : scroll_container.scrollWidth,
-    //         clientWidth:
-    //             scroll_container.element instanceof HTMLElement
-    //                 ? scroll_container.element.clientWidth
-    //                 : scroll_container.clientWidth,
-    //         scrollHeight:
-    //             scroll_container.element instanceof HTMLElement
-    //                 ? scroll_container.element.scrollHeight
-    //                 : scroll_container.scrollHeight,
-    //         clientHeight:
-    //             scroll_container.element instanceof HTMLElement
-    //                 ? scroll_container.element.clientHeight
-    //                 : scroll_container.clientHeight,
-    //     })
-    // }, 1000)
+    setInterval(() => {
+        console.log({
+            scrollTop: scroll.scrollTop,
+            scrollHeight: scroll.scrollHeight,
+            clientHeight: scroll.clientHeight,
+        })
+    }, 1000)
 }

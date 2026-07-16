@@ -99,8 +99,8 @@ export function getNodeRenderLayout(node) {
     let ancestor = node.parent
 
     while (ancestor !== null) {
-        x -= ancestor.scrollLeft
-        y -= ancestor.scrollTop
+        x -= ancestor.scroll_left
+        y -= ancestor.scroll_top
         ancestor = ancestor.parent
     }
 
@@ -112,11 +112,11 @@ export function getNodeRenderLayout(node) {
     }
 }
 
-export function updateScrollMetrics(root) {
-    updateNodeScrollMetrics(root)
+export function updateScrollMetrics(root, get_content_size) {
+    updateNodeScrollMetrics(root, get_content_size)
 }
 
-function updateNodeScrollMetrics(node) {
+function updateNodeScrollMetrics(node, get_content_size) {
     const display = node.styles.display?.parsed.enum ?? DISPLAY.flex
     if (display === DISPLAY.none) {
         resetScrollMetrics(node)
@@ -127,17 +127,22 @@ function updateNodeScrollMetrics(node) {
     const border_right = node.element.getComputedBorder(EDGE.right)
     const border_top = node.element.getComputedBorder(EDGE.top)
     const border_bottom = node.element.getComputedBorder(EDGE.bottom)
-    const padding_right = node.element.getComputedPadding(EDGE.right)
-    const padding_bottom = node.element.getComputedPadding(EDGE.bottom)
+    const padding_left = node.element.getComputedPadding(EDGE.left)
+    const padding_top = node.element.getComputedPadding(EDGE.top)
 
-    node.clientWidth = Math.round(Math.max(0, node.layout.width - border_left - border_right))
-    node.clientHeight = Math.round(Math.max(0, node.layout.height - border_top - border_bottom))
+    node.client_width = Math.round(Math.max(0, node.layout.width - border_left - border_right))
+    node.client_height = Math.round(Math.max(0, node.layout.height - border_top - border_bottom))
 
-    let content_right = node.layout.x + border_left + node.clientWidth - padding_right
-    let content_bottom = node.layout.y + border_top + node.clientHeight - padding_bottom
+    let content_right = node.layout.x + border_left + node.client_width
+    let content_bottom = node.layout.y + border_top + node.client_height
+    const content_size = get_content_size(node)
+    if (content_size !== null) {
+        content_right = Math.max(content_right, node.layout.x + border_left + padding_left + content_size.width)
+        content_bottom = Math.max(content_bottom, node.layout.y + border_top + padding_top + content_size.height)
+    }
 
     for (const child of node.children) {
-        const child_overflow = updateNodeScrollMetrics(child)
+        const child_overflow = updateNodeScrollMetrics(child, get_content_size)
         const child_display = child.styles.display?.parsed.enum ?? DISPLAY.flex
         if (child_display === DISPLAY.none) {
             continue
@@ -153,14 +158,10 @@ function updateNodeScrollMetrics(node) {
         }
     }
 
-    node.scrollWidth = Math.round(
-        Math.max(node.clientWidth, content_right - node.layout.x - border_left + padding_right),
-    )
-    node.scrollHeight = Math.round(
-        Math.max(node.clientHeight, content_bottom - node.layout.y - border_top + padding_bottom),
-    )
-    node.scrollLeft = Math.max(0, Math.min(node.scrollLeft, node.scrollWidth - node.clientWidth))
-    node.scrollTop = Math.max(0, Math.min(node.scrollTop, node.scrollHeight - node.clientHeight))
+    node.scroll_width = Math.round(Math.max(node.client_width, content_right - node.layout.x - border_left))
+    node.scroll_height = Math.round(Math.max(node.client_height, content_bottom - node.layout.y - border_top))
+    node.scroll_left = Math.max(0, Math.min(node.scroll_left, node.scroll_width - node.client_width))
+    node.scroll_top = Math.max(0, Math.min(node.scroll_top, node.scroll_height - node.client_height))
 
     return {
         right: Math.max(node.layout.x + node.layout.width, content_right),
@@ -169,12 +170,12 @@ function updateNodeScrollMetrics(node) {
 }
 
 function resetScrollMetrics(node) {
-    node.clientWidth = 0
-    node.clientHeight = 0
-    node.scrollWidth = 0
-    node.scrollHeight = 0
-    node.scrollLeft = 0
-    node.scrollTop = 0
+    node.client_width = 0
+    node.client_height = 0
+    node.scroll_width = 0
+    node.scroll_height = 0
+    node.scroll_left = 0
+    node.scroll_top = 0
 
     for (const child of node.children) {
         resetScrollMetrics(child)
@@ -225,8 +226,8 @@ export function getAncestorClipping(node) {
     let ancestor = node.parent
 
     while (ancestor !== null) {
-        scroll_left += ancestor.scrollLeft
-        scroll_top += ancestor.scrollTop
+        scroll_left += ancestor.scroll_left
+        scroll_top += ancestor.scroll_top
         ancestor = ancestor.parent
     }
 
@@ -235,8 +236,8 @@ export function getAncestorClipping(node) {
     ancestor = node.parent
 
     while (ancestor?.parent != null) {
-        scroll_left -= ancestor.scrollLeft
-        scroll_top -= ancestor.scrollTop
+        scroll_left -= ancestor.scroll_left
+        scroll_top -= ancestor.scroll_top
         const overflow = ancestor.styles.overflow?.parsed.enum
         if (overflow === OVERFLOW.hidden || overflow === OVERFLOW.scroll) {
             const border_left = ancestor.element.getComputedBorder(EDGE.left)

@@ -419,7 +419,21 @@ export default class RendererWebGPU extends Renderer {
 
     public afterUpdate(nodes) {
         super.afterUpdate(nodes)
-        updateScrollMetrics(this.root_node)
+        updateScrollMetrics(this.root_node, (node) => this.getNodeContentSize(node))
+    }
+
+    private getNodeContentSize(node) {
+        if (!node.hasTextContent()) {
+            return null
+        }
+
+        const border_left = node.element.getComputedBorder(EDGE.left)
+        const border_right = node.element.getComputedBorder(EDGE.right)
+        const padding_left = node.element.getComputedPadding(EDGE.left)
+        const padding_right = node.element.getComputedPadding(EDGE.right)
+        const content_width = node.layout.width - border_left - border_right - padding_left - padding_right
+
+        return this.getTextMeasure(node, content_width)
     }
 
     public update(nodes) {

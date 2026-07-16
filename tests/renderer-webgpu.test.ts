@@ -90,8 +90,8 @@ test('RendererWebGPU scrolls panel geometry inside the ancestor padding box', ()
         parent,
         layout: { x: 0, y: 0, width: 10, height: 10 },
     })
-    parent.scrollLeft = 1
-    parent.scrollTop = 2
+    parent.scroll_left = 1
+    parent.scroll_top = 2
     const renderer = createRenderer()
     const nodes_buffer_data = createNodesBufferData(renderer, [child])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
@@ -118,8 +118,8 @@ test('RendererWebGPU accumulates nested scroll and moves nested clipping with it
         parent: inner,
         layout: { x: 30, y: 80, width: 20, height: 20 },
     })
-    outer.scrollTop = 30
-    inner.scrollTop = 10
+    outer.scroll_top = 30
+    inner.scroll_top = 10
     const renderer = createRenderer()
     const nodes_buffer_data = createNodesBufferData(renderer, [child])
     const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
@@ -154,19 +154,54 @@ test('RendererWebGPU calculates scroll metrics from descendant layout overflow',
     })
     root.children.push(child)
     child.children.push(grandchild)
-    root.scrollLeft = 100
-    root.scrollTop = 100
+    root.scroll_left = 100
+    root.scroll_top = 100
     const renderer = createRenderer()
     ;(renderer as any).root_node = root
 
     renderer.afterUpdate([])
 
-    expect(root.clientWidth).toBe(110)
-    expect(root.clientHeight).toBe(90)
-    expect(root.scrollWidth).toBe(185)
-    expect(root.scrollHeight).toBe(153)
-    expect(root.scrollLeft).toBe(75)
-    expect(root.scrollTop).toBe(63)
+    expect(root.client_width).toBe(110)
+    expect(root.client_height).toBe(90)
+    expect(root.scroll_width).toBe(175)
+    expect(root.scroll_height).toBe(145)
+    expect(root.scroll_left).toBe(65)
+    expect(root.scroll_top).toBe(55)
+})
+
+test('RendererWebGPU includes overflowing text content in scroll metrics', () => {
+    const root = createNode({ layout: { x: 0, y: 0, width: 24, height: 50 } })
+    const text = createNode({
+        parent: root,
+        layout: { x: 0, y: 0, width: 24, height: 20 },
+        text_content: 'AA AA',
+        styles: {
+            fontSize: {
+                value: '20px',
+                parsed: { value: 20, kind: UNIT.PX },
+            },
+        },
+    })
+    root.children.push(text)
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: {
+                ...createManagedFont(),
+                metrics: {
+                    ascender: 1,
+                    descender: -0.25,
+                    lineHeight: 1.5,
+                },
+            },
+        }),
+    )
+    ;(renderer as any).root_node = root
+
+    renderer.afterUpdate([])
+
+    expect(text.scroll_height).toBe(60)
+    expect(root.scroll_height).toBe(60)
 })
 
 test('RendererWebGPU does not propagate overflow through a clipping descendant', () => {
@@ -187,10 +222,10 @@ test('RendererWebGPU does not propagate overflow through a clipping descendant',
 
     renderer.afterUpdate([])
 
-    expect(child.scrollWidth).toBe(140)
-    expect(child.scrollHeight).toBe(140)
-    expect(root.scrollWidth).toBe(100)
-    expect(root.scrollHeight).toBe(100)
+    expect(child.scroll_width).toBe(140)
+    expect(child.scroll_height).toBe(140)
+    expect(root.scroll_width).toBe(100)
+    expect(root.scroll_height).toBe(100)
 })
 
 test('RendererWebGPU reserves native scrollbar space in Yoga', () => {
@@ -914,8 +949,8 @@ test('RendererWebGPU scrolls glyph geometry and keeps text clipping fixed to the
         text_content: 'A',
         layout: { x: 10, y: 20, width: 80, height: 40 },
     })
-    parent.scrollLeft = 5
-    parent.scrollTop = 7
+    parent.scroll_left = 5
+    parent.scroll_top = 7
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2692,12 +2727,12 @@ function createNode({
         parent,
         children: [],
         layout,
-        scrollTop: 0,
-        scrollLeft: 0,
-        scrollHeight: 0,
-        scrollWidth: 0,
-        clientHeight: 0,
-        clientWidth: 0,
+        scroll_top: 0,
+        scroll_left: 0,
+        scroll_height: 0,
+        scroll_width: 0,
+        client_height: 0,
+        client_width: 0,
         text_content,
         isTextNode() {
             return text_content !== undefined

@@ -7,12 +7,12 @@ export default class Node {
     public layout = {}
     public text_content = undefined
     public order = 0
-    public scrollTop = 0
-    public scrollLeft = 0
-    public scrollHeight = 0
-    public scrollWidth = 0
-    public clientHeight = 0
-    public clientWidth = 0
+    private scroll_top = 0
+    private scroll_left = 0
+    private scroll_height = 0
+    private scroll_width = 0
+    private client_height = 0
+    private client_width = 0
 
     constructor({ id, ui }) {
         this.id = id
@@ -60,6 +60,38 @@ export default class Node {
 
     public hasTextContent() {
         return this.isTextNode() && this.text_content.length > 0
+    }
+
+    public get scrollTop() {
+        return this.scroll_top
+    }
+
+    public set scrollTop(value) {
+        this.scroll_top = value
+    }
+
+    public get scrollLeft() {
+        return this.scroll_left
+    }
+
+    public set scrollLeft(value) {
+        this.scroll_left = value
+    }
+
+    public get scrollHeight() {
+        return this.scroll_height
+    }
+
+    public get scrollWidth() {
+        return this.scroll_width
+    }
+
+    public get clientHeight() {
+        return this.client_height
+    }
+
+    public get clientWidth() {
+        return this.client_width
     }
 }
 
