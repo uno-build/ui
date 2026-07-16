@@ -327,8 +327,8 @@ export default class RendererWebGPU extends Renderer {
             const font = this.getTextFont(node)
             if (font !== undefined) {
                 const font_size = this.getTextFontSize(node)
-                const natural_metrics = this.getTextNaturalMetrics(font, font_size)
-                const line_height = this.getTextLineHeight(node, natural_metrics.line_height, font_size)
+                const natural_line_height = this.getTextNaturalLineHeight(font, font_size)
+                const line_height = this.getTextLineHeight(node, natural_line_height, font_size)
                 const max_width = width_mode === MEASURE_MODE.UNDEFINED ? Infinity : available_width
                 const text_layout = measureLineStats(this.getPreparedText(node, font, font_size), max_width)
                 measured_width = text_layout.maxLineWidth
@@ -601,9 +601,10 @@ export default class RendererWebGPU extends Renderer {
         }
 
         const clipping = clip === null ? [0, 0, 0, 0] : [y + clip.top, x + clip.right, y + clip.bottom, x + clip.left]
-        const natural_metrics = this.getTextNaturalMetrics(font, font_size)
-        const line_height = this.getTextLineHeight(node, natural_metrics.line_height, font_size)
-        const leading = line_height - natural_metrics.ascender - natural_metrics.descender
+        const natural_line_height = this.getTextNaturalLineHeight(font, font_size)
+        const line_height = this.getTextLineHeight(node, natural_line_height, font_size)
+        const raster_metrics = this.getTextRasterMetrics(font, font_size)
+        const leading = line_height - raster_metrics.ascender - raster_metrics.descender
         const prepared_text = this.getPreparedText(node, font, font_size)
         const text_layout = layoutWithLines(prepared_text, content_width, line_height)
         const text_align = node.styles.textAlign?.parsed.enum ?? TEXT_ALIGN.left
@@ -615,7 +616,7 @@ export default class RendererWebGPU extends Renderer {
 
         for (let line_index = 0; line_index < text_layout.lines.length; line_index++) {
             const line = text_layout.lines[line_index]!
-            const baseline = content_y + leading / 2 + natural_metrics.ascender + line_index * line_height
+            const baseline = content_y + leading / 2 + raster_metrics.ascender + line_index * line_height
             const line_width = getTextAlignmentWidth(line, space_advance)
             const line_x = content_x + getTextAlignOffset(text_align, content_width, line_width)
             const justify_data = getJustifyData(text_align, prepared_text, line, content_width, line_width)
@@ -696,17 +697,14 @@ export default class RendererWebGPU extends Renderer {
         return node.styles.fontSize?.parsed.value ?? FONT_SIZE
     }
 
-    private getTextNaturalMetrics(font, font_size) {
-        const { ascender, descender, lineHeight } = font.metrics
-        const line_gap = lineHeight - ascender + descender
-        const rounded_ascender = roundToDevicePixel(ascender * font_size, this.device_pixel_ratio)
-        const rounded_descender = roundToDevicePixel(-descender * font_size, this.device_pixel_ratio)
-        const rounded_line_gap = roundToDevicePixel(line_gap * font_size, this.device_pixel_ratio)
+    private getTextNaturalLineHeight(font, font_size) {
+        return font.metrics.lineHeight * font_size
+    }
 
+    private getTextRasterMetrics(font, font_size) {
         return {
-            ascender: rounded_ascender,
-            descender: rounded_descender,
-            line_height: rounded_ascender + rounded_descender + rounded_line_gap,
+            ascender: roundToDevicePixel(font.metrics.ascender * font_size, this.device_pixel_ratio),
+            descender: roundToDevicePixel(-font.metrics.descender * font_size, this.device_pixel_ratio),
         }
     }
 

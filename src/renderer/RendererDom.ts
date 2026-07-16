@@ -52,8 +52,13 @@ export default class RendererDom extends Renderer {
         }
 
         if (resolved_style.name === 'fontFamily') {
-            const font = this.fonts.get(resolved_style.value)
             node.element.style.fontFamily = resolved_style.value
+            this.updateTextLineHeight(node)
+            return
+        }
+
+        if (resolved_style.name === 'lineHeight') {
+            this.updateTextLineHeight(node)
             return
         }
 
@@ -75,6 +80,18 @@ export default class RendererDom extends Renderer {
         }
 
         node.element.style[resolved_style.name] = resolved_style.value
+    }
+
+    private updateTextLineHeight(node) {
+        const line_height = node.styles.lineHeight
+
+        if (line_height !== undefined && line_height.parsed.kind !== KEYWORD.UNSET) {
+            node.element.style.lineHeight = line_height.value
+            return
+        }
+
+        const font = this.fonts.get(node.styles.fontFamily?.value)
+        node.element.style.lineHeight = font === undefined ? '' : `${font.lineHeight}`
     }
 
     public beforeUpdate(nodes) {

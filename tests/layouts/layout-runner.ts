@@ -25,7 +25,7 @@ export const SETUPS = {
         renderer: RendererWebGPU,
         attributes: {},
         inspectDomPaint: false,
-        runOnTests: false,
+        runOnTests: true,
     },
 }
 

@@ -19,6 +19,30 @@ test('RendererDom maps textStroke only to webkitTextStroke', () => {
     })
 })
 
+test('RendererDom resolves natural and unset lineHeight from registered font metrics', () => {
+    const renderer = new RendererDom({ canvas: {} })
+    const node = {
+        element: { style: {} },
+        styles: {
+            fontFamily: { value: 'Poppins-Regular' },
+        },
+    }
+    renderer.fontRegister('Poppins-Regular', {}, { metrics: { lineHeight: 1.5 } })
+
+    ;(renderer as any).updateStyle(node, Style.resolveStyle('fontFamily', 'Poppins-Regular'))
+    expect(node.element.style.lineHeight).toBe('1.5')
+
+    const explicit_line_height = Style.resolveStyle('lineHeight', '20px')
+    node.styles.lineHeight = explicit_line_height.expanded[0]
+    ;(renderer as any).updateStyle(node, explicit_line_height)
+    expect(node.element.style.lineHeight).toBe('20px')
+
+    const unset_line_height = Style.resolveStyle('lineHeight', 'unset')
+    node.styles.lineHeight = unset_line_height.expanded[0]
+    ;(renderer as any).updateStyle(node, unset_line_height)
+    expect(node.element.style.lineHeight).toBe('1.5')
+})
+
 test('RendererDom synchronizes node scroll state after update', () => {
     const canvas = createScrollableElement({
         scroll_width: 600,

@@ -12,5 +12,8 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         baseURL: 'http://127.0.0.1:5173',
         viewport: { width: 800, height: 600 },
+        launchOptions: {
+            args: ['--enable-unsafe-webgpu'],
+        },
     },
 })

@@ -1333,7 +1333,7 @@ test('RendererWebGPU passes the text stroke sample limit to the fragment pipelin
     }
 })
 
-test('RendererWebGPU snaps natural font metrics to device pixels', () => {
+test('RendererWebGPU keeps natural line height logical and snaps glyph metrics to device pixels', () => {
     const font = {
         ...createManagedFont(),
         metrics: {
@@ -1348,7 +1348,6 @@ test('RendererWebGPU snaps natural font metrics to device pixels', () => {
             default_font: font,
         }),
     )
-    renderer.setDevicePixelRatio(2)
     const node = createNode({
         text_content: 'A',
         styles: {
@@ -1359,8 +1358,13 @@ test('RendererWebGPU snaps natural font metrics to device pixels', () => {
         },
     })
 
-    expect(renderer.getTextMeasure(node)).toEqual({ width: 3, height: 8 })
-    expect(collectRenderData(renderer, [node]).glyphs[0].layout).toEqual([0, 0.75, 2.5, 5])
+    renderer.setDevicePixelRatio(1)
+    expect(renderer.getTextMeasure(node)).toEqual({ width: 3, height: 7.5 })
+    expect(collectRenderData(renderer, [node]).glyphs[0].layout).toEqual([0, 0.25, 2.5, 5])
+
+    renderer.setDevicePixelRatio(2)
+    expect(renderer.getTextMeasure(node)).toEqual({ width: 3, height: 7.5 })
+    expect(collectRenderData(renderer, [node]).glyphs[0].layout).toEqual([0, 0.5, 2.5, 5])
 })
 
 test('RendererWebGPU measures text with a unitless lineHeight multiplier', () => {
