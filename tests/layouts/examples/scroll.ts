@@ -6,7 +6,7 @@ Curabitur pretium tincidunt lacus, nulla gravida orci a odio. Nullam varius, tur
 
 Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Mauris accumsan eros eget libero posuere vulputate. Etiam elit elit, elementum sed varius at, adipiscing vitae est. Sed nec felis pellentesque, lacinia dui sed, ultricies sapien. Pellentesque orci lectus, consectetur vel posuere posuere, rutrum eu ipsum.`
 
-const INNER_COLORS = ['#ff8a80', '#ffd180', '#ffff8d', '#b9f6ca', '#80d8ff', '#b388ff']
+const INNER_TEXTS = TEXT.split('\n\n')
 
 export default async function createFontTextScrollLayout({ ui }) {
     const changa_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
@@ -88,7 +88,9 @@ export default async function createFontTextScrollLayout({ ui }) {
     outer_header.style('width', '100%')
     outer_header.style('height', '180px')
     outer_header.style('flexShrink', '0')
-    outer_header.style('backgroundColor', '#90caf9')
+    outer_header.style('backgroundImage', image_asset.src)
+    outer_header.style('backgroundSize', 'cover')
+    outer_header.style('backgroundPosition', '50% 50%')
     outer_scroll.add(outer_header)
 
     const inner_scroll = ui.create()
@@ -103,20 +105,35 @@ export default async function createFontTextScrollLayout({ ui }) {
     inner_scroll.style('border', '2px solid #0d161a')
     outer_scroll.add(inner_scroll)
 
-    for (const color of INNER_COLORS) {
-        const row = ui.create()
-        row.style('width', '100%')
-        row.style('height', '110px')
-        row.style('flexShrink', '0')
-        row.style('backgroundColor', color)
-        inner_scroll.add(row)
+    for (const inner_text_content of INNER_TEXTS) {
+        const inner_text = ui.create()
+        inner_text.style('width', '100%')
+        inner_text.style('flexShrink', '0')
+        inner_text.style('fontFamily', 'Poppins-Regular')
+        inner_text.style('fontSize', '14px')
+        inner_text.style('lineHeight', '20px')
+        inner_text.style('color', '#ffffff')
+        inner_text.text(inner_text_content)
+        inner_scroll.add(inner_text)
+
+        const inner_image = ui.create()
+        inner_image.style('width', '100%')
+        inner_image.style('height', '140px')
+        inner_image.style('flexShrink', '0')
+        inner_image.style('backgroundImage', image_asset.src)
+        inner_image.style('backgroundSize', 'cover')
+        inner_image.style('backgroundPosition', '50% 50%')
+        inner_scroll.add(inner_image)
     }
 
     const outer_footer = ui.create()
     outer_footer.style('width', '100%')
-    outer_footer.style('height', '400px')
     outer_footer.style('flexShrink', '0')
-    outer_footer.style('backgroundColor', '#80cbc4')
+    outer_footer.style('fontFamily', 'Poppins-Regular')
+    outer_footer.style('fontSize', '16px')
+    outer_footer.style('lineHeight', '24px')
+    outer_footer.style('color', '#243447')
+    outer_footer.text(TEXT)
     outer_scroll.add(outer_footer)
 
     const scroll_states = [
@@ -141,7 +158,9 @@ export default async function createFontTextScrollLayout({ ui }) {
             scroll_state.node.scrollTop = next_scroll_top
         }
 
+        const now = performance.now()
         ui.update()
         ui.draw()
-    }, 16)
+        // console.log(`${performance.now() - now}ms`)
+    }, 10)
 }

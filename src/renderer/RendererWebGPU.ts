@@ -338,7 +338,7 @@ export default class RendererWebGPU extends Renderer {
 
         return {
             width: constrainMeasuredSize(measured_width, available_width, width_mode),
-            height: constrainMeasuredSize(measured_height, available_height, height_mode),
+            height: height_mode === MEASURE_MODE.EXACTLY ? available_height : measured_height,
         }
     }
 
@@ -533,8 +533,7 @@ export default class RendererWebGPU extends Renderer {
                         kind: COMMAND_KIND_TEXT_SHADOW,
                         panel_index: 0,
                         glyph_index,
-                        text_stroke_width:
-                            text_data.run.text_stroke_color[3] > 0 ? text_data.run.text_stroke_width : 0,
+                        text_stroke_width: text_data.run.text_stroke_color[3] > 0 ? text_data.run.text_stroke_width : 0,
                     })
                 }
             }

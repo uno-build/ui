@@ -1519,7 +1519,7 @@ test('RendererWebGPU respects exact text measurement constraints', () => {
     })
 })
 
-test('RendererWebGPU caps text measurement to at-most constraints', () => {
+test('RendererWebGPU preserves intrinsic text height under at-most constraints', () => {
     const font = {
         ...createManagedFont(),
         metrics: {
@@ -1546,7 +1546,7 @@ test('RendererWebGPU caps text measurement to at-most constraints', () => {
 
     expect(renderer.getTextMeasure(node, 24, MEASURE_MODE.AT_MOST, 45, MEASURE_MODE.AT_MOST)).toEqual({
         width: 24,
-        height: 45,
+        height: 60,
     })
 })
 
