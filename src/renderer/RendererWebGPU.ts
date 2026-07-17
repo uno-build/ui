@@ -1,7 +1,8 @@
 import Renderer from '../Renderer'
 import { STYLE } from '../style'
 import {
-    FONT_SIZE,
+    ROOT_SIZE,
+    SCROLLBAR_SIZE,
     BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
     DISPLAY,
@@ -52,7 +53,6 @@ const FONT_ATLAS_SIZE = 1024
 const FONT_COLOR = [0, 0, 0, 255]
 const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9
 const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 289
-const SCROLLBAR_SIZE = [15, 15] // Chrome default scrollbar size is 15px
 
 export default class RendererWebGPU extends Renderer {
     private canvas
@@ -424,7 +424,7 @@ export default class RendererWebGPU extends Renderer {
                 parsed: {
                     value:
                         (node.styles.borderRightWidth?.parsed.value ?? 0) +
-                        (has_vertical_scrollbar ? this.scrollbar_size[0] : 0),
+                        (has_vertical_scrollbar ? this.scrollbar_size : 0),
                 },
             })
             this.engine.applyStyle(node, {
@@ -432,7 +432,7 @@ export default class RendererWebGPU extends Renderer {
                 parsed: {
                     value:
                         (node.styles.borderBottomWidth?.parsed.value ?? 0) +
-                        (has_horizontal_scrollbar ? this.scrollbar_size[1] : 0),
+                        (has_horizontal_scrollbar ? this.scrollbar_size : 0),
                 },
             })
         }
@@ -737,7 +737,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private getTextFontSize(node) {
-        return node.styles.fontSize?.parsed.value ?? FONT_SIZE
+        return node.styles.fontSize?.parsed.value ?? ROOT_SIZE
     }
 
     private getTextNaturalLineHeight(font, font_size) {

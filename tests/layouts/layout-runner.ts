@@ -34,7 +34,7 @@ function render({ ui }) {
     ui.draw()
 }
 
-export async function runLayout({ root, layout, renderers, logger = console }) {
+export async function runLayout({ root, layout, renderers, renderer_options = {}, logger = console }) {
     const createLayout = getLayout(layout)
     const results = []
     const rendered_layouts = []
@@ -43,7 +43,7 @@ export async function runLayout({ root, layout, renderers, logger = console }) {
         const setup = getSetup(rendererName)
         const canvas = createCanvasElement(root, rendererName, setup)
         const Renderer = setup.renderer
-        const renderer = new Renderer({ canvas })
+        const renderer = new Renderer({ canvas, ...renderer_options })
         const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
         await ui.init()
         window.ui = ui

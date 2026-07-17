@@ -374,7 +374,7 @@ test('RendererWebGPU reserves native scrollbar space independently by axis', () 
             borderBottomWidth: { parsed: { value: 2 } },
         },
     }
-    ;(renderer as any).scrollbar_size = [15, 15]
+    ;(renderer as any).scrollbar_size = 15
 
     ;(renderer as any).updateResolvedStyle(node, {
         name: 'overflowY',

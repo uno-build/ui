@@ -1,6 +1,7 @@
 import Style from './style'
 import Node from './Node'
 import { sortPaintingOrder } from './utils/sort-painting-order'
+import { ROOT_SIZE } from './style/consts'
 
 export default class UI {
     public root = null
@@ -8,6 +9,7 @@ export default class UI {
     private nodes = []
     private next_node_id = 0
     private device_pixel_ratio = null
+    private root_size = ROOT_SIZE
 
     constructor({ renderer, device_pixel_ratio = 1 }) {
         this.renderer = renderer
@@ -75,7 +77,7 @@ export default class UI {
     }
 
     public style(node, name, value) {
-        const context = { rootSize: 16 }
+        const context = { root_size: this.root_size }
         const resolved_style = Style.resolveStyle(name, value, context)
         for (const style of resolved_style.expanded) {
             node.styles[style.name] = {

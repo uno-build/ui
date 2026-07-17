@@ -137,7 +137,7 @@ async function renderLayout(page, layout) {
     await page.goto(layoutHarnessUrl)
 
     return page.evaluate(
-        async ({ layoutRunnerUrl, layout, renderers }) => {
+        async ({ layoutRunnerUrl, layout, renderers, renderer_options }) => {
             const { runLayout } = await import(layoutRunnerUrl)
             const root = document.getElementById('root')
 
@@ -149,6 +149,7 @@ async function renderLayout(page, layout) {
                 root,
                 layout,
                 renderers,
+                renderer_options,
                 logger: {
                     error() {},
                     log() {},
@@ -161,6 +162,7 @@ async function renderLayout(page, layout) {
             layoutRunnerUrl,
             layout,
             renderers: defaultRendererNames,
+            renderer_options: { scrollbar_size: 0 },
         },
     )
 }

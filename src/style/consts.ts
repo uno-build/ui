@@ -1,4 +1,5 @@
-export const FONT_SIZE = 16
+export const ROOT_SIZE = 16 // 16px is the default font size in browsers
+export const SCROLLBAR_SIZE = 15 // Chrome default scrollbar size is 15px
 
 export const KEYWORD = {
     AUTO: 'auto',

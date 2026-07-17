@@ -319,6 +319,55 @@ test('fontSize', () => {
     expectInvalid('fontSize', true, /style value must be a string/)
 })
 
+test('rem units', () => {
+    const context = { root_size: 16 }
+    const styles = [
+        'fontSize',
+        'lineHeight',
+        'borderTopLeftRadius',
+        'top',
+        'marginTop',
+        'width',
+        'minWidth',
+        'borderTopWidth',
+        'backgroundSizeWidth',
+        'backgroundPositionX',
+    ]
+
+    for (const name of styles) {
+        expect(Style.resolveStyle(name, '1rem', context).expanded).toEqual([
+            {
+                name,
+                value: '1rem',
+                parsed: { value: 16, kind: 'px' },
+            },
+        ])
+    }
+
+    expect(Style.resolveStyle('width', ' 1.5REM ', context).expanded).toEqual([
+        {
+            name: 'width',
+            value: '1.5rem',
+            parsed: { value: 24, kind: 'px' },
+        },
+    ])
+    expect(Style.resolveStyle('fontSize', '0rem', context).expanded).toEqual([
+        {
+            name: 'fontSize',
+            value: '0rem',
+            parsed: { value: 0, kind: 'px' },
+        },
+    ])
+    expect(Style.resolveStyle('top', '-0.5rem', context).expanded).toEqual([
+        {
+            name: 'top',
+            value: '-0.5rem',
+            parsed: { value: -8, kind: 'px' },
+        },
+    ])
+    expect(() => Style.resolveStyle('width', '-1rem', context)).toThrow(/expected non-negative value/)
+})
+
 test('lineHeight', () => {
     expectResolved('lineHeight', ' 1.5 ', '1.5', { value: 1.5 })
     expectResolved(' line-height ', '24PX', '24px', { value: 24, kind: 'px' }, 'lineHeight')
@@ -328,7 +377,6 @@ test('lineHeight', () => {
     expectInvalid('lineHeight', 'normal', /expected number/)
     expectInvalid('lineHeight', '150%', /expected number/)
     expectInvalid('lineHeight', '1em', /expected number/)
-    expectInvalid('lineHeight', '1rem', /expected number/)
     expectInvalid('lineHeight', true, /style value must be a string/)
 })
 

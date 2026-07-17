@@ -1,4 +1,4 @@
-import { KEYWORD } from './consts'
+import { KEYWORD, UNIT } from './consts'
 import { readInteger, readNumber, readUnit } from './utils'
 
 export function parseString(value: string) {
@@ -161,7 +161,7 @@ export function parseRem(value: string, context: any) {
     const unit = readUnit(value)
     return {
         value,
-        parsed: { value: unit.value * context.rootSize, kind: UNIT.PX },
+        parsed: { value: unit.value * context.root_size, kind: UNIT.PX },
     }
 }
 

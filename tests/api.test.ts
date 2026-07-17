@@ -108,6 +108,34 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     expect(sibling.layout).toMatchObject({ x: 20, y: 0, width: 0, height: 200 })
 })
 
+test('UI resolves rem styles using the root size', async () => {
+    const canvas = createDiv()
+    const renderer = new RendererDivs({ canvas, createDiv })
+    const ui = new UI({ renderer })
+
+    await ui.init()
+
+    const node = ui.create()
+    node.style('width', '2rem')
+    node.style('fontSize', '1.25rem')
+    node.style('top', '-0.5rem')
+
+    expect(node.styles).toMatchObject({
+        width: {
+            value: '2rem',
+            parsed: { value: 32, kind: 'px' },
+        },
+        fontSize: {
+            value: '1.25rem',
+            parsed: { value: 20, kind: 'px' },
+        },
+        top: {
+            value: '-0.5rem',
+            parsed: { value: -8, kind: 'px' },
+        },
+    })
+})
+
 test('Node remove removes descendants', async () => {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })
