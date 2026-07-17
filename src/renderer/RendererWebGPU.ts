@@ -1,4 +1,5 @@
 import Renderer from '../Renderer'
+import { STYLE } from '../style'
 import {
     BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
@@ -10,7 +11,14 @@ import {
     TEXT_ALIGN,
     UNIT,
 } from '../style/consts'
-import createEngine, { YOGA_SETTER, MEASURE_MODE } from '../layouter/yoga'
+import createEngine, {
+    YOGA_SETTER,
+    MEASURE_MODE,
+    getYogaComputedBorder,
+    getYogaComputedPadding,
+    setYogaNodeDirty,
+    setYogaMeasureFunc,
+} from '../layouter/yoga'
 import {
     getAncestorClipping,
     getNodeBorderWidth,
@@ -313,14 +321,14 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public initializeTextNode(node) {
-        node.element.setMeasureFunc((width, width_mode, height, height_mode) =>
+        setYogaMeasureFunc(node.element, (width, width_mode, height, height_mode) =>
             this.getTextMeasure(node, width, width_mode, height, height_mode),
         )
     }
 
     public invalidateTextNode(node) {
         this.prepared_texts.delete(node)
-        node.element.markDirty()
+        setYogaNodeDirty(node.element)
     }
 
     public getTextMeasure(
@@ -358,7 +366,7 @@ export default class RendererWebGPU extends Renderer {
 
     public removeChild(parent, node) {
         this.engine.removeChild(parent, node)
-        if (node.styles.hasOwnProperty('backgroundImage')) {
+        if (node.styles.hasOwnProperty(STYLE.BACKGROUNDIMAGE.name)) {
             this.image_manager.removeNode(node)
         }
     }
@@ -392,37 +400,45 @@ export default class RendererWebGPU extends Renderer {
             YOGA_SETTER[style.name](node.element, style)
         }
 
-        if (style.name === 'overflowX' || style.name === 'overflowY' || style.name === 'flexDirection') {
+        if (
+            style.name === STYLE.OVERFLOWX.name ||
+            style.name === STYLE.OVERFLOWY.name ||
+            style.name === STYLE.FLEXDIRECTION.name
+        ) {
             const flex_direction = node.styles.flexDirection?.parsed.enum ?? FLEX_DIRECTION.row
             const overflow =
                 flex_direction === FLEX_DIRECTION.column || flex_direction === FLEX_DIRECTION['column-reverse']
                     ? (node.styles.overflowY?.parsed.enum ?? OVERFLOW.visible)
                     : (node.styles.overflowX?.parsed.enum ?? OVERFLOW.visible)
 
-            node.element.setOverflow(overflow)
+            YOGA_SETTER.overflow(node.element, { parsed: { enum: overflow } })
         }
 
         if (
-            style.name === 'overflowX' ||
-            style.name === 'overflowY' ||
-            style.name === 'borderRightWidth' ||
-            style.name === 'borderBottomWidth'
+            style.name === STYLE.OVERFLOWX.name ||
+            style.name === STYLE.OVERFLOWY.name ||
+            style.name === STYLE.BORDERRIGHTWIDTH.name ||
+            style.name === STYLE.BORDERBOTTOMWIDTH.name
         ) {
             const has_vertical_scrollbar = node.styles.overflowY?.parsed.enum === OVERFLOW.scroll
             const has_horizontal_scrollbar = node.styles.overflowX?.parsed.enum === OVERFLOW.scroll
-            node.element.setBorder(
-                EDGE.right,
-                (node.styles.borderRightWidth?.parsed.value ?? 0) +
-                    (has_vertical_scrollbar ? this.scrollbar_size[0] : 0),
-            )
-            node.element.setBorder(
-                EDGE.bottom,
-                (node.styles.borderBottomWidth?.parsed.value ?? 0) +
-                    (has_horizontal_scrollbar ? this.scrollbar_size[1] : 0),
-            )
+            YOGA_SETTER.borderRightWidth(node.element, {
+                parsed: {
+                    value:
+                        (node.styles.borderRightWidth?.parsed.value ?? 0) +
+                        (has_vertical_scrollbar ? this.scrollbar_size[0] : 0),
+                },
+            })
+            YOGA_SETTER.borderBottomWidth(node.element, {
+                parsed: {
+                    value:
+                        (node.styles.borderBottomWidth?.parsed.value ?? 0) +
+                        (has_horizontal_scrollbar ? this.scrollbar_size[1] : 0),
+                },
+            })
         }
 
-        if (style.name === 'backgroundImage') {
+        if (style.name === STYLE.BACKGROUNDIMAGE.name) {
             this.image_manager.removeNode(node)
             if (style.parsed.kind !== KEYWORD.UNSET) {
                 const atlas_image = this.image_manager.getImage(style.value)
@@ -455,10 +471,10 @@ export default class RendererWebGPU extends Renderer {
             return null
         }
 
-        const border_left = node.element.getComputedBorder(EDGE.left)
-        const border_right = node.element.getComputedBorder(EDGE.right)
-        const padding_left = node.element.getComputedPadding(EDGE.left)
-        const padding_right = node.element.getComputedPadding(EDGE.right)
+        const border_left = getYogaComputedBorder(node.element, EDGE.left)
+        const border_right = getYogaComputedBorder(node.element, EDGE.right)
+        const padding_left = getYogaComputedPadding(node.element, EDGE.left)
+        const padding_right = getYogaComputedPadding(node.element, EDGE.right)
         const content_width = node.layout.width - border_left - border_right - padding_left - padding_right
 
         return this.getTextMeasure(node, content_width)
@@ -611,9 +627,9 @@ export default class RendererWebGPU extends Renderer {
         const border_top = getNodeBorderWidth(node, 'Top')
         const border_right = getNodeBorderWidth(node, 'Right')
         const border_left = getNodeBorderWidth(node, 'Left')
-        const padding_top = node.element.getComputedPadding(EDGE.top)
-        const padding_right = node.element.getComputedPadding(EDGE.right)
-        const padding_left = node.element.getComputedPadding(EDGE.left)
+        const padding_top = getYogaComputedPadding(node.element, EDGE.top)
+        const padding_right = getYogaComputedPadding(node.element, EDGE.right)
+        const padding_left = getYogaComputedPadding(node.element, EDGE.left)
         const content_x = x + border_left + padding_left
         const content_y = y + border_top + padding_top
         const content_width = width - border_left - border_right - padding_left - padding_right

@@ -221,9 +221,9 @@ export const YOGA_SETTER = {
     borderBottomWidth: (node, { parsed }) => {
         node.setBorder(EDGE.bottom, parsed.value)
     },
-    // overflow: (node, { parsed }) => {
-    //     node.setOverflow(parsed.enum)
-    // },
+    overflow: (node, { parsed }) => {
+        node.setOverflow(parsed.enum)
+    },
     display: (node, { parsed }) => {
         node.setDisplay(parsed.enum)
     },
@@ -290,6 +290,22 @@ export const YOGA_SETTER = {
     //     node.setIsReferenceBaseline(Boolean(input))
     //     return Boolean(input)
     // },
+}
+
+export function getYogaComputedPadding(node, edge) {
+    return node.getComputedPadding(edge)
+}
+
+export function getYogaComputedBorder(node, edge) {
+    return node.getComputedBorder(edge)
+}
+
+export function setYogaMeasureFunc(node, measure_func) {
+    node.setMeasureFunc(measure_func)
+}
+
+export function setYogaNodeDirty(node) {
+    node.markDirty()
 }
 
 // Correct Yoga's wrapped flex relative offsets so painted divs match the DOM.
