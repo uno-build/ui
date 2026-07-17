@@ -1,8 +1,7 @@
 // https://github.com/robinweser/inline-style-expand-shorthand/blob/master/src/expand.js
 import { BACKGROUND_SIZE, BORDER_STYLE, KEYWORD } from './consts'
 import { normalizeTrim, normalizeToLowercase } from './normalizers'
-const NUMBER = /^-?(?:\d+|\d*\.\d+)$/
-const BORDER_WIDTH = /^-?(?:\d+|\d*\.\d+)px$|^0$/
+import { validateNumber, validatePx } from './validators'
 
 export function expandProperty(property: string, value: string | string[]) {
     if (Array.isArray(value)) {
@@ -87,6 +86,15 @@ function splitShorthand(value: string) {
     return values
 }
 
+function isValid(value: string, validate: (value: string) => void) {
+    try {
+        validate(value)
+        return true
+    } catch {
+        return false
+    }
+}
+
 function parseBorder(value: string, resolve) {
     const values = splitShorthand(value)
     const longhands = {}
@@ -94,7 +102,7 @@ function parseBorder(value: string, resolve) {
     values.forEach((val) => {
         if (BORDER_STYLE.hasOwnProperty(val)) {
             longhands[resolve('Style')] = val
-        } else if (BORDER_WIDTH.test(val)) {
+        } else if (val === '0' || isValid(val, validatePx)) {
             longhands[resolve('Width')] = val
         } else {
             longhands[resolve('Color')] = val
@@ -242,7 +250,7 @@ function expandFlex(value: string) {
     if (values.length === 1) {
         // One-value syntax
         const val = values[0]
-        if (NUMBER.test(val)) {
+        if (isValid(val, validateNumber)) {
             // flex value
             values = splitShorthand(val + ' 1 0%')
         } else {
@@ -257,7 +265,7 @@ function expandFlex(value: string) {
         // Two-value syntax
         longhands.flexGrow = values[0]
 
-        if (values[1].match(NUMBER) !== null) {
+        if (isValid(values[1], validateNumber)) {
             // The second value appears to be a shrink factor
             longhands.flexShrink = values[1]
         } else {

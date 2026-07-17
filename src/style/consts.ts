@@ -6,6 +6,7 @@ export const KEYWORD = {
 }
 export const UNIT = {
     PX: 'px',
+    REM: 'rem',
     PERCENT: '%',
 }
 export const EDGE = {
