@@ -43,7 +43,7 @@ import {
 //     window.resolveStyle = resolveStyle
 // }
 
-export function resolveStyle(name: string, value: any) {
+export function resolveStyle(name: string, value: any, context: any) {
     if (typeof name !== 'string') {
         throw new Error(`style name must be a string, got '${typeof name}'`)
     }
@@ -65,7 +65,7 @@ export function resolveStyle(name: string, value: any) {
         return {
             name: normalized_name,
             value: value,
-            expanded: StyleParser.resolve(value),
+            expanded: StyleParser.resolve(value, context),
         }
     } catch (err) {
         const message = err instanceof Error ? err.message : err
@@ -77,8 +77,8 @@ export function resolveStyle(name: string, value: any) {
 function createStyle(name, shorthandCallback) {
     return {
         name,
-        resolve(value) {
-            const style_shorthand = shorthandCallback(name, value)
+        resolve(value, context) {
+            const style_shorthand = shorthandCallback(name, value, context)
             const styles = []
 
             for (const { name, value, definition } of style_shorthand) {
@@ -86,7 +86,7 @@ function createStyle(name, shorthandCallback) {
                 let resolved = false
 
                 for (const definition_item of definition) {
-                    const normalized_value = runPipeline(definition_item.normalize, value)
+                    const normalized_value = runPipeline(definition_item.normalize, value, context)
 
                     try {
                         runValidators(definition_item.validate, normalized_value)
@@ -95,7 +95,7 @@ function createStyle(name, shorthandCallback) {
                         continue
                     }
 
-                    const parsed_value = runPipeline(definition_item.parse, normalized_value)
+                    const parsed_value = runPipeline(definition_item.parse, normalized_value, context)
                     styles.push({ name, ...parsed_value })
                     resolved = true
                 }

@@ -1,5 +1,5 @@
-import { KEYWORD } from './consts'
-import { readInteger, readNumber, readPercent, readPx } from './utils'
+import { KEYWORD, UNIT } from './consts'
+import { readInteger, readNumber, readUnit } from './utils'
 
 export function validateColor(value: string) {
     if (typeof value !== 'string' || !/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) {
@@ -21,7 +21,7 @@ export function validateBoxShadow(value: string) {
         validatePx(shadow_value)
     }
 
-    if (readPx(values[2])!.value < 0) {
+    if (readUnit(values[2])!.value < 0) {
         throw new Error('expected non-negative blur radius')
     }
 
@@ -44,7 +44,7 @@ export function validateTextShadow(value: string) {
         validatePx(shadow_value)
     }
 
-    if (readPx(values[2])!.value < 0) {
+    if (readUnit(values[2])!.value < 0) {
         throw new Error('expected non-negative blur radius')
     }
 
@@ -64,7 +64,7 @@ export function validateTextStroke(value: string) {
     }
 
     validatePx(values[0])
-    if (readPx(values[0])!.value < 0) {
+    if (readUnit(values[0])!.value < 0) {
         throw new Error('expected non-negative width')
     }
     validateColor(values[1])
@@ -105,19 +105,28 @@ export function validateInteger(value: any) {
 }
 
 export function validatePx(value: string) {
-    if (readPx(value) === undefined) {
+    const parsed = readUnit(value)
+    if (parsed === undefined || parsed.kind !== UNIT.PX) {
         throw new Error('expected px unit')
     }
 }
 
 export function validatePercent(value: string) {
-    if (readPercent(value) === undefined) {
+    const parsed = readUnit(value)
+    if (parsed === undefined || parsed.kind !== UNIT.PERCENT) {
         throw new Error('expected % unit')
     }
 }
 
+export function validateRem(value: string) {
+    const parsed = readUnit(value)
+    if (parsed === undefined || parsed.kind !== UNIT.REM) {
+        throw new Error('expected rem unit')
+    }
+}
+
 export function validateNonNegative(value: any) {
-    const number = readNumber(value) ?? (readPx(value) ?? readPercent(value))?.value
+    const number = readNumber(value) ?? (readUnit(value) ?? readUnit(value))?.value
 
     if (number !== undefined && number < 0) {
         throw new Error('expected non-negative value')

@@ -75,7 +75,8 @@ export default class UI {
     }
 
     public style(node, name, value) {
-        const resolved_style = Style.resolveStyle(name, value)
+        const context = { rootSize: 16 }
+        const resolved_style = Style.resolveStyle(name, value, context)
         for (const style of resolved_style.expanded) {
             node.styles[style.name] = {
                 value: style.value,

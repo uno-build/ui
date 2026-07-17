@@ -1,5 +1,5 @@
 import { KEYWORD } from './consts'
-import { readInteger, readNumber, readPercent, readPx } from './utils'
+import { readInteger, readNumber, readUnit } from './utils'
 
 export function parseString(value: string) {
     return {
@@ -72,10 +72,10 @@ export function parseBoxShadow(value: string) {
         value,
         parsed: {
             box_shadow: {
-                offset_x: readPx(values[0])!.value,
-                offset_y: readPx(values[1])!.value,
-                blur: readPx(values[2])!.value,
-                spread: readPx(values[3])!.value,
+                offset_x: readUnit(values[0])!.value,
+                offset_y: readUnit(values[1])!.value,
+                blur: readUnit(values[2])!.value,
+                spread: readUnit(values[3])!.value,
                 color: parseRgba(values[4] ?? '#000000FF'),
             },
         },
@@ -103,9 +103,9 @@ export function parseTextShadow(value: string) {
         value,
         parsed: {
             text_shadow: {
-                offset_x: readPx(values[0])!.value,
-                offset_y: readPx(values[1])!.value,
-                blur: readPx(values[2])!.value,
+                offset_x: readUnit(values[0])!.value,
+                offset_y: readUnit(values[1])!.value,
+                blur: readUnit(values[2])!.value,
                 color: parseRgba(values[3] ?? '#000000FF'),
             },
         },
@@ -131,7 +131,7 @@ export function parseTextStroke(value: string) {
         value,
         parsed: {
             text_stroke: {
-                width: readPx(values[0])!.value,
+                width: readUnit(values[0])!.value,
                 color: parseRgba(values[1]),
             },
         },
@@ -142,18 +142,26 @@ export function parseEnum(value: string, values: Record<string, any>) {
 }
 
 export function parsePx(value: string) {
-    const unit = readPx(value)!
+    const unit = readUnit(value)
     return {
-        value: `${String(unit.value)}${unit.kind}`,
+        value,
         parsed: unit,
     }
 }
 
 export function parsePercent(value: string) {
-    const unit = readPercent(value)!
+    const unit = readUnit(value)
     return {
-        value: `${String(unit.value)}${unit.kind}`,
+        value,
         parsed: unit,
+    }
+}
+
+export function parseRem(value: string, context: any) {
+    const unit = readUnit(value)
+    return {
+        value,
+        parsed: { value: unit.value * context.rootSize, kind: UNIT.PX },
     }
 }
 

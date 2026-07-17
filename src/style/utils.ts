@@ -2,68 +2,37 @@ import { UNIT } from './consts'
 import { parseEnum } from './parsers'
 import { validateEnum } from './validators'
 
-export function readPx(value: string) {
-    const match = readUnitMatch(value, /^(-?(?:\d+|\d*\.\d+))px$/)
-    if (match === undefined) {
-        return undefined
-    }
+export function readUnit(value: string) {
+    const regex = new RegExp(`^(-?(?:\\d+|\\d*\\.\\d+))(${Object.values(UNIT).join('|')})$`, 'i')
+    const match = value.match(regex)
 
-    return { value: match, kind: UNIT.PX }
-}
-
-export function readPercent(value: string) {
-    const match = readUnitMatch(value, /^(-?(?:\d+|\d*\.\d+))%$/)
-    if (match === undefined) {
-        return undefined
-    }
-
-    return { value: match, kind: UNIT.PERCENT }
-}
-
-export function readNumber(value: any) {
-    if (typeof value !== 'string') {
-        return undefined
-    }
-
-    const normalized = value.trim().toLowerCase()
-    if (!/^-?(?:\d+|\d*\.\d+)$/.test(normalized)) {
-        return undefined
-    }
-
-    const number = Number(normalized)
-    return Number.isFinite(number) ? number : undefined
-}
-
-export function readInteger(value: any) {
-    if (typeof value !== 'string') {
-        return undefined
-    }
-
-    const normalized = value.trim().toLowerCase()
-    if (!/^-?\d+$/.test(normalized)) {
-        return undefined
-    }
-
-    const integer = Number(normalized)
-    return Number.isFinite(integer) && Number.isInteger(integer) ? integer : undefined
-}
-
-function readUnitMatch(value: string, pattern: RegExp) {
-    if (typeof value !== 'string') {
-        return undefined
-    }
-
-    const match = value.trim().toLowerCase().match(pattern)
     if (!match) {
         return undefined
     }
 
-    const number = Number(match[1])
+    return { value: Number(match[1]), kind: match[2] }
+}
+
+export function readNumber(value: any) {
+    if (!/^-?(?:\d+|\d*\.\d+)$/.test(value)) {
+        return undefined
+    }
+
+    const number = Number(value)
     return Number.isFinite(number) ? number : undefined
 }
 
-export function runPipeline(fns: [] = [], value: any) {
-    return fns.reduce((current, fn) => fn(current), value)
+export function readInteger(value: any) {
+    if (!/^-?\d+$/.test(value)) {
+        return undefined
+    }
+
+    const integer = Number(value)
+    return Number.isFinite(integer) && Number.isInteger(integer) ? integer : undefined
+}
+
+export function runPipeline(fns: [] = [], value: any, context: any) {
+    return fns.reduce((current, fn) => fn(current, context), value)
 }
 
 export function runValidators(fns: [] = [], value: any) {
