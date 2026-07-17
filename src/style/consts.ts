@@ -1,3 +1,5 @@
+export const FONT_SIZE = 16
+
 export const KEYWORD = {
     AUTO: 'auto',
     UNSET: 'unset',

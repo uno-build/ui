@@ -1,6 +1,7 @@
 import Renderer from '../Renderer'
 import { STYLE } from '../style'
 import {
+    FONT_SIZE,
     BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
     DISPLAY,
@@ -48,10 +49,10 @@ import {
 
 const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 1024
-const FONT_SIZE = 16
 const FONT_COLOR = [0, 0, 0, 255]
 const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9
 const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 289
+const SCROLLBAR_SIZE = [15, 15] // Chrome default scrollbar size is 15px
 
 export default class RendererWebGPU extends Renderer {
     private canvas
@@ -62,7 +63,7 @@ export default class RendererWebGPU extends Renderer {
     private text_shadow_max_samples_per_axis
     private text_stroke_max_samples_per_glyph
     private device_pixel_ratio = 1
-    private scrollbar_size = [0, 0]
+    private scrollbar_size
     // props
     private engine!: LayoutEngine
     private adapter
@@ -115,6 +116,7 @@ export default class RendererWebGPU extends Renderer {
         image_mag_filter = 'linear',
         text_shadow_max_samples_per_axis = TEXT_SHADOW_MAX_SAMPLES_PER_AXIS,
         text_stroke_max_samples_per_glyph = TEXT_STROKE_MAX_SAMPLES_PER_GLYPH,
+        scrollbar_size = SCROLLBAR_SIZE,
     }) {
         super()
         this.canvas = canvas
@@ -124,6 +126,7 @@ export default class RendererWebGPU extends Renderer {
         this.image_mag_filter = image_mag_filter
         this.text_shadow_max_samples_per_axis = text_shadow_max_samples_per_axis
         this.text_stroke_max_samples_per_glyph = text_stroke_max_samples_per_glyph
+        this.scrollbar_size = scrollbar_size
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
@@ -131,7 +134,6 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public async init() {
-        this.scrollbar_size = measureScrollbarSize()
         this.engine = await createEngine()
         this.adapter = await navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
         this.device = await this.adapter.requestDevice({
@@ -1088,21 +1090,6 @@ function packColor(color) {
 
 function roundToDevicePixel(value, device_pixel_ratio) {
     return Math.round(value * device_pixel_ratio) / device_pixel_ratio
-}
-
-function measureScrollbarSize() {
-    const element = document.createElement('div')
-    Object.assign(element.style, {
-        position: 'absolute',
-        width: '100px',
-        height: '100px',
-        overflow: 'scroll',
-        visibility: 'hidden',
-    })
-    document.body.appendChild(element)
-    const size = [element.offsetWidth - element.clientWidth, element.offsetHeight - element.clientHeight]
-    element.remove()
-    return size
 }
 
 function constrainMeasuredSize(measured_size, available_size, measure_mode) {
