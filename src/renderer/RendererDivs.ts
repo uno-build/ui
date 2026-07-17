@@ -1,7 +1,7 @@
 import Renderer from '../Renderer'
 import createEngine, { YOGA_SETTER } from '../layouter/yoga'
 import { KEYWORD } from '../style/consts'
-import { getAncestorClipping } from './utils/node'
+import { getAncestorClipping } from './utils/render-metrics'
 
 export default class RendererDivs extends Renderer {
     private canvas

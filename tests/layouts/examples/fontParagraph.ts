@@ -1,4 +1,4 @@
-import { loadImage, loadJson } from '../../../src/utils/loadAssets'
+import { loadImage, loadJson } from '../../../src/utils/load-assets'
 
 const VARIANTS = [
     {

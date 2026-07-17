@@ -6,7 +6,7 @@ import {
     releaseAtlasRect,
     type AtlasRect,
     type SkylineNode,
-} from '../utils/AtlasAllocator'
+} from '../utils/atlas-allocator'
 
 export const ATLAS_SIZE = 2048
 export const ATLAS_PADDING = 2

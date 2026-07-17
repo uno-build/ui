@@ -1,6 +1,6 @@
 import Style from './style'
 import Node from './Node'
-import { sortPaintingOrder } from './utils/sortPaintingOrder'
+import { sortPaintingOrder } from './utils/sort-painting-order'
 
 export default class UI {
     public root = null

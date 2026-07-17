@@ -20,7 +20,7 @@ import {
     getNodeOpacity,
     getNodeRenderLayout,
     updateScrollMetrics,
-} from './utils/node'
+} from './utils/render-metrics'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
 import { createUIWGSL } from './webgpu/shaders'
 import { ImageManager } from './webgpu/ImageManager'
