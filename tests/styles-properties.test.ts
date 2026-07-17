@@ -562,7 +562,7 @@ test('boxSizing', () => {
 })
 
 test('overflow', () => {
-    const styles = ['overflow']
+    const styles = ['overflowX', 'overflowY']
     const validCases = [
         ['visible', 'visible', 0],
         [' Hidden ', 'hidden', 1],
@@ -577,6 +577,15 @@ test('overflow', () => {
         expectInvalid(name, 'auto', /expected one of visible, hidden, scroll/)
         expectInvalid(name, 'clip', /expected one of visible, hidden, scroll/)
     }
+
+    expectResolved('overflow-x', ' Hidden ', 'hidden', { enum: 1 }, 'overflowX')
+    expectResolved('overflow-y', 'SCROLL', 'scroll', { enum: 2 }, 'overflowY')
+    expect(Style.resolveStyle('overflow', 'SCROLL').expanded).toEqual([
+        { name: 'overflowX', value: 'scroll', parsed: { enum: 2 } },
+        { name: 'overflowY', value: 'scroll', parsed: { enum: 2 } },
+    ])
+    expectInvalid('overflow', 'auto', /expected one of visible, hidden, scroll/)
+    expectInvalid('overflow', 'clip', /expected one of visible, hidden, scroll/)
 })
 
 test('display', () => {

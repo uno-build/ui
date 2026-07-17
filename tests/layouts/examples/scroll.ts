@@ -14,23 +14,28 @@ export default async function createFontTextScrollLayout({ ui }) {
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
     const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
     const image_asset = await loadImage('/assets/texture.jpg')
+    const image_asset2 = await loadImage('/assets/logo.jpg')
+    const image_asset3 = await loadImage('/assets/coin.png')
 
     ui.fontRegister('ChangaOne-Regular', changa_image, changa_json)
     ui.fontRegister('Poppins-Regular', poppins_image, poppins_json)
     ui.imageUpload(image_asset.src, image_asset)
+    ui.imageUpload(image_asset2.src, image_asset2)
+    ui.imageUpload(image_asset3.src, image_asset3)
 
     const stage = ui.create()
     stage.style('width', '100%')
     stage.style('height', '100%')
     stage.style('padding', '40px')
     stage.style('flexDirection', 'row')
+    stage.style('flexWrap', 'wrap')
     stage.style('gap', '40px')
     stage.style('backgroundColor', '#eef3f7')
     ui.root.add(stage)
 
     const scroll = ui.create()
     scroll.style('width', '450px')
-    scroll.style('height', '500px')
+    scroll.style('height', '400px')
     scroll.style('overflow', 'scroll')
     scroll.style('justifyContent', 'center')
     scroll.style('padding', '24px')
@@ -40,7 +45,7 @@ export default async function createFontTextScrollLayout({ ui }) {
     stage.add(scroll)
 
     const container = ui.create()
-    container.style('width', '370px')
+    container.style('width', '650px')
     container.style('gap', '20px')
     container.style('flexDirection', 'column')
     scroll.add(container)
@@ -50,7 +55,7 @@ export default async function createFontTextScrollLayout({ ui }) {
     title.style('flexShrink', '0')
     title.style('fontFamily', 'ChangaOne-Regular')
     title.style('fontSize', '28px')
-    title.text('A long story inside a scroll')
+    title.text('This is overflow x and y scroll layout example')
     container.add(title)
 
     const image = ui.create()
@@ -63,7 +68,7 @@ export default async function createFontTextScrollLayout({ ui }) {
     container.add(image)
 
     const text = ui.create()
-    text.style('width', '370px')
+    text.style('width', '650px')
     text.style('flexShrink', '0')
     text.style('fontFamily', 'Poppins-Regular')
     text.style('fontSize', '16px')
@@ -73,10 +78,11 @@ export default async function createFontTextScrollLayout({ ui }) {
     text.text(TEXT)
     container.add(text)
 
+    // Second
     const outer_scroll = ui.create()
-    outer_scroll.style('width', '500px')
-    outer_scroll.style('height', '500px')
-    outer_scroll.style('overflow', 'scroll')
+    outer_scroll.style('width', '450px')
+    outer_scroll.style('height', '400px')
+    outer_scroll.style('overflowY', 'scroll')
     outer_scroll.style('flexDirection', 'column')
     outer_scroll.style('padding', '24px')
     outer_scroll.style('gap', '24px')
@@ -84,11 +90,19 @@ export default async function createFontTextScrollLayout({ ui }) {
     outer_scroll.style('border', '2px solid #243447')
     stage.add(outer_scroll)
 
+    const title2 = ui.create()
+    title2.style('width', '100%')
+    title2.style('flexShrink', '0')
+    title2.style('fontFamily', 'ChangaOne-Regular')
+    title2.style('fontSize', '28px')
+    title2.text('Overflow y scroll layout with inner scroll example')
+    outer_scroll.add(title2)
+
     const outer_header = ui.create()
     outer_header.style('width', '100%')
     outer_header.style('height', '180px')
     outer_header.style('flexShrink', '0')
-    outer_header.style('backgroundImage', image_asset.src)
+    outer_header.style('backgroundImage', image_asset2.src)
     outer_header.style('backgroundSize', 'cover')
     outer_header.style('backgroundPosition', '50% 50%')
     outer_scroll.add(outer_header)
@@ -96,7 +110,7 @@ export default async function createFontTextScrollLayout({ ui }) {
     const inner_scroll = ui.create()
     inner_scroll.style('width', '100%')
     inner_scroll.style('height', '280px')
-    inner_scroll.style('overflow', 'scroll')
+    inner_scroll.style('overflowY', 'scroll')
     inner_scroll.style('flexDirection', 'column')
     inner_scroll.style('flexShrink', '0')
     inner_scroll.style('padding', '16px')
@@ -136,10 +150,48 @@ export default async function createFontTextScrollLayout({ ui }) {
     outer_footer.text(TEXT)
     outer_scroll.add(outer_footer)
 
+    // Third
+    const horizontal_scroll = ui.create()
+    horizontal_scroll.style('width', '940px')
+    horizontal_scroll.style('height', '250px')
+    horizontal_scroll.style('overflowX', 'scroll')
+    horizontal_scroll.style('flexDirection', 'row')
+    horizontal_scroll.style('padding', '24px')
+    horizontal_scroll.style('gap', '24px')
+    horizontal_scroll.style('backgroundColor', '#ffffff')
+    horizontal_scroll.style('backgroundImage', image_asset3.src)
+    horizontal_scroll.style('backgroundRepeat', 'repeat')
+    horizontal_scroll.style('backgroundSize', '20px 20px')
+    horizontal_scroll.style('border', '2px solid #243447')
+    stage.add(horizontal_scroll)
+
+    const title3 = ui.create()
+    title3.style('width', '300px')
+    title3.style('flexShrink', '0')
+    title3.style('fontFamily', 'ChangaOne-Regular')
+    title3.style('fontSize', '28px')
+    title3.text('Overflow x horizontal scroll layout example')
+    horizontal_scroll.add(title3)
+
+    for (let index = 0; index < 6; index++) {
+        const horizontal_image = ui.create()
+        horizontal_image.style('width', '180px')
+        horizontal_image.style('height', '180px')
+        horizontal_image.style('flexShrink', '0')
+        horizontal_image.style('backgroundImage', image_asset3.src)
+        horizontal_image.style('backgroundSize', 'cover')
+        horizontal_image.style('backgroundPosition', '50% 50%')
+        horizontal_scroll.add(horizontal_image)
+    }
+
     const scroll_states = [
         { node: scroll, direction: 1 },
         { node: outer_scroll, direction: 1 },
         { node: inner_scroll, direction: 2 },
+    ]
+    const horizontal_scroll_states = [
+        { node: scroll, direction: 1 },
+        { node: horizontal_scroll, direction: 1 },
     ]
 
     setInterval(() => {
@@ -156,6 +208,21 @@ export default async function createFontTextScrollLayout({ ui }) {
             }
 
             scroll_state.node.scrollTop = next_scroll_top
+        }
+
+        for (const scroll_state of horizontal_scroll_states) {
+            const scroll_max = scroll_state.node.scrollWidth - scroll_state.node.clientWidth
+            let next_scroll_left = scroll_state.node.scrollLeft + scroll_state.direction
+
+            if (next_scroll_left >= scroll_max) {
+                next_scroll_left = scroll_max
+                scroll_state.direction = -Math.abs(scroll_state.direction)
+            } else if (next_scroll_left <= 0) {
+                next_scroll_left = 0
+                scroll_state.direction = Math.abs(scroll_state.direction)
+            }
+
+            scroll_state.node.scrollLeft = next_scroll_left
         }
 
         const now = performance.now()

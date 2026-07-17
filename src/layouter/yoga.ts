@@ -221,9 +221,9 @@ export const YOGA_SETTER = {
     borderBottomWidth: (node, { parsed }) => {
         node.setBorder(EDGE.bottom, parsed.value)
     },
-    overflow: (node, { parsed }) => {
-        node.setOverflow(parsed.enum)
-    },
+    // overflow: (node, { parsed }) => {
+    //     node.setOverflow(parsed.enum)
+    // },
     display: (node, { parsed }) => {
         node.setDisplay(parsed.enum)
     },

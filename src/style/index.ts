@@ -125,6 +125,13 @@ export const STYLE = {
         { name, value, definition: INTEGER_DEFINITION },
     ]),
     OVERFLOW: createStyle('overflow', (name, value) => [
+        { name: 'overflowX', value, definition: OVERFLOW_DEFINITION },
+        { name: 'overflowY', value, definition: OVERFLOW_DEFINITION },
+    ]),
+    OVERFLOWX: createStyle('overflowX', (name, value) => [
+        { name, value, definition: OVERFLOW_DEFINITION },
+    ]),
+    OVERFLOWY: createStyle('overflowY', (name, value) => [
         { name, value, definition: OVERFLOW_DEFINITION },
     ]),
     OPACITY: createStyle('opacity', (name, value) => [

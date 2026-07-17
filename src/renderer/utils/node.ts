@@ -170,11 +170,14 @@ function updateNodeScrollMetrics(node, get_content_size) {
         overflow_rect.right = Math.max(overflow_rect.right, child.layout.x + child.layout.width + padding_right)
         overflow_rect.bottom = Math.max(overflow_rect.bottom, child.layout.y + child.layout.height + padding_bottom)
 
-        const overflow = child.styles.overflow?.parsed.enum ?? OVERFLOW.visible
-        if (overflow === OVERFLOW.visible) {
+        const overflow_x = child.styles.overflowX?.parsed.enum ?? OVERFLOW.visible
+        const overflow_y = child.styles.overflowY?.parsed.enum ?? OVERFLOW.visible
+        if (overflow_x === OVERFLOW.visible) {
             overflow_rect.left = Math.min(overflow_rect.left, child_overflow.left)
-            overflow_rect.top = Math.min(overflow_rect.top, child_overflow.top)
             overflow_rect.right = Math.max(overflow_rect.right, child_overflow.right)
+        }
+        if (overflow_y === OVERFLOW.visible) {
+            overflow_rect.top = Math.min(overflow_rect.top, child_overflow.top)
             overflow_rect.bottom = Math.max(overflow_rect.bottom, child_overflow.bottom)
         }
     }
@@ -242,7 +245,13 @@ function packColor(color) {
 }
 
 export function getAncestorClipping(node) {
-    let clip = null
+    const clip = {
+        top: Number.NEGATIVE_INFINITY,
+        right: Number.POSITIVE_INFINITY,
+        bottom: Number.POSITIVE_INFINITY,
+        left: Number.NEGATIVE_INFINITY,
+    }
+    let has_clip = false
     let scroll_left = 0
     let scroll_top = 0
     let ancestor = node.parent
@@ -260,27 +269,39 @@ export function getAncestorClipping(node) {
     while (ancestor?.parent != null) {
         scroll_left -= ancestor.scroll_left
         scroll_top -= ancestor.scroll_top
-        const overflow = ancestor.styles.overflow?.parsed.enum
-        if (overflow === OVERFLOW.hidden || overflow === OVERFLOW.scroll) {
+        const overflow_x = ancestor.styles.overflowX?.parsed.enum ?? OVERFLOW.visible
+        const overflow_y = ancestor.styles.overflowY?.parsed.enum ?? OVERFLOW.visible
+        const clip_x = overflow_x === OVERFLOW.hidden || overflow_x === OVERFLOW.scroll
+        const clip_y = overflow_y === OVERFLOW.hidden || overflow_y === OVERFLOW.scroll
+        if (clip_x || clip_y) {
             const border_left = ancestor.element.getComputedBorder(EDGE.left)
             const border_right = ancestor.element.getComputedBorder(EDGE.right)
             const border_top = ancestor.element.getComputedBorder(EDGE.top)
             const border_bottom = ancestor.element.getComputedBorder(EDGE.bottom)
-            clip = intersectRects(clip, {
-                x: ancestor.layout.x - scroll_left + border_left,
-                y: ancestor.layout.y - scroll_top + border_top,
-                width: ancestor.layout.width - border_left - border_right,
-                height: ancestor.layout.height - border_top - border_bottom,
-            })
+            if (clip_x) {
+                clip.left = Math.max(clip.left, ancestor.layout.x - scroll_left + border_left)
+                clip.right = Math.min(
+                    clip.right,
+                    ancestor.layout.x - scroll_left + ancestor.layout.width - border_right,
+                )
+            }
+            if (clip_y) {
+                clip.top = Math.max(clip.top, ancestor.layout.y - scroll_top + border_top)
+                clip.bottom = Math.min(
+                    clip.bottom,
+                    ancestor.layout.y - scroll_top + ancestor.layout.height - border_bottom,
+                )
+            }
+            has_clip = true
         }
         ancestor = ancestor.parent
     }
 
-    if (clip == null) {
+    if (!has_clip) {
         return null
     }
 
-    if (clip.width <= 0 || clip.height <= 0) {
+    if (clip.right <= clip.left || clip.bottom <= clip.top) {
         return {
             top: 0,
             right: 0,
@@ -289,33 +310,10 @@ export function getAncestorClipping(node) {
         }
     }
 
-    const top = clip.y - render_y
-    const right = clip.x + clip.width - render_x
-    const bottom = clip.y + clip.height - render_y
-    const left = clip.x - render_x
-
     return {
-        top,
-        right,
-        bottom,
-        left,
-    }
-}
-
-function intersectRects(a, b) {
-    if (a == null) {
-        return b
-    }
-
-    const x = Math.max(a.x, b.x)
-    const y = Math.max(a.y, b.y)
-    const right = Math.min(a.x + a.width, b.x + b.width)
-    const bottom = Math.min(a.y + a.height, b.y + b.height)
-
-    return {
-        x,
-        y,
-        width: right - x,
-        height: bottom - y,
+        top: clip.top - render_y,
+        right: clip.right - render_x,
+        bottom: clip.bottom - render_y,
+        left: clip.left - render_x,
     }
 }

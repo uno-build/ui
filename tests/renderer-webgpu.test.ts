@@ -1,7 +1,16 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { MEASURE_MODE } from '../src/layouter/yoga.ts'
-import { BACKGROUND_REPEAT, BACKGROUND_SIZE, EDGE, KEYWORD, OVERFLOW, TEXT_ALIGN, UNIT } from '../src/style/consts.ts'
+import {
+    BACKGROUND_REPEAT,
+    BACKGROUND_SIZE,
+    EDGE,
+    FLEX_DIRECTION,
+    KEYWORD,
+    OVERFLOW,
+    TEXT_ALIGN,
+    UNIT,
+} from '../src/style/consts.ts'
 import {
     COMMAND,
     COMMAND_KIND_GLYPH,
@@ -71,6 +80,56 @@ test('RendererWebGPU writes layout and clipping bounds into panel instance data'
     expect(nodes_buffer_data.bytes_offset).toBe(PANEL_DATA_SIZE)
     expect(Array.from(floats.slice(layout_float_offset, layout_float_offset + 4))).toEqual([0, 0, 10, 10])
     expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([3, 7, 7, 2])
+})
+
+test('RendererWebGPU clips panel geometry independently by axis', () => {
+    const root = createNode()
+    const horizontal_parent = createNode({
+        parent: root,
+        layout: { x: 2, y: 3, width: 5, height: 4 },
+        styles: {
+            overflowX: { parsed: { enum: OVERFLOW.hidden } },
+        },
+    })
+    const horizontal_child = createNode({
+        parent: horizontal_parent,
+        layout: { x: 0, y: 0, width: 10, height: 10 },
+    })
+    const vertical_parent = createNode({
+        parent: root,
+        layout: { x: 2, y: 3, width: 5, height: 4 },
+        styles: {
+            overflowY: { parsed: { enum: OVERFLOW.hidden } },
+        },
+    })
+    const vertical_child = createNode({
+        parent: vertical_parent,
+        layout: { x: 0, y: 0, width: 10, height: 10 },
+    })
+    const renderer = createRenderer()
+
+    const horizontal_data = createNodesBufferData(renderer, [horizontal_child])
+    const horizontal_floats = new Float32Array(horizontal_data.bytes.buffer)
+    const clipping_float_offset = PANEL_DATA.CLIPPING.OFFSET / FLOAT32_SIZE
+    const horizontal_clipping = Array.from(
+        horizontal_floats.slice(clipping_float_offset, clipping_float_offset + 4),
+    )
+    const vertical_data = createNodesBufferData(renderer, [vertical_child])
+    const vertical_floats = new Float32Array(vertical_data.bytes.buffer)
+    const vertical_clipping = Array.from(vertical_floats.slice(clipping_float_offset, clipping_float_offset + 4))
+
+    expect(horizontal_clipping).toEqual([
+        Number.NEGATIVE_INFINITY,
+        7,
+        Number.POSITIVE_INFINITY,
+        2,
+    ])
+    expect(vertical_clipping).toEqual([
+        3,
+        Number.POSITIVE_INFINITY,
+        7,
+        Number.NEGATIVE_INFINITY,
+    ])
 })
 
 test('RendererWebGPU scrolls panel geometry inside the ancestor padding box', () => {
@@ -254,13 +313,59 @@ test('RendererWebGPU does not propagate overflow through a clipping descendant',
     expect(root.scroll_height).toBe(100)
 })
 
-test('RendererWebGPU reserves native scrollbar space in Yoga', () => {
+test('RendererWebGPU propagates descendant overflow independently by axis', () => {
+    const horizontal_root = createNode({ layout: { x: 0, y: 0, width: 100, height: 100 } })
+    const horizontal_child = createNode({
+        parent: horizontal_root,
+        layout: { x: 10, y: 10, width: 60, height: 60 },
+        styles: {
+            overflowX: { parsed: { enum: OVERFLOW.hidden } },
+            overflowY: { parsed: { enum: OVERFLOW.visible } },
+        },
+    })
+    const horizontal_grandchild = createNode({
+        parent: horizontal_child,
+        layout: { x: 50, y: 50, width: 100, height: 100 },
+    })
+    horizontal_root.children.push(horizontal_child)
+    horizontal_child.children.push(horizontal_grandchild)
+
+    const vertical_root = createNode({ layout: { x: 0, y: 0, width: 100, height: 100 } })
+    const vertical_child = createNode({
+        parent: vertical_root,
+        layout: { x: 10, y: 10, width: 60, height: 60 },
+        styles: {
+            overflowX: { parsed: { enum: OVERFLOW.visible } },
+            overflowY: { parsed: { enum: OVERFLOW.hidden } },
+        },
+    })
+    const vertical_grandchild = createNode({
+        parent: vertical_child,
+        layout: { x: 50, y: 50, width: 100, height: 100 },
+    })
+    vertical_root.children.push(vertical_child)
+    vertical_child.children.push(vertical_grandchild)
+
+    const renderer = createRenderer()
+    ;(renderer as any).root_node = horizontal_root
+    renderer.afterUpdate([])
+    ;(renderer as any).root_node = vertical_root
+    renderer.afterUpdate([])
+
+    expect(horizontal_root.scroll_width).toBe(100)
+    expect(horizontal_root.scroll_height).toBe(150)
+    expect(vertical_root.scroll_width).toBe(150)
+    expect(vertical_root.scroll_height).toBe(100)
+})
+
+test('RendererWebGPU reserves native scrollbar space independently by axis', () => {
     const renderer = createRenderer()
     const borders = new Map()
     let overflow
     const node = {
         styles: {
-            overflow: { parsed: { enum: OVERFLOW.scroll } },
+            overflowX: { parsed: { enum: OVERFLOW.visible } },
+            overflowY: { parsed: { enum: OVERFLOW.scroll } },
             borderRightWidth: { parsed: { value: 1 } },
             borderBottomWidth: { parsed: { value: 2 } },
         },
@@ -276,13 +381,88 @@ test('RendererWebGPU reserves native scrollbar space in Yoga', () => {
     ;(renderer as any).scrollbar_size = [15, 15]
 
     ;(renderer as any).updateResolvedStyle(node, {
-        name: 'overflow',
+        name: 'overflowY',
+        parsed: { enum: OVERFLOW.scroll },
+    })
+
+    expect(overflow).toBe(OVERFLOW.visible)
+    expect(borders.get(EDGE.right)).toBe(16)
+    expect(borders.get(EDGE.bottom)).toBe(2)
+
+    node.styles.overflowX.parsed.enum = OVERFLOW.scroll
+    node.styles.overflowY.parsed.enum = OVERFLOW.visible
+    ;(renderer as any).updateResolvedStyle(node, {
+        name: 'overflowX',
+        parsed: { enum: OVERFLOW.scroll },
+    })
+
+    expect(overflow).toBe(OVERFLOW.scroll)
+    expect(borders.get(EDGE.right)).toBe(1)
+    expect(borders.get(EDGE.bottom)).toBe(17)
+
+    node.styles.overflowX.parsed.enum = OVERFLOW.hidden
+    ;(renderer as any).updateResolvedStyle(node, {
+        name: 'overflowX',
+        parsed: { enum: OVERFLOW.hidden },
+    })
+
+    expect(overflow).toBe(OVERFLOW.hidden)
+    expect(borders.get(EDGE.right)).toBe(1)
+    expect(borders.get(EDGE.bottom)).toBe(2)
+
+    node.styles.overflowX.parsed.enum = OVERFLOW.scroll
+    node.styles.overflowY.parsed.enum = OVERFLOW.scroll
+    ;(renderer as any).updateResolvedStyle(node, {
+        name: 'overflowY',
         parsed: { enum: OVERFLOW.scroll },
     })
 
     expect(overflow).toBe(OVERFLOW.scroll)
     expect(borders.get(EDGE.right)).toBe(16)
     expect(borders.get(EDGE.bottom)).toBe(17)
+})
+
+test('RendererWebGPU maps the main-axis overflow to Yoga when flexDirection changes', () => {
+    const renderer = createRenderer()
+    const overflows = []
+    const node = {
+        styles: {
+            flexDirection: { parsed: { enum: FLEX_DIRECTION.row } },
+            overflowX: { parsed: { enum: OVERFLOW.hidden } },
+            overflowY: { parsed: { enum: OVERFLOW.scroll } },
+        },
+        element: {
+            setFlexDirection() {},
+            setOverflow(value) {
+                overflows.push(value)
+            },
+            setBorder() {},
+        },
+    }
+
+    ;(renderer as any).updateResolvedStyle(node, {
+        name: 'overflowY',
+        parsed: { enum: OVERFLOW.scroll },
+    })
+    expect(overflows.at(-1)).toBe(OVERFLOW.hidden)
+
+    for (const flex_direction of [
+        FLEX_DIRECTION.column,
+        FLEX_DIRECTION['column-reverse'],
+        FLEX_DIRECTION.row,
+        FLEX_DIRECTION['row-reverse'],
+    ]) {
+        node.styles.flexDirection.parsed.enum = flex_direction
+        ;(renderer as any).updateResolvedStyle(node, {
+            name: 'flexDirection',
+            parsed: { enum: flex_direction },
+        })
+        expect(overflows.at(-1)).toBe(
+            flex_direction === FLEX_DIRECTION.column || flex_direction === FLEX_DIRECTION['column-reverse']
+                ? OVERFLOW.scroll
+                : OVERFLOW.hidden,
+        )
+    }
 })
 
 test('RendererWebGPU writes border drawing data into panel instance data', () => {
@@ -2784,7 +2964,12 @@ function createNode({
             ...(overflow === undefined
                 ? {}
                 : {
-                      overflow: {
+                      overflowX: {
+                          parsed: {
+                              enum: overflow,
+                          },
+                      },
+                      overflowY: {
                           parsed: {
                               enum: overflow,
                           },

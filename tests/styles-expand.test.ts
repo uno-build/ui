@@ -37,6 +37,13 @@ test('flex expands to grow, shrink, basis', () => {
     }).toThrow(/expected px unit/)
 })
 
+test('overflow expands to both axes', () => {
+    expect(Style.resolveStyle('overflow', ' scroll ').expanded).toEqual([
+        { name: 'overflowX', value: 'scroll', parsed: { enum: 2 } },
+        { name: 'overflowY', value: 'scroll', parsed: { enum: 2 } },
+    ])
+})
+
 test('padding expands to four edges', () => {
     expect(Style.resolveStyle('padding', '1px 2px 3px 4px').expanded).toEqual([
         { name: 'paddingTop', value: '1px', parsed: { value: 1, kind: 'px' } },

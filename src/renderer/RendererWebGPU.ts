@@ -1,5 +1,15 @@
 import Renderer from '../Renderer'
-import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, EDGE, KEYWORD, OVERFLOW, TEXT_ALIGN, UNIT } from '../style/consts'
+import {
+    BACKGROUND_REPEAT,
+    BACKGROUND_SIZE,
+    DISPLAY,
+    EDGE,
+    FLEX_DIRECTION,
+    KEYWORD,
+    OVERFLOW,
+    TEXT_ALIGN,
+    UNIT,
+} from '../style/consts'
 import createEngine, { YOGA_SETTER, MEASURE_MODE } from '../layouter/yoga'
 import {
     getAncestorClipping,
@@ -382,15 +392,33 @@ export default class RendererWebGPU extends Renderer {
             YOGA_SETTER[style.name](node.element, style)
         }
 
-        if (style.name === 'overflow' || style.name === 'borderRightWidth' || style.name === 'borderBottomWidth') {
-            const has_scrollbar = node.styles.overflow?.parsed.enum === OVERFLOW.scroll
+        if (style.name === 'overflowX' || style.name === 'overflowY' || style.name === 'flexDirection') {
+            const flex_direction = node.styles.flexDirection?.parsed.enum ?? FLEX_DIRECTION.row
+            const overflow =
+                flex_direction === FLEX_DIRECTION.column || flex_direction === FLEX_DIRECTION['column-reverse']
+                    ? (node.styles.overflowY?.parsed.enum ?? OVERFLOW.visible)
+                    : (node.styles.overflowX?.parsed.enum ?? OVERFLOW.visible)
+
+            node.element.setOverflow(overflow)
+        }
+
+        if (
+            style.name === 'overflowX' ||
+            style.name === 'overflowY' ||
+            style.name === 'borderRightWidth' ||
+            style.name === 'borderBottomWidth'
+        ) {
+            const has_vertical_scrollbar = node.styles.overflowY?.parsed.enum === OVERFLOW.scroll
+            const has_horizontal_scrollbar = node.styles.overflowX?.parsed.enum === OVERFLOW.scroll
             node.element.setBorder(
                 EDGE.right,
-                (node.styles.borderRightWidth?.parsed.value ?? 0) + (has_scrollbar ? this.scrollbar_size[0] : 0),
+                (node.styles.borderRightWidth?.parsed.value ?? 0) +
+                    (has_vertical_scrollbar ? this.scrollbar_size[0] : 0),
             )
             node.element.setBorder(
                 EDGE.bottom,
-                (node.styles.borderBottomWidth?.parsed.value ?? 0) + (has_scrollbar ? this.scrollbar_size[1] : 0),
+                (node.styles.borderBottomWidth?.parsed.value ?? 0) +
+                    (has_horizontal_scrollbar ? this.scrollbar_size[1] : 0),
             )
         }
 

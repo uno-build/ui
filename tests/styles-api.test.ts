@@ -390,7 +390,8 @@ test('enumStyle maps all enum properties', () => {
         ['flexWrap', 'wrap-reverse', 2],
         ['justifyContent', 'space-around', 4],
         ['boxSizing', 'content-box', 1],
-        ['overflow', 'scroll', 2],
+        ['overflowX', 'scroll', 2],
+        ['overflowY', 'hidden', 1],
         ['display', 'contents', 2],
         ['direction', 'rtl', 2],
     ]

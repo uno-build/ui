@@ -328,6 +328,25 @@ test('Node lineHeight invalidates text measurement', async () => {
     expect(invalidated_node).toBe(node)
 })
 
+test('overflow shorthand and longhands follow assignment order', async () => {
+    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const ui = new UI({ renderer })
+    await ui.init()
+    const node = ui.create()
+
+    node.style('overflow', 'scroll')
+    node.style('overflowX', 'hidden')
+
+    expect(node.styles.overflowX.parsed.enum).toBe(1)
+    expect(node.styles.overflowY.parsed.enum).toBe(2)
+
+    node.style('overflow', 'visible')
+    node.style('overflow-y', 'scroll')
+
+    expect(node.styles.overflowX.parsed.enum).toBe(0)
+    expect(node.styles.overflowY.parsed.enum).toBe(2)
+})
+
 test('UI configures and updates the device pixel ratio', async () => {
     const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
     const device_pixel_ratios = []
