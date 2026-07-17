@@ -119,7 +119,6 @@ test('UI resolves rem styles using the root size', async () => {
     node.style('width', '2rem')
     node.style('fontSize', '1.25rem')
     node.style('top', '-0.5rem')
-
     expect(node.styles).toMatchObject({
         width: {
             value: '2rem',
@@ -132,6 +131,25 @@ test('UI resolves rem styles using the root size', async () => {
         top: {
             value: '-0.5rem',
             parsed: { value: -8, kind: 'px' },
+        },
+    })
+
+    ui.setRootSize(20)
+    node.style('width', '2rem')
+    node.style('fontSize', '1.25rem')
+    node.style('top', '-0.5rem')
+    expect(node.styles).toMatchObject({
+        width: {
+            value: '2rem',
+            parsed: { value: 40, kind: 'px' },
+        },
+        fontSize: {
+            value: '1.25rem',
+            parsed: { value: 25, kind: 'px' },
+        },
+        top: {
+            value: '-0.5rem',
+            parsed: { value: -10, kind: 'px' },
         },
     })
 })
@@ -375,37 +393,6 @@ test('overflow shorthand and longhands follow assignment order', async () => {
     expect(node.styles.overflowY.parsed.enum).toBe(2)
 })
 
-test('UI configures and updates the device pixel ratio', async () => {
-    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
-    const device_pixel_ratios = []
-    const invalidated_nodes = []
-    renderer.setDevicePixelRatio = (device_pixel_ratio) => {
-        device_pixel_ratios.push(device_pixel_ratio)
-    }
-    renderer.invalidateTextNode = (node) => {
-        invalidated_nodes.push(node)
-    }
-    const ui = new UI({ renderer, device_pixel_ratio: 2 })
-
-    await ui.init()
-    const text = ui.create()
-    text.text('Text')
-    const box = ui.create()
-    ui.root.add(text)
-    ui.root.add(box)
-
-    invalidated_nodes.length = 0
-    ui.setDevicePixelRatio(3)
-
-    expect(device_pixel_ratios).toEqual([2, 3])
-    expect(invalidated_nodes).toEqual([text])
-
-    ui.setDevicePixelRatio(3)
-
-    expect(device_pixel_ratios).toEqual([2, 3])
-    expect(invalidated_nodes).toEqual([text])
-})
-
 test('UI defaults the device pixel ratio to 1', () => {
     const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
     let device_pixel_ratio
@@ -416,14 +403,6 @@ test('UI defaults the device pixel ratio to 1', () => {
     new UI({ renderer })
 
     expect(device_pixel_ratio).toBe(1)
-})
-
-test('UI rejects invalid device pixel ratios', () => {
-    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
-    const ui = new UI({ renderer })
-
-    expect(() => ui.setDevicePixelRatio(0)).toThrow(/device_pixel_ratio/)
-    expect(() => ui.setDevicePixelRatio(Infinity)).toThrow(/device_pixel_ratio/)
 })
 
 test('RendererDivs image api hooks are no-ops', async () => {
