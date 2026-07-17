@@ -11,14 +11,8 @@ import {
     TEXT_ALIGN,
     UNIT,
 } from '../style/consts'
-import createEngine, {
-    YOGA_SETTER,
-    MEASURE_MODE,
-    getYogaComputedBorder,
-    getYogaComputedPadding,
-    setYogaNodeDirty,
-    setYogaMeasureFunc,
-} from '../layouter/yoga'
+import createEngine from '../layouter/yoga'
+import { MEASURE_MODE, type LayoutEngine } from '../layouter/types'
 import {
     getAncestorClipping,
     getNodeBorderWidth,
@@ -70,7 +64,7 @@ export default class RendererWebGPU extends Renderer {
     private device_pixel_ratio = 1
     private scrollbar_size = [0, 0]
     // props
-    private engine
+    private engine!: LayoutEngine
     private adapter
     private device
     private context
@@ -313,7 +307,7 @@ export default class RendererWebGPU extends Renderer {
             this.root_node = node
         }
 
-        return this.engine.createElement(node)
+        this.engine.createNode(node)
     }
 
     public getChildIndex(node) {
@@ -321,14 +315,14 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public initializeTextNode(node) {
-        setYogaMeasureFunc(node.element, (width, width_mode, height, height_mode) =>
+        this.engine.setMeasureFunction(node, (width, width_mode, height, height_mode) =>
             this.getTextMeasure(node, width, width_mode, height, height_mode),
         )
     }
 
     public invalidateTextNode(node) {
         this.prepared_texts.delete(node)
-        setYogaNodeDirty(node.element)
+        this.engine.markDirty(node)
     }
 
     public getTextMeasure(
@@ -396,9 +390,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private updateResolvedStyle(node, style) {
-        if (YOGA_SETTER.hasOwnProperty(style.name)) {
-            YOGA_SETTER[style.name](node.element, style)
-        }
+        this.engine.applyStyle(node, style)
 
         if (
             style.name === STYLE.OVERFLOWX.name ||
@@ -411,7 +403,10 @@ export default class RendererWebGPU extends Renderer {
                     ? (node.styles.overflowY?.parsed.enum ?? OVERFLOW.visible)
                     : (node.styles.overflowX?.parsed.enum ?? OVERFLOW.visible)
 
-            YOGA_SETTER.overflow(node.element, { parsed: { enum: overflow } })
+            this.engine.applyStyle(node, {
+                name: STYLE.OVERFLOW.name,
+                parsed: { enum: overflow },
+            })
         }
 
         if (
@@ -422,14 +417,16 @@ export default class RendererWebGPU extends Renderer {
         ) {
             const has_vertical_scrollbar = node.styles.overflowY?.parsed.enum === OVERFLOW.scroll
             const has_horizontal_scrollbar = node.styles.overflowX?.parsed.enum === OVERFLOW.scroll
-            YOGA_SETTER.borderRightWidth(node.element, {
+            this.engine.applyStyle(node, {
+                name: STYLE.BORDERRIGHTWIDTH.name,
                 parsed: {
                     value:
                         (node.styles.borderRightWidth?.parsed.value ?? 0) +
                         (has_vertical_scrollbar ? this.scrollbar_size[0] : 0),
                 },
             })
-            YOGA_SETTER.borderBottomWidth(node.element, {
+            this.engine.applyStyle(node, {
+                name: STYLE.BORDERBOTTOMWIDTH.name,
                 parsed: {
                     value:
                         (node.styles.borderBottomWidth?.parsed.value ?? 0) +
@@ -458,7 +455,7 @@ export default class RendererWebGPU extends Renderer {
 
     public beforeUpdate(nodes) {
         super.beforeUpdate(nodes)
-        this.engine.update()
+        this.engine.calculate()
     }
 
     public afterUpdate(nodes) {
@@ -471,10 +468,10 @@ export default class RendererWebGPU extends Renderer {
             return null
         }
 
-        const border_left = getYogaComputedBorder(node.element, EDGE.left)
-        const border_right = getYogaComputedBorder(node.element, EDGE.right)
-        const padding_left = getYogaComputedPadding(node.element, EDGE.left)
-        const padding_right = getYogaComputedPadding(node.element, EDGE.right)
+        const border_left = node.layout.border.left
+        const border_right = node.layout.border.right
+        const padding_left = node.layout.padding.left
+        const padding_right = node.layout.padding.right
         const content_width = node.layout.width - border_left - border_right - padding_left - padding_right
 
         return this.getTextMeasure(node, content_width)
@@ -627,9 +624,9 @@ export default class RendererWebGPU extends Renderer {
         const border_top = getNodeBorderWidth(node, 'Top')
         const border_right = getNodeBorderWidth(node, 'Right')
         const border_left = getNodeBorderWidth(node, 'Left')
-        const padding_top = getYogaComputedPadding(node.element, EDGE.top)
-        const padding_right = getYogaComputedPadding(node.element, EDGE.right)
-        const padding_left = getYogaComputedPadding(node.element, EDGE.left)
+        const padding_top = node.layout.padding.top
+        const padding_right = node.layout.padding.right
+        const padding_left = node.layout.padding.left
         const content_x = x + border_left + padding_left
         const content_y = y + border_top + padding_top
         const content_width = width - border_left - border_right - padding_left - padding_right

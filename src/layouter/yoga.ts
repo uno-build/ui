@@ -1,16 +1,12 @@
 import { loadYoga } from 'yoga-layout/load'
 import { UNIT, KEYWORD, EDGE, GUTTER } from '../style/consts'
 import { calculateLayoutRect, getParentLayout } from './utils'
-
-export const MEASURE_MODE = {
-    UNDEFINED: 0,
-    EXACTLY: 1,
-    AT_MOST: 2,
-}
+import { MEASURE_MODE } from './types'
 
 export default async function createYogaEngine() {
     const Yoga = await loadYoga()
     const yoga_config = Yoga.Config.create()
+    const elements = new WeakMap()
     let root_element
 
     yoga_config.setUseWebDefaults(true)
@@ -20,48 +16,116 @@ export default async function createYogaEngine() {
         true,
     )
 
+    function createYogaElement(node) {
+        const element = Yoga.Node.create(yoga_config)
+        elements.set(node, element)
+
+        if (node.id === 0) {
+            root_element = element
+        }
+
+        return element
+    }
+
+    function getElement(node) {
+        return elements.get(node)
+    }
+
+    function calculate() {
+        root_element.calculateLayout()
+    }
+
     return {
+        createNode(node) {
+            createYogaElement(node)
+        },
+
         createElement(node) {
-            const element = Yoga.Node.create(yoga_config)
-
-            if (node.id === 0) {
-                root_element = element
-            }
-
-            return element
+            return createYogaElement(node)
         },
 
         getChildIndex(node) {
-            return node.element.getChildCount()
+            return getElement(node).getChildCount()
         },
 
         insertChild(parent, node, childIndex) {
-            parent.element.insertChild(node.element, childIndex)
+            getElement(parent).insertChild(getElement(node), childIndex)
         },
 
         removeChild(parent, node) {
-            parent.element.removeChild(node.element)
-            node.element.free()
+            const element = getElement(node)
+            getElement(parent).removeChild(element)
+            element.free()
+            elements.delete(node)
         },
 
+        applyStyle(node, style) {
+            const setter = YOGA_SETTER[style.name]
+            if (setter !== undefined) {
+                setter(getElement(node), style)
+            }
+        },
+
+        setMeasureFunction(node, measure_function) {
+            getElement(node).setMeasureFunc((width, width_mode, height, height_mode) =>
+                measure_function(
+                    width,
+                    toMeasureMode(Yoga, width_mode),
+                    height,
+                    toMeasureMode(Yoga, height_mode),
+                ),
+            )
+        },
+
+        markDirty(node) {
+            getElement(node).markDirty()
+        },
+
+        calculate,
+
         update() {
-            root_element.calculateLayout()
+            calculate()
         },
 
         // prettier-ignore
         getLayout(node) {
-            const node_rect = node.element.getComputedLayout()
+            const element = getElement(node)
+            const node_rect = element.getComputedLayout()
             const parent_layout = getParentLayout(node)
             const parent_rect =
-                node.parent?.element === root_element
+                node.parent != null && getElement(node.parent) === root_element
                     ? { ...parent_layout, ...root_element.getComputedLayout() }
                     : parent_layout
 
-            return calculateLayoutRect(
-                applyWrappedRelativeOffsets(node, node_rect),
-                parent_rect,
-            )
+            return {
+                ...calculateLayoutRect(
+                    applyWrappedRelativeOffsets(node, node_rect),
+                    parent_rect,
+                ),
+                padding: getComputedEdges(element, 'getComputedPadding'),
+                border: getComputedEdges(element, 'getComputedBorder'),
+            }
         },
+    }
+}
+
+function toMeasureMode(Yoga, measure_mode) {
+    if (measure_mode === Yoga.MEASURE_MODE_UNDEFINED) {
+        return MEASURE_MODE.UNDEFINED
+    }
+    if (measure_mode === Yoga.MEASURE_MODE_EXACTLY) {
+        return MEASURE_MODE.EXACTLY
+    }
+
+    return MEASURE_MODE.AT_MOST
+}
+
+function getComputedEdges(element, method) {
+    return {
+        top: element[method](EDGE.top),
+        right: element[method](EDGE.right),
+        bottom: element[method](EDGE.bottom),
+        left: element[method](EDGE.left),
     }
 }
 
@@ -290,22 +354,6 @@ export const YOGA_SETTER = {
     //     node.setIsReferenceBaseline(Boolean(input))
     //     return Boolean(input)
     // },
-}
-
-export function getYogaComputedPadding(node, edge) {
-    return node.getComputedPadding(edge)
-}
-
-export function getYogaComputedBorder(node, edge) {
-    return node.getComputedBorder(edge)
-}
-
-export function setYogaMeasureFunc(node, measure_func) {
-    node.setMeasureFunc(measure_func)
-}
-
-export function setYogaNodeDirty(node) {
-    node.markDirty()
 }
 
 // Correct Yoga's wrapped flex relative offsets so painted divs match the DOM.

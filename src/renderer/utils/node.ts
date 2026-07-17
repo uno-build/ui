@@ -1,4 +1,4 @@
-import { DISPLAY, EDGE, OVERFLOW, UNIT } from '../../style/consts'
+import { DISPLAY, OVERFLOW, UNIT } from '../../style/consts'
 import { TRANSPARENT_COLOR } from '../webgpu/buffers'
 
 const EMPTY_BOX_SHADOW = [0, 0, 0, 0]
@@ -128,14 +128,14 @@ function updateNodeScrollMetrics(node, get_content_size) {
         }
     }
 
-    const border_left = node.element.getComputedBorder(EDGE.left)
-    const border_right = node.element.getComputedBorder(EDGE.right)
-    const border_top = node.element.getComputedBorder(EDGE.top)
-    const border_bottom = node.element.getComputedBorder(EDGE.bottom)
-    const padding_left = node.element.getComputedPadding(EDGE.left)
-    const padding_top = node.element.getComputedPadding(EDGE.top)
-    const padding_right = node.element.getComputedPadding(EDGE.right)
-    const padding_bottom = node.element.getComputedPadding(EDGE.bottom)
+    const border_left = node.layout.border.left
+    const border_right = node.layout.border.right
+    const border_top = node.layout.border.top
+    const border_bottom = node.layout.border.bottom
+    const padding_left = node.layout.padding.left
+    const padding_top = node.layout.padding.top
+    const padding_right = node.layout.padding.right
+    const padding_bottom = node.layout.padding.bottom
 
     node.client_width = Math.round(Math.max(0, node.layout.width - border_left - border_right))
     node.client_height = Math.round(Math.max(0, node.layout.height - border_top - border_bottom))
@@ -274,10 +274,10 @@ export function getAncestorClipping(node) {
         const clip_x = overflow_x === OVERFLOW.hidden || overflow_x === OVERFLOW.scroll
         const clip_y = overflow_y === OVERFLOW.hidden || overflow_y === OVERFLOW.scroll
         if (clip_x || clip_y) {
-            const border_left = ancestor.element.getComputedBorder(EDGE.left)
-            const border_right = ancestor.element.getComputedBorder(EDGE.right)
-            const border_top = ancestor.element.getComputedBorder(EDGE.top)
-            const border_bottom = ancestor.element.getComputedBorder(EDGE.bottom)
+            const border_left = ancestor.layout.border.left
+            const border_right = ancestor.layout.border.right
+            const border_top = ancestor.layout.border.top
+            const border_bottom = ancestor.layout.border.bottom
             if (clip_x) {
                 clip.left = Math.max(clip.left, ancestor.layout.x - scroll_left + border_left)
                 clip.right = Math.min(

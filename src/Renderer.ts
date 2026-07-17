@@ -31,10 +31,6 @@ export default abstract class Renderer {
         this.insertChild(parent, node, this.getChildIndex(parent))
     }
 
-    public removeChild(parent, node) {
-        parent.element.removeChild(node.element)
-    }
-
     public beforeUpdate(nodes) {
         for (const { node, style } of this.pending_styles) {
             this.updateStyle(node, style)
@@ -55,6 +51,7 @@ export default abstract class Renderer {
     public abstract createElement(node)
     public abstract getChildIndex(node)
     public abstract getLayout(node)
+    public abstract removeChild(parent, node)
 
     protected abstract updateStyle(node, style)
     protected abstract insertChild(parent, node, childIndex)

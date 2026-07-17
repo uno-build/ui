@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
-import { MEASURE_MODE } from '../src/layouter/yoga.ts'
+import { MEASURE_MODE } from '../src/layouter/types.ts'
 import {
     BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
@@ -359,23 +359,19 @@ test('RendererWebGPU propagates descendant overflow independently by axis', () =
 })
 
 test('RendererWebGPU reserves native scrollbar space independently by axis', () => {
+    const applied_styles = []
     const renderer = createRenderer()
-    const borders = new Map()
-    let overflow
+    ;(renderer as any).engine = {
+        applyStyle(node, style) {
+            applied_styles.push(style)
+        },
+    }
     const node = {
         styles: {
             overflowX: { parsed: { enum: OVERFLOW.visible } },
             overflowY: { parsed: { enum: OVERFLOW.scroll } },
             borderRightWidth: { parsed: { value: 1 } },
             borderBottomWidth: { parsed: { value: 2 } },
-        },
-        element: {
-            setOverflow(value) {
-                overflow = value
-            },
-            setBorder(edge, value) {
-                borders.set(edge, value)
-            },
         },
     }
     ;(renderer as any).scrollbar_size = [15, 15]
@@ -385,9 +381,9 @@ test('RendererWebGPU reserves native scrollbar space independently by axis', () 
         parsed: { enum: OVERFLOW.scroll },
     })
 
-    expect(overflow).toBe(OVERFLOW.visible)
-    expect(borders.get(EDGE.right)).toBe(16)
-    expect(borders.get(EDGE.bottom)).toBe(2)
+    expect(getAppliedStyle(applied_styles, 'overflow').parsed.enum).toBe(OVERFLOW.visible)
+    expect(getAppliedStyle(applied_styles, 'borderRightWidth').parsed.value).toBe(16)
+    expect(getAppliedStyle(applied_styles, 'borderBottomWidth').parsed.value).toBe(2)
 
     node.styles.overflowX.parsed.enum = OVERFLOW.scroll
     node.styles.overflowY.parsed.enum = OVERFLOW.visible
@@ -396,9 +392,9 @@ test('RendererWebGPU reserves native scrollbar space independently by axis', () 
         parsed: { enum: OVERFLOW.scroll },
     })
 
-    expect(overflow).toBe(OVERFLOW.scroll)
-    expect(borders.get(EDGE.right)).toBe(1)
-    expect(borders.get(EDGE.bottom)).toBe(17)
+    expect(getAppliedStyle(applied_styles, 'overflow').parsed.enum).toBe(OVERFLOW.scroll)
+    expect(getAppliedStyle(applied_styles, 'borderRightWidth').parsed.value).toBe(1)
+    expect(getAppliedStyle(applied_styles, 'borderBottomWidth').parsed.value).toBe(17)
 
     node.styles.overflowX.parsed.enum = OVERFLOW.hidden
     ;(renderer as any).updateResolvedStyle(node, {
@@ -406,9 +402,9 @@ test('RendererWebGPU reserves native scrollbar space independently by axis', () 
         parsed: { enum: OVERFLOW.hidden },
     })
 
-    expect(overflow).toBe(OVERFLOW.hidden)
-    expect(borders.get(EDGE.right)).toBe(1)
-    expect(borders.get(EDGE.bottom)).toBe(2)
+    expect(getAppliedStyle(applied_styles, 'overflow').parsed.enum).toBe(OVERFLOW.hidden)
+    expect(getAppliedStyle(applied_styles, 'borderRightWidth').parsed.value).toBe(1)
+    expect(getAppliedStyle(applied_styles, 'borderBottomWidth').parsed.value).toBe(2)
 
     node.styles.overflowX.parsed.enum = OVERFLOW.scroll
     node.styles.overflowY.parsed.enum = OVERFLOW.scroll
@@ -417,26 +413,24 @@ test('RendererWebGPU reserves native scrollbar space independently by axis', () 
         parsed: { enum: OVERFLOW.scroll },
     })
 
-    expect(overflow).toBe(OVERFLOW.scroll)
-    expect(borders.get(EDGE.right)).toBe(16)
-    expect(borders.get(EDGE.bottom)).toBe(17)
+    expect(getAppliedStyle(applied_styles, 'overflow').parsed.enum).toBe(OVERFLOW.scroll)
+    expect(getAppliedStyle(applied_styles, 'borderRightWidth').parsed.value).toBe(16)
+    expect(getAppliedStyle(applied_styles, 'borderBottomWidth').parsed.value).toBe(17)
 })
 
 test('RendererWebGPU maps the main-axis overflow to Yoga when flexDirection changes', () => {
+    const applied_styles = []
     const renderer = createRenderer()
-    const overflows = []
+    ;(renderer as any).engine = {
+        applyStyle(node, style) {
+            applied_styles.push(style)
+        },
+    }
     const node = {
         styles: {
             flexDirection: { parsed: { enum: FLEX_DIRECTION.row } },
             overflowX: { parsed: { enum: OVERFLOW.hidden } },
             overflowY: { parsed: { enum: OVERFLOW.scroll } },
-        },
-        element: {
-            setFlexDirection() {},
-            setOverflow(value) {
-                overflows.push(value)
-            },
-            setBorder() {},
         },
     }
 
@@ -444,7 +438,7 @@ test('RendererWebGPU maps the main-axis overflow to Yoga when flexDirection chan
         name: 'overflowY',
         parsed: { enum: OVERFLOW.scroll },
     })
-    expect(overflows.at(-1)).toBe(OVERFLOW.hidden)
+    expect(getAppliedStyle(applied_styles, 'overflow').parsed.enum).toBe(OVERFLOW.hidden)
 
     for (const flex_direction of [
         FLEX_DIRECTION.column,
@@ -457,7 +451,7 @@ test('RendererWebGPU maps the main-axis overflow to Yoga when flexDirection chan
             name: 'flexDirection',
             parsed: { enum: flex_direction },
         })
-        expect(overflows.at(-1)).toBe(
+        expect(getAppliedStyle(applied_styles, 'overflow').parsed.enum).toBe(
             flex_direction === FLEX_DIRECTION.column || flex_direction === FLEX_DIRECTION['column-reverse']
                 ? OVERFLOW.scroll
                 : OVERFLOW.hidden,
@@ -1862,7 +1856,7 @@ test('RendererWebGPU invalidates prepared text', () => {
     )
     const node: any = createNode({ text_content: 'A' })
     let marked_dirty = false
-    node.element = {
+    ;(renderer as any).engine = {
         markDirty() {
             marked_dirty = true
         },
@@ -2692,8 +2686,13 @@ function createRenderer(image_manager = createImageManager(), font_manager = cre
     const renderer = new RendererWebGPU({ canvas: {} })
     ;(renderer as any).image_manager = image_manager
     ;(renderer as any).font_manager = font_manager
+    ;(renderer as any).engine = { applyStyle() {} }
 
     return renderer
+}
+
+function getAppliedStyle(applied_styles, name) {
+    return applied_styles.filter((style) => style.name === name).at(-1)
 }
 
 function createImageManager({ resources = {} } = {}) {
@@ -2926,17 +2925,23 @@ function createNode({
     text_content?: string
 } = {}) {
     return {
-        element: {
-            getComputedBorder(edge) {
-                return computed_border[edge] ?? 0
+        layout: {
+            ...layout,
+            border: {
+                top: computed_border[EDGE.top] ?? 0,
+                right: computed_border[EDGE.right] ?? 0,
+                bottom: computed_border[EDGE.bottom] ?? 0,
+                left: computed_border[EDGE.left] ?? 0,
             },
-            getComputedPadding(edge) {
-                return computed_padding[edge] ?? 0
+            padding: {
+                top: computed_padding[EDGE.top] ?? 0,
+                right: computed_padding[EDGE.right] ?? 0,
+                bottom: computed_padding[EDGE.bottom] ?? 0,
+                left: computed_padding[EDGE.left] ?? 0,
             },
         },
         parent,
         children: [],
-        layout,
         scroll_top: 0,
         scroll_left: 0,
         scroll_height: 0,

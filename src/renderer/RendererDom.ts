@@ -4,6 +4,7 @@ import { KEYWORD } from '../style/consts'
 
 export default class RendererDom extends Renderer {
     private canvas
+    private elements = new WeakMap()
     private fonts = new Map()
     private text_elements = new WeakMap()
     private root_node
@@ -14,31 +15,37 @@ export default class RendererDom extends Renderer {
     }
 
     public createElement(node) {
+        let element
         if (node.id === 0) {
             this.root_node = node
-            return this.canvas
+            element = this.canvas
+        } else {
+            element = document.createElement('div')
+            element.id = `node-${node.id}`
+            Object.assign(element.style, DEFAULT_NODE_STYLE)
         }
-        const element = document.createElement('div')
-        element.id = `node-${node.id}`
-        Object.assign(element.style, DEFAULT_NODE_STYLE)
+
+        this.elements.set(node, element)
         return element
     }
 
     protected insertChild(parent, node, childIndex) {
-        parent.element.appendChild(node.element)
+        this.elements.get(parent).appendChild(this.elements.get(node))
     }
 
     public removeChild(parent, node) {
-        parent.element.removeChild(node.element)
+        this.elements.get(parent).removeChild(this.elements.get(node))
+        this.elements.delete(node)
     }
 
     public getChildIndex(node) {
-        return node.element.children.length
+        return this.elements.get(node).children.length
     }
 
     public initializeTextNode(node) {
-        node.element.style.whiteSpace = 'pre-wrap'
-        node.element.style.overflowWrap = 'anywhere'
+        const element = this.elements.get(node)
+        element.style.whiteSpace = 'pre-wrap'
+        element.style.overflowWrap = 'anywhere'
     }
 
     public fontRegister(name: string, image: any, json: any): void {
@@ -46,13 +53,15 @@ export default class RendererDom extends Renderer {
     }
 
     protected updateStyle(node, resolved_style) {
+        const element = this.elements.get(node)
+
         if (resolved_style.name === 'textStroke') {
-            node.element.style.webkitTextStroke = resolved_style.expanded[0].value
+            element.style.webkitTextStroke = resolved_style.expanded[0].value
             return
         }
 
         if (resolved_style.name === 'fontFamily') {
-            node.element.style.fontFamily = resolved_style.value
+            element.style.fontFamily = resolved_style.value
             this.updateTextLineHeight(node)
             return
         }
@@ -65,33 +74,34 @@ export default class RendererDom extends Renderer {
         if (resolved_style.name === 'backgroundImage') {
             const style = resolved_style.expanded[0]
             if (style.parsed.kind === KEYWORD.UNSET) {
-                node.element.style.backgroundImage = 'none'
+                element.style.backgroundImage = 'none'
                 return
             }
 
-            node.element.style.backgroundImage = toCssBackgroundImage(style.value)
-            node.element.style.backgroundRepeat = node.styles.backgroundRepeat?.value ?? 'no-repeat'
+            element.style.backgroundImage = toCssBackgroundImage(style.value)
+            element.style.backgroundRepeat = node.styles.backgroundRepeat?.value ?? 'no-repeat'
             return
         }
 
         if (resolved_style.name === 'backgroundSizeWidth' || resolved_style.name === 'backgroundSizeHeight') {
-            node.element.style.backgroundSize = toCssBackgroundSize(node)
+            element.style.backgroundSize = toCssBackgroundSize(node)
             return
         }
 
-        node.element.style[resolved_style.name] = resolved_style.value
+        element.style[resolved_style.name] = resolved_style.value
     }
 
     private updateTextLineHeight(node) {
+        const element = this.elements.get(node)
         const line_height = node.styles.lineHeight
 
         if (line_height !== undefined && line_height.parsed.kind !== KEYWORD.UNSET) {
-            node.element.style.lineHeight = line_height.value
+            element.style.lineHeight = line_height.value
             return
         }
 
         const font = this.fonts.get(node.styles.fontFamily?.value)
-        node.element.style.lineHeight = font === undefined ? '' : `${font.lineHeight}`
+        element.style.lineHeight = font === undefined ? '' : `${font.lineHeight}`
     }
 
     public beforeUpdate(nodes) {
@@ -117,13 +127,13 @@ export default class RendererDom extends Renderer {
     }
 
     private applyNodeScroll(node) {
-        const { element } = node
+        const element = this.elements.get(node)
         element.scrollLeft = node.scroll_left
         element.scrollTop = node.scroll_top
     }
 
     private readNodeScroll(node) {
-        const { element } = node
+        const element = this.elements.get(node)
         node.scroll_left = element.scrollLeft
         node.scroll_top = element.scrollTop
         node.scroll_width = element.scrollWidth
@@ -144,25 +154,26 @@ export default class RendererDom extends Renderer {
         // if (text_element === undefined) {
         //     text_element = document.createElement('span')
         //     this.text_elements.set(node, text_element)
-        //     node.element.insertBefore(text_element, node.element.firstChild)
+        //     this.elements.get(node).insertBefore(text_element, this.elements.get(node).firstChild)
         // }
 
-        node.element.innerHTML = node.text_content
+        this.elements.get(node).innerHTML = node.text_content
     }
 
     // prettier-ignore
     public getLayout(node) {
         const parent = node.parent
         const parent_layout = getParentLayout(node)
-        const node_rect = node.element.getBoundingClientRect()
-        const parent_rect = (parent?.element ?? this.canvas).getBoundingClientRect()
+        const node_rect = this.elements.get(node).getBoundingClientRect()
+        const parent_element = parent === null ? this.canvas : this.elements.get(parent)
+        const parent_rect = parent_element.getBoundingClientRect()
 
         return calculateLayoutRect(
             {
                 width: node_rect.width,
                 height: node_rect.height,
-                left: node_rect.left - parent_rect.left + (parent?.element.scrollLeft ?? 0),
-                top: node_rect.top - parent_rect.top + (parent?.element.scrollTop ?? 0),
+                left: node_rect.left - parent_rect.left + (parent === null ? 0 : parent_element.scrollLeft),
+                top: node_rect.top - parent_rect.top + (parent === null ? 0 : parent_element.scrollTop),
             },
             {
                 ...parent_layout,
