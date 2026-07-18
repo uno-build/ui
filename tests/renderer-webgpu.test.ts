@@ -29,6 +29,7 @@ import {
 } from '../src/renderer/webgpu/buffers.ts'
 import { FontManager } from '../src/renderer/webgpu/FontManager.ts'
 import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
+import { TEXT_WGSL } from '../src/renderer/webgpu/shaders/text.ts'
 ;(globalThis as any).GPUTextureUsage = {
     TEXTURE_BINDING: 1,
     COPY_SRC: 2,
@@ -1132,6 +1133,7 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
             text_shadow: [0, 0, 0, 0],
             text_shadow_color: [0, 0, 0, 0],
             text_stroke_width: 0,
+            font_is_mtsdf: 0,
             text_stroke_color: [0, 0, 0, 0],
         },
     ])
@@ -1462,6 +1464,12 @@ test('RendererWebGPU passes the text shadow sample limit to the fragment pipelin
     }
 })
 
+test('text shader reuses one RGBA sample for direct MTSDF coverage', () => {
+    expect(TEXT_WGSL.match(/textureSampleLevel\(/g)).toHaveLength(1)
+    expect(TEXT_WGSL.match(/let distance_sample = glyphDistanceSampleAtUv\(glyph, run, input\.uv\);/g)).toHaveLength(2)
+    expect(TEXT_WGSL).toContain('return vec3f(median(sample.r, sample.g, sample.b), sample.a, 1.0);')
+})
+
 test('RendererWebGPU passes the text stroke sample limit to the fragment pipeline unchanged', () => {
     for (const [options, expected_samples] of [
         [{}, 289],
@@ -1500,6 +1508,16 @@ test('RendererWebGPU passes the text stroke sample limit to the fragment pipelin
         expect(shader_descriptor.code).toContain(
             'sample_weight = 1.0 - smoothstep(fade_start, radius, length(sample_offset));',
         )
+        expect(shader_descriptor.code).toContain(
+            'let signed_distance = select(distance_sample.x, distance_sample.y, use_true_distance);',
+        )
+        expect(shader_descriptor.code).toContain(
+            'let distance_sample = glyphDistanceSampleAtUv(glyph, run, input.uv);',
+        )
+        expect(shader_descriptor.code).toContain('let use_true_distance = run.font_is_mtsdf > 0.0;')
+        expect(shader_descriptor.code).toContain('distance_sample.y,\n                stroke_width,\n                0.0,')
+        expect(shader_descriptor.code).toContain('distance_sample.y,\n                stroke_width,\n                blur_px,')
+        expect(shader_descriptor.code).toContain('sample_softness,\n                        false,')
         expect(shader_descriptor.code).toContain('let fill_alpha = fill_coverage * run.color.a * opacity;')
         expect(shader_descriptor.code).toContain('max(1.0 - fill_alpha, 0.000001);')
         expect(shader_descriptor.code).not.toContain('screen_distance + stroke_width')
@@ -2046,6 +2064,10 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
         ),
     ).toEqual([0, 0, 0, 0])
     expect(floats[TEXT_RUN.TEXT_STROKE_WIDTH.OFFSET / FLOAT32_SIZE]).toBe(0)
+    expect(floats[TEXT_RUN.FONT_IS_MTSDF.OFFSET / FLOAT32_SIZE]).toBe(0)
+    expect(TEXT_RUN.FONT_IS_MTSDF.OFFSET).toBe(21 * FLOAT32_SIZE)
+    expect(TEXT_RUN.TEXT_STROKE_COLOR.OFFSET).toBe(24 * FLOAT32_SIZE)
+    expect(TEXT_RUN_SIZE).toBe(28 * FLOAT32_SIZE)
     expect(
         Array.from(
             floats.slice(
@@ -2054,6 +2076,20 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
             ),
         ),
     ).toEqual([0, 0, 0, 0])
+})
+
+test('RendererWebGPU marks MTSDF fonts in the shared text run', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont('mtsdf'),
+        }),
+    )
+    collectRenderData(renderer, [createNode({ text_content: 'A' })])
+    const text_run_buffer_data = (renderer as any).createTextRunBufferData()
+    const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
+
+    expect(floats[TEXT_RUN.FONT_IS_MTSDF.OFFSET / FLOAT32_SIZE]).toBe(1)
 })
 
 test('RendererWebGPU writes text stroke data into the shared text run', () => {
@@ -2734,12 +2770,13 @@ function createFontManager({ default_font = undefined, fonts = {} } = {}) {
     }
 }
 
-function createManagedFont() {
+function createManagedFont(atlas_type = 'msdf') {
     return {
         name: 'Poppins',
         layer: 2,
         json: {
             atlas: {
+                type: atlas_type,
                 distanceRange: 6,
             },
         },

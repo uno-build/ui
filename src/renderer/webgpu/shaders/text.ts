@@ -3,18 +3,15 @@ fn median(r: f32, g: f32, b: f32) -> f32 {
     return max(min(r, g), min(max(r, g), b));
 }
 
-fn glyphCoverageAtUv(
+fn glyphDistanceSampleAtUv(
     glyph: GlyphData,
     run: TextRun,
     uv: vec2f,
-    uv_width: vec2f,
-    dilation: f32,
-    softness: f32,
-) -> f32 {
+) -> vec3f {
     let uv_min = glyph.uv_rect.xy;
     let uv_max = glyph.uv_rect.xy + glyph.uv_rect.zw;
     if (any(uv < uv_min) || any(uv > uv_max)) {
-        return 0.0;
+        return vec3f(0.0);
     }
 
     let sample = textureSampleLevel(
@@ -24,7 +21,17 @@ fn glyphCoverageAtUv(
         u32(run.font_data.x),
         0.0,
     );
-    let signed_distance = median(sample.r, sample.g, sample.b);
+
+    return vec3f(median(sample.r, sample.g, sample.b), sample.a, 1.0);
+}
+
+fn glyphCoverageFromSignedDistance(
+    run: TextRun,
+    uv_width: vec2f,
+    signed_distance: f32,
+    dilation: f32,
+    softness: f32,
+) -> f32 {
     let unit_range = vec2f(run.font_data.z / run.font_data.w);
     let screen_tex_size = vec2f(1.0) / max(uv_width, vec2f(0.000001));
     let screen_px_range = max(0.5 * dot(unit_range, screen_tex_size), 1.0);
@@ -35,6 +42,27 @@ fn glyphCoverageAtUv(
     let safe_softness = min(softness, screen_px_range * 0.45);
 
     return smoothstep(-safe_softness, safe_softness, screen_distance);
+}
+
+fn glyphCoverageAtUv(
+    glyph: GlyphData,
+    run: TextRun,
+    uv: vec2f,
+    uv_width: vec2f,
+    dilation: f32,
+    softness: f32,
+    use_true_distance: bool,
+) -> f32 {
+    let distance_sample = glyphDistanceSampleAtUv(glyph, run, uv);
+    let signed_distance = select(distance_sample.x, distance_sample.y, use_true_distance);
+
+    return distance_sample.z * glyphCoverageFromSignedDistance(
+        run,
+        uv_width,
+        signed_distance,
+        dilation,
+        softness,
+    );
 }
 
 fn expandedGlyphCoverageAtUv(
@@ -83,6 +111,7 @@ fn expandedGlyphCoverageAtUv(
                         uv_width,
                         sample_dilation,
                         0.5,
+                        false,
                     ) * sample_weight,
                 );
             }
@@ -111,6 +140,7 @@ fn expandedGlyphCoverageAtUv(
                     uv_width,
                     sample_dilation,
                     0.5,
+                    false,
                 ) * sample_weight,
             );
         }
@@ -131,17 +161,39 @@ fn textStrokeColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
             input.pixel.y > run.clipping.z
         )
     );
-    let fill_coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.0, 0.0);
-    let stroke_width = run.text_stroke_width * viewport.device_pixel_ratio;
-    let expanded_coverage = expandedGlyphCoverageAtUv(
-        glyph,
+    let distance_sample = glyphDistanceSampleAtUv(glyph, run, input.uv);
+    let fill_coverage = distance_sample.z * glyphCoverageFromSignedDistance(
         run,
-        input.uv,
         uv_width,
-        fill_coverage,
-        stroke_width,
-        stroke_width,
+        distance_sample.x,
+        0.0,
+        0.0,
     );
+    let stroke_width = run.text_stroke_width * viewport.device_pixel_ratio;
+    let use_true_distance = run.font_is_mtsdf > 0.0;
+    var expanded_coverage = fill_coverage;
+    if (use_true_distance) {
+        expanded_coverage = max(
+            fill_coverage,
+            distance_sample.z * glyphCoverageFromSignedDistance(
+                run,
+                uv_width,
+                distance_sample.y,
+                stroke_width,
+                0.0,
+            ),
+        );
+    } else {
+        expanded_coverage = expandedGlyphCoverageAtUv(
+            glyph,
+            run,
+            input.uv,
+            uv_width,
+            fill_coverage,
+            stroke_width,
+            stroke_width,
+        );
+    }
 
     let opacity = run.font_data.y * select(0.0, 1.0, visible);
     let fill_alpha = fill_coverage * run.color.a * opacity;
@@ -167,7 +219,7 @@ fn glyphColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
             input.pixel.y > run.clipping.z
         )
     );
-    let coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.0, 0.0);
+    let coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.0, 0.0, false);
     let alpha = coverage *
         run.color.a *
         run.font_data.y *
@@ -198,9 +250,28 @@ fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
         run.text_stroke_width * viewport.device_pixel_ratio,
         run.text_stroke_color.a > 0.0,
     );
-    let base_coverage = glyphCoverageAtUv(glyph, run, input.uv, uv_width, 0.0, 0.5);
+    let use_true_distance = run.font_is_mtsdf > 0.0;
+    let distance_sample = glyphDistanceSampleAtUv(glyph, run, input.uv);
+    let base_coverage = distance_sample.z * glyphCoverageFromSignedDistance(
+        run,
+        uv_width,
+        distance_sample.x,
+        0.0,
+        0.5,
+    );
     var coverage = base_coverage;
-    if (stroke_width > 0.0) {
+    if (use_true_distance && (stroke_width > 0.0 || blur_px > 0.0)) {
+        coverage = max(
+            base_coverage,
+            distance_sample.z * glyphCoverageFromSignedDistance(
+                run,
+                uv_width,
+                distance_sample.y,
+                stroke_width,
+                blur_px,
+            ),
+        );
+    } else if (stroke_width > 0.0) {
         coverage = expandedGlyphCoverageAtUv(
             glyph,
             run,
@@ -234,6 +305,7 @@ fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
                         uv_width,
                         0.0,
                         sample_softness,
+                        false,
                     ) * sample_weight;
                 }
             }

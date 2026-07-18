@@ -16,6 +16,7 @@ import deepNestedPaint from './examples/deepNestedPaint'
 import fontLineHeight from './examples/fontLineHeight'
 import fontParagraph from './examples/fontParagraph'
 import fontSize from './examples/fontSize'
+import fontSize2 from './examples/fontSize2'
 import fontTextAlign from './examples/fontTextAlign'
 import scroll from './examples/scroll'
 import fontTextShadow from './examples/fontTextShadow'
@@ -55,6 +56,7 @@ export const LAYOUTS = {
     deepNestedPaint,
     fontLineHeight,
     fontSize,
+    fontSize2,
     fontTextAlign,
     scroll,
     fontTextShadow,

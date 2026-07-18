@@ -110,6 +110,10 @@ export const TEXT_RUN = {
         OFFSET: 20 * FLOAT32_SIZE,
         SIZE: FLOAT32_SIZE,
     },
+    FONT_IS_MTSDF: {
+        OFFSET: 21 * FLOAT32_SIZE,
+        SIZE: FLOAT32_SIZE,
+    },
     TEXT_STROKE_COLOR: {
         OFFSET: 24 * FLOAT32_SIZE,
         SIZE: 4 * FLOAT32_SIZE,

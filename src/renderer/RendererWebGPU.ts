@@ -49,7 +49,7 @@ import {
 } from './webgpu/buffers'
 
 const IMAGE_ATLAS_SIZE = 2048
-const FONT_ATLAS_SIZE = 1024
+const FONT_ATLAS_SIZE = 2048
 const FONT_COLOR = [0, 0, 0, 255]
 const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9
 const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 289
@@ -719,6 +719,7 @@ export default class RendererWebGPU extends Renderer {
                 text_shadow: [text_shadow?.offset_x ?? 0, text_shadow?.offset_y ?? 0, text_shadow?.blur ?? 0, 0],
                 text_shadow_color: text_shadow?.color ?? [0, 0, 0, 0],
                 text_stroke_width: text_stroke?.width ?? 0,
+                font_is_mtsdf: font.json.atlas.type === 'mtsdf' ? 1 : 0,
                 text_stroke_color: text_stroke?.color ?? [0, 0, 0, 0],
             },
         }
@@ -1050,8 +1051,16 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private writeTextRunData(text_run, bytes_offset) {
-        const { color, font_data, clipping, text_shadow, text_shadow_color, text_stroke_width, text_stroke_color } =
-            text_run
+        const {
+            color,
+            font_data,
+            clipping,
+            text_shadow,
+            text_shadow_color,
+            text_stroke_width,
+            font_is_mtsdf,
+            text_stroke_color,
+        } = text_run
         const color_float_offset = (bytes_offset + TEXT_RUN.COLOR.OFFSET) / FLOAT32_SIZE
         this.text_run_floats[color_float_offset] = color[0] / 255
         this.text_run_floats[color_float_offset + 1] = color[1] / 255
@@ -1075,6 +1084,9 @@ export default class RendererWebGPU extends Renderer {
 
         const text_stroke_width_float_offset = (bytes_offset + TEXT_RUN.TEXT_STROKE_WIDTH.OFFSET) / FLOAT32_SIZE
         this.text_run_floats[text_stroke_width_float_offset] = text_stroke_width
+
+        const font_is_mtsdf_float_offset = (bytes_offset + TEXT_RUN.FONT_IS_MTSDF.OFFSET) / FLOAT32_SIZE
+        this.text_run_floats[font_is_mtsdf_float_offset] = font_is_mtsdf
 
         const text_stroke_color_float_offset = (bytes_offset + TEXT_RUN.TEXT_STROKE_COLOR.OFFSET) / FLOAT32_SIZE
         this.text_run_floats[text_stroke_color_float_offset] = text_stroke_color[0] / 255

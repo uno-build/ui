@@ -46,7 +46,7 @@
         <script type="module">
             import UI from '../../src/UI'
             import RendererWebGPU from '../../src/renderer/RendererWebGPU'
-            import { loadImage, loadJson } from '../../src/utils/loadAssets'
+            import { loadImage, loadJson } from '../../src/utils/load-assets'
 
             const DEFAULT_NODES = 400
             const DEFAULT_FRAMES = 60
@@ -95,8 +95,8 @@
                     ? Number(params.get('text_stroke_max_samples_per_glyph'))
                     : DEFAULT_TEXT_STROKE_MAX_SAMPLES_PER_GLYPH
                 const [font_image, font_json] = await Promise.all([
-                    loadImage('/assets/fonts/Poppins-Regular.mtsdf.png'),
-                    loadJson('/assets/fonts/Poppins-Regular.mtsdf.json'),
+                    loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png'),
+                    loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json'),
                 ])
                 const scenes = []
 

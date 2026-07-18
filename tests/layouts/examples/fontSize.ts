@@ -17,21 +17,25 @@ export default async function createFontsLayout({ ui }) {
     const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
     const changaone_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
     const changaone_json = await loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json')
+    const changaone2_image = await loadImage('/assets/fonts/ChangaOne-Regular.msdf.png')
+    const changaone2_json = await loadJson('/assets/fonts/ChangaOne-Regular.msdf.json')
 
     ui.fontRegister('Poppins-Regular', poppins_image, poppins_json)
     ui.fontRegister('ChangaOne-Regular', changaone_image, changaone_json)
+    ui.fontRegister('ChangaOne-Regular-MSDF', changaone2_image, changaone2_json)
 
     const stage = ui.create()
     stage.style('flex', '1')
     stage.style('flexDirection', 'row')
     stage.style('gap', '24px')
     stage.style('padding', '24px')
-    stage.style('backgroundColor', '#ccf3f7')
+    stage.style('backgroundColor', '#263338')
     ui.root.add(stage)
 
     const font_columns = [
-        { font_family: 'Poppins-Regular', text_content: 'Poppins' },
-        { font_family: 'ChangaOne-Regular', text_content: 'ChangaOne' },
+        // { font_family: 'Poppins-Regular', text_content: 'Poppins' },
+        { font_family: 'ChangaOne-Regular', text_content: 'ChangaOne mtsdf' },
+        { font_family: 'ChangaOne-Regular-MSDF', text_content: 'ChangaOne msdf' },
     ]
 
     for (const font_column of font_columns) {
@@ -43,16 +47,25 @@ export default async function createFontsLayout({ ui }) {
 
         for (let font_size = MIN_FONT_SIZE; font_size <= MAX_FONT_SIZE; font_size++) {
             const text = ui.create()
-            text.style('width', '300px')
+            const stroke = font_size / 10
+            const shadow = font_size / 10
+            text.style('width', '350px')
             // text.style('height', `${font_size * 2}px`)
             text.style('flexShrink', '0')
             // text.style('border', '1px solid #000')
             // text.style('padding', '1px')
             text.style('fontFamily', font_column.font_family)
             text.style('fontSize', `${font_size}px`)
+            text.style('textStroke', `${stroke}px #000`)
+            text.style('textShadow', `0px ${shadow}px 0px #000`)
             text.style('color', getRainbowColor(font_size))
             text.text(font_column.text_content)
             column.add(text)
+
+            console.log({
+                font_size,
+                text_stroke: `${stroke}`,
+            })
         }
     }
 }
