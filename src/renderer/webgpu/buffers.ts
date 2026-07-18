@@ -114,6 +114,10 @@ export const TEXT_RUN = {
         OFFSET: 21 * FLOAT32_SIZE,
         SIZE: FLOAT32_SIZE,
     },
+    EFFECT_DISTANCE_RANGE: {
+        OFFSET: 22 * FLOAT32_SIZE,
+        SIZE: FLOAT32_SIZE,
+    },
     TEXT_STROKE_COLOR: {
         OFFSET: 24 * FLOAT32_SIZE,
         SIZE: 4 * FLOAT32_SIZE,

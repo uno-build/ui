@@ -52,6 +52,8 @@ const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 2048
 const FONT_COLOR = [0, 0, 0, 255]
 const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9
+const MTSDF_TEXT_SHADOW_SAMPLES = 4
+const MTSDF_TEXT_STROKE_SAMPLES = 1
 const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 289
 
 export default class RendererWebGPU extends Renderer {
@@ -61,6 +63,8 @@ export default class RendererWebGPU extends Renderer {
     private image_min_filter
     private image_mag_filter
     private text_shadow_max_samples_per_axis
+    private mtsdf_text_shadow_samples
+    private mtsdf_text_stroke_samples
     private text_stroke_max_samples_per_glyph
     private device_pixel_ratio = 1
     private scrollbar_size
@@ -115,6 +119,8 @@ export default class RendererWebGPU extends Renderer {
         image_min_filter = 'linear',
         image_mag_filter = 'linear',
         text_shadow_max_samples_per_axis = TEXT_SHADOW_MAX_SAMPLES_PER_AXIS,
+        mtsdf_text_shadow_samples = MTSDF_TEXT_SHADOW_SAMPLES,
+        mtsdf_text_stroke_samples = MTSDF_TEXT_STROKE_SAMPLES,
         text_stroke_max_samples_per_glyph = TEXT_STROKE_MAX_SAMPLES_PER_GLYPH,
         scrollbar_size = SCROLLBAR_SIZE,
     }) {
@@ -125,6 +131,8 @@ export default class RendererWebGPU extends Renderer {
         this.image_min_filter = image_min_filter
         this.image_mag_filter = image_mag_filter
         this.text_shadow_max_samples_per_axis = text_shadow_max_samples_per_axis
+        this.mtsdf_text_shadow_samples = mtsdf_text_shadow_samples
+        this.mtsdf_text_stroke_samples = mtsdf_text_stroke_samples
         this.text_stroke_max_samples_per_glyph = text_stroke_max_samples_per_glyph
         this.scrollbar_size = scrollbar_size
     }
@@ -197,7 +205,11 @@ export default class RendererWebGPU extends Renderer {
 
     private createPipeline() {
         const shader_module = this.device.createShaderModule({
-            code: createUIWGSL(this.text_shadow_max_samples_per_axis),
+            code: createUIWGSL(
+                this.text_shadow_max_samples_per_axis,
+                this.mtsdf_text_shadow_samples,
+                this.mtsdf_text_stroke_samples,
+            ),
         })
 
         return this.device.createRenderPipeline({
@@ -720,6 +732,7 @@ export default class RendererWebGPU extends Renderer {
                 text_shadow_color: text_shadow?.color ?? [0, 0, 0, 0],
                 text_stroke_width: text_stroke?.width ?? 0,
                 font_is_mtsdf: font.json.atlas.type === 'mtsdf' ? 1 : 0,
+                effect_distance_range: font.json.atlas.effectDistanceRange ?? font.json.atlas.distanceRange,
                 text_stroke_color: text_stroke?.color ?? [0, 0, 0, 0],
             },
         }
@@ -1059,6 +1072,7 @@ export default class RendererWebGPU extends Renderer {
             text_shadow_color,
             text_stroke_width,
             font_is_mtsdf,
+            effect_distance_range,
             text_stroke_color,
         } = text_run
         const color_float_offset = (bytes_offset + TEXT_RUN.COLOR.OFFSET) / FLOAT32_SIZE
@@ -1087,6 +1101,9 @@ export default class RendererWebGPU extends Renderer {
 
         const font_is_mtsdf_float_offset = (bytes_offset + TEXT_RUN.FONT_IS_MTSDF.OFFSET) / FLOAT32_SIZE
         this.text_run_floats[font_is_mtsdf_float_offset] = font_is_mtsdf
+
+        const effect_distance_range_float_offset = (bytes_offset + TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET) / FLOAT32_SIZE
+        this.text_run_floats[effect_distance_range_float_offset] = effect_distance_range
 
         const text_stroke_color_float_offset = (bytes_offset + TEXT_RUN.TEXT_STROKE_COLOR.OFFSET) / FLOAT32_SIZE
         this.text_run_floats[text_stroke_color_float_offset] = text_stroke_color[0] / 255

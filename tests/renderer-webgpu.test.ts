@@ -37,7 +37,7 @@ import { TEXT_WGSL } from '../src/renderer/webgpu/shaders/text.ts'
     RENDER_ATTACHMENT: 8,
 }
 
-const FONT_ATLAS_SIZE = 1024
+const FONT_ATLAS_SIZE = 2048
 
 test('RendererWebGPU accumulates opacity into panel instance data', () => {
     const root = createNode({ opacity: 0.5 })
@@ -1134,6 +1134,7 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
             text_shadow_color: [0, 0, 0, 0],
             text_stroke_width: 0,
             font_is_mtsdf: 0,
+            effect_distance_range: 6,
             text_stroke_color: [0, 0, 0, 0],
         },
     ])
@@ -1464,10 +1465,69 @@ test('RendererWebGPU passes the text shadow sample limit to the fragment pipelin
     }
 })
 
-test('text shader reuses one RGBA sample for direct MTSDF coverage', () => {
+test('text shader shares each RGBA lookup between MSDF and MTSDF coverage', () => {
     expect(TEXT_WGSL.match(/textureSampleLevel\(/g)).toHaveLength(1)
     expect(TEXT_WGSL.match(/let distance_sample = glyphDistanceSampleAtUv\(glyph, run, input\.uv\);/g)).toHaveLength(2)
     expect(TEXT_WGSL).toContain('return vec3f(median(sample.r, sample.g, sample.b), sample.a, 1.0);')
+    expect(TEXT_WGSL).toContain('let distance_range = select(run.font_data.z, run.effect_distance_range')
+    expect(TEXT_WGSL).toContain('let distance_threshold = select(0.45, 0.5, use_true_distance);')
+})
+
+test('RendererWebGPU specializes the MTSDF text shadow sample count', () => {
+    for (const [options, expected_samples] of [
+        [{}, 4],
+        [{ mtsdf_text_shadow_samples: 1 }, 1],
+        [{ mtsdf_text_shadow_samples: 8 }, 8],
+    ]) {
+        let shader_descriptor
+        const renderer = new RendererWebGPU({ canvas: {}, ...options })
+        ;(renderer as any).device = {
+            createShaderModule(descriptor) {
+                shader_descriptor = descriptor
+                return { id: 'shader' }
+            },
+            createRenderPipeline() {
+                return { id: 'pipeline' }
+            },
+        }
+        ;(renderer as any).format = 'rgba8unorm'
+
+        ;(renderer as any).createPipeline()
+
+        expect(shader_descriptor.code).toContain(`const MTSDF_TEXT_SHADOW_SAMPLES = ${expected_samples}u;`)
+        expect(shader_descriptor.code).toContain(
+            `const MTSDF_TEXT_SHADOW_SAMPLE_OFFSETS = array<vec2f, ${expected_samples}>`,
+        )
+    }
+})
+
+test('RendererWebGPU specializes the MTSDF text stroke sample count', () => {
+    for (const [options, expected_samples] of [
+        [{}, 1],
+        [{ mtsdf_text_stroke_samples: 4 }, 4],
+        [{ mtsdf_text_stroke_samples: 8 }, 8],
+    ]) {
+        let shader_descriptor
+        const renderer = new RendererWebGPU({ canvas: {}, ...options })
+        ;(renderer as any).device = {
+            createShaderModule(descriptor) {
+                shader_descriptor = descriptor
+                return { id: 'shader' }
+            },
+            createRenderPipeline() {
+                return { id: 'pipeline' }
+            },
+        }
+        ;(renderer as any).format = 'rgba8unorm'
+
+        ;(renderer as any).createPipeline()
+
+        const expected_offset_count = Math.max(expected_samples - 1, 1)
+        expect(shader_descriptor.code).toContain(`const MTSDF_TEXT_STROKE_SAMPLES = ${expected_samples}u;`)
+        expect(shader_descriptor.code).toContain(
+            `const MTSDF_TEXT_STROKE_SAMPLE_OFFSETS = array<vec2f, ${expected_offset_count}>`,
+        )
+    }
 })
 
 test('RendererWebGPU passes the text stroke sample limit to the fragment pipeline unchanged', () => {
@@ -1504,7 +1564,7 @@ test('RendererWebGPU passes the text stroke sample limit to the fragment pipelin
         )
         expect(shader_descriptor.code).toContain('let shadow_padding = blur + stroke_width;')
         expect(shader_descriptor.code).toContain('sample_dilation,\n                        0.5,')
-        expect(shader_descriptor.code).toContain('stroke_width + blur_px,\n            stroke_width,')
+        expect(shader_descriptor.code).toContain('stroke_width + blur_px,\n                stroke_width,')
         expect(shader_descriptor.code).toContain(
             'sample_weight = 1.0 - smoothstep(fade_start, radius, length(sample_offset));',
         )
@@ -1512,12 +1572,18 @@ test('RendererWebGPU passes the text stroke sample limit to the fragment pipelin
             'let signed_distance = select(distance_sample.x, distance_sample.y, use_true_distance);',
         )
         expect(shader_descriptor.code).toContain(
+            'let distance_range = select(run.font_data.z, run.effect_distance_range, use_true_distance);',
+        )
+        expect(shader_descriptor.code).toContain(
             'let distance_sample = glyphDistanceSampleAtUv(glyph, run, input.uv);',
         )
         expect(shader_descriptor.code).toContain('let use_true_distance = run.font_is_mtsdf > 0.0;')
-        expect(shader_descriptor.code).toContain('distance_sample.y,\n                stroke_width,\n                0.0,')
-        expect(shader_descriptor.code).toContain('distance_sample.y,\n                stroke_width,\n                blur_px,')
-        expect(shader_descriptor.code).toContain('sample_softness,\n                        false,')
+        expect(shader_descriptor.code).toContain(
+            'run.effect_distance_range,\n            distance_sample.y,\n            0.5,\n            stroke_width,\n            0.0,',
+        )
+        expect(shader_descriptor.code).toContain('MTSDF_TEXT_SHADOW_SAMPLE_OFFSETS[sample_index]')
+        expect(shader_descriptor.code).toContain('MTSDF_TEXT_STROKE_SAMPLE_OFFSETS[sample_index]')
+        expect(shader_descriptor.code).toContain('sample_softness,\n                            false,')
         expect(shader_descriptor.code).toContain('let fill_alpha = fill_coverage * run.color.a * opacity;')
         expect(shader_descriptor.code).toContain('max(1.0 - fill_alpha, 0.000001);')
         expect(shader_descriptor.code).not.toContain('screen_distance + stroke_width')
@@ -2065,7 +2131,9 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
     ).toEqual([0, 0, 0, 0])
     expect(floats[TEXT_RUN.TEXT_STROKE_WIDTH.OFFSET / FLOAT32_SIZE]).toBe(0)
     expect(floats[TEXT_RUN.FONT_IS_MTSDF.OFFSET / FLOAT32_SIZE]).toBe(0)
+    expect(floats[TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET / FLOAT32_SIZE]).toBe(6)
     expect(TEXT_RUN.FONT_IS_MTSDF.OFFSET).toBe(21 * FLOAT32_SIZE)
+    expect(TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET).toBe(22 * FLOAT32_SIZE)
     expect(TEXT_RUN.TEXT_STROKE_COLOR.OFFSET).toBe(24 * FLOAT32_SIZE)
     expect(TEXT_RUN_SIZE).toBe(28 * FLOAT32_SIZE)
     expect(
@@ -2090,6 +2158,20 @@ test('RendererWebGPU marks MTSDF fonts in the shared text run', () => {
     const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
 
     expect(floats[TEXT_RUN.FONT_IS_MTSDF.OFFSET / FLOAT32_SIZE]).toBe(1)
+})
+
+test('RendererWebGPU writes the MTSDF effect distance range into the shared text run', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont('mtsdf', 48),
+        }),
+    )
+    collectRenderData(renderer, [createNode({ text_content: 'A' })])
+    const text_run_buffer_data = (renderer as any).createTextRunBufferData()
+    const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
+
+    expect(floats[TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET / FLOAT32_SIZE]).toBe(48)
 })
 
 test('RendererWebGPU writes text stroke data into the shared text run', () => {
@@ -2770,7 +2852,7 @@ function createFontManager({ default_font = undefined, fonts = {} } = {}) {
     }
 }
 
-function createManagedFont(atlas_type = 'msdf') {
+function createManagedFont(atlas_type = 'msdf', effect_distance_range = undefined) {
     return {
         name: 'Poppins',
         layer: 2,
@@ -2778,6 +2860,7 @@ function createManagedFont(atlas_type = 'msdf') {
             atlas: {
                 type: atlas_type,
                 distanceRange: 6,
+                effectDistanceRange: effect_distance_range,
             },
         },
         metrics: {

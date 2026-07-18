@@ -28,14 +28,16 @@ fn glyphDistanceSampleAtUv(
 fn glyphCoverageFromSignedDistance(
     run: TextRun,
     uv_width: vec2f,
+    distance_range: f32,
     signed_distance: f32,
+    distance_threshold: f32,
     dilation: f32,
     softness: f32,
 ) -> f32 {
-    let unit_range = vec2f(run.font_data.z / run.font_data.w);
+    let unit_range = vec2f(distance_range / run.font_data.w);
     let screen_tex_size = vec2f(1.0) / max(uv_width, vec2f(0.000001));
     let screen_px_range = max(0.5 * dot(unit_range, screen_tex_size), 1.0);
-    let screen_distance = screen_px_range * (signed_distance - 0.45) + dilation;
+    let screen_distance = screen_px_range * (signed_distance - distance_threshold) + dilation;
     if (softness <= 0.0) {
         return clamp(screen_distance + 0.5, 0.0, 1.0);
     }
@@ -55,14 +57,45 @@ fn glyphCoverageAtUv(
 ) -> f32 {
     let distance_sample = glyphDistanceSampleAtUv(glyph, run, uv);
     let signed_distance = select(distance_sample.x, distance_sample.y, use_true_distance);
+    let distance_range = select(run.font_data.z, run.effect_distance_range, use_true_distance);
+    let distance_threshold = select(0.45, 0.5, use_true_distance);
 
     return distance_sample.z * glyphCoverageFromSignedDistance(
         run,
         uv_width,
+        distance_range,
         signed_distance,
+        distance_threshold,
         dilation,
         softness,
     );
+}
+
+fn mtsdfTextShadowCoverageAtUv(
+    glyph: GlyphData,
+    run: TextRun,
+    uv: vec2f,
+    uv_width: vec2f,
+    stroke_width: f32,
+    blur_px: f32,
+) -> f32 {
+    let sample_softness = max(blur_px * 0.5, 0.5);
+    var coverage = 0.0;
+    for (var sample_index = 0u; sample_index < MTSDF_TEXT_SHADOW_SAMPLES; sample_index++) {
+        let sample_offset = MTSDF_TEXT_SHADOW_SAMPLE_OFFSETS[sample_index] * blur_px * uv_width;
+        let distance_sample = glyphDistanceSampleAtUv(glyph, run, uv + sample_offset);
+        coverage += distance_sample.z * glyphCoverageFromSignedDistance(
+            run,
+            uv_width,
+            run.effect_distance_range,
+            distance_sample.y,
+            0.5,
+            stroke_width,
+            sample_softness,
+        );
+    }
+
+    return coverage / f32(MTSDF_TEXT_SHADOW_SAMPLES);
 }
 
 fn expandedGlyphCoverageAtUv(
@@ -149,6 +182,46 @@ fn expandedGlyphCoverageAtUv(
     return coverage;
 }
 
+fn mtsdfTextStrokeCoverageAtUv(
+    glyph: GlyphData,
+    run: TextRun,
+    uv: vec2f,
+    uv_width: vec2f,
+    distance_sample: vec3f,
+    fill_coverage: f32,
+    stroke_width: f32,
+) -> f32 {
+    var coverage = max(
+        fill_coverage,
+        distance_sample.z * glyphCoverageFromSignedDistance(
+            run,
+            uv_width,
+            run.effect_distance_range,
+            distance_sample.y,
+            0.5,
+            stroke_width,
+            0.0,
+        ),
+    );
+    for (var sample_index = 0u; sample_index < MTSDF_TEXT_STROKE_SAMPLES - 1u; sample_index++) {
+        let sample_offset = MTSDF_TEXT_STROKE_SAMPLE_OFFSETS[sample_index] * stroke_width * uv_width;
+        coverage = max(
+            coverage,
+            glyphCoverageAtUv(
+                glyph,
+                run,
+                uv + sample_offset,
+                uv_width,
+                0.0,
+                0.5,
+                false,
+            ),
+        );
+    }
+
+    return coverage;
+}
+
 fn textStrokeColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
     let glyph = glyph_data[u32(input.glyph_index)];
     let run = text_runs[glyph.run_data.x];
@@ -165,7 +238,9 @@ fn textStrokeColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
     let fill_coverage = distance_sample.z * glyphCoverageFromSignedDistance(
         run,
         uv_width,
+        run.font_data.z,
         distance_sample.x,
+        0.45,
         0.0,
         0.0,
     );
@@ -173,15 +248,14 @@ fn textStrokeColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
     let use_true_distance = run.font_is_mtsdf > 0.0;
     var expanded_coverage = fill_coverage;
     if (use_true_distance) {
-        expanded_coverage = max(
+        expanded_coverage = mtsdfTextStrokeCoverageAtUv(
+            glyph,
+            run,
+            input.uv,
+            uv_width,
+            distance_sample,
             fill_coverage,
-            distance_sample.z * glyphCoverageFromSignedDistance(
-                run,
-                uv_width,
-                distance_sample.y,
-                stroke_width,
-                0.0,
-            ),
+            stroke_width,
         );
     } else {
         expanded_coverage = expandedGlyphCoverageAtUv(
@@ -251,62 +325,78 @@ fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
         run.text_stroke_color.a > 0.0,
     );
     let use_true_distance = run.font_is_mtsdf > 0.0;
-    let distance_sample = glyphDistanceSampleAtUv(glyph, run, input.uv);
-    let base_coverage = distance_sample.z * glyphCoverageFromSignedDistance(
-        run,
-        uv_width,
-        distance_sample.x,
-        0.0,
-        0.5,
-    );
-    var coverage = base_coverage;
-    if (use_true_distance && (stroke_width > 0.0 || blur_px > 0.0)) {
-        coverage = max(
-            base_coverage,
-            distance_sample.z * glyphCoverageFromSignedDistance(
-                run,
-                uv_width,
-                distance_sample.y,
-                stroke_width,
-                blur_px,
-            ),
-        );
-    } else if (stroke_width > 0.0) {
-        coverage = expandedGlyphCoverageAtUv(
+    var coverage = 0.0;
+    if (use_true_distance && blur_px > 0.0) {
+        coverage = mtsdfTextShadowCoverageAtUv(
             glyph,
             run,
             input.uv,
             uv_width,
-            base_coverage,
-            stroke_width + blur_px,
             stroke_width,
+            blur_px,
         );
-    } else if (blur_px > 0.0) {
-        let required_samples_per_axis = u32(ceil(blur_px)) + 1u;
-        let samples_per_axis = min(required_samples_per_axis, TEXT_SHADOW_MAX_SAMPLES_PER_AXIS);
-        if (samples_per_axis == 1u) {
-            coverage = base_coverage;
-        } else {
-            let sample_step = 2.0 / f32(samples_per_axis - 1u);
-            let sample_softness = max(blur_px / f32(samples_per_axis - 1u), 0.5);
-            let sample_weights_offset = samples_per_axis * (samples_per_axis - 1u) / 2u - 1u;
+    } else {
+        let distance_sample = glyphDistanceSampleAtUv(glyph, run, input.uv);
+        let base_coverage = distance_sample.z * glyphCoverageFromSignedDistance(
+            run,
+            uv_width,
+            run.font_data.z,
+            distance_sample.x,
+            0.45,
+            0.0,
+            0.5,
+        );
+        coverage = base_coverage;
+        if (use_true_distance && stroke_width > 0.0) {
+            coverage = max(
+                base_coverage,
+                distance_sample.z * glyphCoverageFromSignedDistance(
+                    run,
+                    uv_width,
+                    run.effect_distance_range,
+                    distance_sample.y,
+                    0.5,
+                    stroke_width,
+                    0.0,
+                ),
+            );
+        } else if (stroke_width > 0.0) {
+            coverage = expandedGlyphCoverageAtUv(
+                glyph,
+                run,
+                input.uv,
+                uv_width,
+                base_coverage,
+                stroke_width + blur_px,
+                stroke_width,
+            );
+        } else if (blur_px > 0.0) {
+            let required_samples_per_axis = u32(ceil(blur_px)) + 1u;
+            let samples_per_axis = min(required_samples_per_axis, TEXT_SHADOW_MAX_SAMPLES_PER_AXIS);
+            if (samples_per_axis == 1u) {
+                coverage = base_coverage;
+            } else {
+                let sample_step = 2.0 / f32(samples_per_axis - 1u);
+                let sample_softness = max(blur_px / f32(samples_per_axis - 1u), 0.5);
+                let sample_weights_offset = samples_per_axis * (samples_per_axis - 1u) / 2u - 1u;
 
-            coverage = 0.0;
-            for (var y = 0u; y < samples_per_axis; y++) {
-                for (var x = 0u; x < samples_per_axis; x++) {
-                    let sample_position = vec2f(f32(x), f32(y)) * sample_step - vec2f(1.0);
-                    let sample_offset = sample_position * blur_px * uv_width;
-                    let sample_weight = TEXT_SHADOW_SAMPLE_WEIGHTS[sample_weights_offset + x] *
-                        TEXT_SHADOW_SAMPLE_WEIGHTS[sample_weights_offset + y];
-                    coverage += glyphCoverageAtUv(
-                        glyph,
-                        run,
-                        input.uv + sample_offset,
-                        uv_width,
-                        0.0,
-                        sample_softness,
-                        false,
-                    ) * sample_weight;
+                coverage = 0.0;
+                for (var y = 0u; y < samples_per_axis; y++) {
+                    for (var x = 0u; x < samples_per_axis; x++) {
+                        let sample_position = vec2f(f32(x), f32(y)) * sample_step - vec2f(1.0);
+                        let sample_offset = sample_position * blur_px * uv_width;
+                        let sample_weight = TEXT_SHADOW_SAMPLE_WEIGHTS[sample_weights_offset + x] *
+                            TEXT_SHADOW_SAMPLE_WEIGHTS[sample_weights_offset + y];
+                        coverage += glyphCoverageAtUv(
+                            glyph,
+                            run,
+                            input.uv + sample_offset,
+                            uv_width,
+                            0.0,
+                            sample_softness,
+                            false,
+                        ) * sample_weight;
+                    }
                 }
             }
         }
