@@ -2,9 +2,6 @@ export const SHARED_WGSL = /* wgsl */ `
 const COMMAND_KIND_PANEL = 0u;
 const COMMAND_KIND_TEXT_SHADOW = 2u;
 const COMMAND_KIND_TEXT_STROKE = 3u;
-override TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9u;
-override TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 81u;
-
 struct Viewport {
     size: vec2f,
     device_pixel_ratio: f32,
@@ -38,7 +35,6 @@ struct TextRun {
     text_shadow: vec4f,
     text_shadow_color: vec4f,
     text_stroke_width: f32,
-    font_is_mtsdf: f32,
     effect_distance_range: f32,
     text_stroke_color: vec4f,
 }

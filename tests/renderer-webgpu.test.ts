@@ -29,6 +29,9 @@ import {
 } from '../src/renderer/webgpu/buffers.ts'
 import { FontManager } from '../src/renderer/webgpu/FontManager.ts'
 import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
+import { createUIWGSL } from '../src/renderer/webgpu/shaders.ts'
+import { TEXT_EFFECT_WGSL as MSDF_TEXT_EFFECT_WGSL } from '../src/renderer/webgpu/shaders/text-msdf.ts'
+import { TEXT_EFFECT_WGSL as MTSDF_TEXT_EFFECT_WGSL } from '../src/renderer/webgpu/shaders/text-mtsdf.ts'
 import { TEXT_WGSL } from '../src/renderer/webgpu/shaders/text.ts'
 ;(globalThis as any).GPUTextureUsage = {
     TEXTURE_BINDING: 1,
@@ -1133,7 +1136,6 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
             text_shadow: [0, 0, 0, 0],
             text_shadow_color: [0, 0, 0, 0],
             text_stroke_width: 0,
-            font_is_mtsdf: 0,
             effect_distance_range: 6,
             text_stroke_color: [0, 0, 0, 0],
         },
@@ -1427,168 +1429,53 @@ test('RendererWebGPU writes the device pixel ratio into the viewport uniform', (
     expect(Array.from(writes[0].data)).toEqual([320, 180, 2, 0])
 })
 
-test('RendererWebGPU passes the text shadow sample limit to the fragment pipeline unchanged', () => {
-    for (const [options, expected_samples] of [
-        [{}, 9],
-        [{ text_shadow_max_samples_per_axis: 1 }, 1],
-        [{ text_shadow_max_samples_per_axis: 8 }, 8],
-        [{ text_shadow_max_samples_per_axis: 13 }, 13],
-        [{ text_shadow_max_samples_per_axis: 17 }, 17],
-    ]) {
-        let shader_descriptor
-        let pipeline_descriptor
-        const renderer = new RendererWebGPU({ canvas: {}, ...options })
-        ;(renderer as any).device = {
-            createShaderModule(descriptor) {
-                shader_descriptor = descriptor
-                return { id: 'shader' }
-            },
-            createRenderPipeline(descriptor) {
-                pipeline_descriptor = descriptor
-                return { id: 'pipeline' }
-            },
-        }
-        ;(renderer as any).format = 'rgba8unorm'
-
-        ;(renderer as any).createPipeline()
-
-        const expected_weight_count = expected_samples === 1 ? 1 : (expected_samples * (expected_samples + 1)) / 2 - 1
-
-        expect(shader_descriptor.code).toContain(
-            `const TEXT_SHADOW_SAMPLE_WEIGHTS = array<f32, ${expected_weight_count}>`,
-        )
-        expect(shader_descriptor.code).not.toContain('TEXT_SHADOW_SAMPLE_WEIGHTS_VALUES')
-        expect(shader_descriptor.code).not.toContain('exp(')
-        expect(shader_descriptor.code).not.toContain('sample_weight_sum')
-        expect(shader_descriptor.code).not.toContain('var sample_weights')
-        expect(pipeline_descriptor.fragment.constants.TEXT_SHADOW_MAX_SAMPLES_PER_AXIS).toBe(expected_samples)
-    }
-})
-
-test('text shader shares each RGBA lookup between MSDF and MTSDF coverage', () => {
+test('text shader shares RGBA sampling and MSDF fill coverage with text effects', () => {
     expect(TEXT_WGSL.match(/textureSampleLevel\(/g)).toHaveLength(1)
-    expect(TEXT_WGSL.match(/let distance_sample = glyphDistanceSampleAtUv\(glyph, run, input\.uv\);/g)).toHaveLength(2)
     expect(TEXT_WGSL).toContain('return vec3f(median(sample.r, sample.g, sample.b), sample.a, 1.0);')
-    expect(TEXT_WGSL).toContain('let distance_range = select(run.font_data.z, run.effect_distance_range')
-    expect(TEXT_WGSL).toContain('let distance_threshold = select(0.45, 0.5, use_true_distance);')
+    expect(TEXT_WGSL).toContain('fn glyphMsdfCoverageAtUv(')
+    expect(TEXT_WGSL).not.toContain('font_is_mtsdf')
 })
 
-test('RendererWebGPU specializes the MTSDF text shadow sample count', () => {
-    for (const [options, expected_samples] of [
-        [{}, 4],
-        [{ mtsdf_text_shadow_samples: 1 }, 1],
-        [{ mtsdf_text_shadow_samples: 8 }, 8],
-    ]) {
-        let shader_descriptor
-        const renderer = new RendererWebGPU({ canvas: {}, ...options })
-        ;(renderer as any).device = {
-            createShaderModule(descriptor) {
-                shader_descriptor = descriptor
-                return { id: 'shader' }
-            },
-            createRenderPipeline() {
-                return { id: 'pipeline' }
-            },
-        }
-        ;(renderer as any).format = 'rgba8unorm'
-
-        ;(renderer as any).createPipeline()
-
-        expect(shader_descriptor.code).toContain(`const MTSDF_TEXT_SHADOW_SAMPLES = ${expected_samples}u;`)
-        expect(shader_descriptor.code).toContain(
-            `const MTSDF_TEXT_SHADOW_SAMPLE_OFFSETS = array<vec2f, ${expected_samples}>`,
-        )
+test('RendererWebGPU registers fonts', () => {
+    const registrations = []
+    const renderer = new RendererWebGPU({ canvas: {} })
+    const image = { id: 'image' }
+    const json = { atlas: { type: 'mtsdf' } }
+    ;(renderer as any).font_manager = {
+        fontRegister(name, next_image, next_json) {
+            registrations.push({ name, image: next_image, json: next_json })
+        },
     }
+    ;(renderer as any).createBindGroup = () => ({ id: 'bind-group' })
+
+    renderer.fontRegister('Poppins', image, json)
+
+    expect(registrations).toEqual([{ name: 'Poppins', image, json }])
 })
 
-test('RendererWebGPU specializes the MTSDF text stroke sample count', () => {
-    for (const [options, expected_samples] of [
-        [{}, 1],
-        [{ mtsdf_text_stroke_samples: 4 }, 4],
-        [{ mtsdf_text_stroke_samples: 8 }, 8],
-    ]) {
-        let shader_descriptor
-        const renderer = new RendererWebGPU({ canvas: {}, ...options })
-        ;(renderer as any).device = {
-            createShaderModule(descriptor) {
-                shader_descriptor = descriptor
-                return { id: 'shader' }
-            },
-            createRenderPipeline() {
-                return { id: 'pipeline' }
-            },
-        }
-        ;(renderer as any).format = 'rgba8unorm'
+test('UI shader loads MTSDF text effects', () => {
+    const shader = createUIWGSL()
 
-        ;(renderer as any).createPipeline()
-
-        const expected_offset_count = Math.max(expected_samples - 1, 1)
-        expect(shader_descriptor.code).toContain(`const MTSDF_TEXT_STROKE_SAMPLES = ${expected_samples}u;`)
-        expect(shader_descriptor.code).toContain(
-            `const MTSDF_TEXT_STROKE_SAMPLE_OFFSETS = array<vec2f, ${expected_offset_count}>`,
-        )
-    }
+    expect(shader).toContain('fn mtsdfTextShadowCoverageAtUv(')
+    expect(shader).toContain('run.effect_distance_range')
+    expect(shader).not.toContain('fn expandedGlyphCoverageAtUv(')
+    expect(shader).not.toContain('TEXT_SHADOW_SAMPLE_WEIGHTS')
 })
 
-test('RendererWebGPU passes the text stroke sample limit to the fragment pipeline unchanged', () => {
-    for (const [options, expected_samples] of [
-        [{}, 289],
-        [{ text_stroke_max_samples_per_glyph: 1 }, 1],
-        [{ text_stroke_max_samples_per_glyph: 8 }, 8],
-        [{ text_stroke_max_samples_per_glyph: 64 }, 64],
-        [{ text_stroke_max_samples_per_glyph: 128 }, 128],
-    ]) {
-        let shader_descriptor
-        let pipeline_descriptor
-        const renderer = new RendererWebGPU({ canvas: {}, ...options })
-        ;(renderer as any).device = {
-            createShaderModule(descriptor) {
-                shader_descriptor = descriptor
-                return { id: 'shader' }
-            },
-            createRenderPipeline(descriptor) {
-                pipeline_descriptor = descriptor
-                return { id: 'pipeline' }
-            },
-        }
-        ;(renderer as any).format = 'rgba8unorm'
+test('MTSDF text effects own their sample counts', () => {
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('const MTSDF_TEXT_SHADOW_SAMPLES = 4u;')
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('const MTSDF_TEXT_SHADOW_SAMPLE_OFFSETS = array<vec2f, 4>')
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('const MTSDF_TEXT_STROKE_SAMPLES = 1u;')
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('const MTSDF_TEXT_STROKE_SAMPLE_OFFSETS = array<vec2f, 1>')
+})
 
-        ;(renderer as any).createPipeline()
-
-        expect(shader_descriptor.code).toContain(
-            'let expanded_size = glyph.rect.zw + vec2f(stroke_width * 2.0);',
-        )
-        expect(shader_descriptor.code).toContain('let stroke_width = bitcast<f32>(command.w);')
-        expect(shader_descriptor.code).toContain(
-            'let sample_dilation = radius / f32(ring_count) * 0.5;',
-        )
-        expect(shader_descriptor.code).toContain('let shadow_padding = blur + stroke_width;')
-        expect(shader_descriptor.code).toContain('sample_dilation,\n                        0.5,')
-        expect(shader_descriptor.code).toContain('stroke_width + blur_px,\n                stroke_width,')
-        expect(shader_descriptor.code).toContain(
-            'sample_weight = 1.0 - smoothstep(fade_start, radius, length(sample_offset));',
-        )
-        expect(shader_descriptor.code).toContain(
-            'let signed_distance = select(distance_sample.x, distance_sample.y, use_true_distance);',
-        )
-        expect(shader_descriptor.code).toContain(
-            'let distance_range = select(run.font_data.z, run.effect_distance_range, use_true_distance);',
-        )
-        expect(shader_descriptor.code).toContain(
-            'let distance_sample = glyphDistanceSampleAtUv(glyph, run, input.uv);',
-        )
-        expect(shader_descriptor.code).toContain('let use_true_distance = run.font_is_mtsdf > 0.0;')
-        expect(shader_descriptor.code).toContain(
-            'run.effect_distance_range,\n            distance_sample.y,\n            0.5,\n            stroke_width,\n            0.0,',
-        )
-        expect(shader_descriptor.code).toContain('MTSDF_TEXT_SHADOW_SAMPLE_OFFSETS[sample_index]')
-        expect(shader_descriptor.code).toContain('MTSDF_TEXT_STROKE_SAMPLE_OFFSETS[sample_index]')
-        expect(shader_descriptor.code).toContain('sample_softness,\n                            false,')
-        expect(shader_descriptor.code).toContain('let fill_alpha = fill_coverage * run.color.a * opacity;')
-        expect(shader_descriptor.code).toContain('max(1.0 - fill_alpha, 0.000001);')
-        expect(shader_descriptor.code).not.toContain('screen_distance + stroke_width')
-        expect(pipeline_descriptor.fragment.constants.TEXT_STROKE_MAX_SAMPLES_PER_GLYPH).toBe(expected_samples)
-    }
+test('MSDF text effects own their sample limits', () => {
+    expect(MSDF_TEXT_EFFECT_WGSL).toContain('const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9u;')
+    expect(MSDF_TEXT_EFFECT_WGSL).toContain('const TEXT_SHADOW_SAMPLE_WEIGHTS = array<f32, 44>')
+    expect(MSDF_TEXT_EFFECT_WGSL).toContain('const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 289u;')
+    expect(MSDF_TEXT_EFFECT_WGSL).toContain('let sample_dilation = radius / f32(ring_count) * 0.5;')
+    expect(MSDF_TEXT_EFFECT_WGSL).toContain('stroke_width + blur_px,')
+    expect(MSDF_TEXT_EFFECT_WGSL).not.toContain('run.effect_distance_range')
 })
 
 test('RendererWebGPU keeps natural line height logical and snaps glyph metrics to device pixels', () => {
@@ -2130,10 +2017,8 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
         ),
     ).toEqual([0, 0, 0, 0])
     expect(floats[TEXT_RUN.TEXT_STROKE_WIDTH.OFFSET / FLOAT32_SIZE]).toBe(0)
-    expect(floats[TEXT_RUN.FONT_IS_MTSDF.OFFSET / FLOAT32_SIZE]).toBe(0)
     expect(floats[TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET / FLOAT32_SIZE]).toBe(6)
-    expect(TEXT_RUN.FONT_IS_MTSDF.OFFSET).toBe(21 * FLOAT32_SIZE)
-    expect(TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET).toBe(22 * FLOAT32_SIZE)
+    expect(TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET).toBe(21 * FLOAT32_SIZE)
     expect(TEXT_RUN.TEXT_STROKE_COLOR.OFFSET).toBe(24 * FLOAT32_SIZE)
     expect(TEXT_RUN_SIZE).toBe(28 * FLOAT32_SIZE)
     expect(
@@ -2144,20 +2029,6 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
             ),
         ),
     ).toEqual([0, 0, 0, 0])
-})
-
-test('RendererWebGPU marks MTSDF fonts in the shared text run', () => {
-    const renderer = createRenderer(
-        createImageManager(),
-        createFontManager({
-            default_font: createManagedFont('mtsdf'),
-        }),
-    )
-    collectRenderData(renderer, [createNode({ text_content: 'A' })])
-    const text_run_buffer_data = (renderer as any).createTextRunBufferData()
-    const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
-
-    expect(floats[TEXT_RUN.FONT_IS_MTSDF.OFFSET / FLOAT32_SIZE]).toBe(1)
 })
 
 test('RendererWebGPU writes the MTSDF effect distance range into the shared text run', () => {
@@ -2852,7 +2723,7 @@ function createFontManager({ default_font = undefined, fonts = {} } = {}) {
     }
 }
 
-function createManagedFont(atlas_type = 'msdf', effect_distance_range = undefined) {
+function createManagedFont(atlas_type = 'mtsdf', effect_distance_range = undefined) {
     return {
         name: 'Poppins',
         layer: 2,

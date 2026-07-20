@@ -15,7 +15,7 @@ if (!font_path) {
 const type = 'mtsdf'; // mtsdf | msdf | sdf
 const GLYPH_SIZE = 128;
 const EFFECT_DISTANCE_RANGE = 64;
-const DISTANCE_RANGE = 32;
+const DISTANCE_RANGE = 16;
 const parsed_path = path.parse(font_path);
 const output_base = path.join(parsed_path.dir, `${parsed_path.name}.${type}`);
 const script_dir = path.dirname(fileURLToPath(import.meta.url));

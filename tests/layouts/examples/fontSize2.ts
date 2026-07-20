@@ -1,7 +1,6 @@
 import { loadImage, loadJson } from '../../../src/utils/load-assets'
 
 const SAMPLE_TEXT = 'Hello World!'
-const SAMPLE_WIDTH = 420
 const TEST_CASES = [
     { label: 'Fill · 8px', font_size: 8 },
     { label: 'Fill · 16px', font_size: 16 },
@@ -22,19 +21,13 @@ const TEST_CASES = [
 ]
 
 export default async function createFontsLayout({ ui }) {
-    const poppins_msdf_image = await loadImage('/assets/fonts/Poppins-Regular.msdf.png')
-    const poppins_msdf_json = await loadJson('/assets/fonts/Poppins-Regular.msdf.json')
-    const poppins_mtsdf_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
-    const poppins_mtsdf_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
-    const changaone_msdf_image = await loadImage('/assets/fonts/ChangaOne-Regular.msdf.png')
-    const changaone_msdf_json = await loadJson('/assets/fonts/ChangaOne-Regular.msdf.json')
-    const changaone_mtsdf_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
-    const changaone_mtsdf_json = await loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json')
+    const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
+    const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
+    const changaone_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
+    const changaone_json = await loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json')
 
-    ui.fontRegister('Poppins-MSDF', poppins_msdf_image, poppins_msdf_json)
-    ui.fontRegister('Poppins-MTSDF', poppins_mtsdf_image, poppins_mtsdf_json)
-    ui.fontRegister('ChangaOne-MSDF', changaone_msdf_image, changaone_msdf_json)
-    ui.fontRegister('ChangaOne-MTSDF', changaone_mtsdf_image, changaone_mtsdf_json)
+    ui.fontRegister('Poppins-Regular', poppins_image, poppins_json)
+    ui.fontRegister('ChangaOne-Regular', changaone_image, changaone_json)
 
     const stage = ui.create()
     stage.style('width', '100%')
@@ -51,17 +44,11 @@ export default async function createFontsLayout({ ui }) {
     content.style('flexShrink', '0')
     stage.add(content)
 
-    const font_families = [
-        { label: 'ChangaOne', msdf: 'ChangaOne-MSDF', mtsdf: 'ChangaOne-MTSDF', show_title: false },
-        { label: 'Poppins', msdf: 'Poppins-MSDF', mtsdf: 'Poppins-MTSDF', show_title: true },
-    ]
-
-    for (const font_family of font_families) {
-        addFontComparison(ui, content, font_family)
-    }
+    addFontSection(ui, content, 'ChangaOne', 'ChangaOne-Regular')
+    addFontSection(ui, content, 'Poppins', 'Poppins-Regular')
 }
 
-function addFontComparison(ui, content, font_family) {
+function addFontSection(ui, content, label, font_family) {
     const section = ui.create()
     section.style('width', '1032px')
     section.style('gap', '4px')
@@ -69,28 +56,24 @@ function addFontComparison(ui, content, font_family) {
     section.style('flexShrink', '0')
     content.add(section)
 
-    if (font_family.show_title) {
-        const title = ui.create()
-        title.style('height', '32px')
-        title.style('fontFamily', 'Poppins-MTSDF')
-        title.style('fontSize', '18px')
-        title.style('color', '#0f172a')
-        title.style('flexShrink', '0')
-        title.text(font_family.label)
-        section.add(title)
-    }
-
-    addRow(ui, section, 'Case', 'MSDF · sampled', 'MTSDF · direct', 32, true)
+    const title = ui.create()
+    title.style('height', '32px')
+    title.style('fontFamily', 'Poppins-Regular')
+    title.style('fontSize', '18px')
+    title.style('color', '#0f172a')
+    title.style('flexShrink', '0')
+    title.text(`${label} · MTSDF`)
+    section.add(title)
 
     for (const test_case of TEST_CASES) {
-        addRow(ui, section, test_case.label, font_family.msdf, font_family.mtsdf, test_case.font_size, false, test_case)
+        addRow(ui, section, font_family, test_case)
     }
 }
 
-function addRow(ui, section, label, msdf, mtsdf, font_size, is_header, test_case = {}) {
+function addRow(ui, section, font_family, test_case) {
     const row = ui.create()
     row.style('width', '1032px')
-    row.style('height', `${Math.max(font_size + 32, 64)}px`)
+    row.style('height', `${Math.max(test_case.font_size + 32, 64)}px`)
     row.style('flexDirection', 'row')
     row.style('alignItems', 'center')
     row.style('backgroundColor', '#ffffff')
@@ -100,36 +83,14 @@ function addRow(ui, section, label, msdf, mtsdf, font_size, is_header, test_case
     const label_node = ui.create()
     label_node.style('width', '192px')
     label_node.style('padding', '12px')
-    label_node.style('fontFamily', 'Poppins-MTSDF')
+    label_node.style('fontFamily', 'Poppins-Regular')
     label_node.style('fontSize', '13px')
     label_node.style('color', '#475569')
-    label_node.text(label)
+    label_node.text(test_case.label)
     row.add(label_node)
 
-    if (is_header) {
-        addHeaderCell(ui, row, msdf)
-        addHeaderCell(ui, row, mtsdf)
-        return
-    }
-
-    addSampleCell(ui, row, msdf, font_size, test_case)
-    addSampleCell(ui, row, mtsdf, font_size, test_case)
-}
-
-function addHeaderCell(ui, row, text_content) {
     const cell = ui.create()
-    cell.style('width', `${SAMPLE_WIDTH}px`)
-    cell.style('padding', '12px')
-    cell.style('fontFamily', 'Poppins-MTSDF')
-    cell.style('fontSize', '13px')
-    cell.style('color', '#0f172a')
-    cell.text(text_content)
-    row.add(cell)
-}
-
-function addSampleCell(ui, row, font_family, font_size, test_case) {
-    const cell = ui.create()
-    cell.style('width', `${SAMPLE_WIDTH}px`)
+    cell.style('width', '840px')
     cell.style('height', '100%')
     cell.style('padding', '8px')
     cell.style('justifyContent', 'center')
@@ -137,7 +98,7 @@ function addSampleCell(ui, row, font_family, font_size, test_case) {
 
     const text = ui.create()
     text.style('fontFamily', font_family)
-    text.style('fontSize', `${font_size}px`)
+    text.style('fontSize', `${test_case.font_size}px`)
     text.style('color', '#0f172a')
     if (test_case.text_stroke !== undefined) {
         text.style('textStroke', test_case.text_stroke)

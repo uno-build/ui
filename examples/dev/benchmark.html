@@ -51,8 +51,6 @@
             const DEFAULT_NODES = 400
             const DEFAULT_FRAMES = 60
             const DEFAULT_WARMUP = 10
-            const DEFAULT_TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9
-            const DEFAULT_TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 289
             const CARD_WIDTH = 58
             const CARD_HEIGHT = 38
             const GAP = 18
@@ -88,12 +86,6 @@
                 const nodes = readNumber(params, 'nodes', DEFAULT_NODES)
                 const frames = readNumber(params, 'frames', DEFAULT_FRAMES)
                 const warmup = readNumber(params, 'warmup', DEFAULT_WARMUP)
-                const text_shadow_max_samples_per_axis = params.has('text_shadow_max_samples_per_axis')
-                    ? Number(params.get('text_shadow_max_samples_per_axis'))
-                    : DEFAULT_TEXT_SHADOW_MAX_SAMPLES_PER_AXIS
-                const text_stroke_max_samples_per_glyph = params.has('text_stroke_max_samples_per_glyph')
-                    ? Number(params.get('text_stroke_max_samples_per_glyph'))
-                    : DEFAULT_TEXT_STROKE_MAX_SAMPLES_PER_GLYPH
                 const [font_image, font_json] = await Promise.all([
                     loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png'),
                     loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json'),
@@ -108,8 +100,6 @@
                             nodes,
                             frames,
                             warmup,
-                            text_shadow_max_samples_per_axis,
-                            text_stroke_max_samples_per_glyph,
                             font_image,
                             font_json,
                         }),
@@ -120,8 +110,6 @@
                     nodes,
                     frames,
                     warmup,
-                    text_shadow_max_samples_per_axis,
-                    text_stroke_max_samples_per_glyph,
                     scenes,
                 }
             }
@@ -132,8 +120,6 @@
                 nodes,
                 frames,
                 warmup,
-                text_shadow_max_samples_per_axis,
-                text_stroke_max_samples_per_glyph,
                 font_image,
                 font_json,
             }) {
@@ -147,11 +133,7 @@
 
                 syncCanvasSize({ root, canvas })
 
-                const renderer = new RendererWebGPU({
-                    canvas,
-                    text_shadow_max_samples_per_axis,
-                    text_stroke_max_samples_per_glyph,
-                })
+                const renderer = new RendererWebGPU({ canvas })
                 const ui = new UI({ renderer })
                 await ui.init()
                 ui.fontRegister('Poppins-Regular', font_image, font_json)
@@ -320,7 +302,7 @@
 
             function formatResult(result) {
                 const lines = [
-                    `nodes=${result.nodes} frames=${result.frames} warmup=${result.warmup} text_shadow_max_samples_per_axis=${result.text_shadow_max_samples_per_axis} text_stroke_max_samples_per_glyph=${result.text_stroke_max_samples_per_glyph}`,
+                    `nodes=${result.nodes} frames=${result.frames} warmup=${result.warmup}`,
                 ]
 
                 for (const scene of result.scenes) {

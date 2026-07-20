@@ -17,12 +17,9 @@ export default async function createFontsLayout({ ui }) {
     const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
     const changaone_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
     const changaone_json = await loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json')
-    const changaone2_image = await loadImage('/assets/fonts/ChangaOne-Regular.msdf.png')
-    const changaone2_json = await loadJson('/assets/fonts/ChangaOne-Regular.msdf.json')
 
     ui.fontRegister('Poppins-Regular', poppins_image, poppins_json)
     ui.fontRegister('ChangaOne-Regular', changaone_image, changaone_json)
-    ui.fontRegister('ChangaOne-Regular-MSDF', changaone2_image, changaone2_json)
 
     const stage = ui.create()
     stage.style('flex', '1')
@@ -35,7 +32,6 @@ export default async function createFontsLayout({ ui }) {
     const font_columns = [
         { font_family: 'Poppins-Regular', text_content: 'Poppins' },
         { font_family: 'ChangaOne-Regular', text_content: 'ChangaOne mtsdf' },
-        { font_family: 'ChangaOne-Regular-MSDF', text_content: 'ChangaOne msdf' },
     ]
 
     for (const font_column of font_columns) {
