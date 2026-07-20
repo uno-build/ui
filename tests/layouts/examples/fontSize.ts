@@ -33,7 +33,7 @@ export default async function createFontsLayout({ ui }) {
     ui.root.add(stage)
 
     const font_columns = [
-        // { font_family: 'Poppins-Regular', text_content: 'Poppins' },
+        { font_family: 'Poppins-Regular', text_content: 'Poppins' },
         { font_family: 'ChangaOne-Regular', text_content: 'ChangaOne mtsdf' },
         { font_family: 'ChangaOne-Regular-MSDF', text_content: 'ChangaOne msdf' },
     ]

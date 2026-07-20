@@ -9,8 +9,11 @@ const ORBIT_STEP = Math.PI / 500
 export default async function createFontTextShadowLayout({ ui }) {
     const font_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
     const font_json = await loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json')
+    const font_image2 = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
+    const font_json2 = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
 
     ui.fontRegister('ChangaOne-Regular', font_image, font_json)
+    ui.fontRegister('Poppins-Regular', font_image2, font_json2)
 
     const stage = ui.create()
     stage.style('width', '100%')
@@ -28,8 +31,8 @@ export default async function createFontTextShadowLayout({ ui }) {
     for (const font_size of FONT_SIZES) {
         for (const blur of BLUR_LEVELS) {
             const card = ui.create()
-            card.style('width', '160px')
-            card.style('height', '80px')
+            card.style('width', '180px')
+            card.style('height', '90px')
             card.style('padding', '12px')
             card.style('alignItems', 'center')
             card.style('justifyContent', 'center')
@@ -39,7 +42,7 @@ export default async function createFontTextShadowLayout({ ui }) {
 
             const text = ui.create()
             text.style('color', '#172554')
-            text.style('fontFamily', 'ChangaOne-Regular')
+            text.style('fontFamily', 'Poppins-Regular')
             text.style('fontSize', `${font_size}px`)
             text.style('textShadow', `${ORBIT_RADIUS}px 0px ${blur}px #00000099`)
             text.text(`${blur}px blur`)

@@ -21,9 +21,10 @@ const output_base = path.join(parsed_path.dir, `${parsed_path.name}.${type}`);
 const script_dir = path.dirname(fileURLToPath(import.meta.url));
 const binary_path = path.join(script_dir, "msdf-atlas-gen/darwin-x64");
 const charset = `[0x20, 0x7E], "áéíóúÁÉÍÓÚñÑüÜ¿¡"`;
-const temporary_directory = fs.mkdtempSync(path.join(os.tmpdir(), "uno-mtsdf-"));
-const temporary_image_path = path.join(temporary_directory, "atlas.bin");
-const temporary_json_path = path.join(temporary_directory, "atlas.json");
+const direct_output = type === 'msdf' || EFFECT_DISTANCE_RANGE === DISTANCE_RANGE;
+const temporary_directory = direct_output ? null : fs.mkdtempSync(path.join(os.tmpdir(), "uno-mtsdf-"));
+const image_path = direct_output ? `${output_base}.png` : path.join(temporary_directory, "atlas.bin");
+const json_path = direct_output ? `${output_base}.json` : path.join(temporary_directory, "atlas.json");
 
 const result = spawnSync(
     binary_path,
@@ -35,32 +36,40 @@ const result = spawnSync(
         "-size",
         String(GLYPH_SIZE),
         "-pxrange",
-        String(EFFECT_DISTANCE_RANGE),
+        String(direct_output ? DISTANCE_RANGE : EFFECT_DISTANCE_RANGE),
         "-chars",
         charset,
         "-format",
-        "binfloat",
+        direct_output ? "png" : "binfloat",
         "-imageout",
-        temporary_image_path,
+        image_path,
         "-json",
-        temporary_json_path,
+        json_path,
     ],
     { stdio: "inherit" },
 );
 
 if (result.error) {
-    fs.rmSync(temporary_directory, { recursive: true, force: true });
+    if (!direct_output) {
+        fs.rmSync(temporary_directory, { recursive: true, force: true });
+    }
     console.error(result.error.message);
     process.exit(1);
 }
 
 if (result.status !== 0) {
-    fs.rmSync(temporary_directory, { recursive: true, force: true });
+    if (!direct_output) {
+        fs.rmSync(temporary_directory, { recursive: true, force: true });
+    }
     process.exit(result.status ?? 1);
 }
 
-const json = JSON.parse(fs.readFileSync(temporary_json_path, "utf8"));
-const float_buffer = fs.readFileSync(temporary_image_path);
+if (direct_output) {
+    process.exit(0);
+}
+
+const json = JSON.parse(fs.readFileSync(json_path, "utf8"));
+const float_buffer = fs.readFileSync(image_path);
 const float_pixels = new Float32Array(
     float_buffer.buffer,
     float_buffer.byteOffset,
