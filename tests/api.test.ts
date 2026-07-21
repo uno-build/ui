@@ -374,6 +374,28 @@ test('Node lineHeight invalidates text measurement', async () => {
     expect(invalidated_node).toBe(node)
 })
 
+test('Node letterSpacing invalidates text measurement', async () => {
+    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const ui = new UI({ renderer })
+
+    await ui.init()
+
+    const node = ui.create()
+    node.text('Text')
+    let invalidated_node
+    renderer.invalidateTextNode = (node) => {
+        invalidated_node = node
+    }
+
+    node.style('letter-spacing', '0.125rem')
+
+    expect(node.styles.letterSpacing).toEqual({
+        value: '0.125rem',
+        parsed: { value: 2, kind: 'px' },
+    })
+    expect(invalidated_node).toBe(node)
+})
+
 test('overflow shorthand and longhands follow assignment order', async () => {
     const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
     const ui = new UI({ renderer })

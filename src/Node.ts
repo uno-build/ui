@@ -96,5 +96,5 @@ export default class Node {
 }
 
 function isTextMeasureStyle(name) {
-    return ['fontFamily', 'fontSize', 'lineHeight'].includes(name)
+    return ['fontFamily', 'fontSize', 'lineHeight', 'letterSpacing'].includes(name)
 }

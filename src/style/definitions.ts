@@ -140,6 +140,19 @@ export const LINE_HEIGHT_DEFINITION = [
     },
 ]
 
+export const LETTER_SPACING_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validatePx],
+        parse: [parsePx],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateRem],
+        parse: [parseRem],
+    },
+]
+
 export const TEXT_ALIGN_DEFINITION = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],

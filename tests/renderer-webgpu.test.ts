@@ -1271,6 +1271,48 @@ test('RendererWebGPU excludes wrapped trailing spaces from right alignment', () 
     ])
 })
 
+test('RendererWebGPU excludes letter spacing after trailing spaces from right alignment', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A A ',
+        layout: { x: 10, y: 20, width: 100, height: 40 },
+        styles: {
+            letterSpacing: { parsed: { value: 2, kind: UNIT.PX } },
+            textAlign: { parsed: { enum: TEXT_ALIGN.right } },
+        },
+    })
+
+    const glyphs = collectRenderData(renderer, [node]).glyphs
+
+    expect(glyphs.map(({ layout }) => layout[0])).toEqual([expect.closeTo(80.8), expect.closeTo(98.4)])
+})
+
+test('RendererWebGPU centers text using its letter-spaced width', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'AB',
+        layout: { x: 10, y: 20, width: 50, height: 40 },
+        styles: {
+            letterSpacing: { parsed: { value: 2, kind: UNIT.PX } },
+            textAlign: { parsed: { enum: TEXT_ALIGN.center } },
+        },
+    })
+
+    const glyphs = collectRenderData(renderer, [node]).glyphs
+
+    expect(glyphs.map(({ layout }) => layout[0])).toEqual([expect.closeTo(22.6), expect.closeTo(35.8)])
+})
+
 test('RendererWebGPU justifies wrapped lines and leaves the final line ragged', () => {
     const renderer = createRenderer(
         createImageManager(),
@@ -1289,6 +1331,27 @@ test('RendererWebGPU justifies wrapped lines and leaves the final line ragged', 
     const glyphs = collectRenderData(renderer, [node]).glyphs
 
     expect(glyphs.map(({ layout }) => layout[0])).toEqual([10, expect.closeTo(30.4), 10])
+})
+
+test('RendererWebGPU justifies text after accounting for letter spacing', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A A A',
+        layout: { x: 10, y: 20, width: 38, height: 40 },
+        styles: {
+            letterSpacing: { parsed: { value: 2, kind: UNIT.PX } },
+            textAlign: { parsed: { enum: TEXT_ALIGN.justify } },
+        },
+    })
+
+    const glyphs = collectRenderData(renderer, [node]).glyphs
+
+    expect(glyphs.map(({ layout }) => layout[0])).toEqual([10, expect.closeTo(36.4), 10])
 })
 
 test('RendererWebGPU does not justify explicit paragraph ends or wrapped lines without spaces', () => {
@@ -1402,6 +1465,47 @@ test('RendererWebGPU measures text from glyph metrics', () => {
     })
 
     expect(renderer.getTextMeasure(node)).toEqual({ width: 31, height: 30 })
+})
+
+test('RendererWebGPU includes positive and negative letter spacing in text measurement', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const positive_node = createNode({
+        text_content: 'AB',
+        styles: {
+            letterSpacing: { parsed: { value: 2, kind: UNIT.PX } },
+        },
+    })
+    const negative_node = createNode({
+        text_content: 'AB',
+        styles: {
+            letterSpacing: { parsed: { value: -1, kind: UNIT.PX } },
+        },
+    })
+
+    expect(renderer.getTextMeasure(positive_node)).toEqual({ width: expect.closeTo(24.8), height: 20 })
+    expect(renderer.getTextMeasure(negative_node)).toEqual({ width: expect.closeTo(18.8), height: 20 })
+})
+
+test('RendererWebGPU wraps text using letter spacing', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'AA',
+        styles: {
+            letterSpacing: { parsed: { value: 2, kind: UNIT.PX } },
+        },
+    })
+
+    expect(renderer.getTextMeasure(node, 22)).toEqual({ width: expect.closeTo(11.6), height: 40 })
 })
 
 test('RendererWebGPU writes the device pixel ratio into the viewport uniform', () => {
@@ -1866,6 +1970,51 @@ test('RendererWebGPU scales glyph render data with fontSize', () => {
 
     expect(render_data.glyphs[0].layout).toEqual([10, 20, 10, 20])
     expect(render_data.glyphs[1].layout).toEqual([24, 24, 10, 20])
+})
+
+test('RendererWebGPU positions glyphs with letter spacing per grapheme', () => {
+    const font = createManagedFont()
+    font.glyphs_by_unicode.set(0x0301, {
+        unicode: 0x0301,
+        advance: 0,
+    })
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: font,
+        }),
+    )
+    const node = createNode({
+        text_content: 'A\u0301B',
+        layout: { x: 0, y: 0, width: 200, height: 40 },
+        styles: {
+            letterSpacing: { parsed: { value: 2, kind: UNIT.PX } },
+        },
+    })
+
+    const glyphs = collectRenderData(renderer, [node]).glyphs
+
+    expect(glyphs.map(({ layout }) => layout[0])).toEqual([0, expect.closeTo(13.2)])
+})
+
+test('RendererWebGPU applies letter spacing after tabs', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A\tB',
+        layout: { x: 0, y: 0, width: 200, height: 40 },
+        styles: {
+            letterSpacing: { parsed: { value: 2, kind: UNIT.PX } },
+        },
+    })
+
+    const glyphs = collectRenderData(renderer, [node]).glyphs
+
+    expect(glyphs.map(({ layout }) => layout[0])).toEqual([0, expect.closeTo(35.6)])
 })
 
 test('RendererWebGPU resolves text font from fontFamily', () => {

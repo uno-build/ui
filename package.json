@@ -6,6 +6,7 @@
         "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"
     },
     "dependencies": {
+        "@formatjs/intl-segmenter": "^12.2.13",
         "yoga-layout": "^3.2.1"
     },
     "devDependencies": {

@@ -13,6 +13,7 @@ import backgroundImageBleeding from './examples/backgroundImageBleeding'
 import backgroundImageUnset from './examples/backgroundImageUnset'
 import positionRelative from './examples/positionRelative'
 import deepNestedPaint from './examples/deepNestedPaint'
+import fontLetterSpacing from './examples/fontLetterSpacing'
 import fontLineHeight from './examples/fontLineHeight'
 import fontParagraph from './examples/fontParagraph'
 import fontSize from './examples/fontSize'
@@ -54,6 +55,7 @@ export const LAYOUTS = {
     boxShadow2,
     boxShadow3,
     deepNestedPaint,
+    fontLetterSpacing,
     fontLineHeight,
     fontSize,
     fontSize2,

@@ -17,6 +17,7 @@ import {
     FLEX_WRAP_DEFINITION,
     FONT_FAMILY_DEFINITION,
     FONT_SIZE_DEFINITION,
+    LETTER_SPACING_DEFINITION,
     LINE_HEIGHT_DEFINITION,
     TEXT_ALIGN_DEFINITION,
     JUSTIFY_CONTENT_DEFINITION,
@@ -250,6 +251,9 @@ export const STYLE = {
     ]),
     LINEHEIGHT: createStyle('lineHeight', (name, value) => [
         { name, value, definition: LINE_HEIGHT_DEFINITION },
+    ]),
+    LETTERSPACING: createStyle('letterSpacing', (name, value) => [
+        { name, value, definition: LETTER_SPACING_DEFINITION },
     ]),
     TEXTALIGN: createStyle('textAlign', (name, value) => [
         { name, value, definition: TEXT_ALIGN_DEFINITION },

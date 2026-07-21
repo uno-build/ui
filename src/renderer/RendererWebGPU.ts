@@ -103,6 +103,7 @@ export default class RendererWebGPU extends Renderer {
     private text_run_floats
     private prepared_texts = new WeakMap()
     private root_node
+    private grapheme_segmenter
 
     constructor({
         canvas,
@@ -126,6 +127,12 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public async init() {
+        // Polyfill Intl.Segmenter if not available
+        if (typeof Intl !== 'object' || typeof Intl.Segmenter !== 'function') {
+            await import('@formatjs/intl-segmenter/polyfill-force.js')
+        }
+        this.grapheme_segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+
         this.engine = await createEngine()
         this.adapter = await navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
         this.device = await this.adapter.requestDevice({
@@ -638,6 +645,7 @@ export default class RendererWebGPU extends Renderer {
         const leading = line_height - raster_metrics.ascender - raster_metrics.descender
         const prepared_text = this.getPreparedText(node, font, font_size)
         const text_layout = layoutWithLines(prepared_text, content_width, line_height)
+        const letter_spacing = prepared_text.letterSpacing
         const text_align = node.styles.textAlign?.parsed.enum ?? TEXT_ALIGN.left
         const space_advance = this.measureGlyphAdvances(font, font_size, ' ')
         const text_shadow = node.styles.textShadow?.parsed.text_shadow
@@ -648,41 +656,41 @@ export default class RendererWebGPU extends Renderer {
         for (let line_index = 0; line_index < text_layout.lines.length; line_index++) {
             const line = text_layout.lines[line_index]!
             const baseline = content_y + leading / 2 + raster_metrics.ascender + line_index * line_height
-            const line_width = getTextAlignmentWidth(line, space_advance)
+            const line_width = getTextAlignmentWidth(line, space_advance, letter_spacing)
             const line_x = content_x + getTextAlignOffset(text_align, content_width, line_width)
             const justify_data = getJustifyData(text_align, prepared_text, line, content_width, line_width)
             let cursor_x = line_x
             let character_offset = 0
 
-            for (const character of line.text) {
-                if (character === '\t') {
+            for (const { segment: grapheme } of this.grapheme_segmenter.segment(line.text)) {
+                if (grapheme === '\t') {
                     cursor_x += getTabAdvance(cursor_x - line_x, space_advance * 8)
-                    character_offset += character.length
-                    continue
-                }
+                } else {
+                    for (const character of grapheme) {
+                        const glyph = font.glyphs_by_unicode.get(character.codePointAt(0))
+                        if (glyph !== undefined) {
+                            if (glyph.plane_bounds !== undefined && glyph.uv_rect !== undefined) {
+                                const [left, bottom, right, top] = glyph.plane_bounds
+                                glyphs.push({
+                                    layout: [
+                                        cursor_x + left * font_size,
+                                        baseline - top * font_size,
+                                        (right - left) * font_size,
+                                        (top - bottom) * font_size,
+                                    ],
+                                    uv_rect: glyph.uv_rect,
+                                    run_index,
+                                    text_shadow: text_shadow_data,
+                                })
+                            }
 
-                const glyph = font.glyphs_by_unicode.get(character.codePointAt(0))
-                if (glyph !== undefined) {
-                    if (glyph.plane_bounds !== undefined && glyph.uv_rect !== undefined) {
-                        const [left, bottom, right, top] = glyph.plane_bounds
-                        glyphs.push({
-                            layout: [
-                                cursor_x + left * font_size,
-                                baseline - top * font_size,
-                                (right - left) * font_size,
-                                (top - bottom) * font_size,
-                            ],
-                            uv_rect: glyph.uv_rect,
-                            run_index,
-                            text_shadow: text_shadow_data,
-                        })
+                            cursor_x += glyph.advance * font_size
+                        }
                     }
-
-                    cursor_x += glyph.advance * font_size
                 }
 
                 if (
-                    character === ' ' &&
+                    grapheme === ' ' &&
                     justify_data !== null &&
                     character_offset >= justify_data.start &&
                     character_offset < justify_data.end
@@ -690,7 +698,8 @@ export default class RendererWebGPU extends Renderer {
                     cursor_x += justify_data.advance
                 }
 
-                character_offset += character.length
+                cursor_x += letter_spacing
+                character_offset += grapheme.length
             }
         }
 
@@ -761,6 +770,7 @@ export default class RendererWebGPU extends Renderer {
             prepared_text = prepareWithSegments(node.text_content, {
                 measure: (text) => this.measureGlyphAdvances(font, font_size, text),
                 whiteSpace: 'pre-wrap',
+                letterSpacing: node.styles.letterSpacing?.parsed.value ?? 0,
             })
             this.prepared_texts.set(node, prepared_text)
         }
@@ -1125,13 +1135,13 @@ function getTextAlignOffset(text_align, content_width, line_width) {
     return 0
 }
 
-function getTextAlignmentWidth(line, space_advance) {
+function getTextAlignmentWidth(line, space_advance, letter_spacing) {
     let end = line.text.length
     while (end > 0 && line.text[end - 1] === ' ') {
         end--
     }
 
-    return line.width - (line.text.length - end) * space_advance
+    return line.width - (line.text.length - end) * (space_advance + letter_spacing)
 }
 
 function getJustifyData(text_align, prepared_text, line, content_width, line_width) {

@@ -319,6 +319,23 @@ test('fontSize', () => {
     expectInvalid('fontSize', true, /style value must be a string/)
 })
 
+test('letterSpacing', () => {
+    expectUnit('letterSpacing', ' 2PX ', '2px', 2, 'px')
+    expectResolved(' letter-spacing ', '-1.5px', '-1.5px', { value: -1.5, kind: 'px' }, 'letterSpacing')
+    expect(Style.resolveStyle('letterSpacing', '0.125rem', { root_size: 20 }).expanded).toEqual([
+        {
+            name: 'letterSpacing',
+            value: '0.125rem',
+            parsed: { value: 2.5, kind: 'px' },
+        },
+    ])
+
+    for (const value of ['10%', '1em', '1', 'normal']) {
+        expectInvalid('letterSpacing', value, /expected px unit/)
+    }
+    expectInvalid('letterSpacing', true, /style value must be a string/)
+})
+
 test('rem units', () => {
     const context = { root_size: 16 }
     const styles = [
