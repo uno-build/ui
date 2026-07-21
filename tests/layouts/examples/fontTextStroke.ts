@@ -1,7 +1,7 @@
 import { loadImage, loadJson } from '../../../src/utils/load-assets'
 
 const STROKE_WIDTHS = Array.from({ length: 10 }, (_, index) => index)
-const FONT_SIZES = [5, 15, 25]
+const FONT_SIZES = [5, 16, 32]
 
 export default async function createFontTextStrokeLayout({ ui }) {
     const font_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')

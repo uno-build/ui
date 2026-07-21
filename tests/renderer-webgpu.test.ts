@@ -1137,6 +1137,7 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
             text_shadow_color: [0, 0, 0, 0],
             text_stroke_width: 0,
             effect_distance_range: 6,
+            text_stroke_multisampling: 0,
             text_stroke_color: [0, 0, 0, 0],
         },
     ])
@@ -1584,7 +1585,7 @@ test('UI shader loads MTSDF text effects', () => {
 
     expect(shader).toContain('fn mtsdfTextShadowCoverageAtUv(')
     expect(shader).toContain('run.effect_distance_range')
-    expect(shader).not.toContain('fn expandedGlyphCoverageAtUv(')
+    expect(shader).toContain('fn expandedMtsdfCoverageAtUv(')
     expect(shader).not.toContain('TEXT_SHADOW_SAMPLE_WEIGHTS')
 })
 
@@ -1596,8 +1597,12 @@ test('MTSDF text shadow derives its sample count from the physical blur', () => 
     expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('MTSDF_TEXT_SHADOW_SAMPLE_OFFSETS')
 })
 
-test('MTSDF text stroke uses true distance without correction samples', () => {
+test('MTSDF text stroke multisamples only the radius beyond its safe alpha range', () => {
     expect(MTSDF_TEXT_EFFECT_WGSL).toContain('run.effect_distance_range,\n            distance_sample.y,')
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 289u;')
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('run.text_stroke_multisampling > 0.0')
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('fn expandedMtsdfCoverageAtUv(')
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('let sample_radius = radius - inner_radius;')
     expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('MTSDF_TEXT_STROKE_SAMPLES')
     expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('MTSDF_TEXT_STROKE_SAMPLE_OFFSETS')
     expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('glyphMsdfCoverageAtUv(')
@@ -2197,7 +2202,9 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
     ).toEqual([0, 0, 0, 0])
     expect(floats[TEXT_RUN.TEXT_STROKE_WIDTH.OFFSET / FLOAT32_SIZE]).toBe(0)
     expect(floats[TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET / FLOAT32_SIZE]).toBe(6)
+    expect(floats[TEXT_RUN.TEXT_STROKE_MULTISAMPLING.OFFSET / FLOAT32_SIZE]).toBe(0)
     expect(TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET).toBe(21 * FLOAT32_SIZE)
+    expect(TEXT_RUN.TEXT_STROKE_MULTISAMPLING.OFFSET).toBe(22 * FLOAT32_SIZE)
     expect(TEXT_RUN.TEXT_STROKE_COLOR.OFFSET).toBe(24 * FLOAT32_SIZE)
     expect(TEXT_RUN_SIZE).toBe(28 * FLOAT32_SIZE)
     expect(
@@ -2281,6 +2288,42 @@ test('RendererWebGPU writes text stroke data into the shared text run', () => {
     expect(command_floats[(COMMAND_SIZE / FLOAT32_SIZE) * 2 + 3]).toBe(4)
     expect(command_floats[(COMMAND_SIZE / FLOAT32_SIZE) * 3 + 3]).toBe(0)
     expect(command_floats[(COMMAND_SIZE / FLOAT32_SIZE) * 4 + 3]).toBe(0)
+})
+
+test('RendererWebGPU enables residual multisampling beyond the safe MTSDF alpha range', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont('mtsdf', 64, 128),
+        }),
+    )
+    renderer.setDevicePixelRatio(2)
+    const node = createNode({
+        text_content: 'A',
+        styles: {
+            fontSize: {
+                parsed: { value: 5, kind: UNIT.PX },
+            },
+            textStroke: {
+                parsed: {
+                    text_stroke: {
+                        width: 2,
+                        color: [17, 34, 51, 255],
+                    },
+                },
+            },
+        },
+    })
+
+    const render_data = collectRenderData(renderer, [node])
+
+    expect((renderer as any).text_runs[0].text_stroke_width).toBe(2)
+    expect((renderer as any).text_runs[0].text_stroke_multisampling).toBe(1)
+    expect(render_data.commands.map((command) => command.kind)).toEqual([
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_TEXT_STROKE,
+        COMMAND_KIND_GLYPH,
+    ])
 })
 
 test('RendererWebGPU writes text shadow data into the shared text run', () => {
@@ -2903,13 +2946,14 @@ function createFontManager({ default_font = undefined, fonts = {} } = {}) {
     }
 }
 
-function createManagedFont(atlas_type = 'mtsdf', effect_distance_range = undefined) {
+function createManagedFont(atlas_type = 'mtsdf', effect_distance_range = undefined, atlas_size = 1) {
     return {
         name: 'Poppins',
         layer: 2,
         json: {
             atlas: {
                 type: atlas_type,
+                size: atlas_size,
                 distanceRange: 6,
                 effectDistanceRange: effect_distance_range,
             },

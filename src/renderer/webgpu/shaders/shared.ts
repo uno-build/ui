@@ -36,6 +36,7 @@ struct TextRun {
     text_shadow_color: vec4f,
     text_stroke_width: f32,
     effect_distance_range: f32,
+    text_stroke_multisampling: f32,
     text_stroke_color: vec4f,
 }
 
