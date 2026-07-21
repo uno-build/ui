@@ -60,10 +60,9 @@ export default class RendererWebGPU extends Renderer {
     private image_min_filter
     private image_mag_filter
     private device_pixel_ratio = 1
-    private style_context = { root_size: ROOT_SIZE }
-    private root_size_dirty = false
+    private style_context_dirty = false
+    private root_size = ROOT_SIZE
     private scrollbar_size
-    // props
     private engine!: LayoutEngine
     private adapter
     private device
@@ -107,7 +106,7 @@ export default class RendererWebGPU extends Renderer {
     private prepared_texts = new WeakMap()
     private root_node
     private grapheme_segmenter
-    private computeStyle = (style) => computeStyleValue(style, this.style_context)
+    private computeStyle = (style) => computeStyleValue(style, this)
 
     constructor({
         canvas,
@@ -131,12 +130,12 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public setRootSize(root_size) {
-        if (this.style_context.root_size === root_size) {
+        if (this.root_size === root_size) {
             return
         }
 
-        this.style_context.root_size = root_size
-        this.root_size_dirty = true
+        this.root_size = root_size
+        this.style_context_dirty = true
     }
 
     public async init() {
@@ -146,7 +145,7 @@ export default class RendererWebGPU extends Renderer {
         }
         this.grapheme_segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
 
-        this.engine = await createEngine({ computeStyleValue: this.computeStyle })
+        this.engine = await createEngine()
         this.adapter = await navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
         this.device = await this.adapter.requestDevice({
             requiredLimits: {
@@ -400,7 +399,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private updateResolvedStyle(node, style) {
-        this.engine.applyStyle(node, style)
+        this.engine.applyStyle(node, this.computeStyle(style))
 
         if (
             style.name === STYLE.OVERFLOWX.name ||
@@ -466,7 +465,7 @@ export default class RendererWebGPU extends Renderer {
     public beforeUpdate(nodes) {
         super.beforeUpdate(nodes)
 
-        if (this.root_size_dirty) {
+        if (this.style_context_dirty) {
             for (const node of [this.root_node, ...nodes]) {
                 let invalidate_text = false
 
@@ -484,7 +483,7 @@ export default class RendererWebGPU extends Renderer {
                 }
             }
 
-            this.root_size_dirty = false
+            this.style_context_dirty = false
         }
 
         this.engine.calculate()
@@ -693,8 +692,7 @@ export default class RendererWebGPU extends Renderer {
         const text_stroke_width = text_stroke?.width ?? 0
         const text_stroke_width_limit =
             (effect_distance_range * font_size) / (font.json.atlas.size * 2) - 0.5 / this.device_pixel_ratio
-        const text_stroke_multisampling =
-            text_stroke_width > 0 && text_stroke_width > text_stroke_width_limit ? 1 : 0
+        const text_stroke_multisampling = text_stroke_width > 0 && text_stroke_width > text_stroke_width_limit ? 1 : 0
         const text_shadow_data = [text_shadow?.offset_x ?? 0, text_shadow?.offset_y ?? 0, text_shadow?.blur ?? 0]
         const glyphs = []
 
@@ -707,8 +705,7 @@ export default class RendererWebGPU extends Renderer {
             let cursor_x = line_x
             let character_offset = 0
 
-            const segments =
-                letter_spacing === 0 ? line.text : this.grapheme_segmenter.segment(line.text)
+            const segments = letter_spacing === 0 ? line.text : this.grapheme_segmenter.segment(line.text)
 
             for (const segment of segments) {
                 const grapheme = typeof segment === 'string' ? segment : segment.segment
@@ -1264,16 +1261,8 @@ function getBackgroundImageRect(node, image_size, computeStyleValue) {
         height = size_height ?? image_height * (width / image_width)
     }
 
-    const x = readBackgroundPosition(
-        computeStyleValue(node.styles.backgroundPositionX),
-        background_width,
-        width,
-    )
-    const y = readBackgroundPosition(
-        computeStyleValue(node.styles.backgroundPositionY),
-        background_height,
-        height,
-    )
+    const x = readBackgroundPosition(computeStyleValue(node.styles.backgroundPositionX), background_width, width)
+    const y = readBackgroundPosition(computeStyleValue(node.styles.backgroundPositionY), background_height, height)
 
     return [x, y, width, height]
 }

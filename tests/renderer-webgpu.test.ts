@@ -2042,7 +2042,7 @@ test('RendererWebGPU recalculates rem text only after the root size changes', ()
             style: {
                 name: 'letterSpacing',
                 value: '0.125rem',
-                parsed: { value: 0.125, kind: UNIT.REM },
+                parsed: { value: 2.5, kind: UNIT.PX },
             },
         },
     ])

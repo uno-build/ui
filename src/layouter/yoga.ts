@@ -1,9 +1,9 @@
 import { loadYoga } from 'yoga-layout/load'
-import { UNIT, KEYWORD, EDGE, GUTTER } from '../style/consts'
+import { UNIT, KEYWORD, EDGE, GUTTER, FLEX_DIRECTION } from '../style/consts'
 import { calculateLayoutRect, getParentLayout } from './utils'
 import { MEASURE_MODE } from './types'
 
-export default async function createYogaEngine({ computeStyleValue = (style) => style } = {}) {
+export default async function createYogaEngine() {
     const Yoga = await loadYoga()
     const yoga_config = Yoga.Config.create()
     const elements = new WeakMap()
@@ -60,10 +60,9 @@ export default async function createYogaEngine({ computeStyleValue = (style) => 
         },
 
         applyStyle(node, style) {
-            const computed_style = computeStyleValue(style)
-            const setter = YOGA_SETTER[computed_style.name]
+            const setter = YOGA_SETTER[style.name]
             if (setter !== undefined) {
-                setter(getElement(node), computed_style)
+                setter(getElement(node), style)
             }
         },
 
@@ -100,7 +99,7 @@ export default async function createYogaEngine({ computeStyleValue = (style) => 
 
             return {
                 ...calculateLayoutRect(
-                    applyWrappedRelativeOffsets(node, node_rect, computeStyleValue),
+                    applyWrappedRelativeOffsets(node, node_rect, getElement, Yoga),
                     parent_rect,
                 ),
                 padding: getComputedEdges(element, 'getComputedPadding'),
@@ -359,20 +358,22 @@ export const YOGA_SETTER = {
 
 // Correct Yoga's wrapped flex relative offsets so painted divs match the DOM.
 // Yoga may omit cross-axis offsets or apply reverse main-axis offsets backward.
-function applyWrappedRelativeOffsets(node, rect, computeStyleValue) {
-    const main_axis = FLEX_DIRECTION_AXIS[node.parent?.styles.flexDirection?.value]
+function applyWrappedRelativeOffsets(node, rect, getElement, Yoga) {
+    const element = getElement(node)
+    const parent_element = getElement(node.parent)
+    const main_axis = FLEX_DIRECTION_AXIS[parent_element?.getFlexDirection()]
 
     // If the node is not a relatively positioned child of a wrapped flex container, no correction is needed.
-    if (main_axis == null || !isRelative(node) || !isWrappedFlexParent(node)) {
+    if (main_axis == null || !isRelative(element, Yoga) || !isWrappedFlexParent(parent_element, Yoga)) {
         return rect
     }
 
     let rect_corrected = rect
     for (const axis of RELATIVE_OFFSET_AXES) {
-        const reference_size = readContentSize(node.parent, axis.reference_dimension, computeStyleValue)
+        const reference_size = readContentSize(node.parent, parent_element, axis.reference_dimension)
         const css_offset =
-            readOffset(node.styles[axis.style_start], reference_size, computeStyleValue) -
-            readOffset(node.styles[axis.style_end], reference_size, computeStyleValue)
+            readOffset(element.getPosition(axis.edge_start), reference_size, Yoga) -
+            readOffset(element.getPosition(axis.edge_end), reference_size, Yoga)
         const yoga_offset = axis.name === main_axis.name ? css_offset * main_axis.direction : 0
         const correction = css_offset - yoga_offset
 
@@ -388,68 +389,57 @@ function applyWrappedRelativeOffsets(node, rect, computeStyleValue) {
 }
 
 const FLEX_DIRECTION_AXIS = {
-    row: { name: 'x', direction: 1 },
-    'row-reverse': { name: 'x', direction: -1 },
-    column: { name: 'y', direction: 1 },
-    'column-reverse': { name: 'y', direction: -1 },
+    [FLEX_DIRECTION.row]: { name: 'x', direction: 1 },
+    [FLEX_DIRECTION['row-reverse']]: { name: 'x', direction: -1 },
+    [FLEX_DIRECTION.column]: { name: 'y', direction: 1 },
+    [FLEX_DIRECTION['column-reverse']]: { name: 'y', direction: -1 },
 }
 
 const RELATIVE_OFFSET_AXES = [
     {
         name: 'x',
         rect_property: 'left',
-        style_start: 'left',
-        style_end: 'right',
+        edge_start: EDGE.left,
+        edge_end: EDGE.right,
         reference_dimension: 'width',
     },
     {
         name: 'y',
         rect_property: 'top',
-        style_start: 'top',
-        style_end: 'bottom',
+        edge_start: EDGE.top,
+        edge_end: EDGE.bottom,
         reference_dimension: 'height',
     },
 ]
 
-function readContentSize(node, dimension, computeStyleValue) {
+function readContentSize(node, element, dimension) {
     const padding =
         dimension === 'width'
-            ? readPxOffset(node.styles.paddingLeft, computeStyleValue) +
-              readPxOffset(node.styles.paddingRight, computeStyleValue)
-            : readPxOffset(node.styles.paddingTop, computeStyleValue) +
-              readPxOffset(node.styles.paddingBottom, computeStyleValue)
+            ? element.getComputedPadding(EDGE.left) + element.getComputedPadding(EDGE.right)
+            : element.getComputedPadding(EDGE.top) + element.getComputedPadding(EDGE.bottom)
     const border_width =
         dimension === 'width'
-            ? readPxOffset(node.styles.borderLeftWidth, computeStyleValue) +
-              readPxOffset(node.styles.borderRightWidth, computeStyleValue)
-            : readPxOffset(node.styles.borderTopWidth, computeStyleValue) +
-              readPxOffset(node.styles.borderBottomWidth, computeStyleValue)
+            ? element.getComputedBorder(EDGE.left) + element.getComputedBorder(EDGE.right)
+            : element.getComputedBorder(EDGE.top) + element.getComputedBorder(EDGE.bottom)
 
     return node.layout[dimension] - padding - border_width
 }
 
-function readOffset(style, reference_size, computeStyleValue) {
-    const computed_style = computeStyleValue(style)
-
-    if (computed_style?.parsed?.kind === UNIT.PERCENT) {
-        return (reference_size * computed_style.parsed.value) / 100
+function readOffset(value, reference_size, Yoga) {
+    if (value.unit === Yoga.UNIT_PERCENT) {
+        return (reference_size * value.value) / 100
     }
 
-    return computed_style?.parsed?.kind === UNIT.PX ? computed_style.parsed.value : 0
+    return value.unit === Yoga.UNIT_POINT ? value.value : 0
 }
 
-function readPxOffset(style, computeStyleValue) {
-    const computed_style = computeStyleValue(style)
-    return computed_style?.parsed?.kind === UNIT.PX ? computed_style.parsed.value : 0
+function isWrappedFlexParent(element, Yoga) {
+    const flex_wrap = element.getFlexWrap()
+    return flex_wrap === Yoga.WRAP_WRAP || flex_wrap === Yoga.WRAP_WRAP_REVERSE
 }
 
-function isWrappedFlexParent(node) {
-    const flexWrap = node.parent?.styles.flexWrap?.value
-    return flexWrap === 'wrap' || flexWrap === 'wrap-reverse'
-}
-
-function isRelative(node) {
-    return node.styles.position?.value === 'relative'
+function isRelative(element, Yoga) {
+    return element.getPositionType() === Yoga.POSITION_TYPE_RELATIVE
 }
 
 function setPosition(node, edge, parsed) {

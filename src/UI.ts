@@ -1,5 +1,5 @@
-import Style from './style'
 import Node from './Node'
+import { resolveStyle } from './style'
 import { sortPaintingOrder } from './utils/sort-painting-order'
 import { ROOT_SIZE } from './style/consts'
 
@@ -67,7 +67,7 @@ export default class UI {
     }
 
     public style(node, name, value) {
-        const resolved_style = Style.resolveStyle(name, value)
+        const resolved_style = resolveStyle(name, value)
         for (const style of resolved_style.expanded) {
             node.styles[style.name] = {
                 value: style.value,
