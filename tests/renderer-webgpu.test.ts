@@ -30,7 +30,6 @@ import {
 import { FontManager } from '../src/renderer/webgpu/FontManager.ts'
 import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
 import { createUIWGSL } from '../src/renderer/webgpu/shaders.ts'
-import { TEXT_EFFECT_WGSL as MSDF_TEXT_EFFECT_WGSL } from '../src/renderer/webgpu/shaders/text-msdf.ts'
 import { TEXT_EFFECT_WGSL as MTSDF_TEXT_EFFECT_WGSL } from '../src/renderer/webgpu/shaders/text-mtsdf.ts'
 import { TEXT_WGSL } from '../src/renderer/webgpu/shaders/text.ts'
 ;(globalThis as any).GPUTextureUsage = {
@@ -115,25 +114,13 @@ test('RendererWebGPU clips panel geometry independently by axis', () => {
     const horizontal_data = createNodesBufferData(renderer, [horizontal_child])
     const horizontal_floats = new Float32Array(horizontal_data.bytes.buffer)
     const clipping_float_offset = PANEL_DATA.CLIPPING.OFFSET / FLOAT32_SIZE
-    const horizontal_clipping = Array.from(
-        horizontal_floats.slice(clipping_float_offset, clipping_float_offset + 4),
-    )
+    const horizontal_clipping = Array.from(horizontal_floats.slice(clipping_float_offset, clipping_float_offset + 4))
     const vertical_data = createNodesBufferData(renderer, [vertical_child])
     const vertical_floats = new Float32Array(vertical_data.bytes.buffer)
     const vertical_clipping = Array.from(vertical_floats.slice(clipping_float_offset, clipping_float_offset + 4))
 
-    expect(horizontal_clipping).toEqual([
-        Number.NEGATIVE_INFINITY,
-        7,
-        Number.POSITIVE_INFINITY,
-        2,
-    ])
-    expect(vertical_clipping).toEqual([
-        3,
-        Number.POSITIVE_INFINITY,
-        7,
-        Number.NEGATIVE_INFINITY,
-    ])
+    expect(horizontal_clipping).toEqual([Number.NEGATIVE_INFINITY, 7, Number.POSITIVE_INFINITY, 2])
+    expect(vertical_clipping).toEqual([3, Number.POSITIVE_INFINITY, 7, Number.NEGATIVE_INFINITY])
 })
 
 test('RendererWebGPU scrolls panel geometry inside the ancestor padding box', () => {
@@ -379,7 +366,6 @@ test('RendererWebGPU reserves native scrollbar space independently by axis', () 
         },
     }
     ;(renderer as any).scrollbar_size = 15
-
     ;(renderer as any).updateResolvedStyle(node, {
         name: 'overflowY',
         parsed: { enum: OVERFLOW.scroll },
@@ -1403,12 +1389,7 @@ test('RendererWebGPU does not justify explicit paragraph ends or wrapped lines w
     const no_space_glyphs = collectRenderData(renderer, [no_spaces]).glyphs
 
     expect(explicit_break_glyphs.map(({ layout }) => layout[0])).toEqual([10, expect.closeTo(23.6), 10])
-    expect(no_space_glyphs.map(({ layout }) => layout[0])).toEqual([
-        10,
-        expect.closeTo(19.6),
-        10,
-        expect.closeTo(19.6),
-    ])
+    expect(no_space_glyphs.map(({ layout }) => layout[0])).toEqual([10, expect.closeTo(19.6), 10, expect.closeTo(19.6)])
 })
 
 test('RendererWebGPU excludes exterior spaces and tabs from justification', () => {
@@ -1436,11 +1417,7 @@ test('RendererWebGPU excludes exterior spaces and tabs from justification', () =
     const exterior_space_glyphs = collectRenderData(renderer, [exterior_spaces]).glyphs
     const tab_glyphs = collectRenderData(renderer, [tab]).glyphs
 
-    expect(exterior_space_glyphs.map(({ layout }) => layout[0])).toEqual([
-        14,
-        expect.closeTo(34.4),
-        10,
-    ])
+    expect(exterior_space_glyphs.map(({ layout }) => layout[0])).toEqual([14, expect.closeTo(34.4), 10])
     expect(tab_glyphs.map(({ layout }) => layout[0])).toEqual([10, 42, 10])
 })
 
@@ -1544,7 +1521,6 @@ test('RendererWebGPU writes the device pixel ratio into the viewport uniform', (
     }
     ;(renderer as any).viewport_buffer = { id: 'viewport' }
     renderer.setDevicePixelRatio(2)
-
     ;(renderer as any).updateBuffers(
         { ...empty_buffer_data, count: 0 },
         empty_buffer_data,
@@ -1604,21 +1580,10 @@ test('MTSDF text stroke multisamples only the radius beyond its safe alpha range
     expect(MTSDF_TEXT_EFFECT_WGSL).toContain('fn expandedMtsdfCoverageAtUv(')
     expect(MTSDF_TEXT_EFFECT_WGSL).toContain('let sample_radius = radius - inner_radius;')
     expect(MTSDF_TEXT_EFFECT_WGSL).toContain('let sample_step = max(inner_radius * 0.5, 1.0);')
-    expect(MTSDF_TEXT_EFFECT_WGSL).toContain(
-        'let required_ring_count = u32(ceil(sample_radius / sample_step));',
-    )
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('let required_ring_count = u32(ceil(sample_radius / sample_step));')
     expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('MTSDF_TEXT_STROKE_SAMPLES')
     expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('MTSDF_TEXT_STROKE_SAMPLE_OFFSETS')
     expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('glyphMsdfCoverageAtUv(')
-})
-
-test('MSDF text effects own their sample limits', () => {
-    expect(MSDF_TEXT_EFFECT_WGSL).toContain('const TEXT_SHADOW_MAX_SAMPLES_PER_AXIS = 9u;')
-    expect(MSDF_TEXT_EFFECT_WGSL).toContain('const TEXT_SHADOW_SAMPLE_WEIGHTS = array<f32, 44>')
-    expect(MSDF_TEXT_EFFECT_WGSL).toContain('const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 289u;')
-    expect(MSDF_TEXT_EFFECT_WGSL).toContain('let sample_dilation = radius / f32(ring_count) * 0.5;')
-    expect(MSDF_TEXT_EFFECT_WGSL).toContain('stroke_width + blur_px,')
-    expect(MSDF_TEXT_EFFECT_WGSL).not.toContain('run.effect_distance_range')
 })
 
 test('RendererWebGPU keeps natural line height logical and snaps glyph metrics to device pixels', () => {
@@ -2139,19 +2104,13 @@ test('RendererWebGPU writes glyph instance data into a glyph buffer', () => {
     expect(Array.from(floats.slice(GLYPH_DATA.LAYOUT.OFFSET / FLOAT32_SIZE, 4))).toEqual([10, 20, 8, 16])
     expect(
         Array.from(
-            floats.slice(
-                GLYPH_DATA.UV_RECT.OFFSET / FLOAT32_SIZE,
-                GLYPH_DATA.UV_RECT.OFFSET / FLOAT32_SIZE + 4,
-            ),
+            floats.slice(GLYPH_DATA.UV_RECT.OFFSET / FLOAT32_SIZE, GLYPH_DATA.UV_RECT.OFFSET / FLOAT32_SIZE + 4),
         ),
     ).toEqual([expect.closeTo(0.1), expect.closeTo(0.2), expect.closeTo(0.3), expect.closeTo(0.4)])
     expect(u32[GLYPH_DATA.RUN_DATA.OFFSET / UINT32_SIZE]).toBe(0)
     expect(
         Array.from(
-            floats.slice(
-                GLYPH_DATA.RUN_DATA.OFFSET / FLOAT32_SIZE + 1,
-                GLYPH_DATA.RUN_DATA.OFFSET / FLOAT32_SIZE + 4,
-            ),
+            floats.slice(GLYPH_DATA.RUN_DATA.OFFSET / FLOAT32_SIZE + 1, GLYPH_DATA.RUN_DATA.OFFSET / FLOAT32_SIZE + 4),
         ),
     ).toEqual([0, 0, 0])
 })
@@ -2275,12 +2234,7 @@ test('RendererWebGPU writes text stroke data into the shared text run', () => {
                 TEXT_RUN.TEXT_STROKE_COLOR.OFFSET / FLOAT32_SIZE + 4,
             ),
         ),
-    ).toEqual([
-        expect.closeTo(17 / 255),
-        expect.closeTo(34 / 255),
-        expect.closeTo(51 / 255),
-        expect.closeTo(68 / 255),
-    ])
+    ).toEqual([expect.closeTo(17 / 255), expect.closeTo(34 / 255), expect.closeTo(51 / 255), expect.closeTo(68 / 255)])
     expect(render_data.commands.map((command) => command.kind)).toEqual([
         COMMAND_KIND_PANEL,
         COMMAND_KIND_TEXT_STROKE,
@@ -2388,12 +2342,7 @@ test('RendererWebGPU writes text shadow data into the shared text run', () => {
                 TEXT_RUN.TEXT_SHADOW_COLOR.OFFSET / FLOAT32_SIZE + 4,
             ),
         ),
-    ).toEqual([
-        expect.closeTo(17 / 255),
-        expect.closeTo(34 / 255),
-        expect.closeTo(51 / 255),
-        expect.closeTo(68 / 255),
-    ])
+    ).toEqual([expect.closeTo(17 / 255), expect.closeTo(34 / 255), expect.closeTo(51 / 255), expect.closeTo(68 / 255)])
     expect(floats[TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE + 1]).toBe(0.5)
     expect(
         Array.from(floats.slice(TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE, TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE + 4)),

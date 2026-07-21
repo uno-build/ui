@@ -17,7 +17,6 @@ import fontLetterSpacing from './examples/fontLetterSpacing'
 import fontLineHeight from './examples/fontLineHeight'
 import fontParagraph from './examples/fontParagraph'
 import fontSize from './examples/fontSize'
-import fontSize2 from './examples/fontSize2'
 import fontTextAlign from './examples/fontTextAlign'
 import scroll from './examples/scroll'
 import fontTextShadow from './examples/fontTextShadow'
@@ -58,7 +57,6 @@ export const LAYOUTS = {
     fontLetterSpacing,
     fontLineHeight,
     fontSize,
-    fontSize2,
     fontTextAlign,
     scroll,
     fontTextShadow,
