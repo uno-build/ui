@@ -1599,10 +1599,14 @@ test('MTSDF text shadow derives its sample count from the physical blur', () => 
 
 test('MTSDF text stroke multisamples only the radius beyond its safe alpha range', () => {
     expect(MTSDF_TEXT_EFFECT_WGSL).toContain('run.effect_distance_range,\n            distance_sample.y,')
-    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 289u;')
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('const TEXT_STROKE_MAX_RING_COUNT = 4u;')
     expect(MTSDF_TEXT_EFFECT_WGSL).toContain('run.text_stroke_multisampling > 0.0')
     expect(MTSDF_TEXT_EFFECT_WGSL).toContain('fn expandedMtsdfCoverageAtUv(')
     expect(MTSDF_TEXT_EFFECT_WGSL).toContain('let sample_radius = radius - inner_radius;')
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('let sample_step = max(inner_radius * 0.5, 1.0);')
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain(
+        'let required_ring_count = u32(ceil(sample_radius / sample_step));',
+    )
     expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('MTSDF_TEXT_STROKE_SAMPLES')
     expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('MTSDF_TEXT_STROKE_SAMPLE_OFFSETS')
     expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('glyphMsdfCoverageAtUv(')

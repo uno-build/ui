@@ -1,7 +1,7 @@
-const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = 50
+const TEXT_STROKE_MAX_RING_COUNT = 4
 
 export const TEXT_EFFECT_WGSL = /* wgsl */ `
-const TEXT_STROKE_MAX_SAMPLES_PER_GLYPH = ${TEXT_STROKE_MAX_SAMPLES_PER_GLYPH}u;
+const TEXT_STROKE_MAX_RING_COUNT = ${TEXT_STROKE_MAX_RING_COUNT}u;
 
 fn expandedMtsdfCoverageAtUv(
     glyph: GlyphData,
@@ -31,15 +31,13 @@ fn expandedMtsdfCoverageAtUv(
         ),
     );
     let sample_radius = radius - inner_radius;
-    if (sample_radius <= 0.0 || TEXT_STROKE_MAX_SAMPLES_PER_GLYPH <= 1u) {
+    if (sample_radius <= 0.0 || TEXT_STROKE_MAX_RING_COUNT == 0u) {
         return coverage;
     }
 
-    let max_ring_count = u32(floor(max(
-        (sqrt(f32(TEXT_STROKE_MAX_SAMPLES_PER_GLYPH)) - 1.0) * 0.5,
-        0.0,
-    )));
-    let ring_count = min(u32(ceil(sample_radius)), max_ring_count);
+    let sample_step = max(inner_radius * 0.5, 1.0);
+    let required_ring_count = u32(ceil(sample_radius / sample_step));
+    let ring_count = min(required_ring_count, TEXT_STROKE_MAX_RING_COUNT);
     let signed_ring_count = i32(ring_count);
     for (var y = -signed_ring_count; y <= signed_ring_count; y++) {
         for (var x = -signed_ring_count; x <= signed_ring_count; x++) {
