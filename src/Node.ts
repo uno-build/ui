@@ -1,3 +1,5 @@
+import { normalizeStyleKey } from './style/normalizers'
+
 export default class Node {
     public element = null
     public parent = null
@@ -96,5 +98,5 @@ export default class Node {
 }
 
 function isTextMeasureStyle(name) {
-    return ['fontFamily', 'fontSize', 'lineHeight', 'letterSpacing'].includes(name)
+    return ['FONTFAMILY', 'FONTSIZE', 'LINEHEIGHT', 'LETTERSPACING'].includes(normalizeStyleKey(name))
 }

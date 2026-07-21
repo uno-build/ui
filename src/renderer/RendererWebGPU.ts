@@ -662,12 +662,17 @@ export default class RendererWebGPU extends Renderer {
             let cursor_x = line_x
             let character_offset = 0
 
-            for (const { segment: grapheme } of this.grapheme_segmenter.segment(line.text)) {
+            const segments =
+                letter_spacing === 0 ? line.text : this.grapheme_segmenter.segment(line.text)
+
+            for (const segment of segments) {
+                const grapheme = typeof segment === 'string' ? segment : segment.segment
                 if (grapheme === '\t') {
                     cursor_x += getTabAdvance(cursor_x - line_x, space_advance * 8)
                 } else {
-                    for (const character of grapheme) {
-                        const glyph = font.glyphs_by_unicode.get(character.codePointAt(0))
+                    for (let character_index = 0; character_index < grapheme.length; ) {
+                        const code_point = grapheme.codePointAt(character_index)
+                        const glyph = font.glyphs_by_unicode.get(code_point)
                         if (glyph !== undefined) {
                             if (glyph.plane_bounds !== undefined && glyph.uv_rect !== undefined) {
                                 const [left, bottom, right, top] = glyph.plane_bounds
@@ -686,6 +691,8 @@ export default class RendererWebGPU extends Renderer {
 
                             cursor_x += glyph.advance * font_size
                         }
+
+                        character_index += code_point > 0xffff ? 2 : 1
                     }
                 }
 

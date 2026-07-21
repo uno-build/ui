@@ -1142,6 +1142,28 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
     ])
 })
 
+test('RendererWebGPU does not segment text without letter spacing', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    ;(renderer as any).grapheme_segmenter = {
+        segment() {
+            throw new Error('unexpected segmentation')
+        },
+    }
+    const node = createNode({
+        text_content: 'AB',
+        layout: { x: 10, y: 20, width: 200, height: 40 },
+    })
+
+    const glyphs = collectRenderData(renderer, [node]).glyphs
+
+    expect(glyphs.map(({ layout }) => layout[0])).toEqual([10, expect.closeTo(21.2)])
+})
+
 test('RendererWebGPU scrolls glyph geometry and keeps text clipping fixed to the ancestor', () => {
     const root = createNode()
     const parent = createNode({
@@ -2833,6 +2855,7 @@ function createRenderer(image_manager = createImageManager(), font_manager = cre
     ;(renderer as any).image_manager = image_manager
     ;(renderer as any).font_manager = font_manager
     ;(renderer as any).engine = { applyStyle() {} }
+    ;(renderer as any).grapheme_segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
 
     return renderer
 }
