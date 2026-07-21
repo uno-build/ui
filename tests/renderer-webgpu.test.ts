@@ -1566,11 +1566,19 @@ test('UI shader loads MTSDF text effects', () => {
     expect(shader).not.toContain('TEXT_SHADOW_SAMPLE_WEIGHTS')
 })
 
-test('MTSDF text effects own their sample counts', () => {
-    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('const MTSDF_TEXT_SHADOW_SAMPLES = 4u;')
-    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('const MTSDF_TEXT_SHADOW_SAMPLE_OFFSETS = array<vec2f, 4>')
-    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('const MTSDF_TEXT_STROKE_SAMPLES = 1u;')
-    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('const MTSDF_TEXT_STROKE_SAMPLE_OFFSETS = array<vec2f, 1>')
+test('MTSDF text shadow derives its sample count from the physical blur', () => {
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('let sample_count = max(u32(ceil(blur_px)), 1u);')
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('sample_index < sample_count')
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('return coverage / f32(sample_count);')
+    expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('MTSDF_TEXT_SHADOW_SAMPLES')
+    expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('MTSDF_TEXT_SHADOW_SAMPLE_OFFSETS')
+})
+
+test('MTSDF text stroke uses true distance without correction samples', () => {
+    expect(MTSDF_TEXT_EFFECT_WGSL).toContain('run.effect_distance_range,\n            distance_sample.y,')
+    expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('MTSDF_TEXT_STROKE_SAMPLES')
+    expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('MTSDF_TEXT_STROKE_SAMPLE_OFFSETS')
+    expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('glyphMsdfCoverageAtUv(')
 })
 
 test('MSDF text effects own their sample limits', () => {

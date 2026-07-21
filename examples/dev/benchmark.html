@@ -114,15 +114,7 @@
                 }
             }
 
-            async function runScene({
-                root,
-                scene,
-                nodes,
-                frames,
-                warmup,
-                font_image,
-                font_json,
-            }) {
+            async function runScene({ root, scene, nodes, frames, warmup, font_image, font_json }) {
                 root.textContent = ''
 
                 const canvas = document.createElement('canvas')
@@ -301,9 +293,7 @@
                 })
 
             function formatResult(result) {
-                const lines = [
-                    `nodes=${result.nodes} frames=${result.frames} warmup=${result.warmup}`,
-                ]
+                const lines = [`nodes=${result.nodes} frames=${result.frames} warmup=${result.warmup}`]
 
                 for (const scene of result.scenes) {
                     lines.push(

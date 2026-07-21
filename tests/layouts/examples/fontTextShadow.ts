@@ -3,7 +3,7 @@ import { loadImage, loadJson } from '../../../src/utils/load-assets'
 const BLUR_LEVELS = Array.from({ length: 10 }, (_, index) => index)
 const FONT_SIZES = [5, 15, 25, 35]
 const UPDATE_INTERVAL = 5
-const ORBIT_RADIUS = 10
+const ORBIT_RADIUS = 3
 const ORBIT_STEP = Math.PI / 500
 
 export default async function createFontTextShadowLayout({ ui }) {
