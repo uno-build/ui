@@ -1,5 +1,5 @@
 import Renderer from '../Renderer'
-import { STYLE } from '../style'
+import { computeStyleValue, STYLE } from '../style'
 import {
     ROOT_SIZE,
     SCROLLBAR_SIZE,
@@ -51,6 +51,7 @@ import {
 const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 2048
 const FONT_COLOR = [0, 0, 0, 255]
+const TEXT_MEASURE_STYLE_NAMES = [STYLE.FONTSIZE.name, STYLE.LINEHEIGHT.name, STYLE.LETTERSPACING.name]
 
 export default class RendererWebGPU extends Renderer {
     private canvas
@@ -59,6 +60,8 @@ export default class RendererWebGPU extends Renderer {
     private image_min_filter
     private image_mag_filter
     private device_pixel_ratio = 1
+    private style_context = { root_size: ROOT_SIZE }
+    private root_size_dirty = false
     private scrollbar_size
     // props
     private engine!: LayoutEngine
@@ -104,6 +107,7 @@ export default class RendererWebGPU extends Renderer {
     private prepared_texts = new WeakMap()
     private root_node
     private grapheme_segmenter
+    private computeStyle = (style) => computeStyleValue(style, this.style_context)
 
     constructor({
         canvas,
@@ -126,6 +130,15 @@ export default class RendererWebGPU extends Renderer {
         this.device_pixel_ratio = device_pixel_ratio
     }
 
+    public setRootSize(root_size) {
+        if (this.style_context.root_size === root_size) {
+            return
+        }
+
+        this.style_context.root_size = root_size
+        this.root_size_dirty = true
+    }
+
     public async init() {
         // Polyfill Intl.Segmenter if not available
         if (typeof Intl !== 'object' || typeof Intl.Segmenter !== 'function') {
@@ -133,7 +146,7 @@ export default class RendererWebGPU extends Renderer {
         }
         this.grapheme_segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
 
-        this.engine = await createEngine()
+        this.engine = await createEngine({ computeStyleValue: this.computeStyle })
         this.adapter = await navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
         this.device = await this.adapter.requestDevice({
             requiredLimits: {
@@ -418,7 +431,7 @@ export default class RendererWebGPU extends Renderer {
                 name: STYLE.BORDERRIGHTWIDTH.name,
                 parsed: {
                     value:
-                        (node.styles.borderRightWidth?.parsed.value ?? 0) +
+                        (this.computeStyle(node.styles.borderRightWidth)?.parsed.value ?? 0) +
                         (has_vertical_scrollbar ? this.scrollbar_size : 0),
                 },
             })
@@ -426,7 +439,7 @@ export default class RendererWebGPU extends Renderer {
                 name: STYLE.BORDERBOTTOMWIDTH.name,
                 parsed: {
                     value:
-                        (node.styles.borderBottomWidth?.parsed.value ?? 0) +
+                        (this.computeStyle(node.styles.borderBottomWidth)?.parsed.value ?? 0) +
                         (has_horizontal_scrollbar ? this.scrollbar_size : 0),
                 },
             })
@@ -452,6 +465,28 @@ export default class RendererWebGPU extends Renderer {
 
     public beforeUpdate(nodes) {
         super.beforeUpdate(nodes)
+
+        if (this.root_size_dirty) {
+            for (const node of [this.root_node, ...nodes]) {
+                let invalidate_text = false
+
+                for (const [name, style] of Object.entries(node.styles)) {
+                    if (this.computeStyle(style) === style) {
+                        continue
+                    }
+
+                    this.updateResolvedStyle(node, { name, ...style })
+                    invalidate_text ||= TEXT_MEASURE_STYLE_NAMES.includes(name)
+                }
+
+                if (invalidate_text && node.isTextNode()) {
+                    this.invalidateTextNode(node)
+                }
+            }
+
+            this.root_size_dirty = false
+        }
+
         this.engine.calculate()
     }
 
@@ -523,7 +558,7 @@ export default class RendererWebGPU extends Renderer {
         this.text_runs = []
 
         for (const node of nodes) {
-            const drawing_data = getNodeDrawingData(node)
+            const drawing_data = getNodeDrawingData(node, this.computeStyle)
             if (drawing_data !== null) {
                 const panel_data = {
                     ...drawing_data,
@@ -537,7 +572,11 @@ export default class RendererWebGPU extends Renderer {
                 if (atlas_image !== undefined) {
                     panel_data.background_image_mode = readBackgroundImageMode(node)
                     panel_data.background_uv_rect = atlas_image.uv_rect
-                    panel_data.background_image_rect = getBackgroundImageRect(node, atlas_image.image_size)
+                    panel_data.background_image_rect = getBackgroundImageRect(
+                        node,
+                        atlas_image.image_size,
+                        this.computeStyle,
+                    )
                     panel_data.background_atlas_layer = atlas_image.layer
                 }
 
@@ -618,9 +657,9 @@ export default class RendererWebGPU extends Renderer {
             return null
         }
 
-        const border_top = getNodeBorderWidth(node, 'Top')
-        const border_right = getNodeBorderWidth(node, 'Right')
-        const border_left = getNodeBorderWidth(node, 'Left')
+        const border_top = getNodeBorderWidth(node, 'Top', this.computeStyle)
+        const border_right = getNodeBorderWidth(node, 'Right', this.computeStyle)
+        const border_left = getNodeBorderWidth(node, 'Left', this.computeStyle)
         const padding_top = node.layout.padding.top
         const padding_right = node.layout.padding.right
         const padding_left = node.layout.padding.left
@@ -749,7 +788,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private getTextFontSize(node) {
-        return node.styles.fontSize?.parsed.value ?? ROOT_SIZE
+        return this.computeStyle(node.styles.fontSize)?.parsed.value ?? ROOT_SIZE
     }
 
     private getTextNaturalLineHeight(font, font_size) {
@@ -764,7 +803,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private getTextLineHeight(node, natural_line_height, font_size) {
-        const line_height_style = node.styles.lineHeight
+        const line_height_style = this.computeStyle(node.styles.lineHeight)
 
         if (line_height_style === undefined || line_height_style.parsed.kind === KEYWORD.UNSET) {
             return natural_line_height
@@ -784,7 +823,7 @@ export default class RendererWebGPU extends Renderer {
             prepared_text = prepareWithSegments(node.text_content, {
                 measure: (text) => this.measureGlyphAdvances(font, font_size, text),
                 whiteSpace: 'pre-wrap',
-                letterSpacing: node.styles.letterSpacing?.parsed.value ?? 0,
+                letterSpacing: this.computeStyle(node.styles.letterSpacing)?.parsed.value ?? 0,
             })
             this.prepared_texts.set(node, prepared_text)
         }
@@ -1201,11 +1240,11 @@ function isParagraphEnd(prepared_text, line) {
     return line.end.graphemeIndex === 0 && prepared_text.kinds[line.end.segmentIndex - 1] === 'hard-break'
 }
 
-function getBackgroundImageRect(node, image_size) {
+function getBackgroundImageRect(node, image_size, computeStyleValue) {
     const [image_width, image_height] = image_size
-    const [background_width, background_height] = getBackgroundAreaSize(node)
-    const width_style = node.styles.backgroundSizeWidth
-    const height_style = node.styles.backgroundSizeHeight
+    const [background_width, background_height] = getBackgroundAreaSize(node, computeStyleValue)
+    const width_style = computeStyleValue(node.styles.backgroundSizeWidth)
+    const height_style = computeStyleValue(node.styles.backgroundSizeHeight)
     const background_size_mode = width_style?.parsed.enum ?? height_style?.parsed.enum
     let width
     let height
@@ -1225,17 +1264,25 @@ function getBackgroundImageRect(node, image_size) {
         height = size_height ?? image_height * (width / image_width)
     }
 
-    const x = readBackgroundPosition(node.styles.backgroundPositionX, background_width, width)
-    const y = readBackgroundPosition(node.styles.backgroundPositionY, background_height, height)
+    const x = readBackgroundPosition(
+        computeStyleValue(node.styles.backgroundPositionX),
+        background_width,
+        width,
+    )
+    const y = readBackgroundPosition(
+        computeStyleValue(node.styles.backgroundPositionY),
+        background_height,
+        height,
+    )
 
     return [x, y, width, height]
 }
 
-function getBackgroundAreaSize(node) {
-    const border_width_top = getNodeBorderWidth(node, 'Top')
-    const border_width_right = getNodeBorderWidth(node, 'Right')
-    const border_width_bottom = getNodeBorderWidth(node, 'Bottom')
-    const border_width_left = getNodeBorderWidth(node, 'Left')
+function getBackgroundAreaSize(node, computeStyleValue) {
+    const border_width_top = getNodeBorderWidth(node, 'Top', computeStyleValue)
+    const border_width_right = getNodeBorderWidth(node, 'Right', computeStyleValue)
+    const border_width_bottom = getNodeBorderWidth(node, 'Bottom', computeStyleValue)
+    const border_width_left = getNodeBorderWidth(node, 'Left', computeStyleValue)
 
     return [
         node.layout.width - border_width_left - border_width_right,

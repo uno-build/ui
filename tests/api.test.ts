@@ -108,7 +108,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     expect(sibling.layout).toMatchObject({ x: 20, y: 0, width: 0, height: 200 })
 })
 
-test('UI resolves rem styles using the root size', async () => {
+test('UI stores rem styles without resolving them', async () => {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })
     const ui = new UI({ renderer })
@@ -122,15 +122,15 @@ test('UI resolves rem styles using the root size', async () => {
     expect(node.styles).toMatchObject({
         width: {
             value: '2rem',
-            parsed: { value: 32, kind: 'px' },
+            parsed: { value: 2, kind: 'rem' },
         },
         fontSize: {
             value: '1.25rem',
-            parsed: { value: 20, kind: 'px' },
+            parsed: { value: 1.25, kind: 'rem' },
         },
         top: {
             value: '-0.5rem',
-            parsed: { value: -8, kind: 'px' },
+            parsed: { value: -0.5, kind: 'rem' },
         },
     })
 
@@ -141,15 +141,15 @@ test('UI resolves rem styles using the root size', async () => {
     expect(node.styles).toMatchObject({
         width: {
             value: '2rem',
-            parsed: { value: 40, kind: 'px' },
+            parsed: { value: 2, kind: 'rem' },
         },
         fontSize: {
             value: '1.25rem',
-            parsed: { value: 25, kind: 'px' },
+            parsed: { value: 1.25, kind: 'rem' },
         },
         top: {
             value: '-0.5rem',
-            parsed: { value: -10, kind: 'px' },
+            parsed: { value: -0.5, kind: 'rem' },
         },
     })
 })
@@ -391,7 +391,7 @@ test('Node letterSpacing invalidates text measurement', async () => {
 
     expect(node.styles.letterSpacing).toEqual({
         value: '0.125rem',
-        parsed: { value: 2, kind: 'px' },
+        parsed: { value: 0.125, kind: 'rem' },
     })
     expect(invalidated_node).toBe(node)
 })
@@ -425,6 +425,19 @@ test('UI defaults the device pixel ratio to 1', () => {
     new UI({ renderer })
 
     expect(device_pixel_ratio).toBe(1)
+})
+
+test('UI forwards root size changes to the renderer', () => {
+    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const root_sizes = []
+    renderer.setRootSize = (value) => {
+        root_sizes.push(value)
+    }
+
+    const ui = new UI({ renderer })
+    ui.setRootSize(20)
+
+    expect(root_sizes).toEqual([16, 20])
 })
 
 test('RendererDivs image api hooks are no-ops', async () => {
@@ -486,6 +499,7 @@ test('UI fontRegister delegates to renderer', () => {
     const calls = []
     const renderer = {
         setDevicePixelRatio() {},
+        setRootSize() {},
         fontRegister(name, image, json) {
             calls.push({ name, image, json })
         },

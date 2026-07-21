@@ -1,4 +1,4 @@
-import { KEYWORD, UNIT } from './consts'
+import { KEYWORD } from './consts'
 import { readInteger, readNumber, readUnit } from './utils'
 
 export function parseString(value: string) {
@@ -157,11 +157,11 @@ export function parsePercent(value: string) {
     }
 }
 
-export function parseRem(value: string, context: any) {
+export function parseRem(value: string) {
     const unit = readUnit(value)
     return {
         value,
-        parsed: { value: unit.value * context.root_size, kind: UNIT.PX },
+        parsed: unit,
     }
 }
 

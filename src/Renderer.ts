@@ -5,6 +5,8 @@ export default abstract class Renderer {
 
     public setDevicePixelRatio(device_pixel_ratio) {}
 
+    public setRootSize(root_size) {}
+
     public addPendingStyle(node, style) {
         this.pending_styles.push({ node, style })
     }

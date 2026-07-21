@@ -655,6 +655,48 @@ test('RendererWebGPU writes background image size and position into panel instan
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([4, 6, 100, 50])
 })
 
+test('RendererWebGPU resolves rem background image size and position with the current root size', () => {
+    const image = createImage('coin.png', 40, 20)
+    const image_manager = createImageManager({
+        resources: {
+            [image.src]: {
+                src: image.src,
+                layer: 0,
+                uv_rect: [0, 0, 1, 1],
+                image_size: [image.width, image.height],
+            },
+        },
+    })
+    const renderer = createRenderer(image_manager)
+    const node = createNode({
+        styles: {
+            backgroundImage: {
+                value: image.src,
+                parsed: {},
+            },
+            backgroundSizeWidth: {
+                value: '5rem',
+                parsed: { value: 5, kind: UNIT.REM },
+            },
+            backgroundPositionX: {
+                value: '1rem',
+                parsed: { value: 1, kind: UNIT.REM },
+            },
+            backgroundPositionY: {
+                value: '0.5rem',
+                parsed: { value: 0.5, kind: UNIT.REM },
+            },
+        },
+    })
+    renderer.setRootSize(20)
+
+    const nodes_buffer_data = createNodesBufferData(renderer, [node])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
+    const image_rect_float_offset = PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+
+    expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([20, 10, 100, 50])
+})
+
 test('RendererWebGPU resolves percentage background image position against available space', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
@@ -1948,6 +1990,70 @@ test('RendererWebGPU invalidates prepared text', () => {
 
     expect(marked_dirty).toBe(true)
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(20.8)
+})
+
+test('RendererWebGPU recalculates rem text only after the root size changes', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const root = createNode()
+    const node = createNode({
+        text_content: 'A',
+        styles: {
+            letterSpacing: {
+                value: '0.125rem',
+                parsed: { value: 0.125, kind: UNIT.REM },
+            },
+        },
+    })
+    const applied_styles = []
+    const dirty_nodes = []
+    let calculations = 0
+    ;(renderer as any).root_node = root
+    ;(renderer as any).engine = {
+        applyStyle(target, style) {
+            applied_styles.push({ target, style })
+        },
+        markDirty(target) {
+            dirty_nodes.push(target)
+        },
+        calculate() {
+            calculations++
+        },
+    }
+
+    expect(renderer.getTextMeasure(node).width).toBeCloseTo(11.6)
+
+    renderer.setRootSize(16)
+    renderer.beforeUpdate([node])
+
+    expect(applied_styles).toEqual([])
+    expect(dirty_nodes).toEqual([])
+
+    renderer.setRootSize(20)
+    renderer.beforeUpdate([node])
+
+    expect(applied_styles).toEqual([
+        {
+            target: node,
+            style: {
+                name: 'letterSpacing',
+                value: '0.125rem',
+                parsed: { value: 0.125, kind: UNIT.REM },
+            },
+        },
+    ])
+    expect(dirty_nodes).toEqual([node])
+    expect(renderer.getTextMeasure(node).width).toBeCloseTo(12.1)
+
+    renderer.beforeUpdate([node])
+
+    expect(applied_styles).toHaveLength(1)
+    expect(dirty_nodes).toHaveLength(1)
+    expect(calculations).toBe(3)
 })
 
 test('RendererWebGPU scales glyph render data with fontSize', () => {

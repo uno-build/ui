@@ -4,7 +4,7 @@ import { TRANSPARENT_COLOR } from '../webgpu/buffers'
 const EMPTY_BOX_SHADOW = [0, 0, 0, 0]
 
 // If null is returned, the node should not be drawn
-export function getNodeDrawingData(node) {
+export function getNodeDrawingData(node, computeStyleValue) {
     const { x, y, width, height } = getNodeRenderLayout(node)
     const display = node.styles.display?.parsed.enum || DISPLAY.flex
     if (width === 0 || height === 0 || display !== DISPLAY.flex) {
@@ -14,10 +14,10 @@ export function getNodeDrawingData(node) {
     const background_color = node.styles.backgroundColor?.parsed.rgba
     const has_background = background_color !== undefined && background_color[3] > 0
     const has_background_image = node.styles.backgroundImage !== undefined
-    const border_width_top = getNodeBorderWidth(node, 'Top')
-    const border_width_right = getNodeBorderWidth(node, 'Right')
-    const border_width_bottom = getNodeBorderWidth(node, 'Bottom')
-    const border_width_left = getNodeBorderWidth(node, 'Left')
+    const border_width_top = getNodeBorderWidth(node, 'Top', computeStyleValue)
+    const border_width_right = getNodeBorderWidth(node, 'Right', computeStyleValue)
+    const border_width_bottom = getNodeBorderWidth(node, 'Bottom', computeStyleValue)
+    const border_width_left = getNodeBorderWidth(node, 'Left', computeStyleValue)
     const has_border =
         border_width_top > 0 || border_width_right > 0 || border_width_bottom > 0 || border_width_left > 0
     const box_shadow = getNodeBoxShadow(node)
@@ -38,10 +38,26 @@ export function getNodeDrawingData(node) {
         return null
     }
 
-    const border_top_left_radius = getBorderRadius(node.styles.borderTopLeftRadius?.parsed, width, height)
-    const border_top_right_radius = getBorderRadius(node.styles.borderTopRightRadius?.parsed, width, height)
-    const border_bottom_right_radius = getBorderRadius(node.styles.borderBottomRightRadius?.parsed, width, height)
-    const border_bottom_left_radius = getBorderRadius(node.styles.borderBottomLeftRadius?.parsed, width, height)
+    const border_top_left_radius = getBorderRadius(
+        computeStyleValue(node.styles.borderTopLeftRadius)?.parsed,
+        width,
+        height,
+    )
+    const border_top_right_radius = getBorderRadius(
+        computeStyleValue(node.styles.borderTopRightRadius)?.parsed,
+        width,
+        height,
+    )
+    const border_bottom_right_radius = getBorderRadius(
+        computeStyleValue(node.styles.borderBottomRightRadius)?.parsed,
+        width,
+        height,
+    )
+    const border_bottom_left_radius = getBorderRadius(
+        computeStyleValue(node.styles.borderBottomLeftRadius)?.parsed,
+        width,
+        height,
+    )
 
     return {
         layout: [x, y, width, height],
@@ -81,10 +97,10 @@ export function getNodeOpacity(node) {
     return opacity
 }
 
-export function getNodeBorderWidth(node, side) {
+export function getNodeBorderWidth(node, side, computeStyleValue) {
     const border_style = node.styles[`border${side}Style`]
     const border_color = node.styles[`border${side}Color`]
-    const border_width = node.styles[`border${side}Width`]
+    const border_width = computeStyleValue(node.styles[`border${side}Width`])
 
     if (border_style?.value !== 'solid' || border_color === undefined) {
         return 0

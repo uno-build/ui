@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import createEngine from '../src/layouter/yoga.ts'
 import { MEASURE_MODE } from '../src/layouter/types.ts'
-import Style from '../src/style'
+import Style, { computeStyleValue } from '../src/style'
 
 test('Yoga layout engine keeps handles private and returns computed box metrics', async () => {
     const engine = await createEngine()
@@ -64,6 +64,22 @@ test('Yoga layout engine translates measure modes to the generic contract', asyn
     at_most_engine.calculate()
 
     expect(at_most_modes).toEqual([MEASURE_MODE.AT_MOST, MEASURE_MODE.UNDEFINED])
+})
+
+test('Yoga layout engine applies computed rem styles', async () => {
+    const style_context = { root_size: 20 }
+    const engine = await createEngine({
+        computeStyleValue: (style) => computeStyleValue(style, style_context),
+    })
+    const root = createNode(0)
+    const width_style = Style.resolveStyle('width', '2rem', { root_size: 16 }).expanded[0]
+
+    engine.createNode(root)
+    root.styles.width = width_style
+    engine.applyStyle(root, width_style)
+    engine.calculate()
+
+    expect(engine.getLayout(root).width).toBe(40)
 })
 
 function createNode(id, parent = null) {

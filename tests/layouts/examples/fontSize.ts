@@ -57,11 +57,6 @@ export default async function createFontsLayout({ ui }) {
             text.style('color', getRainbowColor(font_size))
             text.text(font_column.text_content)
             column.add(text)
-
-            console.log({
-                font_size,
-                text_stroke: `${stroke}`,
-            })
         }
     }
 }

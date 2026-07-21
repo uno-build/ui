@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import Style from '../src/style'
+import Style, { computeStyleValue } from '../src/style'
 
 test('colors', () => {
     const styles = ['backgroundColor', 'color']
@@ -326,7 +326,7 @@ test('letterSpacing', () => {
         {
             name: 'letterSpacing',
             value: '0.125rem',
-            parsed: { value: 2.5, kind: 'px' },
+            parsed: { value: 0.125, kind: 'rem' },
         },
     ])
 
@@ -334,6 +334,18 @@ test('letterSpacing', () => {
         expectInvalid('letterSpacing', value, /expected px unit/)
     }
     expectInvalid('letterSpacing', true, /style value must be a string/)
+})
+
+test('computeStyleValue resolves rem with the current root size', () => {
+    const style = Style.resolveStyle('letterSpacing', '0.125rem', { root_size: 16 }).expanded[0]
+    const px_style = Style.resolveStyle('letterSpacing', '2px', { root_size: 16 }).expanded[0]
+
+    expect(computeStyleValue(style, { root_size: 20 })).toEqual({
+        name: 'letterSpacing',
+        value: '0.125rem',
+        parsed: { value: 2.5, kind: 'px' },
+    })
+    expect(computeStyleValue(px_style, { root_size: 20 })).toBe(px_style)
 })
 
 test('rem units', () => {
@@ -356,7 +368,7 @@ test('rem units', () => {
             {
                 name,
                 value: '1rem',
-                parsed: { value: 16, kind: 'px' },
+                parsed: { value: 1, kind: 'rem' },
             },
         ])
     }
@@ -365,21 +377,21 @@ test('rem units', () => {
         {
             name: 'width',
             value: '1.5rem',
-            parsed: { value: 24, kind: 'px' },
+            parsed: { value: 1.5, kind: 'rem' },
         },
     ])
     expect(Style.resolveStyle('fontSize', '0rem', context).expanded).toEqual([
         {
             name: 'fontSize',
             value: '0rem',
-            parsed: { value: 0, kind: 'px' },
+            parsed: { value: 0, kind: 'rem' },
         },
     ])
     expect(Style.resolveStyle('top', '-0.5rem', context).expanded).toEqual([
         {
             name: 'top',
             value: '-0.5rem',
-            parsed: { value: -8, kind: 'px' },
+            parsed: { value: -0.5, kind: 'rem' },
         },
     ])
     expect(() => Style.resolveStyle('width', '-1rem', context)).toThrow(/expected non-negative value/)
