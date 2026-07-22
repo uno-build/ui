@@ -132,8 +132,11 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public setViewport(width, height) {
-        this.viewport_width = width
-        this.viewport_height = height
+        if (this.viewport_width !== width || this.viewport_height !== height) {
+            this.viewport_width = width
+            this.viewport_height = height
+            this.style_context_dirty = true
+        }
     }
 
     public setRootSize(root_size) {

@@ -714,6 +714,48 @@ test('RendererWebGPU resolves rem background image size and position with the cu
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([20, 10, 100, 50])
 })
 
+test('RendererWebGPU resolves viewport background image size and position with the current viewport size', () => {
+    const image = createImage('coin.png', 40, 20)
+    const image_manager = createImageManager({
+        resources: {
+            [image.src]: {
+                src: image.src,
+                layer: 0,
+                uv_rect: [0, 0, 1, 1],
+                image_size: [image.width, image.height],
+            },
+        },
+    })
+    const renderer = createRenderer(image_manager)
+    const node = createNode({
+        styles: {
+            backgroundImage: {
+                value: image.src,
+                parsed: {},
+            },
+            backgroundSizeWidth: {
+                value: '25vw',
+                parsed: { value: 25, kind: UNIT.VW },
+            },
+            backgroundPositionX: {
+                value: '5vw',
+                parsed: { value: 5, kind: UNIT.VW },
+            },
+            backgroundPositionY: {
+                value: '10vh',
+                parsed: { value: 10, kind: UNIT.VH },
+            },
+        },
+    })
+    renderer.setViewport(400, 100)
+
+    const nodes_buffer_data = createNodesBufferData(renderer, [node])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
+    const image_rect_float_offset = PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET / FLOAT32_SIZE
+
+    expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([20, 10, 100, 50])
+})
+
 test('RendererWebGPU resolves percentage background image position against available space', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
@@ -2011,7 +2053,7 @@ test('RendererWebGPU invalidates prepared text', () => {
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(20.8)
 })
 
-test('RendererWebGPU recalculates rem text only after the root size changes', () => {
+test('RendererWebGPU recalculates rem text after the root size changes', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2044,6 +2086,8 @@ test('RendererWebGPU recalculates rem text only after the root size changes', ()
         },
     }
     renderer.setViewport(320, 180)
+    renderer.beforeUpdate([])
+    calculations.length = 0
 
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(11.6)
 
@@ -2078,6 +2122,124 @@ test('RendererWebGPU recalculates rem text only after the root size changes', ()
         [320, 180],
         [320, 180],
     ])
+})
+
+test('RendererWebGPU recalculates viewport text after style context changes', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const root = createNode()
+    const node = createNode({
+        text_content: 'A',
+        styles: {
+            letterSpacing: {
+                value: '1vw',
+                parsed: { value: 1, kind: UNIT.VW },
+            },
+            lineHeight: {
+                value: '10vh',
+                parsed: { value: 10, kind: UNIT.VH },
+            },
+        },
+    })
+    const applied_styles = []
+    const dirty_nodes = []
+    const read_applied_styles = () => applied_styles.map(({ style }) => style)
+    ;(renderer as any).root_node = root
+    ;(renderer as any).engine = {
+        applyStyle(target, style) {
+            applied_styles.push({ target, style })
+        },
+        markDirty(target) {
+            dirty_nodes.push(target)
+        },
+        calculate() {},
+    }
+
+    renderer.setViewport(320, 180)
+    renderer.beforeUpdate([node])
+
+    expect(read_applied_styles()).toEqual([
+        {
+            name: 'letterSpacing',
+            value: '1vw',
+            parsed: { value: 3.2, kind: UNIT.PX },
+        },
+        {
+            name: 'lineHeight',
+            value: '10vh',
+            parsed: { value: 18, kind: UNIT.PX },
+        },
+    ])
+    expect(dirty_nodes).toEqual([node])
+    expect(renderer.getTextMeasure(node).width).toBeCloseTo(12.8)
+    expect(renderer.getTextMeasure(node).height).toBe(18)
+
+    applied_styles.length = 0
+    dirty_nodes.length = 0
+    renderer.setViewport(320, 180)
+    renderer.beforeUpdate([node])
+
+    expect(applied_styles).toEqual([])
+    expect(dirty_nodes).toEqual([])
+
+    renderer.setViewport(400, 180)
+    renderer.beforeUpdate([node])
+
+    expect(read_applied_styles()).toEqual([
+        {
+            name: 'letterSpacing',
+            value: '1vw',
+            parsed: { value: 4, kind: UNIT.PX },
+        },
+        {
+            name: 'lineHeight',
+            value: '10vh',
+            parsed: { value: 18, kind: UNIT.PX },
+        },
+    ])
+    expect(dirty_nodes).toEqual([node])
+
+    applied_styles.length = 0
+    dirty_nodes.length = 0
+    renderer.setViewport(400, 200)
+    renderer.beforeUpdate([node])
+
+    expect(read_applied_styles()).toEqual([
+        {
+            name: 'letterSpacing',
+            value: '1vw',
+            parsed: { value: 4, kind: UNIT.PX },
+        },
+        {
+            name: 'lineHeight',
+            value: '10vh',
+            parsed: { value: 20, kind: UNIT.PX },
+        },
+    ])
+    expect(dirty_nodes).toEqual([node])
+
+    applied_styles.length = 0
+    dirty_nodes.length = 0
+    renderer.setRootSize(20)
+    renderer.beforeUpdate([node])
+
+    expect(read_applied_styles()).toEqual([
+        {
+            name: 'letterSpacing',
+            value: '1vw',
+            parsed: { value: 4, kind: UNIT.PX },
+        },
+        {
+            name: 'lineHeight',
+            value: '10vh',
+            parsed: { value: 20, kind: UNIT.PX },
+        },
+    ])
+    expect(dirty_nodes).toEqual([node])
 })
 
 test('RendererWebGPU scales glyph render data with fontSize', () => {

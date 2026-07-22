@@ -9,6 +9,8 @@ export const UNIT = {
     PX: 'px',
     PERCENT: '%',
     REM: 'rem',
+    VW: 'vw',
+    VH: 'vh',
 }
 export const EDGE = {
     left: 0,

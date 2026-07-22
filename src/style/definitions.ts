@@ -28,6 +28,8 @@ import {
     validatePx,
     validatePercent,
     validateRem,
+    validateVw,
+    validateVh,
     validateNonNegative,
     validateMaxOne,
     validateImageSrc,
@@ -45,6 +47,8 @@ import {
     parsePx,
     parsePercent,
     parseRem,
+    parseVw,
+    parseVh,
 } from './parsers'
 import { createEnumValidator, createEnumParser } from './utils'
 
@@ -115,6 +119,16 @@ export const FONT_SIZE_DEFINITION = [
         validate: [validateNonNegative, validateRem],
         parse: [parseRem],
     },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validateVw],
+        parse: [parseVw],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validateVh],
+        parse: [parseVh],
+    },
 ]
 
 export const LINE_HEIGHT_DEFINITION = [
@@ -135,6 +149,16 @@ export const LINE_HEIGHT_DEFINITION = [
     },
     {
         normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validateVw],
+        parse: [parseVw],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validateVh],
+        parse: [parseVh],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateUnset],
         parse: [parseUnset],
     },
@@ -150,6 +174,16 @@ export const LETTER_SPACING_DEFINITION = [
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateRem],
         parse: [parseRem],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateVw],
+        parse: [parseVw],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateVh],
+        parse: [parseVh],
     },
 ]
 
@@ -174,6 +208,16 @@ export const PX_PERCENT_DEFINITION = [
     },
     {
         normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validateVw],
+        parse: [parseVw],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validateVh],
+        parse: [parseVh],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNonNegative, validatePercent],
         parse: [parsePercent],
     },
@@ -189,6 +233,16 @@ export const OFFSET_DEFINITION = [
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateRem],
         parse: [parseRem],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateVw],
+        parse: [parseVw],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateVh],
+        parse: [parseVh],
     },
     {
         normalize: [normalizeTrim, normalizeToLowercase],
@@ -284,6 +338,16 @@ export const MARGIN_DEFINITION = [
     },
     {
         normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateVw],
+        parse: [parseVw],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateVh],
+        parse: [parseVh],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validatePercent],
         parse: [parsePercent],
     },
@@ -350,6 +414,16 @@ export const BORDER_WIDTH_DEFINITION = [
         validate: [validateNonNegative, validateRem],
         parse: [parseRem],
     },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validateVw],
+        parse: [parseVw],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validateVh],
+        parse: [parseVh],
+    },
 ]
 
 export const BORDER_DEFINITION = [
@@ -410,6 +484,16 @@ export const BACKGROUND_SIZE_DEFINITION = [
     },
     {
         normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validateVw],
+        parse: [parseVw],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateNonNegative, validateVh],
+        parse: [parseVh],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNonNegative, validatePercent],
         parse: [parsePercent],
     },
@@ -443,6 +527,16 @@ export const BACKGROUND_POSITION_DEFINITION = [
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateRem],
         parse: [parseRem],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateVw],
+        parse: [parseVw],
+    },
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateVh],
+        parse: [parseVh],
     },
     {
         normalize: [normalizeTrim, normalizeToLowercase],

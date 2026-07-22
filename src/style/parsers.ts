@@ -165,6 +165,22 @@ export function parseRem(value: string) {
     }
 }
 
+export function parseVw(value: string) {
+    const unit = readUnit(value)
+    return {
+        value,
+        parsed: unit,
+    }
+}
+
+export function parseVh(value: string) {
+    const unit = readUnit(value)
+    return {
+        value,
+        parsed: unit,
+    }
+}
+
 export function parseImage(value: any) {
     return { value: value.src, parsed: value }
 }

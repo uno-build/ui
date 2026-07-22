@@ -125,6 +125,20 @@ export function validateRem(value: string) {
     }
 }
 
+export function validateVw(value: string) {
+    const parsed = readUnit(value)
+    if (parsed === undefined || parsed.kind !== UNIT.VW) {
+        throw new Error('expected vw unit')
+    }
+}
+
+export function validateVh(value: string) {
+    const parsed = readUnit(value)
+    if (parsed === undefined || parsed.kind !== UNIT.VH) {
+        throw new Error('expected vh unit')
+    }
+}
+
 export function validateNonNegative(value: any) {
     const number = readNumber(value) ?? (readUnit(value) ?? readUnit(value))?.value
 

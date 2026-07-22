@@ -108,7 +108,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     expect(sibling.layout).toMatchObject({ x: 20, y: 0, width: 0, height: 200 })
 })
 
-test('UI stores rem styles without resolving them', async () => {
+test('UI stores context-dependent styles without resolving them', async () => {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })
     const ui = new UI({ renderer })
@@ -117,12 +117,22 @@ test('UI stores rem styles without resolving them', async () => {
 
     const node = ui.create()
     node.style('width', '2rem')
+    node.style('height', '20vw')
+    node.style('minHeight', '30vh')
     node.style('fontSize', '1.25rem')
     node.style('top', '-0.5rem')
     expect(node.styles).toMatchObject({
         width: {
             value: '2rem',
             parsed: { value: 2, kind: 'rem' },
+        },
+        height: {
+            value: '20vw',
+            parsed: { value: 20, kind: 'vw' },
+        },
+        minHeight: {
+            value: '30vh',
+            parsed: { value: 30, kind: 'vh' },
         },
         fontSize: {
             value: '1.25rem',
@@ -135,13 +145,24 @@ test('UI stores rem styles without resolving them', async () => {
     })
 
     ui.setRootSize(20)
+    ui.setViewport(320, 180)
     node.style('width', '2rem')
+    node.style('height', '20vw')
+    node.style('minHeight', '30vh')
     node.style('fontSize', '1.25rem')
     node.style('top', '-0.5rem')
     expect(node.styles).toMatchObject({
         width: {
             value: '2rem',
             parsed: { value: 2, kind: 'rem' },
+        },
+        height: {
+            value: '20vw',
+            parsed: { value: 20, kind: 'vw' },
+        },
+        minHeight: {
+            value: '30vh',
+            parsed: { value: 30, kind: 'vh' },
         },
         fontSize: {
             value: '1.25rem',

@@ -23,6 +23,21 @@ test('RendererDom sets the document root font size', () => {
     }
 })
 
+test('RendererDom keeps viewport units as native CSS values', () => {
+    const renderer = new RendererDom({ canvas: {} })
+    const element = { style: {} }
+    const node = {}
+    ;(renderer as any).elements.set(node, element)
+
+    ;(renderer as any).updateStyle(node, Style.resolveStyle('width', '20vw'))
+    ;(renderer as any).updateStyle(node, Style.resolveStyle('fontSize', '5vh'))
+
+    expect(element.style).toEqual({
+        width: '20vw',
+        fontSize: '5vh',
+    })
+})
+
 test('RendererDom maps textStroke only to webkitTextStroke', () => {
     const renderer = new RendererDom({ canvas: {} })
     const element = { style: {} }

@@ -348,6 +348,25 @@ test('computeStyleValue resolves rem with the current root size', () => {
     expect(computeStyleValue(px_style, { root_size: 20 })).toBe(px_style)
 })
 
+test('computeStyleValue resolves viewport units with the current viewport size', () => {
+    const vw_style = Style.resolveStyle('width', '10vw').expanded[0]
+    const vh_style = Style.resolveStyle('height', '10vh').expanded[0]
+    const px_style = Style.resolveStyle('width', '10px').expanded[0]
+    const context = { viewport_width: 320, viewport_height: 180 }
+
+    expect(computeStyleValue(vw_style, context)).toEqual({
+        name: 'width',
+        value: '10vw',
+        parsed: { value: 32, kind: 'px' },
+    })
+    expect(computeStyleValue(vh_style, context)).toEqual({
+        name: 'height',
+        value: '10vh',
+        parsed: { value: 18, kind: 'px' },
+    })
+    expect(computeStyleValue(px_style, context)).toBe(px_style)
+})
+
 test('rem units', () => {
     const context = { root_size: 16 }
     const styles = [
@@ -424,6 +443,86 @@ test('rem units in shorthand properties', () => {
             parsed: { value: 0.25, kind: 'rem' },
         })),
     )
+})
+
+test('viewport units', () => {
+    const styles = [
+        'fontSize',
+        'lineHeight',
+        'letterSpacing',
+        'borderTopLeftRadius',
+        'top',
+        'marginTop',
+        'width',
+        'minWidth',
+        'borderTopWidth',
+        'backgroundSizeWidth',
+        'backgroundPositionX',
+    ]
+
+    for (const name of styles) {
+        for (const unit of ['vw', 'vh']) {
+            expect(Style.resolveStyle(name, `1${unit}`).expanded).toEqual([
+                {
+                    name,
+                    value: `1${unit}`,
+                    parsed: { value: 1, kind: unit },
+                },
+            ])
+        }
+    }
+
+    expect(Style.resolveStyle('width', ' 1.5VW ').expanded).toEqual([
+        {
+            name: 'width',
+            value: '1.5vw',
+            parsed: { value: 1.5, kind: 'vw' },
+        },
+    ])
+    expect(Style.resolveStyle('height', ' 2.5VH ').expanded).toEqual([
+        {
+            name: 'height',
+            value: '2.5vh',
+            parsed: { value: 2.5, kind: 'vh' },
+        },
+    ])
+    expect(Style.resolveStyle('top', '-0.5vw').expanded[0].parsed).toEqual({ value: -0.5, kind: 'vw' })
+    expect(Style.resolveStyle('marginTop', '-0.5vh').expanded[0].parsed).toEqual({ value: -0.5, kind: 'vh' })
+    expect(() => Style.resolveStyle('width', '-1vw')).toThrow(/expected non-negative value/)
+    expect(() => Style.resolveStyle('height', '-1vh')).toThrow(/expected non-negative value/)
+})
+
+test('viewport units in shorthand properties', () => {
+    const cases = [
+        ['padding', '1vw 2vh'],
+        ['margin', '1vw 2vh'],
+        ['borderRadius', '1vw 2vh'],
+        ['backgroundSize', '10vw 20vh'],
+        ['backgroundPosition', '1vw 2vh'],
+        ['flex', '0 1 20vw'],
+    ]
+
+    for (const [name, value] of cases) {
+        const viewport_styles = Style.resolveStyle(name, value).expanded.filter((style) =>
+            ['vw', 'vh'].includes(style.parsed.kind),
+        )
+
+        expect(viewport_styles.length, name).toBeGreaterThan(0)
+    }
+
+    for (const unit of ['vw', 'vh']) {
+        const border_widths = Style.resolveStyle('border', `0.25${unit} solid #93c5fd`).expanded.filter((style) =>
+            style.name.endsWith('Width'),
+        )
+
+        expect(border_widths).toEqual(
+            ['Top', 'Right', 'Bottom', 'Left'].map((side) => ({
+                name: `border${side}Width`,
+                value: `0.25${unit}`,
+                parsed: { value: 0.25, kind: unit },
+            })),
+        )
+    }
 })
 
 test('lineHeight', () => {

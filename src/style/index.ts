@@ -77,17 +77,25 @@ export function resolveStyle(name: string, value: any) {
 }
 
 export function computeStyleValue(style, context) {
+    let unit_size
+
     if (style?.parsed?.kind === UNIT.REM) {
-        return {
-            ...style,
-            parsed: {
-                value: style.parsed.value * context.root_size,
-                kind: UNIT.PX,
-            },
-        }
+        unit_size = context.root_size
+    } else if (style?.parsed?.kind === UNIT.VW) {
+        unit_size = context.viewport_width / 100
+    } else if (style?.parsed?.kind === UNIT.VH) {
+        unit_size = context.viewport_height / 100
+    } else {
+        return style
     }
 
-    return style
+    return {
+        ...style,
+        parsed: {
+            value: style.parsed.value * unit_size,
+            kind: UNIT.PX,
+        },
+    }
 }
 
 function createStyle(name, shorthandCallback) {
