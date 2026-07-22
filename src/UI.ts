@@ -61,6 +61,10 @@ export default class UI {
         this.renderer.setDevicePixelRatio(device_pixel_ratio)
     }
 
+    public setViewport(width, height) {
+        this.renderer.setViewport(width, height)
+    }
+
     public setRootSize(root_size) {
         this.root_size = root_size
         this.renderer.setRootSize(root_size)

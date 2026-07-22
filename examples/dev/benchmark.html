@@ -123,13 +123,14 @@
                 canvas.style.height = '100%'
                 root.appendChild(canvas)
 
-                syncCanvasSize({ root, canvas })
-
                 const renderer = new RendererWebGPU({ canvas })
-                const ui = new UI({ renderer })
+                const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
                 await ui.init()
                 ui.fontRegister('Poppins-Regular', font_image, font_json)
 
+                ui.setViewport(root.clientWidth, root.clientHeight)
+                canvas.width = Math.round(root.clientWidth * window.devicePixelRatio)
+                canvas.height = Math.round(root.clientHeight * window.devicePixelRatio)
                 ui.root.style('width', `${root.clientWidth}px`)
                 ui.root.style('height', `${root.clientHeight}px`)
                 ui.root.style('backgroundColor', '#f6f7f9')
@@ -236,13 +237,6 @@
                 }
 
                 return index % 3 === 1 ? '1px #172554' : '4px #172554'
-            }
-
-            function syncCanvasSize({ root, canvas }) {
-                const device_pixel_ratio = window.devicePixelRatio
-
-                canvas.width = Math.round(root.clientWidth * device_pixel_ratio)
-                canvas.height = Math.round(root.clientHeight * device_pixel_ratio)
             }
 
             function readNumber(params, name, fallback) {

@@ -440,6 +440,19 @@ test('UI forwards root size changes to the renderer', () => {
     expect(root_sizes).toEqual([16, 20])
 })
 
+test('UI forwards viewport changes to the renderer', () => {
+    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const viewports = []
+    renderer.setViewport = (width, height) => {
+        viewports.push([width, height])
+    }
+
+    const ui = new UI({ renderer })
+    ui.setViewport(320, 180)
+
+    expect(viewports).toEqual([[320, 180]])
+})
+
 test('RendererDivs image api hooks are no-ops', async () => {
     const canvas = createDiv()
     const renderer = new RendererDivs({ canvas, createDiv })

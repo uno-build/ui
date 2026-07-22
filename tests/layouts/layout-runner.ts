@@ -94,6 +94,7 @@ export async function runLayout({
 function syncRootSize({ ui, root, canvas }) {
     ui.root.style('width', `${root.clientWidth}px`)
     ui.root.style('height', `${root.clientHeight}px`)
+    ui.setViewport(root.clientWidth, root.clientHeight)
 
     if (canvas.tagName === 'CANVAS') {
         const device_pixel_ratio = window.devicePixelRatio
@@ -233,9 +234,6 @@ function createCanvasElement(root, rendererName, setup) {
         zIndex: '0',
         opacity: '1',
     })
-
-    canvas.width = canvas.clientWidth
-    canvas.height = canvas.clientHeight
 
     Object.entries(setup.attributes).forEach(([key, value]) => {
         canvas.setAttribute(key, value)

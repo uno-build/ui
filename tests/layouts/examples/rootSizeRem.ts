@@ -8,7 +8,7 @@ const ROOT_SIZE_INTERVAL = 1
 export default async function createRootSizeRemLayout({ ui, animations_enabled }) {
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
     const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
-    const img = await loadImage('/assets/coin.png')
+    const img = await loadImage('/assets/texture.jpg')
 
     ui.fontRegister('Poppins-Regular', poppins_image, poppins_json)
     ui.imageUpload(img.src, img)
@@ -105,10 +105,10 @@ export default async function createRootSizeRemLayout({ ui, animations_enabled }
     image.style('flexBasis', '8rem')
     image.style('backgroundColor', '#bfdbfe')
     image.style('backgroundImage', img.src)
-    image.style('backgroundSize', '8rem 4rem')
+    image.style('backgroundSize', '7rem 4rem')
     // image.style('backgroundSizeWidth', '4rem')
     // image.style('backgroundSizeHeight', '3rem')
-    image.style('backgroundPosition', '0.2rem 0.2rem')
+    image.style('backgroundPosition', '0.5rem 0.5rem')
     // image.style('backgroundPositionX', '1rem')
     // image.style('backgroundPositionY', '1rem')
     rem_features.add(image)

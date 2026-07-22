@@ -1550,9 +1550,10 @@ test('RendererWebGPU wraps text using letter spacing', () => {
     expect(renderer.getTextMeasure(node, 22)).toEqual({ width: expect.closeTo(11.6), height: 40 })
 })
 
-test('RendererWebGPU writes the device pixel ratio into the viewport uniform', () => {
+test('RendererWebGPU writes the explicit viewport and device pixel ratio into the viewport uniform', () => {
     const writes = []
-    const renderer = new RendererWebGPU({ canvas: { clientWidth: 320, clientHeight: 180 } })
+    const canvas = { clientWidth: 640, clientHeight: 360 }
+    const renderer = new RendererWebGPU({ canvas })
     const empty_buffer_data = { bytes: new Uint8Array(), bytes_offset: 0 }
     ;(renderer as any).device = {
         queue: {
@@ -1563,6 +1564,7 @@ test('RendererWebGPU writes the device pixel ratio into the viewport uniform', (
     }
     ;(renderer as any).viewport_buffer = { id: 'viewport' }
     renderer.setDevicePixelRatio(2)
+    renderer.setViewport(320, 180)
     ;(renderer as any).updateBuffers(
         { ...empty_buffer_data, count: 0 },
         empty_buffer_data,

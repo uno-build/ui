@@ -60,8 +60,10 @@ export default class RendererWebGPU extends Renderer {
     private image_min_filter
     private image_mag_filter
     private device_pixel_ratio = 1
-    private style_context_dirty = false
+    private viewport_width
+    private viewport_height
     private root_size = ROOT_SIZE
+    private style_context_dirty = false
     private scrollbar_size
     private engine!: LayoutEngine
     private adapter
@@ -127,6 +129,11 @@ export default class RendererWebGPU extends Renderer {
 
     public setDevicePixelRatio(device_pixel_ratio) {
         this.device_pixel_ratio = device_pixel_ratio
+    }
+
+    public setViewport(width, height) {
+        this.viewport_width = width
+        this.viewport_height = height
     }
 
     public setRootSize(root_size) {
@@ -1019,7 +1026,7 @@ export default class RendererWebGPU extends Renderer {
         this.device.queue.writeBuffer(
             this.viewport_buffer,
             0,
-            new Float32Array([this.canvas.clientWidth, this.canvas.clientHeight, this.device_pixel_ratio, 0]),
+            new Float32Array([this.viewport_width, this.viewport_height, this.device_pixel_ratio, 0]),
         )
 
         const uploaded_bytes =
