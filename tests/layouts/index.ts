@@ -13,7 +13,6 @@ import backgroundImageBleeding from './examples/backgroundImageBleeding'
 import backgroundImageUnset from './examples/backgroundImageUnset'
 import positionRelative from './examples/positionRelative'
 import rootSizeRem from './examples/rootSizeRem'
-import deepNestedPaint from './examples/deepNestedPaint'
 import fontLetterSpacing from './examples/fontLetterSpacing'
 import fontLineHeight from './examples/fontLineHeight'
 import fontParagraph from './examples/fontParagraph'
@@ -22,6 +21,7 @@ import fontTextAlign from './examples/fontTextAlign'
 import scroll from './examples/scroll'
 import fontTextShadow from './examples/fontTextShadow'
 import fontTextStroke from './examples/fontTextStroke'
+import nestedDeepPaint from './examples/nestedDeepPaint'
 import nestedFlexDirections from './examples/nestedFlexDirections'
 import nestedMargins from './examples/nestedMargins'
 import nestedPercentDimensions from './examples/nestedPercentDimensions'
@@ -54,7 +54,6 @@ export const LAYOUTS = {
     boxShadow,
     boxShadow2,
     boxShadow3,
-    deepNestedPaint,
     fontLetterSpacing,
     fontLineHeight,
     fontSize,
@@ -63,6 +62,7 @@ export const LAYOUTS = {
     fontTextShadow,
     fontTextStroke,
     fontParagraph,
+    nestedDeepPaint,
     nestedFlexDirections,
     nestedMargins,
     nestedPercentDimensions,

@@ -86,9 +86,30 @@
             #settings-panel.dragging {
                 cursor: grabbing;
             }
-            #settings-panel-title {
+            .settings-panel-title {
                 margin-bottom: 8px;
                 font-weight: 600;
+            }
+            .settings-layouts-title {
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            #settings-layouts {
+                max-height: 240px;
+                overflow-y: auto;
+            }
+            .settings-layout {
+                display: block;
+                padding: 2px 0;
+                color: inherit;
+                text-decoration: none;
+            }
+            .settings-layout:hover {
+                text-decoration: underline;
+            }
+            .settings-layout[aria-current='page'] {
+                color: #56ccf2;
             }
             #settings-buttons {
                 display: flex;
@@ -124,8 +145,10 @@
     <body>
         <div id="root"></div>
         <div id="settings-panel">
-            <!-- <div id="settings-panel-title">Renderers</div> -->
+            <div class="settings-panel-title">Renderers</div>
             <div id="settings-renderers"></div>
+            <div class="settings-panel-title settings-layouts-title">Layouts</div>
+            <div id="settings-layouts"></div>
             <div id="settings-buttons">
                 <button id="add-random-node-button">+</button>
                 <button id="remove-random-node-button">-</button>
@@ -204,7 +227,7 @@
             })
 
             settingsPanel.addEventListener('pointerdown', (event) => {
-                if (event.target.closest('.settings-renderer, button')) {
+                if (event.target.closest('.settings-layout, .settings-renderer, button')) {
                     return
                 }
 

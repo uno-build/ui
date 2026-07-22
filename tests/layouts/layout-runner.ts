@@ -56,7 +56,12 @@ export async function runLayout({
         window.ui = ui
 
         syncViewport({ ui, root, canvas })
-        const layoutResult = await createLayout({ ui, rendererName, animations_enabled })
+        const layoutResult = await createLayout({
+            ui,
+            rendererName,
+            animations_enabled,
+            viewport_width: root.clientWidth,
+        })
         const viewport = layoutResult?.viewport
         if (viewport !== undefined) {
             syncViewport({ ui, root, canvas, viewport })

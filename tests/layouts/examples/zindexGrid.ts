@@ -1,7 +1,7 @@
-export default function createZIndexLayout({ ui, rendererName }) {
+export default function createZIndexLayout({ ui, rendererName, viewport_width }) {
     const PADDING = 100
     const OFFSET = 10
-    const CENTER_X = ui.root.styles.width.parsed.value / 2
+    const CENTER_X = viewport_width / 2
 
     const Container = ui.create()
     Container.style('flexDirection', 'row')

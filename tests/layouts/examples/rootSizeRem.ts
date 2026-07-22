@@ -106,11 +106,7 @@ export default async function createRootSizeRemLayout({ ui, animations_enabled }
     image.style('backgroundColor', '#bfdbfe')
     image.style('backgroundImage', img.src)
     image.style('backgroundSize', '7rem 4rem')
-    // image.style('backgroundSizeWidth', '4rem')
-    // image.style('backgroundSizeHeight', '3rem')
     image.style('backgroundPosition', '0.5rem 0.5rem')
-    // image.style('backgroundPositionX', '1rem')
-    // image.style('backgroundPositionY', '1rem')
     rem_features.add(image)
 
     const offsets = ui.create()
