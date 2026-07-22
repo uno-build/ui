@@ -79,6 +79,22 @@ test('Yoga layout engine applies styles computed by its consumer', async () => {
     expect(engine.getLayout(root).width).toBe(40)
 })
 
+test('Yoga layout engine applies computed numeric functions', async () => {
+    const engine = await createEngine()
+    const root = createNode(0)
+    const width_style = Style.resolveStyle('width', 'clamp(20px, 10vw, 40px)').expanded[0]
+
+    engine.createNode(root)
+    root.styles.width = width_style
+    engine.applyStyle(
+        root,
+        computeStyleValue(width_style, { root_size: 16, viewport_width: 300, viewport_height: 200 }),
+    )
+    engine.calculate()
+
+    expect(engine.getLayout(root).width).toBe(30)
+})
+
 test('Yoga layout engine resolves root percentages against the available size', async () => {
     const engine = await createEngine()
     const root = createNode(0)

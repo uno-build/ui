@@ -30,6 +30,7 @@ import {
     validateRem,
     validateVw,
     validateVh,
+    validateNumericFunction,
     validateNonNegative,
     validateMaxOne,
     validateImageSrc,
@@ -49,8 +50,21 @@ import {
     parseRem,
     parseVw,
     parseVh,
+    parseNumericFunctionValue,
 } from './parsers'
 import { createEnumValidator, createEnumParser } from './utils'
+
+const NUMERIC_FUNCTION_DEFINITION = {
+    normalize: [normalizeTrim, normalizeToLowercase],
+    validate: [validateNumericFunction],
+    parse: [parseNumericFunctionValue],
+}
+
+const NON_NEGATIVE_NUMERIC_FUNCTION_DEFINITION = {
+    normalize: [normalizeTrim, normalizeToLowercase],
+    validate: [validateNonNegative, validateNumericFunction],
+    parse: [parseNumericFunctionValue],
+}
 
 export const INTEGER_DEFINITION = [
     {
@@ -129,6 +143,7 @@ export const FONT_SIZE_DEFINITION = [
         validate: [validateNonNegative, validateVh],
         parse: [parseVh],
     },
+    NON_NEGATIVE_NUMERIC_FUNCTION_DEFINITION,
 ]
 
 export const LINE_HEIGHT_DEFINITION = [
@@ -157,6 +172,7 @@ export const LINE_HEIGHT_DEFINITION = [
         validate: [validateNonNegative, validateVh],
         parse: [parseVh],
     },
+    NON_NEGATIVE_NUMERIC_FUNCTION_DEFINITION,
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateUnset],
@@ -185,6 +201,7 @@ export const LETTER_SPACING_DEFINITION = [
         validate: [validateVh],
         parse: [parseVh],
     },
+    NUMERIC_FUNCTION_DEFINITION,
 ]
 
 export const TEXT_ALIGN_DEFINITION = [
@@ -221,6 +238,7 @@ export const PX_PERCENT_DEFINITION = [
         validate: [validateNonNegative, validatePercent],
         parse: [parsePercent],
     },
+    NON_NEGATIVE_NUMERIC_FUNCTION_DEFINITION,
 ]
 
 export const OFFSET_DEFINITION = [
@@ -249,6 +267,7 @@ export const OFFSET_DEFINITION = [
         validate: [validatePercent],
         parse: [parsePercent],
     },
+    NUMERIC_FUNCTION_DEFINITION,
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateAuto],
@@ -356,6 +375,7 @@ export const MARGIN_DEFINITION = [
         validate: [validateAuto],
         parse: [parseAuto],
     },
+    NUMERIC_FUNCTION_DEFINITION,
 ]
 
 export const NUMBER_UNSET_DEFINITION = [
@@ -424,6 +444,7 @@ export const BORDER_WIDTH_DEFINITION = [
         validate: [validateNonNegative, validateVh],
         parse: [parseVh],
     },
+    NON_NEGATIVE_NUMERIC_FUNCTION_DEFINITION,
 ]
 
 export const BORDER_DEFINITION = [
@@ -497,6 +518,7 @@ export const BACKGROUND_SIZE_DEFINITION = [
         validate: [validateNonNegative, validatePercent],
         parse: [parsePercent],
     },
+    NON_NEGATIVE_NUMERIC_FUNCTION_DEFINITION,
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(BACKGROUND_SIZE)],
@@ -543,4 +565,5 @@ export const BACKGROUND_POSITION_DEFINITION = [
         validate: [validatePercent],
         parse: [parsePercent],
     },
+    NUMERIC_FUNCTION_DEFINITION,
 ]

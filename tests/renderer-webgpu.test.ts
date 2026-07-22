@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
+import Style from '../src/style'
 import { MEASURE_MODE } from '../src/layouter/types.ts'
 import {
     BACKGROUND_REPEAT,
@@ -2240,6 +2241,52 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
         },
     ])
     expect(dirty_nodes).toEqual([node])
+})
+
+test('RendererWebGPU recalculates numeric functions after style context changes', () => {
+    const renderer = createRenderer()
+    const root = createNode()
+    const node = createNode({
+        styles: {
+            width: Style.resolveStyle('width', 'clamp(16px, 10vw, 2rem)').expanded[0],
+        },
+    })
+    const applied_styles = []
+    ;(renderer as any).root_node = root
+    ;(renderer as any).engine = {
+        applyStyle(target, style) {
+            applied_styles.push({ target, style })
+        },
+        calculate() {},
+    }
+
+    renderer.setViewport(100, 200)
+    renderer.beforeUpdate([node])
+    expect(getAppliedStyle(applied_styles.map(({ style }) => style), 'width').parsed).toEqual({
+        value: 16,
+        kind: UNIT.PX,
+    })
+
+    renderer.setViewport(200, 200)
+    renderer.beforeUpdate([node])
+    expect(getAppliedStyle(applied_styles.map(({ style }) => style), 'width').parsed).toEqual({
+        value: 20,
+        kind: UNIT.PX,
+    })
+
+    renderer.setViewport(400, 200)
+    renderer.beforeUpdate([node])
+    expect(getAppliedStyle(applied_styles.map(({ style }) => style), 'width').parsed).toEqual({
+        value: 32,
+        kind: UNIT.PX,
+    })
+
+    renderer.setRootSize(20)
+    renderer.beforeUpdate([node])
+    expect(getAppliedStyle(applied_styles.map(({ style }) => style), 'width').parsed).toEqual({
+        value: 40,
+        kind: UNIT.PX,
+    })
 })
 
 test('RendererWebGPU scales glyph render data with fontSize', () => {

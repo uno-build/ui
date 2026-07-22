@@ -1,7 +1,14 @@
 // https://github.com/robinweser/inline-style-expand-shorthand/blob/master/src/expand.js
 import { BACKGROUND_SIZE, BORDER_STYLE, KEYWORD } from './consts'
 import { normalizeTrim, normalizeToLowercase } from './normalizers'
-import { validateNumber, validatePx, validateRem, validateVw, validateVh } from './validators'
+import {
+    validateNumber,
+    validatePx,
+    validateRem,
+    validateVw,
+    validateVh,
+    validateNumericFunction,
+} from './validators'
 
 export function expandProperty(property: string, value: string | string[]) {
     if (Array.isArray(value)) {
@@ -100,14 +107,17 @@ function parseBorder(value: string, resolve) {
     const longhands = {}
 
     values.forEach((val) => {
-        if (BORDER_STYLE.hasOwnProperty(val)) {
+        const normalized_val = normalizeToLowercase(val)
+
+        if (BORDER_STYLE.hasOwnProperty(normalized_val)) {
             longhands[resolve('Style')] = val
         } else if (
             val === '0' ||
-            isValid(val, validatePx) ||
-            isValid(val, validateRem) ||
-            isValid(val, validateVw) ||
-            isValid(val, validateVh)
+            isValid(normalized_val, validatePx) ||
+            isValid(normalized_val, validateRem) ||
+            isValid(normalized_val, validateVw) ||
+            isValid(normalized_val, validateVh) ||
+            isValid(normalized_val, validateNumericFunction)
         ) {
             longhands[resolve('Width')] = val
         } else {

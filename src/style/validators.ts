@@ -1,5 +1,6 @@
 import { KEYWORD, UNIT } from './consts'
 import { readInteger, readNumber, readUnit } from './utils'
+import { parseNumericFunction, readNumericFunction } from './functions'
 
 export function validateColor(value: string) {
     if (typeof value !== 'string' || !/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) {
@@ -139,10 +140,18 @@ export function validateVh(value: string) {
     }
 }
 
-export function validateNonNegative(value: any) {
-    const number = readNumber(value) ?? (readUnit(value) ?? readUnit(value))?.value
+export function validateNumericFunction(value: string) {
+    parseNumericFunction(value, readUnit)
+}
 
-    if (number !== undefined && number < 0) {
+export function validateNonNegative(value: any) {
+    const number = readNumber(value) ?? readUnit(value)?.value
+    const numeric_function = readNumericFunction(value, readUnit)
+
+    if (
+        (number !== undefined && number < 0) ||
+        numeric_function?.arguments.some((argument) => argument.value < 0)
+    ) {
         throw new Error('expected non-negative value')
     }
 }

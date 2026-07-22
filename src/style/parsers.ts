@@ -1,5 +1,6 @@
 import { KEYWORD } from './consts'
 import { readInteger, readNumber, readUnit } from './utils'
+import { parseNumericFunction } from './functions'
 
 export function parseString(value: string) {
     return {
@@ -178,6 +179,13 @@ export function parseVh(value: string) {
     return {
         value,
         parsed: unit,
+    }
+}
+
+export function parseNumericFunctionValue(value: string) {
+    return {
+        value,
+        parsed: parseNumericFunction(value, readUnit),
     }
 }
 

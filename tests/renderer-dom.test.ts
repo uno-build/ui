@@ -38,6 +38,19 @@ test('RendererDom keeps viewport units as native CSS values', () => {
     })
 })
 
+test('RendererDom keeps numeric functions as native CSS values', () => {
+    const renderer = new RendererDom({ canvas: {} })
+    const element = { style: {} }
+    const node = {}
+    ;(renderer as any).elements.set(node, element)
+
+    ;(renderer as any).updateStyle(node, Style.resolveStyle('width', 'clamp(10px, 20vw, 30rem)'))
+
+    expect(element.style).toEqual({
+        width: 'clamp(10px, 20vw, 30rem)',
+    })
+})
+
 test('RendererDom maps textStroke only to webkitTextStroke', () => {
     const renderer = new RendererDom({ canvas: {} })
     const element = { style: {} }

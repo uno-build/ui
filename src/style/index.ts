@@ -2,6 +2,7 @@ import { normalizeStyleName, normalizeStyleKey } from './normalizers'
 import { readUnit, runPipeline, runValidators } from './utils'
 import { expandProperty } from './expand'
 import { UNIT } from './consts'
+import { NUMERIC_FUNCTION_KIND, computeNumericFunction } from './functions'
 import {
     ALIGN_CONTENT_DEFINITION,
     ALIGN_ITEMS_DEFINITION,
@@ -77,6 +78,16 @@ export function resolveStyle(name: string, value: any) {
 }
 
 export function computeStyleValue(style, context) {
+    if (style?.parsed?.kind === NUMERIC_FUNCTION_KIND) {
+        return {
+            ...style,
+            parsed: {
+                value: computeNumericValue(style.parsed, context),
+                kind: UNIT.PX,
+            },
+        }
+    }
+
     let unit_size
 
     if (style?.parsed?.kind === UNIT.REM) {
@@ -96,6 +107,24 @@ export function computeStyleValue(style, context) {
             kind: UNIT.PX,
         },
     }
+}
+
+function computeNumericValue(value, context) {
+    if (value.kind === NUMERIC_FUNCTION_KIND) {
+        return computeNumericFunction(value, (argument) => computeNumericValue(argument, context))
+    }
+
+    if (value.kind === UNIT.PX) {
+        return value.value
+    }
+    if (value.kind === UNIT.REM) {
+        return value.value * context.root_size
+    }
+    if (value.kind === UNIT.VW) {
+        return (value.value * context.viewport_width) / 100
+    }
+
+    return (value.value * context.viewport_height) / 100
 }
 
 function createStyle(name, shorthandCallback) {
