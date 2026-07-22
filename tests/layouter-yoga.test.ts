@@ -79,6 +79,19 @@ test('Yoga layout engine applies styles computed by its consumer', async () => {
     expect(engine.getLayout(root).width).toBe(40)
 })
 
+test('Yoga layout engine resolves root percentages against the available size', async () => {
+    const engine = await createEngine()
+    const root = createNode(0)
+
+    engine.createNode(root)
+    applyStyle(engine, root, 'width', '100%')
+    applyStyle(engine, root, 'height', '100%')
+    engine.calculate(800, 600)
+
+    expect(engine.getLayout(root).width).toBe(800)
+    expect(engine.getLayout(root).height).toBe(600)
+})
+
 function createNode(id, parent = null) {
     return {
         id,

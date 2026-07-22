@@ -282,7 +282,7 @@ export function getAncestorClipping(node) {
     const render_y = node.layout.y - scroll_top
     ancestor = node.parent
 
-    while (ancestor?.parent != null) {
+    while (ancestor !== null) {
         scroll_left -= ancestor.scroll_left
         scroll_top -= ancestor.scroll_top
         const overflow_x = ancestor.styles.overflowX?.parsed.enum ?? OVERFLOW.visible

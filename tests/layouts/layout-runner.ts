@@ -55,13 +55,17 @@ export async function runLayout({
         await ui.init()
         window.ui = ui
 
-        syncRootSize({ ui, root, canvas })
+        syncViewport({ ui, root, canvas })
         const layoutResult = await createLayout({ ui, rendererName, animations_enabled })
+        const viewport = layoutResult?.viewport
+        if (viewport !== undefined) {
+            syncViewport({ ui, root, canvas, viewport })
+        }
 
         render({ ui })
         await document.fonts.ready
         render({ ui })
-        observeRootSize({ ui, root, canvas })
+        observeRootSize({ ui, root, canvas, viewport })
 
         const result = readPaintLayout(ui)
         const paintedRects =
@@ -91,10 +95,8 @@ export async function runLayout({
     return results
 }
 
-function syncRootSize({ ui, root, canvas }) {
-    ui.root.style('width', `${root.clientWidth}px`)
-    ui.root.style('height', `${root.clientHeight}px`)
-    ui.setViewport(root.clientWidth, root.clientHeight)
+function syncViewport({ ui, root, canvas, viewport }) {
+    ui.setViewport(viewport?.width ?? root.clientWidth, viewport?.height ?? root.clientHeight)
 
     if (canvas.tagName === 'CANVAS') {
         const device_pixel_ratio = window.devicePixelRatio
@@ -103,7 +105,7 @@ function syncRootSize({ ui, root, canvas }) {
     }
 }
 
-function observeRootSize({ ui, root, canvas }) {
+function observeRootSize({ ui, root, canvas, viewport }) {
     let width = root.clientWidth
     let height = root.clientHeight
 
@@ -114,7 +116,7 @@ function observeRootSize({ ui, root, canvas }) {
 
         width = root.clientWidth
         height = root.clientHeight
-        syncRootSize({ ui, root, canvas })
+        syncViewport({ ui, root, canvas, viewport })
         render({ ui })
     })
 

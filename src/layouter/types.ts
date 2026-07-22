@@ -44,6 +44,6 @@ export interface LayoutEngine {
     applyStyle(node: any, style: any): void
     setMeasureFunction(node: any, measure_function: MeasureFunction): void
     markDirty(node: any): void
-    calculate(): void
+    calculate(width?: number, height?: number): void
     getLayout(node: any): LayoutMetrics
 }

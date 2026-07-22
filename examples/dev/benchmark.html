@@ -131,8 +131,6 @@
                 ui.setViewport(root.clientWidth, root.clientHeight)
                 canvas.width = Math.round(root.clientWidth * window.devicePixelRatio)
                 canvas.height = Math.round(root.clientHeight * window.devicePixelRatio)
-                ui.root.style('width', `${root.clientWidth}px`)
-                ui.root.style('height', `${root.clientHeight}px`)
                 ui.root.style('backgroundColor', '#f6f7f9')
 
                 createGrid({ ui, scene, nodes, width: root.clientWidth })

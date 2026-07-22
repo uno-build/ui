@@ -31,8 +31,8 @@ export default async function createYogaEngine() {
         return elements.get(node)
     }
 
-    function calculate() {
-        root_element.calculateLayout()
+    function calculate(width?, height?) {
+        root_element.calculateLayout(width, height)
     }
 
     return {
@@ -83,8 +83,8 @@ export default async function createYogaEngine() {
 
         calculate,
 
-        update() {
-            calculate()
+        update(width?, height?) {
+            calculate(width, height)
         },
 
         // prettier-ignore

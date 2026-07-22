@@ -491,7 +491,7 @@ export default class RendererWebGPU extends Renderer {
             this.style_context_dirty = false
         }
 
-        this.engine.calculate()
+        this.engine.calculate(this.viewport_width, this.viewport_height)
     }
 
     public afterUpdate(nodes) {

@@ -85,6 +85,23 @@ test('RendererWebGPU writes layout and clipping bounds into panel instance data'
     expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([3, 7, 7, 2])
 })
 
+test('RendererWebGPU clips direct children to root overflow', () => {
+    const root = createNode({
+        layout: { x: 0, y: 0, width: 5, height: 4 },
+        overflow: OVERFLOW.hidden,
+    })
+    const child = createNode({
+        parent: root,
+        layout: { x: 0, y: 0, width: 10, height: 10 },
+    })
+    const renderer = createRenderer()
+    const nodes_buffer_data = createNodesBufferData(renderer, [child])
+    const floats = new Float32Array(nodes_buffer_data.bytes.buffer)
+    const clipping_float_offset = PANEL_DATA.CLIPPING.OFFSET / FLOAT32_SIZE
+
+    expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([0, 5, 4, 0])
+})
+
 test('RendererWebGPU clips panel geometry independently by axis', () => {
     const root = createNode()
     const horizontal_parent = createNode({
@@ -2013,7 +2030,7 @@ test('RendererWebGPU recalculates rem text only after the root size changes', ()
     })
     const applied_styles = []
     const dirty_nodes = []
-    let calculations = 0
+    const calculations = []
     ;(renderer as any).root_node = root
     ;(renderer as any).engine = {
         applyStyle(target, style) {
@@ -2022,10 +2039,11 @@ test('RendererWebGPU recalculates rem text only after the root size changes', ()
         markDirty(target) {
             dirty_nodes.push(target)
         },
-        calculate() {
-            calculations++
+        calculate(width, height) {
+            calculations.push([width, height])
         },
     }
+    renderer.setViewport(320, 180)
 
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(11.6)
 
@@ -2055,7 +2073,11 @@ test('RendererWebGPU recalculates rem text only after the root size changes', ()
 
     expect(applied_styles).toHaveLength(1)
     expect(dirty_nodes).toHaveLength(1)
-    expect(calculations).toBe(3)
+    expect(calculations).toEqual([
+        [320, 180],
+        [320, 180],
+        [320, 180],
+    ])
 })
 
 test('RendererWebGPU scales glyph render data with fontSize', () => {
