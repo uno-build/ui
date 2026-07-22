@@ -34,7 +34,14 @@ function render({ ui }) {
     ui.draw()
 }
 
-export async function runLayout({ root, layout, renderers, renderer_options = {}, logger = console }) {
+export async function runLayout({
+    root,
+    layout,
+    renderers,
+    renderer_options = {},
+    animations_enabled = false,
+    logger = console,
+}) {
     const createLayout = getLayout(layout)
     const results = []
     const rendered_layouts = []
@@ -49,7 +56,7 @@ export async function runLayout({ root, layout, renderers, renderer_options = {}
         window.ui = ui
 
         syncRootSize({ ui, root, canvas })
-        const layoutResult = await createLayout({ ui, rendererName })
+        const layoutResult = await createLayout({ ui, rendererName, animations_enabled })
 
         render({ ui })
         await document.fonts.ready
@@ -122,7 +129,7 @@ export async function runLayoutFromSearchParams({ root, params, origin, logger =
     logger.log('Available layouts:', Object.keys(LAYOUTS))
     // logger.log('Available renderers:', Object.keys(SETUPS))
 
-    const results = await runLayout({ root, layout, renderers, logger })
+    const results = await runLayout({ root, layout, renderers, animations_enabled: true, logger })
     reportLayoutComparisons(compareLayoutResults(results), logger)
 
     return results
