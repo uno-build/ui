@@ -12,6 +12,7 @@ import backgroundSize from './examples/backgroundSize'
 import backgroundImageBleeding from './examples/backgroundImageBleeding'
 import backgroundImageUnset from './examples/backgroundImageUnset'
 import positionRelative from './examples/positionRelative'
+import rootSizeRem from './examples/rootSizeRem'
 import deepNestedPaint from './examples/deepNestedPaint'
 import fontLetterSpacing from './examples/fontLetterSpacing'
 import fontLineHeight from './examples/fontLineHeight'
@@ -76,6 +77,7 @@ export const LAYOUTS = {
     wrappedRelativeOffsets,
     wrappedRelativeWrapReverse,
     positionRelative,
+    rootSizeRem,
     zindexBasic,
     zindexNested,
     zindexGrid,

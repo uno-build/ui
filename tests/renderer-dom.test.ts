@@ -2,6 +2,27 @@ import { expect, test } from '@playwright/test'
 import RendererDom from '../src/renderer/RendererDom.ts'
 import Style from '../src/style'
 
+test('RendererDom sets the document root font size', () => {
+    const document_element = { style: {} }
+    const original_document = (globalThis as any).document
+
+    ;(globalThis as any).document = {
+        body: {
+            parentElement: document_element,
+        },
+    }
+
+    try {
+        const renderer = new RendererDom({ canvas: {} })
+
+        renderer.setRootSize(20)
+
+        expect(document_element.style.fontSize).toBe('20px')
+    } finally {
+        ;(globalThis as any).document = original_document
+    }
+})
+
 test('RendererDom maps textStroke only to webkitTextStroke', () => {
     const renderer = new RendererDom({ canvas: {} })
     const element = { style: {} }

@@ -14,6 +14,10 @@ export default class RendererDom extends Renderer {
         this.canvas = canvas
     }
 
+    public setRootSize(root_size) {
+        document.body.parentElement.style.fontSize = `${root_size}px`
+    }
+
     public createElement(node) {
         let element
         if (node.id === 0) {

@@ -130,12 +130,10 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public setRootSize(root_size) {
-        if (this.root_size === root_size) {
-            return
+        if (this.root_size !== root_size) {
+            this.root_size = root_size
+            this.style_context_dirty = true
         }
-
-        this.root_size = root_size
-        this.style_context_dirty = true
     }
 
     public async init() {

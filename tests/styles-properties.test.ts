@@ -397,6 +397,35 @@ test('rem units', () => {
     expect(() => Style.resolveStyle('width', '-1rem', context)).toThrow(/expected non-negative value/)
 })
 
+test('rem units in shorthand properties', () => {
+    const cases = [
+        ['padding', '1rem 2rem'],
+        ['margin', '1rem 2rem'],
+        ['borderRadius', '1rem 2rem'],
+        ['backgroundSize', '1rem 2rem'],
+        ['backgroundPosition', '1rem 2rem'],
+        ['flex', '0 1 2rem'],
+    ]
+
+    for (const [name, value] of cases) {
+        const rem_styles = Style.resolveStyle(name, value).expanded.filter((style) => style.parsed.kind === 'rem')
+
+        expect(rem_styles.length, name).toBeGreaterThan(0)
+    }
+
+    const border_widths = Style.resolveStyle('border', '0.25rem solid #93c5fd').expanded.filter((style) =>
+        style.name.endsWith('Width'),
+    )
+
+    expect(border_widths).toEqual(
+        ['Top', 'Right', 'Bottom', 'Left'].map((side) => ({
+            name: `border${side}Width`,
+            value: '0.25rem',
+            parsed: { value: 0.25, kind: 'rem' },
+        })),
+    )
+})
+
 test('lineHeight', () => {
     expectResolved('lineHeight', ' 1.5 ', '1.5', { value: 1.5 })
     expectResolved(' line-height ', '24PX', '24px', { value: 24, kind: 'px' }, 'lineHeight')
