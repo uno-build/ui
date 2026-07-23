@@ -1,9 +1,9 @@
 // Text analysis and layout with caller-provided measurements.
 //
-//   prepare(text, options) — segments text, measures each word
+//   prepareWithSegments(text, options) — segments text, measures each word
 //     with options.measure, and caches widths. Call once when text first appears.
-//   layout(prepared, maxWidth, lineHeight) — walks cached word widths with pure
-//     arithmetic to count lines and compute height. Call on every resize.
+//   measureLineStats(prepared, maxWidth) — computes line count and maximum width.
+//   layoutWithLines(prepared, maxWidth, lineHeight) — materializes renderable lines.
 //
 // i18n: the segmenter handles CJK per-character breaking and Unicode graphemes.
 //   Punctuation merging: "better." measured as one unit (matches CSS behavior).
@@ -13,14 +13,12 @@
 import {
   analyzeText,
   canContinueKeepAllTextRun,
-  clearAnalysisCaches,
   endsWithClosingQuote,
   isCJK,
   isNumericRunSegment,
   kinsokuEnd,
   kinsokuStart,
   leftStickyPunctuation,
-  setAnalysisLocale,
   type SegmentBreakKind,
   type TextAnalysis,
   type WhiteSpaceMode,
@@ -28,7 +26,6 @@ import {
 } from './analysis.js'
 import {
   type BreakableFitMode,
-  clearMeasurementCaches,
   getSegmentBreakableFitAdvances,
   getEngineProfile,
   getSegmentMetrics,
@@ -36,15 +33,11 @@ import {
   type SegmentMetrics,
 } from './measurement.js'
 import {
-  countPreparedLines,
   measurePreparedLineGeometry,
-  normalizePreparedLineStart,
-  stepPreparedLineGeometryFromChunk,
   walkPreparedLinesRaw,
 } from './line-break.js'
 import {
   buildLineTextFromRange,
-  clearLineTextCaches,
   getLineTextCache,
 } from './line-text.js'
 import Segmenter from './segmenter.js'
@@ -57,10 +50,6 @@ function getSharedGraphemeSegmenter(): Segmenter {
   }
   return sharedGraphemeSegmenter
 }
-
-// --- Public types ---
-
-declare const preparedTextBrand: unique symbol
 
 type PreparedCore = {
   widths: number[] // Segment widths, e.g. [42.5, 4.4, 37.2]
@@ -77,17 +66,9 @@ type PreparedCore = {
   chunks: PreparedLineChunk[] // Precompiled hard-break chunks for line walking
 }
 
-// Keep the compact height-prediction handle opaque so the public API does not accidentally
-// calcify around the current parallel-array representation.
-export type PreparedText = {
-  readonly [preparedTextBrand]: true
-}
-
-type InternalPreparedText = PreparedText & PreparedCore
-
 // Manual-layout handle that exposes the structural segment data used by
 // range/cursor APIs and custom rendering.
-export type PreparedTextWithSegments = InternalPreparedText & {
+export type PreparedTextWithSegments = PreparedCore & {
   segments: string[] // Segment text aligned with the parallel arrays, e.g. ['hello', ' ', 'world']
 }
 
@@ -108,12 +89,6 @@ export type LineStats = {
 
 export type LayoutLine = {
   text: string // Full text content of this line, e.g. 'hello world'
-  width: number // Measured width of this line, e.g. 87.5
-  start: LayoutCursor // Inclusive start cursor in prepared segments/graphemes
-  end: LayoutCursor // Exclusive end cursor in prepared segments/graphemes
-}
-
-export type LayoutLineRange = {
   width: number // Measured width of this line, e.g. 87.5
   start: LayoutCursor // Inclusive start cursor in prepared segments/graphemes
   end: LayoutCursor // Exclusive end cursor in prepared segments/graphemes
@@ -140,26 +115,7 @@ type PreparedLineChunk = {
   consumedEndSegmentIndex: number
 }
 
-// --- Public API ---
-
-function createEmptyPrepared(includeSegments: boolean): InternalPreparedText | PreparedTextWithSegments {
-  if (includeSegments) {
-    return {
-      widths: [],
-      lineEndFitAdvances: [],
-      lineEndPaintAdvances: [],
-      kinds: [],
-      simpleLineWalkFastPath: true,
-      breakableFitAdvances: [],
-      breakablePreferredBreaks: [],
-      letterSpacing: 0,
-      spacingGraphemeCounts: [],
-      discretionaryHyphenWidth: 0,
-      tabStopAdvance: 0,
-      chunks: [],
-      segments: [],
-    } as unknown as PreparedTextWithSegments
-  }
+function createEmptyPrepared(): PreparedTextWithSegments {
   return {
     widths: [],
     lineEndFitAdvances: [],
@@ -173,7 +129,8 @@ function createEmptyPrepared(includeSegments: boolean): InternalPreparedText | P
     discretionaryHyphenWidth: 0,
     tabStopAdvance: 0,
     chunks: [],
-  } as unknown as InternalPreparedText
+    segments: [],
+  }
 }
 
 type MeasuredTextUnit = {
@@ -363,11 +320,10 @@ function addInternalLetterSpacing(width: number, graphemeCount: number, letterSp
 function measureAnalysis(
   analysis: TextAnalysis,
   measure: MeasureText,
-  includeSegments: boolean,
   wordBreak: WordBreakMode,
   letterSpacing: number,
-): InternalPreparedText | PreparedTextWithSegments {
-  if (analysis.len === 0) return createEmptyPrepared(includeSegments)
+): PreparedTextWithSegments {
+  if (analysis.len === 0) return createEmptyPrepared()
 
   const engineProfile = getEngineProfile()
   const cache = new Map<string, SegmentMetrics>()
@@ -386,7 +342,7 @@ function measureAnalysis(
   const breakableFitAdvances: (number[] | null)[] = []
   const breakablePreferredBreaks: (number[] | null)[] = []
   const spacingGraphemeCounts: number[] = []
-  const segments = includeSegments ? [] as string[] : null
+  const segments: string[] = []
   const chunks: PreparedLineChunk[] = []
   let chunkStartSegmentIndex = 0
 
@@ -410,7 +366,7 @@ function measureAnalysis(
     breakableFitAdvances.push(breakableFitAdvance)
     breakablePreferredBreaks.push(breakablePreferredBreak)
     if (hasLetterSpacing) spacingGraphemeCounts.push(spacingGraphemeCount)
-    if (segments !== null) segments.push(text)
+    segments.push(text)
   }
 
   function pushMeasuredTextSegment(
@@ -562,23 +518,6 @@ function measureAnalysis(
       consumedEndSegmentIndex: widths.length,
     })
   }
-  if (segments !== null) {
-    return {
-      widths,
-      lineEndFitAdvances,
-      lineEndPaintAdvances,
-      kinds,
-      simpleLineWalkFastPath,
-      breakableFitAdvances,
-      breakablePreferredBreaks,
-      letterSpacing,
-      spacingGraphemeCounts,
-      discretionaryHyphenWidth,
-      tabStopAdvance,
-      chunks,
-      segments,
-    } as unknown as PreparedTextWithSegments
-  }
   return {
     widths,
     lineEndFitAdvances,
@@ -592,61 +531,15 @@ function measureAnalysis(
     discretionaryHyphenWidth,
     tabStopAdvance,
     chunks,
-  } as unknown as InternalPreparedText
+    segments,
+  }
 }
 
-function prepareInternal(
-  text: string,
-  includeSegments: boolean,
-  options: PrepareOptions,
-): InternalPreparedText | PreparedTextWithSegments {
+export function prepareWithSegments(text: string, options: PrepareOptions): PreparedTextWithSegments {
   const wordBreak = options.wordBreak ?? 'normal'
   const letterSpacing = options.letterSpacing ?? 0
   const analysis = analyzeText(text, getEngineProfile(), options.whiteSpace, wordBreak)
-  return measureAnalysis(analysis, options.measure, includeSegments, wordBreak, letterSpacing)
-}
-
-// Prepare text for layout. Segments the text, measures each segment with the
-// caller-provided measurement function, and stores the widths for fast relayout
-// at any width. Call once per text block
-// (e.g. when a comment first appears). The result is width-independent — the
-// same PreparedText can be laid out at any maxWidth and lineHeight via layout().
-//
-// Steps:
-//   1. Normalize collapsible whitespace (CSS white-space: normal behavior)
-//   2. Segment into words and CJK characters
-//   3. Merge punctuation into preceding word ("better." as one unit)
-//   4. Split CJK words into individual graphemes (per-character line breaks)
-//   5. Measure each segment with the provided function and cache it for this text
-//   6. Pre-measure graphemes of long words (for overflow-wrap: break-word)
-export function prepare(text: string, options: PrepareOptions): PreparedText {
-  return prepareInternal(text, false, options) as PreparedText
-}
-
-// Rich variant used by callers that need enough information to render the
-// laid-out lines themselves.
-export function prepareWithSegments(text: string, options: PrepareOptions): PreparedTextWithSegments {
-  return prepareInternal(text, true, options) as PreparedTextWithSegments
-}
-
-function getInternalPrepared(prepared: PreparedText): InternalPreparedText {
-  return prepared as InternalPreparedText
-}
-
-// Layout prepared text at a given max width and caller-provided lineHeight.
-// Pure arithmetic on cached widths — no measurement calls, string operations, or allocations.
-// ~0.0002ms per text block. Call on every resize.
-//
-// Line breaking rules (matching CSS white-space: normal + overflow-wrap: break-word):
-//   - Break before any non-space segment that would overflow the line
-//   - Trailing whitespace hangs past the line edge (doesn't trigger breaks)
-//   - Segments wider than maxWidth are broken at grapheme boundaries
-export function layout(prepared: PreparedText, maxWidth: number, lineHeight: number): LayoutResult {
-  // Keep the resize hot path specialized. `layoutWithLines()` shares the same
-  // break semantics but also tracks line ranges; the extra bookkeeping is too
-  // expensive to pay on every hot-path `layout()` call.
-  const lineCount = countPreparedLines(getInternalPrepared(prepared), maxWidth)
-  return { lineCount, height: lineCount * lineHeight }
+  return measureAnalysis(analysis, options.measure, wordBreak, letterSpacing)
 }
 
 function createLayoutLine(
@@ -679,70 +572,11 @@ function createLayoutLine(
   }
 }
 
-function createLayoutLineRange(
-  width: number,
-  startSegmentIndex: number,
-  startGraphemeIndex: number,
-  endSegmentIndex: number,
-  endGraphemeIndex: number,
-): LayoutLineRange {
-  return {
-    width,
-    start: {
-      segmentIndex: startSegmentIndex,
-      graphemeIndex: startGraphemeIndex,
-    },
-    end: {
-      segmentIndex: endSegmentIndex,
-      graphemeIndex: endGraphemeIndex,
-    },
-  }
-}
-
-export function materializeLineRange(
-  prepared: PreparedTextWithSegments,
-  line: LayoutLineRange,
-): LayoutLine {
-  return createLayoutLine(
-    prepared,
-    getLineTextCache(prepared),
-    line.width,
-    line.start.segmentIndex,
-    line.start.graphemeIndex,
-    line.end.segmentIndex,
-    line.end.graphemeIndex,
-  )
-}
-
-// Batch low-level line-range pass. This is the non-materializing counterpart
-// to layoutWithLines(), useful for shrinkwrap and other aggregate stats work.
-export function walkLineRanges(
-  prepared: PreparedTextWithSegments,
-  maxWidth: number,
-  onLine: (line: LayoutLineRange) => void,
-): number {
-  if (prepared.widths.length === 0) return 0
-
-  return walkPreparedLinesRaw(
-    getInternalPrepared(prepared),
-    maxWidth,
-    (width, startSegmentIndex, startGraphemeIndex, endSegmentIndex, endGraphemeIndex) => {
-      onLine(createLayoutLineRange(
-        width,
-        startSegmentIndex,
-        startGraphemeIndex,
-        endSegmentIndex,
-        endGraphemeIndex,
-      ))
-    },
-  )
-}
-
 export function measureLineStats(
   prepared: PreparedTextWithSegments,
   maxWidth: number,
 ): LineStats {
-  return measurePreparedLineGeometry(getInternalPrepared(prepared), maxWidth)
+  return measurePreparedLineGeometry(prepared, maxWidth)
 }
 
 // Intrinsic-width helper for rich/userland layout work. This asks "how wide is
@@ -750,79 +584,21 @@ export function measureLineStats(
 // Explicit hard breaks still count, so this returns the widest forced line.
 export function measureNaturalWidth(prepared: PreparedTextWithSegments): number {
   let maxWidth = 0
-  walkPreparedLinesRaw(getInternalPrepared(prepared), Number.POSITIVE_INFINITY, width => {
+  walkPreparedLinesRaw(prepared, Number.POSITIVE_INFINITY, width => {
     if (width > maxWidth) maxWidth = width
   })
   return maxWidth
 }
 
-export function layoutNextLine(
-  prepared: PreparedTextWithSegments,
-  start: LayoutCursor,
-  maxWidth: number,
-): LayoutLine | null {
-  const internal = getInternalPrepared(prepared)
-  const end = {
-    segmentIndex: start.segmentIndex,
-    graphemeIndex: start.graphemeIndex,
-  }
-  const chunkIndex = normalizePreparedLineStart(internal, end)
-  if (chunkIndex < 0) return null
-
-  const lineStartSegmentIndex = end.segmentIndex
-  const lineStartGraphemeIndex = end.graphemeIndex
-  const width = stepPreparedLineGeometryFromChunk(internal, end, chunkIndex, maxWidth)
-  if (width === null) return null
-
-  return createLayoutLine(
-    prepared,
-    getLineTextCache(prepared),
-    width,
-    lineStartSegmentIndex,
-    lineStartGraphemeIndex,
-    end.segmentIndex,
-    end.graphemeIndex,
-  )
-}
-
-export function layoutNextLineRange(
-  prepared: PreparedTextWithSegments,
-  start: LayoutCursor,
-  maxWidth: number,
-): LayoutLineRange | null {
-  const internal = getInternalPrepared(prepared)
-  const end = {
-    segmentIndex: start.segmentIndex,
-    graphemeIndex: start.graphemeIndex,
-  }
-  const chunkIndex = normalizePreparedLineStart(internal, end)
-  if (chunkIndex < 0) return null
-
-  const lineStartSegmentIndex = end.segmentIndex
-  const lineStartGraphemeIndex = end.graphemeIndex
-  const width = stepPreparedLineGeometryFromChunk(internal, end, chunkIndex, maxWidth)
-  if (width === null) return null
-
-  return createLayoutLineRange(
-    width,
-    lineStartSegmentIndex,
-    lineStartGraphemeIndex,
-    end.segmentIndex,
-    end.graphemeIndex,
-  )
-}
-
 // Rich layout API for callers that want the actual line contents and widths.
-// Caller still supplies lineHeight at layout time. Mirrors layout()'s break
-// decisions, but keeps extra per-line bookkeeping so it should stay off the
-// resize hot path.
+// Caller still supplies lineHeight at layout time.
 export function layoutWithLines(prepared: PreparedTextWithSegments, maxWidth: number, lineHeight: number): LayoutLinesResult {
   const lines: LayoutLine[] = []
   if (prepared.widths.length === 0) return { lineCount: 0, height: 0, lines }
 
   const graphemeCache = getLineTextCache(prepared)
   const lineCount = walkPreparedLinesRaw(
-    getInternalPrepared(prepared),
+    prepared,
     maxWidth,
     (width, startSegmentIndex, startGraphemeIndex, endSegmentIndex, endGraphemeIndex) => {
       lines.push(createLayoutLine(
@@ -838,16 +614,4 @@ export function layoutWithLines(prepared: PreparedTextWithSegments, maxWidth: nu
   )
 
   return { lineCount, height: lineCount * lineHeight, lines }
-}
-
-export function clearCache(): void {
-  clearAnalysisCaches()
-  sharedGraphemeSegmenter = null
-  clearLineTextCaches()
-  clearMeasurementCaches()
-}
-
-export function setLocale(locale?: string): void {
-  setAnalysisLocale(locale)
-  clearCache()
 }

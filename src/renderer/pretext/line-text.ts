@@ -101,8 +101,3 @@ export function buildLineTextFromRange(
 
   return text
 }
-
-export function clearLineTextCaches(): void {
-  sharedGraphemeSegmenter = null
-  sharedLineTextCaches = new WeakMap<PreparedTextWithSegments, Map<number, string[]>>()
-}

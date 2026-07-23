@@ -125,7 +125,3 @@ export function getSegmentBreakableFitAdvances(
   metrics.breakableFitAdvances = advances
   return metrics.breakableFitAdvances
 }
-
-export function clearMeasurementCaches(): void {
-  sharedGraphemeSegmenter = null
-}

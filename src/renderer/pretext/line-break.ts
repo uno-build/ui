@@ -290,10 +290,6 @@ function normalizeLineStartChunkIndexFromHint(
   return normalizeLineStartInChunk(prepared, nextChunkIndex, cursor)
 }
 
-export function countPreparedLines(prepared: PreparedLineBreakData, maxWidth: number): number {
-  return walkPreparedLinesRaw(prepared, maxWidth)
-}
-
 function walkPreparedLinesSimple(
   prepared: PreparedLineBreakData,
   maxWidth: number,
