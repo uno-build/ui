@@ -1,9 +1,12 @@
-import { loadYoga } from 'yoga-layout/load'
 import { UNIT, KEYWORD, EDGE, GUTTER, FLEX_DIRECTION } from '../style/consts'
 import { calculateLayoutRect, getParentLayout } from './utils'
 import { MEASURE_MODE } from './types'
 
-export default async function createYogaEngine() {
+export default async function createYogaEngine({ loadYoga } = {}) {
+    // if (typeof loadYoga !== 'function') {
+    //     loadYoga = (await import('yoga-layout/load')).loadYoga
+    // }
+
     const Yoga = await loadYoga()
     const yoga_config = Yoga.Config.create()
     const elements = new WeakMap()
@@ -68,12 +71,7 @@ export default async function createYogaEngine() {
 
         setMeasureFunction(node, measure_function) {
             getElement(node).setMeasureFunc((width, width_mode, height, height_mode) =>
-                measure_function(
-                    width,
-                    toMeasureMode(Yoga, width_mode),
-                    height,
-                    toMeasureMode(Yoga, height_mode),
-                ),
+                measure_function(width, toMeasureMode(Yoga, width_mode), height, toMeasureMode(Yoga, height_mode)),
             )
         },
 

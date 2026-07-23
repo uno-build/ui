@@ -5,6 +5,7 @@ import {
     measureNaturalWidth,
     prepareWithSegments,
 } from '../src/renderer/pretext/layout.ts'
+import Segmenter from '../src/renderer/pretext/segmenter.ts'
 
 function measureText(text: string) {
     let width = 0
@@ -46,4 +47,26 @@ test('Pretext breaks words at grapheme boundaries when necessary', () => {
     const result = measureLineStats(prepared, 1)
 
     expect(result.lineCount).toBe(4)
+})
+
+test('Segmenter keeps combined Unicode graphemes intact', () => {
+    const segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
+    const segments = segmenter.segment('A\u0301👩🏽‍💻🇪🇸\r\nB')
+
+    expect(segments.map(({ segment }) => segment)).toEqual(['A\u0301', '👩🏽‍💻', '🇪🇸', '\r\n', 'B'])
+    expect(segments.map(({ index }) => index)).toEqual([0, 2, 9, 13, 15])
+})
+
+test('Segmenter groups words and separates CJK characters', () => {
+    const segmenter = new Segmenter(undefined, { granularity: 'word' })
+    const segments = segmenter.segment("hello 世界 can't")
+
+    expect(segments.map(({ segment, isWordLike }) => [segment, isWordLike])).toEqual([
+        ['hello', true],
+        [' ', false],
+        ['世', true],
+        ['界', true],
+        [' ', false],
+        ["can't", true],
+    ])
 })

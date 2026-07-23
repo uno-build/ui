@@ -24,6 +24,7 @@ import {
     updateScrollMetrics,
 } from './utils/render-metrics'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
+import Segmenter from './pretext/segmenter'
 import { createUIWGSL } from './webgpu/shaders'
 import { ImageManager } from './webgpu/ImageManager'
 import { FontManager } from './webgpu/FontManager'
@@ -117,6 +118,7 @@ export default class RendererWebGPU extends Renderer {
         image_min_filter = 'linear',
         image_mag_filter = 'linear',
         scrollbar_size = SCROLLBAR_SIZE,
+        loadYoga,
     }) {
         super()
         this.canvas = canvas
@@ -125,6 +127,7 @@ export default class RendererWebGPU extends Renderer {
         this.image_min_filter = image_min_filter
         this.image_mag_filter = image_mag_filter
         this.scrollbar_size = scrollbar_size
+        this.loadYoga = loadYoga
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
@@ -147,13 +150,8 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public async init() {
-        // Polyfill Intl.Segmenter if not available
-        if (typeof Intl !== 'object' || typeof Intl.Segmenter !== 'function') {
-            await import('@formatjs/intl-segmenter/polyfill-force.js')
-        }
-        this.grapheme_segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
-
-        this.engine = await createEngine()
+        this.grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
+        this.engine = await createEngine({ loadYoga: this.loadYoga })
         this.adapter = await navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
         this.device = await this.adapter.requestDevice({
             requiredLimits: {

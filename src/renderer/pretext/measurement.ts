@@ -1,4 +1,5 @@
 import { isCJK } from './analysis.js'
+import Segmenter from './segmenter.js'
 
 export type MeasureText = (text: string) => number
 
@@ -27,7 +28,7 @@ const ENGINE_PROFILE: EngineProfile = {
 
 const MAX_PREFIX_FIT_GRAPHEMES = 96
 
-let sharedGraphemeSegmenter: Intl.Segmenter | null = null
+let sharedGraphemeSegmenter: Segmenter | null = null
 
 export function getSegmentMetrics(
   text: string,
@@ -49,9 +50,9 @@ export function getEngineProfile(): EngineProfile {
   return ENGINE_PROFILE
 }
 
-function getSharedGraphemeSegmenter(): Intl.Segmenter {
+function getSharedGraphemeSegmenter(): Segmenter {
   if (sharedGraphemeSegmenter === null) {
-    sharedGraphemeSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    sharedGraphemeSegmenter = new Segmenter(undefined, { granularity: 'grapheme' })
   }
   return sharedGraphemeSegmenter
 }

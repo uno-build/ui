@@ -1,11 +1,11 @@
 // Text analysis and layout with caller-provided measurements.
 //
-//   prepare(text, options) — segments text via Intl.Segmenter, measures each word
+//   prepare(text, options) — segments text, measures each word
 //     with options.measure, and caches widths. Call once when text first appears.
 //   layout(prepared, maxWidth, lineHeight) — walks cached word widths with pure
 //     arithmetic to count lines and compute height. Call on every resize.
 //
-// i18n: Intl.Segmenter handles CJK (per-character breaking), Thai, Arabic, etc.
+// i18n: the segmenter handles CJK per-character breaking and Unicode graphemes.
 //   Punctuation merging: "better." measured as one unit (matches CSS behavior).
 //   Trailing whitespace: hangs past line edge without triggering breaks (CSS behavior).
 //   overflow-wrap: pre-measured grapheme widths enable character-level word breaking.
@@ -47,12 +47,13 @@ import {
   clearLineTextCaches,
   getLineTextCache,
 } from './line-text.js'
+import Segmenter from './segmenter.js'
 
-let sharedGraphemeSegmenter: Intl.Segmenter | null = null
+let sharedGraphemeSegmenter: Segmenter | null = null
 
-function getSharedGraphemeSegmenter(): Intl.Segmenter {
+function getSharedGraphemeSegmenter(): Segmenter {
   if (sharedGraphemeSegmenter === null) {
-    sharedGraphemeSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    sharedGraphemeSegmenter = new Segmenter(undefined, { granularity: 'grapheme' })
   }
   return sharedGraphemeSegmenter
 }
@@ -613,7 +614,7 @@ function prepareInternal(
 //
 // Steps:
 //   1. Normalize collapsible whitespace (CSS white-space: normal behavior)
-//   2. Segment via Intl.Segmenter (handles CJK, Thai, etc.)
+//   2. Segment into words and CJK characters
 //   3. Merge punctuation into preceding word ("better." as one unit)
 //   4. Split CJK words into individual graphemes (per-character line breaks)
 //   5. Measure each segment with the provided function and cache it for this text

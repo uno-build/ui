@@ -1,3 +1,5 @@
+import Segmenter from './segmenter.js'
+
 export type WhiteSpaceMode = 'normal' | 'pre-wrap'
 export type WordBreakMode = 'normal' | 'keep-all'
 
@@ -69,12 +71,12 @@ function normalizeWhitespacePreWrap(text: string): string {
     .replace(/[\r\f]/g, '\n')
 }
 
-let sharedWordSegmenter: Intl.Segmenter | null = null
+let sharedWordSegmenter: Segmenter | null = null
 let segmenterLocale: string | undefined
 
-function getSharedWordSegmenter(): Intl.Segmenter {
+function getSharedWordSegmenter(): Segmenter {
   if (sharedWordSegmenter === null) {
-    sharedWordSegmenter = new Intl.Segmenter(segmenterLocale, { granularity: 'word' })
+    sharedWordSegmenter = new Segmenter(segmenterLocale, { granularity: 'word' })
   }
   return sharedWordSegmenter
 }

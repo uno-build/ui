@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
+import Segmenter from '../src/renderer/pretext/segmenter.ts'
 import { MEASURE_MODE } from '../src/layouter/types.ts'
 import {
     BACKGROUND_REPEAT,
@@ -3143,7 +3144,7 @@ function createRenderer(image_manager = createImageManager(), font_manager = cre
     ;(renderer as any).image_manager = image_manager
     ;(renderer as any).font_manager = font_manager
     ;(renderer as any).engine = { applyStyle() {} }
-    ;(renderer as any).grapheme_segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    ;(renderer as any).grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
 
     return renderer
 }

@@ -3,6 +3,7 @@ import RendererDom from '../../src/renderer/RendererDom'
 import RendererDivs from '../../src/renderer/RendererDivs'
 import RendererWebGPU from '../../src/renderer/RendererWebGPU'
 import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
+import { loadYoga } from 'yoga-layout/load'
 
 export const SETUPS = {
     RendererDom: {
@@ -50,7 +51,7 @@ export async function runLayout({
         const setup = getSetup(rendererName)
         const canvas = createCanvasElement(root, rendererName, setup)
         const Renderer = setup.renderer
-        const renderer = new Renderer({ canvas, ...renderer_options })
+        const renderer = new Renderer({ canvas, loadYoga, ...renderer_options })
         const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
         await ui.init()
         window.ui = ui
