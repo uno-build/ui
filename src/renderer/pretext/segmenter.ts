@@ -9,7 +9,6 @@ type Segment = {
 
 const MARK_RE = /\p{M}/u
 const WORD_RE = /[\p{L}\p{N}\p{M}\p{Pc}]/u
-const WHITESPACE_RE = /\s/u
 const CJK_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
 
 function isEmojiModifier(code_point: number) {
@@ -77,7 +76,7 @@ function segmentWords(input: string): Segment[] {
         }
 
         const is_word = WORD_RE.test(character)
-        const is_whitespace = WHITESPACE_RE.test(character)
+        const is_space = character === ' '
         let end = i + 1
 
         while (end < graphemes.length) {
@@ -93,7 +92,7 @@ function segmentWords(input: string): Segment[] {
                         after_next !== undefined &&
                         WORD_RE.test(String.fromCodePoint(after_next.segment.codePointAt(0)!)))
                 if (!joins_word) break
-            } else if (!is_whitespace || !WHITESPACE_RE.test(next_character)) {
+            } else if (!is_space || next_character !== ' ') {
                 break
             }
 

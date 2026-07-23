@@ -42,6 +42,18 @@ test('Pretext preserves explicit line breaks in pre-wrap text', () => {
     expect(result.lines.map((line) => line.text)).toEqual(['first', 'second'])
 })
 
+test('Pretext preserves blank lines in pre-wrap text', () => {
+    const prepared = prepareWithSegments('first\n\nsecond', {
+        measure: measureText,
+        whiteSpace: 'pre-wrap',
+    })
+    const result = layoutWithLines(prepared, Number.POSITIVE_INFINITY, 12)
+
+    expect(result.lineCount).toBe(3)
+    expect(result.height).toBe(36)
+    expect(result.lines.map((line) => line.text)).toEqual(['first', '', 'second'])
+})
+
 test('Pretext breaks words at grapheme boundaries when necessary', () => {
     const prepared = prepareWithSegments('aaaa', { measure: measureText })
     const result = measureLineStats(prepared, 1)
@@ -69,4 +81,11 @@ test('Segmenter groups words and separates CJK characters', () => {
         [' ', false],
         ["can't", true],
     ])
+})
+
+test('Segmenter keeps consecutive hard breaks separate', () => {
+    const segmenter = new Segmenter(undefined, { granularity: 'word' })
+    const segments = segmenter.segment('first\r\n\r\nsecond')
+
+    expect(segments.map(({ segment }) => segment)).toEqual(['first', '\r\n', '\r\n', 'second'])
 })
