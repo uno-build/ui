@@ -47,6 +47,7 @@
             import UI from '../../src/UI'
             import RendererWebGPU from '../../src/renderer/RendererWebGPU'
             import { loadImage, loadJson } from '../../src/utils/load-assets'
+            import { loadYoga } from 'yoga-layout/load'
 
             const DEFAULT_NODES = 400
             const DEFAULT_FRAMES = 60
@@ -123,7 +124,7 @@
                 canvas.style.height = '100%'
                 root.appendChild(canvas)
 
-                const renderer = new RendererWebGPU({ canvas })
+                const renderer = new RendererWebGPU({ canvas, loadYoga })
                 const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
                 await ui.init()
                 ui.fontRegister('Poppins-Regular', font_image, font_json)

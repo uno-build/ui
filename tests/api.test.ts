@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test'
 import UI from '../src/UI'
-import RendererDivs from '../src/renderer/RendererDivs.ts'
+import TestRenderer from './TestRenderer.ts'
 
 test('UI and Node api creates, styles, updates, and removes nodes', async () => {
-    const canvas = createDiv()
-    const renderer = new RendererDivs({ canvas, createDiv })
+    const renderer = new TestRenderer()
     const ui = new UI({ renderer })
 
     await ui.init()
@@ -90,10 +89,6 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     ui.root.remove(child)
 
     expect([...ui.nodes]).toEqual([sibling])
-    expect(canvas.children.map(({ id }) => id)).toContain('node-2')
-    expect(canvas.children.map(({ id }) => id)).not.toContain('node-1')
-    expect(canvas.children.map(({ id }) => id)).not.toContain('node-3')
-    expect(ui.root.element.getChildCount()).toBe(1)
     expect(child.element).toBe(null)
     expect(grandchild.element).toBe(null)
     expect(ui.root.children).toEqual([sibling])
@@ -109,8 +104,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
 })
 
 test('UI stores context-dependent styles without resolving them', async () => {
-    const canvas = createDiv()
-    const renderer = new RendererDivs({ canvas, createDiv })
+    const renderer = new TestRenderer()
     const ui = new UI({ renderer })
 
     await ui.init()
@@ -176,8 +170,7 @@ test('UI stores context-dependent styles without resolving them', async () => {
 })
 
 test('Node remove removes descendants', async () => {
-    const canvas = createDiv()
-    const renderer = new RendererDivs({ canvas, createDiv })
+    const renderer = new TestRenderer()
     const ui = new UI({ renderer })
 
     await ui.init()
@@ -211,12 +204,10 @@ test('Node remove removes descendants', async () => {
     expect(parent.element).toBe(null)
     expect(child.element).toBe(null)
     expect(grandchild.element).toBe(null)
-    expect(canvas.children.map(({ id }) => id)).toEqual(['node-4'])
 })
 
 test('Node add and remove throw for invalid tree operations', async () => {
-    const canvas = createDiv()
-    const renderer = new RendererDivs({ canvas, createDiv })
+    const renderer = new TestRenderer()
     const ui = new UI({ renderer })
 
     await ui.init()
@@ -239,8 +230,7 @@ test('Node add and remove throw for invalid tree operations', async () => {
 })
 
 test('Node remove discards pending styles', async () => {
-    const canvas = createDiv()
-    const renderer = new RendererDivs({ canvas, createDiv })
+    const renderer = new TestRenderer()
     const ui = new UI({ renderer })
 
     await ui.init()
@@ -257,13 +247,11 @@ test('Node remove discards pending styles', async () => {
         ui.draw()
     }).not.toThrow()
     expect([...ui.nodes]).toEqual([])
-    expect(canvas.children).toEqual([])
     expect(child.element).toBe(null)
 })
 
 test('Node text stores, replaces, and clears text content', async () => {
-    const canvas = createDiv()
-    const renderer = new RendererDivs({ canvas, createDiv })
+    const renderer = new TestRenderer()
     renderer.getTextMeasure = () => ({ width: 10, height: 10 })
     const ui = new UI({ renderer })
 
@@ -280,14 +268,11 @@ test('Node text stores, replaces, and clears text content', async () => {
     expect(child.isTextNode()).toBe(true)
     expect(child.hasTextContent()).toBe(true)
     expect(child.text_content).toBe('Hello')
-    expect(canvas.children[0].innerHTML).toBe('Hello')
-    expect(canvas.children[0].style.whiteSpace).toBe('pre')
 
     child.text('World')
     ui.update()
     ui.draw()
     expect(child.text_content).toBe('World')
-    expect(canvas.children[0].innerHTML).toBe('World')
 
     child.text('')
     ui.update()
@@ -295,12 +280,10 @@ test('Node text stores, replaces, and clears text content', async () => {
     expect(child.isTextNode()).toBe(true)
     expect(child.hasTextContent()).toBe(false)
     expect(child.text_content).toBe('')
-    expect(canvas.children[0].innerHTML).toBe('')
 })
 
 test('Node text uses intrinsic size unless dimensions are explicit', async () => {
-    const canvas = createDiv()
-    const renderer = new RendererDivs({ canvas, createDiv })
+    const renderer = new TestRenderer()
     renderer.getTextMeasure = (node) => {
         const font_size = node.styles.fontSize?.parsed.value ?? 16
         const font_scale = node.styles.fontFamily?.value === 'Wide' ? 2 : 1
@@ -358,7 +341,7 @@ test('Node text uses intrinsic size unless dimensions are explicit', async () =>
 })
 
 test('Node text cannot have children', async () => {
-    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const renderer = new TestRenderer()
     const ui = new UI({ renderer })
 
     await ui.init()
@@ -378,7 +361,7 @@ test('Node text cannot have children', async () => {
 })
 
 test('Node lineHeight invalidates text measurement', async () => {
-    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const renderer = new TestRenderer()
     const ui = new UI({ renderer })
 
     await ui.init()
@@ -396,7 +379,7 @@ test('Node lineHeight invalidates text measurement', async () => {
 })
 
 test('Node letterSpacing invalidates text measurement', async () => {
-    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const renderer = new TestRenderer()
     const ui = new UI({ renderer })
 
     await ui.init()
@@ -418,7 +401,7 @@ test('Node letterSpacing invalidates text measurement', async () => {
 })
 
 test('overflow shorthand and longhands follow assignment order', async () => {
-    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const renderer = new TestRenderer()
     const ui = new UI({ renderer })
     await ui.init()
     const node = ui.create()
@@ -437,7 +420,7 @@ test('overflow shorthand and longhands follow assignment order', async () => {
 })
 
 test('UI defaults the device pixel ratio to 1', () => {
-    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const renderer = new TestRenderer()
     let device_pixel_ratio
     renderer.setDevicePixelRatio = (value) => {
         device_pixel_ratio = value
@@ -449,7 +432,7 @@ test('UI defaults the device pixel ratio to 1', () => {
 })
 
 test('UI forwards root size changes to the renderer', () => {
-    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const renderer = new TestRenderer()
     const root_sizes = []
     renderer.setRootSize = (value) => {
         root_sizes.push(value)
@@ -462,7 +445,7 @@ test('UI forwards root size changes to the renderer', () => {
 })
 
 test('UI forwards viewport changes to the renderer', () => {
-    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
+    const renderer = new TestRenderer()
     const viewports = []
     renderer.setViewport = (width, height) => {
         viewports.push([width, height])
@@ -474,58 +457,17 @@ test('UI forwards viewport changes to the renderer', () => {
     expect(viewports).toEqual([[320, 180]])
 })
 
-test('RendererDivs image api hooks are no-ops', async () => {
-    const canvas = createDiv()
-    const renderer = new RendererDivs({ canvas, createDiv })
+test('UI image api supports renderer defaults', async () => {
+    const renderer = new TestRenderer()
     const ui = new UI({ renderer })
-    const first_image = createImage('/assets/first.png', 32, 32)
-    const second_image = createImage('/assets/second.png', 64, 16)
+    const image = createImage('/assets/first.png', 32, 32)
 
     await ui.init()
 
-    ui.imageUpload('/assets/Avatar.png', first_image)
+    ui.imageUpload('/assets/Avatar.png', image)
     expect(ui.imageList()).toEqual([])
-
-    const child = ui.create()
-    child.style('backgroundImage', '/assets/Avatar.png')
-    child.style('backgroundSize', '100px 50px')
-    child.style('backgroundPosition', '4px 6px')
-    ui.root.add(child)
-
-    ui.update()
-    ui.draw()
-    expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
-    expect(canvas.children[0].style.backgroundSize).toBe('100px 50px')
-    expect(canvas.children[0].style.backgroundPosition).toBe('4px 6px')
-
-    child.style('backgroundSize', 'unset')
-    ui.update()
-    ui.draw()
-    expect(canvas.children[0].style.backgroundSize).toBe('unset')
-
-    child.style('backgroundSize', '50%')
-    ui.update()
-    ui.draw()
-    expect(canvas.children[0].style.backgroundSize).toBe('50%')
-
-    child.style('backgroundSize', 'cover')
-    ui.update()
-    ui.draw()
-    expect(canvas.children[0].style.backgroundSize).toBe('cover')
-
-    ui.imageUpload('/assets/Avatar.png', second_image)
-    expect(ui.imageList()).toEqual([])
-
-    ui.update()
-    ui.draw()
-    expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
-
     ui.imageDispose('/assets/Avatar.png')
     expect(ui.imageList()).toEqual([])
-
-    ui.update()
-    ui.draw()
-    expect(canvas.children[0].style.backgroundImage).toBe('url("/assets/Avatar.png")')
     expect(() => ui.imageDispose('/assets/Avatar.png')).not.toThrow()
 })
 
@@ -546,46 +488,6 @@ test('UI fontRegister delegates to renderer', () => {
 
     expect(calls).toEqual([{ name: 'Poppins', image, json }])
 })
-
-test('RendererDivs measures registered fonts from glyph metrics', () => {
-    const renderer = new RendererDivs({ canvas: createDiv(), createDiv })
-
-    renderer.fontRegister('Poppins', null, {
-        metrics: { lineHeight: 1.5 },
-        glyphs: [
-            { unicode: 65, advance: 0.5 },
-            { unicode: 32, advance: 0.25 },
-            { unicode: 66, advance: 0.8 },
-        ],
-    })
-
-    expect(
-        renderer.getTextMeasure({
-            text_content: 'A B',
-            hasTextContent() {
-                return true
-            },
-            styles: {
-                fontFamily: { value: 'Poppins' },
-                fontSize: { parsed: { value: 20 } },
-            },
-        }),
-    ).toEqual({ width: 31, height: 30 })
-})
-
-function createDiv() {
-    return {
-        children: [],
-        style: {},
-        appendChild(child) {
-            this.children.push(child)
-        },
-        removeChild(child) {
-            const index = this.children.indexOf(child)
-            this.children.splice(index, 1)
-        },
-    }
-}
 
 function byId(a, b) {
     return a.id - b.id

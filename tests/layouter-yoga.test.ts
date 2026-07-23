@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test'
+import { loadYoga } from 'yoga-layout/load'
 import createEngine from '../src/layouter/yoga.ts'
 import { MEASURE_MODE } from '../src/layouter/types.ts'
 import Style, { computeStyleValue } from '../src/style'
 
 test('Yoga layout engine keeps handles private and returns computed box metrics', async () => {
-    const engine = await createEngine()
+    const engine = await createEngine({ loadYoga })
     const root = createNode(0)
     const child = createNode(1, root)
 
@@ -34,7 +35,7 @@ test('Yoga layout engine keeps handles private and returns computed box metrics'
 })
 
 test('Yoga layout engine translates measure modes to the generic contract', async () => {
-    const exact_engine = await createEngine()
+    const exact_engine = await createEngine({ loadYoga })
     const exact_root = createNode(0)
     const exact_modes = []
 
@@ -48,7 +49,7 @@ test('Yoga layout engine translates measure modes to the generic contract', asyn
 
     expect(exact_modes).toEqual([MEASURE_MODE.EXACTLY, MEASURE_MODE.UNDEFINED])
 
-    const at_most_engine = await createEngine()
+    const at_most_engine = await createEngine({ loadYoga })
     const at_most_root = createNode(0)
     const measured_child = createNode(1, at_most_root)
     const at_most_modes = []
@@ -67,7 +68,7 @@ test('Yoga layout engine translates measure modes to the generic contract', asyn
 })
 
 test('Yoga layout engine applies styles computed by its consumer', async () => {
-    const engine = await createEngine()
+    const engine = await createEngine({ loadYoga })
     const root = createNode(0)
     const width_style = Style.resolveStyle('width', '2rem', { root_size: 16 }).expanded[0]
 
@@ -80,7 +81,7 @@ test('Yoga layout engine applies styles computed by its consumer', async () => {
 })
 
 test('Yoga layout engine resolves root percentages against the available size', async () => {
-    const engine = await createEngine()
+    const engine = await createEngine({ loadYoga })
     const root = createNode(0)
 
     engine.createNode(root)

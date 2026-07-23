@@ -13,7 +13,6 @@ const layoutRunnerUrl = `/@fs${path.resolve('tests/layouts/layout-runner.ts')}`
 const layoutHarnessUrl = `/@fs${path.resolve('tests/layouts/layout-harness.html')}`
 const uiUrl = `/@fs${path.resolve('src/UI.ts')}`
 const loadImageUrl = `/@fs${path.resolve('src/utils/loadAssets.ts')}`
-const rendererDivsUrl = `/@fs${path.resolve('src/renderer/RendererDivs.ts')}`
 const LAYOUT_VIEWPORTS = [
     // { width: 360, height: 640 },
     { width: 800, height: 600 },

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
-import RendererDivs from '../src/renderer/RendererDivs.ts'
 import UI from '../src/UI'
+import TestRenderer from './TestRenderer.ts'
 
 test('width', async () => {
     const { ui, root, child } = await createUI({ width: '200px' })
@@ -845,8 +845,7 @@ test('padding', async () => {
 })
 
 async function createUI(styles = {}) {
-    const canvas = createDiv()
-    const renderer = new RendererDivs({ canvas, createDiv })
+    const renderer = new TestRenderer()
     const ui = new UI({ renderer })
     await ui.init()
     const root = ui.root
@@ -859,12 +858,4 @@ async function createUI(styles = {}) {
     ui.update()
     ui.draw()
     return { ui, root, child }
-}
-
-function createDiv() {
-    return {
-        style: {},
-        appendChild() {},
-        removeChild() {},
-    }
 }
