@@ -198,19 +198,11 @@ export const YOGA_SETTER = {
     bottom: (node, { parsed }) => {
         setPosition(node, EDGE.bottom, parsed)
     },
-    flexGrow: (node, { value, parsed }) => {
-        if (parsed.kind === KEYWORD.UNSET) {
-            node.setFlexGrow(undefined)
-        } else {
-            node.setFlexGrow(value)
-        }
+    flexGrow: (node, { parsed }) => {
+        node.setFlexGrow(parsed.kind === KEYWORD.UNSET ? undefined : parsed.value)
     },
-    flexShrink: (node, { value, parsed }) => {
-        if (parsed.kind === KEYWORD.UNSET) {
-            node.setFlexShrink(undefined)
-        } else {
-            node.setFlexShrink(value)
-        }
+    flexShrink: (node, { parsed }) => {
+        node.setFlexShrink(parsed.kind === KEYWORD.UNSET ? undefined : parsed.value)
     },
     flexBasis: (node, { parsed }) => {
         if (parsed.kind === UNIT.PX) {

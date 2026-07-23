@@ -108,7 +108,7 @@ export default class RendererWebGPU extends Renderer {
     private text_run_floats
     private prepared_texts = new WeakMap()
     private root_node
-    private grapheme_segmenter
+    private grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
     private computeStyle = (style) => computeStyleValue(style, this)
 
     constructor({
@@ -150,7 +150,6 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public async init() {
-        this.grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
         this.engine = await createEngine({ loadYoga: this.loadYoga })
         this.adapter = await navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
         this.device = await this.adapter.requestDevice({
@@ -210,6 +209,13 @@ export default class RendererWebGPU extends Renderer {
             atlas_size: this.font_atlas_size,
         })
         this.bind_group = this.createBindGroup()
+
+        return {
+            adapter: this.adapter,
+            device: this.device,
+            context: this.context,
+            format: this.format,
+        }
     }
 
     private createPipeline() {
@@ -524,15 +530,16 @@ export default class RendererWebGPU extends Renderer {
         this.updateBuffers(command_buffer_data, panel_data_buffer_data, glyph_data_buffer_data, text_run_buffer_data)
     }
 
-    public draw() {
-        const command_encoder = this.device.createCommandEncoder()
-        const texture_view = this.context.getCurrentTexture().createView()
+    public draw({ command_encoder, texture_view, load_op = 'clear' } = {}) {
+        const submit = command_encoder === undefined
+        command_encoder ??= this.device.createCommandEncoder()
+        texture_view ??= this.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
             colorAttachments: [
                 {
                     view: texture_view,
                     clearValue: [0, 0, 0, 0],
-                    loadOp: 'clear',
+                    loadOp: load_op,
                     storeOp: 'store',
                 },
             ],
@@ -551,7 +558,9 @@ export default class RendererWebGPU extends Renderer {
         }
 
         pass_encoder.end()
-        this.device.queue.submit([command_encoder.finish()])
+        if (submit) {
+            this.device.queue.submit([command_encoder.finish()])
+        }
 
         return { draws, instances }
     }

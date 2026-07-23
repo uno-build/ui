@@ -47,7 +47,7 @@ export default abstract class Renderer {
 
     public update(nodes) {}
 
-    public draw() {}
+    public draw(options?) {}
 
     public initializeTextNode(node) {}
     public invalidateTextNode(node) {}

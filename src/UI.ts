@@ -18,8 +18,9 @@ export default class UI {
     }
 
     public async init() {
-        await this.renderer.init()
+        const output = await this.renderer.init()
         this.root = this.create()
+        return output
     }
 
     public create() {
@@ -52,8 +53,8 @@ export default class UI {
         return this.renderer.update(this.nodes)
     }
 
-    public draw() {
-        return this.renderer.draw()
+    public draw(options?) {
+        return this.renderer.draw(options)
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {

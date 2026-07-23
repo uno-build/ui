@@ -1636,6 +1636,50 @@ test('RendererWebGPU writes the explicit viewport and device pixel ratio into th
     expect(Array.from(writes[0].data)).toEqual([320, 180, 2, 0])
 })
 
+test('RendererWebGPU records into an external command encoder without submitting it', () => {
+    const render_passes = []
+    const submissions = []
+    const texture_view = { id: 'texture-view' }
+    const pass_encoder = {
+        end() {},
+    }
+    const command_encoder = {
+        beginRenderPass(descriptor) {
+            render_passes.push(descriptor)
+            return pass_encoder
+        },
+        finish() {
+            throw new Error('external command encoder must not be finished')
+        },
+    }
+    const renderer = new RendererWebGPU({ canvas: {} })
+    ;(renderer as any).device = {
+        queue: {
+            submit(command_buffers) {
+                submissions.push(command_buffers)
+            },
+        },
+    }
+
+    expect(renderer.draw({ command_encoder, texture_view, load_op: 'load' })).toEqual({
+        draws: 0,
+        instances: 0,
+    })
+    expect(render_passes).toEqual([
+        {
+            colorAttachments: [
+                {
+                    view: texture_view,
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: 'load',
+                    storeOp: 'store',
+                },
+            ],
+        },
+    ])
+    expect(submissions).toEqual([])
+})
+
 test('text shader shares RGBA sampling and MSDF fill coverage with text effects', () => {
     expect(TEXT_WGSL.match(/textureSampleLevel\(/g)).toHaveLength(1)
     expect(TEXT_WGSL).toContain('return vec3f(median(sample.r, sample.g, sample.b), sample.a, 1.0);')
