@@ -2967,12 +2967,12 @@ test('ImageManager lists uploaded images', () => {
     image_manager.imageUpload('second', second_image)
 
     expect(image_manager.imageList()).toEqual([
-        { src: 'first', image: first_image, nodes: expect.any(Set) },
-        { src: 'second', image: second_image, nodes: expect.any(Set) },
+        { src: 'first', nodes: expect.any(Set) },
+        { src: 'second', nodes: expect.any(Set) },
     ])
 
     image_manager.imageDispose('first')
-    expect(image_manager.imageList()).toEqual([{ src: 'second', image: second_image, nodes: expect.any(Set) }])
+    expect(image_manager.imageList()).toEqual([{ src: 'second', nodes: expect.any(Set) }])
 })
 
 test('ImageManager packs small images into atlas layers', () => {
@@ -2989,8 +2989,9 @@ test('ImageManager packs small images into atlas layers', () => {
     expect(device.textures[0].descriptor.size).toEqual({
         width: ATLAS_SIZE,
         height: ATLAS_SIZE,
-        depthOrArrayLayers: 2,
+        depthOrArrayLayers: 1,
     })
+    expect(device.textures[0].descriptor.textureBindingViewDimension).toBe('2d-array')
     expect(device.textures[0].descriptor.usage & GPUTextureUsage.COPY_SRC).toBe(GPUTextureUsage.COPY_SRC)
     expect(device.copies[0].destination.origin).toEqual([0, 0, 0])
 })
@@ -3097,8 +3098,9 @@ test('FontManager registers a font in the first texture layer', () => {
     expect(device.textures[0].descriptor.size).toEqual({
         width: ATLAS_SIZE,
         height: ATLAS_SIZE,
-        depthOrArrayLayers: 2,
+        depthOrArrayLayers: 1,
     })
+    expect(device.textures[0].descriptor.textureBindingViewDimension).toBe('2d-array')
     expect(device.textures[0].descriptor.usage & GPUTextureUsage.RENDER_ATTACHMENT).toBe(
         GPUTextureUsage.RENDER_ATTACHMENT,
     )
@@ -3118,7 +3120,11 @@ test('FontManager registers separate fonts in separate texture layers', () => {
     expect(font_manager.getFont('ChangaOne')).toBe(second)
     expect(device.copies[0].destination.origin).toEqual([0, 0, 0])
     expect(device.copies[1].destination.origin).toEqual([0, 0, 1])
-    expect(getAtlasTextures(device)).toHaveLength(1)
+    const atlas_textures = getAtlasTextures(device)
+    expect(atlas_textures).toHaveLength(2)
+    expect(atlas_textures[0].destroyed).toBe(true)
+    expect(atlas_textures[1].descriptor.size.depthOrArrayLayers).toBe(2)
+    expect(device.texture_copies[0].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, 1])
 })
 
 test('FontManager replaces a registered font in the same texture layer', () => {
@@ -3146,10 +3152,12 @@ test('FontManager grows the font texture when physical layer capacity is full', 
 
     expect(third.layer).toBe(2)
     const atlas_textures = getAtlasTextures(device)
-    expect(atlas_textures).toHaveLength(2)
+    expect(atlas_textures).toHaveLength(3)
     expect(atlas_textures[0].destroyed).toBe(true)
-    expect(atlas_textures[1].descriptor.size.depthOrArrayLayers).toBe(3)
-    expect(device.texture_copies[0].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, 2])
+    expect(atlas_textures[1].destroyed).toBe(true)
+    expect(atlas_textures[2].descriptor.size.depthOrArrayLayers).toBe(3)
+    expect(device.texture_copies[0].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, 1])
+    expect(device.texture_copies[1].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, 2])
     expect(device.copies[2].destination.origin).toEqual([0, 0, 2])
 })
 

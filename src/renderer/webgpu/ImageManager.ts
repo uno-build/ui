@@ -25,7 +25,6 @@ type AtlasLayer = {
 }
 
 export type ManagedAtlasImage = AtlasImage & {
-    image: any
     atlas_layer: AtlasLayer
     x: number
     y: number
@@ -57,7 +56,6 @@ export class ImageManager {
     public imageList(): any[] {
         return Array.from(this.images, ([src, atlas_image]) => ({
             src,
-            image: atlas_image.image,
             nodes: atlas_image.nodes,
         }))
     }
@@ -96,7 +94,6 @@ export class ImageManager {
 
         const new_atlas_image: ManagedAtlasImage = {
             src,
-            image,
             layer: allocation.atlas_layer.layer,
             uv_rect: this.createAtlasUvRect(allocation.x, allocation.y, image.width, image.height),
             image_size: [image.width, image.height],
@@ -254,15 +251,14 @@ export class ImageManager {
     }
 
     private createAtlasTexture(layer_count) {
-        const texture_layer_count = Math.max(2, layer_count)
-
         return this.device.createTexture({
             size: {
                 width: this.atlas_size,
                 height: this.atlas_size,
-                depthOrArrayLayers: texture_layer_count,
+                depthOrArrayLayers: layer_count,
             },
             dimension: '2d',
+            textureBindingViewDimension: '2d-array',
             format: 'rgba8unorm',
             usage:
                 GPUTextureUsage.TEXTURE_BINDING |

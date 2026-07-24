@@ -22,7 +22,7 @@ export class FontManager {
     private atlas_size
     private font_texture
     private font_layer_count = 0
-    private font_texture_layer_count = 2
+    private font_texture_layer_count = 1
     private default_font_name = null
 
     constructor({ device, atlas_size }) {
@@ -123,15 +123,14 @@ export class FontManager {
     }
 
     private createFontTexture(layer_count) {
-        const texture_layer_count = Math.max(2, layer_count)
-
         return this.device.createTexture({
             size: {
                 width: this.atlas_size,
                 height: this.atlas_size,
-                depthOrArrayLayers: texture_layer_count,
+                depthOrArrayLayers: layer_count,
             },
             dimension: '2d',
+            textureBindingViewDimension: '2d-array',
             format: 'rgba8unorm',
             usage:
                 GPUTextureUsage.TEXTURE_BINDING |
