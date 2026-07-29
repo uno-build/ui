@@ -1,5 +1,44 @@
 # Uno UI
 
+## WebGPU composition
+
+Both examples render to the same `GPUDevice`, `GPUCanvasContext`, and current
+`GPUTexture`. The difference is whether the render passes can share a command
+encoder and submit.
+
+### Raw WebGPU
+
+The raw WebGPU example records both render passes in one command encoder and
+submits them together.
+
+```text
+Shared GPUDevice + GPUCanvasContext + GPUTexture
+        │
+        └─ Single GPUCommandEncoder
+                │
+                ├─ Raw WebGPU render pass
+                │
+                └─ uno-ui render pass (loadOp: load)
+                        │
+                        └─ Single queue.submit() → Present
+```
+
+### Three.js WebGPU
+
+Three.js manages its command encoder internally and submits its work before
+`uno-ui` records a second render pass over the same canvas texture. Both submits
+use the same `GPUQueue`, which preserves their order.
+
+```text
+Shared GPUDevice + GPUCanvasContext + GPUTexture
+        │
+        ├─ Three.js render pass → queue.submit() #1
+        │
+        └─ uno-ui render pass (loadOp: load) → queue.submit() #2
+                                                   │
+                                                   └─ Present
+```
+
 ## RendererWebGPU opacity
 
 `RendererWebGPU` implements `opacity` as a simple accumulated alpha factor per
