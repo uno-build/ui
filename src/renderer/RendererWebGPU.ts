@@ -24,7 +24,6 @@ import {
     updateScrollMetrics,
 } from './utils/render-metrics'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
-import Segmenter from './pretext/segmenter'
 import { createUIWGSL } from './webgpu/shaders'
 import { ImageManager } from './webgpu/ImageManager'
 import { FontManager } from './webgpu/FontManager'
@@ -48,6 +47,7 @@ import {
     TEXT_RUN,
     TEXT_RUN_SIZE,
 } from './webgpu/buffers'
+import Segmenter from './pretext/segmenter'
 
 const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 2048
@@ -151,14 +151,14 @@ export default class RendererWebGPU extends Renderer {
 
     public async init() {
         this.engine = await createEngine({ loadYoga: this.loadYoga })
-        this.adapter = await navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
+        this.adapter = await globalThis.navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
         this.device = await this.adapter.requestDevice({
             requiredLimits: {
                 maxStorageBuffersInVertexStage: 2,
             },
         })
         this.context = this.canvas.getContext('webgpu')
-        this.format = navigator.gpu.getPreferredCanvasFormat()
+        this.format = globalThis.navigator.gpu.getPreferredCanvasFormat()
         this.context.configure({
             device: this.device,
             format: this.format,
@@ -166,30 +166,30 @@ export default class RendererWebGPU extends Renderer {
         })
         this.position_buffer = this.device.createBuffer({
             size: POSITION_VERTICES.byteLength,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
         })
         this.viewport_buffer = this.device.createBuffer({
             size: VIEWPORT_SIZE,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            usage: globalThis.GPUBufferUsage.UNIFORM | globalThis.GPUBufferUsage.COPY_DST,
         })
         this.command_buffer = this.device.createBuffer({
             size: COMMAND_SIZE,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
         })
         this.command_buffer_size = COMMAND_SIZE
         this.panel_data_buffer = this.device.createBuffer({
             size: PANEL_DATA_SIZE,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+            usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
         })
         this.panel_data_buffer_size = PANEL_DATA_SIZE
         this.glyph_data_buffer = this.device.createBuffer({
             size: GLYPH_DATA_SIZE,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+            usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
         })
         this.glyph_data_buffer_size = GLYPH_DATA_SIZE
         this.text_run_buffer = this.device.createBuffer({
             size: TEXT_RUN_SIZE,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+            usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
         })
         this.text_run_buffer_size = TEXT_RUN_SIZE
         this.device.queue.writeBuffer(this.position_buffer, 0, POSITION_VERTICES)
@@ -946,7 +946,7 @@ export default class RendererWebGPU extends Renderer {
             this.command_buffer?.destroy()
             this.command_buffer = this.device.createBuffer({
                 size: command_buffer_data.bytes_offset,
-                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+                usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
             })
         }
 
@@ -968,7 +968,7 @@ export default class RendererWebGPU extends Renderer {
             this.panel_data_buffer?.destroy()
             this.panel_data_buffer = this.device.createBuffer({
                 size: panel_data_buffer_data.bytes_offset,
-                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+                usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
             })
             bind_group_dirty = true
         }
@@ -991,7 +991,7 @@ export default class RendererWebGPU extends Renderer {
             this.glyph_data_buffer?.destroy()
             this.glyph_data_buffer = this.device.createBuffer({
                 size: glyph_data_buffer_data.bytes_offset,
-                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+                usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
             })
             bind_group_dirty = true
         }
@@ -1014,7 +1014,7 @@ export default class RendererWebGPU extends Renderer {
             this.text_run_buffer?.destroy()
             this.text_run_buffer = this.device.createBuffer({
                 size: text_run_buffer_data.bytes_offset,
-                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+                usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
             })
             bind_group_dirty = true
         }

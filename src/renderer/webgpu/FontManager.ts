@@ -133,10 +133,10 @@ export class FontManager {
             textureBindingViewDimension: '2d-array',
             format: 'rgba8unorm',
             usage:
-                GPUTextureUsage.TEXTURE_BINDING |
-                GPUTextureUsage.COPY_SRC |
-                GPUTextureUsage.COPY_DST |
-                GPUTextureUsage.RENDER_ATTACHMENT,
+                globalThis.GPUTextureUsage.TEXTURE_BINDING |
+                globalThis.GPUTextureUsage.COPY_SRC |
+                globalThis.GPUTextureUsage.COPY_DST |
+                globalThis.GPUTextureUsage.RENDER_ATTACHMENT,
         })
     }
 
