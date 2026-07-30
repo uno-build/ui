@@ -11,13 +11,10 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
     let canvas_texture
     const uses_explicit_present = platform === 'ios'
     const three_context = uses_explicit_present ? Object.create(context) : context
-    const queue = device.queue
-    const submit = queue.submit.bind(queue)
 
     if (uses_explicit_present) {
         three_context.configure = (configuration) => context.configure(configuration)
         three_context.getCurrentTexture = () => canvas_texture
-        Object.defineProperty(device, 'queue', { value: queue })
     }
 
     const three_renderer = new THREE.WebGPURenderer({
@@ -69,18 +66,11 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
         grid.style('backgroundPosition', `${grid_x}px ${grid_x}px`)
         ui.update()
 
-        const command_buffers = []
         if (uses_explicit_present) {
             canvas_texture = context.getCurrentTexture()
-            queue.submit = (buffers) => {
-                command_buffers.push(...buffers)
-            }
         }
 
         three_renderer.render(scene, camera)
-        if (uses_explicit_present) {
-            queue.submit = submit
-        }
 
         const command_encoder = device.createCommandEncoder()
         const texture = uses_explicit_present ? canvas_texture : context.getCurrentTexture()
@@ -89,13 +79,10 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
             command_encoder,
             texture_view,
         })
-        const command_buffer = command_encoder.finish()
+        device.queue.submit([command_encoder.finish()])
 
         if (uses_explicit_present) {
-            submit([...command_buffers, command_buffer])
             context.present()
-        } else {
-            submit([command_buffer])
         }
 
         requestAnimationFrame(frame)
