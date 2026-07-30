@@ -130,25 +130,6 @@ export default class RendererWebGPU extends Renderer {
         this.loadYoga = loadYoga
     }
 
-    public setDevicePixelRatio(device_pixel_ratio) {
-        this.device_pixel_ratio = device_pixel_ratio
-    }
-
-    public setViewport(width, height) {
-        if (this.viewport_width !== width || this.viewport_height !== height) {
-            this.viewport_width = width
-            this.viewport_height = height
-            this.style_context_dirty = true
-        }
-    }
-
-    public setRootSize(root_size) {
-        if (this.root_size !== root_size) {
-            this.root_size = root_size
-            this.style_context_dirty = true
-        }
-    }
-
     public async init() {
         this.engine = await createEngine({ loadYoga: this.loadYoga })
         this.adapter = await globalThis.navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
@@ -215,6 +196,25 @@ export default class RendererWebGPU extends Renderer {
             device: this.device,
             context: this.context,
             format: this.format,
+        }
+    }
+
+    public setDevicePixelRatio(device_pixel_ratio) {
+        this.device_pixel_ratio = device_pixel_ratio
+    }
+
+    public setViewport(width, height) {
+        if (this.viewport_width !== width || this.viewport_height !== height) {
+            this.viewport_width = width
+            this.viewport_height = height
+            this.style_context_dirty = true
+        }
+    }
+
+    public setRootSize(root_size) {
+        if (this.root_size !== root_size) {
+            this.root_size = root_size
+            this.style_context_dirty = true
         }
     }
 
@@ -530,8 +530,8 @@ export default class RendererWebGPU extends Renderer {
         this.updateBuffers(command_buffer_data, panel_data_buffer_data, glyph_data_buffer_data, text_run_buffer_data)
     }
 
-    public draw({ command_encoder, texture_view, load_op = 'clear' } = {}) {
-        const submit = command_encoder === undefined
+    public draw({ command_encoder, texture_view, load_op = 'load', submit = command_encoder === undefined } = {}) {
+        const return_command_encoder = command_encoder === undefined && submit === false
         command_encoder ??= this.device.createCommandEncoder()
         texture_view ??= this.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
@@ -545,24 +545,21 @@ export default class RendererWebGPU extends Renderer {
             ],
         })
 
-        let draws = 0
-        let instances = 0
         if (this.command_count > 0) {
             pass_encoder.setPipeline(this.pipeline)
             pass_encoder.setBindGroup(0, this.bind_group)
             pass_encoder.setVertexBuffer(0, this.position_buffer)
             pass_encoder.setVertexBuffer(1, this.command_buffer)
             pass_encoder.draw(POSITION_VERTEX_COUNT, this.command_count, 0, 0)
-            draws += 1
-            instances += this.command_count
         }
 
         pass_encoder.end()
+
         if (submit) {
             this.device.queue.submit([command_encoder.finish()])
         }
 
-        return { draws, instances }
+        return { command_encoder, texture_view }
     }
 
     private collectRenderData(nodes) {

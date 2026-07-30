@@ -1680,6 +1680,39 @@ test('RendererWebGPU records into an external command encoder without submitting
     expect(submissions).toEqual([])
 })
 
+test('RendererWebGPU returns an internally created command encoder without submitting it', () => {
+    const submissions = []
+    const texture_view = { id: 'texture-view' }
+    const command_encoder = {
+        beginRenderPass() {
+            return {
+                end() {},
+            }
+        },
+        finish() {
+            throw new Error('deferred command encoder must not be finished')
+        },
+    }
+    const renderer = new RendererWebGPU({ canvas: {} })
+    ;(renderer as any).device = {
+        createCommandEncoder() {
+            return command_encoder
+        },
+        queue: {
+            submit(command_buffers) {
+                submissions.push(command_buffers)
+            },
+        },
+    }
+
+    expect(renderer.draw({ texture_view, submit: false })).toEqual({
+        command_encoder,
+        draws: 0,
+        instances: 0,
+    })
+    expect(submissions).toEqual([])
+})
+
 test('text shader shares RGBA sampling and MSDF fill coverage with text effects', () => {
     expect(TEXT_WGSL.match(/textureSampleLevel\(/g)).toHaveLength(1)
     expect(TEXT_WGSL).toContain('return vec3f(median(sample.r, sample.g, sample.b), sample.a, 1.0);')
