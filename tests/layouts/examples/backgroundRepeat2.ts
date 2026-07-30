@@ -3,9 +3,9 @@ import { loadImage } from '../../../src/utils/load-assets'
 export default async function createBackgroundRepeatLayout({ ui }) {
     const size = 120
     const GAP = 16
-    const coin = await loadImage('/assets/coin.png')
-    const repeatx = await loadImage('/assets/repeat-x.png')
-    const repeaty = await loadImage('/assets/repeat-y.png')
+    const coin = await loadImage('/assets/images/coin.png')
+    const repeatx = await loadImage('/assets/images/repeat-x.png')
+    const repeaty = await loadImage('/assets/images/repeat-y.png')
     const BACKGROUND_COLOR = '#f2f5f8'
 
     ui.imageUpload(coin.src, coin)

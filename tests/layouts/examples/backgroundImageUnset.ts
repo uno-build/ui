@@ -3,8 +3,8 @@ import { loadImage } from '../../../src/utils/load-assets'
 export default async function createBackgroundImageUnsetLayout({ ui }) {
     const CARD_SIZE = 160
     const SWITCH_INTERVAL = 1200
-    const asset_texture = await loadImage('/assets/texture.jpg')
-    const asset_coin = await loadImage('/assets/coin.png')
+    const asset_texture = await loadImage('/assets/images/texture.jpg')
+    const asset_coin = await loadImage('/assets/images/coin.png')
     ui.imageUpload(asset_texture.src, asset_texture)
     ui.imageUpload(asset_coin.src, asset_coin)
 

@@ -3,7 +3,7 @@ import { loadImage } from '../../../src/utils/load-assets'
 export default async function createBackgroundRepeatLayout({ ui }) {
     const size = 120
     const GAP = 16
-    const asset_texture = await loadImage('/assets/coin.png')
+    const asset_texture = await loadImage('/assets/images/coin.png')
     const BACKGROUND_COLOR = '#cdd3f8'
     const BACKGROUND_SIZE = '32px 32px'
     const BACKGROUND_POSITIONS = ['0% 0%', '50% 50%', '100% 100%', '25px 25px']

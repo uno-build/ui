@@ -2,7 +2,7 @@ import { loadImage } from '../../../src/utils/load-assets'
 
 export default async function createBackgroundImageLayout({ ui }) {
     const size = 100
-    const asset_texture = await loadImage('/assets/card.png')
+    const asset_texture = await loadImage('/assets/images/card.png')
     const BACKGROUND_COLOR = '#cdd3f8'
     const IMAGE_SIZES = [
         `unset`,

@@ -8,7 +8,7 @@ const ROOT_SIZE_INTERVAL = 1
 export default async function createUnitsRemLayout({ ui, animations_enabled }) {
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
     const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
-    const img = await loadImage('/assets/texture.jpg')
+    const img = await loadImage('/assets/images/texture.jpg')
 
     ui.fontRegister('Poppins-Regular', poppins_image, poppins_json)
     ui.imageUpload(img.src, img)

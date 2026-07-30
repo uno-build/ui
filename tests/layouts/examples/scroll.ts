@@ -13,9 +13,9 @@ export default async function createFontTextScrollLayout({ ui }) {
     const changa_json = await loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json')
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
     const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
-    const image_asset = await loadImage('/assets/texture.jpg')
-    const image_asset2 = await loadImage('/assets/logo.jpg')
-    const image_asset3 = await loadImage('/assets/coin.png')
+    const image_asset = await loadImage('/assets/images/texture.jpg')
+    const image_asset2 = await loadImage('/assets/images/logo.jpg')
+    const image_asset3 = await loadImage('/assets/images/coin.png')
 
     ui.fontRegister('ChangaOne-Regular', changa_image, changa_json)
     ui.fontRegister('Poppins-Regular', poppins_image, poppins_json)
