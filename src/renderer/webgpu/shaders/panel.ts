@@ -47,12 +47,14 @@ fn boxShadowRect(box_shadow: vec4u) -> vec4f {
 }
 
 fn unpackColor(color: u32) -> vec4f {
-    return vec4f(
+    let unpacked = vec4f(
         f32(color & 255u),
         f32((color >> 8u) & 255u),
         f32((color >> 16u) & 255u),
         f32((color >> 24u) & 255u),
     ) / 255.0;
+
+    return vec4f(colorToWorking(unpacked.rgb), unpacked.a);
 }
 
 fn cornerRadius(

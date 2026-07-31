@@ -1,5 +1,4 @@
 import * as THREE from 'three/webgpu'
-import { colorSpaceToWorking, texture, unpremultiplyAlpha } from 'three/tsl'
 import RendererWebGPU from './RendererWebGPU'
 
 export default class RendererThreeSpace extends RendererWebGPU {
@@ -15,16 +14,8 @@ export default class RendererThreeSpace extends RendererWebGPU {
     private ui_texture
     private ui_texture_view
 
-    constructor({
-        canvas,
-        texture_width,
-        texture_height,
-        world_width,
-        world_height,
-        three_options = {},
-        ...options
-    }) {
-        super({ canvas, ...options })
+    constructor({ canvas, texture_width, texture_height, world_width, world_height, three_options = {}, ...options }) {
+        super({ canvas, ...options, srgb: false })
         this.three_canvas = canvas
         this.texture_width = texture_width
         this.texture_height = texture_height
@@ -64,19 +55,21 @@ export default class RendererThreeSpace extends RendererWebGPU {
         three_texture.minFilter = THREE.LinearFilter
         three_texture.magFilter = THREE.LinearFilter
         three_texture.generateMipmaps = false
-        three_texture.colorSpace = THREE.NoColorSpace
+        three_texture.colorSpace = THREE.LinearSRGBColorSpace
+
         three_texture.offset.y = 1
         three_texture.repeat.y = -1
 
-        const texture_node = colorSpaceToWorking(unpremultiplyAlpha(texture(three_texture)), THREE.SRGBColorSpace)
-
         const plane = new THREE.Mesh(
             new THREE.PlaneGeometry(this.world_width, this.world_height),
-            new THREE.MeshBasicNodeMaterial({
-                colorNode: texture_node,
+            new THREE.MeshBasicMaterial({
+                map: three_texture,
                 transparent: true,
                 depthWrite: false,
                 toneMapped: false,
+                blending: THREE.CustomBlending,
+                blendSrc: THREE.OneFactor,
+                blendDst: THREE.OneMinusSrcAlphaFactor,
             }),
         )
 

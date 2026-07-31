@@ -2,6 +2,24 @@ export const SHARED_WGSL = /* wgsl */ `
 const COMMAND_KIND_PANEL = 0u;
 const COMMAND_KIND_TEXT_SHADOW = 2u;
 const COMMAND_KIND_TEXT_STROKE = 3u;
+override SRGB = 1u;
+
+fn srgbToLinear(color: vec3f) -> vec3f {
+    return select(
+        color / 12.92,
+        pow((color + 0.055) / 1.055, vec3f(2.4)),
+        color > vec3f(0.04045),
+    );
+}
+
+fn colorToWorking(color: vec3f) -> vec3f {
+    if (SRGB == 1u) {
+        return color;
+    }
+
+    return srgbToLinear(color);
+}
+
 struct Viewport {
     size: vec2f,
     device_pixel_ratio: f32,

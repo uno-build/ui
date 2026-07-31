@@ -135,7 +135,7 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
             colorAttachments: [
                 {
                     view: texture_view,
-                    clearValue: [0.5, 0.5, 0.5, 1],
+                    clearValue: [1.0, 1.5, 1.5, 1],
                     loadOp: 'clear',
                     storeOp: 'store',
                 },

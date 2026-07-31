@@ -11,7 +11,7 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage
     })
     const ui = new UI({ renderer: ui_renderer, device_pixel_ratio: devicePixelRatio })
     const { three_renderer } = await ui.init()
-    three_renderer.setClearColor(0x3a3a4d, 1)
+    three_renderer.setClearColor(0xffffff, 1)
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(72, 1, 1, 100)
