@@ -18,6 +18,10 @@
         "./renderer/three": {
             "types": "./src/renderer/RendererThree.ts",
             "import": "./src/renderer/RendererThree.ts"
+        },
+        "./renderer/three-space": {
+            "types": "./src/renderer/RendererThreeSpace.ts",
+            "import": "./src/renderer/RendererThreeSpace.ts"
         }
     },
     "dependencies": {
