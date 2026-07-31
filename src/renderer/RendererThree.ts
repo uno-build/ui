@@ -37,6 +37,7 @@ export default class RendererThree extends RendererWebGPU {
     }
 
     public draw({ scene, camera, ...options }) {
+        this.three_renderer.getContext()
         const canvas_texture = this.render_context.getCurrentTexture()
         this.current_texture = canvas_texture
         this.three_renderer.render(scene, camera)
