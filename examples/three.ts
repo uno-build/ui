@@ -18,7 +18,7 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
         antialias: true,
     })
     await three_renderer.init()
-    three_renderer.setClearColor(0x808080, 1)
+    three_renderer.setClearColor(0x3a3a4d, 1)
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(72, 1, 1, 100)
@@ -53,9 +53,9 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
     function frame() {
         const now = Date.now() / 1000
 
-        canvas_texture = context.getCurrentTexture()
         rotation_axis.set(Math.sin(now), Math.cos(now), 0).normalize()
         cube.setRotationFromAxisAngle(rotation_axis, 1)
+        canvas_texture = context.getCurrentTexture()
         three_renderer.render(scene, camera)
 
         grid_x += 1
