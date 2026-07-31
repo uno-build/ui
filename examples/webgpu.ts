@@ -99,6 +99,7 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
         ],
     })
 
+    const has_present = typeof context.present === 'function'
     let grid_x = 0
 
     function frame() {
@@ -156,14 +157,9 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
         grid_x += 1
         grid.style('backgroundPosition', `${grid_x}px ${grid_x}px`)
         ui.update()
-        ui.draw({
-            command_encoder,
-            texture_view,
-        })
+        ui.draw({ command_encoder, texture_view })
 
-        device.queue.submit([command_encoder.finish()])
-
-        if (context.hasOwnProperty('present')) {
+        if (has_present) {
             context.present()
         }
 

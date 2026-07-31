@@ -1,21 +1,14 @@
 import * as THREE from 'three/webgpu'
 
-const BACKGROUND_GAP = 16
-const BACKGROUND_ITEM_SIZE = 120
-
-export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImage, loadJson, loadYoga, platform }) {
+export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImage, loadJson, loadYoga }) {
     const ui_renderer = new RendererWebGPU({ canvas, loadYoga })
-    const ui = new UI({ renderer: ui_renderer, device_pixel_ratio: window.devicePixelRatio })
+    const ui = new UI({ renderer: ui_renderer, device_pixel_ratio: devicePixelRatio })
     const { device, context } = await ui.init()
 
     let canvas_texture
-    const uses_explicit_present = platform === 'ios'
-    const three_context = uses_explicit_present ? Object.create(context) : context
-
-    if (uses_explicit_present) {
-        three_context.configure = (configuration) => context.configure(configuration)
-        three_context.getCurrentTexture = () => canvas_texture
-    }
+    const three_context = Object.create(context)
+    three_context.configure = (configuration) => context.configure(configuration)
+    three_context.getCurrentTexture = () => canvas_texture
 
     const three_renderer = new THREE.WebGPURenderer({
         canvas,
@@ -26,7 +19,6 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
     })
     await three_renderer.init()
     three_renderer.setClearColor(0x808080, 1)
-    three_renderer.outputColorSpace = THREE.LinearSRGBColorSpace
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(72, 1, 1, 100)
@@ -45,7 +37,7 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
     const cube = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true }))
     scene.add(cube)
 
-    const { grid } = await createBackgroundRepeatLayout({ ui, loadImage, loadJson })
+    const { grid } = await createLayout({ ui, loadImage, loadJson })
     syncCanvasSize({ canvas, ui, three_renderer, camera })
     ui.update()
 
@@ -54,34 +46,24 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
         ui.update()
     })
 
+    const has_present = typeof context.present === 'function'
     const rotation_axis = new THREE.Vector3()
     let grid_x = 0
 
     function frame() {
         const now = Date.now() / 1000
+
+        canvas_texture = context.getCurrentTexture()
         rotation_axis.set(Math.sin(now), Math.cos(now), 0).normalize()
         cube.setRotationFromAxisAngle(rotation_axis, 1)
+        three_renderer.render(scene, camera)
 
         grid_x += 1
         grid.style('backgroundPosition', `${grid_x}px ${grid_x}px`)
         ui.update()
+        ui.draw()
 
-        if (uses_explicit_present) {
-            canvas_texture = context.getCurrentTexture()
-        }
-
-        three_renderer.render(scene, camera)
-
-        const command_encoder = device.createCommandEncoder()
-        const texture = uses_explicit_present ? canvas_texture : context.getCurrentTexture()
-        const texture_view = texture.createView()
-        ui.draw({
-            command_encoder,
-            texture_view,
-        })
-        device.queue.submit([command_encoder.finish()])
-
-        if (uses_explicit_present) {
+        if (has_present) {
             context.present()
         }
 
@@ -105,7 +87,10 @@ function syncCanvasSize({ canvas, ui, three_renderer, camera }) {
     ui.setDevicePixelRatio(device_pixel_ratio)
 }
 
-async function createBackgroundRepeatLayout({ ui, loadImage, loadJson }) {
+const BACKGROUND_GAP = 16
+const BACKGROUND_ITEM_SIZE = 120
+
+async function createLayout({ ui, loadImage, loadJson }) {
     const coin = await loadImage('assets/images/coin.png')
     const repeat_x = await loadImage('assets/images/repeat-x.png')
     const repeat_y = await loadImage('assets/images/repeat-y.png')

@@ -530,8 +530,7 @@ export default class RendererWebGPU extends Renderer {
         this.updateBuffers(command_buffer_data, panel_data_buffer_data, glyph_data_buffer_data, text_run_buffer_data)
     }
 
-    public draw({ command_encoder, texture_view, load_op = 'load', submit = command_encoder === undefined } = {}) {
-        const return_command_encoder = command_encoder === undefined && submit === false
+    public draw({ submit = true, command_encoder, texture_view, load_op = 'load' } = {}) {
         command_encoder ??= this.device.createCommandEncoder()
         texture_view ??= this.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
