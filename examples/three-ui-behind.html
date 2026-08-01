@@ -39,9 +39,12 @@
             async function main() {
                 const session = await RendererSession.create({ canvas })
                 const { device, context } = session
-                const renderer = new RendererOverlay({ session, loadYoga })
-                const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
-                await ui.init()
+                const background_renderer = new RendererOverlay({ session, loadYoga })
+                const background_ui = new UI({
+                    renderer: background_renderer,
+                    device_pixel_ratio: window.devicePixelRatio,
+                })
+                await background_ui.init()
                 const foreground_renderer = new RendererOverlay({
                     session,
                     loadYoga,
@@ -84,16 +87,16 @@
                 const cube = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true }))
                 scene.add(cube)
 
-                const { grid, font_image, font_json } = await createBackgroundRepeatLayout({ ui })
+                const { grid, font_image, font_json } = await createBackgroundRepeatLayout({ ui: background_ui })
                 foreground_ui.fontRegister('Supercell-Magic', font_image, font_json)
                 createForegroundLayout({ ui: foreground_ui })
-                syncCanvasSize({ canvas, ui, foreground_ui, three_renderer, camera })
-                ui.update()
+                syncCanvasSize({ canvas, background_ui, foreground_ui, three_renderer, camera })
+                background_ui.update()
                 foreground_ui.update()
 
                 window.addEventListener('resize', () => {
-                    syncCanvasSize({ canvas, ui, foreground_ui, three_renderer, camera })
-                    ui.update()
+                    syncCanvasSize({ canvas, background_ui, foreground_ui, three_renderer, camera })
+                    background_ui.update()
                     foreground_ui.update()
                 })
 
@@ -107,13 +110,9 @@
 
                     grid_x += 1
                     grid.style('backgroundPosition', `${grid_x}px ${grid_x}px`)
-                    ui.update()
+                    background_ui.update()
 
-                    const texture_view = context.getCurrentTexture().createView()
-                    ui.draw({
-                        texture_view,
-                        load_op: 'clear',
-                    })
+                    background_ui.draw({ load_op: 'clear' })
                     three_renderer.render(scene, camera)
                     foreground_ui.draw()
                     session.endFrame()
@@ -124,7 +123,7 @@
                 requestAnimationFrame(frame)
             }
 
-            function syncCanvasSize({ canvas, ui, foreground_ui, three_renderer, camera }) {
+            function syncCanvasSize({ canvas, background_ui, foreground_ui, three_renderer, camera }) {
                 const device_pixel_ratio = window.devicePixelRatio
                 const width = canvas.clientWidth
                 const height = canvas.clientHeight
@@ -134,8 +133,8 @@
                 three_renderer.getContext()
                 camera.aspect = width / height
                 camera.updateProjectionMatrix()
-                ui.setViewport(width, height)
-                ui.setDevicePixelRatio(device_pixel_ratio)
+                background_ui.setViewport(width, height)
+                background_ui.setDevicePixelRatio(device_pixel_ratio)
                 foreground_ui.setViewport(width, height)
                 foreground_ui.setDevicePixelRatio(device_pixel_ratio)
             }
@@ -159,9 +158,9 @@
             }
 
             async function createBackgroundRepeatLayout({ ui }) {
-                const coin = await loadImage(new URL('./assets/coin.png', import.meta.url).href)
-                const repeat_x = await loadImage(new URL('./assets/repeat-x.png', import.meta.url).href)
-                const repeat_y = await loadImage(new URL('./assets/repeat-y.png', import.meta.url).href)
+                const coin = await loadImage(new URL('./assets/images/coin.png', import.meta.url).href)
+                const repeat_x = await loadImage(new URL('./assets/images/repeat-x.png', import.meta.url).href)
+                const repeat_y = await loadImage(new URL('./assets/images/repeat-y.png', import.meta.url).href)
                 const font_image = await loadImage(
                     new URL('./assets/fonts/Supercell-Magic.mtsdf.png', import.meta.url).href,
                 )
