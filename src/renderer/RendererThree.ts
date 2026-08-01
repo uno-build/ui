@@ -1,13 +1,11 @@
 import RendererWebGPU from './RendererWebGPU'
 
 export default class RendererThree extends RendererWebGPU {
-    private three_canvas
     private render_context
     private current_texture
 
     constructor({ canvas, ...options }) {
         super({ canvas, ...options })
-        this.three_canvas = canvas
     }
 
     public async init() {
@@ -15,18 +13,18 @@ export default class RendererThree extends RendererWebGPU {
         this.render_context = output.context
 
         const context = Object.create(this.render_context)
-        context.configure = (configuration) => this.render_context.configure(configuration)
-        context.getCurrentTexture = () => this.current_texture
+        context.configure = (configuration) => {
+            this.render_context.configure(configuration)
+        }
+        context.getCurrentTexture = () => {
+            this.current_texture ??= this.render_context.getCurrentTexture()
+            return this.current_texture
+        }
 
         return {
             ...output,
             context,
         }
-    }
-
-    public prepareThreeRender(three_renderer) {
-        three_renderer.getContext()
-        this.current_texture = this.render_context.getCurrentTexture()
     }
 
     public draw(options = {}) {
@@ -36,8 +34,12 @@ export default class RendererThree extends RendererWebGPU {
             texture_view,
         })
 
-        if (options.submit !== false && typeof this.render_context.present === 'function') {
-            this.render_context.present()
+        if (options.submit !== false) {
+            if (typeof this.render_context.present === 'function') {
+                this.render_context.present()
+            }
+
+            this.current_texture = undefined
         }
 
         return output

@@ -12,7 +12,7 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage
         alpha: true,
         antialias: true,
     })
-    three_renderer.setClearColor(0x464455, 1)
+    three_renderer.setClearColor(0x123456, 1)
     await three_renderer.init()
 
     // Scene logic
@@ -43,19 +43,18 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage
     })
 
     const rotation_axis = new THREE.Vector3()
-    let grid_x = 0
+    let bg_position = 0
 
     function frame() {
+        // Three
         const now = Date.now() / 1000
-
         rotation_axis.set(Math.sin(now), Math.cos(now), 0).normalize()
         cube.setRotationFromAxisAngle(rotation_axis, 1)
-
-        ui_renderer.prepareThreeRender(three_renderer)
         three_renderer.render(scene, camera)
 
-        grid_x += 1
-        grid.style('backgroundPosition', `${grid_x}px ${grid_x}px`)
+        // UI
+        bg_position += 1
+        grid.style('backgroundPosition', `${bg_position}px ${bg_position}px`)
         ui.update()
         ui.draw({ scene, camera })
 
