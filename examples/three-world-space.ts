@@ -11,20 +11,25 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThreeWorldSpace,
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
     const world_width = WORLD_HEIGHT * (device_width / device_height)
 
-    const renderer = new RendererThreeWorldSpace({
+    const ui_renderer = new RendererThreeWorldSpace({
         canvas,
         loadYoga,
         texture_width: Math.round(device_width * device_pixel_ratio),
         texture_height: Math.round(device_height * device_pixel_ratio),
         world_width,
         world_height: WORLD_HEIGHT,
-        three_options: {
-            alpha: true,
-            antialias: true,
-        },
     })
-    const ui = new UI({ renderer, device_pixel_ratio })
-    const { three_renderer, plane } = await ui.init()
+    const ui = new UI({ renderer: ui_renderer, device_pixel_ratio })
+    const { context, device, plane } = await ui.init()
+
+    const three_renderer = new THREE.WebGPURenderer({
+        canvas,
+        context,
+        device,
+        alpha: true,
+        antialias: true,
+    })
+    await three_renderer.init()
 
     const scene = new THREE.Scene()
     scene.background = new THREE.Color(0x111827)
@@ -56,14 +61,22 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThreeWorldSpace,
     syncCanvasSize({ canvas, three_renderer, camera })
     onCanvasEvent('resize', () => syncCanvasSize({ canvas, three_renderer, camera }))
 
-    let grid_x = 0
+    const has_present = typeof context.present === 'function'
+    let bg_position = 0
 
     function renderFrame() {
-        grid_x += 1
-        grid.style('backgroundPosition', `${grid_x}px ${grid_x}px`)
+        bg_position += 1
+        grid.style('backgroundPosition', `${bg_position}px ${bg_position}px`)
         ui.update()
+        ui.draw()
+
         controls.update()
-        ui.draw({ scene, camera })
+        three_renderer.render(scene, camera)
+
+        if (has_present) {
+            context.present()
+        }
+
         requestAnimationFrame(renderFrame)
     }
 
@@ -151,7 +164,7 @@ async function createLayout({ ui, loadImage, loadJson }) {
     title.style('color', '#ffffff')
     title.style('textStroke', '6px #000000')
     title.style('textShadow', '0px 4px 0px #000000')
-    title.text('Hello Three.js!')
+    title.text('Hello Three.js World Space!')
     grid.add(title)
 
     return { grid }
