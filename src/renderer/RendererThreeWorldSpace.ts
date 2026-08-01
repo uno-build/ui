@@ -1,7 +1,7 @@
 import * as THREE from 'three/webgpu'
 import RendererWebGPU from './RendererWebGPU'
 
-export default class RendererThreeSpace extends RendererWebGPU {
+export default class RendererThreeWorldSpace extends RendererWebGPU {
     private three_canvas
     private render_context
     private current_texture

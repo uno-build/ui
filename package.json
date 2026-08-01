@@ -7,21 +7,21 @@
             "types": "./src/index.ts",
             "import": "./src/index.ts"
         },
-        "./renderer/dom": {
+        "./RendererDom": {
             "types": "./src/renderer/RendererDom.ts",
             "import": "./src/renderer/RendererDom.ts"
         },
-        "./renderer/webgpu": {
+        "./RendererWebGPU": {
             "types": "./src/renderer/RendererWebGPU.ts",
             "import": "./src/renderer/RendererWebGPU.ts"
         },
-        "./renderer/three": {
+        "./RendererThree": {
             "types": "./src/renderer/RendererThree.ts",
             "import": "./src/renderer/RendererThree.ts"
         },
-        "./renderer/three-space": {
-            "types": "./src/renderer/RendererThreeSpace.ts",
-            "import": "./src/renderer/RendererThreeSpace.ts"
+        "./RendererThreeWorldSpace": {
+            "types": "./src/renderer/RendererThreeWorldSpace.ts",
+            "import": "./src/renderer/RendererThreeWorldSpace.ts"
         }
     },
     "dependencies": {

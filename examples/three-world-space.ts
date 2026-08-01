@@ -5,13 +5,13 @@ const WORLD_HEIGHT = 2
 const BACKGROUND_GAP = 16
 const BACKGROUND_ITEM_SIZE = 120
 
-export async function main({ canvas, onCanvasEvent, UI, RendererThreeSpace, loadImage, loadJson, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, UI, RendererThreeWorldSpace, loadImage, loadJson, loadYoga }) {
     const device_pixel_ratio = window.devicePixelRatio
     const device_width = Math.max(canvas.clientWidth, canvas.clientHeight)
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
     const world_width = WORLD_HEIGHT * (device_width / device_height)
 
-    const renderer = new RendererThreeSpace({
+    const renderer = new RendererThreeWorldSpace({
         canvas,
         loadYoga,
         texture_width: Math.round(device_width * device_pixel_ratio),

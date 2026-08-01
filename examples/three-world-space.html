@@ -23,14 +23,14 @@
         <canvas></canvas>
         <script type="module">
             import UI from '../src/UI'
-            import RendererThreeSpace from '../src/renderer/RendererThreeSpace'
+            import RendererThreeWorldSpace from '../src/renderer/RendererThreeWorldSpace'
             import { loadImage, loadJson } from '../src/utils/load-assets'
             import { loadYoga } from 'yoga-layout/load'
-            import { main } from './three-space.ts'
+            import { main } from './three-world-space.ts'
 
             const canvas = document.querySelector('canvas')
             const onCanvasEvent = window.addEventListener
-            main({ canvas, onCanvasEvent, UI, RendererThreeSpace, loadImage, loadJson, loadYoga }).catch(console.error)
+            main({ canvas, onCanvasEvent, UI, RendererThreeWorldSpace, loadImage, loadJson, loadYoga }).catch(console.error)
         </script>
     </body>
 </html>

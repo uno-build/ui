@@ -1,24 +1,17 @@
 import * as THREE from 'three/webgpu'
 
-export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImage, loadJson, loadYoga }) {
-    const ui_renderer = new RendererWebGPU({ canvas, loadYoga })
-    const ui = new UI({ renderer: ui_renderer, device_pixel_ratio: devicePixelRatio })
-    const { device, context } = await ui.init()
-
-    let canvas_texture
-    const three_context = Object.create(context)
-    three_context.configure = (configuration) => context.configure(configuration)
-    three_context.getCurrentTexture = () => canvas_texture
-
-    const three_renderer = new THREE.WebGPURenderer({
+export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage, loadJson, loadYoga }) {
+    const ui_renderer = new RendererThree({
         canvas,
-        context: three_context,
-        device,
-        alpha: true,
-        antialias: true,
+        loadYoga,
+        three_options: {
+            alpha: true,
+            antialias: true,
+        },
     })
-    await three_renderer.init()
-    three_renderer.setClearColor(0x3a3a4d, 1)
+    const ui = new UI({ renderer: ui_renderer, device_pixel_ratio: devicePixelRatio })
+    const { three_renderer } = await ui.init()
+    three_renderer.setClearColor(0xffffff, 1)
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(72, 1, 1, 100)
@@ -46,7 +39,6 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
         ui.update()
     })
 
-    const has_present = typeof context.present === 'function'
     const rotation_axis = new THREE.Vector3()
     let grid_x = 0
 
@@ -55,17 +47,11 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
 
         rotation_axis.set(Math.sin(now), Math.cos(now), 0).normalize()
         cube.setRotationFromAxisAngle(rotation_axis, 1)
-        canvas_texture = context.getCurrentTexture()
-        three_renderer.render(scene, camera)
 
         grid_x += 1
         grid.style('backgroundPosition', `${grid_x}px ${grid_x}px`)
         ui.update()
-        ui.draw()
-
-        if (has_present) {
-            context.present()
-        }
+        ui.draw({ scene, camera })
 
         requestAnimationFrame(frame)
     }
@@ -80,7 +66,6 @@ function syncCanvasSize({ canvas, ui, three_renderer, camera }) {
 
     three_renderer.setPixelRatio(device_pixel_ratio)
     three_renderer.setSize(width, height, false)
-    three_renderer.getContext()
     camera.aspect = width / height
     camera.updateProjectionMatrix()
     ui.setViewport(width, height)

@@ -139,6 +139,7 @@ export default class RendererWebGPU extends Renderer {
         this.device = await this.adapter.requestDevice({
             requiredLimits: {
                 maxStorageBuffersInVertexStage: 2,
+                // maxTextureDimension2D: this.adapter.limits.maxTextureDimension2D,
             },
         })
         this.context = this.canvas.getContext('webgpu')
