@@ -25,9 +25,10 @@
             import UI from '../src/UI'
             import RendererSession from '../src/renderer/RendererSession'
             import RendererOverlay from '../src/renderer/RendererOverlay'
+            import RendererThreeWorldSpace from '../src/renderer/RendererThreeWorldSpace'
             import { loadImage, loadJson } from '../src/utils/load-assets'
             import { loadYoga } from 'yoga-layout/load'
-            import { main } from './three.ts'
+            import { main } from './three-world-space-dual.ts'
 
             const canvas = document.querySelector('canvas')
             const onCanvasEvent = window.addEventListener
@@ -37,6 +38,7 @@
                 UI,
                 RendererSession,
                 RendererOverlay,
+                RendererThreeWorldSpace,
                 loadImage,
                 loadJson,
                 loadYoga,

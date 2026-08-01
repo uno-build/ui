@@ -8,7 +8,7 @@ test.use({
     },
 })
 
-test('RendererWebGPU boxShadow benchmark', async ({ page }) => {
+test('RendererOverlay boxShadow benchmark', async ({ page }) => {
     test.skip(process.env.RUN_BENCHMARKS !== '1', 'Set RUN_BENCHMARKS=1 to run benchmarks')
     test.setTimeout(45_000)
     await page.goto(`${benchmarkUrl}?nodes=400&frames=60&warmup=10`)

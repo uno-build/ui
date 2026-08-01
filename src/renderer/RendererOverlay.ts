@@ -24,7 +24,6 @@ import {
     updateScrollMetrics,
 } from './utils/render-metrics'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
-import { createUIWGSL } from './webgpu/shaders'
 import { ImageManager } from './webgpu/ImageManager'
 import { FontManager } from './webgpu/FontManager'
 import {
@@ -32,8 +31,6 @@ import {
     UINT32_SIZE,
     VIEWPORT_SIZE,
     POSITION_VERTEX_COUNT,
-    POSITION_VERTEX_SIZE,
-    POSITION_VERTICES,
     COMMAND_KIND_PANEL,
     COMMAND_KIND_GLYPH,
     COMMAND_KIND_TEXT_SHADOW,
@@ -54,8 +51,8 @@ const FONT_ATLAS_SIZE = 2048
 const FONT_COLOR = [0, 0, 0, 255]
 const TEXT_MEASURE_STYLE_NAMES = [STYLE.FONTSIZE.name, STYLE.LINEHEIGHT.name, STYLE.LETTERSPACING.name]
 
-export default class RendererWebGPU extends Renderer {
-    private canvas
+export default class RendererOverlay extends Renderer {
+    private session
     private image_atlas_size
     private font_atlas_size
     private image_min_filter
@@ -68,10 +65,7 @@ export default class RendererWebGPU extends Renderer {
     private style_context_dirty = false
     private scrollbar_size
     private engine!: LayoutEngine
-    private adapter
     private device
-    private context
-    private format
     private pipeline
     private bind_group
     private image_sampler
@@ -113,7 +107,7 @@ export default class RendererWebGPU extends Renderer {
     private computeStyle = (style) => computeStyleValue(style, this)
 
     constructor({
-        canvas,
+        session,
         image_atlas_size = IMAGE_ATLAS_SIZE,
         font_atlas_size = FONT_ATLAS_SIZE,
         image_min_filter = 'linear',
@@ -123,7 +117,7 @@ export default class RendererWebGPU extends Renderer {
         loadYoga,
     }) {
         super()
-        this.canvas = canvas
+        this.session = session
         this.image_atlas_size = image_atlas_size
         this.font_atlas_size = font_atlas_size
         this.image_min_filter = image_min_filter
@@ -135,24 +129,9 @@ export default class RendererWebGPU extends Renderer {
 
     public async init() {
         this.engine = await createEngine({ loadYoga: this.loadYoga })
-        this.adapter = await globalThis.navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
-        this.device = await this.adapter.requestDevice({
-            requiredLimits: {
-                maxStorageBuffersInVertexStage: 2,
-                // maxTextureDimension2D: this.adapter.limits.maxTextureDimension2D,
-            },
-        })
-        this.context = this.canvas.getContext('webgpu')
-        this.format = globalThis.navigator.gpu.getPreferredCanvasFormat()
-        this.context.configure({
-            device: this.device,
-            format: this.format,
-            alphaMode: 'premultiplied',
-        })
-        this.position_buffer = this.device.createBuffer({
-            size: POSITION_VERTICES.byteLength,
-            usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
-        })
+        const output = await this.session.init()
+        this.device = output.device
+        this.position_buffer = this.session.position_buffer
         this.viewport_buffer = this.device.createBuffer({
             size: VIEWPORT_SIZE,
             usage: globalThis.GPUBufferUsage.UNIFORM | globalThis.GPUBufferUsage.COPY_DST,
@@ -177,13 +156,10 @@ export default class RendererWebGPU extends Renderer {
             usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
         })
         this.text_run_buffer_size = TEXT_RUN_SIZE
-        this.device.queue.writeBuffer(this.position_buffer, 0, POSITION_VERTICES)
-        this.pipeline = this.createPipeline()
-        this.image_sampler = this.device.createSampler({
-            minFilter: this.image_min_filter,
-            magFilter: this.image_mag_filter,
-            addressModeU: 'clamp-to-edge',
-            addressModeV: 'clamp-to-edge',
+        this.pipeline = this.session.getPipeline({ srgb: this.srgb })
+        this.image_sampler = this.session.getImageSampler({
+            min_filter: this.image_min_filter,
+            mag_filter: this.image_mag_filter,
         })
         this.image_manager = new ImageManager({
             device: this.device,
@@ -196,12 +172,7 @@ export default class RendererWebGPU extends Renderer {
         })
         this.bind_group = this.createBindGroup()
 
-        return {
-            adapter: this.adapter,
-            device: this.device,
-            context: this.context,
-            format: this.format,
-        }
+        return output
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
@@ -221,70 +192,6 @@ export default class RendererWebGPU extends Renderer {
             this.root_size = root_size
             this.style_context_dirty = true
         }
-    }
-
-    private createPipeline() {
-        const shader_module = this.device.createShaderModule({
-            code: createUIWGSL(),
-        })
-
-        return this.device.createRenderPipeline({
-            layout: 'auto',
-            vertex: {
-                module: shader_module,
-                entryPoint: 'vertexMain',
-                buffers: [
-                    {
-                        arrayStride: POSITION_VERTEX_SIZE,
-                        attributes: [
-                            {
-                                shaderLocation: 0,
-                                offset: 0,
-                                format: 'float32x2',
-                            },
-                        ],
-                    },
-                    {
-                        arrayStride: COMMAND_SIZE,
-                        stepMode: 'instance',
-                        attributes: [
-                            {
-                                shaderLocation: COMMAND.KIND_DATA.LOCATION,
-                                offset: COMMAND.KIND_DATA.OFFSET,
-                                format: COMMAND.KIND_DATA.FORMAT,
-                            },
-                        ],
-                    },
-                ],
-            },
-            fragment: {
-                module: shader_module,
-                entryPoint: 'fragmentMain',
-                constants: {
-                    SRGB: this.srgb ? 1 : 0,
-                },
-                targets: [
-                    {
-                        format: this.format,
-                        blend: {
-                            color: {
-                                srcFactor: 'src-alpha',
-                                dstFactor: 'one-minus-src-alpha',
-                                operation: 'add',
-                            },
-                            alpha: {
-                                srcFactor: 'one',
-                                dstFactor: 'one-minus-src-alpha',
-                                operation: 'add',
-                            },
-                        },
-                    },
-                ],
-            },
-            primitive: {
-                topology: 'triangle-list',
-            },
-        })
     }
 
     private createBindGroup() {
@@ -540,7 +447,7 @@ export default class RendererWebGPU extends Renderer {
 
     public draw({ submit = true, command_encoder, texture_view, load_op = 'load' } = {}) {
         command_encoder ??= this.device.createCommandEncoder()
-        texture_view ??= this.context.getCurrentTexture().createView()
+        texture_view ??= this.session.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
             colorAttachments: [
                 {

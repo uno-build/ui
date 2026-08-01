@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
+import RendererOverlay from '../src/renderer/RendererOverlay.ts'
 import Segmenter from '../src/renderer/pretext/segmenter.ts'
 import { MEASURE_MODE } from '../src/layouter/types.ts'
 import {
@@ -42,7 +42,7 @@ import { TEXT_WGSL } from '../src/renderer/webgpu/shaders/text.ts'
 
 const FONT_ATLAS_SIZE = 2048
 
-test('RendererWebGPU accumulates opacity into panel instance data', () => {
+test('RendererOverlay accumulates opacity into panel instance data', () => {
     const root = createNode({ opacity: 0.5 })
     const parent = createNode({ parent: root, opacity: 0.5 })
     const child = createNode({ parent, opacity: 0.8 })
@@ -55,7 +55,7 @@ test('RendererWebGPU accumulates opacity into panel instance data', () => {
     expect(floats[opacity_float_offset]).toBeCloseTo(0.2)
 })
 
-test('RendererWebGPU skips fully transparent panel instance data', () => {
+test('RendererOverlay skips fully transparent panel instance data', () => {
     const root = createNode({ opacity: 0 })
     const child = createNode({ parent: root })
     const renderer = createRenderer()
@@ -64,7 +64,7 @@ test('RendererWebGPU skips fully transparent panel instance data', () => {
     expect(nodes_buffer_data.bytes_offset).toBe(0)
 })
 
-test('RendererWebGPU writes layout and clipping bounds into panel instance data', () => {
+test('RendererOverlay writes layout and clipping bounds into panel instance data', () => {
     const root = createNode()
     const parent = createNode({
         parent: root,
@@ -86,7 +86,7 @@ test('RendererWebGPU writes layout and clipping bounds into panel instance data'
     expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([3, 7, 7, 2])
 })
 
-test('RendererWebGPU clips direct children to root overflow', () => {
+test('RendererOverlay clips direct children to root overflow', () => {
     const root = createNode({
         layout: { x: 0, y: 0, width: 5, height: 4 },
         overflow: OVERFLOW.hidden,
@@ -103,7 +103,7 @@ test('RendererWebGPU clips direct children to root overflow', () => {
     expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([0, 5, 4, 0])
 })
 
-test('RendererWebGPU clips panel geometry independently by axis', () => {
+test('RendererOverlay clips panel geometry independently by axis', () => {
     const root = createNode()
     const horizontal_parent = createNode({
         parent: root,
@@ -141,7 +141,7 @@ test('RendererWebGPU clips panel geometry independently by axis', () => {
     expect(vertical_clipping).toEqual([3, Number.POSITIVE_INFINITY, 7, Number.NEGATIVE_INFINITY])
 })
 
-test('RendererWebGPU scrolls panel geometry inside the ancestor padding box', () => {
+test('RendererOverlay scrolls panel geometry inside the ancestor padding box', () => {
     const root = createNode()
     const parent = createNode({
         parent: root,
@@ -170,7 +170,7 @@ test('RendererWebGPU scrolls panel geometry inside the ancestor padding box', ()
     expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([7, 10, 11, 4])
 })
 
-test('RendererWebGPU accumulates nested scroll and moves nested clipping with its outer container', () => {
+test('RendererOverlay accumulates nested scroll and moves nested clipping with its outer container', () => {
     const root = createNode()
     const outer = createNode({
         parent: root,
@@ -198,7 +198,7 @@ test('RendererWebGPU accumulates nested scroll and moves nested clipping with it
     expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([-10, 50, 50, -10])
 })
 
-test('RendererWebGPU calculates scroll metrics from descendant layout overflow', () => {
+test('RendererOverlay calculates scroll metrics from descendant layout overflow', () => {
     const root = createNode({
         layout: { x: 100, y: 50, width: 120, height: 100 },
         computed_border: {
@@ -237,7 +237,7 @@ test('RendererWebGPU calculates scroll metrics from descendant layout overflow',
     expect(root.scroll_top).toBe(55)
 })
 
-test('RendererWebGPU includes trailing padding after direct child overflow', () => {
+test('RendererOverlay includes trailing padding after direct child overflow', () => {
     const root = createNode({
         layout: { x: 0, y: 0, width: 100, height: 100 },
         computed_padding: {
@@ -259,7 +259,7 @@ test('RendererWebGPU includes trailing padding after direct child overflow', () 
     expect(root.scroll_height).toBe(143)
 })
 
-test('RendererWebGPU includes overflowing text content in scroll metrics', () => {
+test('RendererOverlay includes overflowing text content in scroll metrics', () => {
     const root = createNode({ layout: { x: 0, y: 0, width: 24, height: 50 } })
     const text = createNode({
         parent: root,
@@ -298,7 +298,7 @@ test('RendererWebGPU includes overflowing text content in scroll metrics', () =>
     expect(root.scroll_height).toBe(72)
 })
 
-test('RendererWebGPU does not propagate overflow through a clipping descendant', () => {
+test('RendererOverlay does not propagate overflow through a clipping descendant', () => {
     const root = createNode({ layout: { x: 0, y: 0, width: 100, height: 100 } })
     const child = createNode({
         parent: root,
@@ -322,7 +322,7 @@ test('RendererWebGPU does not propagate overflow through a clipping descendant',
     expect(root.scroll_height).toBe(100)
 })
 
-test('RendererWebGPU propagates descendant overflow independently by axis', () => {
+test('RendererOverlay propagates descendant overflow independently by axis', () => {
     const horizontal_root = createNode({ layout: { x: 0, y: 0, width: 100, height: 100 } })
     const horizontal_child = createNode({
         parent: horizontal_root,
@@ -367,7 +367,7 @@ test('RendererWebGPU propagates descendant overflow independently by axis', () =
     expect(vertical_root.scroll_height).toBe(100)
 })
 
-test('RendererWebGPU reserves native scrollbar space independently by axis', () => {
+test('RendererOverlay reserves native scrollbar space independently by axis', () => {
     const applied_styles = []
     const renderer = createRenderer()
     ;(renderer as any).engine = {
@@ -426,7 +426,7 @@ test('RendererWebGPU reserves native scrollbar space independently by axis', () 
     expect(getAppliedStyle(applied_styles, 'borderBottomWidth').parsed.value).toBe(17)
 })
 
-test('RendererWebGPU maps the main-axis overflow to Yoga when flexDirection changes', () => {
+test('RendererOverlay maps the main-axis overflow to Yoga when flexDirection changes', () => {
     const applied_styles = []
     const renderer = createRenderer()
     ;(renderer as any).engine = {
@@ -467,7 +467,7 @@ test('RendererWebGPU maps the main-axis overflow to Yoga when flexDirection chan
     }
 })
 
-test('RendererWebGPU writes border drawing data into panel instance data', () => {
+test('RendererOverlay writes border drawing data into panel instance data', () => {
     const node = createNode({
         layout: { x: 0, y: 0, width: 20, height: 10 },
         styles: {
@@ -534,7 +534,7 @@ test('RendererWebGPU writes border drawing data into panel instance data', () =>
     ).toEqual([13, 14, 15, 16])
 })
 
-test('RendererWebGPU writes background image data into panel instance data', () => {
+test('RendererOverlay writes background image data into panel instance data', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -571,7 +571,7 @@ test('RendererWebGPU writes background image data into panel instance data', () 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 40, 20])
 })
 
-test('RendererWebGPU writes background repeat mode into panel instance data', () => {
+test('RendererOverlay writes background repeat mode into panel instance data', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -633,7 +633,7 @@ test('RendererWebGPU writes background repeat mode into panel instance data', ()
     ]).toEqual([2, 3, 4])
 })
 
-test('RendererWebGPU writes background image size and position into panel instance data', () => {
+test('RendererOverlay writes background image size and position into panel instance data', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -673,7 +673,7 @@ test('RendererWebGPU writes background image size and position into panel instan
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([4, 6, 100, 50])
 })
 
-test('RendererWebGPU resolves rem background image size and position with the current root size', () => {
+test('RendererOverlay resolves rem background image size and position with the current root size', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -715,7 +715,7 @@ test('RendererWebGPU resolves rem background image size and position with the cu
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([20, 10, 100, 50])
 })
 
-test('RendererWebGPU resolves viewport background image size and position with the current viewport size', () => {
+test('RendererOverlay resolves viewport background image size and position with the current viewport size', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -757,7 +757,7 @@ test('RendererWebGPU resolves viewport background image size and position with t
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([20, 10, 100, 50])
 })
 
-test('RendererWebGPU resolves percentage background image position against available space', () => {
+test('RendererOverlay resolves percentage background image position against available space', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -794,7 +794,7 @@ test('RendererWebGPU resolves percentage background image position against avail
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([30, 60, 40, 20])
 })
 
-test('RendererWebGPU resolves percentage background image position after background size', () => {
+test('RendererOverlay resolves percentage background image position after background size', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -839,7 +839,7 @@ test('RendererWebGPU resolves percentage background image position after backgro
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([50, 45, 100, 30])
 })
 
-test('RendererWebGPU resolves percentage background image size against node layout', () => {
+test('RendererOverlay resolves percentage background image size against node layout', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -876,7 +876,7 @@ test('RendererWebGPU resolves percentage background image size against node layo
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 100, 30])
 })
 
-test('RendererWebGPU resolves percentage background image size against bordered background area', () => {
+test('RendererOverlay resolves percentage background image size against bordered background area', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -925,7 +925,7 @@ test('RendererWebGPU resolves percentage background image size against bordered 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 85, 25])
 })
 
-test('RendererWebGPU resolves cover background image size against node layout', () => {
+test('RendererOverlay resolves cover background image size against node layout', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -962,7 +962,7 @@ test('RendererWebGPU resolves cover background image size against node layout', 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 160, 80])
 })
 
-test('RendererWebGPU resolves 50 percent cover background image position', () => {
+test('RendererOverlay resolves 50 percent cover background image position', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -1007,7 +1007,7 @@ test('RendererWebGPU resolves 50 percent cover background image position', () =>
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([-30, 0, 160, 80])
 })
 
-test('RendererWebGPU resolves contain background image size against node layout', () => {
+test('RendererOverlay resolves contain background image size against node layout', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -1044,7 +1044,7 @@ test('RendererWebGPU resolves contain background image size against node layout'
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 100, 50])
 })
 
-test('RendererWebGPU treats unset background image size as natural image size', () => {
+test('RendererOverlay treats unset background image size as natural image size', () => {
     const image = createImage('coin.png', 40, 20)
     const image_manager = createImageManager({
         resources: {
@@ -1080,7 +1080,7 @@ test('RendererWebGPU treats unset background image size as natural image size', 
     expect(Array.from(floats.slice(image_rect_float_offset, image_rect_float_offset + 4))).toEqual([0, 0, 40, 20])
 })
 
-test('RendererWebGPU treats unset background images as solid panels', () => {
+test('RendererOverlay treats unset background images as solid panels', () => {
     const renderer = createRenderer()
     const node = createNode({
         styles: {
@@ -1098,7 +1098,7 @@ test('RendererWebGPU treats unset background images as solid panels', () => {
     expect(Array.from(floats.slice(mode_data_float_offset, mode_data_float_offset + 2))).toEqual([0, 0])
 })
 
-test('RendererWebGPU creates panel commands for consecutive panels', () => {
+test('RendererOverlay creates panel commands for consecutive panels', () => {
     const renderer = createRenderer()
     const render_data = collectRenderData(renderer, [createNode(), createNode()])
 
@@ -1118,7 +1118,7 @@ test('RendererWebGPU creates panel commands for consecutive panels', () => {
     expect(render_data.glyphs).toHaveLength(0)
 })
 
-test('RendererWebGPU writes panel commands into command buffer data', () => {
+test('RendererOverlay writes panel commands into command buffer data', () => {
     const renderer = createRenderer()
     const render_data = collectRenderData(renderer, [createNode(), createNode()])
     const command_buffer_data = (renderer as any).createCommandBufferData(render_data.commands)
@@ -1135,7 +1135,7 @@ test('RendererWebGPU writes panel commands into command buffer data', () => {
     ])
 })
 
-test('RendererWebGPU keeps panels and images across atlas layers in one panel stream', () => {
+test('RendererOverlay keeps panels and images across atlas layers in one panel stream', () => {
     const first_image = createImage('first.png', 40, 20)
     const second_image = createImage('second.png', 40, 20)
     const renderer = createRenderer(
@@ -1185,7 +1185,7 @@ test('RendererWebGPU keeps panels and images across atlas layers in one panel st
     expect(render_data.panels.map((panel) => panel.background_atlas_layer)).toEqual([0, 0, 1])
 })
 
-test('RendererWebGPU creates glyph render data from node text content', () => {
+test('RendererOverlay creates glyph render data from node text content', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -1231,7 +1231,7 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
     ])
 })
 
-test('RendererWebGPU does not segment text without letter spacing', () => {
+test('RendererOverlay does not segment text without letter spacing', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1253,7 +1253,7 @@ test('RendererWebGPU does not segment text without letter spacing', () => {
     expect(glyphs.map(({ layout }) => layout[0])).toEqual([10, expect.closeTo(21.2)])
 })
 
-test('RendererWebGPU scrolls glyph geometry and keeps text clipping fixed to the ancestor', () => {
+test('RendererOverlay scrolls glyph geometry and keeps text clipping fixed to the ancestor', () => {
     const root = createNode()
     const parent = createNode({
         parent: root,
@@ -1279,7 +1279,7 @@ test('RendererWebGPU scrolls glyph geometry and keeps text clipping fixed to the
     expect((renderer as any).text_runs[0].clipping).toEqual([0, 100, 100, 0])
 })
 
-test('RendererWebGPU positions and wraps text inside the content box', () => {
+test('RendererOverlay positions and wraps text inside the content box', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1315,7 +1315,7 @@ test('RendererWebGPU positions and wraps text inside the content box', () => {
     ])
 })
 
-test('RendererWebGPU aligns each text line inside the content box', () => {
+test('RendererOverlay aligns each text line inside the content box', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1358,7 +1358,7 @@ test('RendererWebGPU aligns each text line inside the content box', () => {
     ])
 })
 
-test('RendererWebGPU excludes wrapped trailing spaces from right alignment', () => {
+test('RendererOverlay excludes wrapped trailing spaces from right alignment', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1382,7 +1382,7 @@ test('RendererWebGPU excludes wrapped trailing spaces from right alignment', () 
     ])
 })
 
-test('RendererWebGPU excludes letter spacing after trailing spaces from right alignment', () => {
+test('RendererOverlay excludes letter spacing after trailing spaces from right alignment', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1403,7 +1403,7 @@ test('RendererWebGPU excludes letter spacing after trailing spaces from right al
     expect(glyphs.map(({ layout }) => layout[0])).toEqual([expect.closeTo(80.8), expect.closeTo(98.4)])
 })
 
-test('RendererWebGPU centers text using its letter-spaced width', () => {
+test('RendererOverlay centers text using its letter-spaced width', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1424,7 +1424,7 @@ test('RendererWebGPU centers text using its letter-spaced width', () => {
     expect(glyphs.map(({ layout }) => layout[0])).toEqual([expect.closeTo(22.6), expect.closeTo(35.8)])
 })
 
-test('RendererWebGPU justifies wrapped lines and leaves the final line ragged', () => {
+test('RendererOverlay justifies wrapped lines and leaves the final line ragged', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1444,7 +1444,7 @@ test('RendererWebGPU justifies wrapped lines and leaves the final line ragged', 
     expect(glyphs.map(({ layout }) => layout[0])).toEqual([10, expect.closeTo(30.4), 10])
 })
 
-test('RendererWebGPU justifies text after accounting for letter spacing', () => {
+test('RendererOverlay justifies text after accounting for letter spacing', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1465,7 +1465,7 @@ test('RendererWebGPU justifies text after accounting for letter spacing', () => 
     expect(glyphs.map(({ layout }) => layout[0])).toEqual([10, expect.closeTo(36.4), 10])
 })
 
-test('RendererWebGPU does not justify explicit paragraph ends or wrapped lines without spaces', () => {
+test('RendererOverlay does not justify explicit paragraph ends or wrapped lines without spaces', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1494,7 +1494,7 @@ test('RendererWebGPU does not justify explicit paragraph ends or wrapped lines w
     expect(no_space_glyphs.map(({ layout }) => layout[0])).toEqual([10, expect.closeTo(19.6), 10, expect.closeTo(19.6)])
 })
 
-test('RendererWebGPU excludes exterior spaces and tabs from justification', () => {
+test('RendererOverlay excludes exterior spaces and tabs from justification', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1523,7 +1523,7 @@ test('RendererWebGPU excludes exterior spaces and tabs from justification', () =
     expect(tab_glyphs.map(({ layout }) => layout[0])).toEqual([10, 42, 10])
 })
 
-test('RendererWebGPU text alignment does not change text measurement', () => {
+test('RendererOverlay text alignment does not change text measurement', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1541,7 +1541,7 @@ test('RendererWebGPU text alignment does not change text measurement', () => {
     expect(renderer.getTextMeasure(aligned_node, 30)).toEqual(renderer.getTextMeasure(natural_node, 30))
 })
 
-test('RendererWebGPU measures text from glyph metrics', () => {
+test('RendererOverlay measures text from glyph metrics', () => {
     const font = {
         ...createManagedFont(),
         metrics: {
@@ -1569,7 +1569,7 @@ test('RendererWebGPU measures text from glyph metrics', () => {
     expect(renderer.getTextMeasure(node)).toEqual({ width: 31, height: 30 })
 })
 
-test('RendererWebGPU includes positive and negative letter spacing in text measurement', () => {
+test('RendererOverlay includes positive and negative letter spacing in text measurement', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1593,7 +1593,7 @@ test('RendererWebGPU includes positive and negative letter spacing in text measu
     expect(renderer.getTextMeasure(negative_node)).toEqual({ width: expect.closeTo(18.8), height: 20 })
 })
 
-test('RendererWebGPU wraps text using letter spacing', () => {
+test('RendererOverlay wraps text using letter spacing', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1610,10 +1610,9 @@ test('RendererWebGPU wraps text using letter spacing', () => {
     expect(renderer.getTextMeasure(node, 22)).toEqual({ width: expect.closeTo(11.6), height: 40 })
 })
 
-test('RendererWebGPU writes the explicit viewport and device pixel ratio into the viewport uniform', () => {
+test('RendererOverlay writes the explicit viewport and device pixel ratio into the viewport uniform', () => {
     const writes = []
-    const canvas = { clientWidth: 640, clientHeight: 360 }
-    const renderer = new RendererWebGPU({ canvas })
+    const renderer = new RendererOverlay({ session: {} })
     const empty_buffer_data = { bytes: new Uint8Array(), bytes_offset: 0 }
     ;(renderer as any).device = {
         queue: {
@@ -1643,9 +1642,9 @@ test('text shader shares RGBA sampling and MSDF fill coverage with text effects'
     expect(TEXT_WGSL).not.toContain('font_is_mtsdf')
 })
 
-test('RendererWebGPU registers fonts', () => {
+test('RendererOverlay registers fonts', () => {
     const registrations = []
-    const renderer = new RendererWebGPU({ canvas: {} })
+    const renderer = new RendererOverlay({ session: {} })
     const image = { id: 'image' }
     const json = { atlas: { type: 'mtsdf' } }
     ;(renderer as any).font_manager = {
@@ -1690,7 +1689,7 @@ test('MTSDF text stroke multisamples only the radius beyond its safe alpha range
     expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('glyphMsdfCoverageAtUv(')
 })
 
-test('RendererWebGPU keeps natural line height logical and snaps glyph metrics to device pixels', () => {
+test('RendererOverlay keeps natural line height logical and snaps glyph metrics to device pixels', () => {
     const font = {
         ...createManagedFont(),
         metrics: {
@@ -1724,7 +1723,7 @@ test('RendererWebGPU keeps natural line height logical and snaps glyph metrics t
     expect(collectRenderData(renderer, [node]).glyphs[0].layout).toEqual([0, 0.5, 2.5, 5])
 })
 
-test('RendererWebGPU measures text with a unitless lineHeight multiplier', () => {
+test('RendererOverlay measures text with a unitless lineHeight multiplier', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1748,7 +1747,7 @@ test('RendererWebGPU measures text with a unitless lineHeight multiplier', () =>
     expect(renderer.getTextMeasure(node)).toEqual({ width: 31, height: 30 })
 })
 
-test('RendererWebGPU measures text with an exact pixel lineHeight', () => {
+test('RendererOverlay measures text with an exact pixel lineHeight', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1772,7 +1771,7 @@ test('RendererWebGPU measures text with an exact pixel lineHeight', () => {
     expect(renderer.getTextMeasure(node)).toEqual({ width: 31, height: 24 })
 })
 
-test('RendererWebGPU restores natural line height with unset', () => {
+test('RendererOverlay restores natural line height with unset', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1796,7 +1795,7 @@ test('RendererWebGPU restores natural line height with unset', () => {
     expect(renderer.getTextMeasure(node)).toEqual({ width: 31, height: 25 })
 })
 
-test('RendererWebGPU measures wrapped text with the available width', () => {
+test('RendererOverlay measures wrapped text with the available width', () => {
     const font = {
         ...createManagedFont(),
         metrics: {
@@ -1824,7 +1823,7 @@ test('RendererWebGPU measures wrapped text with the available width', () => {
     expect(renderer.getTextMeasure(node, 24)).toEqual({ width: 24, height: 60 })
 })
 
-test('RendererWebGPU uses resolved lineHeight for every wrapped line', () => {
+test('RendererOverlay uses resolved lineHeight for every wrapped line', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1848,7 +1847,7 @@ test('RendererWebGPU uses resolved lineHeight for every wrapped line', () => {
     expect(renderer.getTextMeasure(node, 24)).toEqual({ width: 24, height: 48 })
 })
 
-test('RendererWebGPU respects exact text measurement constraints', () => {
+test('RendererOverlay respects exact text measurement constraints', () => {
     const font = {
         ...createManagedFont(),
         metrics: {
@@ -1880,7 +1879,7 @@ test('RendererWebGPU respects exact text measurement constraints', () => {
     })
 })
 
-test('RendererWebGPU preserves intrinsic text height under at-most constraints', () => {
+test('RendererOverlay preserves intrinsic text height under at-most constraints', () => {
     const font = {
         ...createManagedFont(),
         metrics: {
@@ -1911,7 +1910,7 @@ test('RendererWebGPU preserves intrinsic text height under at-most constraints',
     })
 })
 
-test('RendererWebGPU measures explicit line breaks', () => {
+test('RendererOverlay measures explicit line breaks', () => {
     const font = {
         ...createManagedFont(),
         metrics: {
@@ -1939,7 +1938,7 @@ test('RendererWebGPU measures explicit line breaks', () => {
     expect(renderer.getTextMeasure(node)).toEqual({ width: 14, height: 60 })
 })
 
-test('RendererWebGPU paints wrapped glyphs on separate lines', () => {
+test('RendererOverlay paints wrapped glyphs on separate lines', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1964,7 +1963,7 @@ test('RendererWebGPU paints wrapped glyphs on separate lines', () => {
     expect(render_data.glyphs[1].layout).toEqual([10, 40, 8, 16])
 })
 
-test('RendererWebGPU preserves width and line breaks when only lineHeight changes', () => {
+test('RendererOverlay preserves width and line breaks when only lineHeight changes', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -1999,7 +1998,7 @@ test('RendererWebGPU preserves width and line breaks when only lineHeight change
     expect(custom_glyphs.map(({ layout }) => layout[1])).toEqual([25, 55])
 })
 
-test('RendererWebGPU distributes negative leading around natural line height', () => {
+test('RendererOverlay distributes negative leading around natural line height', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2022,7 +2021,7 @@ test('RendererWebGPU distributes negative leading around natural line height', (
     expect(glyphs.map(({ layout }) => layout[1])).toEqual([18, 34])
 })
 
-test('RendererWebGPU invalidates prepared text', () => {
+test('RendererOverlay invalidates prepared text', () => {
     const font = {
         ...createManagedFont(),
         metrics: {
@@ -2054,7 +2053,7 @@ test('RendererWebGPU invalidates prepared text', () => {
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(20.8)
 })
 
-test('RendererWebGPU recalculates rem text after the root size changes', () => {
+test('RendererOverlay recalculates rem text after the root size changes', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2125,7 +2124,7 @@ test('RendererWebGPU recalculates rem text after the root size changes', () => {
     ])
 })
 
-test('RendererWebGPU recalculates viewport text after style context changes', () => {
+test('RendererOverlay recalculates viewport text after style context changes', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2243,7 +2242,7 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     expect(dirty_nodes).toEqual([node])
 })
 
-test('RendererWebGPU scales glyph render data with fontSize', () => {
+test('RendererOverlay scales glyph render data with fontSize', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -2269,7 +2268,7 @@ test('RendererWebGPU scales glyph render data with fontSize', () => {
     expect(render_data.glyphs[1].layout).toEqual([24, 24, 10, 20])
 })
 
-test('RendererWebGPU positions glyphs with letter spacing per grapheme', () => {
+test('RendererOverlay positions glyphs with letter spacing per grapheme', () => {
     const font = createManagedFont()
     font.glyphs_by_unicode.set(0x0301, {
         unicode: 0x0301,
@@ -2294,7 +2293,7 @@ test('RendererWebGPU positions glyphs with letter spacing per grapheme', () => {
     expect(glyphs.map(({ layout }) => layout[0])).toEqual([0, expect.closeTo(13.2)])
 })
 
-test('RendererWebGPU applies letter spacing after tabs', () => {
+test('RendererOverlay applies letter spacing after tabs', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2314,7 +2313,7 @@ test('RendererWebGPU applies letter spacing after tabs', () => {
     expect(glyphs.map(({ layout }) => layout[0])).toEqual([0, expect.closeTo(35.6)])
 })
 
-test('RendererWebGPU resolves text font from fontFamily', () => {
+test('RendererOverlay resolves text font from fontFamily', () => {
     const alternate_font = {
         ...createManagedFont(),
         name: 'ChangaOne',
@@ -2360,7 +2359,7 @@ test('RendererWebGPU resolves text font from fontFamily', () => {
     expect((renderer as any).text_runs[0].font_data).toEqual([5, 1, 6, FONT_ATLAS_SIZE])
 })
 
-test('RendererWebGPU throws when fontFamily is not registered', () => {
+test('RendererOverlay throws when fontFamily is not registered', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -2378,7 +2377,7 @@ test('RendererWebGPU throws when fontFamily is not registered', () => {
     expect(() => collectRenderData(renderer, [node])).toThrow(/Font "Missing" is not registered/)
 })
 
-test('RendererWebGPU writes glyph instance data into a glyph buffer', () => {
+test('RendererOverlay writes glyph instance data into a glyph buffer', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -2408,7 +2407,7 @@ test('RendererWebGPU writes glyph instance data into a glyph buffer', () => {
     ).toEqual([0, 0, 0])
 })
 
-test('RendererWebGPU writes shared text run data once per text node', () => {
+test('RendererOverlay writes shared text run data once per text node', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -2473,7 +2472,7 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
     ).toEqual([0, 0, 0, 0])
 })
 
-test('RendererWebGPU writes the MTSDF effect distance range into the shared text run', () => {
+test('RendererOverlay writes the MTSDF effect distance range into the shared text run', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2487,7 +2486,7 @@ test('RendererWebGPU writes the MTSDF effect distance range into the shared text
     expect(floats[TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET / FLOAT32_SIZE]).toBe(48)
 })
 
-test('RendererWebGPU writes text stroke data into the shared text run', () => {
+test('RendererOverlay writes text stroke data into the shared text run', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2541,7 +2540,7 @@ test('RendererWebGPU writes text stroke data into the shared text run', () => {
     expect(command_floats[(COMMAND_SIZE / FLOAT32_SIZE) * 4 + 3]).toBe(0)
 })
 
-test('RendererWebGPU enables residual multisampling beyond the safe MTSDF alpha range', () => {
+test('RendererOverlay enables residual multisampling beyond the safe MTSDF alpha range', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2577,7 +2576,7 @@ test('RendererWebGPU enables residual multisampling beyond the safe MTSDF alpha 
     ])
 })
 
-test('RendererWebGPU writes text shadow data into the shared text run', () => {
+test('RendererOverlay writes text shadow data into the shared text run', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2642,7 +2641,7 @@ test('RendererWebGPU writes text shadow data into the shared text run', () => {
     ).toEqual([3, 7, 7, 2])
 })
 
-test('RendererWebGPU preserves panel then text order for a text node with background', () => {
+test('RendererOverlay preserves panel then text order for a text node with background', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -2659,7 +2658,7 @@ test('RendererWebGPU preserves panel then text order for a text node with backgr
     ])
 })
 
-test('RendererWebGPU creates consecutive glyph commands', () => {
+test('RendererOverlay creates consecutive glyph commands', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -2681,7 +2680,7 @@ test('RendererWebGPU creates consecutive glyph commands', () => {
     expect(render_data.glyphs).toHaveLength(2)
 })
 
-test('RendererWebGPU draws every text shadow before the node glyphs', () => {
+test('RendererOverlay draws every text shadow before the node glyphs', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2716,7 +2715,7 @@ test('RendererWebGPU draws every text shadow before the node glyphs', () => {
     expect(render_data.glyphs).toHaveLength(2)
 })
 
-test('RendererWebGPU expands text shadow commands by the visible text stroke width', () => {
+test('RendererOverlay expands text shadow commands by the visible text stroke width', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2763,7 +2762,7 @@ test('RendererWebGPU expands text shadow commands by the visible text stroke wid
     expect(command_floats[(COMMAND_SIZE / FLOAT32_SIZE) * 2 + 3]).toBe(4)
 })
 
-test('RendererWebGPU skips transparent text shadow commands', () => {
+test('RendererOverlay skips transparent text shadow commands', () => {
     const renderer = createRenderer(
         createImageManager(),
         createFontManager({
@@ -2790,7 +2789,7 @@ test('RendererWebGPU skips transparent text shadow commands', () => {
     expect(render_data.commands.map((command) => command.kind)).toEqual([COMMAND_KIND_PANEL, COMMAND_KIND_GLYPH])
 })
 
-test('RendererWebGPU writes glyph commands into command buffer data', () => {
+test('RendererOverlay writes glyph commands into command buffer data', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -2819,7 +2818,7 @@ test('RendererWebGPU writes glyph commands into command buffer data', () => {
     ])
 })
 
-test('RendererWebGPU keeps interleaved panel and text command order', () => {
+test('RendererOverlay keeps interleaved panel and text command order', () => {
     const font_manager = createFontManager({
         default_font: createManagedFont(),
     })
@@ -3148,7 +3147,7 @@ function collectRenderData(renderer, nodes) {
 }
 
 function createRenderer(image_manager = createImageManager(), font_manager = createFontManager()) {
-    const renderer = new RendererWebGPU({ canvas: {} })
+    const renderer = new RendererOverlay({ session: {} })
     ;(renderer as any).image_manager = image_manager
     ;(renderer as any).font_manager = font_manager
     ;(renderer as any).engine = { applyStyle() {} }

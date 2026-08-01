@@ -11,13 +11,13 @@
             "types": "./src/renderer/RendererDom.ts",
             "import": "./src/renderer/RendererDom.ts"
         },
-        "./RendererWebGPU": {
-            "types": "./src/renderer/RendererWebGPU.ts",
-            "import": "./src/renderer/RendererWebGPU.ts"
+        "./RendererSession": {
+            "types": "./src/renderer/RendererSession.ts",
+            "import": "./src/renderer/RendererSession.ts"
         },
-        "./RendererThree": {
-            "types": "./src/renderer/RendererThree.ts",
-            "import": "./src/renderer/RendererThree.ts"
+        "./RendererOverlay": {
+            "types": "./src/renderer/RendererOverlay.ts",
+            "import": "./src/renderer/RendererOverlay.ts"
         },
         "./RendererThreeWorldSpace": {
             "types": "./src/renderer/RendererThreeWorldSpace.ts",

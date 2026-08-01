@@ -1,14 +1,24 @@
 import * as THREE from 'three/webgpu'
 
-export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage, loadJson, loadYoga }) {
-    const ui_renderer = new RendererThree({ canvas, loadYoga })
+export async function main({
+    canvas,
+    onCanvasEvent,
+    UI,
+    RendererSession,
+    RendererOverlay,
+    loadImage,
+    loadJson,
+    loadYoga,
+}) {
+    const session = await RendererSession.create({ canvas })
+    const ui_renderer = new RendererOverlay({ session, loadYoga })
     const ui = new UI({ renderer: ui_renderer, device_pixel_ratio: devicePixelRatio })
-    const { context, device } = await ui.init()
+    await ui.init()
 
     const three_renderer = new THREE.WebGPURenderer({
         canvas,
-        context,
-        device,
+        context: session.context,
+        device: session.device,
         alpha: true,
         antialias: true,
     })
@@ -42,7 +52,6 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage
         ui.update()
     })
 
-    const has_present = typeof context.present === 'function'
     const rotation_axis = new THREE.Vector3()
     let bg_position = 0
 
@@ -59,9 +68,7 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage
         ui.update()
         ui.draw()
 
-        if (has_present) {
-            context.present()
-        }
+        session.endFrame()
 
         requestAnimationFrame(frame)
     }

@@ -6,6 +6,31 @@ Both examples render to the same `GPUDevice`, `GPUCanvasContext`, and current
 `GPUTexture`. The difference is whether the render passes can share a command
 encoder and submit.
 
+### RendererSession
+
+Create one `RendererSession` per canvas and pass it to every `RendererOverlay`
+and `RendererThreeWorldSpace` that participates in the same scene. The session
+owns the adapter, device, canvas context, current frame texture, pipelines,
+samplers, and static geometry. Each renderer keeps its own UI tree, atlases,
+dynamic buffers, and bind group; world-space renderers also own their
+offscreen target and Three.js mesh.
+
+Draw every UI and Three.js pass before calling `session.endFrame()` exactly once:
+
+```ts
+const session = await RendererSession.create({ canvas })
+const overlay_renderer = new RendererOverlay({ session, loadYoga })
+const world_renderer = new RendererThreeWorldSpace({ session, loadYoga, ...world_options })
+
+world_ui.draw()
+three_renderer.render(scene, camera)
+overlay_ui.draw()
+session.endFrame()
+```
+
+`endFrame()` presents on runtimes that require it and releases the cached canvas
+texture so the next frame acquires a new one.
+
 ### Raw WebGPU
 
 The raw WebGPU example records both render passes in one command encoder and
@@ -39,9 +64,9 @@ Shared GPUDevice + GPUCanvasContext + GPUTexture
                                                    └─ Present
 ```
 
-## RendererWebGPU opacity
+## RendererOverlay opacity
 
-`RendererWebGPU` implements `opacity` as a simple accumulated alpha factor per
+`RendererOverlay` implements `opacity` as a simple accumulated alpha factor per
 node. A node's effective opacity is multiplied by the opacity of its ancestors
 and applied to each drawable rectangle.
 
@@ -54,18 +79,18 @@ Until WebGPU supports offscreen subtree compositing for opacity, layout examples
 and visual comparisons should avoid overlapping descendants inside nodes with
 `opacity < 1`.
 
-## RendererWebGPU text distance fields
+## RendererOverlay text distance fields
 
-`RendererWebGPU` uses MTSDF fonts. The RGB channels render the text fill and the
+`RendererOverlay` uses MTSDF fonts. The RGB channels render the text fill and the
 true distance stored in alpha renders `textShadow` and `textStroke`.
 
 The MTSDF and MSDF implementations live in separate shader modules. The active
 implementation is the one imported by `src/renderer/webgpu/shaders.ts`; their
 sampling constants stay inside their respective modules.
 
-## RendererWebGPU background image bleeding
+## RendererOverlay background image bleeding
 
-`RendererWebGPU` stores background images in a texture atlas. When a small
+`RendererOverlay` stores background images in a texture atlas. When a small
 image is scaled up or sampled near its atlas edge, linear filtering can blend it
 with neighboring atlas pixels and produce a thin halo.
 
@@ -92,9 +117,9 @@ where the extra padding copies are unlikely to matter.
 Atlas resources are keyed by the `src` passed to `ui.imageUpload`, so use separate srcs
 when the same source needs different `preventBleeding` modes.
 
-## RendererWebGPU overflow and border radius
+## RendererOverlay overflow and border radius
 
-`RendererWebGPU` clips overflowing descendants with rectangular ancestor bounds.
+`RendererOverlay` clips overflowing descendants with rectangular ancestor bounds.
 It does not include an ancestor's `borderRadius` in the clipping shape.
 
 This differs from CSS when a node combines `overflow: hidden` or

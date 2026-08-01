@@ -24,7 +24,8 @@
         <script type="module">
             import * as THREE from 'three/webgpu'
             import UI from '../src/UI'
-            import RendererWebGPU from '../src/renderer/RendererWebGPU'
+            import RendererOverlay from '../src/renderer/RendererOverlay'
+            import RendererSession from '../src/renderer/RendererSession'
             import { loadImage, loadJson } from '../src/utils/load-assets'
             import * as YogaMain from 'yoga-layout'
             import * as Yoga from 'yoga-layout/load'
@@ -36,15 +37,14 @@
             const canvas = document.querySelector('canvas')
 
             async function main() {
-                const renderer = new RendererWebGPU({ canvas, loadYoga })
+                const session = await RendererSession.create({ canvas })
+                const { device, context } = session
+                const renderer = new RendererOverlay({ session, loadYoga })
                 const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
-                const { device, context, format } = await ui.init()
-                const foreground_renderer = new RendererWebGPU({
-                    canvas,
+                await ui.init()
+                const foreground_renderer = new RendererOverlay({
+                    session,
                     loadYoga,
-                    device,
-                    context,
-                    format,
                 })
                 const foreground_ui = new UI({
                     renderer: foreground_renderer,
@@ -116,6 +116,7 @@
                     })
                     three_renderer.render(scene, camera)
                     foreground_ui.draw()
+                    session.endFrame()
 
                     requestAnimationFrame(frame)
                 }
@@ -130,6 +131,7 @@
 
                 three_renderer.setPixelRatio(device_pixel_ratio)
                 three_renderer.setSize(width, height, false)
+                three_renderer.getContext()
                 camera.aspect = width / height
                 camera.updateProjectionMatrix()
                 ui.setViewport(width, height)

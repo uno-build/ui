@@ -1,14 +1,25 @@
 import * as THREE from 'three/webgpu'
 
-export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImage, loadJson, loadYoga }) {
-    const ui_renderer = new RendererWebGPU({ canvas, loadYoga })
+export async function main({
+    canvas,
+    onCanvasEvent,
+    UI,
+    RendererSession,
+    RendererOverlay,
+    loadImage,
+    loadJson,
+    loadYoga,
+}) {
+    const session = await RendererSession.create({ canvas })
+    const ui_renderer = new RendererOverlay({ session, loadYoga })
     const ui = new UI({ renderer: ui_renderer, device_pixel_ratio: devicePixelRatio })
-    const { device, context } = await ui.init()
+    await ui.init()
 
     const three_renderer = new ThreeUIRenderer({
         canvas,
-        context,
-        device,
+        context: session.context,
+        device: session.device,
+        session,
         ui,
         alpha: true,
         antialias: true,
@@ -63,29 +74,17 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
 }
 
 class ThreeUIRenderer extends THREE.WebGPURenderer {
-    constructor({ context, ui, ...options }) {
-        let current_texture
-        const three_context = Object.create(context)
-        three_context.configure = (configuration) => context.configure(configuration)
-        three_context.getCurrentTexture = () => current_texture
-
-        super({ ...options, context: three_context })
+    constructor({ session, ui, ...options }) {
+        super(options)
 
         this.ui = ui
-        this.context = context
-        this.acquire_current_texture = () => {
-            current_texture = context.getCurrentTexture()
-        }
+        this.session = session
     }
 
     render(scene, camera) {
-        this.acquire_current_texture()
         super.render(scene, camera)
         this.ui.draw()
-
-        if (typeof this.context.present === 'function') {
-            this.context.present()
-        }
+        this.session.endFrame()
     }
 }
 

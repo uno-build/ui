@@ -24,7 +24,8 @@
         <script type="module">
             import { mat4 } from 'wgpu-matrix'
             import UI from '../src/UI'
-            import RendererWebGPU from '../src/renderer/RendererWebGPU'
+            import RendererOverlay from '../src/renderer/RendererOverlay'
+            import RendererSession from '../src/renderer/RendererSession'
             import { loadImage, loadJson } from '../src/utils/load-assets'
             import { loadYoga } from 'yoga-layout/load'
 
@@ -52,15 +53,14 @@
             const canvas = document.querySelector('canvas')
 
             async function main() {
-                const renderer = new RendererWebGPU({ canvas, loadYoga })
+                const session = await RendererSession.create({ canvas })
+                const { device, context, format } = session
+                const renderer = new RendererOverlay({ session, loadYoga })
                 const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
-                const { device, context, format } = await ui.init()
-                const foreground_renderer = new RendererWebGPU({
-                    canvas,
+                await ui.init()
+                const foreground_renderer = new RendererOverlay({
+                    session,
                     loadYoga,
-                    device,
-                    context,
-                    format,
                 })
                 const foreground_ui = new UI({
                     renderer: foreground_renderer,
@@ -210,9 +210,11 @@
                     foreground_ui.draw({
                         command_encoder,
                         texture_view,
+                        submit: false,
                     })
 
                     device.queue.submit([command_encoder.finish()])
+                    session.endFrame()
                     requestAnimationFrame(frame)
                 }
 

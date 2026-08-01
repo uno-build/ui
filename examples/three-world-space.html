@@ -23,6 +23,7 @@
         <canvas></canvas>
         <script type="module">
             import UI from '../src/UI'
+            import RendererSession from '../src/renderer/RendererSession'
             import RendererThreeWorldSpace from '../src/renderer/RendererThreeWorldSpace'
             import { loadImage, loadJson } from '../src/utils/load-assets'
             import { loadYoga } from 'yoga-layout/load'
@@ -30,7 +31,16 @@
 
             const canvas = document.querySelector('canvas')
             const onCanvasEvent = window.addEventListener
-            main({ canvas, onCanvasEvent, UI, RendererThreeWorldSpace, loadImage, loadJson, loadYoga }).catch(console.error)
+            main({
+                canvas,
+                onCanvasEvent,
+                UI,
+                RendererSession,
+                RendererThreeWorldSpace,
+                loadImage,
+                loadJson,
+                loadYoga,
+            }).catch(console.error)
         </script>
     </body>
 </html>

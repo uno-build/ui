@@ -10,6 +10,7 @@ export async function main({
     onCanvasEvent,
     UI,
     RendererSession,
+    RendererOverlay,
     RendererThreeWorldSpace,
     loadImage,
     loadJson,
@@ -21,7 +22,7 @@ export async function main({
     const world_width = WORLD_HEIGHT * (device_width / device_height)
     const session = await RendererSession.create({ canvas })
 
-    const ui_renderer = new RendererThreeWorldSpace({
+    const first_renderer = new RendererThreeWorldSpace({
         session,
         loadYoga,
         texture_width: Math.round(device_width * device_pixel_ratio),
@@ -29,8 +30,23 @@ export async function main({
         world_width,
         world_height: WORLD_HEIGHT,
     })
-    const ui = new UI({ renderer: ui_renderer, device_pixel_ratio })
-    const { plane } = await ui.init()
+    const first_ui = new UI({ renderer: first_renderer, device_pixel_ratio })
+    const { plane: first_plane } = await first_ui.init()
+
+    const second_renderer = new RendererThreeWorldSpace({
+        session,
+        loadYoga,
+        texture_width: Math.round(device_width * device_pixel_ratio),
+        texture_height: Math.round(device_height * device_pixel_ratio),
+        world_width,
+        world_height: WORLD_HEIGHT,
+    })
+    const second_ui = new UI({ renderer: second_renderer, device_pixel_ratio })
+    const { plane: second_plane } = await second_ui.init()
+
+    const overlay_renderer = new RendererOverlay({ session, loadYoga })
+    const overlay_ui = new UI({ renderer: overlay_renderer, device_pixel_ratio })
+    await overlay_ui.init()
 
     const three_renderer = new THREE.WebGPURenderer({
         canvas,
@@ -45,15 +61,21 @@ export async function main({
     scene.background = new THREE.Color(0x111827)
 
     const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
-    camera.position.set(5, 3.5, 6)
+    camera.position.set(0, 3.5, 9)
 
     const controls = new OrbitControls(camera, canvas)
     controls.enableDamping = true
     controls.target.set(0, 0.8, 0)
 
-    plane.position.y = 1
-    plane.material.side = THREE.DoubleSide
-    scene.add(plane)
+    first_plane.position.set(-world_width / 2 - 0.25, 1, 0)
+    first_plane.rotation.y = 0.35
+    first_plane.material.side = THREE.DoubleSide
+    scene.add(first_plane)
+
+    second_plane.position.set(world_width / 2 + 0.25, 1, 0)
+    second_plane.rotation.y = -0.35
+    second_plane.material.side = THREE.DoubleSide
+    scene.add(second_plane)
 
     const floor = new THREE.GridHelper(20, 20, 0x475569, 0x263244)
     floor.position.y = -0.12
@@ -64,23 +86,36 @@ export async function main({
     light.position.set(3, 5, 4)
     scene.add(light)
 
-    const { grid } = await createLayout({ ui, loadImage, loadJson })
-    ui.setViewport(device_width, device_height)
-    ui.update()
+    const assets = await loadAssets({ loadImage, loadJson })
+    const { grid: first_grid } = createLayout({ ui: first_ui, assets, title: 'First UI' })
+    const { grid: second_grid } = createLayout({ ui: second_ui, assets, title: 'Second UI' })
+    createOverlayLayout({ ui: overlay_ui, assets })
 
-    syncCanvasSize({ canvas, three_renderer, camera })
-    onCanvasEvent('resize', () => syncCanvasSize({ canvas, three_renderer, camera }))
+    for (const ui of [first_ui, second_ui]) {
+        ui.setViewport(device_width, device_height)
+        ui.update()
+    }
+
+    syncCanvasSize({ canvas, three_renderer, camera, overlay_ui })
+    onCanvasEvent('resize', () => syncCanvasSize({ canvas, three_renderer, camera, overlay_ui }))
 
     let bg_position = 0
 
     function renderFrame() {
         bg_position += 1
-        grid.style('backgroundPosition', `${bg_position}px ${bg_position}px`)
-        ui.update()
-        ui.draw()
+        first_grid.style('backgroundPosition', `${bg_position}px ${bg_position}px`)
+        second_grid.style('backgroundPosition', `${-bg_position}px ${bg_position}px`)
+
+        first_ui.update()
+        first_ui.draw()
+        second_ui.update()
+        second_ui.draw()
 
         controls.update()
         three_renderer.render(scene, camera)
+
+        overlay_ui.update()
+        overlay_ui.draw()
 
         session.endFrame()
 
@@ -90,7 +125,7 @@ export async function main({
     requestAnimationFrame(renderFrame)
 }
 
-function syncCanvasSize({ canvas, three_renderer, camera }) {
+function syncCanvasSize({ canvas, three_renderer, camera, overlay_ui }) {
     const device_pixel_ratio = window.devicePixelRatio
     const width = canvas.clientWidth
     const height = canvas.clientHeight
@@ -99,14 +134,22 @@ function syncCanvasSize({ canvas, three_renderer, camera }) {
     three_renderer.setSize(width, height, false)
     camera.aspect = width / height
     camera.updateProjectionMatrix()
+    overlay_ui.setViewport(width, height)
+    overlay_ui.setDevicePixelRatio(device_pixel_ratio)
 }
 
-async function createLayout({ ui, loadImage, loadJson }) {
+async function loadAssets({ loadImage, loadJson }) {
     const coin = await loadImage('assets/images/coin.png')
     const repeat_x = await loadImage('assets/images/repeat-x.png')
     const repeat_y = await loadImage('assets/images/repeat-y.png')
     const font_image = await loadImage('assets/fonts/Supercell-Magic.mtsdf.png')
     const font_json = await loadJson('assets/fonts/Supercell-Magic.mtsdf.json')
+
+    return { coin, repeat_x, repeat_y, font_image, font_json }
+}
+
+function createLayout({ ui, assets, title: title_text }) {
+    const { coin, repeat_x, repeat_y, font_image, font_json } = assets
 
     ui.imageUpload(coin.src, coin)
     ui.imageUpload(repeat_x.src, repeat_x)
@@ -171,8 +214,43 @@ async function createLayout({ ui, loadImage, loadJson }) {
     title.style('color', '#ffffff')
     title.style('textStroke', '6px #000000')
     title.style('textShadow', '0px 4px 0px #000000')
-    title.text('Hello Three.js World Space!')
+    title.text(title_text)
     grid.add(title)
 
     return { grid }
+}
+
+function createOverlayLayout({ ui, assets }) {
+    const { coin, font_image, font_json } = assets
+
+    ui.imageUpload(coin.src, coin)
+    ui.fontRegister('Supercell-Magic', font_image, font_json)
+
+    const overlay = ui.create()
+    overlay.style('width', '100%')
+    overlay.style('height', '100%')
+    overlay.style('flexDirection', 'row')
+    overlay.style('justifyContent', 'space-between')
+    overlay.style('alignItems', 'flex-start')
+    overlay.style('padding', `${BACKGROUND_GAP}px`)
+    ui.root.add(overlay)
+
+    const title = ui.create()
+    title.style('fontFamily', 'Supercell-Magic')
+    title.style('fontSize', '40px')
+    title.style('color', '#ffffff')
+    title.style('textStroke', '6px #000000')
+    title.style('textShadow', '0px 4px 0px #000000')
+    title.text('Overlay UI')
+    overlay.add(title)
+
+    const badge = ui.create()
+    badge.style('width', '64px')
+    badge.style('height', '64px')
+    badge.style('borderRadius', '12px')
+    badge.style('border', '4px solid #000')
+    badge.style('backgroundColor', '#1f2937')
+    badge.style('backgroundImage', coin.src)
+    badge.style('backgroundSize', 'contain')
+    overlay.add(badge)
 }

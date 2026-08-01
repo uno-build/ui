@@ -23,14 +23,17 @@
         <canvas></canvas>
         <script type="module">
             import UI from '../src/UI'
-            import RendererWebGPU from '../src/renderer/RendererWebGPU'
+            import RendererSession from '../src/renderer/RendererSession'
+            import RendererOverlay from '../src/renderer/RendererOverlay'
             import { loadImage, loadJson } from '../src/utils/load-assets'
             import { loadYoga } from 'yoga-layout/load'
             import { main } from './webgpu.ts'
 
             const canvas = document.querySelector('canvas')
             const onCanvasEvent = window.addEventListener
-            main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImage, loadJson, loadYoga }).catch(console.error)
+            main({ canvas, onCanvasEvent, UI, RendererSession, RendererOverlay, loadImage, loadJson, loadYoga }).catch(
+                console.error,
+            )
         </script>
     </body>
 </html>

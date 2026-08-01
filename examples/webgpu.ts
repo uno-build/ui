@@ -20,10 +20,21 @@ const CUBE_VERTEX_ARRAY = new Float32Array([
     1, -1, 1, 1, 1, 0, 1, 0, 0, 1, -1, -1, 1, 1, 0, 0, 1, 0, 1, -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
 ])
 
-export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImage, loadJson, loadYoga }) {
-    const renderer = new RendererWebGPU({ canvas, loadYoga })
+export async function main({
+    canvas,
+    onCanvasEvent,
+    UI,
+    RendererSession,
+    RendererOverlay,
+    loadImage,
+    loadJson,
+    loadYoga,
+}) {
+    const session = await RendererSession.create({ canvas })
+    const renderer = new RendererOverlay({ session, loadYoga })
     const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
-    const { device, context, format } = await ui.init()
+    await ui.init()
+    const { device, context, format } = session
 
     syncCanvasSize({ canvas, ui })
     onCanvasEvent('resize', () => {
@@ -99,7 +110,6 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
         ],
     })
 
-    const has_present = typeof context.present === 'function'
     let grid_x = 0
 
     function frame() {
@@ -159,9 +169,7 @@ export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImag
         ui.update()
         ui.draw({ command_encoder, texture_view })
 
-        if (has_present) {
-            context.present()
-        }
+        session.endFrame()
 
         requestAnimationFrame(frame)
     }

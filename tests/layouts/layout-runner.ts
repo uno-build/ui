@@ -1,7 +1,8 @@
 import UI from '../../src/UI'
 import RendererDom from '../../src/renderer/RendererDom'
 import RendererDivs from '../../src/renderer/RendererDivs'
-import RendererWebGPU from '../../src/renderer/RendererWebGPU'
+import RendererOverlay from '../../src/renderer/RendererOverlay'
+import RendererSession from '../../src/renderer/RendererSession'
 import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
 import { loadYoga } from 'yoga-layout/load'
 
@@ -21,18 +22,19 @@ export const SETUPS = {
     //     inspectDomPaint: true,
     //     runOnTests: true,
     // },
-    RendererWebGPU: {
+    RendererOverlay: {
         elementType: 'canvas',
-        renderer: RendererWebGPU,
+        renderer: RendererOverlay,
         attributes: {},
         inspectDomPaint: false,
         runOnTests: true,
     },
 }
 
-function render({ ui }) {
+function render({ ui, session }) {
     ui.update()
     ui.draw()
+    session?.endFrame()
 }
 
 export async function runLayout({
@@ -51,7 +53,8 @@ export async function runLayout({
         const setup = getSetup(rendererName)
         const canvas = createCanvasElement(root, rendererName, setup)
         const Renderer = setup.renderer
-        const renderer = new Renderer({ canvas, loadYoga, ...renderer_options })
+        const session = Renderer === RendererOverlay ? await RendererSession.create({ canvas }) : undefined
+        const renderer = new Renderer({ canvas, session, loadYoga, ...renderer_options })
         const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
         await ui.init()
         window.ui = ui
@@ -68,10 +71,10 @@ export async function runLayout({
             syncViewport({ ui, root, canvas, viewport })
         }
 
-        render({ ui })
+        render({ ui, session })
         await document.fonts.ready
-        render({ ui })
-        observeRootSize({ ui, root, canvas, viewport })
+        render({ ui, session })
+        observeRootSize({ ui, session, root, canvas, viewport })
 
         const result = readPaintLayout(ui)
         const paintedRects =
@@ -92,7 +95,7 @@ export async function runLayout({
         logger.groupEnd?.()
 
         results.push({ rendererName, result, paintedRects, paintSamples })
-        rendered_layouts.push({ rendererName, ui })
+        rendered_layouts.push({ rendererName, ui, session })
     }
 
     ;(window as any).addRandomNode = createAddRandomNode(rendered_layouts)
@@ -111,7 +114,7 @@ function syncViewport({ ui, root, canvas, viewport }) {
     }
 }
 
-function observeRootSize({ ui, root, canvas, viewport }) {
+function observeRootSize({ ui, session, root, canvas, viewport }) {
     let width = root.clientWidth
     let height = root.clientHeight
 
@@ -123,7 +126,7 @@ function observeRootSize({ ui, root, canvas, viewport }) {
         width = root.clientWidth
         height = root.clientHeight
         syncViewport({ ui, root, canvas, viewport })
-        render({ ui })
+        render({ ui, session })
     })
 
     observer.observe(root)
@@ -341,7 +344,7 @@ function createAddRandomNode(rendered_layouts) {
         const background_color = readRandomColor()
         const added_nodes = []
 
-        for (const { rendererName, ui } of rendered_layouts) {
+        for (const { rendererName, ui, session } of rendered_layouts) {
             const target_parent = findNodeByPath(ui, parent_path)
             const item = ui.create()
             item.style('width', '24px')
@@ -349,7 +352,7 @@ function createAddRandomNode(rendered_layouts) {
             item.style('backgroundColor', background_color)
 
             target_parent.add(item)
-            render({ ui })
+            render({ ui, session })
 
             added_nodes.push({
                 rendererName,
@@ -369,11 +372,11 @@ function createRemoveRandomNode(rendered_layouts) {
         const node_path = node.path
         const removed_nodes = []
 
-        for (const { rendererName, ui } of rendered_layouts) {
+        for (const { rendererName, ui, session } of rendered_layouts) {
             const target_node = findNodeByPath(ui, node_path)
 
             target_node.parent.remove(target_node)
-            render({ ui })
+            render({ ui, session })
 
             removed_nodes.push({
                 rendererName,

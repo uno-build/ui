@@ -1,7 +1,7 @@
 import * as THREE from 'three/webgpu'
-import RendererWebGPU from './RendererWebGPU'
+import RendererOverlay from './RendererOverlay'
 
-export default class RendererThreeWorldSpace extends RendererWebGPU {
+export default class RendererThreeWorldSpace extends RendererOverlay {
     private texture_width
     private texture_height
     private world_width
@@ -9,8 +9,8 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
     private ui_texture
     private ui_texture_view
 
-    constructor({ canvas, texture_width, texture_height, world_width, world_height, ...options }) {
-        super({ canvas, ...options, srgb: false })
+    constructor({ texture_width, texture_height, world_width, world_height, ...options }) {
+        super({ ...options, srgb: false })
         this.texture_width = texture_width
         this.texture_height = texture_height
         this.world_width = world_width
