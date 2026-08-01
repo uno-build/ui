@@ -1,18 +1,21 @@
 import * as THREE from 'three/webgpu'
 
 export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage, loadJson, loadYoga }) {
-    const ui_renderer = new RendererThree({
-        canvas,
-        loadYoga,
-        three_options: {
-            alpha: true,
-            antialias: true,
-        },
-    })
+    const ui_renderer = new RendererThree({ canvas, loadYoga })
     const ui = new UI({ renderer: ui_renderer, device_pixel_ratio: devicePixelRatio })
-    const { three_renderer } = await ui.init()
-    three_renderer.setClearColor(0xffffff, 1)
+    const { context, device } = await ui.init()
 
+    const three_renderer = new THREE.WebGPURenderer({
+        canvas,
+        context,
+        device,
+        alpha: true,
+        antialias: true,
+    })
+    three_renderer.setClearColor(0x464455, 1)
+    await three_renderer.init()
+
+    // Scene logic
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(72, 1, 1, 100)
     camera.position.z = 4
@@ -47,6 +50,9 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage
 
         rotation_axis.set(Math.sin(now), Math.cos(now), 0).normalize()
         cube.setRotationFromAxisAngle(rotation_axis, 1)
+
+        ui_renderer.prepareThreeRender(three_renderer)
+        three_renderer.render(scene, camera)
 
         grid_x += 1
         grid.style('backgroundPosition', `${grid_x}px ${grid_x}px`)

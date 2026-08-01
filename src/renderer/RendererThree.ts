@@ -1,50 +1,39 @@
-import * as THREE from 'three/webgpu'
 import RendererWebGPU from './RendererWebGPU'
 
 export default class RendererThree extends RendererWebGPU {
     private three_canvas
     private render_context
     private current_texture
-    private three_options
-    private three_renderer
 
-    constructor({ canvas, three_options = {}, ...options }) {
+    constructor({ canvas, ...options }) {
         super({ canvas, ...options })
         this.three_canvas = canvas
-        this.three_options = three_options
     }
 
     public async init() {
         const output = await super.init()
         this.render_context = output.context
 
-        const three_context = Object.create(this.render_context)
-        three_context.configure = (configuration) => this.render_context.configure(configuration)
-        three_context.getCurrentTexture = () => this.current_texture
-
-        this.three_renderer = new THREE.WebGPURenderer({
-            ...this.three_options,
-            canvas: this.three_canvas,
-            context: three_context,
-            device: output.device,
-        })
-        await this.three_renderer.init()
+        const context = Object.create(this.render_context)
+        context.configure = (configuration) => this.render_context.configure(configuration)
+        context.getCurrentTexture = () => this.current_texture
 
         return {
             ...output,
-            three_renderer: this.three_renderer,
+            context,
         }
     }
 
-    public draw({ scene, camera, ...options }) {
-        this.three_renderer.getContext()
-        const canvas_texture = this.render_context.getCurrentTexture()
-        this.current_texture = canvas_texture
-        this.three_renderer.render(scene, camera)
+    public prepareThreeRender(three_renderer) {
+        three_renderer.getContext()
+        this.current_texture = this.render_context.getCurrentTexture()
+    }
 
+    public draw(options = {}) {
+        const texture_view = this.current_texture.createView()
         const output = super.draw({
             ...options,
-            texture_view: canvas_texture.createView(),
+            texture_view,
         })
 
         if (options.submit !== false && typeof this.render_context.present === 'function') {
