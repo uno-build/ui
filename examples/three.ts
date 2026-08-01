@@ -12,7 +12,7 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage
         alpha: true,
         antialias: true,
     })
-    three_renderer.setClearColor(0x123456, 1)
+    three_renderer.setClearColor(0x654321, 1)
     await three_renderer.init()
 
     // Scene logic
@@ -56,7 +56,7 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage
         bg_position += 1
         grid.style('backgroundPosition', `${bg_position}px ${bg_position}px`)
         ui.update()
-        ui.draw({ scene, camera })
+        ui.draw()
 
         requestAnimationFrame(frame)
     }

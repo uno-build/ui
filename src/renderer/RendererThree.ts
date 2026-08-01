@@ -34,13 +34,11 @@ export default class RendererThree extends RendererWebGPU {
             texture_view,
         })
 
-        if (options.submit !== false) {
-            if (typeof this.render_context.present === 'function') {
-                this.render_context.present()
-            }
-
-            this.current_texture = undefined
+        if (options.submit !== false && typeof this.render_context.present === 'function') {
+            this.render_context.present()
         }
+
+        this.current_texture = undefined
 
         return output
     }
