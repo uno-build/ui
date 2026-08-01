@@ -42,6 +42,7 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage
         ui.update()
     })
 
+    const has_present = typeof context.present === 'function'
     const rotation_axis = new THREE.Vector3()
     let bg_position = 0
 
@@ -57,6 +58,10 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThree, loadImage
         grid.style('backgroundPosition', `${bg_position}px ${bg_position}px`)
         ui.update()
         ui.draw()
+
+        if (has_present) {
+            context.present()
+        }
 
         requestAnimationFrame(frame)
     }

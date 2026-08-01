@@ -21,25 +21,13 @@ export default class RendererThree extends RendererWebGPU {
             return this.current_texture
         }
 
-        return {
-            ...output,
-            context,
-        }
+        return { ...output, context }
     }
 
     public draw(options = {}) {
         const texture_view = this.current_texture.createView()
-        const output = super.draw({
-            ...options,
-            texture_view,
-        })
-
-        if (options.submit !== false && typeof this.render_context.present === 'function') {
-            this.render_context.present()
-        }
-
-        this.current_texture = undefined
-
+        const output = super.draw({ ...options, texture_view, present: true })
+        delete this.current_texture
         return output
     }
 }
