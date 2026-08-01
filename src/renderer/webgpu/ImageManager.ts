@@ -35,6 +35,7 @@ export type ManagedAtlasImage = AtlasImage & {
 
 export class ImageManager {
     public images = new Map<string, ManagedAtlasImage>()
+    public texture_version = 0
     private device
     private atlas_size
     private srgb
@@ -245,6 +246,7 @@ export class ImageManager {
         this.atlas_layer_count = next_layer_count
         this.atlas_texture_layer_count = next_layer_count
         this.atlas_texture = new_texture
+        this.texture_version++
 
         const atlas_layer = this.createAtlasLayer(old_layer_count)
         this.atlas_layers.push(atlas_layer)

@@ -77,6 +77,8 @@ export default class RendererWebGPU extends Renderer {
     private image_sampler
     private image_manager
     private font_manager
+    private image_texture_version
+    private font_texture_version
     private position_buffer
     private viewport_buffer
     private command_buffer
@@ -116,6 +118,10 @@ export default class RendererWebGPU extends Renderer {
         canvas,
         adapter,
         device,
+        context,
+        format,
+        image_manager,
+        font_manager,
         image_atlas_size = IMAGE_ATLAS_SIZE,
         font_atlas_size = FONT_ATLAS_SIZE,
         image_min_filter = 'linear',
@@ -128,6 +134,10 @@ export default class RendererWebGPU extends Renderer {
         this.canvas = canvas
         this.adapter = adapter
         this.device = device
+        this.context = context
+        this.format = format
+        this.image_manager = image_manager
+        this.font_manager = font_manager
         this.image_atlas_size = image_atlas_size
         this.font_atlas_size = font_atlas_size
         this.image_min_filter = image_min_filter
@@ -148,13 +158,15 @@ export default class RendererWebGPU extends Renderer {
                 },
             })
         }
-        this.context = this.canvas.getContext('webgpu')
-        this.format = globalThis.navigator.gpu.getPreferredCanvasFormat()
-        this.context.configure({
-            device: this.device,
-            format: this.format,
-            alphaMode: 'premultiplied',
-        })
+        this.format ??= globalThis.navigator.gpu.getPreferredCanvasFormat()
+        if (this.context === undefined) {
+            this.context = this.canvas.getContext('webgpu')
+            this.context.configure({
+                device: this.device,
+                format: this.format,
+                alphaMode: 'premultiplied',
+            })
+        }
         this.position_buffer = this.device.createBuffer({
             size: POSITION_VERTICES.byteLength,
             usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
@@ -191,12 +203,12 @@ export default class RendererWebGPU extends Renderer {
             addressModeU: 'clamp-to-edge',
             addressModeV: 'clamp-to-edge',
         })
-        this.image_manager = new ImageManager({
+        this.image_manager ??= new ImageManager({
             device: this.device,
             atlas_size: this.image_atlas_size,
             srgb: this.srgb,
         })
-        this.font_manager = new FontManager({
+        this.font_manager ??= new FontManager({
             device: this.device,
             atlas_size: this.font_atlas_size,
         })
@@ -207,6 +219,8 @@ export default class RendererWebGPU extends Renderer {
             device: this.device,
             context: this.context,
             format: this.format,
+            image_manager: this.image_manager,
+            font_manager: this.font_manager,
         }
     }
 
@@ -294,6 +308,9 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private createBindGroup() {
+        this.image_texture_version = this.image_manager.texture_version
+        this.font_texture_version = this.font_manager.texture_version
+
         return this.device.createBindGroup({
             layout: this.pipeline.getBindGroupLayout(0),
             entries: [
@@ -1039,7 +1056,11 @@ export default class RendererWebGPU extends Renderer {
             )
         }
 
-        if (bind_group_dirty) {
+        if (
+            bind_group_dirty ||
+            this.image_texture_version !== this.image_manager.texture_version ||
+            this.font_texture_version !== this.font_manager.texture_version
+        ) {
             this.bind_group = this.createBindGroup()
         }
 

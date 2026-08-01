@@ -12,14 +12,19 @@ export default class RendererThree extends RendererWebGPU {
         const output = await super.init()
         this.render_context = output.context
 
-        const context = Object.create(this.render_context)
-        context.configure = (configuration) => {
-            this.render_context.configure(configuration)
-        }
-        context.getCurrentTexture = () => {
-            this.current_texture ??= this.render_context.getCurrentTexture()
-            return this.current_texture
-        }
+        const context = new Proxy(this.render_context, {
+            get: (target, property) => {
+                if (property === 'getCurrentTexture') {
+                    return () => {
+                        this.current_texture ??= target.getCurrentTexture()
+                        return this.current_texture
+                    }
+                }
+
+                const value = target[property]
+                return typeof value === 'function' ? value.bind(target) : value
+            },
+        })
 
         return { ...output, context }
     }

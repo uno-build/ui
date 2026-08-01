@@ -5,28 +5,49 @@ const WORLD_HEIGHT = 2
 const BACKGROUND_GAP = 16
 const BACKGROUND_ITEM_SIZE = 120
 
-export async function main({ canvas, onCanvasEvent, UI, RendererThreeWorldSpace, loadImage, loadJson, loadYoga }) {
+export async function main({
+    canvas,
+    onCanvasEvent,
+    UI,
+    RendererThree,
+    RendererThreeWorldSpace,
+    loadImage,
+    loadJson,
+    loadYoga,
+}) {
     const device_pixel_ratio = window.devicePixelRatio
     const device_width = Math.max(canvas.clientWidth, canvas.clientHeight)
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
     const world_width = WORLD_HEIGHT * (device_width / device_height)
 
+    const overlay_renderer = new RendererThree({ canvas, loadYoga })
+    const overlay_ui = new UI({ renderer: overlay_renderer, device_pixel_ratio })
+    const { context, adapter, device, format } = await overlay_ui.init()
+
     const first_renderer = new RendererThreeWorldSpace({
         canvas,
         loadYoga,
+        adapter,
+        device,
+        context,
+        format,
         texture_width: Math.round(device_width * device_pixel_ratio),
         texture_height: Math.round(device_height * device_pixel_ratio),
         world_width,
         world_height: WORLD_HEIGHT,
     })
     const first_ui = new UI({ renderer: first_renderer, device_pixel_ratio })
-    const { context, adapter, device, plane: first_plane } = await first_ui.init()
+    const { plane: first_plane, image_manager, font_manager } = await first_ui.init()
 
     const second_renderer = new RendererThreeWorldSpace({
         canvas,
         loadYoga,
         adapter,
         device,
+        context,
+        format,
+        image_manager,
+        font_manager,
         texture_width: Math.round(device_width * device_pixel_ratio),
         texture_height: Math.round(device_height * device_pixel_ratio),
         world_width,
@@ -74,16 +95,20 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThreeWorldSpace,
     scene.add(light)
 
     const assets = await loadAssets({ loadImage, loadJson })
+    registerAssets({ ui: first_ui, assets })
+    registerAssets({ ui: overlay_ui, assets })
+
     const { grid: first_grid } = createLayout({ ui: first_ui, assets, title: 'First UI' })
     const { grid: second_grid } = createLayout({ ui: second_ui, assets, title: 'Second UI' })
+    createOverlayLayout({ ui: overlay_ui, assets })
 
     for (const ui of [first_ui, second_ui]) {
         ui.setViewport(device_width, device_height)
         ui.update()
     }
 
-    syncCanvasSize({ canvas, three_renderer, camera })
-    onCanvasEvent('resize', () => syncCanvasSize({ canvas, three_renderer, camera }))
+    syncCanvasSize({ canvas, three_renderer, camera, overlay_ui })
+    onCanvasEvent('resize', () => syncCanvasSize({ canvas, three_renderer, camera, overlay_ui }))
 
     const has_present = typeof context.present === 'function'
     let bg_position = 0
@@ -101,6 +126,9 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThreeWorldSpace,
         controls.update()
         three_renderer.render(scene, camera)
 
+        overlay_ui.update()
+        overlay_ui.draw()
+
         if (has_present) {
             context.present()
         }
@@ -111,7 +139,7 @@ export async function main({ canvas, onCanvasEvent, UI, RendererThreeWorldSpace,
     requestAnimationFrame(renderFrame)
 }
 
-function syncCanvasSize({ canvas, three_renderer, camera }) {
+function syncCanvasSize({ canvas, three_renderer, camera, overlay_ui }) {
     const device_pixel_ratio = window.devicePixelRatio
     const width = canvas.clientWidth
     const height = canvas.clientHeight
@@ -120,6 +148,8 @@ function syncCanvasSize({ canvas, three_renderer, camera }) {
     three_renderer.setSize(width, height, false)
     camera.aspect = width / height
     camera.updateProjectionMatrix()
+    overlay_ui.setViewport(width, height)
+    overlay_ui.setDevicePixelRatio(device_pixel_ratio)
 }
 
 async function loadAssets({ loadImage, loadJson }) {
@@ -132,13 +162,17 @@ async function loadAssets({ loadImage, loadJson }) {
     return { coin, repeat_x, repeat_y, font_image, font_json }
 }
 
-function createLayout({ ui, assets, title: title_text }) {
+function registerAssets({ ui, assets }) {
     const { coin, repeat_x, repeat_y, font_image, font_json } = assets
 
     ui.imageUpload(coin.src, coin)
     ui.imageUpload(repeat_x.src, repeat_x)
     ui.imageUpload(repeat_y.src, repeat_y)
     ui.fontRegister('Supercell-Magic', font_image, font_json)
+}
+
+function createLayout({ ui, assets, title: title_text }) {
+    const { coin, repeat_x, repeat_y } = assets
 
     const grid = ui.create()
     grid.style('width', '100%')
@@ -202,4 +236,38 @@ function createLayout({ ui, assets, title: title_text }) {
     grid.add(title)
 
     return { grid }
+}
+
+function createOverlayLayout({ ui, assets }) {
+    const { coin } = assets
+
+    const overlay = ui.create()
+    overlay.style('width', '100%')
+    overlay.style('height', '100%')
+    overlay.style('flexDirection', 'row')
+    overlay.style('justifyContent', 'space-between')
+    overlay.style('alignItems', 'flex-start')
+    overlay.style('padding', `${BACKGROUND_GAP}px`)
+    ui.root.add(overlay)
+
+    const title = ui.create()
+    title.style('fontFamily', 'Supercell-Magic')
+    title.style('fontSize', '40px')
+    title.style('color', '#ffffff')
+    title.style('textStroke', '6px #000000')
+    title.style('textShadow', '0px 4px 0px #000000')
+    title.text('Overlay UI')
+    overlay.add(title)
+
+    const badge = ui.create()
+    badge.style('width', '64px')
+    badge.style('height', '64px')
+    badge.style('borderRadius', '12px')
+    badge.style('border', '4px solid #000')
+    badge.style('backgroundColor', '#1f2937')
+    badge.style('backgroundImage', coin.src)
+    badge.style('backgroundSize', 'contain')
+    overlay.add(badge)
+
+    return { overlay }
 }
