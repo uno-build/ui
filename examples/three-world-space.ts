@@ -20,8 +20,18 @@ export async function main({
     const device_width = Math.max(canvas.clientWidth, canvas.clientHeight)
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
     const world_width = WORLD_HEIGHT * (device_width / device_height)
+
     const webgpu = new WebGPUSharedContext({ canvas })
     const { context, device } = await webgpu.init()
+    const assets = await loadAssets({ loadImage, loadJson })
+    const { coin, repeat_x, repeat_y, font_image, font_json } = assets
+    webgpu.registerFont('Supercell-Magic', font_image, font_json)
+    webgpu.registerImage(coin.src, coin)
+    webgpu.registerImage(coin.src, coin, { srgb: false })
+    webgpu.registerImage(repeat_x.src, repeat_x)
+    webgpu.registerImage(repeat_x.src, repeat_x, { srgb: false })
+    webgpu.registerImage(repeat_y.src, repeat_y)
+    webgpu.registerImage(repeat_y.src, repeat_y, { srgb: false })
 
     const overlay_renderer = new RendererWebGPU({ webgpu, loadYoga })
     const overlay_ui = new UI({ renderer: overlay_renderer, device_pixel_ratio })
@@ -29,6 +39,7 @@ export async function main({
 
     const first_renderer = new RendererThreeWorldSpace({
         webgpu,
+        srgb: false,
         loadYoga,
         texture_width: Math.round(device_width * device_pixel_ratio),
         texture_height: Math.round(device_height * device_pixel_ratio),
@@ -41,6 +52,7 @@ export async function main({
     const second_renderer = new RendererThreeWorldSpace({
         webgpu,
         loadYoga,
+        srgb: false,
         texture_width: Math.round(device_width * device_pixel_ratio),
         texture_height: Math.round(device_height * device_pixel_ratio),
         world_width,
@@ -86,11 +98,6 @@ export async function main({
     const light = new THREE.DirectionalLight(0xffffff, 3)
     light.position.set(3, 5, 4)
     scene.add(light)
-
-    const assets = await loadAssets({ loadImage, loadJson })
-    registerImages({ ui: overlay_ui, assets })
-    registerImages({ ui: first_ui, assets })
-    registerFont({ ui: overlay_ui, assets })
 
     const { grid: first_grid } = createLayout({ ui: first_ui, assets, title: 'First UI' })
     const { grid: second_grid } = createLayout({ ui: second_ui, assets, title: 'Second UI' })
@@ -154,20 +161,6 @@ async function loadAssets({ loadImage, loadJson }) {
     const font_json = await loadJson('assets/fonts/Supercell-Magic.mtsdf.json')
 
     return { coin, repeat_x, repeat_y, font_image, font_json }
-}
-
-function registerImages({ ui, assets }) {
-    const { coin, repeat_x, repeat_y } = assets
-
-    ui.imageUpload(coin.src, coin)
-    ui.imageUpload(repeat_x.src, repeat_x)
-    ui.imageUpload(repeat_y.src, repeat_y)
-}
-
-function registerFont({ ui, assets }) {
-    const { font_image, font_json } = assets
-
-    ui.fontRegister('Supercell-Magic', font_image, font_json)
 }
 
 function createLayout({ ui, assets, title: title_text }) {
@@ -263,7 +256,7 @@ function createOverlayLayout({ ui, assets }) {
     badge.style('height', '64px')
     badge.style('borderRadius', '12px')
     badge.style('border', '4px solid #000')
-    badge.style('backgroundColor', '#1f2937')
+    badge.style('backgroundColor', '#654321')
     badge.style('backgroundImage', coin.src)
     badge.style('backgroundSize', 'contain')
     overlay.add(badge)

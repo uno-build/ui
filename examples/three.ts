@@ -44,7 +44,7 @@ export async function main({
     const cube = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true }))
     scene.add(cube)
 
-    const { grid } = await createLayout({ ui, loadImage, loadJson })
+    const { grid } = await createLayout({ ui, webgpu, loadImage, loadJson })
     syncCanvasSize({ canvas, ui, three_renderer, camera })
     ui.update()
 
@@ -96,17 +96,17 @@ function syncCanvasSize({ canvas, ui, three_renderer, camera }) {
 const BACKGROUND_GAP = 16
 const BACKGROUND_ITEM_SIZE = 120
 
-async function createLayout({ ui, loadImage, loadJson }) {
+async function createLayout({ ui, webgpu, loadImage, loadJson }) {
     const coin = await loadImage('assets/images/coin.png')
     const repeat_x = await loadImage('assets/images/repeat-x.png')
     const repeat_y = await loadImage('assets/images/repeat-y.png')
     const font_image = await loadImage('assets/fonts/Supercell-Magic.mtsdf.png')
     const font_json = await loadJson('assets/fonts/Supercell-Magic.mtsdf.json')
 
-    ui.imageUpload(coin.src, coin)
-    ui.imageUpload(repeat_x.src, repeat_x)
-    ui.imageUpload(repeat_y.src, repeat_y)
-    ui.fontRegister('Supercell-Magic', font_image, font_json)
+    webgpu.registerImage(coin.src, coin)
+    webgpu.registerImage(repeat_x.src, repeat_x)
+    webgpu.registerImage(repeat_y.src, repeat_y)
+    webgpu.registerFont('Supercell-Magic', font_image, font_json)
 
     const grid = ui.create()
     grid.style('width', '100%')

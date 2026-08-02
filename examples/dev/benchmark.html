@@ -130,7 +130,7 @@
                 const renderer = new RendererWebGPU({ webgpu, loadYoga })
                 const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
                 await ui.init()
-                ui.fontRegister('Poppins-Regular', font_image, font_json)
+                webgpu.registerFont('Poppins-Regular', font_image, font_json)
 
                 ui.setViewport(root.clientWidth, root.clientHeight)
                 canvas.width = Math.round(root.clientWidth * window.devicePixelRatio)

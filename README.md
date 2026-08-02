@@ -12,11 +12,15 @@ import { WebGPUSharedContext } from 'uno-ui/WebGPUSharedContext'
 const webgpu = new WebGPUSharedContext({ canvas })
 await webgpu.init()
 
+webgpu.registerImage(icon_path, icon)
+webgpu.registerFont('Poppins', font_image, font_json)
+
 const renderer = new RendererWebGPU({ webgpu, loadYoga })
 ```
 
-Fonts only need to be registered once per shared context. Images only need to be uploaded once per `srgb` mode used
-by its renderers.
+Fonts only need to be registered once per shared context. Images only need to be registered once per `srgb` mode used
+by its renderers; pass `{ srgb: false }` when registering an image for a renderer using that mode. Registering the same
+`src` twice in one mode throws, so call `disposeImage` before replacing it.
 
 ## WebGPU composition
 
@@ -95,7 +99,7 @@ edge pixels into the atlas padding area:
 const icon_path = '/assets/icon.png'
 const icon = await loadImage(icon_path)
 
-ui.imageUpload(icon_path, { ...icon, preventBleeding: true })
+webgpu.registerImage(icon_path, { ...icon, preventBleeding: true })
 
 const image = ui.create()
 image.style('width', '200px')
@@ -107,7 +111,7 @@ Use `preventBleeding: true` for small images, icons, sprites, or high-contrast a
 where edge artifacts are visible. Keep the default behavior for larger images
 where the extra padding copies are unlikely to matter.
 
-Atlas resources are keyed by the `src` passed to `ui.imageUpload`, so use separate srcs
+Atlas resources are keyed by the `src` passed to `webgpu.registerImage`, so use separate srcs
 when the same source needs different `preventBleeding` modes.
 
 ## RendererWebGPU overflow and border radius

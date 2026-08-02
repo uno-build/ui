@@ -42,7 +42,7 @@ export async function main({
         ui.update()
     })
 
-    const { grid } = await createBackgroundRepeatLayout({ ui, loadImage, loadJson })
+    const { grid } = await createBackgroundRepeatLayout({ ui, webgpu, loadImage, loadJson })
     ui.update()
 
     const vertex_buffer = device.createBuffer({
@@ -210,17 +210,17 @@ function getTextureSize(texture, canvas) {
     }
 }
 
-async function createBackgroundRepeatLayout({ ui, loadImage, loadJson }) {
+async function createBackgroundRepeatLayout({ ui, webgpu, loadImage, loadJson }) {
     const coin = await loadImage('assets/images/coin.png')
     const repeat_x = await loadImage('assets/images/repeat-x.png')
     const repeat_y = await loadImage('assets/images/repeat-y.png')
     const font_image = await loadImage('assets/fonts/Nougat-ExtraBlack.mtsdf.png')
     const font_json = await loadJson('assets/fonts/Nougat-ExtraBlack.mtsdf.json')
 
-    ui.imageUpload(coin.src, coin)
-    ui.imageUpload(repeat_x.src, repeat_x)
-    ui.imageUpload(repeat_y.src, repeat_y)
-    ui.fontRegister('Nougat-ExtraBlack', font_image, font_json)
+    webgpu.registerImage(coin.src, coin)
+    webgpu.registerImage(repeat_x.src, repeat_x)
+    webgpu.registerImage(repeat_y.src, repeat_y)
+    webgpu.registerFont('Nougat-ExtraBlack', font_image, font_json)
 
     const grid = ui.create()
     grid.style('width', '100%')

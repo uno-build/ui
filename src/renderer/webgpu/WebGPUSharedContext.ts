@@ -59,6 +59,28 @@ export class WebGPUSharedContext {
         return this
     }
 
+    public registerImage(src: string, image: any, { srgb = true }: { srgb?: boolean } = {}) {
+        const image_manager = this.getImageManager(srgb)
+
+        if (image_manager.getImage(src) !== undefined) {
+            throw new Error(`Image "${src}" is already registered with srgb=${srgb}.`)
+        }
+
+        return image_manager.imageUpload(src, image)
+    }
+
+    public disposeImage(src: string, { srgb = true }: { srgb?: boolean } = {}): void {
+        this.image_managers.get(srgb)?.imageDispose(src)
+    }
+
+    public listImages({ srgb = true }: { srgb?: boolean } = {}): any[] {
+        return this.image_managers.get(srgb)?.imageList() ?? []
+    }
+
+    public registerFont(name: string, image: any, json: any) {
+        return this.font_manager.fontRegister(name, image, json)
+    }
+
     public getImageManager(srgb: boolean): ImageManager {
         let image_manager = this.image_managers.get(srgb)
 
