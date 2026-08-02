@@ -8,7 +8,6 @@ import {
     type SkylineNode,
 } from '../utils/atlas-allocator'
 
-export const ATLAS_SIZE = 2048
 export const ATLAS_PADDING = 2
 
 export type AtlasImage = {

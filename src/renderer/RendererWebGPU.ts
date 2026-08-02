@@ -24,7 +24,7 @@ import {
     updateScrollMetrics,
 } from './utils/render-metrics'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
-import { createUIWGSL } from './webgpu/shaders'
+import { createUIWGSL } from './webgpu/shaders/'
 import { ImageManager } from './webgpu/ImageManager'
 import { FontManager } from './webgpu/FontManager'
 import {
