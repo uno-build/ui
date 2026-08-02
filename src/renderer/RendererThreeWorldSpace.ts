@@ -20,7 +20,7 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
         tsl = false,
         ...options
     }) {
-        super({ webgpu, ...options, srgb })
+        super({ webgpu, ...options, srgb: tsl ? true : srgb })
         this.texture_width = texture_width
         this.texture_height = texture_height
         this.world_width = world_width
@@ -46,13 +46,14 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
         three_texture.minFilter = THREE.LinearFilter
         three_texture.magFilter = THREE.LinearFilter
         three_texture.generateMipmaps = false
-        three_texture.colorSpace = THREE.LinearSRGBColorSpace
+        three_texture.colorSpace = this.tsl ? THREE.NoColorSpace : THREE.LinearSRGBColorSpace
 
         three_texture.offset.y = 1
         three_texture.repeat.y = -1
 
         let material
         if (this.tsl) {
+            const sampled_color = THREE.TSL.texture(three_texture)
             material = new THREE.MeshStandardNodeMaterial({
                 map: three_texture,
                 transparent: true,
@@ -61,8 +62,10 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
                 premultipliedAlpha: true,
             })
             material.colorNode = THREE.TSL.vec4(
-                THREE.TSL.materialColor.rgb.div(THREE.TSL.materialColor.a.max(0.0001)),
-                THREE.TSL.materialColor.a,
+                THREE.TSL.sRGBTransferEOTF(sampled_color.rgb.div(sampled_color.a.max(0.0001))).mul(
+                    THREE.TSL.materialReference('color', 'color'),
+                ),
+                sampled_color.a,
             )
         } else {
             material = new THREE.MeshBasicMaterial({

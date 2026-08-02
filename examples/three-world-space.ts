@@ -56,7 +56,7 @@ export async function main({
     const second_renderer = new RendererThreeWorldSpace({
         webgpu,
         loadYoga,
-        srgb: false,
+        srgb: true,
         tsl: true,
         texture_width: texture_width,
         texture_height: texture_height,
