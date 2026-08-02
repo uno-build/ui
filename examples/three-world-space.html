@@ -22,15 +22,23 @@
     <body>
         <canvas></canvas>
         <script type="module">
-            import UI from '../src/UI'
-            import RendererThreeWorldSpace from '../src/renderer/RendererThreeWorldSpace'
+            import { createWebGPU } from '../src/webgpu'
+            import { createThreeWorldSpaceUI } from '../src/three'
             import { loadImage, loadJson } from '../src/utils/load-assets'
             import { loadYoga } from 'yoga-layout/load'
             import { main } from './three-world-space.ts'
 
             const canvas = document.querySelector('canvas')
             const onCanvasEvent = window.addEventListener
-            main({ canvas, onCanvasEvent, UI, RendererThreeWorldSpace, loadImage, loadJson, loadYoga }).catch(console.error)
+            main({
+                canvas,
+                onCanvasEvent,
+                createWebGPU,
+                createThreeWorldSpaceUI,
+                loadImage,
+                loadJson,
+                loadYoga,
+            }).catch(console.error)
         </script>
     </body>
 </html>

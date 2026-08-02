@@ -23,8 +23,7 @@
         <canvas></canvas>
         <script type="module">
             import * as THREE from 'three/webgpu'
-            import UI from '../src/UI'
-            import RendererWebGPU from '../src/renderer/RendererWebGPU'
+            import { createWebGPU, createOverlayUI } from '../src/webgpu'
             import { loadImage, loadJson } from '../src/utils/load-assets'
             import * as YogaMain from 'yoga-layout'
             import * as Yoga from 'yoga-layout/load'
@@ -36,21 +35,12 @@
             const canvas = document.querySelector('canvas')
 
             async function main() {
-                const renderer = new RendererWebGPU({ canvas, loadYoga })
-                const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
-                const { device, context, format } = await ui.init()
-                const foreground_renderer = new RendererWebGPU({
-                    canvas,
-                    loadYoga,
-                    device,
-                    context,
-                    format,
-                })
-                const foreground_ui = new UI({
-                    renderer: foreground_renderer,
-                    device_pixel_ratio: window.devicePixelRatio,
-                })
-                await foreground_ui.init()
+                const webgpu = await createWebGPU({ canvas, loadYoga })
+                const { ui } = await createOverlayUI({ webgpu })
+                const { ui: foreground_ui } = await createOverlayUI({ webgpu })
+                const { device, context } = webgpu
+                ui.setDevicePixelRatio(window.devicePixelRatio)
+                foreground_ui.setDevicePixelRatio(window.devicePixelRatio)
 
                 const three_renderer = new THREE.WebGPURenderer({
                     canvas,
@@ -157,9 +147,9 @@
             }
 
             async function createBackgroundRepeatLayout({ ui }) {
-                const coin = await loadImage(new URL('./assets/coin.png', import.meta.url).href)
-                const repeat_x = await loadImage(new URL('./assets/repeat-x.png', import.meta.url).href)
-                const repeat_y = await loadImage(new URL('./assets/repeat-y.png', import.meta.url).href)
+                const coin = await loadImage(new URL('./assets/images/coin.png', import.meta.url).href)
+                const repeat_x = await loadImage(new URL('./assets/images/repeat-x.png', import.meta.url).href)
+                const repeat_y = await loadImage(new URL('./assets/images/repeat-y.png', import.meta.url).href)
                 const font_image = await loadImage(
                     new URL('./assets/fonts/Supercell-Magic.mtsdf.png', import.meta.url).href,
                 )

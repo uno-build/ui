@@ -1613,7 +1613,7 @@ test('RendererWebGPU wraps text using letter spacing', () => {
 test('RendererWebGPU writes the explicit viewport and device pixel ratio into the viewport uniform', () => {
     const writes = []
     const canvas = { clientWidth: 640, clientHeight: 360 }
-    const renderer = new RendererWebGPU({ canvas })
+    const renderer = new RendererWebGPU({ webgpu: { canvas } })
     const empty_buffer_data = { bytes: new Uint8Array(), bytes_offset: 0 }
     ;(renderer as any).device = {
         queue: {
@@ -1645,7 +1645,7 @@ test('text shader shares RGBA sampling and MSDF fill coverage with text effects'
 
 test('RendererWebGPU registers fonts', () => {
     const registrations = []
-    const renderer = new RendererWebGPU({ canvas: {} })
+    const renderer = new RendererWebGPU({ webgpu: { canvas: {} } })
     const image = { id: 'image' }
     const json = { atlas: { type: 'mtsdf' } }
     ;(renderer as any).font_manager = {
@@ -3148,7 +3148,7 @@ function collectRenderData(renderer, nodes) {
 }
 
 function createRenderer(image_manager = createImageManager(), font_manager = createFontManager()) {
-    const renderer = new RendererWebGPU({ canvas: {} })
+    const renderer = new RendererWebGPU({ webgpu: { canvas: {} } })
     ;(renderer as any).image_manager = image_manager
     ;(renderer as any).font_manager = font_manager
     ;(renderer as any).engine = { applyStyle() {} }

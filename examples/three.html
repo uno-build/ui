@@ -22,10 +22,7 @@
     <body>
         <canvas></canvas>
         <script type="module">
-            import UI from '../src/UI'
-            import RendererWebGPU from '../src/renderer/RendererWebGPU'
-            import RendererThree from '../src/renderer/RendererThree'
-            import RendererThreeWorldSpace from '../src/renderer/RendererThreeWorldSpace'
+            import { createWebGPU, createOverlayUI } from '../src/webgpu'
             import { loadImage, loadJson } from '../src/utils/load-assets'
             import { loadYoga } from 'yoga-layout/load'
             import { main } from './three.ts'
@@ -35,10 +32,8 @@
             main({
                 canvas,
                 onCanvasEvent,
-                UI,
-                RendererWebGPU,
-                RendererThree,
-                RendererThreeWorldSpace,
+                createWebGPU,
+                createOverlayUI,
                 loadImage,
                 loadJson,
                 loadYoga,

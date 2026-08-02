@@ -1,9 +1,9 @@
 import * as THREE from 'three/webgpu'
 
-export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImage, loadJson, loadYoga }) {
-    const ui_renderer = new RendererWebGPU({ canvas, loadYoga })
-    const ui = new UI({ renderer: ui_renderer, device_pixel_ratio: devicePixelRatio })
-    const { device, context } = await ui.init()
+export async function main({ canvas, onCanvasEvent, createWebGPU, createOverlayUI, loadImage, loadJson, loadYoga }) {
+    const webgpu = await createWebGPU({ canvas, loadYoga })
+    const { ui } = await createOverlayUI({ webgpu })
+    const { device, context } = webgpu
 
     let canvas_texture
     const three_context = Object.create(context)

@@ -9,8 +9,8 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
     private ui_texture
     private ui_texture_view
 
-    constructor({ canvas, texture_width, texture_height, world_width, world_height, ...options }) {
-        super({ canvas, ...options, srgb: false })
+    constructor({ webgpu, texture_width, texture_height, world_width, world_height, ...options }) {
+        super({ webgpu, ...options, srgb: false })
         this.texture_width = texture_width
         this.texture_height = texture_height
         this.world_width = world_width
@@ -56,7 +56,6 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
         return {
             ...output,
             plane,
-            texture: three_texture,
         }
     }
 

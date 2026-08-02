@@ -17,12 +17,6 @@ export default class UI {
         this.setRootSize(root_size)
     }
 
-    public async init() {
-        const output = await this.renderer.init()
-        this.root = this.create()
-        return output
-    }
-
     public create() {
         const node = new Node({
             id: this.next_node_id++,
@@ -132,4 +126,11 @@ export default class UI {
         this.renderer.removeChild(parent, child)
         child.element = null
     }
+}
+
+export async function createUI(options) {
+    const ui = new UI(options)
+    const resources = await options.renderer.init()
+    ui.root = ui.create()
+    return { ui, resources }
 }

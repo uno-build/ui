@@ -4,8 +4,8 @@ export default class RendererThree extends RendererWebGPU {
     private render_context
     private current_texture
 
-    constructor({ canvas, ...options }) {
-        super({ canvas, ...options })
+    constructor({ webgpu, ...options }) {
+        super({ webgpu, ...options })
     }
 
     public async init() {

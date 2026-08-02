@@ -20,10 +20,10 @@ const CUBE_VERTEX_ARRAY = new Float32Array([
     1, -1, 1, 1, 1, 0, 1, 0, 0, 1, -1, -1, 1, 1, 0, 0, 1, 0, 1, -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
 ])
 
-export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImage, loadJson, loadYoga }) {
-    const renderer = new RendererWebGPU({ canvas, loadYoga })
-    const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
-    const { device, context, format } = await ui.init()
+export async function main({ canvas, onCanvasEvent, createWebGPU, createOverlayUI, loadImage, loadJson, loadYoga }) {
+    const webgpu = await createWebGPU({ canvas, loadYoga })
+    const { ui } = await createOverlayUI({ webgpu })
+    const { device, context, format } = webgpu
 
     syncCanvasSize({ canvas, ui })
     onCanvasEvent('resize', () => {

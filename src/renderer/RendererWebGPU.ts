@@ -56,6 +56,7 @@ const TEXT_MEASURE_STYLE_NAMES = [STYLE.FONTSIZE.name, STYLE.LINEHEIGHT.name, ST
 
 export default class RendererWebGPU extends Renderer {
     private canvas
+    private loadYoga
     private image_atlas_size
     private font_atlas_size
     private image_min_filter
@@ -113,42 +114,31 @@ export default class RendererWebGPU extends Renderer {
     private computeStyle = (style) => computeStyleValue(style, this)
 
     constructor({
-        canvas,
+        webgpu,
         image_atlas_size = IMAGE_ATLAS_SIZE,
         font_atlas_size = FONT_ATLAS_SIZE,
         image_min_filter = 'linear',
         image_mag_filter = 'linear',
         srgb = true,
         scrollbar_size = SCROLLBAR_SIZE,
-        loadYoga,
     }) {
         super()
-        this.canvas = canvas
+        this.canvas = webgpu.canvas
+        this.loadYoga = webgpu.loadYoga
+        this.adapter = webgpu.adapter
+        this.device = webgpu.device
+        this.context = webgpu.context
+        this.format = webgpu.format
         this.image_atlas_size = image_atlas_size
         this.font_atlas_size = font_atlas_size
         this.image_min_filter = image_min_filter
         this.image_mag_filter = image_mag_filter
         this.srgb = srgb
         this.scrollbar_size = scrollbar_size
-        this.loadYoga = loadYoga
     }
 
     public async init() {
         this.engine = await createEngine({ loadYoga: this.loadYoga })
-        this.adapter = await globalThis.navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
-        this.device = await this.adapter.requestDevice({
-            requiredLimits: {
-                maxStorageBuffersInVertexStage: 2,
-                // maxTextureDimension2D: this.adapter.limits.maxTextureDimension2D,
-            },
-        })
-        this.context = this.canvas.getContext('webgpu')
-        this.format = globalThis.navigator.gpu.getPreferredCanvasFormat()
-        this.context.configure({
-            device: this.device,
-            format: this.format,
-            alphaMode: 'premultiplied',
-        })
         this.position_buffer = this.device.createBuffer({
             size: POSITION_VERTICES.byteLength,
             usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,

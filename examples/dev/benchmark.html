@@ -44,8 +44,7 @@
         <div id="root"></div>
         <pre id="results">Running...</pre>
         <script type="module">
-            import UI from '../../src/UI'
-            import RendererWebGPU from '../../src/renderer/RendererWebGPU'
+            import { createWebGPU, createOverlayUI } from '../../src/webgpu'
             import { loadImage, loadJson } from '../../src/utils/load-assets'
             import { loadYoga } from 'yoga-layout/load'
 
@@ -124,9 +123,9 @@
                 canvas.style.height = '100%'
                 root.appendChild(canvas)
 
-                const renderer = new RendererWebGPU({ canvas, loadYoga })
-                const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
-                await ui.init()
+                const webgpu = await createWebGPU({ canvas, loadYoga })
+                const { ui } = await createOverlayUI({ webgpu })
+                ui.setDevicePixelRatio(window.devicePixelRatio)
                 ui.fontRegister('Poppins-Regular', font_image, font_json)
 
                 ui.setViewport(root.clientWidth, root.clientHeight)
@@ -139,7 +138,7 @@
                 for (let i = 0; i < warmup; i++) {
                     ui.update()
                     ui.draw()
-                    await renderer.device.queue.onSubmittedWorkDone()
+                    await webgpu.device.queue.onSubmittedWorkDone()
                 }
 
                 const render_times = []
@@ -150,7 +149,7 @@
                     ui.update()
                     ui.draw()
                     const render_end = performance.now()
-                    await renderer.device.queue.onSubmittedWorkDone()
+                    await webgpu.device.queue.onSubmittedWorkDone()
                     const submitted_end = performance.now()
 
                     render_times.push(render_end - render_start)

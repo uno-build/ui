@@ -1,12 +1,10 @@
 import { test, expect } from '@playwright/test'
-import UI from '../src/UI'
+import UI, { createUI } from '../src/UI'
 import TestRenderer from './TestRenderer.ts'
 
 test('UI and Node api creates, styles, updates, and removes nodes', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const { ui } = await createUI({ renderer })
     ui.root.style('width', '200px')
     ui.root.style('height', '200px')
 
@@ -105,9 +103,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
 
 test('UI stores context-dependent styles without resolving them', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const { ui } = await createUI({ renderer })
 
     const node = ui.create()
     node.style('width', '2rem')
@@ -171,9 +167,7 @@ test('UI stores context-dependent styles without resolving them', async () => {
 
 test('Node remove removes descendants', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const { ui } = await createUI({ renderer })
 
     const parent = ui.create()
     const child = ui.create()
@@ -208,9 +202,7 @@ test('Node remove removes descendants', async () => {
 
 test('Node add and remove throw for invalid tree operations', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const { ui } = await createUI({ renderer })
 
     const child = ui.create()
     const detached_parent = ui.create()
@@ -231,9 +223,7 @@ test('Node add and remove throw for invalid tree operations', async () => {
 
 test('Node remove discards pending styles', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const { ui } = await createUI({ renderer })
 
     const child = ui.create()
     child.style('width', '120px')
@@ -253,9 +243,7 @@ test('Node remove discards pending styles', async () => {
 test('Node text stores, replaces, and clears text content', async () => {
     const renderer = new TestRenderer()
     renderer.getTextMeasure = () => ({ width: 10, height: 10 })
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const { ui } = await createUI({ renderer })
 
     const child = ui.create()
     ui.root.add(child)
@@ -292,9 +280,7 @@ test('Node text uses intrinsic size unless dimensions are explicit', async () =>
             height: font_size * 2,
         }
     }
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const { ui } = await createUI({ renderer })
     ui.root.style('width', '500px')
     ui.root.style('height', '100px')
     ui.root.style('alignItems', 'flex-start')
@@ -342,9 +328,7 @@ test('Node text uses intrinsic size unless dimensions are explicit', async () =>
 
 test('Node text cannot have children', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const { ui } = await createUI({ renderer })
 
     const parent = ui.create()
     const child = ui.create()
@@ -362,9 +346,7 @@ test('Node text cannot have children', async () => {
 
 test('Node lineHeight invalidates text measurement', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const { ui } = await createUI({ renderer })
 
     const node = ui.create()
     node.text('Text')
@@ -380,9 +362,7 @@ test('Node lineHeight invalidates text measurement', async () => {
 
 test('Node letterSpacing invalidates text measurement', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const { ui } = await createUI({ renderer })
 
     const node = ui.create()
     node.text('Text')
@@ -402,8 +382,7 @@ test('Node letterSpacing invalidates text measurement', async () => {
 
 test('overflow shorthand and longhands follow assignment order', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-    await ui.init()
+    const { ui } = await createUI({ renderer })
     const node = ui.create()
 
     node.style('overflow', 'scroll')
@@ -459,10 +438,8 @@ test('UI forwards viewport changes to the renderer', () => {
 
 test('UI image api supports renderer defaults', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
+    const { ui } = await createUI({ renderer })
     const image = createImage('/assets/first.png', 32, 32)
-
-    await ui.init()
 
     ui.imageUpload('/assets/Avatar.png', image)
     expect(ui.imageList()).toEqual([])
