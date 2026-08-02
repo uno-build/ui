@@ -1,7 +1,7 @@
 import * as THREE from 'three/webgpu'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
-const WORLD_HEIGHT = 3
+const WORLD_HEIGHT = 2
 const BACKGROUND_GAP = 16
 const BACKGROUND_ITEM_SIZE = 120
 const TEXTURE_SCALAR = window.devicePixelRatio
@@ -28,11 +28,8 @@ export async function main({
     const { coin, repeat_x, repeat_y, font_image, font_json } = assets
     webgpu.registerFont('Supercell-Magic', font_image, font_json)
     webgpu.registerImage(coin.src, coin)
-    webgpu.registerImage(coin.src, coin, { srgb: false })
     webgpu.registerImage(repeat_x.src, repeat_x)
-    webgpu.registerImage(repeat_x.src, repeat_x, { srgb: false })
     webgpu.registerImage(repeat_y.src, repeat_y)
-    webgpu.registerImage(repeat_y.src, repeat_y, { srgb: false })
 
     const overlay_renderer = new RendererWebGPU({ webgpu, loadYoga })
     const overlay_ui = new UI({ renderer: overlay_renderer, device_pixel_ratio })
@@ -43,7 +40,6 @@ export async function main({
     console.log('texture_width', texture_width, 'texture_height', texture_height)
     const first_renderer = new RendererThreeWorldSpace({
         webgpu,
-        srgb: false,
         loadYoga,
         texture_width: texture_width,
         texture_height: texture_height,
@@ -56,8 +52,6 @@ export async function main({
     const second_renderer = new RendererThreeWorldSpace({
         webgpu,
         loadYoga,
-        srgb: true,
-        tsl: true,
         texture_width: texture_width,
         texture_height: texture_height,
         world_width,

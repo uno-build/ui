@@ -54,7 +54,6 @@ export default class RendererWebGPU extends Renderer {
     private webgpu
     private image_min_filter
     private image_mag_filter
-    private srgb
     private device_pixel_ratio = 1
     private viewport_width
     private viewport_height
@@ -111,16 +110,14 @@ export default class RendererWebGPU extends Renderer {
         webgpu,
         image_min_filter = 'linear',
         image_mag_filter = 'linear',
-        srgb = true,
         scrollbar_size = SCROLLBAR_SIZE,
         loadYoga,
     }) {
         super()
         this.webgpu = webgpu
-        this.image_manager = webgpu.getImageManager(srgb)
+        this.image_manager = webgpu.image_manager
         this.image_min_filter = image_min_filter
         this.image_mag_filter = image_mag_filter
-        this.srgb = srgb
         this.scrollbar_size = scrollbar_size
         this.loadYoga = loadYoga
     }
@@ -229,9 +226,6 @@ export default class RendererWebGPU extends Renderer {
             fragment: {
                 module: shader_module,
                 entryPoint: 'fragmentMain',
-                constants: {
-                    SRGB: this.srgb ? 1 : 0,
-                },
                 targets: [
                     {
                         format: this.webgpu.format,

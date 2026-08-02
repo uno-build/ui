@@ -54,7 +54,7 @@ fn unpackColor(color: u32) -> vec4f {
         f32((color >> 24u) & 255u),
     ) / 255.0;
 
-    return vec4f(colorToWorking(unpacked.rgb), unpacked.a);
+    return unpacked;
 }
 
 fn cornerRadius(

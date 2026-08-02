@@ -13,7 +13,7 @@ export class WebGPUSharedContext {
     public font_atlas_size
     public image_atlas_size
     public font_manager
-    public image_managers = new Map<boolean, ImageManager>()
+    public image_manager
 
     constructor({
         canvas,
@@ -55,44 +55,27 @@ export class WebGPUSharedContext {
             device: this.device,
             atlas_size: this.font_atlas_size,
         })
+        this.image_manager = new ImageManager({
+            device: this.device,
+            atlas_size: this.image_atlas_size,
+        })
 
         return this
     }
 
-    public registerImage(src: string, image: any, { srgb = true }: { srgb?: boolean } = {}) {
-        const image_manager = this.getImageManager(srgb)
-
-        if (image_manager.getImage(src) !== undefined) {
-            throw new Error(`Image "${src}" is already registered with srgb=${srgb}.`)
-        }
-
-        return image_manager.imageUpload(src, image)
+    public registerImage(src: string, image: any) {
+        return this.image_manager.imageUpload(src, image)
     }
 
-    public disposeImage(src: string, { srgb = true }: { srgb?: boolean } = {}): void {
-        this.image_managers.get(srgb)?.imageDispose(src)
+    public disposeImage(src: string): void {
+        this.image_manager.imageDispose(src)
     }
 
-    public listImages({ srgb = true }: { srgb?: boolean } = {}): any[] {
-        return this.image_managers.get(srgb)?.imageList() ?? []
+    public listImages(): any[] {
+        return this.image_manager.imageList()
     }
 
     public registerFont(name: string, image: any, json: any) {
         return this.font_manager.fontRegister(name, image, json)
-    }
-
-    public getImageManager(srgb: boolean): ImageManager {
-        let image_manager = this.image_managers.get(srgb)
-
-        if (image_manager === undefined) {
-            image_manager = new ImageManager({
-                device: this.device,
-                atlas_size: this.image_atlas_size,
-                srgb,
-            })
-            this.image_managers.set(srgb, image_manager)
-        }
-
-        return image_manager
     }
 }

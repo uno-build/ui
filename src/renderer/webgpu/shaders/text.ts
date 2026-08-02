@@ -108,7 +108,7 @@ fn textStrokeColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
         run.text_stroke_color.a *
         opacity;
 
-    return vec4f(colorToWorking(run.text_stroke_color.rgb), alpha);
+    return vec4f(run.text_stroke_color.rgb, alpha);
 }
 
 fn glyphColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
@@ -129,7 +129,7 @@ fn glyphColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
         run.font_data.y *
         select(0.0, 1.0, visible);
 
-    return vec4f(colorToWorking(run.color.rgb), alpha);
+    return vec4f(run.color.rgb, alpha);
 }
 
 fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
@@ -145,7 +145,7 @@ fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
         )
     );
     if (!visible) {
-        return vec4f(colorToWorking(run.text_shadow_color.rgb), 0.0);
+        return vec4f(run.text_shadow_color.rgb, 0.0);
     }
 
     let blur_px = run.text_shadow.z * viewport.device_pixel_ratio;
@@ -166,6 +166,6 @@ fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
         run.text_shadow_color.a *
         run.font_data.y;
 
-    return vec4f(colorToWorking(run.text_shadow_color.rgb), alpha);
+    return vec4f(run.text_shadow_color.rgb, alpha);
 }
 `

@@ -37,16 +37,14 @@ export class ImageManager {
     public texture_version = 0
     private device
     private atlas_size
-    private srgb
     private atlas_texture
     private atlas_layer_count = 1
     private atlas_texture_layer_count = 1
     private atlas_layers: AtlasLayer[] = []
 
-    constructor({ device, atlas_size, srgb }) {
+    constructor({ device, atlas_size }) {
         this.device = device
         this.atlas_size = atlas_size
-        this.srgb = srgb
         this.atlas_texture = this.createAtlasTexture(this.atlas_texture_layer_count)
         this.atlas_layers.push(this.createAtlasLayer(0))
     }
@@ -262,7 +260,7 @@ export class ImageManager {
             },
             dimension: '2d',
             textureBindingViewDimension: '2d-array',
-            format: this.srgb ? 'rgba8unorm' : 'rgba8unorm-srgb',
+            format: 'rgba8unorm',
             usage:
                 globalThis.GPUTextureUsage.TEXTURE_BINDING |
                 globalThis.GPUTextureUsage.COPY_SRC |

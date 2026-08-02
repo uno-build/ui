@@ -18,9 +18,8 @@ webgpu.registerFont('Poppins', font_image, font_json)
 const renderer = new RendererWebGPU({ webgpu, loadYoga })
 ```
 
-Fonts only need to be registered once per shared context. Images only need to be registered once per `srgb` mode used
-by its renderers; pass `{ srgb: false }` when registering an image for a renderer using that mode. Registering the same
-`src` twice in one mode throws, so call `disposeImage` before replacing it.
+Fonts and images only need to be registered once per shared context. Registering the same image `src` twice throws, so
+call `disposeImage` before replacing it.
 
 ## WebGPU composition
 
