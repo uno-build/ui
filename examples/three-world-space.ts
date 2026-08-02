@@ -1,9 +1,10 @@
 import * as THREE from 'three/webgpu'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
-const WORLD_HEIGHT = 2
+const WORLD_HEIGHT = 3
 const BACKGROUND_GAP = 16
 const BACKGROUND_ITEM_SIZE = 120
+const TEXTURE_SCALAR = window.devicePixelRatio
 
 export async function main({
     canvas,
@@ -37,12 +38,15 @@ export async function main({
     const overlay_ui = new UI({ renderer: overlay_renderer, device_pixel_ratio })
     await overlay_ui.init()
 
+    const texture_width = Math.round(device_width * TEXTURE_SCALAR)
+    const texture_height = Math.round(device_height * TEXTURE_SCALAR)
+    console.log('texture_width', texture_width, 'texture_height', texture_height)
     const first_renderer = new RendererThreeWorldSpace({
         webgpu,
         srgb: false,
         loadYoga,
-        texture_width: Math.round(device_width * device_pixel_ratio),
-        texture_height: Math.round(device_height * device_pixel_ratio),
+        texture_width: texture_width,
+        texture_height: texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
     })
@@ -53,8 +57,9 @@ export async function main({
         webgpu,
         loadYoga,
         srgb: false,
-        texture_width: Math.round(device_width * device_pixel_ratio),
-        texture_height: Math.round(device_height * device_pixel_ratio),
+        tsl: true,
+        texture_width: texture_width,
+        texture_height: texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
     })
@@ -88,6 +93,7 @@ export async function main({
     second_plane.position.set(world_width / 2 + 0.25, 1, 0)
     second_plane.rotation.y = -0.35
     second_plane.material.side = THREE.DoubleSide
+    second_plane.material.opacity = 1
     scene.add(second_plane)
 
     const floor = new THREE.GridHelper(20, 20, 0x475569, 0x263244)
@@ -98,6 +104,10 @@ export async function main({
     const light = new THREE.DirectionalLight(0xffffff, 3)
     light.position.set(3, 5, 4)
     scene.add(light)
+
+    const second_light = new THREE.PointLight(0x60a5fa, 25, 5)
+    second_light.position.set(second_plane.position.x + 0.5, second_plane.position.y + 0.5, 2)
+    scene.add(second_light)
 
     const { grid: first_grid } = createLayout({ ui: first_ui, assets, title: 'First UI' })
     const { grid: second_grid } = createLayout({ ui: second_ui, assets, title: 'Second UI' })
@@ -151,6 +161,7 @@ function syncCanvasSize({ canvas, three_renderer, camera, overlay_ui }) {
     camera.updateProjectionMatrix()
     overlay_ui.setViewport(width, height)
     overlay_ui.setDevicePixelRatio(device_pixel_ratio)
+    overlay_ui.update()
 }
 
 async function loadAssets({ loadImage, loadJson }) {

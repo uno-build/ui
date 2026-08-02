@@ -6,15 +6,26 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
     private texture_height
     private world_width
     private world_height
+    private tsl
     private ui_texture
     private ui_texture_view
 
-    constructor({ webgpu, texture_width, texture_height, world_width, world_height, srgb = false, ...options }) {
+    constructor({
+        webgpu,
+        texture_width,
+        texture_height,
+        world_width,
+        world_height,
+        srgb = false,
+        tsl = false,
+        ...options
+    }) {
         super({ webgpu, ...options, srgb })
         this.texture_width = texture_width
         this.texture_height = texture_height
         this.world_width = world_width
         this.world_height = world_height
+        this.tsl = tsl
     }
 
     public async init() {
@@ -40,9 +51,21 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
         three_texture.offset.y = 1
         three_texture.repeat.y = -1
 
-        const plane = new THREE.Mesh(
-            new THREE.PlaneGeometry(this.world_width, this.world_height),
-            new THREE.MeshBasicMaterial({
+        let material
+        if (this.tsl) {
+            material = new THREE.MeshStandardNodeMaterial({
+                map: three_texture,
+                transparent: true,
+                depthWrite: false,
+                toneMapped: false,
+                premultipliedAlpha: true,
+            })
+            material.colorNode = THREE.TSL.vec4(
+                THREE.TSL.materialColor.rgb.div(THREE.TSL.materialColor.a.max(0.0001)),
+                THREE.TSL.materialColor.a,
+            )
+        } else {
+            material = new THREE.MeshBasicMaterial({
                 map: three_texture,
                 transparent: true,
                 depthWrite: false,
@@ -50,8 +73,10 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
                 blending: THREE.CustomBlending,
                 blendSrc: THREE.OneFactor,
                 blendDst: THREE.OneMinusSrcAlphaFactor,
-            }),
-        )
+            })
+        }
+
+        const plane = new THREE.Mesh(new THREE.PlaneGeometry(this.world_width, this.world_height), material)
 
         return { ...output, plane }
     }
