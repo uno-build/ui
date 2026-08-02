@@ -114,6 +114,10 @@ export default class RendererWebGPU extends Renderer {
 
     constructor({
         canvas,
+        adapter,
+        device,
+        context,
+        format,
         image_atlas_size = IMAGE_ATLAS_SIZE,
         font_atlas_size = FONT_ATLAS_SIZE,
         image_min_filter = 'linear',
@@ -124,6 +128,10 @@ export default class RendererWebGPU extends Renderer {
     }) {
         super()
         this.canvas = canvas
+        this.adapter = adapter
+        this.device = device
+        this.context = context
+        this.format = format
         this.image_atlas_size = image_atlas_size
         this.font_atlas_size = font_atlas_size
         this.image_min_filter = image_min_filter
@@ -135,20 +143,24 @@ export default class RendererWebGPU extends Renderer {
 
     public async init() {
         this.engine = await createEngine({ loadYoga: this.loadYoga })
-        this.adapter = await globalThis.navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
-        this.device = await this.adapter.requestDevice({
-            requiredLimits: {
-                maxStorageBuffersInVertexStage: 2,
-                // maxTextureDimension2D: this.adapter.limits.maxTextureDimension2D,
-            },
-        })
-        this.context = this.canvas.getContext('webgpu')
-        this.format = globalThis.navigator.gpu.getPreferredCanvasFormat()
-        this.context.configure({
-            device: this.device,
-            format: this.format,
-            alphaMode: 'premultiplied',
-        })
+        if (this.device === undefined) {
+            this.adapter ??= await globalThis.navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
+            this.device = await this.adapter.requestDevice({
+                requiredLimits: {
+                    maxStorageBuffersInVertexStage: 2,
+                    // maxTextureDimension2D: this.adapter.limits.maxTextureDimension2D,
+                },
+            })
+        }
+        this.format ??= globalThis.navigator.gpu.getPreferredCanvasFormat()
+        if (this.context === undefined) {
+            this.context = this.canvas.getContext('webgpu')
+            this.context.configure({
+                device: this.device,
+                format: this.format,
+                alphaMode: 'premultiplied',
+            })
+        }
         this.position_buffer = this.device.createBuffer({
             size: POSITION_VERTICES.byteLength,
             usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,

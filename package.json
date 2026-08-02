@@ -15,10 +15,6 @@
             "types": "./src/renderer/RendererWebGPU.ts",
             "import": "./src/renderer/RendererWebGPU.ts"
         },
-        "./RendererThree": {
-            "types": "./src/renderer/RendererThree.ts",
-            "import": "./src/renderer/RendererThree.ts"
-        },
         "./RendererThreeWorldSpace": {
             "types": "./src/renderer/RendererThreeWorldSpace.ts",
             "import": "./src/renderer/RendererThreeWorldSpace.ts"
