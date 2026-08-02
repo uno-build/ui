@@ -20,8 +20,19 @@ const CUBE_VERTEX_ARRAY = new Float32Array([
     1, -1, 1, 1, 1, 0, 1, 0, 0, 1, -1, -1, 1, 1, 0, 0, 1, 0, 1, -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
 ])
 
-export async function main({ canvas, onCanvasEvent, UI, RendererWebGPU, loadImage, loadJson, loadYoga }) {
-    const renderer = new RendererWebGPU({ canvas, loadYoga })
+export async function main({
+    canvas,
+    onCanvasEvent,
+    UI,
+    RendererWebGPU,
+    WebGPUSharedContext,
+    loadImage,
+    loadJson,
+    loadYoga,
+}) {
+    const webgpu = new WebGPUSharedContext({ canvas })
+    await webgpu.init()
+    const renderer = new RendererWebGPU({ webgpu, loadYoga })
     const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
     const { device, context, format } = await ui.init()
 

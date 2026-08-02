@@ -9,6 +9,7 @@ export async function main({
     canvas,
     onCanvasEvent,
     UI,
+    WebGPUSharedContext,
     RendererWebGPU,
     RendererThreeWorldSpace,
     loadImage,
@@ -19,18 +20,16 @@ export async function main({
     const device_width = Math.max(canvas.clientWidth, canvas.clientHeight)
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
     const world_width = WORLD_HEIGHT * (device_width / device_height)
+    const webgpu = new WebGPUSharedContext({ canvas })
+    const { context, device } = await webgpu.init()
 
-    const overlay_renderer = new RendererWebGPU({ canvas, loadYoga })
+    const overlay_renderer = new RendererWebGPU({ webgpu, loadYoga })
     const overlay_ui = new UI({ renderer: overlay_renderer, device_pixel_ratio })
-    const { context, adapter, device, format } = await overlay_ui.init()
+    await overlay_ui.init()
 
     const first_renderer = new RendererThreeWorldSpace({
-        canvas,
+        webgpu,
         loadYoga,
-        adapter,
-        device,
-        context,
-        format,
         texture_width: Math.round(device_width * device_pixel_ratio),
         texture_height: Math.round(device_height * device_pixel_ratio),
         world_width,
@@ -40,12 +39,8 @@ export async function main({
     const { plane: first_plane } = await first_ui.init()
 
     const second_renderer = new RendererThreeWorldSpace({
-        canvas,
+        webgpu,
         loadYoga,
-        adapter,
-        device,
-        context,
-        format,
         texture_width: Math.round(device_width * device_pixel_ratio),
         texture_height: Math.round(device_height * device_pixel_ratio),
         world_width,
@@ -93,9 +88,9 @@ export async function main({
     scene.add(light)
 
     const assets = await loadAssets({ loadImage, loadJson })
-    for (const ui of [first_ui, second_ui, overlay_ui]) {
-        registerAssets({ ui, assets })
-    }
+    registerImages({ ui: overlay_ui, assets })
+    registerImages({ ui: first_ui, assets })
+    registerFont({ ui: overlay_ui, assets })
 
     const { grid: first_grid } = createLayout({ ui: first_ui, assets, title: 'First UI' })
     const { grid: second_grid } = createLayout({ ui: second_ui, assets, title: 'Second UI' })
@@ -161,12 +156,17 @@ async function loadAssets({ loadImage, loadJson }) {
     return { coin, repeat_x, repeat_y, font_image, font_json }
 }
 
-function registerAssets({ ui, assets }) {
-    const { coin, repeat_x, repeat_y, font_image, font_json } = assets
+function registerImages({ ui, assets }) {
+    const { coin, repeat_x, repeat_y } = assets
 
     ui.imageUpload(coin.src, coin)
     ui.imageUpload(repeat_x.src, repeat_x)
     ui.imageUpload(repeat_y.src, repeat_y)
+}
+
+function registerFont({ ui, assets }) {
+    const { font_image, font_json } = assets
+
     ui.fontRegister('Supercell-Magic', font_image, font_json)
 }
 

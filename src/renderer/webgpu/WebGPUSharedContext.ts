@@ -5,15 +5,15 @@ const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 2048
 
 export class WebGPUSharedContext {
+    public canvas
     public adapter
     public device
     public context
     public format
+    public font_atlas_size
+    public image_atlas_size
     public font_manager
-    private canvas
-    private image_atlas_size
-    private font_atlas_size
-    private image_managers = new Map<boolean, ImageManager>()
+    public image_managers = new Map<boolean, ImageManager>()
 
     constructor({
         canvas,

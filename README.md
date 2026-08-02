@@ -1,5 +1,23 @@
 # Uno UI
 
+## WebGPU shared context
+
+Create and initialize one `WebGPUSharedContext` before constructing WebGPU renderers. Pass the same instance as
+`webgpu` to every renderer that should share its adapter, device, canvas context, format, fonts, and image atlases.
+
+```ts
+import RendererWebGPU from 'uno-ui/RendererWebGPU'
+import { WebGPUSharedContext } from 'uno-ui/WebGPUSharedContext'
+
+const webgpu = new WebGPUSharedContext({ canvas })
+await webgpu.init()
+
+const renderer = new RendererWebGPU({ webgpu, loadYoga })
+```
+
+Fonts only need to be registered once per shared context. Images only need to be uploaded once per `srgb` mode used
+by its renderers.
+
 ## WebGPU composition
 
 Both examples render to the same `GPUDevice`, `GPUCanvasContext`, and current
@@ -60,7 +78,7 @@ and visual comparisons should avoid overlapping descendants inside nodes with
 true distance stored in alpha renders `textShadow` and `textStroke`.
 
 The MTSDF and MSDF implementations live in separate shader modules. The active
-implementation is the one imported by `src/renderer/webgpu/shaders.ts`; their
+implementation is the one imported by `src/renderer/webgpu/shaders/index.ts`; their
 sampling constants stay inside their respective modules.
 
 ## RendererWebGPU background image bleeding

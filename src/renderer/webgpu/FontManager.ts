@@ -18,6 +18,7 @@ export type ManagedGlyph = {
 
 export class FontManager {
     public fonts = new Map<string, ManagedFont>()
+    public texture_version = 0
     private device
     private atlas_size
     private font_texture
@@ -120,6 +121,7 @@ export class FontManager {
 
         this.font_texture = new_texture
         this.font_texture_layer_count = next_layer_count
+        this.texture_version++
     }
 
     private createFontTexture(layer_count) {

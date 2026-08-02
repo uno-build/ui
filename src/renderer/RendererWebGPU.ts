@@ -25,8 +25,6 @@ import {
 } from './utils/render-metrics'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
 import { createUIWGSL } from './webgpu/shaders/'
-import { ImageManager } from './webgpu/ImageManager'
-import { FontManager } from './webgpu/FontManager'
 import {
     FLOAT32_SIZE,
     UINT32_SIZE,
@@ -49,15 +47,11 @@ import {
 } from './webgpu/buffers'
 import Segmenter from './pretext/segmenter'
 
-const IMAGE_ATLAS_SIZE = 2048
-const FONT_ATLAS_SIZE = 2048
 const FONT_COLOR = [0, 0, 0, 255]
 const TEXT_MEASURE_STYLE_NAMES = [STYLE.FONTSIZE.name, STYLE.LINEHEIGHT.name, STYLE.LETTERSPACING.name]
 
 export default class RendererWebGPU extends Renderer {
-    private canvas
-    private image_atlas_size
-    private font_atlas_size
+    private webgpu
     private image_min_filter
     private image_mag_filter
     private srgb
@@ -68,7 +62,6 @@ export default class RendererWebGPU extends Renderer {
     private style_context_dirty = false
     private scrollbar_size
     private engine!: LayoutEngine
-    private adapter
     private device
     private context
     private format
@@ -77,6 +70,8 @@ export default class RendererWebGPU extends Renderer {
     private image_sampler
     private image_manager
     private font_manager
+    private image_texture_version
+    private font_texture_version
     private position_buffer
     private viewport_buffer
     private command_buffer
@@ -113,13 +108,7 @@ export default class RendererWebGPU extends Renderer {
     private computeStyle = (style) => computeStyleValue(style, this)
 
     constructor({
-        canvas,
-        adapter,
-        device,
-        context,
-        format,
-        image_atlas_size = IMAGE_ATLAS_SIZE,
-        font_atlas_size = FONT_ATLAS_SIZE,
+        webgpu,
         image_min_filter = 'linear',
         image_mag_filter = 'linear',
         srgb = true,
@@ -127,40 +116,21 @@ export default class RendererWebGPU extends Renderer {
         loadYoga,
     }) {
         super()
-        this.canvas = canvas
-        this.adapter = adapter
-        this.device = device
-        this.context = context
-        this.format = format
-        this.image_atlas_size = image_atlas_size
-        this.font_atlas_size = font_atlas_size
+        this.webgpu = webgpu
+        this.device = webgpu.device
+        this.context = webgpu.context
+        this.format = webgpu.format
         this.image_min_filter = image_min_filter
         this.image_mag_filter = image_mag_filter
         this.srgb = srgb
+        this.image_manager = webgpu.getImageManager(srgb)
+        this.font_manager = webgpu.font_manager
         this.scrollbar_size = scrollbar_size
         this.loadYoga = loadYoga
     }
 
     public async init() {
         this.engine = await createEngine({ loadYoga: this.loadYoga })
-        if (this.device === undefined) {
-            this.adapter ??= await globalThis.navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
-            this.device = await this.adapter.requestDevice({
-                requiredLimits: {
-                    maxStorageBuffersInVertexStage: 2,
-                    // maxTextureDimension2D: this.adapter.limits.maxTextureDimension2D,
-                },
-            })
-        }
-        this.format ??= globalThis.navigator.gpu.getPreferredCanvasFormat()
-        if (this.context === undefined) {
-            this.context = this.canvas.getContext('webgpu')
-            this.context.configure({
-                device: this.device,
-                format: this.format,
-                alphaMode: 'premultiplied',
-            })
-        }
         this.position_buffer = this.device.createBuffer({
             size: POSITION_VERTICES.byteLength,
             usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
@@ -197,19 +167,10 @@ export default class RendererWebGPU extends Renderer {
             addressModeU: 'clamp-to-edge',
             addressModeV: 'clamp-to-edge',
         })
-        this.image_manager = new ImageManager({
-            device: this.device,
-            atlas_size: this.image_atlas_size,
-            srgb: this.srgb,
-        })
-        this.font_manager = new FontManager({
-            device: this.device,
-            atlas_size: this.font_atlas_size,
-        })
         this.bind_group = this.createBindGroup()
 
         return {
-            adapter: this.adapter,
+            adapter: this.webgpu.adapter,
             device: this.device,
             context: this.context,
             format: this.format,
@@ -300,7 +261,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private createBindGroup() {
-        return this.device.createBindGroup({
+        const bind_group = this.device.createBindGroup({
             layout: this.pipeline.getBindGroupLayout(0),
             entries: [
                 {
@@ -341,6 +302,11 @@ export default class RendererWebGPU extends Renderer {
                 },
             ],
         })
+
+        this.image_texture_version = this.image_manager.texture_version
+        this.font_texture_version = this.font_manager.texture_version
+
+        return bind_group
     }
 
     public createElement(node) {
@@ -408,7 +374,6 @@ export default class RendererWebGPU extends Renderer {
 
     public imageUpload(src: string, image: any): void {
         this.image_manager.imageUpload(src, image)
-        this.bind_group = this.createBindGroup()
     }
 
     public imageDispose(src: string): void {
@@ -421,7 +386,6 @@ export default class RendererWebGPU extends Renderer {
 
     public fontRegister(name: string, image: any, json: any): void {
         this.font_manager.fontRegister(name, image, json)
-        this.bind_group = this.createBindGroup()
     }
 
     protected updateStyle(node, resolved_style) {
@@ -551,6 +515,13 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public draw({ submit = true, command_encoder, texture_view, load_op = 'load' } = {}) {
+        if (
+            this.image_texture_version !== this.image_manager.texture_version ||
+            this.font_texture_version !== this.font_manager.texture_version
+        ) {
+            this.bind_group = this.createBindGroup()
+        }
+
         command_encoder ??= this.device.createCommandEncoder()
         texture_view ??= this.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
@@ -791,7 +762,7 @@ export default class RendererWebGPU extends Renderer {
             glyphs,
             run: {
                 color: node.styles.color?.parsed.rgba ?? FONT_COLOR,
-                font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.font_atlas_size],
+                font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.webgpu.font_atlas_size],
                 clipping,
                 text_shadow: [text_shadow?.offset_x ?? 0, text_shadow?.offset_y ?? 0, text_shadow?.blur ?? 0, 0],
                 text_shadow_color: text_shadow?.color ?? [0, 0, 0, 0],

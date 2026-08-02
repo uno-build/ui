@@ -15,6 +15,10 @@
             "types": "./src/renderer/RendererWebGPU.ts",
             "import": "./src/renderer/RendererWebGPU.ts"
         },
+        "./WebGPUSharedContext": {
+            "types": "./src/renderer/webgpu/WebGPUSharedContext.ts",
+            "import": "./src/renderer/webgpu/WebGPUSharedContext.ts"
+        },
         "./RendererThreeWorldSpace": {
             "types": "./src/renderer/RendererThreeWorldSpace.ts",
             "import": "./src/renderer/RendererThreeWorldSpace.ts"
