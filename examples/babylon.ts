@@ -20,7 +20,7 @@ const BACKGROUND_GAP = 16
 const BACKGROUND_ITEM_SIZE = 120
 
 export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUSharedContext, loadImage, loadJson, loadYoga }) {
-    const engine = await createEngine(canvas, { msaaSamples: 1 })
+    const engine = await createEngine(canvas, { msaaSamples: 1, alphaMode: 'premultiplied' })
     const scene = createSceneContext(engine, { defaultRenderTask: false })
 
     const camera = createArcRotateCamera(-Math.PI / 2, Math.PI / 2, 4, { x: 0, y: 0, z: 0 })

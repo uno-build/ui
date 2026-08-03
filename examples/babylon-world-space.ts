@@ -37,7 +37,7 @@ export async function main({
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
     const world_width = WORLD_HEIGHT * (device_width / device_height)
 
-    const engine = await createEngine(canvas)
+    const engine = await createEngine(canvas, { msaaSamples: 1, alphaMode: 'premultiplied' })
     const scene = createSceneContext(engine)
     scene.clearColor = { r: 0.067, g: 0.094, b: 0.153, a: 1 }
 
