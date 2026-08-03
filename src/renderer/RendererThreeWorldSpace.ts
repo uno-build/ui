@@ -9,6 +9,7 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
     private world_height
     private ui_texture
     private ui_texture_view
+    private node_material
 
     constructor({
         webgpu,
@@ -16,6 +17,7 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
         texture_height,
         world_width,
         world_height,
+        node_material = THREE.MeshStandardNodeMaterial,
         ...options
     }) {
         super({ webgpu, ...options })
@@ -23,6 +25,7 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
         this.texture_height = texture_height
         this.world_width = world_width
         this.world_height = world_height
+        this.node_material = node_material
     }
 
     public async init() {
@@ -49,7 +52,7 @@ export default class RendererThreeWorldSpace extends RendererWebGPU {
         three_texture.repeat.y = -1
 
         const sampled_color = texture(three_texture)
-        const material = new THREE.MeshStandardNodeMaterial({
+        const material = new this.node_material({
             map: three_texture,
             transparent: true,
             depthWrite: false,
