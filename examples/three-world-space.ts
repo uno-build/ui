@@ -9,10 +9,9 @@ const TEXTURE_SCALAR = window.devicePixelRatio
 export async function main({
     canvas,
     onCanvasEvent,
-    UI,
+    UIWebGPU,
+    UIThreeWorldSpace,
     WebGPUSharedContext,
-    RendererWebGPU,
-    RendererThreeWorldSpace,
     loadImage,
     loadJson,
     loadYoga,
@@ -22,8 +21,8 @@ export async function main({
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
     const world_width = WORLD_HEIGHT * (device_width / device_height)
 
-    const webgpu = new WebGPUSharedContext({ canvas })
-    const { context, device } = await webgpu.init()
+    const webgpu = await WebGPUSharedContext.create({ canvas })
+    const { context, device } = webgpu
     const assets = await loadAssets({ loadImage, loadJson })
     const { coin, repeat_x, repeat_y, font_image, font_json } = assets
     webgpu.registerFont('Supercell-Magic', font_image, font_json)
@@ -31,34 +30,32 @@ export async function main({
     webgpu.registerImage(repeat_x.src, repeat_x)
     webgpu.registerImage(repeat_y.src, repeat_y)
 
-    const overlay_renderer = new RendererWebGPU({ webgpu, loadYoga })
-    const overlay_ui = new UI({ renderer: overlay_renderer, device_pixel_ratio })
-    await overlay_ui.init()
+    const overlay_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
     console.log('texture_width', texture_width, 'texture_height', texture_height)
-    const first_renderer = new RendererThreeWorldSpace({
+    const first_ui = await UIThreeWorldSpace.create({
         webgpu,
         loadYoga,
+        device_pixel_ratio,
         texture_width: texture_width,
         texture_height: texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
     })
-    const first_ui = new UI({ renderer: first_renderer, device_pixel_ratio })
-    const { plane: first_plane } = await first_ui.init()
+    const first_plane = first_ui.plane
 
-    const second_renderer = new RendererThreeWorldSpace({
+    const second_ui = await UIThreeWorldSpace.create({
         webgpu,
         loadYoga,
+        device_pixel_ratio,
         texture_width: texture_width,
         texture_height: texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
     })
-    const second_ui = new UI({ renderer: second_renderer, device_pixel_ratio })
-    const { plane: second_plane } = await second_ui.init()
+    const second_plane = second_ui.plane
 
     const three_renderer = new THREE.WebGPURenderer({
         canvas,

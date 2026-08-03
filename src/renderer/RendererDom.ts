@@ -1,4 +1,4 @@
-import Renderer from '../Renderer'
+import Renderer from '../core/Renderer'
 import { calculateLayoutRect, getParentLayout } from '../layouter/utils'
 import { KEYWORD } from '../style/consts'
 

@@ -1,5 +1,5 @@
 import { loadYoga } from 'yoga-layout/load'
-import Renderer from '../src/Renderer'
+import Renderer from '../src/core/Renderer'
 import createEngine from '../src/layouter/yoga'
 
 export default class TestRenderer extends Renderer {

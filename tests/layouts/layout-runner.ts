@@ -1,14 +1,14 @@
-import UI from '../../src/UI'
-import RendererDom from '../../src/renderer/RendererDom'
+import UIDom from '../../src/ui/UIDom'
+import UIWebGPU from '../../src/ui/UIWebGPU'
 import RendererDivs from '../../src/renderer/RendererDivs'
-import RendererWebGPU from '../../src/renderer/RendererWebGPU'
+import { WebGPUSharedContext } from '../../src/renderer/webgpu/WebGPUSharedContext'
 import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
 import { loadYoga } from 'yoga-layout/load'
 
 export const SETUPS = {
     RendererDom: {
         elementType: 'div',
-        renderer: RendererDom,
+        create: async (options) => ({ ui: await UIDom.create(options), webgpu: undefined }),
         attributes: {},
         inspectDomPaint: true,
         runOnTests: true,
@@ -23,7 +23,11 @@ export const SETUPS = {
     // },
     RendererWebGPU: {
         elementType: 'canvas',
-        renderer: RendererWebGPU,
+        create: async ({ canvas, ...options }) => {
+            const webgpu = await WebGPUSharedContext.create({ canvas })
+            const ui = await UIWebGPU.create({ webgpu, ...options })
+            return { ui, webgpu }
+        },
         attributes: {},
         inspectDomPaint: false,
         runOnTests: true,
@@ -50,15 +54,18 @@ export async function runLayout({
     for (const rendererName of renderers) {
         const setup = getSetup(rendererName)
         const canvas = createCanvasElement(root, rendererName, setup)
-        const Renderer = setup.renderer
-        const renderer = new Renderer({ canvas, loadYoga, ...renderer_options })
-        const ui = new UI({ renderer, device_pixel_ratio: window.devicePixelRatio })
-        await ui.init()
+        const { ui, webgpu } = await setup.create({
+            canvas,
+            loadYoga,
+            device_pixel_ratio: window.devicePixelRatio,
+            ...renderer_options,
+        })
         window.ui = ui
 
         syncViewport({ ui, root, canvas })
         const layoutResult = await createLayout({
             ui,
+            webgpu,
             rendererName,
             animations_enabled,
             viewport_width: root.clientWidth,

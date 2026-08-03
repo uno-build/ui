@@ -1,12 +1,12 @@
 import { loadImage } from '../../../src/utils/load-assets'
 
-export default async function createBackgroundImageUnsetLayout({ ui }) {
+export default async function createBackgroundImageUnsetLayout({ ui, webgpu }) {
     const CARD_SIZE = 160
     const SWITCH_INTERVAL = 1200
     const asset_texture = await loadImage('/assets/images/texture.jpg')
     const asset_coin = await loadImage('/assets/images/coin.png')
-    ui.imageUpload(asset_texture.src, asset_texture)
-    ui.imageUpload(asset_coin.src, asset_coin)
+    webgpu?.registerImage(asset_texture.src, asset_texture)
+    webgpu?.registerImage(asset_coin.src, asset_coin)
 
     const states = [{ value: asset_texture.src }, { value: asset_coin.src }, { value: 'unset' }]
 
@@ -39,14 +39,16 @@ export default async function createBackgroundImageUnsetLayout({ ui }) {
 
         // console.log(ui.renderer.image_manager?.atlas_layer_count)
 
-        const imagelist = ui.imageList()
-        for (const img of imagelist) {
-            console.log(`Nodes using ${img.src}:`, img.nodes.size)
-            // if (img.nodes.size === 0) {
-            // ui.imageDispose(img.src)
-            // }
+        if (webgpu !== undefined) {
+            const image_list = webgpu.listImages()
+            for (const image of image_list) {
+                console.log(`Nodes using ${image.src}:`, image.nodes.size)
+                // if (image.nodes.size === 0) {
+                // webgpu.disposeImage(image.src)
+                // }
+            }
+            console.log('----')
         }
-        console.log('----')
     }, SWITCH_INTERVAL)
 }
 

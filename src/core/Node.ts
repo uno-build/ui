@@ -1,4 +1,4 @@
-import { normalizeStyleKey } from './style/normalizers'
+import { normalizeStyleKey } from '../style/normalizers'
 
 export default class Node {
     public element = null

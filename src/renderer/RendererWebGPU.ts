@@ -1,4 +1,4 @@
-import Renderer from '../Renderer'
+import Renderer from '../core/Renderer'
 import { computeStyleValue, STYLE } from '../style'
 import {
     ROOT_SIZE,

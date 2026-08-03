@@ -3,18 +3,15 @@ import * as THREE from 'three/webgpu'
 export async function main({
     canvas,
     onCanvasEvent,
-    UI,
-    RendererWebGPU,
+    UIWebGPU,
     WebGPUSharedContext,
     loadImage,
     loadJson,
     loadYoga,
 }) {
-    const webgpu = new WebGPUSharedContext({ canvas })
-    await webgpu.init()
-    const ui_renderer = new RendererWebGPU({ webgpu, loadYoga })
-    const ui = new UI({ renderer: ui_renderer, device_pixel_ratio: devicePixelRatio })
-    const { context, device } = await ui.init()
+    const webgpu = await WebGPUSharedContext.create({ canvas })
+    const ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio: devicePixelRatio })
+    const { context, device } = webgpu
 
     const three_renderer = new THREE.WebGPURenderer({
         canvas,

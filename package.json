@@ -3,25 +3,21 @@
     "version": "0.1.0",
     "type": "module",
     "exports": {
-        ".": {
-            "types": "./src/index.ts",
-            "import": "./src/index.ts"
-        },
-        "./RendererDom": {
-            "types": "./src/renderer/RendererDom.ts",
-            "import": "./src/renderer/RendererDom.ts"
-        },
-        "./RendererWebGPU": {
-            "types": "./src/renderer/RendererWebGPU.ts",
-            "import": "./src/renderer/RendererWebGPU.ts"
-        },
         "./WebGPUSharedContext": {
             "types": "./src/renderer/webgpu/WebGPUSharedContext.ts",
             "import": "./src/renderer/webgpu/WebGPUSharedContext.ts"
         },
-        "./RendererThreeWorldSpace": {
-            "types": "./src/renderer/RendererThreeWorldSpace.ts",
-            "import": "./src/renderer/RendererThreeWorldSpace.ts"
+        "./UIWebGPU": {
+            "types": "./src/ui/UIWebGPU.ts",
+            "import": "./src/ui/UIWebGPU.ts"
+        },
+        "./UIThreeWorldSpace": {
+            "types": "./src/ui/UIThreeWorldSpace.ts",
+            "import": "./src/ui/UIThreeWorldSpace.ts"
+        },
+        "./UIDom": {
+            "types": "./src/ui/UIDom.ts",
+            "import": "./src/ui/UIDom.ts"
         }
     },
     "dependencies": {

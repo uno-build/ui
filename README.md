@@ -2,20 +2,19 @@
 
 ## WebGPU shared context
 
-Create and initialize one `WebGPUSharedContext` before constructing WebGPU renderers. Pass the same instance as
-`webgpu` to every renderer that should share its adapter, device, canvas context, format, fonts, and image atlases.
+Create one `WebGPUSharedContext` and pass the same instance as `webgpu` to every UI that should share its adapter,
+device, canvas context, format, fonts, and image atlases.
 
 ```ts
-import RendererWebGPU from 'uno-ui/RendererWebGPU'
+import UIWebGPU from 'uno-ui/UIWebGPU'
 import { WebGPUSharedContext } from 'uno-ui/WebGPUSharedContext'
 
-const webgpu = new WebGPUSharedContext({ canvas })
-await webgpu.init()
+const webgpu = await WebGPUSharedContext.create({ canvas })
 
 webgpu.registerImage(icon_path, icon)
 webgpu.registerFont('Poppins', font_image, font_json)
 
-const renderer = new RendererWebGPU({ webgpu, loadYoga })
+const ui = await UIWebGPU.create({ webgpu, loadYoga })
 ```
 
 Fonts and images only need to be registered once per shared context. Registering the same image `src` twice throws, so

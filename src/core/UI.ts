@@ -1,7 +1,7 @@
 import Node from './Node'
-import { resolveStyle } from './style'
-import { sortPaintingOrder } from './utils/sort-painting-order'
-import { ROOT_SIZE } from './style/consts'
+import { resolveStyle } from '../style'
+import { sortPaintingOrder } from '../utils/sort-painting-order'
+import { ROOT_SIZE } from '../style/consts'
 
 export default class UI {
     public root = null
@@ -11,13 +11,19 @@ export default class UI {
     private device_pixel_ratio
     private root_size
 
-    constructor({ renderer, device_pixel_ratio = 1, root_size = ROOT_SIZE }) {
+    protected constructor({ renderer, device_pixel_ratio = 1, root_size = ROOT_SIZE }) {
         this.renderer = renderer
         this.setDevicePixelRatio(device_pixel_ratio)
         this.setRootSize(root_size)
     }
 
-    public async init() {
+    public static async create(options) {
+        const ui = new UI(options)
+        await ui.initialize()
+        return ui
+    }
+
+    protected async initialize() {
         const output = await this.renderer.init()
         this.root = this.create()
         return output
@@ -80,22 +86,6 @@ export default class UI {
             }
         }
         this.renderer.addPendingStyle(node, resolved_style)
-    }
-
-    public imageUpload(src: string, image: any): void {
-        this.renderer.imageUpload(src, image)
-    }
-
-    public imageDispose(src: string): void {
-        this.renderer.imageDispose(src)
-    }
-
-    public imageList(): any[] {
-        return this.renderer.imageList()
-    }
-
-    public fontRegister(name: string, image: any, json: any): void {
-        this.renderer.fontRegister(name, image, json)
     }
 
     private addChild(parent, child) {

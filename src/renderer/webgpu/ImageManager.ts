@@ -1,4 +1,4 @@
-import type Node from '../../Node'
+import type Node from '../../core/Node'
 import {
     allocateFreeRect,
     allocateSkylineRect,

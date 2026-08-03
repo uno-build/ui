@@ -11,11 +11,11 @@ const VARIANTS = [
     { name: 'Justify', text_align: 'justify' },
 ]
 
-export default async function createFontTextAlignLayout({ ui }) {
+export default async function createFontTextAlignLayout({ ui, webgpu }) {
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
     const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
 
-    ui.fontRegister('Poppins-Regular', poppins_image, poppins_json)
+    webgpu?.registerFont('Poppins-Regular', poppins_image, poppins_json)
 
     const stage = ui.create()
     stage.style('width', '100%')

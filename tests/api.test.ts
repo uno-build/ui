@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import UI from '../src/UI'
+import UI from '../src/core/UI'
 import TestRenderer from './TestRenderer.ts'
 
 test('UI and Node api creates, styles, updates, and removes nodes', async () => {

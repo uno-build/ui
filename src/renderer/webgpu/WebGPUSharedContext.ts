@@ -15,7 +15,7 @@ export class WebGPUSharedContext {
     public font_manager
     public image_manager
 
-    constructor({
+    protected constructor({
         canvas,
         adapter,
         device,
@@ -33,7 +33,13 @@ export class WebGPUSharedContext {
         this.font_atlas_size = font_atlas_size
     }
 
-    public async init() {
+    public static async create(options) {
+        const webgpu = new WebGPUSharedContext(options)
+        await webgpu.initialize()
+        return webgpu
+    }
+
+    protected async initialize() {
         if (this.device === undefined) {
             this.adapter ??= await globalThis.navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
             this.device = await this.adapter.requestDevice({
@@ -59,8 +65,6 @@ export class WebGPUSharedContext {
             device: this.device,
             atlas_size: this.image_atlas_size,
         })
-
-        return this
     }
 
     public registerImage(src: string, image: any) {
