@@ -2,6 +2,7 @@ import UIDom from '../../src/ui/UIDom'
 import UIWebGPU from '../../src/ui/UIWebGPU'
 import RendererDivs from '../../src/renderer/RendererDivs'
 import WebGPUSharedContext from '../../src/renderer/webgpu/WebGPUSharedContext'
+import DOMSharedContext from './DOMSharedContext'
 import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
 import { loadYoga } from 'yoga-layout/load'
 
@@ -9,8 +10,9 @@ export const SETUPS = {
     RendererDom: {
         elementType: 'div',
         create: async (options) => {
+            const dom = new DOMSharedContext()
             const ui = await UIDom.create(options)
-            return { ui, webgpu: undefined, registerFont: ui.registerFont.bind(ui) }
+            return { ui, webgpu: dom, registerFont: dom.registerFont.bind(dom) }
         },
         attributes: {},
         inspectDomPaint: true,
