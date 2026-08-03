@@ -8,7 +8,7 @@ Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagit
 
 const INNER_TEXTS = TEXT.split('\n\n')
 
-export default async function createFontTextScrollLayout({ ui, webgpu }) {
+export default async function createFontTextScrollLayout({ ui, webgpu, registerFont }) {
     const changa_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
     const changa_json = await loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json')
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
@@ -17,8 +17,8 @@ export default async function createFontTextScrollLayout({ ui, webgpu }) {
     const image_asset2 = await loadImage('/assets/images/logo.jpg')
     const image_asset3 = await loadImage('/assets/images/coin.png')
 
-    webgpu?.registerFont('ChangaOne-Regular', changa_image, changa_json)
-    webgpu?.registerFont('Poppins-Regular', poppins_image, poppins_json)
+    registerFont('ChangaOne-Regular', changa_image, changa_json)
+    registerFont('Poppins-Regular', poppins_image, poppins_json)
     webgpu?.registerImage(image_asset.src, image_asset)
     webgpu?.registerImage(image_asset2.src, image_asset2)
     webgpu?.registerImage(image_asset3.src, image_asset3)

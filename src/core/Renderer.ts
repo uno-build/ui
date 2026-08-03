@@ -21,16 +21,6 @@ export default abstract class Renderer {
         )
     }
 
-    public imageUpload(src: string, image: any): void {}
-
-    public imageDispose(src: string): void {}
-
-    public imageList(): any[] {
-        return []
-    }
-
-    public fontRegister(name: string, image: any, json: any): void {}
-
     public addChild(parent, node) {
         this.insertChild(parent, node, this.getChildIndex(parent))
     }

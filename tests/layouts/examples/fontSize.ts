@@ -12,14 +12,14 @@ const RAINBOW_STOPS = [
     [148, 0, 211],
 ]
 
-export default async function createFontsLayout({ ui, webgpu }) {
+export default async function createFontsLayout({ ui, registerFont }) {
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
     const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
     const changaone_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
     const changaone_json = await loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json')
 
-    webgpu?.registerFont('Poppins-Regular', poppins_image, poppins_json)
-    webgpu?.registerFont('ChangaOne-Regular', changaone_image, changaone_json)
+    registerFont('Poppins-Regular', poppins_image, poppins_json)
+    registerFont('ChangaOne-Regular', changaone_image, changaone_json)
 
     const stage = ui.create()
     stage.style('flex', '1')

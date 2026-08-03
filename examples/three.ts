@@ -10,7 +10,8 @@ export async function main({
     loadYoga,
 }) {
     const webgpu = await WebGPUSharedContext.create({ canvas })
-    const ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio: devicePixelRatio })
+    const background_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio: devicePixelRatio })
+    const foreground_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio: devicePixelRatio })
     const { context, device } = webgpu
 
     const three_renderer = new THREE.WebGPURenderer({
@@ -18,9 +19,9 @@ export async function main({
         context,
         device,
         alpha: true,
-        antialias: true,
     })
-    three_renderer.setClearColor(0x654321, 1)
+    three_renderer.outputColorSpace = THREE.LinearSRGBColorSpace
+    three_renderer.autoClearColor = false
     await three_renderer.init()
 
     // Scene logic
@@ -41,13 +42,15 @@ export async function main({
     const cube = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true }))
     scene.add(cube)
 
-    const { grid } = await createLayout({ ui, webgpu, loadImage, loadJson })
-    syncCanvasSize({ canvas, ui, three_renderer, camera })
-    ui.update()
+    const { grid } = await createLayouts({ background_ui, foreground_ui, webgpu, loadImage, loadJson })
+    syncCanvasSize({ canvas, background_ui, foreground_ui, three_renderer, camera })
+    background_ui.update()
+    foreground_ui.update()
 
     onCanvasEvent('resize', () => {
-        syncCanvasSize({ canvas, ui, three_renderer, camera })
-        ui.update()
+        syncCanvasSize({ canvas, background_ui, foreground_ui, three_renderer, camera })
+        background_ui.update()
+        foreground_ui.update()
     })
 
     const has_present = typeof context.present === 'function'
@@ -55,17 +58,21 @@ export async function main({
     let bg_position = 0
 
     function frame() {
+        // Background UI
+        bg_position += 1
+        grid.style('backgroundPosition', `${bg_position}px ${bg_position}px`)
+        background_ui.update()
+        background_ui.draw({ load_op: 'clear' })
+
         // Three
         const now = Date.now() / 1000
         rotation_axis.set(Math.sin(now), Math.cos(now), 0).normalize()
         cube.setRotationFromAxisAngle(rotation_axis, 1)
         three_renderer.render(scene, camera)
 
-        // UI
-        bg_position += 1
-        grid.style('backgroundPosition', `${bg_position}px ${bg_position}px`)
-        ui.update()
-        ui.draw()
+        // Foreground UI
+        foreground_ui.update()
+        foreground_ui.draw()
 
         if (has_present) {
             context.present()
@@ -77,7 +84,7 @@ export async function main({
     requestAnimationFrame(frame)
 }
 
-function syncCanvasSize({ canvas, ui, three_renderer, camera }) {
+function syncCanvasSize({ canvas, background_ui, foreground_ui, three_renderer, camera }) {
     const device_pixel_ratio = window.devicePixelRatio
     const width = canvas.clientWidth
     const height = canvas.clientHeight
@@ -86,14 +93,17 @@ function syncCanvasSize({ canvas, ui, three_renderer, camera }) {
     three_renderer.setSize(width, height, false)
     camera.aspect = width / height
     camera.updateProjectionMatrix()
-    ui.setViewport(width, height)
-    ui.setDevicePixelRatio(device_pixel_ratio)
+
+    for (const ui of [background_ui, foreground_ui]) {
+        ui.setViewport(width, height)
+        ui.setDevicePixelRatio(device_pixel_ratio)
+    }
 }
 
 const BACKGROUND_GAP = 16
 const BACKGROUND_ITEM_SIZE = 120
 
-async function createLayout({ ui, webgpu, loadImage, loadJson }) {
+async function createLayouts({ background_ui, foreground_ui, webgpu, loadImage, loadJson }) {
     const coin = await loadImage('assets/images/coin.png')
     const repeat_x = await loadImage('assets/images/repeat-x.png')
     const repeat_y = await loadImage('assets/images/repeat-y.png')
@@ -105,7 +115,7 @@ async function createLayout({ ui, webgpu, loadImage, loadJson }) {
     webgpu.registerImage(repeat_y.src, repeat_y)
     webgpu.registerFont('Supercell-Magic', font_image, font_json)
 
-    const grid = ui.create()
+    const grid = background_ui.create()
     grid.style('width', '100%')
     grid.style('height', '100%')
     grid.style('flexDirection', 'row')
@@ -113,12 +123,13 @@ async function createLayout({ ui, webgpu, loadImage, loadJson }) {
     grid.style('alignContent', 'flex-start')
     grid.style('gap', `${BACKGROUND_GAP}px`)
     grid.style('padding', `${BACKGROUND_GAP}px`)
+    grid.style('backgroundColor', '#654321')
     grid.style('backgroundImage', coin.src)
     grid.style('backgroundRepeat', 'repeat')
     grid.style('backgroundSize', '30px')
-    ui.root.add(grid)
+    background_ui.root.add(grid)
 
-    const first = ui.create()
+    const first = background_ui.create()
     first.style('width', `${BACKGROUND_ITEM_SIZE}px`)
     first.style('height', `${BACKGROUND_ITEM_SIZE}px`)
     first.style('borderRadius', '12px')
@@ -128,7 +139,7 @@ async function createLayout({ ui, webgpu, loadImage, loadJson }) {
     first.style('border', '4px solid #000')
     grid.add(first)
 
-    const second = ui.create()
+    const second = background_ui.create()
     second.style('width', `${BACKGROUND_ITEM_SIZE}px`)
     second.style('height', `${BACKGROUND_ITEM_SIZE}px`)
     second.style('borderRadius', '12px')
@@ -138,7 +149,7 @@ async function createLayout({ ui, webgpu, loadImage, loadJson }) {
     second.style('border', '4px solid #000')
     grid.add(second)
 
-    const combined = ui.create()
+    const combined = background_ui.create()
     combined.style('width', `${BACKGROUND_ITEM_SIZE}px`)
     combined.style('height', `${BACKGROUND_ITEM_SIZE}px`)
     combined.style('borderRadius', '12px')
@@ -148,7 +159,7 @@ async function createLayout({ ui, webgpu, loadImage, loadJson }) {
     combined.style('border', '4px solid #000')
     grid.add(combined)
 
-    const inside = ui.create()
+    const inside = background_ui.create()
     inside.style('width', '100%')
     inside.style('height', '100%')
     inside.style('borderRadius', '8px')
@@ -157,14 +168,21 @@ async function createLayout({ ui, webgpu, loadImage, loadJson }) {
     inside.style('backgroundRepeat', 'repeat-y')
     combined.add(inside)
 
-    const title = ui.create()
+    const foreground = foreground_ui.create()
+    foreground.style('width', '100%')
+    foreground.style('height', '100%')
+    foreground.style('justifyContent', 'center')
+    foreground.style('alignItems', 'center')
+    foreground_ui.root.add(foreground)
+
+    const title = foreground_ui.create()
     title.style('fontFamily', 'Supercell-Magic')
     title.style('fontSize', '50px')
     title.style('color', '#ffffff')
     title.style('textStroke', '6px #000000')
     title.style('textShadow', '0px 4px 0px #000000')
     title.text('Hello Three.js!')
-    grid.add(title)
+    foreground.add(title)
 
     return { grid }
 }

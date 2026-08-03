@@ -9,9 +9,9 @@ const TEXTURE_SCALAR = window.devicePixelRatio
 export async function main({
     canvas,
     onCanvasEvent,
+    WebGPUSharedContext,
     UIWebGPU,
     UIThreeWorldSpace,
-    WebGPUSharedContext,
     loadImage,
     loadJson,
     loadYoga,

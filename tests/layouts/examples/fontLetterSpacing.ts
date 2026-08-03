@@ -27,11 +27,11 @@ const VARIANTS = [
     },
 ]
 
-export default async function createFontLetterSpacingLayout({ ui, webgpu }) {
+export default async function createFontLetterSpacingLayout({ ui, registerFont }) {
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
     const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
 
-    webgpu?.registerFont('Poppins-Regular', poppins_image, poppins_json)
+    registerFont('Poppins-Regular', poppins_image, poppins_json)
 
     const stage = ui.create()
     stage.style('width', '100%')

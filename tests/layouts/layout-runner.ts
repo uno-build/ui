@@ -1,14 +1,17 @@
 import UIDom from '../../src/ui/UIDom'
 import UIWebGPU from '../../src/ui/UIWebGPU'
 import RendererDivs from '../../src/renderer/RendererDivs'
-import { WebGPUSharedContext } from '../../src/renderer/webgpu/WebGPUSharedContext'
+import WebGPUSharedContext from '../../src/renderer/webgpu/WebGPUSharedContext'
 import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
 import { loadYoga } from 'yoga-layout/load'
 
 export const SETUPS = {
     RendererDom: {
         elementType: 'div',
-        create: async (options) => ({ ui: await UIDom.create(options), webgpu: undefined }),
+        create: async (options) => {
+            const ui = await UIDom.create(options)
+            return { ui, webgpu: undefined, registerFont: ui.registerFont.bind(ui) }
+        },
         attributes: {},
         inspectDomPaint: true,
         runOnTests: true,
@@ -26,7 +29,7 @@ export const SETUPS = {
         create: async ({ canvas, ...options }) => {
             const webgpu = await WebGPUSharedContext.create({ canvas })
             const ui = await UIWebGPU.create({ webgpu, ...options })
-            return { ui, webgpu }
+            return { ui, webgpu, registerFont: webgpu.registerFont.bind(webgpu) }
         },
         attributes: {},
         inspectDomPaint: false,
@@ -54,7 +57,7 @@ export async function runLayout({
     for (const rendererName of renderers) {
         const setup = getSetup(rendererName)
         const canvas = createCanvasElement(root, rendererName, setup)
-        const { ui, webgpu } = await setup.create({
+        const { ui, webgpu, registerFont } = await setup.create({
             canvas,
             loadYoga,
             device_pixel_ratio: window.devicePixelRatio,
@@ -66,6 +69,7 @@ export async function runLayout({
         const layoutResult = await createLayout({
             ui,
             webgpu,
+            registerFont,
             rendererName,
             animations_enabled,
             viewport_width: root.clientWidth,

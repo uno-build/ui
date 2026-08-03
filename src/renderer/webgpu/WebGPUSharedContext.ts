@@ -4,7 +4,7 @@ import { ImageManager } from './ImageManager'
 const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 2048
 
-export class WebGPUSharedContext {
+export default class WebGPUSharedContext {
     public canvas
     public adapter
     public device

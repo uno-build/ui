@@ -3,11 +3,11 @@ import { loadImage, loadJson } from '../../utils/load-assets'
 const STROKE_WIDTHS = Array.from({ length: 10 }, (_, index) => index)
 const FONT_SIZES = [5, 16, 32]
 
-export default async function createFontTextStrokeLayout({ ui, webgpu }) {
+export default async function createFontTextStrokeLayout({ ui, registerFont }) {
     const font_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
     const font_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
 
-    webgpu?.registerFont('Poppins-Regular', font_image, font_json)
+    registerFont('Poppins-Regular', font_image, font_json)
 
     const stage = ui.create()
     stage.style('width', '100%')

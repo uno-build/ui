@@ -1,11 +1,11 @@
 import { loadImage, loadJson } from '../../utils/load-assets'
 
-export default async function createUnitsViewportLayout({ ui, webgpu }) {
+export default async function createUnitsViewportLayout({ ui, webgpu, registerFont }) {
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
     const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
     const img = await loadImage('/assets/images/texture.jpg')
 
-    webgpu?.registerFont('Poppins-Regular', poppins_image, poppins_json)
+    registerFont('Poppins-Regular', poppins_image, poppins_json)
     webgpu?.registerImage(img.src, img)
 
     const stage = ui.create()

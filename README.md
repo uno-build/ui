@@ -7,7 +7,7 @@ device, canvas context, format, fonts, and image atlases.
 
 ```ts
 import UIWebGPU from 'uno-ui/UIWebGPU'
-import { WebGPUSharedContext } from 'uno-ui/WebGPUSharedContext'
+import WebGPUSharedContext from 'uno-ui/WebGPUSharedContext'
 
 const webgpu = await WebGPUSharedContext.create({ canvas })
 

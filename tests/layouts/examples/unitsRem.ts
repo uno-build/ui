@@ -5,12 +5,12 @@ const MAX_ROOT_SIZE = 24
 const ROOT_SIZE_STEP = 0.02
 const ROOT_SIZE_INTERVAL = 1
 
-export default async function createUnitsRemLayout({ ui, webgpu, animations_enabled }) {
+export default async function createUnitsRemLayout({ ui, webgpu, registerFont, animations_enabled }) {
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
     const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
     const img = await loadImage('/assets/images/texture.jpg')
 
-    webgpu?.registerFont('Poppins-Regular', poppins_image, poppins_json)
+    registerFont('Poppins-Regular', poppins_image, poppins_json)
     webgpu?.registerImage(img.src, img)
 
     const stage = ui.create()
