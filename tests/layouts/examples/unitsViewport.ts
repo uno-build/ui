@@ -1,4 +1,4 @@
-import { loadImage, loadJson } from '../../../src/utils/load-assets'
+import { loadImage, loadJson } from '../../utils/load-assets'
 
 export default async function createUnitsViewportLayout({ ui, webgpu }) {
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')

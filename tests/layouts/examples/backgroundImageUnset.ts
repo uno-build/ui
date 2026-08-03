@@ -1,4 +1,4 @@
-import { loadImage } from '../../../src/utils/load-assets'
+import { loadImage } from '../../utils/load-assets'
 
 export default async function createBackgroundImageUnsetLayout({ ui, webgpu }) {
     const CARD_SIZE = 160

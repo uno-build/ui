@@ -1,4 +1,4 @@
-import { loadImage, loadJson } from '../../../src/utils/load-assets'
+import { loadImage, loadJson } from '../../utils/load-assets'
 
 const MIN_FONT_SIZE = 3
 const MAX_FONT_SIZE = 50

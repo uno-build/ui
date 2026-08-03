@@ -1,4 +1,4 @@
-import { loadImage, loadJson } from '../../../src/utils/load-assets'
+import { loadImage, loadJson } from '../../utils/load-assets'
 
 const TEXT = 'The same text changes its horizontal spacing and wraps across different lines.'
 const VARIANTS = [

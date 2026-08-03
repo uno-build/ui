@@ -846,8 +846,7 @@ test('padding', async () => {
 
 async function createUI(styles = {}) {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-    await ui.init()
+    const ui = await UI.create({ renderer })
     const root = ui.root
     Object.keys(styles).forEach((name) => {
         root.style(name, styles[name])

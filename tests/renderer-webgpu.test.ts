@@ -29,8 +29,8 @@ import {
     UINT32_SIZE,
 } from '../src/renderer/webgpu/buffers.ts'
 import { FontManager } from '../src/renderer/webgpu/FontManager.ts'
-import { ATLAS_PADDING, ATLAS_SIZE, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
-import { createUIWGSL } from '../src/renderer/webgpu/shaders.ts'
+import { ATLAS_PADDING, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
+import { createUIWGSL } from '../src/renderer/webgpu/shaders/'
 import { TEXT_EFFECT_WGSL as MTSDF_TEXT_EFFECT_WGSL } from '../src/renderer/webgpu/shaders/text-mtsdf.ts'
 import { TEXT_WGSL } from '../src/renderer/webgpu/shaders/text.ts'
 ;(globalThis as any).GPUTextureUsage = {
@@ -40,6 +40,7 @@ import { TEXT_WGSL } from '../src/renderer/webgpu/shaders/text.ts'
     RENDER_ATTACHMENT: 8,
 }
 
+const ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 2048
 
 test('RendererWebGPU accumulates opacity into panel instance data', () => {
@@ -1612,10 +1613,9 @@ test('RendererWebGPU wraps text using letter spacing', () => {
 
 test('RendererWebGPU writes the explicit viewport and device pixel ratio into the viewport uniform', () => {
     const writes = []
-    const canvas = { clientWidth: 640, clientHeight: 360 }
-    const renderer = new RendererWebGPU({ canvas })
+    const renderer = createRenderer()
     const empty_buffer_data = { bytes: new Uint8Array(), bytes_offset: 0 }
-    ;(renderer as any).device = {
+    ;(renderer as any).webgpu.device = {
         queue: {
             writeBuffer(buffer, offset, data) {
                 writes.push({ buffer, offset, data })
@@ -1641,23 +1641,6 @@ test('text shader shares RGBA sampling and MSDF fill coverage with text effects'
     expect(TEXT_WGSL).toContain('return vec3f(median(sample.r, sample.g, sample.b), sample.a, 1.0);')
     expect(TEXT_WGSL).toContain('fn glyphMsdfCoverageAtUv(')
     expect(TEXT_WGSL).not.toContain('font_is_mtsdf')
-})
-
-test('RendererWebGPU registers fonts', () => {
-    const registrations = []
-    const renderer = new RendererWebGPU({ canvas: {} })
-    const image = { id: 'image' }
-    const json = { atlas: { type: 'mtsdf' } }
-    ;(renderer as any).font_manager = {
-        fontRegister(name, next_image, next_json) {
-            registrations.push({ name, image: next_image, json: next_json })
-        },
-    }
-    ;(renderer as any).createBindGroup = () => ({ id: 'bind-group' })
-
-    renderer.fontRegister('Poppins', image, json)
-
-    expect(registrations).toEqual([{ name: 'Poppins', image, json }])
 })
 
 test('UI shader loads MTSDF text effects', () => {
@@ -3148,9 +3131,13 @@ function collectRenderData(renderer, nodes) {
 }
 
 function createRenderer(image_manager = createImageManager(), font_manager = createFontManager()) {
-    const renderer = new RendererWebGPU({ canvas: {} })
-    ;(renderer as any).image_manager = image_manager
-    ;(renderer as any).font_manager = font_manager
+    const renderer = new RendererWebGPU({
+        webgpu: {
+            image_manager,
+            font_manager,
+            font_atlas_size: FONT_ATLAS_SIZE,
+        },
+    })
     ;(renderer as any).engine = { applyStyle() {} }
     ;(renderer as any).grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
 

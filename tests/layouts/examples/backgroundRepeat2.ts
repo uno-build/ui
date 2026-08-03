@@ -1,4 +1,4 @@
-import { loadImage } from '../../../src/utils/load-assets'
+import { loadImage } from '../../utils/load-assets'
 
 export default async function createBackgroundRepeatLayout({ ui, webgpu }) {
     const size = 120

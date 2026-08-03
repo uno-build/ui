@@ -1,4 +1,4 @@
-import { loadImage, loadJson } from '../../../src/utils/load-assets'
+import { loadImage, loadJson } from '../../utils/load-assets'
 
 const STROKE_WIDTHS = Array.from({ length: 10 }, (_, index) => index)
 const FONT_SIZES = [5, 16, 32]

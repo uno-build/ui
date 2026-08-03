@@ -1,12 +1,11 @@
 import { test, expect } from '@playwright/test'
 import UI from '../src/core/UI'
+import { WebGPUSharedContext } from '../src/renderer/webgpu/WebGPUSharedContext'
 import TestRenderer from './TestRenderer.ts'
 
 test('UI and Node api creates, styles, updates, and removes nodes', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const ui = await UI.create({ renderer })
     ui.root.style('width', '200px')
     ui.root.style('height', '200px')
 
@@ -105,9 +104,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
 
 test('UI stores context-dependent styles without resolving them', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const ui = await UI.create({ renderer })
 
     const node = ui.create()
     node.style('width', '2rem')
@@ -171,9 +168,7 @@ test('UI stores context-dependent styles without resolving them', async () => {
 
 test('Node remove removes descendants', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const ui = await UI.create({ renderer })
 
     const parent = ui.create()
     const child = ui.create()
@@ -208,9 +203,7 @@ test('Node remove removes descendants', async () => {
 
 test('Node add and remove throw for invalid tree operations', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const ui = await UI.create({ renderer })
 
     const child = ui.create()
     const detached_parent = ui.create()
@@ -231,9 +224,7 @@ test('Node add and remove throw for invalid tree operations', async () => {
 
 test('Node remove discards pending styles', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const ui = await UI.create({ renderer })
 
     const child = ui.create()
     child.style('width', '120px')
@@ -253,9 +244,7 @@ test('Node remove discards pending styles', async () => {
 test('Node text stores, replaces, and clears text content', async () => {
     const renderer = new TestRenderer()
     renderer.getTextMeasure = () => ({ width: 10, height: 10 })
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const ui = await UI.create({ renderer })
 
     const child = ui.create()
     ui.root.add(child)
@@ -292,9 +281,7 @@ test('Node text uses intrinsic size unless dimensions are explicit', async () =>
             height: font_size * 2,
         }
     }
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const ui = await UI.create({ renderer })
     ui.root.style('width', '500px')
     ui.root.style('height', '100px')
     ui.root.style('alignItems', 'flex-start')
@@ -342,9 +329,7 @@ test('Node text uses intrinsic size unless dimensions are explicit', async () =>
 
 test('Node text cannot have children', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const ui = await UI.create({ renderer })
 
     const parent = ui.create()
     const child = ui.create()
@@ -362,9 +347,7 @@ test('Node text cannot have children', async () => {
 
 test('Node lineHeight invalidates text measurement', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const ui = await UI.create({ renderer })
 
     const node = ui.create()
     node.text('Text')
@@ -380,9 +363,7 @@ test('Node lineHeight invalidates text measurement', async () => {
 
 test('Node letterSpacing invalidates text measurement', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-
-    await ui.init()
+    const ui = await UI.create({ renderer })
 
     const node = ui.create()
     node.text('Text')
@@ -402,8 +383,7 @@ test('Node letterSpacing invalidates text measurement', async () => {
 
 test('overflow shorthand and longhands follow assignment order', async () => {
     const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
-    await ui.init()
+    const ui = await UI.create({ renderer })
     const node = ui.create()
 
     node.style('overflow', 'scroll')
@@ -419,72 +399,81 @@ test('overflow shorthand and longhands follow assignment order', async () => {
     expect(node.styles.overflowY.parsed.enum).toBe(2)
 })
 
-test('UI defaults the device pixel ratio to 1', () => {
+test('UI defaults the device pixel ratio to 1', async () => {
     const renderer = new TestRenderer()
     let device_pixel_ratio
     renderer.setDevicePixelRatio = (value) => {
         device_pixel_ratio = value
     }
 
-    new UI({ renderer })
+    await UI.create({ renderer })
 
     expect(device_pixel_ratio).toBe(1)
 })
 
-test('UI forwards root size changes to the renderer', () => {
+test('UI forwards root size changes to the renderer', async () => {
     const renderer = new TestRenderer()
     const root_sizes = []
     renderer.setRootSize = (value) => {
         root_sizes.push(value)
     }
 
-    const ui = new UI({ renderer })
+    const ui = await UI.create({ renderer })
     ui.setRootSize(20)
 
     expect(root_sizes).toEqual([16, 20])
 })
 
-test('UI forwards viewport changes to the renderer', () => {
+test('UI forwards viewport changes to the renderer', async () => {
     const renderer = new TestRenderer()
     const viewports = []
     renderer.setViewport = (width, height) => {
         viewports.push([width, height])
     }
 
-    const ui = new UI({ renderer })
+    const ui = await UI.create({ renderer })
     ui.setViewport(320, 180)
 
     expect(viewports).toEqual([[320, 180]])
 })
 
-test('UI image api supports renderer defaults', async () => {
-    const renderer = new TestRenderer()
-    const ui = new UI({ renderer })
+test('WebGPUSharedContext image api delegates to the image manager', () => {
     const image = createImage('/assets/first.png', 32, 32)
+    const calls = []
+    const webgpu = new (WebGPUSharedContext as any)({})
+    webgpu.image_manager = {
+        imageUpload(src, next_image) {
+            calls.push({ kind: 'upload', src, image: next_image })
+        },
+        imageDispose(src) {
+            calls.push({ kind: 'dispose', src })
+        },
+        imageList() {
+            return [image]
+        },
+    }
 
-    await ui.init()
-
-    ui.imageUpload('/assets/Avatar.png', image)
-    expect(ui.imageList()).toEqual([])
-    ui.imageDispose('/assets/Avatar.png')
-    expect(ui.imageList()).toEqual([])
-    expect(() => ui.imageDispose('/assets/Avatar.png')).not.toThrow()
+    webgpu.registerImage('/assets/Avatar.png', image)
+    expect(webgpu.listImages()).toEqual([image])
+    webgpu.disposeImage('/assets/Avatar.png')
+    expect(calls).toEqual([
+        { kind: 'upload', src: '/assets/Avatar.png', image },
+        { kind: 'dispose', src: '/assets/Avatar.png' },
+    ])
 })
 
-test('UI fontRegister delegates to renderer', () => {
+test('WebGPUSharedContext font api delegates to the font manager', () => {
     const calls = []
-    const renderer = {
-        setDevicePixelRatio() {},
-        setRootSize() {},
+    const webgpu = new (WebGPUSharedContext as any)({})
+    webgpu.font_manager = {
         fontRegister(name, image, json) {
             calls.push({ name, image, json })
         },
     }
-    const ui = new UI({ renderer })
     const image = createImage('/assets/fonts/Poppins.png', 484, 484)
     const json = { atlas: { type: 'msdf' } }
 
-    ui.fontRegister('Poppins', image, json)
+    webgpu.registerFont('Poppins', image, json)
 
     expect(calls).toEqual([{ name: 'Poppins', image, json }])
 })
