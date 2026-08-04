@@ -5,7 +5,7 @@ import { ROOT_SIZE } from '../style/consts'
 
 export default class UI {
     public root = null
-    private renderer = null
+    public renderer = null
     private nodes = []
     private next_node_id = 0
     private device_pixel_ratio

@@ -4,14 +4,15 @@ import { KEYWORD } from '../style/consts'
 
 export default class RendererDom extends Renderer {
     private canvas
+    private dom
     private elements = new WeakMap()
-    private fonts = new Map()
     private text_elements = new WeakMap()
     private root_node
 
-    constructor({ canvas }) {
+    constructor({ canvas, dom }) {
         super()
         this.canvas = canvas
+        this.dom = dom
     }
 
     public setRootSize(root_size) {
@@ -50,10 +51,6 @@ export default class RendererDom extends Renderer {
         const element = this.elements.get(node)
         element.style.whiteSpace = 'pre-wrap'
         element.style.overflowWrap = 'anywhere'
-    }
-
-    public fontRegister(name: string, image: any, json: any): void {
-        this.fonts.set(name, json.metrics)
     }
 
     protected updateStyle(node, resolved_style) {
@@ -104,7 +101,7 @@ export default class RendererDom extends Renderer {
             return
         }
 
-        const font = this.fonts.get(node.styles.fontFamily?.value)
+        const font = this.dom.getFont(node.styles.fontFamily?.value)
         element.style.lineHeight = font === undefined ? '' : `${font.lineHeight}`
     }
 

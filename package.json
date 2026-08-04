@@ -22,6 +22,10 @@
         "./UIDom": {
             "types": "./src/ui/UIDom.ts",
             "import": "./src/ui/UIDom.ts"
+        },
+        "./DOMSharedContext": {
+            "types": "./src/renderer/dom/DOMSharedContext.ts",
+            "import": "./src/renderer/dom/DOMSharedContext.ts"
         }
     },
     "dependencies": {

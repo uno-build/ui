@@ -2,9 +2,9 @@ import UI from '../core/UI'
 import RendererDom from '../renderer/RendererDom'
 
 export default class UIDom extends UI {
-    protected constructor({ canvas, device_pixel_ratio, root_size }) {
+    protected constructor({ canvas, dom, device_pixel_ratio, root_size }) {
         super({
-            renderer: new RendererDom({ canvas }),
+            renderer: new RendererDom({ canvas, dom }),
             device_pixel_ratio,
             root_size,
         })

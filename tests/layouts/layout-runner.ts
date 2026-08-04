@@ -1,38 +1,26 @@
 import UIDom from '../../src/ui/UIDom'
 import UIWebGPU from '../../src/ui/UIWebGPU'
-import RendererDivs from '../../src/renderer/RendererDivs'
 import WebGPUSharedContext from '../../src/renderer/webgpu/WebGPUSharedContext'
-import DOMSharedContext from './DOMSharedContext'
+import DOMSharedContext from '../../src/renderer/dom/DOMSharedContext'
 import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
 import { loadYoga } from 'yoga-layout/load'
 
 export const SETUPS = {
     RendererDom: {
         elementType: 'div',
-        create: async (options) => {
-            const dom = new DOMSharedContext()
-            const ui = await UIDom.create(options)
-            return { ui, webgpu: dom, registerFont: dom.registerFont.bind(dom) }
-        },
+        ui: UIDom,
+        shared_context: DOMSharedContext,
+        context_option: 'dom',
         attributes: {},
         inspectDomPaint: true,
         runOnTests: true,
         sourceOfTruth: true,
     },
-    // RendererDivs: {
-    //     elementType: 'div',
-    //     renderer: RendererDivs,
-    //     attributes: {},
-    //     inspectDomPaint: true,
-    //     runOnTests: true,
-    // },
     RendererWebGPU: {
         elementType: 'canvas',
-        create: async ({ canvas, ...options }) => {
-            const webgpu = await WebGPUSharedContext.create({ canvas })
-            const ui = await UIWebGPU.create({ webgpu, ...options })
-            return { ui, webgpu, registerFont: webgpu.registerFont.bind(webgpu) }
-        },
+        ui: UIWebGPU,
+        shared_context: WebGPUSharedContext,
+        context_option: 'webgpu',
         attributes: {},
         inspectDomPaint: false,
         runOnTests: true,
@@ -59,8 +47,10 @@ export async function runLayout({
     for (const rendererName of renderers) {
         const setup = getSetup(rendererName)
         const canvas = createCanvasElement(root, rendererName, setup)
-        const { ui, webgpu, registerFont } = await setup.create({
+        const context = await setup.shared_context.create({ canvas })
+        const ui = await setup.ui.create({
             canvas,
+            [setup.context_option]: context,
             loadYoga,
             device_pixel_ratio: window.devicePixelRatio,
             ...renderer_options,
@@ -70,8 +60,8 @@ export async function runLayout({
         syncViewport({ ui, root, canvas })
         const layoutResult = await createLayout({
             ui,
-            webgpu,
-            registerFont,
+            context,
+            registerFont: context.registerFont.bind(context),
             rendererName,
             animations_enabled,
             viewport_width: root.clientWidth,
