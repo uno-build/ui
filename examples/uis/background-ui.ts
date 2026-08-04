@@ -63,6 +63,25 @@ export function createBackgroundUI({ ui, assets, title: title_text, background_c
     inside.style('backgroundRepeat', 'repeat-y')
     combined.add(inside)
 
+    const combined2 = ui.create()
+    combined2.style('width', `${ITEM_SIZE}px`)
+    combined2.style('height', `${ITEM_SIZE}px`)
+    combined2.style('borderRadius', '12px')
+    combined2.style('backgroundImage', repeat_y.src)
+    combined2.style('backgroundSize', '100% 1px')
+    combined2.style('backgroundRepeat', 'repeat-y')
+    combined2.style('border', '4px solid #000')
+    grid.add(combined2)
+
+    const inside2 = ui.create()
+    inside2.style('width', '100%')
+    inside2.style('height', '100%')
+    inside2.style('borderRadius', '8px')
+    inside2.style('backgroundImage', repeat_x.src)
+    inside2.style('backgroundSize', '1px 100%')
+    inside2.style('backgroundRepeat', 'repeat-x')
+    combined2.add(inside2)
+
     if (title_text) {
         const title = ui.create()
         title.style('fontFamily', FONT_FAMILY)

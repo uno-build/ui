@@ -65,4 +65,23 @@ export default async function createBackgroundRepeatLayout({ ui, context }) {
     inside.style('backgroundSize', '100% 1px')
     inside.style('backgroundRepeat', 'repeat-y')
     combined.add(inside)
+
+    const combined2 = ui.create()
+    combined2.style('width', `${size}px`)
+    combined2.style('height', `${size}px`)
+    combined2.style('borderRadius', '12px')
+    combined2.style('backgroundImage', repeaty.src)
+    combined2.style('backgroundSize', '100% 1px')
+    combined2.style('backgroundRepeat', 'repeat-y')
+    combined2.style('border', '4px solid #000')
+    grid.add(combined2)
+
+    const inside2 = ui.create()
+    inside2.style('width', '100%')
+    inside2.style('height', '100%')
+    inside2.style('borderRadius', '8px')
+    inside2.style('backgroundImage', repeatx.src)
+    inside2.style('backgroundSize', '1px 100%')
+    inside2.style('backgroundRepeat', 'repeat-x')
+    combined2.add(inside2)
 }

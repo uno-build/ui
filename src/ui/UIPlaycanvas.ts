@@ -2,6 +2,7 @@ import {
     ADDRESS_CLAMP_TO_EDGE,
     BLEND_PREMULTIPLIED,
     CHUNKAPI_2_8,
+    Color,
     CULLFACE_NONE,
     Entity,
     FILTER_LINEAR,
@@ -98,6 +99,11 @@ export default class UIPlayCanvas extends UI {
         material.diffuseMap = playcanvas_texture
         material.opacityMap = playcanvas_texture
         material.opacityMapChannel = 'a'
+        // PlayCanvas defaults specular to black, which compiles the specular path out entirely.
+        // A white specular with a tight gloss gives the plane the same view dependent highlight
+        // that the Babylon and Three materials have out of the box.
+        material.specular = new Color(1, 1, 1)
+        material.gloss = 0.55
         material.blendType = BLEND_PREMULTIPLIED
         material.cull = CULLFACE_NONE
         material.depthWrite = false

@@ -7,6 +7,7 @@ import {
     Entity,
     FILLMODE_FILL_WINDOW,
     InputFrame,
+    LIGHTFALLOFF_INVERSESQUARED,
     LightComponentSystem,
     Mesh,
     MeshInstance,
@@ -141,10 +142,11 @@ export async function main({
     point_light.addComponent('light', {
         type: 'omni',
         color: new Color(0.376, 0.647, 0.98),
-        intensity: 25,
-        range: 4.75,
+        intensity: 2,
+        range: 5,
+        falloffMode: LIGHTFALLOFF_INVERSESQUARED,
     })
-    point_light.setPosition(second_plane.getPosition().x, second_plane.getPosition().y + 0.5, 2)
+    point_light.setPosition(second_plane.getPosition().x + 0.5, second_plane.getPosition().y + 0.5, 2)
     app.root.addChild(point_light)
 
     const camera = new Entity('camera', app)

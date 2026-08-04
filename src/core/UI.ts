@@ -37,10 +37,6 @@ export default class UI {
 
         node.element = this.renderer.createElement(node)
 
-        // Object.keys(styles).forEach((name) => {
-        //     this.style(node, name, styles[name])
-        // })
-
         return node
     }
 
