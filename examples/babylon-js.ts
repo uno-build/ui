@@ -10,39 +10,18 @@ import { Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector.js'
 const BACKGROUND_GAP = 16
 const BACKGROUND_ITEM_SIZE = 120
 
-export async function main({
-    canvas,
-    onCanvasEvent,
-    UIWebGPU,
-    WebGPUSharedContext,
-    loadImage,
-    loadJson,
-    loadYoga,
-    platform = 'web',
-}) {
-    // On web the canvas backing store is ours to size, so Babylon has to scale it by the device
-    // pixel ratio. On native the swap chain belongs to the runtime: `canvas.width` is a plain
-    // field there, writing it does nothing, and `clientWidth` is not reliably CSS pixels.
-    const is_web = platform === 'web'
+export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUSharedContext, loadImage, loadJson, loadYoga }) {
     const context = canvas.getContext('webgpu')
     const format = navigator.gpu.getPreferredCanvasFormat()
     const engine = new WebGPUEngine(canvas, {
         antialias: false,
         audioEngine: false,
-        adaptToDeviceRatio: is_web,
         premultipliedAlpha: true,
         doNotHandleTouchAction: true,
         swapChainFormat: format,
     })
 
     await engine.initAsync()
-
-    if (is_web) {
-        // The option above only seeds the initial scaling level, this makes resize() re-read the
-        // device pixel ratio when it changes (zoom, moving the window to another display).
-        ;(engine as any).adaptToDeviceRatio = true
-    }
-
     ;(engine as any).getInputElement = () => null
 
     const webgpu = await WebGPUSharedContext.create({
@@ -83,14 +62,14 @@ export async function main({
     cube.material = cube_material
 
     const { grid } = await createLayouts({ background_ui, foreground_ui, webgpu, loadImage, loadJson })
-    syncUISize({ texture: context.getCurrentTexture(), background_ui, foreground_ui })
+    syncCanvasSize({ canvas, engine, background_ui, foreground_ui })
     background_ui.update()
     foreground_ui.update()
 
     onCanvasEvent('resize', () => {
-        if (is_web) {
-            engine.resize(true)
-        }
+        syncCanvasSize({ canvas, engine, background_ui, foreground_ui })
+        background_ui.update()
+        foreground_ui.update()
     })
 
     const has_present = typeof context.present === 'function'
@@ -99,15 +78,11 @@ export async function main({
     cube.rotationQuaternion = new Quaternion()
     let bg_position = 0
 
-    // The swap chain texture is the only size both the engine and the UI can agree on: on web it
-    // follows the canvas, on native it is whatever the runtime handed us.
     engine.onBeginFrameObservable.add(() => {
         const texture = context.getCurrentTexture()
         if (engine.getRenderWidth(true) !== texture.width || engine.getRenderHeight(true) !== texture.height) {
             engine.setSize(texture.width, texture.height, true)
         }
-
-        syncUISize({ texture, background_ui, foreground_ui })
     })
 
     engine.onEndFrameObservable.add(() => {
@@ -126,20 +101,17 @@ export async function main({
         background_ui.draw({ load_op: 'clear' })
 
         const now = Date.now() / 1000
-        cube.rotationQuaternion!.set(
-            Math.sin(now) * rotation_sin,
-            Math.cos(now) * rotation_sin,
-            0,
-            rotation_cos,
-        )
+        cube.rotationQuaternion!.set(Math.sin(now) * rotation_sin, Math.cos(now) * rotation_sin, 0, rotation_cos)
         scene.render()
     })
 }
 
-function syncUISize({ texture, background_ui, foreground_ui }) {
+function syncCanvasSize({ canvas, engine, background_ui, foreground_ui }) {
     const device_pixel_ratio = window.devicePixelRatio
-    const width = texture.width / device_pixel_ratio
-    const height = texture.height / device_pixel_ratio
+    const width = canvas.clientWidth
+    const height = canvas.clientHeight
+
+    engine.setSize(Math.round(width * device_pixel_ratio), Math.round(height * device_pixel_ratio))
 
     for (const ui of [background_ui, foreground_ui]) {
         ui.setViewport(width, height)
