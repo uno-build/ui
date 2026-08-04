@@ -11,13 +11,13 @@
             "types": "./src/ui/UIWebGPU.ts",
             "import": "./src/ui/UIWebGPU.ts"
         },
-        "./UIThreeWorldSpace": {
-            "types": "./src/ui/UIThreeWorldSpace.ts",
-            "import": "./src/ui/UIThreeWorldSpace.ts"
+        "./UIThree": {
+            "types": "./src/ui/UIThree.ts",
+            "import": "./src/ui/UIThree.ts"
         },
-        "./UIBabylonWorldSpace": {
-            "types": "./src/ui/UIBabylonWorldSpace.ts",
-            "import": "./src/ui/UIBabylonWorldSpace.ts"
+        "./UIBabylonLite": {
+            "types": "./src/ui/UIBabylonLite.ts",
+            "import": "./src/ui/UIBabylonLite.ts"
         },
         "./UIDom": {
             "types": "./src/ui/UIDom.ts",

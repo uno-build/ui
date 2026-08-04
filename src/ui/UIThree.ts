@@ -3,7 +3,7 @@ import { materialReference, sRGBTransferEOTF, texture, vec4 } from 'three/tsl'
 import UI from '../core/UI'
 import RendererWebGPU from '../renderer/RendererWebGPU'
 
-export default class UIThreeWorldSpace extends UI {
+export default class UIThree extends UI {
     public plane
     private texture_width
     private texture_height
@@ -37,7 +37,7 @@ export default class UIThreeWorldSpace extends UI {
     }
 
     public static async create(options) {
-        const ui = new UIThreeWorldSpace(options)
+        const ui = new UIThree(options)
         await ui.initialize()
         return ui
     }

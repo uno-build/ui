@@ -12,7 +12,7 @@ export async function main({
     onCanvasEvent,
     WebGPUSharedContext,
     UIWebGPU,
-    UIThreeWorldSpace,
+    UIThree,
     loadImage,
     loadJson,
     loadYoga,
@@ -32,7 +32,7 @@ export async function main({
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
     console.log('texture_width', texture_width, 'texture_height', texture_height)
-    const first_ui = await UIThreeWorldSpace.create({
+    const first_ui = await UIThree.create({
         webgpu,
         loadYoga,
         device_pixel_ratio,
@@ -43,7 +43,7 @@ export async function main({
     })
     const first_plane = first_ui.plane
 
-    const second_ui = await UIThreeWorldSpace.create({
+    const second_ui = await UIThree.create({
         webgpu,
         loadYoga,
         device_pixel_ratio,

@@ -28,7 +28,7 @@ export async function main({
     onCanvasEvent,
     WebGPUSharedContext,
     UIWebGPU,
-    UIBabylonWorldSpace,
+    UIBabylonLite,
     loadImage,
     loadJson,
     loadYoga,
@@ -56,7 +56,7 @@ export async function main({
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
-    const first_ui = await UIBabylonWorldSpace.create({
+    const first_ui = await UIBabylonLite.create({
         engine,
         webgpu,
         loadYoga,
@@ -68,7 +68,7 @@ export async function main({
     })
     const first_plane = first_ui.plane
 
-    const second_ui = await UIBabylonWorldSpace.create({
+    const second_ui = await UIBabylonLite.create({
         engine,
         webgpu,
         loadYoga,

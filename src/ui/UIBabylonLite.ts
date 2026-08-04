@@ -15,7 +15,7 @@ const UI_TEXTURE_PLUGIN: MaterialPlugin = {
     },
 }
 
-export default class UIBabylonWorldSpace extends UI {
+export default class UIBabylonLite extends UI {
     public plane
     private engine
     private texture_width
@@ -49,7 +49,7 @@ export default class UIBabylonWorldSpace extends UI {
     }
 
     public static async create(options) {
-        const ui = new UIBabylonWorldSpace(options)
+        const ui = new UIBabylonLite(options)
         await ui.initialize()
         return ui
     }
