@@ -1,11 +1,12 @@
 import { mat4 } from 'wgpu-matrix'
+import { loadAssets, registerAssets } from './uis/assets'
+import { createBackgroundUI } from './uis/background-ui'
+import { createForegroundUI } from './uis/foreground-ui'
 
 const CUBE_VERTEX_SIZE = 4 * 10
 const CUBE_POSITION_OFFSET = 0
 const CUBE_UV_OFFSET = 4 * 8
 const CUBE_VERTEX_COUNT = 36
-const BACKGROUND_GAP = 16
-const BACKGROUND_ITEM_SIZE = 120
 
 const CUBE_VERTEX_ARRAY = new Float32Array([
     1, -1, 1, 1, 1, 0, 1, 1, 0, 1, -1, -1, 1, 1, 0, 0, 1, 1, 1, 1, -1, -1, -1, 1, 0, 0, 0, 1, 1, 0, 1, -1, -1, 1, 1, 0,
@@ -20,27 +21,26 @@ const CUBE_VERTEX_ARRAY = new Float32Array([
     1, -1, 1, 1, 1, 0, 1, 0, 0, 1, -1, -1, 1, 1, 0, 0, 1, 0, 1, -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
 ])
 
-export async function main({
-    canvas,
-    onCanvasEvent,
-    UIWebGPU,
-    WebGPUSharedContext,
-    loadImage,
-    loadJson,
-    loadYoga,
-}) {
+export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUSharedContext, loadImage, loadJson, loadYoga }) {
     const webgpu = await WebGPUSharedContext.create({ canvas })
-    const ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio: window.devicePixelRatio })
+    const device_pixel_ratio = window.devicePixelRatio
+    const background_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    const foreground_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
     const { device, context, format } = webgpu
 
-    syncCanvasSize({ canvas, ui })
+    syncCanvasSize({ canvas, background_ui, foreground_ui })
     onCanvasEvent('resize', () => {
-        syncCanvasSize({ canvas, ui })
-        ui.update()
+        syncCanvasSize({ canvas, background_ui, foreground_ui })
+        background_ui.update()
+        foreground_ui.update()
     })
 
-    const { grid } = await createBackgroundRepeatLayout({ ui, webgpu, loadImage, loadJson })
-    ui.update()
+    const assets = await loadAssets({ loadImage, loadJson })
+    registerAssets({ webgpu, assets })
+    const { grid } = createBackgroundUI({ ui: background_ui, assets, background_color: '#e2cff4' })
+    createForegroundUI({ ui: foreground_ui, assets, title: 'Hello WebGPU!' })
+    background_ui.update()
+    foreground_ui.update()
 
     const vertex_buffer = device.createBuffer({
         size: CUBE_VERTEX_ARRAY.byteLength,
@@ -139,12 +139,17 @@ export async function main({
         )
 
         const command_encoder = device.createCommandEncoder()
+
+        grid_x += 1
+        grid.style('backgroundPosition', `${grid_x}px ${grid_x}px`)
+        background_ui.update()
+        background_ui.draw({ submit: false, command_encoder, texture_view, load_op: 'clear' })
+
         const cube_pass_encoder = command_encoder.beginRenderPass({
             colorAttachments: [
                 {
                     view: texture_view,
-                    clearValue: [1.0, 1.5, 1.5, 1],
-                    loadOp: 'clear',
+                    loadOp: 'load',
                     storeOp: 'store',
                 },
             ],
@@ -162,10 +167,8 @@ export async function main({
         cube_pass_encoder.draw(CUBE_VERTEX_COUNT)
         cube_pass_encoder.end()
 
-        grid_x += 1
-        grid.style('backgroundPosition', `${grid_x}px ${grid_x}px`)
-        ui.update()
-        ui.draw({ command_encoder, texture_view })
+        foreground_ui.update()
+        foreground_ui.draw({ command_encoder, texture_view })
 
         if (has_present) {
             context.present()
@@ -177,15 +180,18 @@ export async function main({
     requestAnimationFrame(frame)
 }
 
-function syncCanvasSize({ canvas, ui }) {
+function syncCanvasSize({ canvas, background_ui, foreground_ui }) {
     const device_pixel_ratio = window.devicePixelRatio
     const width = canvas.clientWidth
     const height = canvas.clientHeight
 
     canvas.width = Math.max(1, Math.round(width * device_pixel_ratio))
     canvas.height = Math.max(1, Math.round(height * device_pixel_ratio))
-    ui.setViewport(width, height)
-    ui.setDevicePixelRatio(device_pixel_ratio)
+
+    for (const ui of [background_ui, foreground_ui]) {
+        ui.setViewport(width, height)
+        ui.setDevicePixelRatio(device_pixel_ratio)
+    }
 }
 
 function createDepthTexture(device, width, height) {
@@ -205,82 +211,6 @@ function getTextureSize(texture, canvas) {
         width: Math.max(1, texture.width ?? canvas.width),
         height: Math.max(1, texture.height ?? canvas.height),
     }
-}
-
-async function createBackgroundRepeatLayout({ ui, webgpu, loadImage, loadJson }) {
-    const coin = await loadImage('assets/images/coin.png')
-    const repeat_x = await loadImage('assets/images/repeat-x.png')
-    const repeat_y = await loadImage('assets/images/repeat-y.png')
-    const font_image = await loadImage('assets/fonts/Nougat-ExtraBlack.mtsdf.png')
-    const font_json = await loadJson('assets/fonts/Nougat-ExtraBlack.mtsdf.json')
-
-    webgpu.registerImage(coin.src, coin)
-    webgpu.registerImage(repeat_x.src, repeat_x)
-    webgpu.registerImage(repeat_y.src, repeat_y)
-    webgpu.registerFont('Nougat-ExtraBlack', font_image, font_json)
-
-    const grid = ui.create()
-    grid.style('width', '100%')
-    grid.style('height', '100%')
-    grid.style('flexDirection', 'row')
-    grid.style('flexWrap', 'wrap')
-    grid.style('alignContent', 'flex-start')
-    grid.style('gap', `${BACKGROUND_GAP}px`)
-    grid.style('padding', `${BACKGROUND_GAP}px`)
-    grid.style('backgroundImage', coin.src)
-    grid.style('backgroundRepeat', 'repeat')
-    grid.style('backgroundSize', '30px')
-    ui.root.add(grid)
-
-    const first = ui.create()
-    first.style('width', `${BACKGROUND_ITEM_SIZE}px`)
-    first.style('height', `${BACKGROUND_ITEM_SIZE}px`)
-    first.style('borderRadius', '12px')
-    first.style('backgroundImage', repeat_x.src)
-    first.style('backgroundSize', '1px 100%')
-    first.style('backgroundRepeat', 'repeat-x')
-    first.style('border', '4px solid #000')
-    grid.add(first)
-
-    const second = ui.create()
-    second.style('width', `${BACKGROUND_ITEM_SIZE}px`)
-    second.style('height', `${BACKGROUND_ITEM_SIZE}px`)
-    second.style('borderRadius', '12px')
-    second.style('backgroundImage', repeat_y.src)
-    second.style('backgroundSize', '100% 1px')
-    second.style('backgroundRepeat', 'repeat-y')
-    second.style('border', '4px solid #000')
-    grid.add(second)
-
-    const combined = ui.create()
-    combined.style('width', `${BACKGROUND_ITEM_SIZE}px`)
-    combined.style('height', `${BACKGROUND_ITEM_SIZE}px`)
-    combined.style('borderRadius', '12px')
-    combined.style('backgroundImage', repeat_x.src)
-    combined.style('backgroundSize', '1px 100%')
-    combined.style('backgroundRepeat', 'repeat-x')
-    combined.style('border', '4px solid #000')
-    grid.add(combined)
-
-    const inside = ui.create()
-    inside.style('width', '100%')
-    inside.style('height', '100%')
-    inside.style('borderRadius', '8px')
-    inside.style('backgroundImage', repeat_y.src)
-    inside.style('backgroundSize', '100% 1px')
-    inside.style('backgroundRepeat', 'repeat-y')
-    combined.add(inside)
-
-    const title = ui.create()
-    title.style('fontFamily', 'Nougat-ExtraBlack')
-    title.style('fontSize', '70px')
-    title.style('color', '#ffffff')
-    title.style('textStroke', '6px #000000')
-    title.style('textShadow', '0px 4px 0px #000000')
-    title.text('Hello WebGPU!')
-    grid.add(title)
-
-    return { grid }
 }
 
 const BASIC_VERTEX_WGSL = /* wgsl */ `

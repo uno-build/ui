@@ -16,10 +16,11 @@ import {
     renderFrame,
     resizeEngine,
 } from '@babylonjs/lite'
+import { loadAssets, registerAssets } from './uis/assets'
+import { createBackgroundUI } from './uis/background-ui'
+import { createForegroundUI } from './uis/foreground-ui'
 
 const WORLD_HEIGHT = 2
-const BACKGROUND_GAP = 16
-const BACKGROUND_ITEM_SIZE = 120
 const TEXTURE_SCALAR = window.devicePixelRatio
 
 export async function main({
@@ -49,11 +50,7 @@ export async function main({
         format: engine.format,
     })
     const assets = await loadAssets({ loadImage, loadJson })
-    const { coin, repeat_x, repeat_y, font_image, font_json } = assets
-    webgpu.registerFont('Supercell-Magic', font_image, font_json)
-    webgpu.registerImage(coin.src, coin)
-    webgpu.registerImage(repeat_x.src, repeat_x)
-    webgpu.registerImage(repeat_y.src, repeat_y)
+    registerAssets({ webgpu, assets })
 
     const overlay_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
 
@@ -116,9 +113,9 @@ export async function main({
     second_light.range = 5
     addToScene(scene, second_light)
 
-    const { grid: first_grid } = createLayout({ ui: first_ui, assets, title: 'First UI' })
-    const { grid: second_grid } = createLayout({ ui: second_ui, assets, title: 'Second UI' })
-    createOverlayLayout({ ui: overlay_ui, assets })
+    const { grid: first_grid } = createBackgroundUI({ ui: first_ui, assets, title: 'First UI' })
+    const { grid: second_grid } = createBackgroundUI({ ui: second_ui, assets, title: 'Second UI' })
+    createForegroundUI({ ui: overlay_ui, assets, title: 'Babylon Lite' })
 
     for (const ui of [first_ui, second_ui]) {
         ui.setViewport(device_width, device_height)
@@ -183,113 +180,4 @@ function syncCanvasSize({ canvas, overlay_ui }) {
     overlay_ui.setViewport(width, height)
     overlay_ui.setDevicePixelRatio(device_pixel_ratio)
     overlay_ui.update()
-}
-
-async function loadAssets({ loadImage, loadJson }) {
-    const coin = await loadImage('assets/images/coin.png')
-    const repeat_x = await loadImage('assets/images/repeat-x.png')
-    const repeat_y = await loadImage('assets/images/repeat-y.png')
-    const font_image = await loadImage('assets/fonts/Supercell-Magic.mtsdf.png')
-    const font_json = await loadJson('assets/fonts/Supercell-Magic.mtsdf.json')
-
-    return { coin, repeat_x, repeat_y, font_image, font_json }
-}
-
-function createLayout({ ui, assets, title: title_text }) {
-    const { coin, repeat_x, repeat_y } = assets
-
-    const grid = ui.create()
-    grid.style('width', '100%')
-    grid.style('height', '100%')
-    grid.style('flexDirection', 'row')
-    grid.style('flexWrap', 'wrap')
-    grid.style('alignContent', 'flex-start')
-    grid.style('gap', `${BACKGROUND_GAP}px`)
-    grid.style('padding', `${BACKGROUND_GAP}px`)
-    grid.style('backgroundImage', coin.src)
-    grid.style('backgroundRepeat', 'repeat')
-    grid.style('backgroundSize', '30px')
-    ui.root.add(grid)
-
-    const first = ui.create()
-    first.style('width', `${BACKGROUND_ITEM_SIZE}px`)
-    first.style('height', `${BACKGROUND_ITEM_SIZE}px`)
-    first.style('borderRadius', '12px')
-    first.style('backgroundImage', repeat_x.src)
-    first.style('backgroundSize', '1px 100%')
-    first.style('backgroundRepeat', 'repeat-x')
-    first.style('border', '4px solid #000')
-    grid.add(first)
-
-    const second = ui.create()
-    second.style('width', `${BACKGROUND_ITEM_SIZE}px`)
-    second.style('height', `${BACKGROUND_ITEM_SIZE}px`)
-    second.style('borderRadius', '12px')
-    second.style('backgroundImage', repeat_y.src)
-    second.style('backgroundSize', '100% 1px')
-    second.style('backgroundRepeat', 'repeat-y')
-    second.style('border', '4px solid #000')
-    grid.add(second)
-
-    const combined = ui.create()
-    combined.style('width', `${BACKGROUND_ITEM_SIZE}px`)
-    combined.style('height', `${BACKGROUND_ITEM_SIZE}px`)
-    combined.style('borderRadius', '12px')
-    combined.style('backgroundImage', repeat_x.src)
-    combined.style('backgroundSize', '1px 100%')
-    combined.style('backgroundRepeat', 'repeat-x')
-    combined.style('border', '4px solid #000')
-    grid.add(combined)
-
-    const inside = ui.create()
-    inside.style('width', '100%')
-    inside.style('height', '100%')
-    inside.style('borderRadius', '8px')
-    inside.style('backgroundImage', repeat_y.src)
-    inside.style('backgroundSize', '100% 1px')
-    inside.style('backgroundRepeat', 'repeat-y')
-    combined.add(inside)
-
-    const title = ui.create()
-    title.style('fontFamily', 'Supercell-Magic')
-    title.style('fontSize', '50px')
-    title.style('color', '#ffffff')
-    title.style('textStroke', '6px #000000')
-    title.style('textShadow', '0px 4px 0px #000000')
-    title.text(title_text)
-    grid.add(title)
-
-    return { grid }
-}
-
-function createOverlayLayout({ ui, assets }) {
-    const { coin } = assets
-
-    const overlay = ui.create()
-    overlay.style('width', '100%')
-    overlay.style('height', '100%')
-    overlay.style('flexDirection', 'row')
-    overlay.style('justifyContent', 'space-between')
-    overlay.style('alignItems', 'flex-start')
-    overlay.style('padding', `${BACKGROUND_GAP}px`)
-    ui.root.add(overlay)
-
-    const title = ui.create()
-    title.style('fontFamily', 'Supercell-Magic')
-    title.style('fontSize', '40px')
-    title.style('color', '#ffffff')
-    title.style('textStroke', '6px #000000')
-    title.style('textShadow', '0px 4px 0px #000000')
-    title.text('Babylon Lite')
-    overlay.add(title)
-
-    const badge = ui.create()
-    badge.style('width', '64px')
-    badge.style('height', '64px')
-    badge.style('borderRadius', '12px')
-    badge.style('border', '4px solid #000')
-    badge.style('backgroundColor', '#654321')
-    badge.style('backgroundImage', coin.src)
-    badge.style('backgroundSize', 'contain')
-    overlay.add(badge)
 }

@@ -6,9 +6,9 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer.js'
 import { Color3 } from '@babylonjs/core/Maths/math.color.js'
 import { Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector.js'
-
-const BACKGROUND_GAP = 16
-const BACKGROUND_ITEM_SIZE = 120
+import { loadAssets, registerAssets } from './uis/assets'
+import { createBackgroundUI } from './uis/background-ui'
+import { createForegroundUI } from './uis/foreground-ui'
 
 export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUSharedContext, loadImage, loadJson, loadYoga }) {
     const context = canvas.getContext('webgpu')
@@ -61,7 +61,10 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUSharedContex
     cube_material.emissiveColor = Color3.White()
     cube.material = cube_material
 
-    const { grid } = await createLayouts({ background_ui, foreground_ui, webgpu, loadImage, loadJson })
+    const assets = await loadAssets({ loadImage, loadJson })
+    registerAssets({ webgpu, assets })
+    const { grid } = createBackgroundUI({ ui: background_ui, assets, background_color: '#fde2c0' })
+    createForegroundUI({ ui: foreground_ui, assets, title: 'Hello Babylon.js!' })
     syncCanvasSize({ canvas, engine, background_ui, foreground_ui })
     background_ui.update()
     foreground_ui.update()
@@ -117,88 +120,4 @@ function syncCanvasSize({ canvas, engine, background_ui, foreground_ui }) {
         ui.setViewport(width, height)
         ui.setDevicePixelRatio(device_pixel_ratio)
     }
-}
-
-async function createLayouts({ background_ui, foreground_ui, webgpu, loadImage, loadJson }) {
-    const coin = await loadImage('assets/images/coin.png')
-    const repeat_x = await loadImage('assets/images/repeat-x.png')
-    const repeat_y = await loadImage('assets/images/repeat-y.png')
-    const font_image = await loadImage('assets/fonts/Supercell-Magic.mtsdf.png')
-    const font_json = await loadJson('assets/fonts/Supercell-Magic.mtsdf.json')
-
-    webgpu.registerImage(coin.src, coin)
-    webgpu.registerImage(repeat_x.src, repeat_x)
-    webgpu.registerImage(repeat_y.src, repeat_y)
-    webgpu.registerFont('Supercell-Magic', font_image, font_json)
-
-    const grid = background_ui.create()
-    grid.style('width', '100%')
-    grid.style('height', '100%')
-    grid.style('flexDirection', 'row')
-    grid.style('flexWrap', 'wrap')
-    grid.style('alignContent', 'flex-start')
-    grid.style('gap', `${BACKGROUND_GAP}px`)
-    grid.style('padding', `${BACKGROUND_GAP}px`)
-    grid.style('backgroundColor', '#654321')
-    grid.style('backgroundImage', coin.src)
-    grid.style('backgroundRepeat', 'repeat')
-    grid.style('backgroundSize', '30px')
-    background_ui.root.add(grid)
-
-    const first = background_ui.create()
-    first.style('width', `${BACKGROUND_ITEM_SIZE}px`)
-    first.style('height', `${BACKGROUND_ITEM_SIZE}px`)
-    first.style('borderRadius', '12px')
-    first.style('backgroundImage', repeat_x.src)
-    first.style('backgroundSize', '1px 100%')
-    first.style('backgroundRepeat', 'repeat-x')
-    first.style('border', '4px solid #000')
-    grid.add(first)
-
-    const second = background_ui.create()
-    second.style('width', `${BACKGROUND_ITEM_SIZE}px`)
-    second.style('height', `${BACKGROUND_ITEM_SIZE}px`)
-    second.style('borderRadius', '12px')
-    second.style('backgroundImage', repeat_y.src)
-    second.style('backgroundSize', '100% 1px')
-    second.style('backgroundRepeat', 'repeat-y')
-    second.style('border', '4px solid #000')
-    grid.add(second)
-
-    const combined = background_ui.create()
-    combined.style('width', `${BACKGROUND_ITEM_SIZE}px`)
-    combined.style('height', `${BACKGROUND_ITEM_SIZE}px`)
-    combined.style('borderRadius', '12px')
-    combined.style('backgroundImage', repeat_x.src)
-    combined.style('backgroundSize', '1px 100%')
-    combined.style('backgroundRepeat', 'repeat-x')
-    combined.style('border', '4px solid #000')
-    grid.add(combined)
-
-    const inside = background_ui.create()
-    inside.style('width', '100%')
-    inside.style('height', '100%')
-    inside.style('borderRadius', '8px')
-    inside.style('backgroundImage', repeat_y.src)
-    inside.style('backgroundSize', '100% 1px')
-    inside.style('backgroundRepeat', 'repeat-y')
-    combined.add(inside)
-
-    const foreground = foreground_ui.create()
-    foreground.style('width', '100%')
-    foreground.style('height', '100%')
-    foreground.style('justifyContent', 'center')
-    foreground.style('alignItems', 'center')
-    foreground_ui.root.add(foreground)
-
-    const title = foreground_ui.create()
-    title.style('fontFamily', 'Supercell-Magic')
-    title.style('fontSize', '50px')
-    title.style('color', '#ffffff')
-    title.style('textStroke', '6px #000000')
-    title.style('textShadow', '0px 4px 0px #000000')
-    title.text('Hello Babylon.js!')
-    foreground.add(title)
-
-    return { grid }
 }
