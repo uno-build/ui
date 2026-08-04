@@ -116,14 +116,25 @@
                 gap: 4px;
             }
             .settings-renderer {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                height: 20px;
+                display: block;
+                padding: 2px 0;
                 cursor: pointer;
             }
+            .settings-renderer-header {
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+            }
+            .settings-renderer-opacity {
+                color: rgba(255, 255, 255, 0.6);
+            }
             .settings-renderer input {
-                margin: 0;
+                display: block;
+                margin: 2px 0 0;
+                width: 100%;
+                height: 12px;
+                accent-color: #56ccf2;
+                cursor: pointer;
             }
             #settings-panel button {
                 display: block;
@@ -149,10 +160,10 @@
             <div id="settings-renderers"></div>
             <div class="settings-panel-title settings-layouts-title">Layouts</div>
             <div id="settings-layouts"></div>
-            <div id="settings-buttons">
+            <!-- <div id="settings-buttons">
                 <button id="add-random-node-button">+</button>
                 <button id="remove-random-node-button">-</button>
-            </div>
+            </div> -->
         </div>
         <div id="mouse-tooltip">x: 0, y: 0</div>
         <script>
@@ -164,10 +175,11 @@
             const remove_random_node_button = document.getElementById('remove-random-node-button')
             const SETTINGS_PANEL_POSITION_STORAGE_KEY = 'settings-panel-position'
             const SETTINGS_RENDERERS_STORAGE_KEY = 'settings-renderers'
+            const DEFAULT_RENDERER_OPACITY = 100
             let settingsDragX = 0
             let settingsDragY = 0
             let settingsDragPointerId = null
-            const saved_active_renderer_names = getSavedActiveRendererNames()
+            const saved_renderer_opacities = getSavedRendererOpacities()
 
             function getSettingsPanelPosition(left, top) {
                 return {
@@ -202,26 +214,35 @@
 
             restoreSettingsPanelPosition()
 
-            function getSavedActiveRendererNames() {
-                const saved_renderer_names = localStorage.getItem(SETTINGS_RENDERERS_STORAGE_KEY)
+            function getSavedRendererOpacities() {
+                const saved_renderer_opacities = localStorage.getItem(SETTINGS_RENDERERS_STORAGE_KEY)
 
-                if (saved_renderer_names != null) {
-                    return saved_renderer_names === '' ? [] : saved_renderer_names.split(',')
+                if (saved_renderer_opacities == null) {
+                    return {}
                 }
 
-                return null
+                try {
+                    return JSON.parse(saved_renderer_opacities)
+                } catch {
+                    // Settings used to be a comma separated list of visible renderer names.
+                    return {}
+                }
             }
 
-            function isRendererActive(rendererName) {
-                return saved_active_renderer_names == null || saved_active_renderer_names.includes(rendererName)
+            function getRendererOpacity(rendererName) {
+                const saved_opacity = saved_renderer_opacities[rendererName]
+
+                return typeof saved_opacity === 'number' ? saved_opacity : DEFAULT_RENDERER_OPACITY
             }
 
             function saveRendererSettings() {
-                const renderer_names = Array.from(settingsRenderers.querySelectorAll('input:checked')).map(
-                    (rendererToggle) => rendererToggle.id.replace('settings-', ''),
-                )
+                const renderer_opacities = {}
 
-                localStorage.setItem(SETTINGS_RENDERERS_STORAGE_KEY, renderer_names.join(','))
+                settingsRenderers.querySelectorAll('input').forEach((rendererSlider) => {
+                    renderer_opacities[rendererSlider.id.replace('settings-', '')] = Number(rendererSlider.value)
+                })
+
+                localStorage.setItem(SETTINGS_RENDERERS_STORAGE_KEY, JSON.stringify(renderer_opacities))
             }
 
             window.addEventListener('mousemove', (event) => {
@@ -276,33 +297,54 @@
                         return
                     }
 
-                    const rendererToggle = document.createElement('input')
-                    rendererToggle.type = 'checkbox'
-                    rendererToggle.id = `settings-${renderer.id}`
-                    rendererToggle.checked = isRendererActive(renderer.id)
-                    renderer.style.visibility = rendererToggle.checked ? 'visible' : 'hidden'
+                    const rendererSlider = document.createElement('input')
+                    rendererSlider.type = 'range'
+                    rendererSlider.min = '0'
+                    rendererSlider.max = '100'
+                    rendererSlider.step = '1'
+                    rendererSlider.id = `settings-${renderer.id}`
+                    rendererSlider.value = getRendererOpacity(renderer.id)
+
+                    const rendererName = document.createElement('span')
+                    rendererName.textContent = renderer.id
+
+                    const rendererOpacity = document.createElement('span')
+                    rendererOpacity.className = 'settings-renderer-opacity'
+
+                    const rendererHeader = document.createElement('div')
+                    rendererHeader.className = 'settings-renderer-header'
+                    rendererHeader.append(rendererName, rendererOpacity)
 
                     const rendererLabel = document.createElement('label')
                     rendererLabel.className = 'settings-renderer'
-                    rendererLabel.htmlFor = rendererToggle.id
-                    rendererLabel.append(rendererToggle, renderer.id)
+                    rendererLabel.htmlFor = rendererSlider.id
+                    rendererLabel.append(rendererHeader, rendererSlider)
 
-                    rendererToggle.addEventListener('change', () => {
-                        renderer.style.visibility = rendererToggle.checked ? 'visible' : 'hidden'
-                        saveRendererSettings()
-                    })
+                    function applyRendererOpacity() {
+                        renderer.style.opacity = `${Number(rendererSlider.value) / 100}`
+                        rendererOpacity.textContent = `${rendererSlider.value}%`
+                    }
+
+                    applyRendererOpacity()
+
+                    rendererSlider.addEventListener('input', applyRendererOpacity)
+                    rendererSlider.addEventListener('change', saveRendererSettings)
 
                     settingsRenderers.appendChild(rendererLabel)
                 })
             }
 
-            add_random_node_button.addEventListener('click', () => {
-                window.addRandomNode()
-            })
+            if (add_random_node_button) {
+                add_random_node_button.addEventListener('click', () => {
+                    window.addRandomNode()
+                })
+            }
 
-            remove_random_node_button.addEventListener('click', () => {
-                window.removeRandomNode()
-            })
+            if (remove_random_node_button) {
+                remove_random_node_button.addEventListener('click', () => {
+                    window.removeRandomNode()
+                })
+            }
 
             document.addEventListener('DOMContentLoaded', () => {
                 addRendererSettings()

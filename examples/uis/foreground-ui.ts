@@ -16,9 +16,9 @@ export function createForegroundUI({ ui, assets, title: title_text }) {
 
     const title = ui.create()
     title.style('fontFamily', FONT_FAMILY)
-    title.style('fontSize', '4vw')
-    title.style('textStroke', '0.3vw #000000')
-    title.style('textShadow', '0px 0.3vw 0px #000000')
+    title.style('fontSize', '4.5vw')
+    title.style('textStroke', '0.4vw #000000')
+    title.style('textShadow', '0px 0.35vw 0px #000000')
     title.style('color', '#ffffff')
     title.text(title_text)
     overlay.add(title)
