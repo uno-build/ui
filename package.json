@@ -32,6 +32,7 @@
         "@babylonjs/lite": "^1.16.0",
         "@playwright/test": "^1.52.0",
         "pngjs": "^7.0.0",
+        "playcanvas": "^2.21.3",
         "three": "^0.185.1",
         "vite": "^8.0.12",
         "wgpu-matrix": "^3.4.2"

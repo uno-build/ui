@@ -87,7 +87,6 @@ export async function main({
 
     const camera = new ArcRotateCamera('camera', -Math.PI / 2, 1.25, 9.5, new Vector3(0, 0.8, 0), scene)
 
-    console.log('document', typeof document)
     if (typeof document !== 'undefined') {
         camera.attachControl(canvas, true)
     }
