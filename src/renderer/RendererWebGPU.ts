@@ -13,8 +13,7 @@ import {
     TEXT_ALIGN,
     UNIT,
 } from '../style/consts'
-import createEngine from '../layouter/yoga'
-import { MEASURE_MODE, type LayoutEngine } from '../layouter/types'
+import createEngine, { MEASURE_MODE } from '../layouter/yoga'
 import {
     getAncestorClipping,
     getNodeBorderWidth,
@@ -60,7 +59,7 @@ export default class RendererWebGPU extends Renderer {
     private root_size = ROOT_SIZE
     private style_context_dirty = false
     private scrollbar_size
-    private engine!: LayoutEngine
+    private engine!
     private device
     private context
     private format
