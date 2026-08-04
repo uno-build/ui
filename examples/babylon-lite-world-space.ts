@@ -280,7 +280,7 @@ function createOverlayLayout({ ui, assets }) {
     title.style('color', '#ffffff')
     title.style('textStroke', '6px #000000')
     title.style('textShadow', '0px 4px 0px #000000')
-    title.text('Overlay UI')
+    title.text('Babylon Lite')
     overlay.add(title)
 
     const badge = ui.create()

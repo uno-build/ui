@@ -28,6 +28,7 @@
         "yoga-layout": "^3.2.1"
     },
     "devDependencies": {
+        "@babylonjs/core": "9.5.2",
         "@babylonjs/lite": "^1.16.0",
         "@playwright/test": "^1.52.0",
         "pngjs": "^7.0.0",
@@ -36,10 +37,14 @@
         "wgpu-matrix": "^3.4.2"
     },
     "peerDependencies": {
+        "@babylonjs/core": "9.5.2",
         "@babylonjs/lite": "^1.16.0",
         "three": "^0.185.1"
     },
     "peerDependenciesMeta": {
+        "@babylonjs/core": {
+            "optional": true
+        },
         "@babylonjs/lite": {
             "optional": true
         },

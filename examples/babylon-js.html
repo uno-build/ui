@@ -23,21 +23,17 @@
         <canvas></canvas>
         <script type="module">
             import UIWebGPU from '../src/ui/UIWebGPU'
-            import UIBabylonWorldSpace from '../src/ui/UIBabylonWorldSpace'
             import WebGPUSharedContext from '../src/renderer/webgpu/WebGPUSharedContext'
             import { loadImage, loadJson } from '../tests/utils/load-assets'
             import { loadYoga } from 'yoga-layout/load'
-            import { main } from './babylon-world-space.ts'
+            import { main } from './babylon-js.ts'
 
             const canvas = document.querySelector('canvas')
             const onCanvasEvent = window.addEventListener
-            const requestAnimationFrame = window.requestAnimationFrame.bind(window)
             main({
                 canvas,
                 onCanvasEvent,
-                requestAnimationFrame,
                 UIWebGPU,
-                UIBabylonWorldSpace,
                 WebGPUSharedContext,
                 loadImage,
                 loadJson,
