@@ -17,6 +17,7 @@ export function createBackgroundUI({ ui, assets, title: title_text, background_c
     grid.style('backgroundImage', coin.src)
     grid.style('backgroundRepeat', 'repeat')
     grid.style('backgroundSize', '30px')
+    grid.style('borderRadius', '25px')
     ui.root.add(grid)
 
     if (background_color) {

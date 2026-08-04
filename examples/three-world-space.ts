@@ -40,6 +40,7 @@ export async function main({
         texture_height: texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
+        node_material: THREE.MeshPhongNodeMaterial,
     })
     const first_plane = first_ui.plane
 
@@ -51,6 +52,7 @@ export async function main({
         texture_height: texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
+        node_material: THREE.MeshPhongNodeMaterial,
     })
     const second_plane = second_ui.plane
 
@@ -76,12 +78,14 @@ export async function main({
     first_plane.position.set(-world_width / 2 - 0.25, 1, 0)
     first_plane.rotation.y = 0.35
     first_plane.material.side = THREE.DoubleSide
+    first_plane.material.shininess = 64
     scene.add(first_plane)
 
     second_plane.position.set(world_width / 2 + 0.25, 1, 0)
     second_plane.rotation.y = -0.35
     second_plane.material.side = THREE.DoubleSide
     second_plane.material.opacity = 1
+    second_plane.material.shininess = 64
     scene.add(second_plane)
 
     const floor = new THREE.GridHelper(20, 20, 0x475569, 0x263244)
@@ -93,7 +97,7 @@ export async function main({
     light.position.set(3, 5, 4)
     scene.add(light)
 
-    const second_light = new THREE.PointLight(0x60a5fa, 25, 5)
+    const second_light = new THREE.PointLight(0x60a5fa, 250, 5)
     second_light.position.set(second_plane.position.x + 0.5, second_plane.position.y + 0.5, 2)
     scene.add(second_light)
 
