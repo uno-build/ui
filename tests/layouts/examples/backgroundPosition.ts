@@ -1,6 +1,6 @@
 import { loadImage } from '../../utils/load-assets'
 
-export default async function createBackgroundPositionLayout({ ui, webgpu }) {
+export default async function createBackgroundPositionLayout({ ui, context }) {
     const size = 100
     const asset_texture = await loadImage('/assets/images/coin.png')
     const BACKGROUND_COLOR = '#cdd3f8'
@@ -27,7 +27,7 @@ export default async function createBackgroundPositionLayout({ ui, webgpu }) {
         '-10px 20px',
     ]
 
-    webgpu?.registerImage(asset_texture.src, asset_texture)
+    context.registerImage?.(asset_texture.src, asset_texture)
 
     const grid = ui.create()
     grid.style('width', '100%')

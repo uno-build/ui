@@ -1,6 +1,6 @@
 import { loadImage } from '../../utils/load-assets'
 
-export default async function createBackgroundRepeatLayout({ ui, webgpu }) {
+export default async function createBackgroundRepeatLayout({ ui, context }) {
     const size = 120
     const GAP = 16
     const coin = await loadImage('/assets/images/coin.png')
@@ -8,9 +8,9 @@ export default async function createBackgroundRepeatLayout({ ui, webgpu }) {
     const repeaty = await loadImage('/assets/images/repeat-y.png')
     const BACKGROUND_COLOR = '#f2f5f8'
 
-    webgpu?.registerImage(coin.src, coin)
-    webgpu?.registerImage(repeatx.src, repeatx)
-    webgpu?.registerImage(repeaty.src, repeaty)
+    context.registerImage?.(coin.src, coin)
+    context.registerImage?.(repeatx.src, repeatx)
+    context.registerImage?.(repeaty.src, repeaty)
 
     const grid = ui.create()
     grid.style('width', `100%`)

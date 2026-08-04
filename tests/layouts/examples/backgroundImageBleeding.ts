@@ -1,16 +1,16 @@
 import { loadImage } from '../../utils/load-assets'
 
-export default async function createBackgroundImageBleedingLayout({ ui, webgpu }) {
+export default async function createBackgroundImageBleedingLayout({ ui, context }) {
     const TARGET_SIZE = 200
     const asset_bleeding = await loadImage('/assets/images/bleeding.png')
     const padded_src = `${asset_bleeding.src}#padded`
     const plain_src = `${asset_bleeding.src}#plain`
 
-    webgpu?.registerImage(padded_src, {
+    context.registerImage?.(padded_src, {
         ...asset_bleeding,
         preventBleeding: true,
     })
-    webgpu?.registerImage(plain_src, {
+    context.registerImage?.(plain_src, {
         ...asset_bleeding,
         preventBleeding: false,
     })

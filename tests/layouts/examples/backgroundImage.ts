@@ -1,6 +1,6 @@
 import { loadImage } from '../../utils/load-assets'
 
-export default async function createBackgroundImageLayout({ ui, webgpu }) {
+export default async function createBackgroundImageLayout({ ui, context }) {
     const size = 150
     const asset_logo = await loadImage('/assets/images/logo.jpg')
     const asset_coin = await loadImage('/assets/images/coin.png')
@@ -16,7 +16,7 @@ export default async function createBackgroundImageLayout({ ui, webgpu }) {
     const BACKGROUND_IMAGES = [asset_logo, asset_coin, asset_texture, asset_card]
 
     for (const background_image of BACKGROUND_IMAGES) {
-        webgpu?.registerImage(background_image.src, background_image)
+        context.registerImage?.(background_image.src, background_image)
     }
 
     const grid = ui.create()
