@@ -166,37 +166,41 @@
             const SETTINGS_RENDERERS_STORAGE_KEY = 'settings-renderers'
             let settingsDragX = 0
             let settingsDragY = 0
+            let settingsDragPointerId = null
             const saved_active_renderer_names = getSavedActiveRendererNames()
 
             function getSettingsPanelPosition(left, top) {
                 return {
-                    left: Math.min(left, window.innerWidth - settingsPanel.offsetWidth),
-                    top: Math.min(top, window.innerHeight - settingsPanel.offsetHeight),
+                    left: Math.max(0, Math.min(left, window.innerWidth - settingsPanel.offsetWidth)),
+                    top: Math.max(0, Math.min(top, window.innerHeight - settingsPanel.offsetHeight)),
                 }
             }
 
-            const saved_settings_panel_position = localStorage.getItem(SETTINGS_PANEL_POSITION_STORAGE_KEY)
-            if (saved_settings_panel_position) {
-                const settings_panel_position = JSON.parse(saved_settings_panel_position)
-                const normalized_settings_panel_position = getSettingsPanelPosition(
-                    settings_panel_position.left,
-                    settings_panel_position.top,
-                )
-                settingsPanel.style.left = `${normalized_settings_panel_position.left}px`
-                settingsPanel.style.top = `${normalized_settings_panel_position.top}px`
-                localStorage.setItem(
-                    SETTINGS_PANEL_POSITION_STORAGE_KEY,
-                    JSON.stringify(normalized_settings_panel_position),
-                )
+            function moveSettingsPanel(left, top) {
+                const settings_panel_position = getSettingsPanelPosition(left, top)
+                settingsPanel.style.left = `${settings_panel_position.left}px`
+                settingsPanel.style.top = `${settings_panel_position.top}px`
             }
 
             function saveSettingsPanelPosition() {
-                const settings_panel_position = getSettingsPanelPosition(
-                    settingsPanel.offsetLeft,
-                    settingsPanel.offsetTop,
+                localStorage.setItem(
+                    SETTINGS_PANEL_POSITION_STORAGE_KEY,
+                    JSON.stringify({ left: settingsPanel.offsetLeft, top: settingsPanel.offsetTop }),
                 )
-                localStorage.setItem(SETTINGS_PANEL_POSITION_STORAGE_KEY, JSON.stringify(settings_panel_position))
             }
+
+            function restoreSettingsPanelPosition() {
+                const saved_settings_panel_position = localStorage.getItem(SETTINGS_PANEL_POSITION_STORAGE_KEY)
+
+                if (saved_settings_panel_position == null) {
+                    return
+                }
+
+                const settings_panel_position = JSON.parse(saved_settings_panel_position)
+                moveSettingsPanel(settings_panel_position.left, settings_panel_position.top)
+            }
+
+            restoreSettingsPanelPosition()
 
             function getSavedActiveRendererNames() {
                 const saved_renderer_names = localStorage.getItem(SETTINGS_RENDERERS_STORAGE_KEY)
@@ -226,11 +230,26 @@
                 tooltip.style.top = `${event.clientY}px`
             })
 
+            function endSettingsPanelDrag(event) {
+                if (event.pointerId !== settingsDragPointerId) {
+                    return
+                }
+
+                settingsDragPointerId = null
+                settingsPanel.classList.remove('dragging')
+                saveSettingsPanelPosition()
+            }
+
             settingsPanel.addEventListener('pointerdown', (event) => {
+                if (settingsDragPointerId != null || event.button !== 0) {
+                    return
+                }
+
                 if (event.target.closest('.settings-layout, .settings-renderer, button')) {
                     return
                 }
 
+                settingsDragPointerId = event.pointerId
                 settingsDragX = event.clientX - settingsPanel.offsetLeft
                 settingsDragY = event.clientY - settingsPanel.offsetTop
                 settingsPanel.classList.add('dragging')
@@ -238,23 +257,18 @@
             })
 
             settingsPanel.addEventListener('pointermove', (event) => {
-                if (!settingsPanel.hasPointerCapture(event.pointerId)) {
+                if (event.pointerId !== settingsDragPointerId) {
                     return
                 }
 
-                settingsPanel.style.left = `${event.clientX - settingsDragX}px`
-                settingsPanel.style.top = `${event.clientY - settingsDragY}px`
+                moveSettingsPanel(event.clientX - settingsDragX, event.clientY - settingsDragY)
             })
 
-            settingsPanel.addEventListener('pointerup', (event) => {
-                if (!settingsPanel.hasPointerCapture(event.pointerId)) {
-                    return
-                }
+            settingsPanel.addEventListener('pointerup', endSettingsPanelDrag)
+            settingsPanel.addEventListener('pointercancel', endSettingsPanelDrag)
+            settingsPanel.addEventListener('lostpointercapture', endSettingsPanelDrag)
 
-                settingsPanel.classList.remove('dragging')
-                settingsPanel.releasePointerCapture(event.pointerId)
-                saveSettingsPanelPosition()
-            })
+            window.addEventListener('resize', restoreSettingsPanelPosition)
 
             function addRendererSettings() {
                 Array.from(root.children).forEach((renderer) => {
@@ -295,6 +309,9 @@
                 new MutationObserver(addRendererSettings).observe(root, {
                     childList: true,
                 })
+                // The panel is only fully sized once its renderers and layouts exist,
+                // so clamp the restored position against its final size.
+                restoreSettingsPanelPosition()
             })
         </script>
     </body>
