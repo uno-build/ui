@@ -10,7 +10,7 @@ const TEXTURE_SCALAR = window.devicePixelRatio
 export async function main({
     canvas,
     onCanvasEvent,
-    WebGPUSharedContext,
+    WebGPUResources,
     UIWebGPU,
     UIThree,
     loadImage,
@@ -22,7 +22,7 @@ export async function main({
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
     const world_width = WORLD_HEIGHT * (device_width / device_height)
 
-    const webgpu = await WebGPUSharedContext.create({ canvas })
+    const webgpu = await WebGPUResources.create({ canvas })
     const { context, device } = webgpu
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ webgpu, assets })

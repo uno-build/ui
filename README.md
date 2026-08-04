@@ -2,14 +2,14 @@
 
 ## WebGPU shared context
 
-Create one `WebGPUSharedContext` and pass the same instance as `webgpu` to every UI that should share its adapter,
+Create one `WebGPUResources` and pass the same instance as `webgpu` to every UI that should share its adapter,
 device, canvas context, format, fonts, and image atlases.
 
 ```ts
 import UIWebGPU from 'uno-ui/UIWebGPU'
-import WebGPUSharedContext from 'uno-ui/WebGPUSharedContext'
+import WebGPUResources from 'uno-ui/WebGPUResources'
 
-const webgpu = await WebGPUSharedContext.create({ canvas })
+const webgpu = await WebGPUResources.create({ canvas })
 
 webgpu.registerImage(icon_path, icon)
 webgpu.registerFont('Poppins', font_image, font_json)

@@ -1,8 +1,8 @@
-export default class DOMSharedContext {
+export default class DOMResources {
     private fonts = new Map()
 
     public static create() {
-        return new DOMSharedContext()
+        return new DOMResources()
     }
 
     public registerFont(name: string, image: any, json: any) {

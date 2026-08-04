@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import UI from '../src/core/UI'
-import WebGPUSharedContext from '../src/renderer/webgpu/WebGPUSharedContext'
+import WebGPUResources from '../src/renderer/webgpu/WebGPUResources'
 import TestRenderer from './TestRenderer.ts'
 
 test('UI and Node api creates, styles, updates, and removes nodes', async () => {
@@ -437,10 +437,10 @@ test('UI forwards viewport changes to the renderer', async () => {
     expect(viewports).toEqual([[320, 180]])
 })
 
-test('WebGPUSharedContext image api delegates to the image manager', () => {
+test('WebGPUResources image api delegates to the image manager', () => {
     const image = createImage('/assets/first.png', 32, 32)
     const calls = []
-    const webgpu = new (WebGPUSharedContext as any)({})
+    const webgpu = new (WebGPUResources as any)({})
     webgpu.image_manager = {
         imageUpload(src, next_image) {
             calls.push({ kind: 'upload', src, image: next_image })
@@ -462,9 +462,9 @@ test('WebGPUSharedContext image api delegates to the image manager', () => {
     ])
 })
 
-test('WebGPUSharedContext font api delegates to the font manager', () => {
+test('WebGPUResources font api delegates to the font manager', () => {
     const calls = []
-    const webgpu = new (WebGPUSharedContext as any)({})
+    const webgpu = new (WebGPUResources as any)({})
     webgpu.font_manager = {
         fontRegister(name, image, json) {
             calls.push({ name, image, json })

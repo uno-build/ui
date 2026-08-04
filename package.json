@@ -3,9 +3,9 @@
     "version": "0.1.0",
     "type": "module",
     "exports": {
-        "./WebGPUSharedContext": {
-            "types": "./src/renderer/webgpu/WebGPUSharedContext.ts",
-            "import": "./src/renderer/webgpu/WebGPUSharedContext.ts"
+        "./WebGPUResources": {
+            "types": "./src/renderer/webgpu/WebGPUResources.ts",
+            "import": "./src/renderer/webgpu/WebGPUResources.ts"
         },
         "./UIWebGPU": {
             "types": "./src/ui/UIWebGPU.ts",
@@ -18,14 +18,6 @@
         "./UIBabylonLite": {
             "types": "./src/ui/UIBabylonLite.ts",
             "import": "./src/ui/UIBabylonLite.ts"
-        },
-        "./UIDom": {
-            "types": "./src/ui/UIDom.ts",
-            "import": "./src/ui/UIDom.ts"
-        },
-        "./DOMSharedContext": {
-            "types": "./src/renderer/dom/DOMSharedContext.ts",
-            "import": "./src/renderer/dom/DOMSharedContext.ts"
         }
     },
     "dependencies": {

@@ -26,7 +26,7 @@ const TEXTURE_SCALAR = window.devicePixelRatio
 export async function main({
     canvas,
     onCanvasEvent,
-    WebGPUSharedContext,
+    WebGPUResources,
     UIWebGPU,
     UIBabylonLite,
     loadImage,
@@ -43,7 +43,7 @@ export async function main({
     scene.clearColor = { r: 0.067, g: 0.094, b: 0.153, a: 1 }
 
     const context = canvas.getContext('webgpu')
-    const webgpu = await WebGPUSharedContext.create({
+    const webgpu = await WebGPUResources.create({
         canvas,
         device: engine._device,
         context,

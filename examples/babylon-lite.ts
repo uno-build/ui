@@ -19,7 +19,7 @@ import { loadAssets, registerAssets } from './uis/assets'
 import { createBackgroundUI } from './uis/background-ui'
 import { createForegroundUI } from './uis/foreground-ui'
 
-export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUSharedContext, loadImage, loadJson, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, loadImage, loadJson, loadYoga }) {
     const engine = await createEngine(canvas, { msaaSamples: 1, alphaMode: 'premultiplied' })
     const scene = createSceneContext(engine, { defaultRenderTask: false })
 
@@ -59,7 +59,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUSharedContex
     addToScene(scene, cube)
 
     const context = canvas.getContext('webgpu')
-    const webgpu = await WebGPUSharedContext.create({
+    const webgpu = await WebGPUResources.create({
         canvas,
         device: engine._device,
         context,

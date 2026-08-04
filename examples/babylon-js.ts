@@ -10,7 +10,7 @@ import { loadAssets, registerAssets } from './uis/assets'
 import { createBackgroundUI } from './uis/background-ui'
 import { createForegroundUI } from './uis/foreground-ui'
 
-export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUSharedContext, loadImage, loadJson, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, loadImage, loadJson, loadYoga }) {
     const context = canvas.getContext('webgpu')
     const format = navigator.gpu.getPreferredCanvasFormat()
     const engine = new WebGPUEngine(canvas, {
@@ -24,7 +24,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUSharedContex
     await engine.initAsync()
     ;(engine as any).getInputElement = () => null
 
-    const webgpu = await WebGPUSharedContext.create({
+    const webgpu = await WebGPUResources.create({
         canvas,
         device: engine._device,
         context,

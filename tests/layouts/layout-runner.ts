@@ -1,7 +1,7 @@
 import UIDom from '../../src/ui/UIDom'
 import UIWebGPU from '../../src/ui/UIWebGPU'
-import WebGPUSharedContext from '../../src/renderer/webgpu/WebGPUSharedContext'
-import DOMSharedContext from '../../src/renderer/dom/DOMSharedContext'
+import WebGPUResources from '../../src/renderer/webgpu/WebGPUResources'
+import DOMResources from '../../src/renderer/dom/DOMResources'
 import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
 import { loadYoga } from 'yoga-layout/load'
 
@@ -9,7 +9,7 @@ export const SETUPS = {
     RendererDom: {
         elementType: 'div',
         ui: UIDom,
-        shared_context: DOMSharedContext,
+        shared_context: DOMResources,
         context_option: 'dom',
         attributes: {},
         inspectDomPaint: true,
@@ -19,7 +19,7 @@ export const SETUPS = {
     RendererWebGPU: {
         elementType: 'canvas',
         ui: UIWebGPU,
-        shared_context: WebGPUSharedContext,
+        shared_context: WebGPUResources,
         context_option: 'webgpu',
         attributes: {},
         inspectDomPaint: false,

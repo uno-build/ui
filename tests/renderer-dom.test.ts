@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import RendererDom from '../src/renderer/RendererDom.ts'
-import DOMSharedContext from '../src/renderer/dom/DOMSharedContext.ts'
+import DOMResources from '../src/renderer/dom/DOMResources.ts'
 import Style from '../src/style'
 
 test('RendererDom sets the document root font size', () => {
@@ -29,7 +29,6 @@ test('RendererDom keeps viewport units as native CSS values', () => {
     const element = { style: {} }
     const node = {}
     ;(renderer as any).elements.set(node, element)
-
     ;(renderer as any).updateStyle(node, Style.resolveStyle('width', '20vw'))
     ;(renderer as any).updateStyle(node, Style.resolveStyle('fontSize', '5vh'))
 
@@ -44,13 +43,11 @@ test('RendererDom maps textStroke only to webkitTextStroke', () => {
     const element = { style: {} }
     const node = {}
     ;(renderer as any).elements.set(node, element)
-
     ;(renderer as any).updateStyle(node, Style.resolveStyle('textStroke', '4PX #1234'))
 
     expect(element.style).toEqual({
         webkitTextStroke: '4px #1234',
     })
-
     ;(renderer as any).updateStyle(node, Style.resolveStyle('textStroke', 'unset'))
 
     expect(element.style).toEqual({
@@ -59,7 +56,7 @@ test('RendererDom maps textStroke only to webkitTextStroke', () => {
 })
 
 test('RendererDom resolves natural and unset lineHeight from registered font metrics', () => {
-    const dom = DOMSharedContext.create()
+    const dom = DOMResources.create()
     const renderer = new RendererDom({ canvas: {}, dom })
     const element = { style: {} }
     const node = {
@@ -69,7 +66,6 @@ test('RendererDom resolves natural and unset lineHeight from registered font met
     }
     ;(renderer as any).elements.set(node, element)
     dom.registerFont('Poppins-Regular', {}, { metrics: { lineHeight: 1.5 } })
-
     ;(renderer as any).updateStyle(node, Style.resolveStyle('fontFamily', 'Poppins-Regular'))
     expect(element.style.lineHeight).toBe('1.5')
 
