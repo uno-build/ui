@@ -1,4 +1,7 @@
 export const PANEL_WGSL = /* wgsl */ `
+const BORDER_RADIUS_ANTIALIAS_SCALE = 0.5;
+const BORDER_RADIUS_ANTIALIAS_MIN_WIDTH = 0.0001;
+
 fn unpackBoxShadowI16(value: u32, shift: u32) -> f32 {
     let raw = (value >> shift) & 65535u;
     return select(f32(raw), f32(raw) - 65536.0, raw >= 32768u);
@@ -84,23 +87,26 @@ fn roundedRectCoverage(
     border_radius_x: vec4f,
     border_radius_y: vec4f,
 ) -> f32 {
-    let distance = roundedRectSignedDistance(
+    let distance_data = roundedRectDistance(
         local_position,
         rect_size,
         border_radius_x,
         border_radius_y,
     );
-    let antialias = max(max(local_position_width.x, local_position_width.y) * 0.5, 0.0001);
+    let antialias = max(
+        dot(distance_data.yz, local_position_width) * BORDER_RADIUS_ANTIALIAS_SCALE,
+        BORDER_RADIUS_ANTIALIAS_MIN_WIDTH,
+    );
 
-    return 1.0 - smoothstep(-antialias, antialias, distance);
+    return 1.0 - smoothstep(-antialias, antialias, distance_data.x);
 }
 
-fn roundedRectSignedDistance(
+fn roundedRectDistance(
     local_position: vec2f,
     rect_size: vec2f,
     border_radius_x: vec4f,
     border_radius_y: vec4f,
-) -> f32 {
+) -> vec3f {
     let clamped_position = clamp(local_position, vec2f(0.0), rect_size);
     let corner_radius = cornerRadius(
         clamped_position,
@@ -108,14 +114,47 @@ fn roundedRectSignedDistance(
         border_radius_x,
         border_radius_y,
     );
-    let radius = min(
-        min(corner_radius.x, corner_radius.y),
-        min(rect_size.x, rect_size.y) * 0.5,
-    );
     let half_size = rect_size * 0.5;
-    let delta = abs(local_position - half_size) - max(half_size - vec2f(radius), vec2f(0.0));
+    var radius = vec2f(0.0);
+    if (all(corner_radius > vec2f(0.0))) {
+        let radius_scale = min(
+            min(half_size.x / corner_radius.x, half_size.y / corner_radius.y),
+            1.0,
+        );
+        radius = corner_radius * radius_scale;
+    }
 
-    return length(max(delta, vec2f(0.0))) + min(max(delta.x, delta.y), 0.0) - radius;
+    let delta = abs(local_position - half_size) - max(half_size - radius, vec2f(0.0));
+    let outside_delta = max(delta, vec2f(0.0));
+    let outside_distance = length(outside_delta);
+    let inside_gradient = select(vec2f(0.0, 1.0), vec2f(1.0, 0.0), delta.x > delta.y);
+
+    if (any(radius <= vec2f(0.0))) {
+        let gradient = select(
+            inside_gradient,
+            outside_delta / max(outside_distance, 0.0001),
+            outside_distance > 0.0,
+        );
+        let distance = outside_distance + min(max(delta.x, delta.y), 0.0);
+
+        return vec3f(distance, gradient);
+    }
+
+    let normalized_delta = outside_delta / radius;
+    let normalized_length = length(normalized_delta);
+    if (normalized_length == 0.0) {
+        let inner_delta = delta - radius;
+        let gradient = select(vec2f(0.0, 1.0), vec2f(1.0, 0.0), inner_delta.x > inner_delta.y);
+
+        return vec3f(max(inner_delta.x, inner_delta.y), gradient);
+    }
+
+    let ellipse_gradient = normalized_delta / radius / normalized_length;
+    let ellipse_gradient_length = length(ellipse_gradient);
+    let gradient = ellipse_gradient / ellipse_gradient_length;
+    let distance = (normalized_length - 1.0) / ellipse_gradient_length;
+
+    return vec3f(distance, gradient);
 }
 
 fn compositeOver(top: vec4f, bottom: vec4f) -> vec4f {
@@ -139,12 +178,12 @@ fn boxShadowCoverage(panel: PanelData, local_position: vec2f, outer_coverage: f3
     let shadow_position = local_position - shadow_offset + vec2f(spread);
     let shadow_radius_x = max(panel.border_radius_x + vec4f(spread), vec4f(0.0));
     let shadow_radius_y = max(panel.border_radius_y + vec4f(spread), vec4f(0.0));
-    let distance = roundedRectSignedDistance(
+    let distance = roundedRectDistance(
         shadow_position,
         safe_shadow_size,
         shadow_radius_x,
         shadow_radius_y,
-    );
+    ).x;
     let softness = max(blur, 0.5);
     let coverage = 1.0 - smoothstep(-softness, softness, distance);
     let alpha = coverage * (1.0 - outer_coverage);
@@ -285,7 +324,13 @@ fn panelColor(input: VertexOutput, local_position_width: vec2f) -> vec4f {
         }
         if (any(panel.border_widths > vec4f(0.0))) {
             let border_color = compositeOver(borderColorForPosition(panel, input.local_position), box_color);
-            box_color = mix(border_color, box_color, inner_coverage);
+            let border_mix_alpha = mix(border_color.a, box_color.a, inner_coverage);
+            let border_mix_color = mix(
+                border_color.rgb * border_color.a,
+                box_color.rgb * box_color.a,
+                inner_coverage,
+            ) / max(border_mix_alpha, 0.0001);
+            box_color = vec4f(border_mix_color, border_mix_alpha);
         }
     }
     box_color.a *= outer_coverage * panel.image_data.x;

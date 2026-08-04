@@ -1660,6 +1660,32 @@ test('MTSDF text shadow derives its sample count from the physical blur', () => 
     expect(MTSDF_TEXT_EFFECT_WGSL).not.toContain('MTSDF_TEXT_SHADOW_SAMPLE_OFFSETS')
 })
 
+test('panel border radius antialiasing follows the signed distance gradient', () => {
+    const shader = createUIWGSL()
+
+    expect(shader).toContain('const BORDER_RADIUS_ANTIALIAS_SCALE =')
+    expect(shader).toContain('const BORDER_RADIUS_ANTIALIAS_MIN_WIDTH =')
+    expect(shader).toContain('dot(distance_data.yz, local_position_width) * BORDER_RADIUS_ANTIALIAS_SCALE')
+    expect(shader).toContain('outside_delta / max(outside_distance, 0.0001)')
+})
+
+test('panel preserves elliptical border radii', () => {
+    const shader = createUIWGSL()
+
+    expect(shader).toContain('radius = corner_radius * radius_scale;')
+    expect(shader).toContain('let normalized_delta = outside_delta / radius;')
+    expect(shader).toContain('let ellipse_gradient = normalized_delta / radius / normalized_length;')
+    expect(shader).not.toContain('min(corner_radius.x, corner_radius.y)')
+})
+
+test('panel blends antialiased borders in premultiplied color space', () => {
+    const shader = createUIWGSL()
+
+    expect(shader).toContain('border_color.rgb * border_color.a')
+    expect(shader).toContain('box_color.rgb * box_color.a')
+    expect(shader).toContain('max(border_mix_alpha, 0.0001)')
+})
+
 test('MTSDF text stroke multisamples only the radius beyond its safe alpha range', () => {
     expect(MTSDF_TEXT_EFFECT_WGSL).toContain('run.effect_distance_range,\n            distance_sample.y,')
     expect(MTSDF_TEXT_EFFECT_WGSL).toContain('const TEXT_STROKE_MAX_RING_COUNT = 4u;')
