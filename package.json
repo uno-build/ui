@@ -22,6 +22,10 @@
         "./UIBabylonLite": {
             "types": "./src/ui/UIBabylonLite.ts",
             "import": "./src/ui/UIBabylonLite.ts"
+        },
+        "./UIPlaycanvas": {
+            "types": "./src/ui/UIPlaycanvas.ts",
+            "import": "./src/ui/UIPlaycanvas.ts"
         }
     },
     "dependencies": {
@@ -40,6 +44,7 @@
     "peerDependencies": {
         "@babylonjs/core": "9.5.2",
         "@babylonjs/lite": "^1.16.0",
+        "playcanvas": "^2.21.3",
         "three": "^0.185.1"
     },
     "peerDependenciesMeta": {
@@ -47,6 +52,9 @@
             "optional": true
         },
         "@babylonjs/lite": {
+            "optional": true
+        },
+        "playcanvas": {
             "optional": true
         },
         "three": {
