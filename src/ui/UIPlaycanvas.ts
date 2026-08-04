@@ -30,7 +30,7 @@ fn getAlbedo() {
 }
 `
 
-export default class UIPlaycanvas extends UI {
+export default class UIPlayCanvas extends UI {
     public plane
     private app
     private texture_width
@@ -64,7 +64,7 @@ export default class UIPlaycanvas extends UI {
     }
 
     public static async create(options) {
-        const ui = new UIPlaycanvas(options)
+        const ui = new UIPlayCanvas(options)
         await ui.initialize()
         return ui
     }

@@ -23,9 +23,9 @@
             "types": "./src/ui/UIBabylonLite.ts",
             "import": "./src/ui/UIBabylonLite.ts"
         },
-        "./UIPlaycanvas": {
-            "types": "./src/ui/UIPlaycanvas.ts",
-            "import": "./src/ui/UIPlaycanvas.ts"
+        "./UIPlayCanvas": {
+            "types": "./src/ui/UIPlayCanvas.ts",
+            "import": "./src/ui/UIPlayCanvas.ts"
         }
     },
     "dependencies": {

@@ -7,7 +7,6 @@ import {
     Entity,
     FILLMODE_FILL_WINDOW,
     InputFrame,
-    KeyboardMouseSource,
     LightComponentSystem,
     Mesh,
     MeshInstance,
@@ -33,7 +32,7 @@ const TEXTURE_SCALAR = window.devicePixelRatio
 export async function main({
     canvas,
     onCanvasEvent,
-    UIPlaycanvas,
+    UIPlayCanvas,
     UIWebGPU,
     WebGPUResources,
     loadImage,
@@ -65,6 +64,7 @@ export async function main({
     app.setCanvasFillMode(FILLMODE_FILL_WINDOW)
     app.setCanvasResolution(RESOLUTION_AUTO)
     app.scene.ambientLight = new Color(0.2, 0.25, 0.35)
+    app.scene.lighting.shadowsEnabled = false
 
     const device_pixel_ratio = graphics_device.maxPixelRatio
     const device_width = Math.max(canvas.clientWidth, canvas.clientHeight)
@@ -77,7 +77,7 @@ export async function main({
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
-    const first_ui = await UIPlaycanvas.create({
+    const first_ui = await UIPlayCanvas.create({
         app,
         webgpu,
         loadYoga,
@@ -87,7 +87,7 @@ export async function main({
         world_width,
         world_height: WORLD_HEIGHT,
     })
-    const second_ui = await UIPlaycanvas.create({
+    const second_ui = await UIPlayCanvas.create({
         app,
         webgpu,
         loadYoga,
@@ -158,10 +158,33 @@ export async function main({
     camera.lookAt(0, 0.8, 0)
     app.root.addChild(camera)
 
-    const mouse_source = new KeyboardMouseSource()
-    mouse_source.attach(canvas)
     const touch_source = new MultiTouchSource()
     touch_source.attach(canvas)
+    const mouse_buttons = [false, false, false]
+    let mouse_x = 0
+    let mouse_y = 0
+    let mouse_wheel = 0
+
+    onCanvasEvent('pointerdown', (event: PointerEvent) => {
+        if (event.pointerType !== 'mouse') return
+        canvas.setPointerCapture(event.pointerId)
+        setMouseButtons(mouse_buttons, event.buttons)
+    })
+    onCanvasEvent('pointermove', (event: PointerEvent) => {
+        if (event.pointerType !== 'mouse' || event.buttons === 0) return
+        mouse_x += event.movementX
+        mouse_y += event.movementY
+    })
+    onCanvasEvent('pointerup', (event: PointerEvent) => {
+        if (event.pointerType !== 'mouse') return
+        canvas.releasePointerCapture(event.pointerId)
+        setMouseButtons(mouse_buttons, event.buttons)
+    })
+    onCanvasEvent('wheel', (event: WheelEvent) => {
+        event.preventDefault()
+        mouse_wheel += event.deltaY
+    })
+    onCanvasEvent('contextmenu', (event: MouseEvent) => event.preventDefault())
 
     const orbit_controller = new OrbitController()
     orbit_controller.pitchRange = new Vec2(-85, 85)
@@ -186,22 +209,19 @@ export async function main({
     let bg_position = 0
 
     app.on('update', (delta_time) => {
-        const mouse_input = mouse_source.read()
         const touch_input = touch_source.read()
         touch_count += touch_input.count[0]
 
-        const move = [0, 0, mouse_input.wheel[0] * 0.001]
-        const rotate = [0, 0]
+        const move: [number, number, number] = [0, 0, mouse_wheel * 0.001]
+        const rotate: [number, number] = [0, 0]
 
-        if (mouse_source._button[0] === 1) {
-            rotate[0] += mouse_input.mouse[0] * 0.2
-            rotate[1] += mouse_input.mouse[1] * 0.2
-        } else if (mouse_source._button[1] === 1 || mouse_source._button[2] === 1) {
-            move[0] -= mouse_input.mouse[0] * 0.005
-            move[1] += mouse_input.mouse[1] * 0.005
-        }
-
-        if (touch_count === 1) {
+        if (mouse_buttons[0]) {
+            rotate[0] += mouse_x * 0.2
+            rotate[1] += mouse_y * 0.2
+        } else if (mouse_buttons[1] || mouse_buttons[2]) {
+            move[0] -= mouse_x * 0.005
+            move[1] += mouse_y * 0.005
+        } else if (touch_count === 1) {
             rotate[0] += touch_input.touch[0] * 0.2
             rotate[1] += touch_input.touch[1] * 0.2
         } else if (touch_count === 2) {
@@ -209,6 +229,10 @@ export async function main({
             move[1] += touch_input.touch[1] * 0.005
             move[2] += touch_input.pinch[0] * 0.003
         }
+
+        mouse_x = 0
+        mouse_y = 0
+        mouse_wheel = 0
 
         orbit_frame.deltas.move.append(move)
         orbit_frame.deltas.rotate.append(rotate)
@@ -243,6 +267,12 @@ export async function main({
     }
 
     app.start()
+}
+
+function setMouseButtons(mouse_buttons: boolean[], buttons: number) {
+    mouse_buttons[0] = (buttons & 1) !== 0
+    mouse_buttons[1] = (buttons & 4) !== 0
+    mouse_buttons[2] = (buttons & 2) !== 0
 }
 
 function syncCanvasSize({ canvas, app, graphics_device, overlay_ui }) {
