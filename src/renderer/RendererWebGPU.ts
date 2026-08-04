@@ -662,14 +662,18 @@ export default class RendererWebGPU extends Renderer {
         const letter_spacing = prepared_text.letterSpacing
         const text_align = node.styles.textAlign?.parsed.enum ?? TEXT_ALIGN.left
         const space_advance = this.measureGlyphAdvances(font, font_size, ' ')
-        const text_shadow = node.styles.textShadow?.parsed.text_shadow
-        const text_stroke = node.styles.textStroke?.parsed.text_stroke
+        const text_shadow = this.computeStyle(node.styles.textShadow)?.parsed.text_shadow
+        const text_stroke = this.computeStyle(node.styles.textStroke)?.parsed.text_stroke
         const effect_distance_range = font.json.atlas.effectDistanceRange ?? font.json.atlas.distanceRange
-        const text_stroke_width = text_stroke?.width ?? 0
+        const text_stroke_width = text_stroke?.width.value ?? 0
         const text_stroke_width_limit =
             (effect_distance_range * font_size) / (font.json.atlas.size * 2) - 0.5 / this.device_pixel_ratio
         const text_stroke_multisampling = text_stroke_width > 0 && text_stroke_width > text_stroke_width_limit ? 1 : 0
-        const text_shadow_data = [text_shadow?.offset_x ?? 0, text_shadow?.offset_y ?? 0, text_shadow?.blur ?? 0]
+        const text_shadow_data = [
+            text_shadow?.offset_x.value ?? 0,
+            text_shadow?.offset_y.value ?? 0,
+            text_shadow?.blur.value ?? 0,
+        ]
         const glyphs = []
 
         for (let line_index = 0; line_index < text_layout.lines.length; line_index++) {
@@ -738,7 +742,7 @@ export default class RendererWebGPU extends Renderer {
                 color: node.styles.color?.parsed.rgba ?? FONT_COLOR,
                 font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.webgpu.font_atlas_size],
                 clipping,
-                text_shadow: [text_shadow?.offset_x ?? 0, text_shadow?.offset_y ?? 0, text_shadow?.blur ?? 0, 0],
+                text_shadow: [...text_shadow_data, 0],
                 text_shadow_color: text_shadow?.color ?? [0, 0, 0, 0],
                 text_stroke_width,
                 effect_distance_range,

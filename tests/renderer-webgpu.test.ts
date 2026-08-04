@@ -2483,7 +2483,7 @@ test('RendererWebGPU writes text stroke data into the shared text run', () => {
             textStroke: {
                 parsed: {
                     text_stroke: {
-                        width: 4,
+                        width: { value: 4, kind: UNIT.PX },
                         color: [17, 34, 51, 68],
                     },
                 },
@@ -2541,7 +2541,7 @@ test('RendererWebGPU enables residual multisampling beyond the safe MTSDF alpha 
             textStroke: {
                 parsed: {
                     text_stroke: {
-                        width: 2,
+                        width: { value: 2, kind: UNIT.PX },
                         color: [17, 34, 51, 255],
                     },
                 },
@@ -2581,9 +2581,9 @@ test('RendererWebGPU writes text shadow data into the shared text run', () => {
             textShadow: {
                 parsed: {
                     text_shadow: {
-                        offset_x: -2,
-                        offset_y: 3,
-                        blur: 4,
+                        offset_x: { value: -2, kind: UNIT.PX },
+                        offset_y: { value: 3, kind: UNIT.PX },
+                        blur: { value: 4, kind: UNIT.PX },
                         color: [17, 34, 51, 68],
                     },
                 },
@@ -2623,6 +2623,51 @@ test('RendererWebGPU writes text shadow data into the shared text run', () => {
     expect(
         Array.from(floats.slice(TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE, TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE + 4)),
     ).toEqual([3, 7, 7, 2])
+})
+
+test('RendererWebGPU resolves text shadow and stroke units with the current root and viewport size', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A',
+        styles: {
+            textShadow: {
+                parsed: {
+                    text_shadow: {
+                        offset_x: { value: 0.5, kind: UNIT.REM },
+                        offset_y: { value: 10, kind: UNIT.VW },
+                        blur: { value: 10, kind: UNIT.VH },
+                        color: [17, 34, 51, 68],
+                    },
+                },
+            },
+            textStroke: {
+                parsed: {
+                    text_stroke: {
+                        width: { value: 0.25, kind: UNIT.REM },
+                        color: [255, 0, 0, 255],
+                    },
+                },
+            },
+        },
+    })
+    renderer.setRootSize(20)
+    renderer.setViewport(320, 180)
+
+    collectRenderData(renderer, [node])
+    const text_run_buffer_data = (renderer as any).createTextRunBufferData()
+    const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
+
+    expect(
+        Array.from(
+            floats.slice(TEXT_RUN.TEXT_SHADOW.OFFSET / FLOAT32_SIZE, TEXT_RUN.TEXT_SHADOW.OFFSET / FLOAT32_SIZE + 4),
+        ),
+    ).toEqual([10, 32, 18, 0])
+    expect(floats[TEXT_RUN.TEXT_STROKE_WIDTH.OFFSET / FLOAT32_SIZE]).toBe(5)
 })
 
 test('RendererWebGPU preserves panel then text order for a text node with background', () => {
@@ -2677,9 +2722,9 @@ test('RendererWebGPU draws every text shadow before the node glyphs', () => {
             textShadow: {
                 parsed: {
                     text_shadow: {
-                        offset_x: 0,
-                        offset_y: 0,
-                        blur: 0,
+                        offset_x: { value: 0, kind: UNIT.PX },
+                        offset_y: { value: 0, kind: UNIT.PX },
+                        blur: { value: 0, kind: UNIT.PX },
                         color: [0, 0, 0, 255],
                     },
                 },
@@ -2712,9 +2757,9 @@ test('RendererWebGPU expands text shadow commands by the visible text stroke wid
             textShadow: {
                 parsed: {
                     text_shadow: {
-                        offset_x: 1,
-                        offset_y: 2,
-                        blur: 3,
+                        offset_x: { value: 1, kind: UNIT.PX },
+                        offset_y: { value: 2, kind: UNIT.PX },
+                        blur: { value: 3, kind: UNIT.PX },
                         color: [0, 0, 0, 255],
                     },
                 },
@@ -2722,7 +2767,7 @@ test('RendererWebGPU expands text shadow commands by the visible text stroke wid
             textStroke: {
                 parsed: {
                     text_stroke: {
-                        width: 4,
+                        width: { value: 4, kind: UNIT.PX },
                         color: [255, 0, 0, 255],
                     },
                 },
@@ -2759,9 +2804,9 @@ test('RendererWebGPU skips transparent text shadow commands', () => {
             textShadow: {
                 parsed: {
                     text_shadow: {
-                        offset_x: 2,
-                        offset_y: 3,
-                        blur: 4,
+                        offset_x: { value: 2, kind: UNIT.PX },
+                        offset_y: { value: 3, kind: UNIT.PX },
+                        blur: { value: 4, kind: UNIT.PX },
                         color: [0, 0, 0, 0],
                     },
                 },

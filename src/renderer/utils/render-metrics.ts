@@ -20,7 +20,7 @@ export function getNodeDrawingData(node, computeStyleValue) {
     const border_width_left = getNodeBorderWidth(node, 'Left', computeStyleValue)
     const has_border =
         border_width_top > 0 || border_width_right > 0 || border_width_bottom > 0 || border_width_left > 0
-    const box_shadow = getNodeBoxShadow(node)
+    const box_shadow = getNodeBoxShadow(node, computeStyleValue)
     const has_box_shadow = box_shadow[2] >>> 24 > 0 && (box_shadow[0] !== 0 || box_shadow[1] !== 0)
 
     if (!has_background && !has_background_image && !has_border && !has_box_shadow) {
@@ -234,15 +234,15 @@ function getBorderRadius(border_radius, width, height) {
     return [border_radius.value, border_radius.value]
 }
 
-function getNodeBoxShadow(node) {
-    const box_shadow = node.styles.boxShadow?.parsed.box_shadow
+function getNodeBoxShadow(node, computeStyleValue) {
+    const box_shadow = computeStyleValue(node.styles.boxShadow)?.parsed.box_shadow
     if (box_shadow === undefined || box_shadow.color[3] === 0) {
         return EMPTY_BOX_SHADOW
     }
 
     return [
-        packSigned16Pair(box_shadow.offset_x, box_shadow.offset_y),
-        packSigned16Pair(box_shadow.blur, box_shadow.spread),
+        packSigned16Pair(box_shadow.offset_x.value, box_shadow.offset_y.value),
+        packSigned16Pair(box_shadow.blur.value, box_shadow.spread.value),
         packColor(box_shadow.color),
         0,
     ]

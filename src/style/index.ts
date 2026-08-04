@@ -77,24 +77,54 @@ export function resolveStyle(name: string, value: any) {
 }
 
 export function computeStyleValue(style, context) {
-    let unit_size
-
-    if (style?.parsed?.kind === UNIT.REM) {
-        unit_size = context.root_size
-    } else if (style?.parsed?.kind === UNIT.VW) {
-        unit_size = context.viewport_width / 100
-    } else if (style?.parsed?.kind === UNIT.VH) {
-        unit_size = context.viewport_height / 100
-    } else {
+    if (style?.parsed === undefined) {
         return style
     }
 
+    const parsed = computeParsedValue(style.parsed, context)
+
+    return parsed === style.parsed ? style : { ...style, parsed }
+}
+
+function computeParsedValue(parsed, context) {
+    if (parsed.kind !== undefined) {
+        return computeUnitValue(parsed, context)
+    }
+
+    let computed
+
+    for (const key in parsed) {
+        if (typeof parsed[key] !== 'object') {
+            continue
+        }
+
+        const value = computeParsedValue(parsed[key], context)
+
+        if (value !== parsed[key]) {
+            computed ??= { ...parsed }
+            computed[key] = value
+        }
+    }
+
+    return computed ?? parsed
+}
+
+function computeUnitValue(parsed, context) {
+    let unit_size
+
+    if (parsed.kind === UNIT.REM) {
+        unit_size = context.root_size
+    } else if (parsed.kind === UNIT.VW) {
+        unit_size = context.viewport_width / 100
+    } else if (parsed.kind === UNIT.VH) {
+        unit_size = context.viewport_height / 100
+    } else {
+        return parsed
+    }
+
     return {
-        ...style,
-        parsed: {
-            value: style.parsed.value * unit_size,
-            kind: UNIT.PX,
-        },
+        value: parsed.value * unit_size,
+        kind: UNIT.PX,
     }
 }
 

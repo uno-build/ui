@@ -1,6 +1,8 @@
 import { KEYWORD, UNIT } from './consts'
 import { readInteger, readNumber, readUnit } from './utils'
 
+const LENGTH_UNITS = [UNIT.PX, UNIT.REM, UNIT.VW, UNIT.VH]
+
 export function validateColor(value: string) {
     if (typeof value !== 'string' || !/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) {
         throw new Error('expected hex color')
@@ -18,7 +20,7 @@ export function validateBoxShadow(value: string) {
     }
 
     for (const shadow_value of values.slice(0, 4)) {
-        validatePx(shadow_value)
+        validateLength(shadow_value)
     }
 
     if (readUnit(values[2])!.value < 0) {
@@ -41,7 +43,7 @@ export function validateTextShadow(value: string) {
     }
 
     for (const shadow_value of values.slice(0, 3)) {
-        validatePx(shadow_value)
+        validateLength(shadow_value)
     }
 
     if (readUnit(values[2])!.value < 0) {
@@ -63,7 +65,7 @@ export function validateTextStroke(value: string) {
         throw new Error('expected width color')
     }
 
-    validatePx(values[0])
+    validateLength(values[0])
     if (readUnit(values[0])!.value < 0) {
         throw new Error('expected non-negative width')
     }
@@ -108,6 +110,13 @@ export function validatePx(value: string) {
     const parsed = readUnit(value)
     if (parsed === undefined || parsed.kind !== UNIT.PX) {
         throw new Error('expected px unit')
+    }
+}
+
+export function validateLength(value: string) {
+    const parsed = readUnit(value)
+    if (parsed === undefined || !LENGTH_UNITS.includes(parsed.kind)) {
+        throw new Error('expected px, rem, vw or vh unit')
     }
 }
 

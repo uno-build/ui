@@ -38,101 +38,128 @@ test('colors', () => {
 test('boxShadow', () => {
     expectResolved('boxShadow', ' unset ', 'unset', {
         box_shadow: {
-            offset_x: 0,
-            offset_y: 0,
-            blur: 0,
-            spread: 0,
+            offset_x: { value: 0, kind: 'px' },
+            offset_y: { value: 0, kind: 'px' },
+            blur: { value: 0, kind: 'px' },
+            spread: { value: 0, kind: 'px' },
             color: [0, 0, 0, 0],
         },
     })
     expectResolved('boxShadow', ' 0PX 4px 12PX 0px ', '0px 4px 12px 0px', {
         box_shadow: {
-            offset_x: 0,
-            offset_y: 4,
-            blur: 12,
-            spread: 0,
+            offset_x: { value: 0, kind: 'px' },
+            offset_y: { value: 4, kind: 'px' },
+            blur: { value: 12, kind: 'px' },
+            spread: { value: 0, kind: 'px' },
             color: [0, 0, 0, 255],
         },
     })
     expectResolved('boxShadow', '-8px 10px 14px 2px #1234', '-8px 10px 14px 2px #1234', {
         box_shadow: {
-            offset_x: -8,
-            offset_y: 10,
-            blur: 14,
-            spread: 2,
+            offset_x: { value: -8, kind: 'px' },
+            offset_y: { value: 10, kind: 'px' },
+            blur: { value: 14, kind: 'px' },
+            spread: { value: 2, kind: 'px' },
+            color: [17, 34, 51, 68],
+        },
+    })
+    expectResolved('boxShadow', '-0.5rem 1vw 2vh 0.25rem #1234', '-0.5rem 1vw 2vh 0.25rem #1234', {
+        box_shadow: {
+            offset_x: { value: -0.5, kind: 'rem' },
+            offset_y: { value: 1, kind: 'vw' },
+            blur: { value: 2, kind: 'vh' },
+            spread: { value: 0.25, kind: 'rem' },
             color: [17, 34, 51, 68],
         },
     })
     expectResolved(' box-shadow ', '2px 4px 6px -1px #12345678', '2px 4px 6px -1px #12345678', {
         box_shadow: {
-            offset_x: 2,
-            offset_y: 4,
-            blur: 6,
-            spread: -1,
+            offset_x: { value: 2, kind: 'px' },
+            offset_y: { value: 4, kind: 'px' },
+            blur: { value: 6, kind: 'px' },
+            spread: { value: -1, kind: 'px' },
             color: [18, 52, 86, 120],
         },
     }, 'boxShadow')
 
     expectInvalid('boxShadow', 'none', /expected offset-x offset-y blur-radius spread-radius color/)
     expectInvalid('boxShadow', '0px 4px -1px 0px #000000ff', /expected non-negative blur radius/)
+    expectInvalid('boxShadow', '0px 4px -1rem 0px #000000ff', /expected non-negative blur radius/)
     expectInvalid('boxShadow', '0px 4px 12px', /expected offset-x offset-y blur-radius spread-radius color/)
     expectInvalid('boxShadow', '0px 4px 12px 0px red', /expected hex color/)
-    expectInvalid('boxShadow', '0px 4px 12px 0%', /expected px unit/)
+    expectInvalid('boxShadow', '0px 4px 12px 0%', /expected px, rem, vw or vh unit/)
+    expectInvalid('boxShadow', '0px 4px 12em 0px', /expected px, rem, vw or vh unit/)
     expectInvalid('boxShadow', true, /expected offset-x offset-y blur-radius spread-radius color/)
 })
 
 test('textShadow', () => {
     expectResolved('textShadow', ' unset ', 'unset', {
         text_shadow: {
-            offset_x: 0,
-            offset_y: 0,
-            blur: 0,
+            offset_x: { value: 0, kind: 'px' },
+            offset_y: { value: 0, kind: 'px' },
+            blur: { value: 0, kind: 'px' },
             color: [0, 0, 0, 0],
         },
     })
     expectResolved('textShadow', ' 0PX 4px 12PX ', '0px 4px 12px', {
         text_shadow: {
-            offset_x: 0,
-            offset_y: 4,
-            blur: 12,
+            offset_x: { value: 0, kind: 'px' },
+            offset_y: { value: 4, kind: 'px' },
+            blur: { value: 12, kind: 'px' },
+            color: [0, 0, 0, 255],
+        },
+    })
+    expectResolved('textShadow', ' -0.5REM 1vw 0.75vh ', '-0.5rem 1vw 0.75vh', {
+        text_shadow: {
+            offset_x: { value: -0.5, kind: 'rem' },
+            offset_y: { value: 1, kind: 'vw' },
+            blur: { value: 0.75, kind: 'vh' },
             color: [0, 0, 0, 255],
         },
     })
     expectResolved(' text-shadow ', '-8px 10px 0px #1234', '-8px 10px 0px #1234', {
         text_shadow: {
-            offset_x: -8,
-            offset_y: 10,
-            blur: 0,
+            offset_x: { value: -8, kind: 'px' },
+            offset_y: { value: 10, kind: 'px' },
+            blur: { value: 0, kind: 'px' },
             color: [17, 34, 51, 68],
         },
     }, 'textShadow')
 
     expectInvalid('textShadow', 'none', /expected offset-x offset-y blur-radius color/)
     expectInvalid('textShadow', '0px 4px -1px #000000ff', /expected non-negative blur radius/)
+    expectInvalid('textShadow', '0px 4px -1rem #000000ff', /expected non-negative blur radius/)
     expectInvalid('textShadow', '0px 4px', /expected offset-x offset-y blur-radius color/)
     expectInvalid('textShadow', '0px 4px 12px 0px #000000ff', /expected offset-x offset-y blur-radius color/)
     expectInvalid('textShadow', '0px 4px 12px, 1px 1px 2px', /expected offset-x offset-y blur-radius color/)
     expectInvalid('textShadow', '0px 4px 12px red', /expected hex color/)
-    expectInvalid('textShadow', '0px 4px 12%', /expected px unit/)
+    expectInvalid('textShadow', '0px 4px 12%', /expected px, rem, vw or vh unit/)
+    expectInvalid('textShadow', '0px 4px 12em', /expected px, rem, vw or vh unit/)
     expectInvalid('textShadow', true, /style value must be a string/)
 })
 
 test('textStroke', () => {
     expectResolved('textStroke', ' unset ', 'unset', {
         text_stroke: {
-            width: 0,
+            width: { value: 0, kind: 'px' },
             color: [0, 0, 0, 0],
         },
     })
     expectResolved('textStroke', ' 4PX #1234 ', '4px #1234', {
         text_stroke: {
-            width: 4,
+            width: { value: 4, kind: 'px' },
+            color: [17, 34, 51, 68],
+        },
+    })
+    expectResolved('textStroke', ' 0.25REM #1234 ', '0.25rem #1234', {
+        text_stroke: {
+            width: { value: 0.25, kind: 'rem' },
             color: [17, 34, 51, 68],
         },
     })
     expectResolved(' text-stroke ', '0.5px #12345678', '0.5px #12345678', {
         text_stroke: {
-            width: 0.5,
+            width: { value: 0.5, kind: 'px' },
             color: [18, 52, 86, 120],
         },
     }, 'textStroke')
@@ -140,8 +167,9 @@ test('textStroke', () => {
     expectInvalid('textStroke', '4px', /expected width color/)
     expectInvalid('textStroke', '4px #000 extra', /expected width color/)
     expectInvalid('textStroke', '-1px #000', /expected non-negative width/)
-    expectInvalid('textStroke', '4% #000', /expected px unit/)
-    expectInvalid('textStroke', '4em #000', /expected px unit/)
+    expectInvalid('textStroke', '-1rem #000', /expected non-negative width/)
+    expectInvalid('textStroke', '4% #000', /expected px, rem, vw or vh unit/)
+    expectInvalid('textStroke', '4em #000', /expected px, rem, vw or vh unit/)
     expectInvalid('textStroke', '4px red', /expected hex color/)
     expectInvalid('textStroke', true, /style value must be a string/)
 })
@@ -346,6 +374,39 @@ test('computeStyleValue resolves rem with the current root size', () => {
         parsed: { value: 2.5, kind: 'px' },
     })
     expect(computeStyleValue(px_style, { root_size: 20 })).toBe(px_style)
+})
+
+test('computeStyleValue resolves the units of every shadow and stroke length', () => {
+    const context = { root_size: 16, viewport_width: 320, viewport_height: 180 }
+    const text_shadow = Style.resolveStyle('textShadow', '0.5rem 10vw 10vh #1234').expanded[0]
+    const box_shadow = Style.resolveStyle('boxShadow', '2px 0.5rem 10vw 10vh #1234').expanded[0]
+    const text_stroke = Style.resolveStyle('textStroke', '0.25rem #1234').expanded[0]
+    const px_shadow = Style.resolveStyle('textShadow', '2px 4px 6px #1234').expanded[0]
+
+    expect(computeStyleValue(text_shadow, context).parsed).toEqual({
+        text_shadow: {
+            offset_x: { value: 8, kind: 'px' },
+            offset_y: { value: 32, kind: 'px' },
+            blur: { value: 18, kind: 'px' },
+            color: [17, 34, 51, 68],
+        },
+    })
+    expect(computeStyleValue(box_shadow, context).parsed).toEqual({
+        box_shadow: {
+            offset_x: { value: 2, kind: 'px' },
+            offset_y: { value: 8, kind: 'px' },
+            blur: { value: 32, kind: 'px' },
+            spread: { value: 18, kind: 'px' },
+            color: [17, 34, 51, 68],
+        },
+    })
+    expect(computeStyleValue(text_stroke, context).parsed).toEqual({
+        text_stroke: {
+            width: { value: 4, kind: 'px' },
+            color: [17, 34, 51, 68],
+        },
+    })
+    expect(computeStyleValue(px_shadow, context)).toBe(px_shadow)
 })
 
 test('computeStyleValue resolves viewport units with the current viewport size', () => {

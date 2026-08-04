@@ -1,5 +1,7 @@
-import { KEYWORD } from './consts'
+import { KEYWORD, UNIT } from './consts'
 import { readInteger, readNumber, readUnit } from './utils'
+
+const ZERO_LENGTH = { value: 0, kind: UNIT.PX }
 
 export function parseString(value: string) {
     return {
@@ -56,10 +58,10 @@ export function parseBoxShadow(value: string) {
             value,
             parsed: {
                 box_shadow: {
-                    offset_x: 0,
-                    offset_y: 0,
-                    blur: 0,
-                    spread: 0,
+                    offset_x: ZERO_LENGTH,
+                    offset_y: ZERO_LENGTH,
+                    blur: ZERO_LENGTH,
+                    spread: ZERO_LENGTH,
                     color: [0, 0, 0, 0],
                 },
             },
@@ -72,10 +74,10 @@ export function parseBoxShadow(value: string) {
         value,
         parsed: {
             box_shadow: {
-                offset_x: readUnit(values[0])!.value,
-                offset_y: readUnit(values[1])!.value,
-                blur: readUnit(values[2])!.value,
-                spread: readUnit(values[3])!.value,
+                offset_x: readUnit(values[0])!,
+                offset_y: readUnit(values[1])!,
+                blur: readUnit(values[2])!,
+                spread: readUnit(values[3])!,
                 color: parseRgba(values[4] ?? '#000000FF'),
             },
         },
@@ -88,9 +90,9 @@ export function parseTextShadow(value: string) {
             value,
             parsed: {
                 text_shadow: {
-                    offset_x: 0,
-                    offset_y: 0,
-                    blur: 0,
+                    offset_x: ZERO_LENGTH,
+                    offset_y: ZERO_LENGTH,
+                    blur: ZERO_LENGTH,
                     color: [0, 0, 0, 0],
                 },
             },
@@ -103,9 +105,9 @@ export function parseTextShadow(value: string) {
         value,
         parsed: {
             text_shadow: {
-                offset_x: readUnit(values[0])!.value,
-                offset_y: readUnit(values[1])!.value,
-                blur: readUnit(values[2])!.value,
+                offset_x: readUnit(values[0])!,
+                offset_y: readUnit(values[1])!,
+                blur: readUnit(values[2])!,
                 color: parseRgba(values[3] ?? '#000000FF'),
             },
         },
@@ -118,7 +120,7 @@ export function parseTextStroke(value: string) {
             value,
             parsed: {
                 text_stroke: {
-                    width: 0,
+                    width: ZERO_LENGTH,
                     color: [0, 0, 0, 0],
                 },
             },
@@ -131,7 +133,7 @@ export function parseTextStroke(value: string) {
         value,
         parsed: {
             text_stroke: {
-                width: readUnit(values[0])!.value,
+                width: readUnit(values[0])!,
                 color: parseRgba(values[1]),
             },
         },
