@@ -15,6 +15,10 @@
             "types": "./src/ui/UIThree.ts",
             "import": "./src/ui/UIThree.ts"
         },
+        "./UIBabylon": {
+            "types": "./src/ui/UIBabylon.ts",
+            "import": "./src/ui/UIBabylon.ts"
+        },
         "./UIBabylonLite": {
             "types": "./src/ui/UIBabylonLite.ts",
             "import": "./src/ui/UIBabylonLite.ts"
