@@ -546,15 +546,58 @@ test('WebGPUResources font api delegates to the font manager', () => {
     const webgpu = new (WebGPUResources as any)({})
     webgpu.font_manager = {
         fontRegister(name, image, json) {
-            calls.push({ name, image, json })
+            calls.push({ kind: 'register', name, image, json })
+        },
+        fontDispose(name) {
+            calls.push({ kind: 'dispose', name })
         },
     }
     const image = createImage('/assets/fonts/Poppins.png', 484, 484)
     const json = { atlas: { type: 'msdf' } }
 
     webgpu.registerFont('Poppins', image, json)
+    webgpu.disposeFont('Poppins')
 
-    expect(calls).toEqual([{ name: 'Poppins', image, json }])
+    expect(calls).toEqual([
+        { kind: 'register', name: 'Poppins', image, json },
+        { kind: 'dispose', name: 'Poppins' },
+    ])
+})
+
+test('WebGPUResources dispose resets both managers without releasing the shared context', () => {
+    let image_dispose_count = 0
+    let font_dispose_count = 0
+    const image_manager = {
+        dispose() {
+            image_dispose_count++
+        },
+    }
+    const font_manager = {
+        dispose() {
+            font_dispose_count++
+        },
+    }
+    const webgpu = new (WebGPUResources as any)({
+        canvas: {},
+        adapter: {},
+        device: {},
+        context: {},
+        format: 'bgra8unorm',
+    })
+    webgpu.image_manager = image_manager
+    webgpu.font_manager = font_manager
+
+    webgpu.dispose()
+
+    expect(image_dispose_count).toBe(1)
+    expect(font_dispose_count).toBe(1)
+    expect(webgpu.image_manager).toBe(image_manager)
+    expect(webgpu.font_manager).toBe(font_manager)
+    expect(webgpu.canvas).not.toBe(null)
+    expect(webgpu.adapter).not.toBe(null)
+    expect(webgpu.device).not.toBe(null)
+    expect(webgpu.context).not.toBe(null)
+    expect(webgpu.format).toBe('bgra8unorm')
 })
 
 function byId(a, b) {

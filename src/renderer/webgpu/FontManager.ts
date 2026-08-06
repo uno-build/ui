@@ -24,12 +24,39 @@ export class FontManager {
     private font_texture
     private font_layer_count = 0
     private font_texture_layer_count = 1
+    private free_font_layers: number[] = []
     private default_font_name = null
 
     constructor({ device, atlas_size }) {
         this.device = device
         this.atlas_size = atlas_size
         this.font_texture = this.createFontTexture(this.font_texture_layer_count)
+    }
+
+    public dispose(): void {
+        this.font_texture?.destroy()
+        this.fonts.clear()
+        this.font_layer_count = 0
+        this.font_texture_layer_count = 1
+        this.free_font_layers.length = 0
+        this.default_font_name = null
+        this.font_texture = null
+        this.texture_version++
+    }
+
+    public fontDispose(name: string): void {
+        const font = this.fonts.get(name)
+
+        if (font === undefined) {
+            return
+        }
+
+        this.fonts.delete(name)
+        this.free_font_layers.push(font.layer)
+
+        if (this.default_font_name === name) {
+            this.default_font_name = this.fonts.keys().next().value ?? null
+        }
     }
 
     public fontRegister(name: string, image: any, json: any): ManagedFont {
@@ -42,10 +69,12 @@ export class FontManager {
         const current_font = this.fonts.get(name)
         const layer = current_font?.layer ?? this.allocateFontLayer()
 
+        const font_texture = this.getFontTexture()
+
         this.device.queue.copyExternalImageToTexture(
             { source: image.bitmap },
             {
-                texture: this.font_texture,
+                texture: font_texture,
                 origin: [0, 0, layer],
             },
             [image.width, image.height, 1],
@@ -77,12 +106,17 @@ export class FontManager {
     }
 
     public getTextureView() {
-        return this.font_texture.createView({
+        return this.getFontTexture().createView({
             dimension: '2d-array',
         })
     }
 
     private allocateFontLayer(): number {
+        const free_layer = this.free_font_layers.pop()
+        if (free_layer !== undefined) {
+            return free_layer
+        }
+
         const layer = this.font_layer_count
         const next_layer_count = layer + 1
 
@@ -140,6 +174,11 @@ export class FontManager {
                 globalThis.GPUTextureUsage.COPY_DST |
                 globalThis.GPUTextureUsage.RENDER_ATTACHMENT,
         })
+    }
+
+    private getFontTexture() {
+        this.font_texture ??= this.createFontTexture(this.font_texture_layer_count)
+        return this.font_texture
     }
 
     private createGlyphsByUnicode(json, image): Map<number, ManagedGlyph> {

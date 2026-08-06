@@ -2970,6 +2970,29 @@ test('ImageManager creates separate resources for separate srcs with the same bi
     expect(device.copies).toHaveLength(copy_count + 1)
 })
 
+test('ImageManager dispose resets its atlas and remains reusable', () => {
+    const device = createFakeDevice()
+    const image_manager = createRealImageManager(device)
+    const atlas_image = image_manager.imageUpload('first', createImage('first.png', 32, 32))
+    const node = createNode()
+    const old_texture = device.textures[0]
+
+    image_manager.addNode(node, atlas_image)
+    image_manager.dispose()
+
+    expect(old_texture.destroyed).toBe(true)
+    expect(image_manager.images.size).toBe(0)
+    expect(atlas_image.nodes.size).toBe(0)
+    expect(image_manager.texture_version).toBe(1)
+    expect(device.textures).toHaveLength(1)
+
+    const next_image = image_manager.imageUpload('next', createImage('next.png', 16, 16))
+    expect(next_image.layer).toBe(0)
+    expect(device.textures[1].destroyed).toBe(false)
+    expect(device.textures[1].descriptor.size.depthOrArrayLayers).toBe(1)
+    expect(device.copies.at(-1).destination.origin).toEqual([0, 0, 0])
+})
+
 test('ImageManager releases atlas space without clearing texture data', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
@@ -3194,6 +3217,43 @@ test('FontManager registers separate fonts in separate texture layers', () => {
     expect(atlas_textures[0].destroyed).toBe(true)
     expect(atlas_textures[1].descriptor.size.depthOrArrayLayers).toBe(2)
     expect(device.texture_copies[0].size).toEqual([ATLAS_SIZE, ATLAS_SIZE, 1])
+})
+
+test('FontManager disposeFont releases the font layer and updates the default font', () => {
+    const device = createFakeDevice()
+    const font_manager = createRealFontManager(device)
+    const first = font_manager.fontRegister('Poppins', createImage('Poppins.png', 64, 64), createFontJson())
+    const second = font_manager.fontRegister('ChangaOne', createImage('ChangaOne.png', 64, 64), createFontJson())
+
+    font_manager.fontDispose('Poppins')
+
+    expect(font_manager.getFont('Poppins')).toBeUndefined()
+    expect(font_manager.getDefaultFont()).toBe(second)
+
+    const replacement = font_manager.fontRegister('Inter', createImage('Inter.png', 64, 64), createFontJson())
+    expect(replacement.layer).toBe(first.layer)
+})
+
+test('FontManager dispose resets its atlas and remains reusable', () => {
+    const device = createFakeDevice()
+    const font_manager = createRealFontManager(device)
+    font_manager.fontRegister('Poppins', createImage('Poppins.png', 64, 64), createFontJson())
+    font_manager.fontRegister('ChangaOne', createImage('ChangaOne.png', 64, 64), createFontJson())
+    const old_texture = device.textures.at(-1)
+    const old_texture_version = font_manager.texture_version
+
+    font_manager.dispose()
+
+    expect(old_texture.destroyed).toBe(true)
+    expect(font_manager.fonts.size).toBe(0)
+    expect(font_manager.getDefaultFont()).toBeUndefined()
+    expect(font_manager.texture_version).toBe(old_texture_version + 1)
+    expect(device.textures.at(-1)).toBe(old_texture)
+
+    const font = font_manager.fontRegister('Inter', createImage('Inter.png', 64, 64), createFontJson())
+    expect(font.layer).toBe(0)
+    expect(device.textures.at(-1).destroyed).toBe(false)
+    expect(device.textures.at(-1).descriptor.size.depthOrArrayLayers).toBe(1)
 })
 
 test('FontManager replaces a registered font in the same texture layer', () => {

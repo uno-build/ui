@@ -31,7 +31,13 @@ export async function main({
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
-    const { ui: first_ui, plane: first_plane } = await UIThree.create({
+    const {
+        ui: first_ui,
+        plane: first_plane,
+        texture: first_texture,
+        material: first_material,
+        geometry: first_geometry,
+    } = await UIThree.create({
         webgpu,
         loadYoga,
         device_pixel_ratio,
@@ -43,9 +49,9 @@ export async function main({
     })
     const {
         ui: second_ui,
+        plane: second_plane,
         texture: second_texture,
         material: second_material,
-        plane: second_plane,
         geometry: second_geometry,
     } = await UIThree.create({
         webgpu,
@@ -140,13 +146,22 @@ export async function main({
         requestAnimationFrame(renderFrame)
     }
 
-    setTimeout(() => {
-        scene.remove(second_plane)
-        second_texture.dispose()
-        second_material.dispose()
-        second_geometry.dispose()
-        second_ui.destroy()
-    }, 2000)
+    // setTimeout(() => {
+    //     scene.remove(second_plane)
+    //     second_texture.dispose()
+    //     second_material.dispose()
+    //     second_geometry.dispose()
+    //     second_ui.destroy()
+
+    //     scene.remove(first_plane)
+    //     first_texture.dispose()
+    //     first_material.dispose()
+    //     first_geometry.dispose()
+    //     first_ui.destroy()
+
+    //     overlay_ui.destroy()
+    //     webgpu.dispose()
+    // }, 10000)
 
     requestAnimationFrame(renderFrame)
 }

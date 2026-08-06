@@ -49,6 +49,26 @@ export class ImageManager {
         this.atlas_layers.push(this.createAtlasLayer(0))
     }
 
+    public dispose(): void {
+        this.atlas_texture?.destroy()
+
+        for (const atlas_image of this.images.values()) {
+            atlas_image.nodes.clear()
+        }
+        for (const atlas_layer of this.atlas_layers) {
+            atlas_layer.skyline.length = 0
+            atlas_layer.free_rects.length = 0
+        }
+
+        this.images.clear()
+        this.atlas_layer_count = 1
+        this.atlas_texture_layer_count = 1
+        this.atlas_layers.length = 0
+        this.atlas_layers.push(this.createAtlasLayer(0))
+        this.atlas_texture = null
+        this.texture_version++
+    }
+
     public getImage(src: string): AtlasImage | undefined {
         return this.images.get(src)
     }
@@ -61,7 +81,7 @@ export class ImageManager {
     }
 
     public getTextureView() {
-        return this.atlas_texture.createView({
+        return this.getAtlasTexture().createView({
             dimension: '2d-array',
         })
     }
@@ -77,10 +97,12 @@ export class ImageManager {
 
         const allocation = this.allocateAtlasRect(image.width, image.height)
 
+        const atlas_texture = this.getAtlasTexture()
+
         this.device.queue.copyExternalImageToTexture(
             { source: image.bitmap },
             {
-                texture: this.atlas_texture,
+                texture: atlas_texture,
                 origin: [allocation.x, allocation.y, allocation.atlas_layer.layer],
             },
             [image.width, image.height, 1],
@@ -89,7 +111,7 @@ export class ImageManager {
         // If preventBleeding===true, copy the padding pixels around the image
         // to avoid bleeding artifacts when sampling the texture.
         if (image.preventBleeding === true) {
-            this.copyImagePadding(image, this.atlas_texture, allocation.x, allocation.y, allocation.atlas_layer.layer)
+            this.copyImagePadding(image, atlas_texture, allocation.x, allocation.y, allocation.atlas_layer.layer)
         }
 
         const new_atlas_image: ManagedAtlasImage = {
@@ -118,6 +140,7 @@ export class ImageManager {
         }
 
         this.images.delete(src)
+        atlas_image.nodes.clear()
         atlas_image.atlas_layer.free_rects = releaseAtlasRect(atlas_image.atlas_layer.free_rects, {
             x: atlas_image.x,
             y: atlas_image.y,
@@ -267,6 +290,11 @@ export class ImageManager {
                 globalThis.GPUTextureUsage.COPY_DST |
                 globalThis.GPUTextureUsage.RENDER_ATTACHMENT,
         })
+    }
+
+    private getAtlasTexture() {
+        this.atlas_texture ??= this.createAtlasTexture(this.atlas_texture_layer_count)
+        return this.atlas_texture
     }
 
     private copyImagePadding(image, texture, x, y, layer) {

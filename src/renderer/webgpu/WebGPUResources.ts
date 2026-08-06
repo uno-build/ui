@@ -77,12 +77,21 @@ export default class WebGPUResources {
         this.image_manager.imageDispose(src)
     }
 
-    public listImages(): any[] {
-        return this.image_manager.imageList()
-    }
-
     public registerFont(name: string, image: any, json: any) {
         return this.font_manager.fontRegister(name, image, json)
+    }
+
+    public disposeFont(name: string): void {
+        this.font_manager.fontDispose(name)
+    }
+
+    public dispose(): void {
+        this.image_manager.dispose()
+        this.font_manager.dispose()
+    }
+
+    public listImages(): any[] {
+        return this.image_manager.imageList()
     }
 
     public present() {
