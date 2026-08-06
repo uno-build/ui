@@ -83,11 +83,12 @@ export default abstract class UIWorldSpace extends UI {
         })
     }
 
-    protected destroyResources() {
-        super.destroyResources()
-        this.gpu_texture.destroy()
-        this.gpu_texture = null
-        this.gpu_texture_view = null
+    public destroy() {
+        if (super.destroy()) {
+            this.gpu_texture.destroy()
+            this.gpu_texture = null
+            this.gpu_texture_view = null
+        }
     }
 
     protected abstract createTexture(options)

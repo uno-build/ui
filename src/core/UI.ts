@@ -143,9 +143,8 @@ export default class UI {
             this.nodes.length = 0
             this.root = null
             this.renderer = null
-            this.destroyResources()
+            return true
         }
+        return false
     }
-
-    protected destroyResources() {}
 }
