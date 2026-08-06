@@ -23,54 +23,46 @@ export default class Node {
     }
 
     public add(child) {
-        if (this.ui === null) {
-            return
-        }
+        if (this.ui !== null) {
+            if (this.isTextNode()) {
+                throw new Error('Nodes with text cannot have children')
+            }
 
-        if (this.isTextNode()) {
-            throw new Error('Nodes with text cannot have children')
+            this.ui.addChild(this, child)
         }
-
-        this.ui.addChild(this, child)
     }
 
     public remove(child) {
-        if (this.ui === null) {
-            return
+        if (this.ui !== null) {
+            this.ui.removeChild(child)
         }
-
-        this.ui.removeChild(child)
     }
 
     public style(name, value, parsed?) {
-        if (this.ui === null) {
-            return
-        }
+        if (this.ui !== null) {
+            this.ui.style(this, name, value, parsed)
 
-        this.ui.style(this, name, value, parsed)
-
-        if (this.isTextNode() && isTextMeasureStyle(name)) {
-            this.ui.renderer.invalidateTextNode(this)
+            if (this.isTextNode() && isTextMeasureStyle(name)) {
+                this.ui.renderer.invalidateTextNode(this)
+            }
         }
     }
 
     public text(value: string) {
-        if (this.ui === null) {
-            return
-        }
+        if (this.ui !== null) {
+            if (this.children.length > 0) {
+                throw new Error('Nodes with text cannot have children')
+            }
 
-        if (this.children.length > 0) {
-            throw new Error('Nodes with text cannot have children')
-        }
+            if (this.isTextNode()) {
+                this.text_content = value
+                this.ui.renderer.invalidateTextNode(this)
+                return
+            }
 
-        if (this.isTextNode()) {
             this.text_content = value
-            this.ui.renderer.invalidateTextNode(this)
-            return
+            this.ui.renderer.initializeTextNode(this)
         }
-
-        this.text_content = value
-        this.ui.renderer.initializeTextNode(this)
     }
 
     public isTextNode() {

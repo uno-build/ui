@@ -83,8 +83,8 @@ export default abstract class UIWorldSpace extends UI {
         })
     }
 
-    protected destroy() {
-        const output = super.destroy()
+    protected destroyResources() {
+        super.destroyResources()
         this.gpu_texture.destroy()
         this.gpu_texture = null
         this.gpu_texture_view = null

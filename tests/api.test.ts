@@ -143,7 +143,7 @@ test('UI destroy releases attached and detached nodes once', async () => {
         expect(node.element).toBe(null)
     }
 
-    expect(ui.create()).toBe(null)
+    expect(ui.create()).toBe(undefined)
     expect(ui.update()).toBe(undefined)
     expect(ui.draw()).toBe(undefined)
     expect(() => detached.style('width', '40px')).not.toThrow()

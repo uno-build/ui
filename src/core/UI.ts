@@ -21,108 +21,71 @@ export default class UI {
     }
 
     public create() {
-        if (this.destroyed) {
-            return null
+        if (!this.destroyed) {
+            const node = new Node({
+                id: this.next_node_id++,
+                ui: this,
+            })
+
+            node.element = this.renderer.createElement(node)
+            this.created_nodes.add(node)
+
+            return node
         }
-
-        const node = new Node({
-            id: this.next_node_id++,
-            ui: this,
-        })
-
-        node.element = this.renderer.createElement(node)
-        this.created_nodes.add(node)
-
-        return node
-    }
-
-    public destroy() {
-        if (this.destroyed) {
-            return
-        }
-
-        this.destroyed = true
-        const nodes = [...this.created_nodes]
-
-        this.renderer.destroy(nodes)
-
-        for (const node of nodes) {
-            node.ui = null
-            node.parent = null
-            node.children.length = 0
-            node.element = null
-        }
-
-        this.created_nodes.clear()
-        this.nodes.length = 0
-        this.root = null
-        this.renderer = null
     }
 
     public update() {
-        if (this.destroyed) {
-            return
+        if (!this.destroyed) {
+            this.nodes.sort(sortPaintingOrder)
+            this.renderer.beforeUpdate(this.nodes)
+            this.root.layout = this.renderer.getLayout(this.root)
+
+            for (let i = 0; i < this.nodes.length; i++) {
+                const node = this.nodes[i]
+                node.layout = this.renderer.getLayout(node)
+                node.order = i
+            }
+
+            this.renderer.afterUpdate(this.nodes)
+            return this.renderer.update(this.nodes)
         }
-
-        this.nodes.sort(sortPaintingOrder)
-        this.renderer.beforeUpdate(this.nodes)
-        this.root.layout = this.renderer.getLayout(this.root)
-
-        for (let i = 0; i < this.nodes.length; i++) {
-            const node = this.nodes[i]
-            node.layout = this.renderer.getLayout(node)
-            node.order = i
-        }
-
-        this.renderer.afterUpdate(this.nodes)
-        return this.renderer.update(this.nodes)
     }
 
     public draw(options?) {
-        if (this.destroyed) {
-            return
+        if (!this.destroyed) {
+            return this.renderer.draw(options)
         }
-
-        return this.renderer.draw(options)
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
-        if (this.destroyed) {
-            return
+        if (!this.destroyed) {
+            this.renderer.setDevicePixelRatio(device_pixel_ratio)
         }
-
-        this.renderer.setDevicePixelRatio(device_pixel_ratio)
     }
 
     public setViewport(width, height) {
-        if (this.destroyed) {
-            return
+        if (!this.destroyed) {
+            this.renderer.setViewport(width, height)
         }
-
-        this.renderer.setViewport(width, height)
     }
 
     public setRootSize(root_size) {
-        if (this.destroyed) {
-            return
+        if (!this.destroyed) {
+            this.renderer.setRootSize(root_size)
         }
-
-        this.renderer.setRootSize(root_size)
     }
 
     public style(node, name, value) {
-        if (this.destroyed) {
-            return
-        }
-
-        const resolved_style = resolveStyle(name, value)
-        for (const style of resolved_style.expanded) {
-            node.styles[style.name] = {
-                value: style.value,
-                parsed: style.parsed,
+        if (!this.destroyed) {
+            const resolved_style = resolveStyle(name, value)
+            for (const style of resolved_style.expanded) {
+                node.styles[style.name] = {
+                    value: style.value,
+                    parsed: style.parsed,
+                }
             }
+            this.renderer.addPendingStyle(node, resolved_style)
         }
-        this.renderer.addPendingStyle(node, resolved_style)
     }
 
     private addChild(parent, child) {
@@ -161,4 +124,28 @@ export default class UI {
         this.created_nodes.delete(child)
         child.element = null
     }
+
+    public destroy() {
+        if (!this.destroyed) {
+            this.destroyed = true
+            const nodes = [...this.created_nodes]
+
+            this.renderer.destroy(nodes)
+
+            for (const node of nodes) {
+                node.ui = null
+                node.parent = null
+                node.children.length = 0
+                node.element = null
+            }
+
+            this.created_nodes.clear()
+            this.nodes.length = 0
+            this.root = null
+            this.renderer = null
+            this.destroyResources()
+        }
+    }
+
+    protected destroyResources() {}
 }
