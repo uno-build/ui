@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import Segmenter from '../src/renderer/pretext/segmenter.ts'
-import { MEASURE_MODE } from '../src/layouter/types.ts'
 import {
     BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
@@ -11,6 +10,7 @@ import {
     OVERFLOW,
     TEXT_ALIGN,
     UNIT,
+    MEASURE_MODE,
 } from '../src/style/consts.ts'
 import {
     COMMAND,

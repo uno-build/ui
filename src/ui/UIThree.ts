@@ -14,21 +14,15 @@ export default class UIThree extends UI {
     private node_material
 
     protected constructor({
-        webgpu,
         texture_width,
         texture_height,
         world_width,
         world_height,
         node_material = THREE.MeshStandardNodeMaterial,
-        device_pixel_ratio,
-        root_size,
         ...renderer_options
     }) {
-        super({
-            renderer: new RendererWebGPU({ webgpu, ...renderer_options }),
-            device_pixel_ratio,
-            root_size,
-        })
+        const renderer = new RendererWebGPU({ ...renderer_options })
+        super({ renderer })
         this.texture_width = texture_width
         this.texture_height = texture_height
         this.world_width = world_width

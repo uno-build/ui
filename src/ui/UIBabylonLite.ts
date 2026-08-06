@@ -25,22 +25,9 @@ export default class UIBabylonLite extends UI {
     private ui_texture
     private ui_texture_view
 
-    protected constructor({
-        engine,
-        webgpu,
-        texture_width,
-        texture_height,
-        world_width,
-        world_height,
-        device_pixel_ratio,
-        root_size,
-        ...renderer_options
-    }) {
-        super({
-            renderer: new RendererWebGPU({ webgpu, ...renderer_options }),
-            device_pixel_ratio,
-            root_size,
-        })
+    protected constructor({ engine, texture_width, texture_height, world_width, world_height, ...renderer_options }) {
+        const renderer = new RendererWebGPU({ ...renderer_options })
+        super({ renderer })
         this.engine = engine
         this.texture_width = texture_width
         this.texture_height = texture_height

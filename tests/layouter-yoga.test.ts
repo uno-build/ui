@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
 import { loadYoga } from 'yoga-layout/load'
 import createEngine from '../src/layouter/yoga.ts'
-import { MEASURE_MODE } from '../src/layouter/types.ts'
 import Style, { computeStyleValue } from '../src/style'
+import { MEASURE_MODE } from '../src/style/consts'
 
 test('Yoga layout engine keeps handles private and returns computed box metrics', async () => {
     const engine = await createEngine({ loadYoga })

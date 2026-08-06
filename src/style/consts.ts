@@ -118,3 +118,8 @@ export const TEXT_ALIGN = {
     center: 2,
     justify: 3,
 }
+export const MEASURE_MODE = {
+    UNDEFINED: 'undefined',
+    EXACTLY: 'exactly',
+    AT_MOST: 'at-most',
+}

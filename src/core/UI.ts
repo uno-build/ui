@@ -8,13 +8,9 @@ export default class UI {
     public renderer = null
     private nodes = []
     private next_node_id = 0
-    private device_pixel_ratio
-    private root_size
 
-    protected constructor({ renderer, device_pixel_ratio = 1, root_size = ROOT_SIZE }) {
+    protected constructor({ renderer }) {
         this.renderer = renderer
-        this.setDevicePixelRatio(device_pixel_ratio)
-        this.setRootSize(root_size)
     }
 
     public static async create(options) {
@@ -60,7 +56,6 @@ export default class UI {
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
-        this.device_pixel_ratio = device_pixel_ratio
         this.renderer.setDevicePixelRatio(device_pixel_ratio)
     }
 
@@ -69,7 +64,6 @@ export default class UI {
     }
 
     public setRootSize(root_size) {
-        this.root_size = root_size
         this.renderer.setRootSize(root_size)
     }
 

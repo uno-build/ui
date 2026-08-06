@@ -1,11 +1,5 @@
-import { UNIT, KEYWORD, EDGE, GUTTER, FLEX_DIRECTION } from '../style/consts'
+import { UNIT, KEYWORD, EDGE, GUTTER, FLEX_DIRECTION, MEASURE_MODE } from '../style/consts'
 import { calculateLayoutRect, getParentLayout } from './utils'
-
-export const MEASURE_MODE = {
-    UNDEFINED: 'undefined',
-    EXACTLY: 'exactly',
-    AT_MOST: 'at-most',
-}
 
 export default async function createYogaEngine({ loadYoga } = {}) {
     // if (typeof loadYoga !== 'function') {

@@ -12,8 +12,9 @@ import {
     OVERFLOW,
     TEXT_ALIGN,
     UNIT,
+    MEASURE_MODE,
 } from '../style/consts'
-import createEngine, { MEASURE_MODE } from '../layouter/yoga'
+import createEngine from '../layouter/yoga'
 import {
     getAncestorClipping,
     getNodeBorderWidth,
