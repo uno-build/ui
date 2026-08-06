@@ -1,7 +1,6 @@
 import Node from './Node'
 import { resolveStyle } from '../style'
 import { sortPaintingOrder } from '../utils/sort-painting-order'
-import { ROOT_SIZE } from '../style/consts'
 
 export default class UI {
     public root = null
@@ -11,12 +10,6 @@ export default class UI {
 
     protected constructor({ renderer }) {
         this.renderer = renderer
-    }
-
-    public static async create(options) {
-        const ui = new UI(options)
-        await ui.initialize()
-        return ui
     }
 
     protected async initialize() {

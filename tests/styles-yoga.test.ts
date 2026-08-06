@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
-import UI from '../src/core/UI'
 import TestRenderer from './TestRenderer.ts'
+import TestUI from './TestUI.ts'
 
 test('width', async () => {
     const { ui, root, child } = await createUI({ width: '200px' })
@@ -846,7 +846,7 @@ test('padding', async () => {
 
 async function createUI(styles = {}) {
     const renderer = new TestRenderer()
-    const ui = await UI.create({ renderer })
+    const ui = await TestUI.create({ renderer })
     const root = ui.root
     Object.keys(styles).forEach((name) => {
         root.style(name, styles[name])
