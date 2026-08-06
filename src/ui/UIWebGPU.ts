@@ -10,6 +10,6 @@ export default class UIWebGPU extends UI {
     public static async create(options) {
         const ui = new UIWebGPU(options)
         await ui.initialize()
-        return ui
+        return { ui }
     }
 }

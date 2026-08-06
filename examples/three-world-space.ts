@@ -27,11 +27,11 @@ export async function main({
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ webgpu, assets })
 
-    const overlay_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
-    const first_ui = await UIThree.create({
+    const { ui: first_ui, plane: first_plane } = await UIThree.create({
         webgpu,
         loadYoga,
         device_pixel_ratio,
@@ -41,9 +41,7 @@ export async function main({
         world_height: WORLD_HEIGHT,
         node_material: THREE.MeshPhongNodeMaterial,
     })
-    const first_plane = first_ui.plane
-
-    const second_ui = await UIThree.create({
+    const { ui: second_ui, plane: second_plane } = await UIThree.create({
         webgpu,
         loadYoga,
         device_pixel_ratio,
@@ -53,8 +51,6 @@ export async function main({
         world_height: WORLD_HEIGHT,
         node_material: THREE.MeshPhongNodeMaterial,
     })
-    const second_plane = second_ui.plane
-
     const three_renderer = new THREE.WebGPURenderer({
         canvas,
         context,

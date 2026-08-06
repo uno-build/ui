@@ -74,11 +74,11 @@ export async function main({
 
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ webgpu, assets })
-    const overlay_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
-    const first_ui = await UIPlayCanvas.create({
+    const { ui: first_ui, plane: first_plane } = await UIPlayCanvas.create({
         app,
         webgpu,
         loadYoga,
@@ -88,7 +88,7 @@ export async function main({
         world_width,
         world_height: WORLD_HEIGHT,
     })
-    const second_ui = await UIPlayCanvas.create({
+    const { ui: second_ui, plane: second_plane } = await UIPlayCanvas.create({
         app,
         webgpu,
         loadYoga,
@@ -99,12 +99,10 @@ export async function main({
         world_height: WORLD_HEIGHT,
     })
 
-    const first_plane = first_ui.plane
     first_plane.setPosition(-world_width / 2 - 0.25, 1, 0)
     first_plane.setLocalEulerAngles(0, 20, 0)
     app.root.addChild(first_plane)
 
-    const second_plane = second_ui.plane
     second_plane.setPosition(world_width / 2 + 0.25, 1, 0)
     second_plane.setLocalEulerAngles(0, -20, 0)
     app.root.addChild(second_plane)

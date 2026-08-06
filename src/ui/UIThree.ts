@@ -4,7 +4,6 @@ import UI from '../core/UI'
 import RendererWebGPU from '../renderer/RendererWebGPU'
 
 export default class UIThree extends UI {
-    public plane
     private texture_width
     private texture_height
     private world_width
@@ -32,8 +31,8 @@ export default class UIThree extends UI {
 
     public static async create(options) {
         const ui = new UIThree(options)
-        await ui.initialize()
-        return ui
+        const { plane } = await ui.initialize()
+        return { ui, plane }
     }
 
     protected async initialize() {
@@ -74,7 +73,8 @@ export default class UIThree extends UI {
             sampled_color.a,
         )
 
-        this.plane = new THREE.Mesh(new THREE.PlaneGeometry(this.world_width, this.world_height), material)
+        const plane = new THREE.Mesh(new THREE.PlaneGeometry(this.world_width, this.world_height), material)
+        return { plane }
     }
 
     public draw(options = {}) {

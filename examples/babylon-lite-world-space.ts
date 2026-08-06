@@ -52,11 +52,11 @@ export async function main({
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ webgpu, assets })
 
-    const overlay_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
-    const first_ui = await UIBabylonLite.create({
+    const { ui: first_ui, plane: first_plane } = await UIBabylonLite.create({
         engine,
         webgpu,
         loadYoga,
@@ -66,9 +66,7 @@ export async function main({
         world_width,
         world_height: WORLD_HEIGHT,
     })
-    const first_plane = first_ui.plane
-
-    const second_ui = await UIBabylonLite.create({
+    const { ui: second_ui, plane: second_plane } = await UIBabylonLite.create({
         engine,
         webgpu,
         loadYoga,
@@ -78,8 +76,6 @@ export async function main({
         world_width,
         world_height: WORLD_HEIGHT,
     })
-    const second_plane = second_ui.plane
-
     const camera = createArcRotateCamera(-Math.PI / 2, 1.25, 9.5, { x: 0, y: 0.8, z: 0 })
     scene.camera = camera
     attachControl(camera, canvas, scene)

@@ -125,7 +125,11 @@
                 root.appendChild(canvas)
 
                 const webgpu = await WebGPUResources.create({ canvas })
-                const ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio: window.devicePixelRatio })
+                const { ui } = await UIWebGPU.create({
+                    webgpu,
+                    loadYoga,
+                    device_pixel_ratio: window.devicePixelRatio,
+                })
                 webgpu.registerFont('Poppins-Regular', font_image, font_json)
 
                 ui.setViewport(root.clientWidth, root.clientHeight)

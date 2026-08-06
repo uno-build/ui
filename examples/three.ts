@@ -5,8 +5,16 @@ import { createForegroundUI } from './uis/foreground-ui'
 
 export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, loadImage, loadJson, loadYoga }) {
     const webgpu = await WebGPUResources.create({ canvas })
-    const background_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio: devicePixelRatio })
-    const foreground_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio: devicePixelRatio })
+    const { ui: background_ui } = await UIWebGPU.create({
+        webgpu,
+        loadYoga,
+        device_pixel_ratio: devicePixelRatio,
+    })
+    const { ui: foreground_ui } = await UIWebGPU.create({
+        webgpu,
+        loadYoga,
+        device_pixel_ratio: devicePixelRatio,
+    })
     const { context, device } = webgpu
 
     const three_renderer = new THREE.WebGPURenderer({

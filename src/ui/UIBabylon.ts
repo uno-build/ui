@@ -29,7 +29,6 @@ class UITexturePlugin extends MaterialPluginBase {
 }
 
 export default class UIBabylon extends UI {
-    public plane
     private scene
     private texture_width
     private texture_height
@@ -50,8 +49,8 @@ export default class UIBabylon extends UI {
 
     public static async create(options) {
         const ui = new UIBabylon(options)
-        await ui.initialize()
-        return ui
+        const { plane } = await ui.initialize()
+        return { ui, plane }
     }
 
     protected async initialize() {
@@ -111,7 +110,7 @@ export default class UIBabylon extends UI {
         material.disableDepthWrite = true
         new UITexturePlugin(material)
 
-        this.plane = MeshBuilder.CreatePlane(
+        const plane = MeshBuilder.CreatePlane(
             'uno-ui-plane',
             {
                 width: this.world_width,
@@ -119,7 +118,8 @@ export default class UIBabylon extends UI {
             },
             this.scene,
         )
-        this.plane.material = material
+        plane.material = material
+        return { plane }
     }
 
     public draw(options = {}) {

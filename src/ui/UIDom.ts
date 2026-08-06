@@ -10,6 +10,6 @@ export default class UIDom extends UI {
     public static async create(options) {
         const ui = new UIDom(options)
         await ui.initialize()
-        return ui
+        return { ui }
     }
 }

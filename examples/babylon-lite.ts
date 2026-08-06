@@ -66,8 +66,8 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
         format: engine.format,
     })
     const device_pixel_ratio = window.devicePixelRatio
-    const background_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
-    const foreground_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    const { ui: background_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    const { ui: foreground_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
 
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ webgpu, assets })

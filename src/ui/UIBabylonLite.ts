@@ -16,7 +16,6 @@ const UI_TEXTURE_PLUGIN: MaterialPlugin = {
 }
 
 export default class UIBabylonLite extends UI {
-    public plane
     private engine
     private texture_width
     private texture_height
@@ -37,8 +36,8 @@ export default class UIBabylonLite extends UI {
 
     public static async create(options) {
         const ui = new UIBabylonLite(options)
-        await ui.initialize()
-        return ui
+        const { plane } = await ui.initialize()
+        return { ui, plane }
     }
 
     protected async initialize() {
@@ -68,11 +67,12 @@ export default class UIBabylonLite extends UI {
         material.opacityTexture = babylon_texture
         material.plugins = [UI_TEXTURE_PLUGIN]
 
-        this.plane = createPlane(this.engine, {
+        const plane = createPlane(this.engine, {
             width: this.world_width,
             height: this.world_height,
         })
-        this.plane.material = material
+        plane.material = material
+        return { plane }
     }
 
     public draw(options = {}) {

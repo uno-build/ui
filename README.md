@@ -14,7 +14,7 @@ const webgpu = await WebGPUResources.create({ canvas })
 webgpu.registerImage(icon_path, icon)
 webgpu.registerFont('Poppins', font_image, font_json)
 
-const ui = await UIWebGPU.create({ webgpu, loadYoga })
+const { ui } = await UIWebGPU.create({ webgpu, loadYoga })
 ```
 
 Fonts and images only need to be registered once per shared context. Registering the same image `src` twice throws, so

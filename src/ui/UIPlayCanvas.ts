@@ -32,7 +32,6 @@ fn getAlbedo() {
 `
 
 export default class UIPlayCanvas extends UI {
-    public plane
     private app
     private texture_width
     private texture_height
@@ -53,8 +52,8 @@ export default class UIPlayCanvas extends UI {
 
     public static async create(options) {
         const ui = new UIPlayCanvas(options)
-        await ui.initialize()
-        return ui
+        const { plane } = await ui.initialize()
+        return { ui, plane }
     }
 
     protected async initialize() {
@@ -121,10 +120,11 @@ export default class UIPlayCanvas extends UI {
         geometry.indices = [0, 3, 2, 0, 2, 1]
 
         const mesh = Mesh.fromGeometry(graphics_device, geometry)
-        this.plane = new Entity('uno-ui-plane', this.app)
-        this.plane.addComponent('render', {
+        const plane = new Entity('uno-ui-plane', this.app)
+        plane.addComponent('render', {
             meshInstances: [new MeshInstance(mesh, material)],
         })
+        return { plane }
     }
 
     public draw(options = {}) {

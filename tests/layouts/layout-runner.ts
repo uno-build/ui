@@ -48,7 +48,7 @@ export async function runLayout({
         const setup = getSetup(rendererName)
         const canvas = createCanvasElement(root, rendererName, setup)
         const context = await setup.shared_context.create({ canvas })
-        const ui = await setup.ui.create({
+        const { ui } = await setup.ui.create({
             canvas,
             [setup.context_option]: context,
             loadYoga,

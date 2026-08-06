@@ -37,8 +37,8 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
         format: graphics_device.canvasConfig.format,
     })
     const device_pixel_ratio = graphics_device.maxPixelRatio
-    const background_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
-    const foreground_ui = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    const { ui: background_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    const { ui: foreground_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
 
     const createOptions = new AppOptions()
     createOptions.graphicsDevice = graphics_device
