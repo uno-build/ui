@@ -399,16 +399,17 @@ test('overflow shorthand and longhands follow assignment order', async () => {
     expect(node.styles.overflowY.parsed.enum).toBe(2)
 })
 
-test('UI defaults the device pixel ratio to 1', async () => {
+test('UI forwards device pixel ratio changes to the renderer', async () => {
     const renderer = new TestRenderer()
-    let device_pixel_ratio
+    const device_pixel_ratios = []
     renderer.setDevicePixelRatio = (value) => {
-        device_pixel_ratio = value
+        device_pixel_ratios.push(value)
     }
 
-    await UI.create({ renderer })
+    const ui = await UI.create({ renderer })
+    ui.setDevicePixelRatio(2)
 
-    expect(device_pixel_ratio).toBe(1)
+    expect(device_pixel_ratios).toEqual([2])
 })
 
 test('UI forwards root size changes to the renderer', async () => {
@@ -421,7 +422,7 @@ test('UI forwards root size changes to the renderer', async () => {
     const ui = await UI.create({ renderer })
     ui.setRootSize(20)
 
-    expect(root_sizes).toEqual([16, 20])
+    expect(root_sizes).toEqual([20])
 })
 
 test('UI forwards viewport changes to the renderer', async () => {
