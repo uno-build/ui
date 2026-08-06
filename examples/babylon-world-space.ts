@@ -156,8 +156,6 @@ export async function main({
         second_ui.draw()
     })
 
-    const has_present = typeof context.present === 'function'
-
     engine.onBeginFrameObservable.add(() => {
         const texture = context.getCurrentTexture()
         if (engine.getRenderWidth(true) !== texture.width || engine.getRenderHeight(true) !== texture.height) {
@@ -169,9 +167,7 @@ export async function main({
         overlay_ui.update()
         overlay_ui.draw()
 
-        if (has_present) {
-            context.present()
-        }
+        webgpu.present()
     })
 
     engine.runRenderLoop(() => scene.render())

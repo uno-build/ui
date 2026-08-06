@@ -4,3 +4,4 @@ package-lock.json
 tests/.results/
 docs/
 AGENTS.md
+CLAUDE.md

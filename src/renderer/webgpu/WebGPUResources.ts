@@ -14,6 +14,7 @@ export default class WebGPUResources {
     public image_atlas_size
     public font_manager
     public image_manager
+    public has_present
 
     protected constructor({
         canvas,
@@ -65,6 +66,7 @@ export default class WebGPUResources {
             device: this.device,
             atlas_size: this.image_atlas_size,
         })
+        this.has_present = typeof this.context.present === 'function'
     }
 
     public registerImage(src: string, image: any) {
@@ -81,5 +83,11 @@ export default class WebGPUResources {
 
     public registerFont(name: string, image: any, json: any) {
         return this.font_manager.fontRegister(name, image, json)
+    }
+
+    public present() {
+        if (this.has_present) {
+            this.context.present()
+        }
     }
 }

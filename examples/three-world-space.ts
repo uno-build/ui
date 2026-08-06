@@ -31,7 +31,6 @@ export async function main({
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
-    console.log('texture_width', texture_width, 'texture_height', texture_height)
     const first_ui = await UIThree.create({
         webgpu,
         loadYoga,
@@ -79,6 +78,7 @@ export async function main({
     first_plane.rotation.y = 0.35
     first_plane.material.side = THREE.DoubleSide
     first_plane.material.shininess = 64
+    first_plane.material.specular = new THREE.Color(0xffffff)
     scene.add(first_plane)
 
     second_plane.position.set(world_width / 2 + 0.25, 1, 0)
@@ -86,6 +86,7 @@ export async function main({
     second_plane.material.side = THREE.DoubleSide
     second_plane.material.opacity = 1
     second_plane.material.shininess = 64
+    second_plane.material.specular = new THREE.Color(0xffffff)
     scene.add(second_plane)
 
     const floor = new THREE.GridHelper(20, 20, 0x475569, 0x263244)
@@ -97,8 +98,8 @@ export async function main({
     light.position.set(3, 5, 4)
     scene.add(light)
 
-    const second_light = new THREE.PointLight(0x60a5fa, 250, 5)
-    second_light.position.set(second_plane.position.x + 0.5, second_plane.position.y + 0.5, 2)
+    const second_light = new THREE.PointLight(0x60a5fa, 30, 4.2)
+    second_light.position.set(second_plane.position.x - 0.5, second_plane.position.y + 0.5, 2)
     scene.add(second_light)
 
     const { grid: first_grid } = createBackgroundUI({ ui: first_ui, assets, title: 'First UI' })
@@ -113,7 +114,6 @@ export async function main({
     syncCanvasSize({ canvas, three_renderer, camera, overlay_ui })
     onCanvasEvent('resize', () => syncCanvasSize({ canvas, three_renderer, camera, overlay_ui }))
 
-    const has_present = typeof context.present === 'function'
     let bg_position = 0
 
     function renderFrame() {
@@ -132,9 +132,7 @@ export async function main({
         overlay_ui.update()
         overlay_ui.draw()
 
-        if (has_present) {
-            context.present()
-        }
+        webgpu.present()
 
         requestAnimationFrame(renderFrame)
     }

@@ -321,7 +321,10 @@
                     rendererLabel.append(rendererHeader, rendererSlider)
 
                     function applyRendererOpacity() {
-                        renderer.style.opacity = `${Number(rendererSlider.value) / 100}`
+                        const renderer_opacity = Number(rendererSlider.value)
+
+                        renderer.style.display = renderer_opacity === 0 ? 'none' : 'flex'
+                        renderer.style.opacity = `${renderer_opacity / 100}`
                         rendererOpacity.textContent = `${rendererSlider.value}%`
                     }
 

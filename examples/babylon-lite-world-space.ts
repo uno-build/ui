@@ -162,9 +162,7 @@ export async function main({
         resizeEngine(engine)
         renderFrame(engine, delta)
 
-        if (typeof context.present === 'function') {
-            context.present()
-        }
+        webgpu.present()
 
         requestAnimationFrame(frame)
     }

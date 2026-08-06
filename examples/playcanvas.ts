@@ -110,7 +110,6 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
     })
 
     const context = graphics_device.gpuContext
-    const has_present = typeof context.present === 'function'
     const rotation_sin = Math.sin(0.5)
     const rotation_cos = Math.cos(0.5)
     let bg_position = 0
@@ -141,10 +140,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
         })
     })
 
-    if (has_present) {
-        app.on('frameend', () => context.present())
-    }
-
+    app.on('frameend', () => webgpu.present())
     app.start()
 }
 

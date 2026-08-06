@@ -51,7 +51,6 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
         foreground_ui.update()
     })
 
-    const has_present = typeof context.present === 'function'
     const rotation_axis = new THREE.Vector3()
     let bg_position = 0
 
@@ -72,9 +71,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
         foreground_ui.update()
         foreground_ui.draw()
 
-        if (has_present) {
-            context.present()
-        }
+        webgpu.present()
 
         requestAnimationFrame(frame)
     }

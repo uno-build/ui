@@ -207,7 +207,6 @@ export async function main({
     onCanvasEvent('resize', () => syncCanvasSize({ canvas, app, graphics_device, overlay_ui }))
 
     const context = graphics_device.gpuContext
-    const has_present = typeof context.present === 'function'
     let bg_position = 0
 
     app.on('update', (delta_time) => {
@@ -264,10 +263,7 @@ export async function main({
         })
     })
 
-    if (has_present) {
-        app.on('frameend', () => context.present())
-    }
-
+    app.on('frameend', () => webgpu.present())
     app.start()
 }
 
@@ -278,12 +274,10 @@ function setMouseButtons(mouse_buttons: boolean[], buttons: number) {
 }
 
 function syncCanvasSize({ canvas, app, graphics_device, overlay_ui }) {
-    const device_pixel_ratio = graphics_device.maxPixelRatio
-    const width = canvas.clientWidth
-    const height = canvas.clientHeight
-
+    graphics_device.maxPixelRatio = Math.min(window.devicePixelRatio, 2)
     app.resizeCanvas()
-    overlay_ui.setViewport(width, height)
-    overlay_ui.setDevicePixelRatio(device_pixel_ratio)
+
+    overlay_ui.setViewport(canvas.clientWidth, canvas.clientHeight)
+    overlay_ui.setDevicePixelRatio(graphics_device.maxPixelRatio)
     overlay_ui.update()
 }

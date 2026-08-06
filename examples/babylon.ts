@@ -75,7 +75,6 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
         foreground_ui.update()
     })
 
-    const has_present = typeof context.present === 'function'
     const rotation_sin = Math.sin(0.5)
     const rotation_cos = Math.cos(0.5)
     cube.rotationQuaternion = new Quaternion()
@@ -92,9 +91,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
         foreground_ui.update()
         foreground_ui.draw()
 
-        if (has_present) {
-            context.present()
-        }
+        webgpu.present()
     })
 
     engine.runRenderLoop(() => {

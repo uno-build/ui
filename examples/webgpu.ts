@@ -107,7 +107,6 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
         ],
     })
 
-    const has_present = typeof context.present === 'function'
     let grid_x = 0
 
     function frame() {
@@ -170,9 +169,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
         foreground_ui.update()
         foreground_ui.draw({ command_encoder, texture_view })
 
-        if (has_present) {
-            context.present()
-        }
+        webgpu.present()
 
         requestAnimationFrame(frame)
     }

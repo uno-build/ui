@@ -151,9 +151,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
 
         renderFrame(engine, delta)
 
-        if (typeof context.present === 'function') {
-            context.present()
-        }
+        webgpu.present()
 
         requestAnimationFrame(frame)
     }
