@@ -3,6 +3,10 @@ export default abstract class Renderer {
 
     public async init() {}
 
+    public destroy(nodes) {
+        this.pending_styles.length = 0
+    }
+
     public setDevicePixelRatio(device_pixel_ratio) {}
 
     public setViewport(width, height) {}

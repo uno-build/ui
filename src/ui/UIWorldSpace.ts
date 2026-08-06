@@ -75,14 +75,6 @@ export default abstract class UIWorldSpace extends UI {
         }
     }
 
-    protected abstract createTexture(options)
-
-    protected abstract createDefaultMaterial(options)
-
-    protected abstract configureMaterial(options)
-
-    protected abstract createDefaultPlane(options)
-
     public draw(options = {}) {
         return super.draw({
             ...options,
@@ -90,4 +82,19 @@ export default abstract class UIWorldSpace extends UI {
             load_op: 'clear',
         })
     }
+
+    protected destroy() {
+        const output = super.destroy()
+        this.gpu_texture.destroy()
+        this.gpu_texture = null
+        this.gpu_texture_view = null
+    }
+
+    protected abstract createTexture(options)
+
+    protected abstract createDefaultMaterial(options)
+
+    protected abstract configureMaterial(options)
+
+    protected abstract createDefaultPlane(options)
 }

@@ -41,7 +41,13 @@ export async function main({
         world_height: WORLD_HEIGHT,
         createMaterial: () => new THREE.MeshPhongNodeMaterial(),
     })
-    const { ui: second_ui, plane: second_plane } = await UIThree.create({
+    const {
+        ui: second_ui,
+        texture: second_texture,
+        material: second_material,
+        plane: second_plane,
+        geometry: second_geometry,
+    } = await UIThree.create({
         webgpu,
         loadYoga,
         device_pixel_ratio,
@@ -114,11 +120,12 @@ export async function main({
 
     function renderFrame() {
         bg_position += 1
-        first_grid.style('backgroundPosition', `${bg_position}px ${bg_position}px`)
-        second_grid.style('backgroundPosition', `${-bg_position}px ${bg_position}px`)
 
+        first_grid.style('backgroundPosition', `${bg_position}px ${bg_position}px`)
         first_ui.update()
         first_ui.draw()
+
+        second_grid.style('backgroundPosition', `${bg_position}px ${bg_position}px`)
         second_ui.update()
         second_ui.draw()
 
@@ -132,6 +139,14 @@ export async function main({
 
         requestAnimationFrame(renderFrame)
     }
+
+    setTimeout(() => {
+        scene.remove(second_plane)
+        second_texture.dispose()
+        second_material.dispose()
+        second_geometry.dispose()
+        second_ui.destroy()
+    }, 2000)
 
     requestAnimationFrame(renderFrame)
 }

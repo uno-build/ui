@@ -61,6 +61,20 @@ export default async function createYogaEngine({ loadYoga } = {}) {
             elements.delete(node)
         },
 
+        destroy(nodes) {
+            const root_elements = nodes.filter((node) => node.parent === null).map(getElement)
+
+            for (const element of root_elements) {
+                element.freeRecursive()
+            }
+            for (const node of nodes) {
+                elements.delete(node)
+            }
+
+            root_element = undefined
+            yoga_config.free()
+        },
+
         applyStyle(node, style) {
             const setter = YOGA_SETTER[style.name]
             if (setter !== undefined) {

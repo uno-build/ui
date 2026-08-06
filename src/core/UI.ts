@@ -6,7 +6,9 @@ export default class UI {
     public root = null
     public renderer = null
     private nodes = []
+    private created_nodes = new Set()
     private next_node_id = 0
+    private destroyed = false
 
     protected constructor({ renderer }) {
         this.renderer = renderer
@@ -19,17 +21,49 @@ export default class UI {
     }
 
     public create() {
+        if (this.destroyed) {
+            return null
+        }
+
         const node = new Node({
             id: this.next_node_id++,
             ui: this,
         })
 
         node.element = this.renderer.createElement(node)
+        this.created_nodes.add(node)
 
         return node
     }
 
+    public destroy() {
+        if (this.destroyed) {
+            return
+        }
+
+        this.destroyed = true
+        const nodes = [...this.created_nodes]
+
+        this.renderer.destroy(nodes)
+
+        for (const node of nodes) {
+            node.ui = null
+            node.parent = null
+            node.children.length = 0
+            node.element = null
+        }
+
+        this.created_nodes.clear()
+        this.nodes.length = 0
+        this.root = null
+        this.renderer = null
+    }
+
     public update() {
+        if (this.destroyed) {
+            return
+        }
+
         this.nodes.sort(sortPaintingOrder)
         this.renderer.beforeUpdate(this.nodes)
         this.root.layout = this.renderer.getLayout(this.root)
@@ -45,22 +79,42 @@ export default class UI {
     }
 
     public draw(options?) {
+        if (this.destroyed) {
+            return
+        }
+
         return this.renderer.draw(options)
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
+        if (this.destroyed) {
+            return
+        }
+
         this.renderer.setDevicePixelRatio(device_pixel_ratio)
     }
 
     public setViewport(width, height) {
+        if (this.destroyed) {
+            return
+        }
+
         this.renderer.setViewport(width, height)
     }
 
     public setRootSize(root_size) {
+        if (this.destroyed) {
+            return
+        }
+
         this.renderer.setRootSize(root_size)
     }
 
     public style(node, name, value) {
+        if (this.destroyed) {
+            return
+        }
+
         const resolved_style = resolveStyle(name, value)
         for (const style of resolved_style.expanded) {
             node.styles[style.name] = {
@@ -97,12 +151,14 @@ export default class UI {
         }
 
         const parent = child.parent
+        child.ui = null
         child.parent = null
         child.children.length = 0
         parent.children.splice(parent.children.indexOf(child), 1)
         this.nodes.splice(index, 1)
         this.renderer.discardPendingStyles(child)
         this.renderer.removeChild(parent, child)
+        this.created_nodes.delete(child)
         child.element = null
     }
 }

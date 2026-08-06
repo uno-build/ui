@@ -13,6 +13,11 @@ export default class TestRenderer extends Renderer {
         this.engine.createNode(node)
     }
 
+    public destroy(nodes) {
+        this.engine.destroy(nodes)
+        super.destroy(nodes)
+    }
+
     public getChildIndex(node) {
         return this.engine.getChildIndex(node)
     }

@@ -120,6 +120,35 @@ test('RendererDom synchronizes node scroll state after update', () => {
     expect(node.client_height).toBe(100)
 })
 
+test('RendererDom destroy removes UI elements and preserves its external root', () => {
+    const original_document = (globalThis as any).document
+    const canvas = createDomElement()
+
+    ;(globalThis as any).document = {
+        createElement: () => createDomElement(),
+    }
+
+    try {
+        const renderer = new RendererDom({ canvas })
+        const root = createNode(0)
+        const child = createNode(1)
+        const detached = createNode(2)
+
+        renderer.createElement(root)
+        const child_element = renderer.createElement(child)
+        const detached_element = renderer.createElement(detached)
+        renderer.addChild(root, child)
+        renderer.destroy([root, child, detached])
+
+        expect(canvas.removed).toBe(false)
+        expect(canvas.children).toHaveLength(0)
+        expect(child_element.removed).toBe(true)
+        expect(detached_element.removed).toBe(true)
+    } finally {
+        ;(globalThis as any).document = original_document
+    }
+})
+
 test('RendererDom layout remains in content coordinates while the parent is scrolled', () => {
     const canvas = {
         scrollLeft: 40,
@@ -180,4 +209,27 @@ function createScrollableElement({ scroll_width, scroll_height, client_width, cl
         clientWidth: client_width,
         clientHeight: client_height,
     }
+}
+
+function createDomElement() {
+    const element = {
+        style: {},
+        children: [],
+        parent: null,
+        removed: false,
+        appendChild(child) {
+            child.parent = element
+            element.children.push(child)
+        },
+        removeChild(child) {
+            element.children.splice(element.children.indexOf(child), 1)
+            child.parent = null
+        },
+        remove() {
+            element.parent?.removeChild(element)
+            element.removed = true
+        },
+    }
+
+    return element
 }

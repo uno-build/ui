@@ -34,6 +34,37 @@ test('Yoga layout engine keeps handles private and returns computed box metrics'
     expect(engine.getChildIndex(root)).toBe(0)
 })
 
+test('Yoga layout engine destroys attached and detached nodes with its config', async () => {
+    const Yoga = await loadYoga()
+    const destroy_node = Yoga.Node.destroy.bind(Yoga.Node)
+    const destroy_config = Yoga.Config.destroy.bind(Yoga.Config)
+    let node_destroy_count = 0
+    let config_destroy_count = 0
+
+    Yoga.Node.destroy = (node) => {
+        node_destroy_count++
+        destroy_node(node)
+    }
+    Yoga.Config.destroy = (config) => {
+        config_destroy_count++
+        destroy_config(config)
+    }
+
+    const engine = await createEngine({ loadYoga: async () => Yoga })
+    const root = createNode(0)
+    const child = createNode(1, root)
+    const detached = createNode(2)
+
+    engine.createNode(root)
+    engine.createNode(child)
+    engine.createNode(detached)
+    engine.insertChild(root, child, 0)
+    engine.destroy([root, child, detached])
+
+    expect(node_destroy_count).toBe(3)
+    expect(config_destroy_count).toBe(1)
+})
+
 test('Yoga layout engine translates measure modes to the generic contract', async () => {
     const exact_engine = await createEngine({ loadYoga })
     const exact_root = createNode(0)

@@ -170,6 +170,52 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
+    public destroy(nodes) {
+        for (const node of nodes) {
+            this.image_manager.removeNode(node)
+        }
+
+        this.engine.destroy(nodes)
+        this.position_buffer.destroy()
+        this.viewport_buffer.destroy()
+        this.command_buffer.destroy()
+        this.panel_data_buffer.destroy()
+        this.glyph_data_buffer.destroy()
+        this.text_run_buffer.destroy()
+        super.destroy(nodes)
+
+        this.position_buffer = null
+        this.viewport_buffer = null
+        this.command_buffer = null
+        this.panel_data_buffer = null
+        this.glyph_data_buffer = null
+        this.text_run_buffer = null
+        this.command_array_buffer = null
+        this.command_u32 = null
+        this.command_floats = null
+        this.command_bytes = null
+        this.panel_data_array_buffer = null
+        this.panel_data_floats = null
+        this.panel_data_u32 = null
+        this.panel_data_buffer_bytes = null
+        this.glyph_data_array_buffer = null
+        this.glyph_data_floats = null
+        this.glyph_data_u32 = null
+        this.glyph_data_buffer_bytes = null
+        this.text_run_array_buffer = null
+        this.text_run_floats = null
+        this.text_runs.length = 0
+        this.prepared_texts = null
+        this.pipeline = null
+        this.bind_group = null
+        this.image_sampler = null
+        this.root_node = null
+        this.engine = null
+        this.image_manager = null
+        this.font_manager = null
+        this.webgpu = null
+    }
+
     public setDevicePixelRatio(device_pixel_ratio) {
         this.device_pixel_ratio = device_pixel_ratio
     }

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import WebGPUResources from '../src/renderer/webgpu/WebGPUResources'
+import UIWorldSpace from '../src/ui/UIWorldSpace.ts'
 import TestRenderer from './TestRenderer.ts'
 import TestUI from './TestUI.ts'
 
@@ -100,6 +101,83 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     ui.draw()
 
     expect(sibling.layout).toMatchObject({ x: 20, y: 0, width: 0, height: 200 })
+})
+
+test('UI destroy releases attached and detached nodes once', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const root = ui.root
+    const parent = ui.create()
+    const child = ui.create()
+    const detached = ui.create()
+    let destroy_count = 0
+    let destroyed_nodes
+    const destroy = renderer.destroy.bind(renderer)
+
+    renderer.destroy = (nodes) => {
+        destroy_count++
+        destroyed_nodes = nodes
+        destroy(nodes)
+    }
+
+    root.add(parent)
+    parent.add(child)
+    detached.style('width', '20px')
+
+    ui.destroy()
+    ui.destroy()
+
+    expect(destroy_count).toBe(1)
+    expect(destroyed_nodes).toEqual([root, parent, child, detached])
+    expect(ui.destroyed).toBe(true)
+    expect(ui.root).toBe(null)
+    expect(ui.renderer).toBe(null)
+    expect((ui as any).nodes).toEqual([])
+    expect((ui as any).created_nodes.size).toBe(0)
+    expect((renderer as any).pending_styles).toEqual([])
+
+    for (const node of [root, parent, child, detached]) {
+        expect(node.ui).toBe(null)
+        expect(node.parent).toBe(null)
+        expect(node.children).toEqual([])
+        expect(node.element).toBe(null)
+    }
+
+    expect(ui.create()).toBe(null)
+    expect(ui.update()).toBe(undefined)
+    expect(ui.draw()).toBe(undefined)
+    expect(() => detached.style('width', '40px')).not.toThrow()
+})
+
+test('UIWorldSpace destroy releases only its GPU texture once', () => {
+    let renderer_destroy_count = 0
+    let texture_destroy_count = 0
+    const ui = Object.assign(Object.create(UIWorldSpace.prototype), {
+        root: null,
+        renderer: {
+            destroy(nodes) {
+                renderer_destroy_count++
+                expect(nodes).toEqual([])
+            },
+        },
+        nodes: [],
+        created_nodes: new Set(),
+        destroyed: false,
+        gpu_texture: {
+            destroy() {
+                texture_destroy_count++
+            },
+        },
+        gpu_texture_view: {},
+    })
+
+    ui.destroy()
+    ui.destroy()
+
+    expect(renderer_destroy_count).toBe(1)
+    expect(texture_destroy_count).toBe(1)
+    expect(ui.gpu_texture).toBe(null)
+    expect(ui.gpu_texture_view).toBe(null)
 })
 
 test('UI stores context-dependent styles without resolving them', async () => {

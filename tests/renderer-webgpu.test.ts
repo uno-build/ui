@@ -65,6 +65,65 @@ test('RendererWebGPU skips fully transparent panel instance data', () => {
     expect(nodes_buffer_data.bytes_offset).toBe(0)
 })
 
+test('RendererWebGPU destroy releases UI buffers without disposing shared resources', () => {
+    const removed_nodes = []
+    let image_manager_dispose_count = 0
+    let font_manager_dispose_count = 0
+    const image_manager = {
+        ...createImageManager(),
+        removeNode(node) {
+            removed_nodes.push(node)
+        },
+        dispose() {
+            image_manager_dispose_count++
+        },
+    }
+    const font_manager = {
+        ...createFontManager(),
+        dispose() {
+            font_manager_dispose_count++
+        },
+    }
+    const renderer = createRenderer(image_manager, font_manager)
+    const nodes = [{ id: 0 }, { id: 1 }]
+    const destroyed_buffers = []
+    const buffer_names = [
+        'position_buffer',
+        'viewport_buffer',
+        'command_buffer',
+        'panel_data_buffer',
+        'glyph_data_buffer',
+        'text_run_buffer',
+    ]
+    let destroyed_engine_nodes
+
+    for (const buffer_name of buffer_names) {
+        ;(renderer as any)[buffer_name] = {
+            destroy() {
+                destroyed_buffers.push(buffer_name)
+            },
+        }
+    }
+    ;(renderer as any).engine = {
+        destroy(next_nodes) {
+            destroyed_engine_nodes = next_nodes
+        },
+    }
+    ;(renderer as any).pending_styles.push({})
+
+    renderer.destroy(nodes)
+
+    expect(removed_nodes).toEqual(nodes)
+    expect(destroyed_engine_nodes).toBe(nodes)
+    expect(destroyed_buffers).toEqual(buffer_names)
+    expect(image_manager_dispose_count).toBe(0)
+    expect(font_manager_dispose_count).toBe(0)
+    expect(image_manager.getTextureView()).toEqual({ id: 'atlas-view' })
+    expect(font_manager.getTextureView()).toEqual({ id: 'font-view' })
+    expect((renderer as any).pending_styles).toEqual([])
+    expect((renderer as any).webgpu).toBe(null)
+})
+
 test('RendererWebGPU writes layout and clipping bounds into panel instance data', () => {
     const root = createNode()
     const parent = createNode({

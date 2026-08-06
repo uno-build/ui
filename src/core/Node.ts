@@ -1,6 +1,7 @@
 import { normalizeStyleKey } from '../style/normalizers'
 
 export default class Node {
+    public ui
     public element = null
     public parent = null
     public children = []
@@ -22,6 +23,10 @@ export default class Node {
     }
 
     public add(child) {
+        if (this.ui === null) {
+            return
+        }
+
         if (this.isTextNode()) {
             throw new Error('Nodes with text cannot have children')
         }
@@ -30,10 +35,18 @@ export default class Node {
     }
 
     public remove(child) {
+        if (this.ui === null) {
+            return
+        }
+
         this.ui.removeChild(child)
     }
 
     public style(name, value, parsed?) {
+        if (this.ui === null) {
+            return
+        }
+
         this.ui.style(this, name, value, parsed)
 
         if (this.isTextNode() && isTextMeasureStyle(name)) {
@@ -42,6 +55,10 @@ export default class Node {
     }
 
     public text(value: string) {
+        if (this.ui === null) {
+            return
+        }
+
         if (this.children.length > 0) {
             throw new Error('Nodes with text cannot have children')
         }

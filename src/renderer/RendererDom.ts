@@ -34,6 +34,28 @@ export default class RendererDom extends Renderer {
         return element
     }
 
+    public destroy(nodes) {
+        for (const node of nodes) {
+            const element = this.elements.get(node)
+
+            if (node === this.root_node) {
+                if (node.hasTextContent()) {
+                    element.textContent = ''
+                }
+            } else {
+                element.remove()
+            }
+
+            this.elements.delete(node)
+            this.text_elements.delete(node)
+        }
+
+        super.destroy(nodes)
+        this.root_node = null
+        this.canvas = null
+        this.dom = null
+    }
+
     protected insertChild(parent, node, childIndex) {
         this.elements.get(parent).appendChild(this.elements.get(node))
     }
