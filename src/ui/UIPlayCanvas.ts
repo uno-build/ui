@@ -14,58 +14,23 @@ import {
     StandardMaterial,
     Texture,
 } from 'playcanvas'
-import UI from '../core/UI'
-import RendererWebGPU from '../renderer/RendererWebGPU'
+import UIWorldSpace from './UIWorldSpace'
 
-const TEXTURE_FORMATS = {
-    bgra8unorm: PIXELFORMAT_BGRA8,
-    rgba8unorm: PIXELFORMAT_RGBA8,
-}
-
-const UI_DIFFUSE_CHUNK = `
-uniform material_diffuse: vec3f;
-fn getAlbedo() {
-    dAlbedo = uniform.material_diffuse.rgb;
-    let ui_color = textureSampleBias({STD_DIFFUSE_TEXTURE_NAME}, {STD_DIFFUSE_TEXTURE_NAME}Sampler, {STD_DIFFUSE_TEXTURE_UV}, uniform.textureBias);
-    dAlbedo *= decodeGamma(vec4f(ui_color.rgb / max(ui_color.a, 0.0001), ui_color.a));
-}
-`
-
-export default class UIPlayCanvas extends UI {
+export default class UIPlayCanvas extends UIWorldSpace {
     private app
-    private texture_width
-    private texture_height
-    private world_width
-    private world_height
-    private ui_texture
-    private ui_texture_view
 
-    protected constructor({ app, texture_width, texture_height, world_width, world_height, ...renderer_options }) {
-        const renderer = new RendererWebGPU({ ...renderer_options })
-        super({ renderer })
+    protected constructor({ app, ...options }) {
+        super(options)
         this.app = app
-        this.texture_width = texture_width
-        this.texture_height = texture_height
-        this.world_width = world_width
-        this.world_height = world_height
     }
 
     public static async create(options) {
         const ui = new UIPlayCanvas(options)
-        const { plane } = await ui.initialize()
-        return { ui, plane }
+        const resources = await ui.initialize()
+        return { ui, ...resources }
     }
 
-    protected async initialize() {
-        const output = await super.initialize()
-
-        this.ui_texture = output.device.createTexture({
-            size: [this.texture_width, this.texture_height],
-            format: output.format,
-            usage: globalThis.GPUTextureUsage.RENDER_ATTACHMENT | globalThis.GPUTextureUsage.TEXTURE_BINDING,
-        })
-        this.ui_texture_view = this.ui_texture.createView()
-
+    protected createTexture({ output, gpu_texture, gpu_texture_view }) {
         const graphics_device = this.app.graphicsDevice
         const playcanvas_texture = new Texture(graphics_device, {
             width: this.texture_width,
@@ -78,10 +43,16 @@ export default class UIPlayCanvas extends UI {
             mipmaps: false,
         })
         playcanvas_texture.impl.gpuTexture.destroy()
-        playcanvas_texture.impl.gpuTexture = this.ui_texture
-        playcanvas_texture.impl.view = this.ui_texture_view
+        playcanvas_texture.impl.gpuTexture = gpu_texture
+        playcanvas_texture.impl.view = gpu_texture_view
+        return playcanvas_texture
+    }
 
-        const material = new StandardMaterial()
+    protected createDefaultMaterial() {
+        return new StandardMaterial()
+    }
+
+    protected configureMaterial({ texture: playcanvas_texture, material }) {
         material.diffuseMap = playcanvas_texture
         material.opacityMap = playcanvas_texture
         material.opacityMapChannel = 'a'
@@ -97,9 +68,12 @@ export default class UIPlayCanvas extends UI {
         material.shaderChunksVersion = CHUNKAPI_2_8
         material.shaderChunks.wgsl.set('diffusePS', UI_DIFFUSE_CHUNK)
         material.update()
+    }
 
-        const half_width = this.world_width / 2
-        const half_height = this.world_height / 2
+    protected createDefaultPlane({ material, world_width, world_height }) {
+        const graphics_device = this.app.graphicsDevice
+        const half_width = world_width / 2
+        const half_height = world_height / 2
         const geometry = new Geometry()
         geometry.positions = [
             -half_width,
@@ -120,18 +94,23 @@ export default class UIPlayCanvas extends UI {
         geometry.indices = [0, 3, 2, 0, 2, 1]
 
         const mesh = Mesh.fromGeometry(graphics_device, geometry)
+        const mesh_instance = new MeshInstance(mesh, material)
         const plane = new Entity('uno-ui-plane', this.app)
-        plane.addComponent('render', {
-            meshInstances: [new MeshInstance(mesh, material)],
-        })
-        return { plane }
-    }
-
-    public draw(options = {}) {
-        return super.draw({
-            ...options,
-            texture_view: this.ui_texture_view,
-            load_op: 'clear',
-        })
+        plane.addComponent('render', { meshInstances: [mesh_instance] })
+        return { plane, geometry, mesh, mesh_instance }
     }
 }
+
+const TEXTURE_FORMATS = {
+    bgra8unorm: PIXELFORMAT_BGRA8,
+    rgba8unorm: PIXELFORMAT_RGBA8,
+}
+
+const UI_DIFFUSE_CHUNK = `
+uniform material_diffuse: vec3f;
+fn getAlbedo() {
+    dAlbedo = uniform.material_diffuse.rgb;
+    let ui_color = textureSampleBias({STD_DIFFUSE_TEXTURE_NAME}, {STD_DIFFUSE_TEXTURE_NAME}Sampler, {STD_DIFFUSE_TEXTURE_UV}, uniform.textureBias);
+    dAlbedo *= decodeGamma(vec4f(ui_color.rgb / max(ui_color.a, 0.0001), ui_color.a));
+}
+`

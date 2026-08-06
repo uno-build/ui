@@ -1,6 +1,54 @@
 import { createPlane, createStandardMaterial, type MaterialPlugin, type Texture2D } from '@babylonjs/lite'
-import UI from '../core/UI'
-import RendererWebGPU from '../renderer/RendererWebGPU'
+import UIWorldSpace from './UIWorldSpace'
+
+export default class UIBabylonLite extends UIWorldSpace {
+    private engine
+
+    protected constructor({ engine, ...options }) {
+        super(options)
+        this.engine = engine
+    }
+
+    public static async create(options) {
+        const ui = new UIBabylonLite(options)
+        const resources = await ui.initialize()
+        return { ui, ...resources }
+    }
+
+    protected createTexture({ output, gpu_texture, gpu_texture_view }) {
+        const babylon_texture: Texture2D = {
+            texture: gpu_texture,
+            view: gpu_texture_view,
+            sampler: output.device.createSampler({
+                minFilter: 'linear',
+                magFilter: 'linear',
+            }),
+            width: this.texture_width,
+            height: this.texture_height,
+            invertY: true,
+        }
+        return babylon_texture
+    }
+
+    protected createDefaultMaterial() {
+        return createStandardMaterial()
+    }
+
+    protected configureMaterial({ texture: babylon_texture, material }) {
+        material.diffuseTexture = babylon_texture
+        material.opacityTexture = babylon_texture
+        material.plugins = [UI_TEXTURE_PLUGIN]
+    }
+
+    protected createDefaultPlane({ material, world_width, world_height }) {
+        const plane = createPlane(this.engine, {
+            width: world_width,
+            height: world_height,
+        })
+        plane.material = material
+        return { plane }
+    }
+}
 
 const UI_TEXTURE_PLUGIN: MaterialPlugin = {
     name: 'uno-ui-texture',
@@ -13,73 +61,4 @@ const UI_TEXTURE_PLUGIN: MaterialPlugin = {
             CUSTOM_FRAGMENT_UPDATE_ALPHA: 'baseColor = _ds.rgb / max(_ds.a, 0.0001);',
         }
     },
-}
-
-export default class UIBabylonLite extends UI {
-    private engine
-    private texture_width
-    private texture_height
-    private world_width
-    private world_height
-    private ui_texture
-    private ui_texture_view
-
-    protected constructor({ engine, texture_width, texture_height, world_width, world_height, ...renderer_options }) {
-        const renderer = new RendererWebGPU({ ...renderer_options })
-        super({ renderer })
-        this.engine = engine
-        this.texture_width = texture_width
-        this.texture_height = texture_height
-        this.world_width = world_width
-        this.world_height = world_height
-    }
-
-    public static async create(options) {
-        const ui = new UIBabylonLite(options)
-        const { plane } = await ui.initialize()
-        return { ui, plane }
-    }
-
-    protected async initialize() {
-        const output = await super.initialize()
-
-        this.ui_texture = output.device.createTexture({
-            size: [this.texture_width, this.texture_height],
-            format: output.format,
-            usage: globalThis.GPUTextureUsage.RENDER_ATTACHMENT | globalThis.GPUTextureUsage.TEXTURE_BINDING,
-        })
-        this.ui_texture_view = this.ui_texture.createView()
-
-        const babylon_texture: Texture2D = {
-            texture: this.ui_texture,
-            view: this.ui_texture_view,
-            sampler: output.device.createSampler({
-                minFilter: 'linear',
-                magFilter: 'linear',
-            }),
-            width: this.texture_width,
-            height: this.texture_height,
-            invertY: true,
-        }
-
-        const material = createStandardMaterial()
-        material.diffuseTexture = babylon_texture
-        material.opacityTexture = babylon_texture
-        material.plugins = [UI_TEXTURE_PLUGIN]
-
-        const plane = createPlane(this.engine, {
-            width: this.world_width,
-            height: this.world_height,
-        })
-        plane.material = material
-        return { plane }
-    }
-
-    public draw(options = {}) {
-        return super.draw({
-            ...options,
-            texture_view: this.ui_texture_view,
-            load_op: 'clear',
-        })
-    }
 }

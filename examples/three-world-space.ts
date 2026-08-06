@@ -39,7 +39,7 @@ export async function main({
         texture_height: texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
-        node_material: THREE.MeshPhongNodeMaterial,
+        createMaterial: () => new THREE.MeshPhongNodeMaterial(),
     })
     const { ui: second_ui, plane: second_plane } = await UIThree.create({
         webgpu,
@@ -49,7 +49,7 @@ export async function main({
         texture_height: texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
-        node_material: THREE.MeshPhongNodeMaterial,
+        createMaterial: () => new THREE.MeshPhongNodeMaterial(),
     })
     const three_renderer = new THREE.WebGPURenderer({
         canvas,

@@ -5,8 +5,7 @@ import { ShaderLanguage } from '@babylonjs/core/Materials/shaderLanguage.js'
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js'
 import { Texture } from '@babylonjs/core/Materials/Textures/texture.js'
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js'
-import UI from '../core/UI'
-import RendererWebGPU from '../renderer/RendererWebGPU'
+import UIWorldSpace from './UIWorldSpace'
 
 class UITexturePlugin extends MaterialPluginBase {
     public constructor(material) {
@@ -28,43 +27,23 @@ class UITexturePlugin extends MaterialPluginBase {
     }
 }
 
-export default class UIBabylon extends UI {
+export default class UIBabylon extends UIWorldSpace {
     private scene
-    private texture_width
-    private texture_height
-    private world_width
-    private world_height
-    private ui_texture
-    private ui_texture_view
 
-    protected constructor({ scene, texture_width, texture_height, world_width, world_height, ...renderer_options }) {
-        const renderer = new RendererWebGPU({ ...renderer_options })
-        super({ renderer })
+    protected constructor({ scene, ...options }) {
+        super(options)
         this.scene = scene
-        this.texture_width = texture_width
-        this.texture_height = texture_height
-        this.world_width = world_width
-        this.world_height = world_height
     }
 
     public static async create(options) {
         const ui = new UIBabylon(options)
-        const { plane } = await ui.initialize()
-        return { ui, plane }
+        const resources = await ui.initialize()
+        return { ui, ...resources }
     }
 
-    protected async initialize() {
-        const output = await super.initialize()
-
-        this.ui_texture = output.device.createTexture({
-            size: [this.texture_width, this.texture_height],
-            format: output.format,
-            usage: globalThis.GPUTextureUsage.RENDER_ATTACHMENT | globalThis.GPUTextureUsage.TEXTURE_BINDING,
-        })
-        this.ui_texture_view = this.ui_texture.createView()
-
+    protected createTexture({ output, gpu_texture }) {
         const engine = this.scene.getEngine()
-        const internal_texture = engine.wrapWebGPUTexture(this.ui_texture)
+        const internal_texture = engine.wrapWebGPUTexture(gpu_texture)
         internal_texture.width = this.texture_width
         internal_texture.height = this.texture_height
         internal_texture.depth = 1
@@ -78,7 +57,7 @@ export default class UIBabylon extends UI {
         const hardware_texture = internal_texture._hardwareTexture as WebGPUHardwareTexture
         hardware_texture.format = output.format
         hardware_texture.originalFormat = output.format
-        hardware_texture.textureUsages = this.ui_texture.usage
+        hardware_texture.textureUsages = gpu_texture.usage
         hardware_texture.setUsage(
             internal_texture.source,
             false,
@@ -102,31 +81,31 @@ export default class UIBabylon extends UI {
         babylon_texture.vOffset = 1
         babylon_texture.vScale = -1
         babylon_texture.anisotropicFilteringLevel = 1
+        return babylon_texture
+    }
 
-        const material = new StandardMaterial('uno-ui-material', this.scene)
+    protected createDefaultMaterial() {
+        return new StandardMaterial('uno-ui-material', this.scene)
+    }
+
+    protected configureMaterial({ texture: babylon_texture, material }) {
         material.diffuseTexture = babylon_texture
         material.opacityTexture = babylon_texture
         material.alphaMode = Constants.ALPHA_PREMULTIPLIED
         material.disableDepthWrite = true
         new UITexturePlugin(material)
+    }
 
+    protected createDefaultPlane({ material, world_width, world_height }) {
         const plane = MeshBuilder.CreatePlane(
             'uno-ui-plane',
             {
-                width: this.world_width,
-                height: this.world_height,
+                width: world_width,
+                height: world_height,
             },
             this.scene,
         )
         plane.material = material
-        return { plane }
-    }
-
-    public draw(options = {}) {
-        return super.draw({
-            ...options,
-            texture_view: this.ui_texture_view,
-            load_op: 'clear',
-        })
+        return { plane, geometry: plane.geometry }
     }
 }
