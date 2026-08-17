@@ -60,7 +60,7 @@ export default class RendererWebGPU extends Renderer {
     private root_size = ROOT_SIZE
     private style_context_dirty = false
     private scrollbar_size
-    private engine!
+    private engine!: any
     private device
     private context
     private format

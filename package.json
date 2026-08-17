@@ -34,11 +34,13 @@
     "devDependencies": {
         "@babylonjs/core": "9.5.2",
         "@babylonjs/lite": "^1.16.0",
+        "@octanejs/vite-plugin": "^0.1.38",
         "@playwright/test": "^1.52.0",
-        "pngjs": "^7.0.0",
+        "octane": "^0.1.38",
         "playcanvas": "^2.21.3",
+        "pngjs": "^7.0.0",
         "three": "^0.185.1",
-        "vite": "^8.0.12",
+        "vite": "^8.2.1",
         "wgpu-matrix": "^3.4.2"
     },
     "peerDependencies": {
