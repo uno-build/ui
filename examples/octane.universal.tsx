@@ -1,9 +1,9 @@
-import { useLayoutEffect } from 'octane'
+import { useEffect } from 'octane'
 
 export function BasicComponent() @{
     console.log('[octane example] render')
 
-    useLayoutEffect(() => {
+    useEffect(() => {
         console.log('[octane example] mounted')
         return () => console.log('[octane example] unmounted')
     }, [])

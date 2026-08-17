@@ -1,15 +1,7 @@
-import { createUniversalLogger, createUniversalRendererRoot } from '../src/components/octane/index.js'
+import { createUniversalRendererRoot } from '../src/components/octane/index.js'
 import { BasicComponent } from './octane.universal'
 
-const logger = createUniversalLogger(true)
-const renderer_root = createUniversalRendererRoot({ logger })
+const renderer = createUniversalRendererRoot({ props: { a: 123 } })
 
-renderer_root.render(BasicComponent, {})
-
-window.addEventListener(
-    'pagehide',
-    () => {
-        renderer_root.unmount()
-    },
-    { once: true },
-)
+renderer.render(BasicComponent, {})
+// renderer.unmount()
