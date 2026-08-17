@@ -1,6 +1,6 @@
 {
     "name": "uno-ui",
-    "version": "0.1.0",
+    "version": "1.0.0-rc.0",
     "type": "module",
     "exports": {
         "./WebGPUResources": {
@@ -36,9 +36,13 @@
         "@babylonjs/lite": "^1.16.0",
         "@octanejs/vite-plugin": "^0.1.38",
         "@playwright/test": "^1.52.0",
+        "@solidjs/universal": "2.0.0-rc.0",
+        "@solidjs/vite-plugin": "3.0.0-next.28",
+        "@solidjs/web": "2.0.0-rc.0",
         "octane": "^0.1.38",
         "playcanvas": "^2.21.3",
         "pngjs": "^7.0.0",
+        "solid-js": "2.0.0-rc.0",
         "three": "^0.185.1",
         "vite": "^8.2.1",
         "wgpu-matrix": "^3.4.2"

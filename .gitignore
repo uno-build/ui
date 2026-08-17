@@ -3,5 +3,6 @@ node_modules/
 package-lock.json
 tests/.results/
 docs/
+examples/dist/
 AGENTS.md
 CLAUDE.md
