@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import Segmenter from '../src/renderer/pretext/segmenter.ts'
-import { resolveStyle } from '../src/style/index.ts'
+import { resolveStyle, validateStyle } from '../src/style/index.ts'
 import {
     BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
@@ -2138,7 +2138,8 @@ for (const [style_name, style_value] of TEXT_MEASURE_STYLES) {
             calculate() {},
         }
 
-        renderer.addPendingStyle(node, resolveStyle(style_name, style_value))
+        const normalized_name = validateStyle(style_name, style_value)
+        renderer.addPendingStyle(node, resolveStyle(normalized_name, style_value))
 
         expect(dirty_nodes).toEqual([])
 

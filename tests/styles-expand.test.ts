@@ -27,7 +27,7 @@ test('flex expands to grow, shrink, basis', () => {
     ])
 
     expect(() => {
-        Style.resolveStyle('flex', true)
+        Style.validateStyle('flex', true)
     }).toThrow(/style value must be a string/)
     expect(() => {
         Style.resolveStyle('flex', '-1')

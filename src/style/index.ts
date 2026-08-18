@@ -45,16 +45,15 @@ import {
 //     window.resolveStyle = resolveStyle
 // }
 
-export function resolveStyle(name: string, value: any) {
+export function validateStyle(name: string, value: any) {
     if (typeof name !== 'string') {
         throw new Error(`style name must be a string, got '${typeof name}'`)
     }
 
     const normalized_name = normalizeStyleName(name, STYLE)
     const normalized_key = normalizeStyleKey(normalized_name)
-    const StyleParser = STYLE[normalized_key]
 
-    if (!StyleParser) {
+    if (!STYLE[normalized_key]) {
         throw new Error(`unsupported property '${name}'`)
     }
 
@@ -63,9 +62,16 @@ export function resolveStyle(name: string, value: any) {
         throw new Error(`style value must be a string, got '${typeof_value}'`)
     }
 
+    return normalized_name
+}
+
+export function resolveStyle(name: string, value: any) {
+    const normalized_key = normalizeStyleKey(name)
+    const StyleParser = STYLE[normalized_key]
+
     try {
         return {
-            name: normalized_name,
+            name,
             value: value,
             expanded: StyleParser.resolve(value),
         }
@@ -456,6 +462,7 @@ export const STYLE = {
 }
 
 export default {
+    validateStyle,
     resolveStyle,
     computeStyleValue,
     STYLE,

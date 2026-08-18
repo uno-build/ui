@@ -1166,7 +1166,9 @@ function expectResolved(
     parsed: Record<string, unknown>,
     expectedName = name,
 ) {
-    expect(Style.resolveStyle(name, value).expanded).toEqual([
+    const normalized_name = Style.validateStyle(name, value)
+
+    expect(Style.resolveStyle(normalized_name, value).expanded).toEqual([
         {
             name: expectedName,
             value: expectedValue,
@@ -1179,7 +1181,8 @@ function expectInvalid(name: string, value: unknown, message: RegExp) {
     const expected_message = typeof value === 'string' ? message : /style value must be a string/
 
     expect(() => {
-        Style.resolveStyle(name, value)
+        const normalized_name = Style.validateStyle(name, value)
+        Style.resolveStyle(normalized_name, value)
     }).toThrow(expected_message)
 }
 

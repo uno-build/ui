@@ -1,22 +1,27 @@
 import { test, expect } from '@playwright/test'
 import Style from '../src/style'
 
-test('resolveStyle', () => {
-    expect(() => {
-        Style.resolveStyle()
-    }).toThrow(/style name must be a string/)
-    expect(() => {
-        Style.resolveStyle('noexist')
-    }).toThrow(/unsupported property 'noexist'/)
-
-    expect(() => {
-        Style.resolveStyle('backgroundColor')
-    }).toThrow(/style value must be a string, got 'undefined'/)
+test('validateStyle', () => {
+    expect(Style.validateStyle('  background-color  ', '#f00')).toBe('backgroundColor')
+    expect(() => Style.validateStyle()).toThrow(/style name must be a string/)
+    expect(() => Style.validateStyle('noexist', '')).toThrow(/unsupported property 'noexist'/)
+    expect(() => Style.validateStyle('backgroundColor')).toThrow(/style value must be a string, got 'undefined'/)
 })
 
-test('resolveStyle should always normalize name', () => {
+test('resolveStyle', () => {
+    expect(Style.resolveStyle('backgroundColor', '#f00').expanded).toEqual([
+        {
+            name: 'backgroundColor',
+            value: '#f00',
+            parsed: { rgba: [255, 0, 0, 255] },
+        },
+    ])
+})
+
+test('validateStyle should always normalize name', () => {
     const red = '#f00'
-    const resolved = Style.resolveStyle('  background-color  ', red)
+    const normalized_name = Style.validateStyle('  background-color  ', red)
+    const resolved = Style.resolveStyle(normalized_name, red)
     const toBe = [
         {
             name: 'backgroundColor',
@@ -28,12 +33,11 @@ test('resolveStyle should always normalize name', () => {
     expect(resolved.value).toBe(red)
     expect(resolved.expanded).toEqual(toBe)
     expect(Style.resolveStyle('backgroundColor', red).expanded).toEqual(toBe)
-    expect(Style.resolveStyle(' backgroundColor ', red).expanded).toEqual(toBe)
-    expect(Style.resolveStyle('  background-color  ', red).expanded).toEqual(toBe)
-    expect(Style.resolveStyle('BACKGROUND-COLOR', red).expanded).toEqual(toBe)
-    expect(Style.resolveStyle('Background-Color', red).expanded).toEqual(toBe)
-    expect(Style.resolveStyle('Background-Color', red).expanded).toEqual(toBe)
-    expect(Style.resolveStyle('BACKGROUNDCOLOR', red).expanded).toEqual(toBe)
+    expect(Style.validateStyle(' backgroundColor ', red)).toBe('backgroundColor')
+    expect(Style.validateStyle('  background-color  ', red)).toBe('backgroundColor')
+    expect(Style.validateStyle('BACKGROUND-COLOR', red)).toBe('backgroundColor')
+    expect(Style.validateStyle('Background-Color', red)).toBe('backgroundColor')
+    expect(Style.validateStyle('BACKGROUNDCOLOR', red)).toBe('backgroundColor')
 })
 
 test('unitPixelStyle', () => {
@@ -41,7 +45,7 @@ test('unitPixelStyle', () => {
         Style.resolveStyle('borderTopWidth', '10%')
     }).toThrow(/expected px unit/)
     expect(() => {
-        Style.resolveStyle('borderTopWidth', -1)
+        Style.validateStyle('borderTopWidth', -1)
     }).toThrow(/style value must be a string/)
     expect(() => {
         Style.resolveStyle('borderTopWidth', 'thin')
@@ -86,7 +90,7 @@ test('unitPixelStyle', () => {
 
 test('unitOrAutoStyle', () => {
     expect(() => {
-        Style.resolveStyle('width', true)
+        Style.validateStyle('width', true)
     }).toThrow(/style value must be a string/)
     expect(() => {
         Style.resolveStyle('width', '12em')
@@ -214,7 +218,7 @@ test('integerStyle', () => {
         Style.resolveStyle('zIndex', '1.5')
     }).toThrow(/expected integer/)
     expect(() => {
-        Style.resolveStyle('zIndex', 1)
+        Style.validateStyle('zIndex', 1)
     }).toThrow(/style value must be a string/)
 })
 
@@ -260,7 +264,7 @@ test('non-negative unit styles reject negative values', () => {
 
     for (const name of styles) {
         expect(() => {
-            Style.resolveStyle(name, -1)
+            Style.validateStyle(name, -1)
         }).toThrow(/style value must be a string/)
         expect(() => {
             Style.resolveStyle(name, '-1px')
@@ -343,7 +347,7 @@ test('border width styles are px-only and non-negative', () => {
             Style.resolveStyle(name, '1')
         }).toThrow(/expected px unit/)
         expect(() => {
-            Style.resolveStyle(name, -1)
+            Style.validateStyle(name, -1)
         }).toThrow(/style value must be a string/)
         expect(() => {
             Style.resolveStyle(name, 'thin')

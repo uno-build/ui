@@ -1,5 +1,5 @@
 import Node from './Node'
-import { resolveStyle } from '../style'
+import { resolveStyle, validateStyle } from '../style'
 import { sortPaintingOrder } from '../utils/sort-painting-order'
 
 export default class UI {
@@ -77,14 +77,17 @@ export default class UI {
 
     public style(node, name, value) {
         if (!this.destroyed) {
-            const resolved_style = resolveStyle(name, value)
-            for (const style of resolved_style.expanded) {
-                node.styles[style.name] = {
-                    value: style.value,
-                    parsed: style.parsed,
+            const normalized_name = validateStyle(name, value)
+            if (node.styles[normalized_name]?.value !== value) {
+                const resolved_style = resolveStyle(normalized_name, value)
+                for (const style of resolved_style.expanded) {
+                    node.styles[style.name] = {
+                        value: style.value,
+                        parsed: style.parsed,
+                    }
                 }
+                this.renderer.addPendingStyle(node, resolved_style)
             }
-            this.renderer.addPendingStyle(node, resolved_style)
         }
     }
 
