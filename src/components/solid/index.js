@@ -5,8 +5,8 @@ const TEXT_NODE = '#text';
 const pending_operations = [];
 let update_scheduled = false;
 
-export const solidViteConfig = {
-	include: ['**/*.tsx', '**/*.jsx'],
+export const viteConfigSolid = {
+	include: ['**/*.tsx', '**/.jsx'],
 	solid: {
 		moduleName: '../src/components/solid/index.js',
 		generate: 'universal',

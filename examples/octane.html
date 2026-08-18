@@ -10,7 +10,17 @@
             import { createUniversalRendererRoot } from '../src/components/octane/index.js'
             import { BasicComponent } from './octane'
 
-            const renderer = createUniversalRendererRoot({ ui: 123 })
+            const node = () => ({
+                add: () => {},
+                remove: () => {},
+                style: () => {},
+            })
+            const ui = {
+                create: () => node(),
+                update: () => {},
+            }
+
+            const renderer = createUniversalRendererRoot({ ui })
 
             renderer.render(BasicComponent, {})
             // renderer.unmount()

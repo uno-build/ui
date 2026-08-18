@@ -2,7 +2,7 @@ import { createUniversalRoot } from 'octane/universal/native';
 
 const RENDERER_ID = 'uno';
 
-export const octaneViteConfig = {
+export const viteConfigOctane = {
     renderers: {
         registry: {
             [RENDERER_ID]: {
@@ -21,21 +21,26 @@ export const octaneViteConfig = {
     }
 }
 
-
-
 function createUniversalDriver() {
     return {
         id: RENDERER_ID,
         capabilities: { text: 'ignore' },
-        prepareBatch(_container, batch) {
-            console.log('prepare', batch);
+        prepareBatch({ ui }, { commands }) {
             return {
                 apply() {
-                    console.log('apply', batch);
-                    console.log('ui.update()');
+                    for (let command of commands) {
+                        console.log(command)
+                        if (command.op === 'create') {
+                            ui.create()
+                        }
+                        if (command.op === 'insert') {
+                            ui.create()
+                        }
+                    }
+                    ui.update()
                 },
                 abort() {
-                    console.log('abort', batch);
+                    ui.abort()
                 },
             };
         },
@@ -45,11 +50,9 @@ function createUniversalDriver() {
     };
 }
 
-export function createUniversalRendererRoot({ props }) {
-    console.log('createUniversalRendererRoot', props);
-
+export function createUniversalRendererRoot(params) {
     const host = createUniversalRoot(
-        { renderer: RENDERER_ID },
+        { renderer: RENDERER_ID, ...params },
         createUniversalDriver(),
     );
 
