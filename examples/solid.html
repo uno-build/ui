@@ -6,6 +6,14 @@
         <title>Solid universal renderer</title>
     </head>
     <body>
-        <script type="module" src="./solid.ts"></script>
+        <script type="module">
+            import { createSolidContainer, render } from '../src/components/solid/index.js'
+            import { BasicComponent } from './solid'
+
+            const container = createSolidContainer({ ui: 123 })
+
+            const dispose = render(BasicComponent, container)
+            // dispose()
+        </script>
     </body>
 </html>

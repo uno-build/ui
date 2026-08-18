@@ -6,6 +6,14 @@
         <title>Octane universal renderer</title>
     </head>
     <body>
-        <script type="module" src="./octane.ts"></script>
+        <script type="module">
+            import { createUniversalRendererRoot } from '../src/components/octane/index.js'
+            import { BasicComponent } from './octane'
+
+            const renderer = createUniversalRendererRoot({ ui: 123 })
+
+            renderer.render(BasicComponent, {})
+            // renderer.unmount()
+        </script>
     </body>
 </html>

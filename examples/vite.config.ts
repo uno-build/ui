@@ -1,20 +1,12 @@
 import { fileURLToPath } from 'node:url'
+import { defineConfig } from 'vite'
 import { octane } from '@octanejs/vite-plugin'
 import solid from '@solidjs/vite-plugin'
-import { defineConfig } from 'vite'
-import { universalRenderers } from '../src/components/octane/index.js'
+import { octaneViteConfig } from '../src/components/octane/index.js'
+import { solidViteConfig } from '../src/components/solid/index.js'
 
 export default defineConfig({
-    plugins: [
-        octane({ renderers: universalRenderers }),
-        solid({
-            include: '**/*.universal.jsx',
-            solid: {
-                moduleName: '../src/components/solid/index.js',
-                generate: 'universal',
-            },
-        }),
-    ],
+    plugins: [octane(octaneViteConfig), solid(solidViteConfig)],
     build: {
         rollupOptions: {
             input: {

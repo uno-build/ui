@@ -1,27 +1,27 @@
-import { createUniversalRoot } from 'octane/universal';
+import { createUniversalRoot } from 'octane/universal/native';
 
 const RENDERER_ID = 'uno';
 
-export const universalRenderers = {
-    registry: {
-        [RENDERER_ID]: {
-            module: 'octane/universal',
-            target: 'universal',
-            server: 'client-only',
-            text: 'ignore',
+export const octaneViteConfig = {
+    renderers: {
+        registry: {
+            [RENDERER_ID]: {
+                module: 'octane/universal/native',
+                target: 'universal',
+                server: 'client-only',
+                text: 'ignore',
+            },
         },
-    },
-    rules: [
-        {
-            include: ['**/*.tsrx', '**/*.tsx'],
-            renderer: RENDERER_ID,
-        },
-    ],
-};
-
-function createUniversalContainer() {
-    return { renderer: RENDERER_ID };
+        rules: [
+            {
+                include: ['**/*.tsrx', '**/*.tsx', '**/*.jsx'],
+                renderer: RENDERER_ID,
+            },
+        ],
+    }
 }
+
+
 
 function createUniversalDriver() {
     return {
@@ -49,7 +49,7 @@ export function createUniversalRendererRoot({ props }) {
     console.log('createUniversalRendererRoot', props);
 
     const host = createUniversalRoot(
-        createUniversalContainer(),
+        { renderer: RENDERER_ID },
         createUniversalDriver(),
     );
 

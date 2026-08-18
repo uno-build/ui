@@ -5,6 +5,14 @@ const TEXT_NODE = '#text';
 const pending_operations = [];
 let update_scheduled = false;
 
+export const solidViteConfig = {
+	include: ['**/*.tsx', '**/*.jsx'],
+	solid: {
+		moduleName: '../src/components/solid/index.js',
+		generate: 'universal',
+	},
+}
+
 function enqueueOperation(name, ...args) {
 	pending_operations.push([name, args]);
 
