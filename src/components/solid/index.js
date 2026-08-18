@@ -1,6 +1,29 @@
 import { createRenderer } from '@solidjs/universal';
+import { onSettled, runWithOwner } from 'solid-js';
 
 const TEXT_NODE = '#text';
+const pending_operations = [];
+let update_scheduled = false;
+
+function enqueueOperation(name, ...args) {
+	pending_operations.push([name, args]);
+
+	if (update_scheduled) return;
+
+	update_scheduled = true;
+	runWithOwner(null, () => onSettled(flushOperations));
+}
+
+function flushOperations() {
+	const operations = pending_operations.splice(0);
+	update_scheduled = false;
+
+	for (const [name, args] of operations) {
+		console.log(`[solid] ${name}`, ...args);
+	}
+
+	console.log('[solid] ui.update()');
+}
 
 export function createSolidContainer(props) {
 	console.log('[solid] createSolidContainer', props);
@@ -29,7 +52,7 @@ export const {
 	ref,
 } = createRenderer({
 	createElement(type, static_props) {
-		console.log('[solid] createElement', type, static_props);
+		enqueueOperation('createElement', type, static_props);
 
 		return {
 			type,
@@ -39,7 +62,7 @@ export const {
 		};
 	},
 	createTextNode(value) {
-		console.log('[solid] createTextNode', value);
+		enqueueOperation('createTextNode', value);
 
 		return {
 			type: TEXT_NODE,
@@ -49,18 +72,18 @@ export const {
 		};
 	},
 	replaceText(text_node, value) {
-		console.log('[solid] replaceText', text_node, value);
+		enqueueOperation('replaceText', text_node, value);
 		text_node.value = value;
 	},
 	isTextNode(node) {
 		return node.type === TEXT_NODE;
 	},
 	setProperty(node, name, value) {
-		console.log('[solid] setProperty', node, name, value);
+		enqueueOperation('setProperty', node, name, value);
 		node.props[name] = value;
 	},
 	insertNode(parent, node, anchor) {
-		console.log('[solid] insertNode', parent, node, anchor);
+		enqueueOperation('insertNode', parent, node, anchor);
 
 		const index = anchor === undefined
 			? parent.children.length
@@ -70,7 +93,7 @@ export const {
 		node.parent = parent;
 	},
 	removeNode(parent, node) {
-		console.log('[solid] removeNode', parent, node);
+		enqueueOperation('removeNode', parent, node);
 
 		parent.children.splice(parent.children.indexOf(node), 1);
 		node.parent = null;

@@ -38,7 +38,6 @@
         "@playwright/test": "^1.52.0",
         "@solidjs/universal": "2.0.0-rc.0",
         "@solidjs/vite-plugin": "3.0.0-next.28",
-        "@solidjs/web": "2.0.0-rc.0",
         "octane": "^0.1.38",
         "playcanvas": "^2.21.3",
         "pngjs": "^7.0.0",

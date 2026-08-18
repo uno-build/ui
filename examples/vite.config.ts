@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import { octane } from '@octanejs/vite-plugin'
 import solid from '@solidjs/vite-plugin'
 import { defineConfig } from 'vite'
-import { universalRenderers } from '../src/components/octane/config.js'
+import { universalRenderers } from '../src/components/octane/index.js'
 
 export default defineConfig({
     plugins: [
