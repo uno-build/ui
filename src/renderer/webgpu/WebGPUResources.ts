@@ -90,10 +90,6 @@ export default class WebGPUResources {
         this.font_manager.dispose()
     }
 
-    public listImages(): any[] {
-        return this.image_manager.imageList()
-    }
-
     public present() {
         if (this.has_present) {
             this.context.present()

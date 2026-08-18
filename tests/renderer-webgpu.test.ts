@@ -67,14 +67,10 @@ test('RendererWebGPU skips fully transparent panel instance data', () => {
 })
 
 test('RendererWebGPU destroy releases UI buffers without disposing shared resources', () => {
-    const removed_nodes = []
     let image_manager_dispose_count = 0
     let font_manager_dispose_count = 0
     const image_manager = {
         ...createImageManager(),
-        removeNode(node) {
-            removed_nodes.push(node)
-        },
         dispose() {
             image_manager_dispose_count++
         },
@@ -114,7 +110,6 @@ test('RendererWebGPU destroy releases UI buffers without disposing shared resour
 
     renderer.destroy(nodes)
 
-    expect(removed_nodes).toEqual(nodes)
     expect(destroyed_engine_nodes).toBe(nodes)
     expect(destroyed_buffers).toEqual(buffer_names)
     expect(image_manager_dispose_count).toBe(0)
@@ -3024,16 +3019,13 @@ test('ImageManager creates separate resources for separate srcs with the same bi
 test('ImageManager dispose resets its atlas and remains reusable', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    const atlas_image = image_manager.imageUpload('first', createImage('first.png', 32, 32))
-    const node = createNode()
+    image_manager.imageUpload('first', createImage('first.png', 32, 32))
     const old_texture = device.textures[0]
 
-    image_manager.addNode(node, atlas_image)
     image_manager.dispose()
 
     expect(old_texture.destroyed).toBe(true)
     expect(image_manager.images.size).toBe(0)
-    expect(atlas_image.nodes.size).toBe(0)
     expect(image_manager.texture_version).toBe(1)
     expect(device.textures).toHaveLength(1)
 
@@ -3087,11 +3079,26 @@ test('ImageManager reuses disposed atlas space before growing the atlas', () => 
     expect(device.texture_copies).toHaveLength(texture_copy_count)
 })
 
-test('ImageManager replaces resources uploaded with the same src', () => {
+test('ImageManager rejects resources uploaded with the same src', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
     const first = image_manager.imageUpload('avatar', createImage('avatar-small.png', 32, 32))
     const copy_count = device.copies.length
+
+    expect(() => image_manager.imageUpload('avatar', createImage('avatar-large.png', 64, 16))).toThrow(
+        'Image "avatar" is already registered.',
+    )
+    expect(image_manager.getImage('avatar')).toBe(first)
+    expect(device.copies).toHaveLength(copy_count)
+})
+
+test('ImageManager allows registering the same src after disposal', () => {
+    const device = createFakeDevice()
+    const image_manager = createRealImageManager(device)
+    const first = image_manager.imageUpload('avatar', createImage('avatar-small.png', 32, 32))
+    const copy_count = device.copies.length
+
+    image_manager.imageDispose('avatar')
     const second = image_manager.imageUpload('avatar', createImage('avatar-large.png', 64, 16))
 
     expect(second).not.toBe(first)
@@ -3100,22 +3107,28 @@ test('ImageManager replaces resources uploaded with the same src', () => {
     expect(device.copies).toHaveLength(copy_count + 1)
 })
 
-test('ImageManager lists uploaded images', () => {
+test('RendererWebGPU resolves an image registered again under the same src', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
-    const first_image = createImage('first.png', 32, 32)
-    const second_image = createImage('second.png', 64, 16)
+    const renderer = createRenderer(image_manager)
+    const node = createNode({
+        styles: {
+            backgroundImage: {
+                value: 'avatar',
+                parsed: {},
+            },
+        },
+    })
+    const first = image_manager.imageUpload('avatar', createImage('avatar-small.png', 32, 32))
+    const first_panel = collectRenderData(renderer, [node]).panels[0]
 
-    image_manager.imageUpload('first', first_image)
-    image_manager.imageUpload('second', second_image)
+    image_manager.imageDispose('avatar')
+    const second = image_manager.imageUpload('avatar', createImage('avatar-large.png', 64, 16))
+    const second_panel = collectRenderData(renderer, [node]).panels[0]
 
-    expect(image_manager.imageList()).toEqual([
-        { src: 'first', nodes: expect.any(Set) },
-        { src: 'second', nodes: expect.any(Set) },
-    ])
-
-    image_manager.imageDispose('first')
-    expect(image_manager.imageList()).toEqual([{ src: 'second', nodes: expect.any(Set) }])
+    expect(first_panel.background_uv_rect).toEqual(first.uv_rect)
+    expect(second_panel.background_uv_rect).toEqual(second.uv_rect)
+    expect(second_panel.background_uv_rect).not.toEqual(first_panel.background_uv_rect)
 })
 
 test('ImageManager packs small images into atlas layers', () => {
@@ -3307,20 +3320,35 @@ test('FontManager dispose resets its atlas and remains reusable', () => {
     expect(device.textures.at(-1).descriptor.size.depthOrArrayLayers).toBe(1)
 })
 
-test('FontManager replaces a registered font in the same texture layer', () => {
+test('FontManager rejects a font registered with the same name', () => {
     const device = createFakeDevice()
     const font_manager = createRealFontManager(device)
     const first = font_manager.fontRegister('Poppins', createImage('Poppins-small.png', 256, 256), createFontJson())
+    const copy_count = device.copies.length
     const second_image = createImage('Poppins-large.png', 512, 128)
-    const second = font_manager.fontRegister('Poppins', second_image, createFontJson())
+
+    expect(() => font_manager.fontRegister('Poppins', second_image, createFontJson())).toThrow(
+        'Font "Poppins" is already registered.',
+    )
+    expect(font_manager.getFont('Poppins')).toBe(first)
+    expect(font_manager.getDefaultFont()).toBe(first)
+    expect(device.copies).toHaveLength(copy_count)
+    expect(getAtlasTextures(device)).toHaveLength(1)
+})
+
+test('FontManager allows registering the same name after disposal', () => {
+    const device = createFakeDevice()
+    const font_manager = createRealFontManager(device)
+    const first = font_manager.fontRegister('Poppins', createImage('Poppins-small.png', 256, 256), createFontJson())
+
+    font_manager.fontDispose('Poppins')
+    const second = font_manager.fontRegister('Poppins', createImage('Poppins-large.png', 512, 128), createFontJson())
 
     expect(second).not.toBe(first)
     expect(second.layer).toBe(first.layer)
-    expect(second.image).toBe(second_image)
     expect(second.image_size).toEqual([512, 128])
+    expect(font_manager.getFont('Poppins')).toBe(second)
     expect(font_manager.getDefaultFont()).toBe(second)
-    expect(device.copies[1].destination.origin).toEqual([0, 0, 0])
-    expect(getAtlasTextures(device)).toHaveLength(1)
 })
 
 test('FontManager grows the font texture when physical layer capacity is full', () => {

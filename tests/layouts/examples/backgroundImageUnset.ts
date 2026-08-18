@@ -36,19 +36,6 @@ export default async function createBackgroundImageUnsetLayout({ ui, context }) 
         setBackgroundImage(live, states[state_index])
         ui.update()
         ui.draw()
-
-        // console.log(ui.renderer.image_manager?.atlas_layer_count)
-
-        if (context.listImages !== undefined) {
-            const image_list = context.listImages()
-            for (const image of image_list) {
-                console.log(`Nodes using ${image.src}:`, image.nodes.size)
-                // if (image.nodes.size === 0) {
-                // context.disposeImage(image.src)
-                // }
-            }
-            console.log('----')
-        }
     }, SWITCH_INTERVAL)
 }
 

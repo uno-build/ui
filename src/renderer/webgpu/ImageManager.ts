@@ -1,4 +1,3 @@
-import type Node from '../../core/Node'
 import {
     allocateFreeRect,
     allocateSkylineRect,
@@ -29,7 +28,6 @@ export type ManagedAtlasImage = AtlasImage & {
     y: number
     width: number
     height: number
-    nodes: Set<Node>
 }
 
 export class ImageManager {
@@ -52,9 +50,6 @@ export class ImageManager {
     public dispose(): void {
         this.atlas_texture?.destroy()
 
-        for (const atlas_image of this.images.values()) {
-            atlas_image.nodes.clear()
-        }
         for (const atlas_layer of this.atlas_layers) {
             atlas_layer.skyline.length = 0
             atlas_layer.free_rects.length = 0
@@ -73,13 +68,6 @@ export class ImageManager {
         return this.images.get(src)
     }
 
-    public imageList(): any[] {
-        return Array.from(this.images, ([src, atlas_image]) => ({
-            src,
-            nodes: atlas_image.nodes,
-        }))
-    }
-
     public getTextureView() {
         return this.getAtlasTexture().createView({
             dimension: '2d-array',
@@ -87,13 +75,15 @@ export class ImageManager {
     }
 
     public imageUpload(src: string, image: any): ManagedAtlasImage {
+        if (this.images.has(src)) {
+            throw new Error(`Image "${src}" is already registered.`)
+        }
+
         if (image.width > this.atlas_size || image.height > this.atlas_size) {
             throw new Error(
                 `Image "${image.src}" is ${image.width}x${image.height}, which exceeds the ${this.atlas_size}x${this.atlas_size} UI atlas layer size.`,
             )
         }
-
-        this.imageDispose(src)
 
         const allocation = this.allocateAtlasRect(image.width, image.height)
 
@@ -124,7 +114,6 @@ export class ImageManager {
             y: allocation.y,
             width: allocation.width,
             height: allocation.height,
-            nodes: new Set(),
         }
 
         this.images.set(src, new_atlas_image)
@@ -140,26 +129,12 @@ export class ImageManager {
         }
 
         this.images.delete(src)
-        atlas_image.nodes.clear()
         atlas_image.atlas_layer.free_rects = releaseAtlasRect(atlas_image.atlas_layer.free_rects, {
             x: atlas_image.x,
             y: atlas_image.y,
             width: atlas_image.width,
             height: atlas_image.height,
         })
-    }
-
-    public addNode(node: Node, atlas_image: ManagedAtlasImage): void {
-        atlas_image.nodes.add(node)
-    }
-
-    public removeNode(node: Node): ManagedAtlasImage | undefined {
-        for (const atlas_image of this.images.values()) {
-            if (atlas_image.nodes.has(node)) {
-                atlas_image.nodes.delete(node)
-                return atlas_image
-            }
-        }
     }
 
     private allocateAtlasRect(width, height) {

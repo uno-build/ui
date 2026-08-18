@@ -176,10 +176,6 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public destroy(nodes) {
-        for (const node of nodes) {
-            this.image_manager.removeNode(node)
-        }
-
         this.engine.destroy(nodes)
         this.position_buffer.destroy()
         this.viewport_buffer.destroy()
@@ -408,9 +404,6 @@ export default class RendererWebGPU extends Renderer {
 
     public removeChild(parent, node) {
         this.engine.removeChild(parent, node)
-        if (node.styles.hasOwnProperty(STYLE.BACKGROUNDIMAGE.name)) {
-            this.image_manager.removeNode(node)
-        }
     }
 
     protected updateStyle(node, resolved_style) {
@@ -467,19 +460,6 @@ export default class RendererWebGPU extends Renderer {
                         (has_horizontal_scrollbar ? this.scrollbar_size : 0),
                 },
             })
-        }
-
-        if (style.name === STYLE.BACKGROUNDIMAGE.name) {
-            this.image_manager.removeNode(node)
-            if (style.parsed.kind !== KEYWORD.UNSET) {
-                const atlas_image = this.image_manager.getImage(style.value)
-
-                if (atlas_image === undefined) {
-                    return
-                }
-
-                this.image_manager.addNode(node, atlas_image)
-            }
         }
     }
 

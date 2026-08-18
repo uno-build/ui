@@ -80,6 +80,24 @@ test('RendererDom resolves natural and unset lineHeight from registered font met
     expect(element.style.lineHeight).toBe('1.5')
 })
 
+test('DOMResources rejects duplicate fonts and allows registration after disposal', () => {
+    const dom = DOMResources.create()
+    const first_metrics = { lineHeight: 1.5 }
+    const second_metrics = { lineHeight: 2 }
+
+    dom.registerFont('Poppins', {}, { metrics: first_metrics })
+
+    expect(() => dom.registerFont('Poppins', {}, { metrics: second_metrics })).toThrow(
+        'Font "Poppins" is already registered.',
+    )
+    expect(dom.getFont('Poppins')).toBe(first_metrics)
+
+    dom.disposeFont('Poppins')
+    dom.registerFont('Poppins', {}, { metrics: second_metrics })
+
+    expect(dom.getFont('Poppins')).toBe(second_metrics)
+})
+
 test('RendererDom synchronizes node scroll state after update', () => {
     const canvas = createScrollableElement({
         scroll_width: 600,

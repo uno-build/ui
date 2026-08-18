@@ -519,13 +519,9 @@ test('WebGPUResources image api delegates to the image manager', () => {
         imageDispose(src) {
             calls.push({ kind: 'dispose', src })
         },
-        imageList() {
-            return [image]
-        },
     }
 
     webgpu.registerImage('/assets/Avatar.png', image)
-    expect(webgpu.listImages()).toEqual([image])
     webgpu.disposeImage('/assets/Avatar.png')
     expect(calls).toEqual([
         { kind: 'upload', src: '/assets/Avatar.png', image },

@@ -60,14 +60,17 @@ export class FontManager {
     }
 
     public fontRegister(name: string, image: any, json: any): ManagedFont {
+        if (this.fonts.has(name)) {
+            throw new Error(`Font "${name}" is already registered.`)
+        }
+
         if (image.width > this.atlas_size || image.height > this.atlas_size) {
             throw new Error(
                 `Font "${name}" atlas is ${image.width}x${image.height}, which exceeds the ${this.atlas_size}x${this.atlas_size} UI font atlas layer size.`,
             )
         }
 
-        const current_font = this.fonts.get(name)
-        const layer = current_font?.layer ?? this.allocateFontLayer()
+        const layer = this.allocateFontLayer()
 
         const font_texture = this.getFontTexture()
 
