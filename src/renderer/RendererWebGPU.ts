@@ -48,7 +48,12 @@ import {
 import Segmenter from './pretext/segmenter'
 
 const FONT_COLOR = [0, 0, 0, 255]
-const TEXT_MEASURE_STYLE_NAMES = [STYLE.FONTSIZE.name, STYLE.LINEHEIGHT.name, STYLE.LETTERSPACING.name]
+const TEXT_MEASURE_STYLE_NAMES = new Set([
+    STYLE.FONTFAMILY.name,
+    STYLE.FONTSIZE.name,
+    STYLE.LINEHEIGHT.name,
+    STYLE.LETTERSPACING.name,
+])
 
 export default class RendererWebGPU extends Renderer {
     private webgpu
@@ -412,6 +417,10 @@ export default class RendererWebGPU extends Renderer {
         for (const style of resolved_style.expanded) {
             this.updateResolvedStyle(node, style)
         }
+
+        if (node.isTextNode() && TEXT_MEASURE_STYLE_NAMES.has(resolved_style.name)) {
+            this.invalidateTextNode(node)
+        }
     }
 
     private updateResolvedStyle(node, style) {
@@ -491,7 +500,7 @@ export default class RendererWebGPU extends Renderer {
                     }
 
                     this.updateResolvedStyle(node, { name, ...style })
-                    invalidate_text ||= TEXT_MEASURE_STYLE_NAMES.includes(name)
+                    invalidate_text ||= TEXT_MEASURE_STYLE_NAMES.has(name)
                 }
 
                 if (invalidate_text && node.isTextNode()) {

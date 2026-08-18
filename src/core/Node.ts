@@ -1,5 +1,3 @@
-import { normalizeStyleKey } from '../style/normalizers'
-
 export default class Node {
     public ui
     public element = null
@@ -38,13 +36,9 @@ export default class Node {
         }
     }
 
-    public style(name, value, parsed?) {
+    public style(name, value) {
         if (this.ui !== null) {
-            this.ui.style(this, name, value, parsed)
-
-            if (this.isTextNode() && isTextMeasureStyle(name)) {
-                this.ui.renderer.invalidateTextNode(this)
-            }
+            this.ui.style(this, name, value)
         }
     }
 
@@ -104,8 +98,4 @@ export default class Node {
     public get clientWidth() {
         return this.client_width
     }
-}
-
-function isTextMeasureStyle(name) {
-    return ['FONTFAMILY', 'FONTSIZE', 'LINEHEIGHT', 'LETTERSPACING'].includes(normalizeStyleKey(name))
 }

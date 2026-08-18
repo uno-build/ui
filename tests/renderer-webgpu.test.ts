@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import Segmenter from '../src/renderer/pretext/segmenter.ts'
+import { resolveStyle } from '../src/style/index.ts'
 import {
     BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
@@ -2120,6 +2121,56 @@ test('RendererWebGPU invalidates prepared text', () => {
 
     expect(marked_dirty).toBe(true)
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(20.8)
+})
+
+const TEXT_MEASURE_STYLES = [
+    ['fontFamily', 'Poppins'],
+    ['fontSize', '20px'],
+    ['lineHeight', '1.5'],
+    ['letter-spacing', '0.125rem'],
+]
+
+for (const [style_name, style_value] of TEXT_MEASURE_STYLES) {
+    test(`RendererWebGPU invalidates ${style_name} text measurement during update`, () => {
+        const renderer = createRenderer()
+        const dirty_nodes = []
+        const node = createNode({ text_content: 'Text' })
+        ;(renderer as any).engine = {
+            applyStyle() {},
+            markDirty(target) {
+                dirty_nodes.push(target)
+            },
+            calculate() {},
+        }
+
+        renderer.addPendingStyle(node, resolveStyle(style_name, style_value))
+
+        expect(dirty_nodes).toEqual([])
+
+        renderer.beforeUpdate([node])
+
+        expect(dirty_nodes).toEqual([node])
+    })
+}
+
+test('RendererWebGPU ignores text invalidation for unrelated styles and nodes without text', () => {
+    const renderer = createRenderer()
+    const dirty_nodes = []
+    const text_node = createNode({ text_content: 'Text' })
+    const empty_node = createNode()
+    ;(renderer as any).engine = {
+        applyStyle() {},
+        markDirty(target) {
+            dirty_nodes.push(target)
+        },
+        calculate() {},
+    }
+
+    renderer.addPendingStyle(text_node, resolveStyle('backgroundColor', '#123'))
+    renderer.addPendingStyle(empty_node, resolveStyle('fontSize', '20px'))
+    renderer.beforeUpdate([text_node, empty_node])
+
+    expect(dirty_nodes).toEqual([])
 })
 
 test('RendererWebGPU recalculates rem text after the root size changes', () => {

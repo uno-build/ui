@@ -423,32 +423,25 @@ test('Node text cannot have children', async () => {
     expect(() => text.add(ui.create())).toThrow(/Nodes with text cannot have children/)
 })
 
-test('Node lineHeight invalidates text measurement', async () => {
+test('Node style does not invalidate text measurement directly', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
-
+    const invalidated_nodes = []
     const node = ui.create()
     node.text('Text')
-    let invalidated_node
     renderer.invalidateTextNode = (node) => {
-        invalidated_node = node
+        invalidated_nodes.push(node)
     }
 
-    node.style('lineHeight', '1.5')
+    node.style('fontSize', '20px')
 
-    expect(invalidated_node).toBe(node)
+    expect(invalidated_nodes).toEqual([])
 })
 
-test('Node letterSpacing invalidates text measurement', async () => {
+test('Node stores normalized text measurement styles', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
-
     const node = ui.create()
-    node.text('Text')
-    let invalidated_node
-    renderer.invalidateTextNode = (node) => {
-        invalidated_node = node
-    }
 
     node.style('letter-spacing', '0.125rem')
 
@@ -456,7 +449,6 @@ test('Node letterSpacing invalidates text measurement', async () => {
         value: '0.125rem',
         parsed: { value: 0.125, kind: 'rem' },
     })
-    expect(invalidated_node).toBe(node)
 })
 
 test('overflow shorthand and longhands follow assignment order', async () => {
