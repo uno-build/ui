@@ -1,3 +1,5 @@
+import { resolveStyle, validateStyle } from '../style'
+
 export default class Node {
     public ui
     public element = null
@@ -37,8 +39,18 @@ export default class Node {
     }
 
     public style(name, value) {
-        if (this.ui !== null) {
-            this.ui.style(this, name, value)
+        if (this.ui !== null && !this.ui.destroyed) {
+            const normalized_name = validateStyle(name, value)
+            if (this.styles[normalized_name]?.value !== value) {
+                const resolved_style = resolveStyle(normalized_name, value)
+                for (const style of resolved_style.expanded) {
+                    this.styles[style.name] = {
+                        value: style.value,
+                        parsed: style.parsed,
+                    }
+                }
+                this.ui.renderer.addPendingStyle(this, resolved_style)
+            }
         }
     }
 
