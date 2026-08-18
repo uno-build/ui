@@ -172,11 +172,13 @@ function createStyle(name, shorthandCallback) {
 
 function expandHelper(name, value, definitions) {
     const values = expandProperty(name, value)
-    return Object.keys(values).map((key) => ({
-        name: key,
-        value: values[key],
-        definition: definitions[key],
-    }))
+    return Object.keys(definitions)
+        .filter((key) => Object.hasOwn(values, key))
+        .map((key) => ({
+            name: key,
+            value: values[key],
+            definition: definitions[key],
+        }))
 }
 
 /* prettier-ignore */
@@ -226,8 +228,8 @@ export const STYLE = {
         expandHelper(name, value, {
             borderTopLeftRadius: PX_PERCENT_DEFINITION,
             borderTopRightRadius: PX_PERCENT_DEFINITION,
-            borderBottomLeftRadius: PX_PERCENT_DEFINITION,
             borderBottomRightRadius: PX_PERCENT_DEFINITION,
+            borderBottomLeftRadius: PX_PERCENT_DEFINITION,
         })
     ),
     BORDERTOPLEFTRADIUS: createStyle('borderTopLeftRadius', (name, value) => [

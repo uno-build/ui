@@ -20,6 +20,14 @@ test('flex expands to grow, shrink, basis', () => {
         { name: 'flexBasis', value: '0%', parsed: { value: 0, kind: '%' } },
     ])
 
+    const flex_basis = [
+        { name: 'flexGrow', value: '1', parsed: { value: 1 } },
+        { name: 'flexShrink', value: '1', parsed: { value: 1 } },
+        { name: 'flexBasis', value: '10px', parsed: { value: 10, kind: 'px' } },
+    ]
+    expect(Style.resolveStyle('flex', '1 10px').expanded).toEqual(flex_basis)
+    expect(Style.resolveStyle('flex', '1 1 10px').expanded).toEqual(flex_basis)
+
     expect(Style.resolveStyle('flex', ' Unset ').expanded).toEqual([
         { name: 'flexGrow', value: 'unset', parsed: { kind: 'unset' } },
         { name: 'flexShrink', value: 'unset', parsed: { kind: 'unset' } },
@@ -76,21 +84,24 @@ test('margin expands to four edges', () => {
     ])
 })
 
-test('border expands to width, style, color on each edge', () => {
-    expect(Style.resolveStyle('border', '2px solid #123').expanded).toEqual([
+test('border expands in canonical width, style, color order', () => {
+    const expanded = [
         { name: 'borderTopWidth', value: '2px', parsed: { value: 2, kind: 'px' } },
-        { name: 'borderTopStyle', value: 'solid', parsed: { enum: 1 } },
-        { name: 'borderTopColor', value: '#123', parsed: { rgba: [17, 34, 51, 255] } },
         { name: 'borderRightWidth', value: '2px', parsed: { value: 2, kind: 'px' } },
-        { name: 'borderRightStyle', value: 'solid', parsed: { enum: 1 } },
-        { name: 'borderRightColor', value: '#123', parsed: { rgba: [17, 34, 51, 255] } },
         { name: 'borderBottomWidth', value: '2px', parsed: { value: 2, kind: 'px' } },
-        { name: 'borderBottomStyle', value: 'solid', parsed: { enum: 1 } },
-        { name: 'borderBottomColor', value: '#123', parsed: { rgba: [17, 34, 51, 255] } },
         { name: 'borderLeftWidth', value: '2px', parsed: { value: 2, kind: 'px' } },
+        { name: 'borderTopStyle', value: 'solid', parsed: { enum: 1 } },
+        { name: 'borderRightStyle', value: 'solid', parsed: { enum: 1 } },
+        { name: 'borderBottomStyle', value: 'solid', parsed: { enum: 1 } },
         { name: 'borderLeftStyle', value: 'solid', parsed: { enum: 1 } },
+        { name: 'borderTopColor', value: '#123', parsed: { rgba: [17, 34, 51, 255] } },
+        { name: 'borderRightColor', value: '#123', parsed: { rgba: [17, 34, 51, 255] } },
+        { name: 'borderBottomColor', value: '#123', parsed: { rgba: [17, 34, 51, 255] } },
         { name: 'borderLeftColor', value: '#123', parsed: { rgba: [17, 34, 51, 255] } },
-    ])
+    ]
+
+    expect(Style.resolveStyle('border', '2px solid #123').expanded).toEqual(expanded)
+    expect(Style.resolveStyle('border', 'solid #123 2px').expanded).toEqual(expanded)
 })
 
 test('borderRadius expands to four corners', () => {

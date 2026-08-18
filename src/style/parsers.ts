@@ -1,7 +1,9 @@
 import { KEYWORD, UNIT } from './consts'
 import { readInteger, readNumber, readUnit } from './utils'
 
-const ZERO_LENGTH = { value: 0, kind: UNIT.PX }
+function createZeroLength() {
+    return { value: 0, kind: UNIT.PX }
+}
 
 export function parseString(value: string) {
     return {
@@ -58,10 +60,10 @@ export function parseBoxShadow(value: string) {
             value,
             parsed: {
                 box_shadow: {
-                    offset_x: ZERO_LENGTH,
-                    offset_y: ZERO_LENGTH,
-                    blur: ZERO_LENGTH,
-                    spread: ZERO_LENGTH,
+                    offset_x: createZeroLength(),
+                    offset_y: createZeroLength(),
+                    blur: createZeroLength(),
+                    spread: createZeroLength(),
                     color: [0, 0, 0, 0],
                 },
             },
@@ -90,9 +92,9 @@ export function parseTextShadow(value: string) {
             value,
             parsed: {
                 text_shadow: {
-                    offset_x: ZERO_LENGTH,
-                    offset_y: ZERO_LENGTH,
-                    blur: ZERO_LENGTH,
+                    offset_x: createZeroLength(),
+                    offset_y: createZeroLength(),
+                    blur: createZeroLength(),
                     color: [0, 0, 0, 0],
                 },
             },
@@ -120,7 +122,7 @@ export function parseTextStroke(value: string) {
             value,
             parsed: {
                 text_stroke: {
-                    width: ZERO_LENGTH,
+                    width: createZeroLength(),
                     color: [0, 0, 0, 0],
                 },
             },

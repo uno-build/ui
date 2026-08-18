@@ -174,6 +174,24 @@ test('textStroke', () => {
     expectInvalid('textStroke', true, /style value must be a string/)
 })
 
+test('unset shadow lengths do not share references', () => {
+    const box_shadow = Style.resolveStyle('boxShadow', 'unset').expanded[0].parsed.box_shadow
+    const next_box_shadow = Style.resolveStyle('boxShadow', 'unset').expanded[0].parsed.box_shadow
+    const text_shadow = Style.resolveStyle('textShadow', 'unset').expanded[0].parsed.text_shadow
+    const next_text_shadow = Style.resolveStyle('textShadow', 'unset').expanded[0].parsed.text_shadow
+    const text_stroke = Style.resolveStyle('textStroke', 'unset').expanded[0].parsed.text_stroke
+    const next_text_stroke = Style.resolveStyle('textStroke', 'unset').expanded[0].parsed.text_stroke
+
+    expect(box_shadow.offset_x).not.toBe(box_shadow.offset_y)
+    expect(box_shadow.offset_x).not.toBe(box_shadow.blur)
+    expect(box_shadow.offset_x).not.toBe(box_shadow.spread)
+    expect(box_shadow.offset_x).not.toBe(next_box_shadow.offset_x)
+    expect(text_shadow.offset_x).not.toBe(text_shadow.offset_y)
+    expect(text_shadow.offset_x).not.toBe(text_shadow.blur)
+    expect(text_shadow.offset_x).not.toBe(next_text_shadow.offset_x)
+    expect(text_stroke.width).not.toBe(next_text_stroke.width)
+})
+
 test('backgroundImage', () => {
     expectKeywordUnit('backgroundImage', ' Unset ', 'unset')
     expectResolved('backgroundImage', '/assets/Avatar/Icon.png', '/assets/Avatar/Icon.png', {})
