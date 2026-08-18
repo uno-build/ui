@@ -62,7 +62,9 @@ function createUniversalDriver({ ui }) {
                         return a.id < b.id ? -1 : 1
                     })
                     for (let command of sorted_commands) {
-                        console.log(command)
+                        // console.log(command)
+
+                        // Create
                         if (command.op === 'create') {
                             const node = ui.create()
                             const styles = Object.entries(command.props.style || {})
@@ -72,10 +74,21 @@ function createUniversalDriver({ ui }) {
                             instances.set(command.id, node)
 
                         }
+
+                        // Insert / Add
                         if (command.op === 'insert') {
                             const parent = instances.get(command.parent)
                             const node = instances.get(command.id)
                             parent.add(node)
+                        }
+
+                        // Update
+                        if (command.op === 'update') {
+                            const node = instances.get(command.id)
+                            const styles = Object.entries(command.props.style || {})
+                            for (const [key, value] of styles) {
+                                node.style(key, value)
+                            }
                         }
                     }
                     ui.update()
@@ -90,5 +103,4 @@ function createUniversalDriver({ ui }) {
         },
     };
 }
-
 
