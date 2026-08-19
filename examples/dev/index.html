@@ -16,6 +16,12 @@
                 font-weight: normal;
                 font-style: normal;
             }
+            @font-face {
+                font-family: 'Nougat-ExtraBlack';
+                src: url('/assets/fonts/Nougat-ExtraBlack.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
 
             * {
                 user-select: none;
@@ -181,17 +187,9 @@
             let settingsDragPointerId = null
             const saved_renderer_opacities = getSavedRendererOpacities()
 
-            function getSettingsPanelPosition(left, top) {
-                return {
-                    left: Math.max(0, Math.min(left, window.innerWidth - settingsPanel.offsetWidth)),
-                    top: Math.max(0, Math.min(top, window.innerHeight - settingsPanel.offsetHeight)),
-                }
-            }
-
             function moveSettingsPanel(left, top) {
-                const settings_panel_position = getSettingsPanelPosition(left, top)
-                settingsPanel.style.left = `${settings_panel_position.left}px`
-                settingsPanel.style.top = `${settings_panel_position.top}px`
+                settingsPanel.style.left = `${left}px`
+                settingsPanel.style.top = `${top}px`
             }
 
             function saveSettingsPanelPosition() {
@@ -209,7 +207,22 @@
                 }
 
                 const settings_panel_position = JSON.parse(saved_settings_panel_position)
-                moveSettingsPanel(settings_panel_position.left, settings_panel_position.top)
+                let left = settings_panel_position.left
+                let top = settings_panel_position.top
+
+                if (left + settingsPanel.offsetWidth <= 0) {
+                    left = 0
+                } else if (left >= window.innerWidth) {
+                    left = window.innerWidth - settingsPanel.offsetWidth
+                }
+
+                if (top + settingsPanel.offsetHeight <= 0) {
+                    top = 0
+                } else if (top >= window.innerHeight) {
+                    top = window.innerHeight - settingsPanel.offsetHeight
+                }
+
+                moveSettingsPanel(left, top)
             }
 
             restoreSettingsPanelPosition()
@@ -288,8 +301,6 @@
             settingsPanel.addEventListener('pointerup', endSettingsPanelDrag)
             settingsPanel.addEventListener('pointercancel', endSettingsPanelDrag)
             settingsPanel.addEventListener('lostpointercapture', endSettingsPanelDrag)
-
-            window.addEventListener('resize', restoreSettingsPanelPosition)
 
             function addRendererSettings() {
                 Array.from(root.children).forEach((renderer) => {
