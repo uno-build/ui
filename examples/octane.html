@@ -23,7 +23,7 @@
     <body>
         <canvas></canvas>
         <script type="module">
-            import { createUniversalRendererRoot } from '../src/components/octane/index.js'
+            import { registerRootComponent } from '../src/components/octane/index.js'
             import { BasicComponent } from './octane'
             import ResourcesWebGPU from '../src/renderer/webgpu/ResourcesWebGPU'
             import ResourcesDom from '../src/renderer/dom/ResourcesDom'
@@ -65,8 +65,8 @@
                 })
 
                 // Octane
-                const renderer = createUniversalRendererRoot({ ui })
-                renderer.render(BasicComponent, {})
+                const renderer = registerRootComponent(BasicComponent, { ui })
+                renderer.render({})
                 // renderer.unmount()
             }
 

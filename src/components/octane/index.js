@@ -4,9 +4,9 @@ import { createUniversalRoot } from 'octane/universal/native';
 
 const RENDERER_ID = 'uno'
 const TYPE = {
-    TEXT: '#text',
     TAG_VIEW: 'view',
     TAG_TEXT: 'text',
+    TEXT: '#text',
 }
 const TYPES = Object.values(TYPE)
 
@@ -28,14 +28,14 @@ export const viteConfigOctane = {
     }
 }
 
-export function createUniversalRendererRoot({ ui }) {
+export function registerRootComponent(component, { ui }) {
     const host = createUniversalRoot(
         { renderer: RENDERER_ID },
         createUniversalDriver({ ui }),
     );
 
     return {
-        render(component, props) {
+        render(props) {
             host.render(component, props);
         },
         unmount() {
@@ -44,7 +44,7 @@ export function createUniversalRendererRoot({ ui }) {
     };
 }
 
-function createUniversalDriver({ ui }) {
+export function createUniversalDriver({ ui }) {
     const instances = new Map()
     instances.set(null, { node: ui.root, type: null, props: {} })
 
@@ -72,12 +72,12 @@ function createUniversalDriver({ ui }) {
                             const parent = instances.get(command.parent)
                             const child = instances.get(id)
 
-                            // If the parent is a <Text> component, it cannot have children that are not text nodes.
+                            // If the parent is a <Text> component, it cannot have children that are not #text nodes.
                             if (parent.type === TYPE.TAG_TEXT && child.type !== TYPE.TEXT) {
                                 throw new Error(`<Text> cannot have children.`)
                             }
 
-                            // If the child is a text node, it must be inserted into a <Text> component.
+                            // If the child is a #text node, it must be inserted into a <Text> component.
                             if (child.type === TYPE.TEXT) {
                                 if (parent.type !== TYPE.TAG_TEXT) {
                                     throw new Error(`Texts must be inserted into a <Text> component.`)

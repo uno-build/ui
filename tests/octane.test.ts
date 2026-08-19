@@ -1,11 +1,6 @@
 import { expect, test } from '@playwright/test'
-import {
-    defineUniversalComponent,
-    universalFor,
-    universalPlan,
-    universalValue,
-} from 'octane/universal/native'
-import { createUniversalRendererRoot } from '../src/components/octane/index.js'
+import { defineUniversalComponent, universalFor, universalPlan, universalValue } from 'octane/universal/native'
+import { createUniversalDriver, registerRootComponent } from '../src/components/octane/index.js'
 import TestRenderer from './TestRenderer.ts'
 import TestUI from './TestUI.ts'
 
@@ -27,9 +22,7 @@ const STATIC_TREE_PLAN = universalPlan('uno', {
     ],
 })
 
-const STATIC_TREE_COMPONENT = defineUniversalComponent('uno', () =>
-    universalValue(STATIC_TREE_PLAN),
-)
+const STATIC_TREE_COMPONENT = defineUniversalComponent('uno', () => universalValue(STATIC_TREE_PLAN))
 
 const DYNAMIC_STYLE_PLAN = universalPlan('uno', {
     kind: 'host',
@@ -37,9 +30,8 @@ const DYNAMIC_STYLE_PLAN = universalPlan('uno', {
     bindings: [['style', 0]],
 })
 
-const DYNAMIC_STYLE_COMPONENT = defineUniversalComponent<{ style: Record<string, string> }>(
-    'uno',
-    (props) => universalValue(DYNAMIC_STYLE_PLAN, [props.style]),
+const DYNAMIC_STYLE_COMPONENT = defineUniversalComponent<{ style: Record<string, string> }>('uno', (props) =>
+    universalValue(DYNAMIC_STYLE_PLAN, [props.style]),
 )
 
 const REF_PLAN = universalPlan('uno', {
@@ -85,22 +77,43 @@ const KEYED_LIST_PLAN = universalPlan('uno', {
     children: [{ kind: 'slot', slot: 0 }],
 })
 
-const KEYED_LIST_COMPONENT = defineUniversalComponent<{ items: { id: string; width: string }[] }>(
-    'uno',
-    (props) =>
-        universalValue(KEYED_LIST_PLAN, [
-            universalFor(
-                props.items,
-                (item) => item.id,
-                (item) => universalValue(KEYED_ITEM_PLAN, [{ width: item.width }]),
-            ),
-        ]),
+const KEYED_LIST_COMPONENT = defineUniversalComponent<{ items: { id: string; width: string }[] }>('uno', (props) =>
+    universalValue(KEYED_LIST_PLAN, [
+        universalFor(
+            props.items,
+            (item) => item.id,
+            (item) => universalValue(KEYED_ITEM_PLAN, [{ width: item.width }]),
+        ),
+    ]),
 )
+
+const UNSUPPORTED_TAG_PLAN = universalPlan('uno', {
+    kind: 'host',
+    type: 'image',
+})
+
+const UNSUPPORTED_TAG_COMPONENT = defineUniversalComponent('uno', () => universalValue(UNSUPPORTED_TAG_PLAN))
+
+const VIEW_INSIDE_TEXT_PLAN = universalPlan('uno', {
+    kind: 'host',
+    type: 'text',
+    children: [{ kind: 'host', type: 'view' }],
+})
+
+const VIEW_INSIDE_TEXT_COMPONENT = defineUniversalComponent('uno', () => universalValue(VIEW_INSIDE_TEXT_PLAN))
+
+const TEXT_INSIDE_VIEW_PLAN = universalPlan('uno', {
+    kind: 'host',
+    type: 'view',
+    children: [{ kind: 'text', value: 'Text' }],
+})
+
+const TEXT_INSIDE_VIEW_COMPONENT = defineUniversalComponent('uno', () => universalValue(TEXT_INSIDE_VIEW_PLAN))
 
 test('Octane create and insert build the Uno node tree and apply initial styles', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
-    const root = createUniversalRendererRoot({ ui })
+    const root = registerRootComponent(STATIC_TREE_COMPONENT, { ui })
     const created_nodes = []
     const create_node = ui.create.bind(ui)
     let update_count = 0
@@ -141,15 +154,15 @@ test('Octane create and insert build the Uno node tree and apply initial styles'
 test('Octane update changes Uno styles without replacing node identity', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
-    const root = createUniversalRendererRoot({ ui })
+    const root = registerRootComponent(DYNAMIC_STYLE_COMPONENT, { ui })
 
-    root.render(DYNAMIC_STYLE_COMPONENT, {
+    root.render({
         style: { width: '100px', height: '40px', backgroundColor: '#f00' },
     })
 
     const node = ui.root.children[0]
 
-    root.render(DYNAMIC_STYLE_COMPONENT, {
+    root.render({
         style: { width: '200px', height: '60px', backgroundColor: '#00f' },
     })
 
@@ -163,10 +176,10 @@ test('Octane update changes Uno styles without replacing node identity', async (
 test('Octane refs receive the Uno node public instance', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
-    const root = createUniversalRendererRoot({ ui })
+    const root = registerRootComponent(REF_COMPONENT, { ui })
     const ref = { current: null }
 
-    root.render(REF_COMPONENT, { ref })
+    root.render({ ref })
 
     const node = ui.root.children[0]
     expect(ref.current).toBe(node)
@@ -179,18 +192,18 @@ test('Octane refs receive the Uno node public instance', async () => {
 test('Octane insert and move place nodes before existing siblings', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
-    const root = createUniversalRendererRoot({ ui })
+    const root = registerRootComponent(KEYED_LIST_COMPONENT, { ui })
     const a = { id: 'a', width: '10px' }
     const b = { id: 'b', width: '20px' }
     const c = { id: 'c', width: '30px' }
     const x = { id: 'x', width: '40px' }
 
-    root.render(KEYED_LIST_COMPONENT, { items: [a, b, c] })
+    root.render({ items: [a, b, c] })
 
     const parent = ui.root.children[0]
     const [a_node, b_node, c_node] = parent.children
 
-    root.render(KEYED_LIST_COMPONENT, { items: [c, a, b] })
+    root.render({ items: [c, a, b] })
 
     expect(parent.children).toEqual([c_node, a_node, b_node])
     expect(parent.children.map((node) => node.path)).toEqual([
@@ -199,7 +212,7 @@ test('Octane insert and move place nodes before existing siblings', async () => 
         [0, 2],
     ])
 
-    root.render(KEYED_LIST_COMPONENT, { items: [c, x, a, b] })
+    root.render({ items: [c, x, a, b] })
 
     const x_node = parent.children[1]
     expect(parent.children).toEqual([c_node, x_node, a_node, b_node])
@@ -209,7 +222,7 @@ test('Octane insert and move place nodes before existing siblings', async () => 
 test('Octane remove and destroy detach and release the Uno subtree in order', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
-    const root = createUniversalRendererRoot({ ui })
+    const root = registerRootComponent(CONDITIONAL_TREE_COMPONENT, { ui })
     const operations = []
     const detach_child = renderer.detachChild.bind(renderer)
     const destroy_node = renderer.destroyNode.bind(renderer)
@@ -229,12 +242,12 @@ test('Octane remove and destroy detach and release the Uno subtree in order', as
         return update_ui()
     }
 
-    root.render(CONDITIONAL_TREE_COMPONENT, { visible: true })
+    root.render({ visible: true })
 
     const parent = ui.root.children[0]
     const child = parent.children[0]
 
-    root.render(CONDITIONAL_TREE_COMPONENT, { visible: false })
+    root.render({ visible: false })
 
     expect(operations).toEqual([
         { op: 'detach', parent: ui.root, node: parent },
@@ -254,11 +267,11 @@ test('Octane remove and destroy detach and release the Uno subtree in order', as
 test('Octane roots keep create, insert, remove, and destroy state isolated', async () => {
     const first_ui = await TestUI.create({ renderer: new TestRenderer() })
     const second_ui = await TestUI.create({ renderer: new TestRenderer() })
-    const first_root = createUniversalRendererRoot({ ui: first_ui })
-    const second_root = createUniversalRendererRoot({ ui: second_ui })
+    const first_root = registerRootComponent(STATIC_TREE_COMPONENT, { ui: first_ui })
+    const second_root = registerRootComponent(STATIC_TREE_COMPONENT, { ui: second_ui })
 
-    first_root.render(STATIC_TREE_COMPONENT, {})
-    second_root.render(STATIC_TREE_COMPONENT, {})
+    first_root.render({})
+    second_root.render({})
 
     const second_parent = second_ui.root.children[0]
     const second_children = [...second_parent.children]
@@ -275,4 +288,38 @@ test('Octane roots keep create, insert, remove, and destroy state isolated', asy
 
     expect(second_ui.root.children).toEqual([])
     expect([...second_ui.nodes]).toEqual([])
+})
+
+test('Octane rejects unsupported tag elements', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const root = registerRootComponent(UNSUPPORTED_TAG_COMPONENT, { ui })
+
+    expect(() => root.render({})).toThrow("Unsupported tag element '<image>'")
+})
+
+test('Octane rejects View children inside Text', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const root = registerRootComponent(VIEW_INSIDE_TEXT_COMPONENT, { ui })
+
+    expect(() => root.render({})).toThrow('<Text> cannot have children.')
+})
+
+test('Octane rejects text children outside Text', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const root = registerRootComponent(TEXT_INSIDE_VIEW_COMPONENT, { ui })
+
+    expect(() => root.render({})).toThrow('Texts must be inserted into a <Text> component.')
+})
+
+test('Octane rejects unsupported renderer commands', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const driver = createUniversalDriver({ ui })
+    const batch = driver.prepareBatch(
+        {},
+        {
+            commands: [{ op: 'visibility' }],
+        },
+    )
+
+    expect(() => batch.apply()).toThrow("Octane components does not support command 'visibility'")
 })
