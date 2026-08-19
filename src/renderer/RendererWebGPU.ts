@@ -23,7 +23,13 @@ import {
     getNodeRenderLayout,
     updateScrollMetrics,
 } from './utils/render-metrics'
-import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
+import {
+    getStyledLineGraphemes,
+    layoutWithLines,
+    measureLineStats,
+    prepareWithSegments,
+    prepareWithStyledRuns,
+} from './pretext/layout'
 import { createUIWGSL } from './webgpu/shaders/'
 import {
     FLOAT32_SIZE,
@@ -383,12 +389,20 @@ export default class RendererWebGPU extends Renderer {
             const font = this.getTextFont(node)
             if (font !== undefined) {
                 const font_size = this.getTextFontSize(node)
-                const natural_line_height = this.getTextNaturalLineHeight(font, font_size)
-                const line_height = this.getTextLineHeight(node, natural_line_height, font_size)
                 const max_width = width_mode === MEASURE_MODE.UNDEFINED ? Infinity : available_width
-                const text_layout = measureLineStats(this.getPreparedText(node, font, font_size), max_width)
-                measured_width = text_layout.maxLineWidth
-                measured_height = text_layout.lineCount * line_height
+                const prepared_text = this.getPreparedText(node, font, font_size)
+
+                if (node.text_runs === undefined) {
+                    const natural_line_height = this.getTextNaturalLineHeight(font, font_size)
+                    const line_height = this.getTextLineHeight(node, natural_line_height, font_size)
+                    const text_layout = measureLineStats(prepared_text, max_width)
+                    measured_width = text_layout.maxLineWidth
+                    measured_height = text_layout.lineCount * line_height
+                } else {
+                    const text_layout = this.getStyledTextLayout(node, prepared_text, max_width, font, font_size)
+                    measured_width = text_layout.max_width
+                    measured_height = text_layout.height
+                }
             }
         }
 
@@ -487,7 +501,7 @@ export default class RendererWebGPU extends Renderer {
                     invalidate_text ||= TEXT_MEASURE_STYLE_NAMES.has(name)
                 }
 
-                if (invalidate_text && node.isTextNode()) {
+                if ((invalidate_text || node.text_runs !== undefined) && node.isTextNode()) {
                     this.invalidateTextNode(node)
                 }
             }
@@ -609,7 +623,7 @@ export default class RendererWebGPU extends Renderer {
                 continue
             }
 
-            this.text_runs.push(text_data.run)
+            this.text_runs.push(...text_data.runs)
 
             const glyph_indices = []
             for (const glyph_data of text_data.glyphs) {
@@ -618,24 +632,26 @@ export default class RendererWebGPU extends Renderer {
                 glyph_indices.push(glyph_index)
             }
 
-            if (text_data.run.text_shadow_color[3] > 0) {
-                for (const glyph_index of glyph_indices) {
+            for (const glyph_index of glyph_indices) {
+                const text_run = this.text_runs[glyphs[glyph_index].run_index]
+                if (text_run.text_shadow_color[3] > 0) {
                     commands.push({
                         kind: COMMAND_KIND_TEXT_SHADOW,
                         panel_index: 0,
                         glyph_index,
-                        text_stroke_width: text_data.run.text_stroke_color[3] > 0 ? text_data.run.text_stroke_width : 0,
+                        text_stroke_width: text_run.text_stroke_color[3] > 0 ? text_run.text_stroke_width : 0,
                     })
                 }
             }
 
-            if (text_data.run.text_stroke_width > 0 && text_data.run.text_stroke_color[3] > 0) {
-                for (const glyph_index of glyph_indices) {
+            for (const glyph_index of glyph_indices) {
+                const text_run = this.text_runs[glyphs[glyph_index].run_index]
+                if (text_run.text_stroke_width > 0 && text_run.text_stroke_color[3] > 0) {
                     commands.push({
                         kind: COMMAND_KIND_TEXT_STROKE,
                         panel_index: 0,
                         glyph_index,
-                        text_stroke_width: text_data.run.text_stroke_width,
+                        text_stroke_width: text_run.text_stroke_width,
                     })
                 }
             }
@@ -657,6 +673,10 @@ export default class RendererWebGPU extends Renderer {
 
         if (!node.hasTextContent() || display !== DISPLAY.flex) {
             return null
+        }
+
+        if (node.text_runs !== undefined) {
+            return this.collectStyledTextInstanceData(node, run_index)
         }
 
         const font = this.getTextFont(node)
@@ -777,9 +797,165 @@ export default class RendererWebGPU extends Renderer {
 
         return {
             glyphs,
-            run: {
+            runs: [{
                 color: node.styles.color?.parsed.rgba ?? FONT_COLOR,
                 font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.resources.font_atlas_size],
+                clipping,
+                text_shadow: [...text_shadow_data, 0],
+                text_shadow_color: text_shadow?.color ?? [0, 0, 0, 0],
+                text_stroke_width,
+                effect_distance_range,
+                text_stroke_multisampling,
+                text_stroke_color: text_stroke?.color ?? [0, 0, 0, 0],
+            }],
+        }
+    }
+
+    private collectStyledTextInstanceData(node, run_index) {
+        const font = this.getTextFont(node)
+        const font_size = this.getTextFontSize(node)
+        if (font === undefined) {
+            return null
+        }
+
+        const { x, y, width, height } = getNodeRenderLayout(node)
+        if (width === 0 || height === 0) {
+            return null
+        }
+
+        const border_top = getNodeBorderWidth(node, 'Top', this.computeStyle)
+        const border_right = getNodeBorderWidth(node, 'Right', this.computeStyle)
+        const border_left = getNodeBorderWidth(node, 'Left', this.computeStyle)
+        const padding_top = node.layout.padding.top
+        const padding_right = node.layout.padding.right
+        const padding_left = node.layout.padding.left
+        const content_x = x + border_left + padding_left
+        const content_y = y + border_top + padding_top
+        const content_width = width - border_left - border_right - padding_left - padding_right
+        const opacity = getNodeOpacity(node)
+        if (opacity <= 0) {
+            return null
+        }
+
+        const clip = getAncestorClipping(node)
+        if (clip !== null && (clip.right <= 0 || clip.bottom <= 0 || clip.left >= width || clip.top >= height)) {
+            return null
+        }
+
+        const clipping = clip === null ? [0, 0, 0, 0] : [y + clip.top, x + clip.right, y + clip.bottom, x + clip.left]
+        const prepared_text = this.getPreparedText(node, font, font_size)
+        const text_layout = this.getStyledTextLayout(node, prepared_text, content_width, font, font_size)
+        const text_align = node.styles.textAlign?.parsed.enum ?? TEXT_ALIGN.left
+        const render_runs = prepared_text.text_runs.map((text_run) =>
+            this.createStyledTextRunData(node, text_run, opacity, clipping),
+        )
+        const glyphs = []
+        let line_y = content_y
+
+        for (const line of text_layout.lines) {
+            const baseline = line_y + line.above
+            const line_width = getStyledTextAlignmentWidth(line)
+            const line_x = content_x + getTextAlignOffset(text_align, content_width, line_width)
+            const justify_data = getStyledJustifyData(
+                text_align,
+                prepared_text,
+                line,
+                content_width,
+                line_width,
+            )
+            let cursor_x = line_x
+
+            for (let grapheme_index = 0; grapheme_index < line.graphemes.length; grapheme_index++) {
+                const grapheme = line.graphemes[grapheme_index]
+                const text_run = prepared_text.text_runs[grapheme.runIndex]
+                const render_run = render_runs[grapheme.runIndex]
+
+                if (grapheme.text === '\t') {
+                    cursor_x +=
+                        getTabAdvance(
+                            cursor_x - line_x,
+                            this.measureGlyphAdvances(text_run.font, text_run.font_size, ' ') * 8,
+                        ) + text_run.letter_spacing
+                } else {
+                    const grapheme_x = cursor_x
+                    for (let character_index = 0; character_index < grapheme.text.length; ) {
+                        const code_point = grapheme.text.codePointAt(character_index)
+                        const glyph = text_run.font.glyphs_by_unicode.get(code_point)
+                        if (glyph !== undefined) {
+                            if (glyph.plane_bounds !== undefined && glyph.uv_rect !== undefined) {
+                                const [left, bottom, right, top] = glyph.plane_bounds
+                                glyphs.push({
+                                    layout: [
+                                        cursor_x + left * text_run.font_size,
+                                        baseline - top * text_run.font_size,
+                                        (right - left) * text_run.font_size,
+                                        (top - bottom) * text_run.font_size,
+                                    ],
+                                    uv_rect: glyph.uv_rect,
+                                    run_index: run_index + grapheme.runIndex,
+                                    text_shadow: render_run.text_shadow_data,
+                                })
+                            }
+
+                            cursor_x += glyph.advance * text_run.font_size
+                        }
+
+                        character_index += code_point > 0xffff ? 2 : 1
+                    }
+                    cursor_x = grapheme_x + grapheme.advance
+                }
+
+                if (
+                    grapheme.text === ' ' &&
+                    justify_data !== null &&
+                    grapheme_index >= justify_data.start &&
+                    grapheme_index < justify_data.end
+                ) {
+                    cursor_x += justify_data.advance
+                }
+            }
+
+            line_y += line.above + line.below
+        }
+
+        if (glyphs.length === 0) {
+            return null
+        }
+
+        return {
+            glyphs,
+            runs: render_runs.map((render_run) => render_run.data),
+        }
+    }
+
+    private createStyledTextRunData(node, text_run, opacity, clipping) {
+        const color = text_run.styles.color ?? node.styles.color
+        const text_shadow = this.computeStyle(text_run.styles.textShadow ?? node.styles.textShadow)?.parsed.text_shadow
+        const text_stroke = this.computeStyle(text_run.styles.textStroke ?? node.styles.textStroke)?.parsed.text_stroke
+        const effect_distance_range =
+            text_run.font.json.atlas.effectDistanceRange ?? text_run.font.json.atlas.distanceRange
+        const text_stroke_width = text_stroke?.width.value ?? 0
+        const text_stroke_width_limit =
+            (effect_distance_range * text_run.font_size) / (text_run.font.json.atlas.size * 2) -
+            0.5 / this.device_pixel_ratio
+        const text_stroke_multisampling =
+            text_stroke_width > 0 && text_stroke_width > text_stroke_width_limit ? 1 : 0
+        const text_shadow_data = [
+            text_shadow?.offset_x.value ?? 0,
+            text_shadow?.offset_y.value ?? 0,
+            text_shadow?.blur.value ?? 0,
+        ]
+
+        return {
+            text_shadow_data,
+            data: {
+                color: color?.parsed.rgba ?? FONT_COLOR,
+                font_data: [
+                    text_run.font.layer,
+                    opacity,
+                    text_run.font.json.atlas.distanceRange,
+                    this.resources.font_atlas_size,
+                ],
                 clipping,
                 text_shadow: [...text_shadow_data, 0],
                 text_shadow_color: text_shadow?.color ?? [0, 0, 0, 0],
@@ -791,8 +967,8 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
-    private getTextFont(node) {
-        const font_family = node.styles.fontFamily?.value
+    private getTextFont(node, run = null) {
+        const font_family = run?.styles.fontFamily?.value ?? node.styles.fontFamily?.value
         const font =
             font_family === undefined
                 ? this.resources.font_manager.getDefaultFont()
@@ -805,8 +981,8 @@ export default class RendererWebGPU extends Renderer {
         return font
     }
 
-    private getTextFontSize(node) {
-        return this.computeStyle(node.styles.fontSize)?.parsed.value ?? ROOT_SIZE
+    private getTextFontSize(node, run = null) {
+        return this.computeStyle(run?.styles.fontSize ?? node.styles.fontSize)?.parsed.value ?? ROOT_SIZE
     }
 
     private getTextNaturalLineHeight(font, font_size) {
@@ -838,15 +1014,78 @@ export default class RendererWebGPU extends Renderer {
         let prepared_text = this.prepared_texts.get(node)
 
         if (prepared_text === undefined) {
-            prepared_text = prepareWithSegments(node.text_content, {
-                measure: (text) => this.measureGlyphAdvances(font, font_size, text),
-                whiteSpace: 'pre-wrap',
-                letterSpacing: this.computeStyle(node.styles.letterSpacing)?.parsed.value ?? 0,
-            })
+            if (node.text_runs === undefined) {
+                prepared_text = prepareWithSegments(node.text_content, {
+                    measure: (text) => this.measureGlyphAdvances(font, font_size, text),
+                    whiteSpace: 'pre-wrap',
+                    letterSpacing: this.computeStyle(node.styles.letterSpacing)?.parsed.value ?? 0,
+                })
+            } else {
+                const text_runs = node.text_runs.map((run) => {
+                    const run_font = this.getTextFont(node, run)
+                    const run_font_size = this.getTextFontSize(node, run)
+                    const letter_spacing =
+                        this.computeStyle(run.styles.letterSpacing ?? node.styles.letterSpacing)?.parsed.value ?? 0
+
+                    return {
+                        ...run,
+                        font: run_font,
+                        font_size: run_font_size,
+                        letter_spacing,
+                        line_metrics: this.getTextLineMetrics(node, run_font, run_font_size),
+                    }
+                })
+
+                prepared_text = prepareWithStyledRuns(
+                    text_runs.map((run) => ({
+                        text: run.text,
+                        measure: (text) => this.measureGlyphAdvances(run.font, run.font_size, text),
+                        letterSpacing: run.letter_spacing,
+                    })),
+                )
+                prepared_text.text_runs = text_runs
+            }
             this.prepared_texts.set(node, prepared_text)
         }
 
         return prepared_text
+    }
+
+    private getTextLineMetrics(node, font, font_size) {
+        const natural_line_height = this.getTextNaturalLineHeight(font, font_size)
+        const line_height = this.getTextLineHeight(node, natural_line_height, font_size)
+        const raster_metrics = this.getTextRasterMetrics(font, font_size)
+        const half_leading = (line_height - raster_metrics.ascender - raster_metrics.descender) / 2
+
+        return {
+            above: raster_metrics.ascender + half_leading,
+            below: raster_metrics.descender + half_leading,
+        }
+    }
+
+    private getStyledTextLayout(node, prepared_text, max_width, font, font_size) {
+        const text_layout = layoutWithLines(prepared_text, max_width, 0)
+        const base_metrics = this.getTextLineMetrics(node, font, font_size)
+        let height = 0
+        let max_line_width = 0
+
+        const lines = text_layout.lines.map((line) => {
+            const graphemes = getStyledLineGraphemes(prepared_text, line)
+            let above = base_metrics.above
+            let below = base_metrics.below
+
+            for (const grapheme of graphemes) {
+                const metrics = prepared_text.text_runs[grapheme.runIndex].line_metrics
+                above = Math.max(above, metrics.above)
+                below = Math.max(below, metrics.below)
+            }
+
+            height += above + below
+            max_line_width = Math.max(max_line_width, line.width)
+            return { ...line, graphemes, above, below }
+        })
+
+        return { lines, height, max_width: max_line_width }
     }
 
     private measureGlyphAdvances(font, font_size, text) {
@@ -1220,6 +1459,20 @@ function getTextAlignmentWidth(line, space_advance, letter_spacing) {
     return line.width - (line.text.length - end) * (space_advance + letter_spacing)
 }
 
+function getStyledTextAlignmentWidth(line) {
+    let width = line.width
+
+    for (let index = line.graphemes.length - 1; index >= 0; index--) {
+        const grapheme = line.graphemes[index]
+        if (grapheme.text !== ' ') {
+            break
+        }
+        width -= grapheme.advance
+    }
+
+    return width
+}
+
 function getJustifyData(text_align, prepared_text, line, content_width, line_width) {
     if (text_align !== TEXT_ALIGN.justify || isParagraphEnd(prepared_text, line)) {
         return null
@@ -1234,6 +1487,40 @@ function getJustifyData(text_align, prepared_text, line, content_width, line_wid
 
     for (let index = start; index < end; index++) {
         if (line.text[index] === ' ') {
+            space_count++
+        }
+    }
+
+    const remaining_width = content_width - line_width
+    if (space_count === 0 || remaining_width <= 0) {
+        return null
+    }
+
+    return {
+        start,
+        end,
+        advance: remaining_width / space_count,
+    }
+}
+
+function getStyledJustifyData(text_align, prepared_text, line, content_width, line_width) {
+    if (text_align !== TEXT_ALIGN.justify || isParagraphEnd(prepared_text, line)) {
+        return null
+    }
+
+    let start = 0
+    while (start < line.graphemes.length && line.graphemes[start].text === ' ') {
+        start++
+    }
+
+    let end = line.graphemes.length
+    while (end > start && line.graphemes[end - 1].text === ' ') {
+        end--
+    }
+
+    let space_count = 0
+    for (let index = start; index < end; index++) {
+        if (line.graphemes[index].text === ' ') {
             space_count++
         }
     }

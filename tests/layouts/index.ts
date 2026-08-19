@@ -86,7 +86,7 @@ export const LAYOUTS = {
     zindexEdgeCases,
 }
 
-export const layoutNames = Object.keys(LAYOUTS)
+export const layoutNames = Object.keys(LAYOUTS).sort((a, b) => a.localeCompare(b))
 const layoutNamesByLowerCase = Object.fromEntries(layoutNames.map((name) => [name.toLowerCase(), name]))
 
 export function getLayout(name) {

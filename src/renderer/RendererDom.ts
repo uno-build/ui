@@ -177,13 +177,46 @@ export default class RendererDom extends Renderer {
             return
         }
 
-        // if (text_element === undefined) {
-        //     text_element = document.createElement('span')
-        //     this.text_elements.set(node, text_element)
-        //     this.elements.get(node).insertBefore(text_element, this.elements.get(node).firstChild)
-        // }
+        if (text_element === undefined) {
+            text_element = document.createElement('span')
+            this.text_elements.set(node, text_element)
+            this.elements.get(node).insertBefore(text_element, this.elements.get(node).firstChild)
+        }
 
-        this.elements.get(node).innerHTML = node.text_content
+        if (node.text_runs === undefined) {
+            text_element.textContent = node.text_content
+            return
+        }
+
+        const fragment = document.createDocumentFragment()
+        for (const run of node.text_runs) {
+            const span = document.createElement('span')
+            span.textContent = run.text
+
+            for (const [name, style] of Object.entries(run.styles)) {
+                if (name === 'textStroke') {
+                    span.style.webkitTextStroke = style.value
+                } else {
+                    span.style[name] = style.value
+                }
+            }
+
+            const line_height = node.styles.lineHeight
+            const font_family = run.styles.fontFamily?.value
+            if (
+                font_family !== undefined &&
+                (line_height === undefined || line_height.parsed.kind === KEYWORD.UNSET)
+            ) {
+                const font = this.resources.getFont(font_family)
+                if (font !== undefined) {
+                    span.style.lineHeight = `${font.lineHeight}`
+                }
+            }
+
+            fragment.appendChild(span)
+        }
+
+        text_element.replaceChildren(fragment)
     }
 
     // prettier-ignore

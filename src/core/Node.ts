@@ -1,5 +1,28 @@
 import { resolveStyle, validateStyle } from '../style'
 
+const TEXT_RUN_STYLE_NAMES = new Set([
+    'fontSize',
+    'fontFamily',
+    'color',
+    'textShadow',
+    'textStroke',
+    'letterSpacing',
+])
+
+export type TextRunStyle = {
+    fontSize?: string
+    fontFamily?: string
+    color?: string
+    textShadow?: string
+    textStroke?: string
+    letterSpacing?: string
+}
+
+export type TextRun = {
+    text: string
+    style?: TextRunStyle
+}
+
 export default class Node {
     public ui
     public element = null
@@ -9,6 +32,7 @@ export default class Node {
     public styles = {}
     public layout = {}
     public text_content = undefined
+    public text_runs = undefined
     public order = 0
     private scroll_top = 0
     private scroll_left = 0
@@ -79,19 +103,27 @@ export default class Node {
         }
     }
 
-    public text(value: string) {
+    public text(value: string | TextRun[]) {
         if (this.ui !== null) {
             if (this.children.length > 0) {
                 throw new Error('Nodes with text cannot have children')
             }
 
-            if (this.isTextNode()) {
+            const was_text_node = this.isTextNode()
+
+            if (typeof value === 'string') {
                 this.text_content = value
+                this.text_runs = undefined
+            } else {
+                this.text_runs = value.filter((run) => run.text.length > 0).map(resolveTextRun)
+                this.text_content = this.text_runs.map((run) => run.text).join('')
+            }
+
+            if (was_text_node) {
                 this.ui.renderer.invalidateTextNode(this)
                 return
             }
 
-            this.text_content = value
             this.ui.renderer.initializeTextNode(this)
         }
     }
@@ -134,5 +166,29 @@ export default class Node {
 
     public get clientWidth() {
         return this.client_width
+    }
+}
+
+function resolveTextRun(run: TextRun) {
+    const styles = {}
+
+    for (const [name, value] of Object.entries(run.style ?? {})) {
+        const normalized_name = validateStyle(name, value)
+        if (!TEXT_RUN_STYLE_NAMES.has(normalized_name)) {
+            throw new Error(`unsupported text run property '${name}'`)
+        }
+
+        const resolved_style = resolveStyle(normalized_name, value)
+        for (const style of resolved_style.expanded) {
+            styles[style.name] = {
+                value: style.value,
+                parsed: style.parsed,
+            }
+        }
+    }
+
+    return {
+        text: run.text,
+        styles,
     }
 }

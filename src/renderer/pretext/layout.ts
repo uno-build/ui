@@ -63,6 +63,9 @@ type PreparedCore = {
   spacingGraphemeCounts: number[] // Rendered grapheme counts for letter-spacing gaps; empty when letterSpacing is 0
   discretionaryHyphenWidth: number // Visible width added when a soft hyphen is chosen as the break
   tabStopAdvance: number // Absolute advance between tab stops for pre-wrap tab segments
+  discretionaryHyphenWidths?: number[]
+  tabStopAdvances?: number[]
+  tabTrailingLetterSpacings?: number[]
   chunks: PreparedLineChunk[] // Precompiled hard-break chunks for line walking
 }
 
@@ -70,6 +73,17 @@ type PreparedCore = {
 // range/cursor APIs and custom rendering.
 export type PreparedTextWithSegments = PreparedCore & {
   segments: string[] // Segment text aligned with the parallel arrays, e.g. ['hello', ' ', 'world']
+}
+
+export type StyledTextGrapheme = {
+  text: string
+  runIndex: number
+  advance: number
+}
+
+export type PreparedStyledTextWithSegments = PreparedTextWithSegments & {
+  styledGraphemes: StyledTextGrapheme[][]
+  segmentRunIndexes: number[]
 }
 
 export type LayoutCursor = {
@@ -105,6 +119,12 @@ export type PrepareOptions = {
   whiteSpace?: WhiteSpaceMode
   wordBreak?: WordBreakMode
   letterSpacing?: number
+}
+
+export type StyledPrepareRun = {
+  text: string
+  measure: MeasureText
+  letterSpacing: number
 }
 
 // Internal hard-break chunk hint for the line walker. Not public because
@@ -540,6 +560,238 @@ export function prepareWithSegments(text: string, options: PrepareOptions): Prep
   const letterSpacing = options.letterSpacing ?? 0
   const analysis = analyzeText(text, getEngineProfile(), options.whiteSpace, wordBreak)
   return measureAnalysis(analysis, options.measure, wordBreak, letterSpacing)
+}
+
+export function prepareWithStyledRuns(
+  runs: StyledPrepareRun[],
+  options: Pick<PrepareOptions, 'wordBreak'> = {},
+): PreparedStyledTextWithSegments {
+  const { text, runIndexes } = normalizeStyledRuns(runs)
+  const wordBreak = options.wordBreak ?? 'normal'
+  const analysis = analyzeText(text, getEngineProfile(), 'pre-wrap', wordBreak)
+  if (analysis.len === 0) {
+    return {
+      ...createEmptyPrepared(),
+      discretionaryHyphenWidths: [],
+      tabStopAdvances: [],
+      tabTrailingLetterSpacings: [],
+      styledGraphemes: [],
+      segmentRunIndexes: [],
+    }
+  }
+
+  const engineProfile = getEngineProfile()
+  const widths: number[] = []
+  const lineEndFitAdvances: number[] = []
+  const lineEndPaintAdvances: number[] = []
+  const kinds: SegmentBreakKind[] = []
+  const breakableFitAdvances: (number[] | null)[] = []
+  const breakablePreferredBreaks: (number[] | null)[] = []
+  const segments: string[] = []
+  const styledGraphemes: StyledTextGrapheme[][] = []
+  const segmentRunIndexes: number[] = []
+  const discretionaryHyphenWidths: number[] = []
+  const tabStopAdvances: number[] = []
+  const tabTrailingLetterSpacings: number[] = []
+  const chunks: PreparedLineChunk[] = []
+  let simpleLineWalkFastPath = true
+  let chunkStartSegmentIndex = 0
+
+  function getRunIndex(sourceStart: number): number {
+    return runIndexes[sourceStart] ?? Math.max(0, runs.length - 1)
+  }
+
+  function getGraphemes(segmentText: string, sourceStart: number, kind: SegmentBreakKind): StyledTextGrapheme[] {
+    if (kind === 'hard-break' || kind === 'soft-hyphen' || kind === 'zero-width-break') return []
+
+    const graphemes: StyledTextGrapheme[] = []
+    for (const gs of getSharedGraphemeSegmenter().segment(segmentText)) {
+      const runIndex = getRunIndex(sourceStart + gs.index)
+      const run = runs[runIndex]!
+      const advance = kind === 'tab' ? 0 : run.measure(gs.segment) + run.letterSpacing
+      graphemes.push({ text: gs.segment, runIndex, advance })
+    }
+    return graphemes
+  }
+
+  function pushSegment(
+    segmentText: string,
+    sourceStart: number,
+    kind: SegmentBreakKind,
+    wordLike: boolean,
+    allowOverflowBreaks: boolean,
+  ): void {
+    if (kind !== 'text' && kind !== 'space' && kind !== 'zero-width-break') {
+      simpleLineWalkFastPath = false
+    }
+
+    const graphemes = getGraphemes(segmentText, sourceStart, kind)
+    const advances = graphemes.map((grapheme) => grapheme.advance)
+    const width = advances.reduce((sum, advance) => sum + advance, 0)
+    const lineEndFitAdvance =
+      kind === 'space' || kind === 'preserved-space' || kind === 'zero-width-break' ? 0 : width
+    const lineEndPaintAdvance = kind === 'space' || kind === 'zero-width-break' ? 0 : width
+    const breakable = allowOverflowBreaks && wordLike && graphemes.length > 1
+    let discretionaryHyphenWidth = 0
+    let tabStopAdvance = 0
+    let tabTrailingLetterSpacing = 0
+
+    if (kind === 'soft-hyphen') {
+      const run = runs[getRunIndex(sourceStart)]!
+      discretionaryHyphenWidth = run.measure('-') + run.letterSpacing * 2
+    } else if (kind === 'tab') {
+      const run = runs[getRunIndex(sourceStart)]!
+      tabStopAdvance = run.measure(' ') * 8
+      tabTrailingLetterSpacing = run.letterSpacing
+    }
+
+    widths.push(width)
+    lineEndFitAdvances.push(kind === 'soft-hyphen' ? discretionaryHyphenWidth : lineEndFitAdvance)
+    lineEndPaintAdvances.push(kind === 'soft-hyphen' ? discretionaryHyphenWidth : lineEndPaintAdvance)
+    kinds.push(kind)
+    breakableFitAdvances.push(breakable ? advances : null)
+    breakablePreferredBreaks.push(breakable && wordBreak !== 'keep-all' ? getBreakablePreferredBreaks(segmentText) : null)
+    segments.push(segmentText)
+    styledGraphemes.push(graphemes)
+    segmentRunIndexes.push(getRunIndex(sourceStart))
+    discretionaryHyphenWidths.push(discretionaryHyphenWidth)
+    tabStopAdvances.push(tabStopAdvance)
+    tabTrailingLetterSpacings.push(tabTrailingLetterSpacing)
+  }
+
+  for (let index = 0; index < analysis.len; index++) {
+    const segmentText = analysis.texts[index]!
+    const segmentStart = analysis.starts[index]!
+    const segmentKind = analysis.kinds[index]!
+    const segmentWordLike = analysis.isWordLike[index]!
+
+    if (segmentKind === 'hard-break') {
+      const endSegmentIndex = widths.length
+      pushSegment(segmentText, segmentStart, segmentKind, segmentWordLike, false)
+      chunks.push({
+        startSegmentIndex: chunkStartSegmentIndex,
+        endSegmentIndex,
+        consumedEndSegmentIndex: widths.length,
+      })
+      chunkStartSegmentIndex = widths.length
+      continue
+    }
+
+    if (segmentKind === 'text' && isCJK(segmentText)) {
+      const baseUnits = buildBaseCjkUnits(segmentText, engineProfile)
+      const measuredUnits = wordBreak === 'keep-all'
+        ? mergeKeepAllTextUnits(segmentText, baseUnits, engineProfile.breakKeepAllAfterPunctuation)
+        : baseUnits
+
+      for (const unit of measuredUnits) {
+        pushSegment(
+          unit.text,
+          segmentStart + unit.start,
+          'text',
+          segmentWordLike,
+          wordBreak === 'keep-all' || !isCJK(unit.text),
+        )
+      }
+      continue
+    }
+
+    pushSegment(segmentText, segmentStart, segmentKind, segmentWordLike, true)
+  }
+
+  if (chunkStartSegmentIndex < widths.length) {
+    chunks.push({
+      startSegmentIndex: chunkStartSegmentIndex,
+      endSegmentIndex: widths.length,
+      consumedEndSegmentIndex: widths.length,
+    })
+  }
+
+  return {
+    widths,
+    lineEndFitAdvances,
+    lineEndPaintAdvances,
+    kinds,
+    simpleLineWalkFastPath,
+    breakableFitAdvances,
+    breakablePreferredBreaks,
+    letterSpacing: 0,
+    spacingGraphemeCounts: [],
+    discretionaryHyphenWidth: 0,
+    tabStopAdvance: 0,
+    discretionaryHyphenWidths,
+    tabStopAdvances,
+    tabTrailingLetterSpacings,
+    chunks,
+    segments,
+    styledGraphemes,
+    segmentRunIndexes,
+  }
+}
+
+function normalizeStyledRuns(runs: StyledPrepareRun[]) {
+  const source = runs.map((run) => run.text).join('')
+  const sourceRunIndexes: number[] = []
+  for (let runIndex = 0; runIndex < runs.length; runIndex++) {
+    sourceRunIndexes.push(...new Array(runs[runIndex]!.text.length).fill(runIndex))
+  }
+
+  let text = ''
+  const runIndexes: number[] = []
+  for (let index = 0; index < source.length; index++) {
+    const character = source[index]!
+    const runIndex = sourceRunIndexes[index]!
+    if (character === '\r') {
+      if (source[index + 1] === '\n') index++
+      text += '\n'
+      runIndexes.push(runIndex)
+      continue
+    }
+    if (character === '\f') {
+      text += '\n'
+      runIndexes.push(runIndex)
+      continue
+    }
+
+    text += character
+    runIndexes.push(runIndex)
+  }
+
+  return { text, runIndexes }
+}
+
+export function getStyledLineGraphemes(
+  prepared: PreparedStyledTextWithSegments,
+  line: LayoutLine,
+): StyledTextGrapheme[] {
+  const graphemes: StyledTextGrapheme[] = []
+  const startSegmentIndex = line.start.segmentIndex
+  const endSegmentIndex = line.end.segmentIndex
+
+  for (let index = startSegmentIndex; index < endSegmentIndex; index++) {
+    const kind = prepared.kinds[index]!
+    if (kind === 'soft-hyphen' || kind === 'hard-break') continue
+
+    const segmentGraphemes = prepared.styledGraphemes[index]!
+    const start = index === startSegmentIndex ? line.start.graphemeIndex : 0
+    graphemes.push(...segmentGraphemes.slice(start))
+  }
+
+  if (line.end.graphemeIndex > 0) {
+    const start = startSegmentIndex === endSegmentIndex ? line.start.graphemeIndex : 0
+    graphemes.push(...prepared.styledGraphemes[endSegmentIndex]!.slice(start, line.end.graphemeIndex))
+  } else if (
+    endSegmentIndex > startSegmentIndex &&
+    prepared.kinds[endSegmentIndex - 1] === 'soft-hyphen'
+  ) {
+    const segmentIndex = endSegmentIndex - 1
+    graphemes.push({
+      text: '-',
+      runIndex: prepared.segmentRunIndexes[segmentIndex]!,
+      advance: prepared.discretionaryHyphenWidths![segmentIndex]!,
+    })
+  }
+
+  return graphemes
 }
 
 function createLayoutLine(

@@ -33,12 +33,13 @@ function render({ ui }) {
 export async function runLayout({
     root,
     layout,
+    create_layout,
     renderers,
     renderer_options = {},
     animations_enabled = false,
     logger = console,
 }) {
-    const createLayout = getLayout(layout)
+    const createLayout = create_layout ?? getLayout(layout)
     const results = []
     const rendered_layouts = []
 

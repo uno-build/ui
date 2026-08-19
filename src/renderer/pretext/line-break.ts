@@ -18,6 +18,9 @@ export type PreparedLineBreakData = {
   spacingGraphemeCounts: number[]
   discretionaryHyphenWidth: number
   tabStopAdvance: number
+  discretionaryHyphenWidths?: number[]
+  tabStopAdvances?: number[]
+  tabTrailingLetterSpacings?: number[]
   chunks: {
     startSegmentIndex: number
     endSegmentIndex: number
@@ -90,12 +93,28 @@ function getTabTrailingLetterSpacing(
   prepared: PreparedLineBreakData,
   segmentIndex: number,
 ): number {
+  if (prepared.tabTrailingLetterSpacings !== undefined) {
+    return 0
+  }
+
   return (
     prepared.letterSpacing !== 0 &&
     prepared.spacingGraphemeCounts[segmentIndex]! > 0
   )
     ? prepared.letterSpacing
     : 0
+}
+
+function getSegmentTabStopAdvance(prepared: PreparedLineBreakData, segmentIndex: number): number {
+  return prepared.tabStopAdvances?.[segmentIndex] ?? prepared.tabStopAdvance
+}
+
+function getStyledTabTrailingLetterSpacing(prepared: PreparedLineBreakData, segmentIndex: number): number {
+  return prepared.tabTrailingLetterSpacings?.[segmentIndex] ?? 0
+}
+
+function getSegmentDiscretionaryHyphenWidth(prepared: PreparedLineBreakData, segmentIndex: number): number {
+  return prepared.discretionaryHyphenWidths?.[segmentIndex] ?? prepared.discretionaryHyphenWidth
 }
 
 function getWholeSegmentFitContribution(
@@ -493,7 +512,6 @@ export function walkPreparedLinesRaw(
     kinds,
     breakableFitAdvances,
     breakablePreferredBreaks,
-    discretionaryHyphenWidth,
     chunks,
   } = prepared
   if (widths.length === 0 || chunks.length === 0) return 0
@@ -686,7 +704,8 @@ export function walkPreparedLinesRaw(
       const breakAfter = breaksAfter(kind)
       const leadingSpacing = getLeadingLetterSpacing(prepared, hasContent, i)
       const w = kind === 'tab'
-        ? getTabAdvance(lineW + leadingSpacing, prepared.tabStopAdvance)
+        ? getTabAdvance(lineW + leadingSpacing, getSegmentTabStopAdvance(prepared, i)) +
+          getStyledTabTrailingLetterSpacing(prepared, i)
         : widths[i]!
       const advance = leadingSpacing + w
       const fitAdvance = getWholeSegmentFitContribution(prepared, kind, i, leadingSpacing, w)
@@ -696,6 +715,7 @@ export function walkPreparedLinesRaw(
           lineEndSegmentIndex = i + 1
           lineEndGraphemeIndex = 0
           pendingBreakSegmentIndex = i + 1
+          const discretionaryHyphenWidth = getSegmentDiscretionaryHyphenWidth(prepared, i)
           pendingBreakFitWidth = lineW + discretionaryHyphenWidth
           pendingBreakPaintWidth = lineW + discretionaryHyphenWidth
           pendingBreakKind = kind
@@ -789,7 +809,6 @@ function stepPreparedChunkLineGeometry(
     kinds,
     breakableFitAdvances,
     breakablePreferredBreaks,
-    discretionaryHyphenWidth,
   } = prepared
   const engineProfile = getEngineProfile()
   const lineFitEpsilon = engineProfile.lineFitEpsilon
@@ -935,7 +954,8 @@ function stepPreparedChunkLineGeometry(
     const startGraphemeIndex = i === cursor.segmentIndex ? cursor.graphemeIndex : 0
     const leadingSpacing = getLeadingLetterSpacing(prepared, hasContent, i)
     const w = kind === 'tab'
-      ? getTabAdvance(lineW + leadingSpacing, prepared.tabStopAdvance)
+      ? getTabAdvance(lineW + leadingSpacing, getSegmentTabStopAdvance(prepared, i)) +
+        getStyledTabTrailingLetterSpacing(prepared, i)
       : widths[i]!
     const advance = leadingSpacing + w
     const fitAdvance = getWholeSegmentFitContribution(prepared, kind, i, leadingSpacing, w)
@@ -945,6 +965,7 @@ function stepPreparedChunkLineGeometry(
         lineEndSegmentIndex = i + 1
         lineEndGraphemeIndex = 0
         pendingBreakSegmentIndex = i + 1
+        const discretionaryHyphenWidth = getSegmentDiscretionaryHyphenWidth(prepared, i)
         pendingBreakFitWidth = lineW + discretionaryHyphenWidth
         pendingBreakPaintWidth = lineW + discretionaryHyphenWidth
         pendingBreakKind = kind
