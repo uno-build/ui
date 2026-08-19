@@ -54,9 +54,13 @@ export default async function createYogaEngine({ loadYoga } = {}) {
             getElement(parent).insertChild(getElement(node), childIndex)
         },
 
-        removeChild(parent, node) {
+        detachChild(parent, node) {
             const element = getElement(node)
             getElement(parent).removeChild(element)
+        },
+
+        destroyNode(node) {
+            const element = getElement(node)
             element.free()
             elements.delete(node)
         },

@@ -167,6 +167,40 @@ test('RendererDom destroy removes UI elements and preserves its external root', 
     }
 })
 
+test('RendererDom keeps detached elements alive until destroyNode', () => {
+    const original_document = (globalThis as any).document
+    const canvas = createDomElement()
+
+    ;(globalThis as any).document = {
+        createElement: () => createDomElement(),
+    }
+
+    try {
+        const renderer = new RendererDom({ canvas })
+        const root = createNode(0)
+        const child = createNode(1)
+        const child_element = renderer.createElement(child)
+
+        renderer.createElement(root)
+        renderer.addChild(root, child)
+        renderer.detachChild(root, child)
+
+        expect(child_element.removed).toBe(false)
+        expect((renderer as any).elements.has(child)).toBe(true)
+
+        renderer.addChild(root, child)
+        renderer.detachChild(root, child)
+        renderer.destroyNode(child)
+
+        expect(child_element.removed).toBe(true)
+        expect((renderer as any).elements.has(child)).toBe(false)
+
+        renderer.destroy([root])
+    } finally {
+        ;(globalThis as any).document = original_document
+    }
+})
+
 test('RendererDom layout remains in content coordinates while the parent is scrolled', () => {
     const canvas = {
         scrollLeft: 40,

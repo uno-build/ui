@@ -60,9 +60,14 @@ export default class RendererDom extends Renderer {
         this.elements.get(parent).appendChild(this.elements.get(node))
     }
 
-    public removeChild(parent, node) {
+    public detachChild(parent, node) {
         this.elements.get(parent).removeChild(this.elements.get(node))
+    }
+
+    public destroyNode(node) {
+        this.elements.get(node).remove()
         this.elements.delete(node)
+        this.text_elements.delete(node)
     }
 
     public getChildIndex(node) {

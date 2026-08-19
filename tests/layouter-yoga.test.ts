@@ -30,8 +30,15 @@ test('Yoga layout engine keeps handles private and returns computed box metrics'
     expect(child.layout.padding).toEqual({ top: 1, right: 2, bottom: 3, left: 4 })
     expect(child.layout.border).toEqual({ top: 5, right: 6, bottom: 7, left: 8 })
 
-    engine.removeChild(root, child)
+    engine.detachChild(root, child)
     expect(engine.getChildIndex(root)).toBe(0)
+
+    engine.insertChild(root, child, 0)
+    expect(engine.getChildIndex(root)).toBe(1)
+
+    engine.detachChild(root, child)
+    engine.destroyNode(child)
+    engine.destroy([root])
 })
 
 test('Yoga layout engine destroys attached and detached nodes with its config', async () => {

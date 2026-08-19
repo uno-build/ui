@@ -49,7 +49,8 @@ export default abstract class Renderer {
     public abstract createElement(node)
     public abstract getChildIndex(node)
     public abstract getLayout(node)
-    public abstract removeChild(parent, node)
+    public abstract detachChild(parent, node)
+    public abstract destroyNode(node)
 
     protected abstract updateStyle(node, style)
     protected abstract insertChild(parent, node, childIndex)

@@ -5,9 +5,11 @@ import { createUniversalRoot } from 'octane/universal/native';
 const RENDERER_ID = 'uno';
 const OP_PRIORITY = {
     create: 0,
-    insert: 1,
+    update: 1,
+    remove: 2,
+    insert: 3,
+    destroy: 4,
 }
-const instances = new Map()
 
 export const viteConfigOctane = {
     renderers: {
@@ -45,7 +47,7 @@ export function createUniversalRendererRoot({ ui }) {
 }
 
 function createUniversalDriver({ ui }) {
-    // Registering root node
+    const instances = new Map()
     instances.set(null, ui.root)
 
     return {
@@ -58,10 +60,14 @@ function createUniversalDriver({ ui }) {
                         const op_diff = (OP_PRIORITY[a.op] ?? Number.MAX_SAFE_INTEGER) - (OP_PRIORITY[b.op] ?? Number.MAX_SAFE_INTEGER)
                         if (op_diff !== 0) return op_diff
 
-                        if (a.id === b.id) return 0
-                        return a.id < b.id ? -1 : 1
+                        if (a.op === 'insert') {
+                            if (a.id === b.id) return 0
+                            return a.id < b.id ? -1 : 1
+                        }
+
+                        return 0
                     })
-                    for (let command of sorted_commands) {
+                    for (const command of sorted_commands) {
                         // console.log(command)
 
                         // Create
@@ -90,6 +96,17 @@ function createUniversalDriver({ ui }) {
                                 node.style(key, value)
                             }
                         }
+
+                        if (command.op === 'remove') {
+                            const node = instances.get(command.id)
+                            node.detach()
+                        }
+
+                        if (command.op === 'destroy') {
+                            const node = instances.get(command.id)
+                            node.destroy()
+                            instances.delete(command.id)
+                        }
                     }
                     ui.update()
                 },
@@ -103,4 +120,3 @@ function createUniversalDriver({ ui }) {
         },
     };
 }
-

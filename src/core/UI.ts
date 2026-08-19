@@ -83,32 +83,61 @@ export default class UI {
         }
         const child_index = this.renderer.getChildIndex(parent)
         child.parent = parent
-        child.path = [...parent.path, child_index]
         parent.children.push(child)
-        this.nodes.push(child)
+        this.activateNode(child, [...parent.path, child_index])
         this.renderer.addChild(parent, child)
     }
 
-    private removeChild(child) {
-        const index = this.nodes.indexOf(child)
-        if (index === -1) {
-            throw new Error('child not found')
+    private activateNode(node, path) {
+        node.path = path
+        this.nodes.push(node)
+
+        for (let i = 0; i < node.children.length; i++) {
+            this.activateNode(node.children[i], [...path, i])
+        }
+    }
+
+    private updateNodePath(node, path) {
+        node.path = path
+
+        for (let i = 0; i < node.children.length; i++) {
+            this.updateNodePath(node.children[i], [...path, i])
+        }
+    }
+
+    private detachNode(node) {
+        const parent = node.parent
+        if (parent === null) {
+            return
         }
 
-        for (const nested_child of [...child.children]) {
-            this.removeChild(nested_child)
+        const detached_nodes = []
+        const collectNodes = (current) => {
+            detached_nodes.push(current)
+            for (const child of current.children) {
+                collectNodes(child)
+            }
         }
+        collectNodes(node)
 
-        const parent = child.parent
-        child.ui = null
-        child.parent = null
-        child.children.length = 0
-        parent.children.splice(parent.children.indexOf(child), 1)
-        this.nodes.splice(index, 1)
-        this.renderer.discardPendingStyles(child)
-        this.renderer.removeChild(parent, child)
-        this.created_nodes.delete(child)
-        child.element = null
+        const detached_set = new Set(detached_nodes)
+        this.nodes = this.nodes.filter((current) => detached_set.has(current) === false)
+        parent.children.splice(parent.children.indexOf(node), 1)
+        for (let i = 0; i < parent.children.length; i++) {
+            this.updateNodePath(parent.children[i], [...parent.path, i])
+        }
+        this.renderer.detachChild(parent, node)
+        node.parent = null
+    }
+
+    private destroyNode(node) {
+        this.renderer.discardPendingStyles(node)
+        this.renderer.destroyNode(node)
+        this.created_nodes.delete(node)
+        node.ui = null
+        node.parent = null
+        node.children.length = 0
+        node.element = null
     }
 
     public destroy() {

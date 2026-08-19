@@ -34,7 +34,32 @@ export default class Node {
 
     public remove(child) {
         if (this.ui !== null) {
-            this.ui.removeChild(child)
+            if (child.parent !== this) {
+                throw new Error('child not found')
+            }
+
+            child.destroy()
+        }
+    }
+
+    public detach() {
+        if (this.ui !== null) {
+            this.ui.detachNode(this)
+        }
+    }
+
+    public destroy() {
+        if (this.ui !== null) {
+            if (this === this.ui.root) {
+                this.ui.destroy()
+                return
+            }
+
+            this.detach()
+            for (const child of [...this.children]) {
+                child.destroy()
+            }
+            this.ui.destroyNode(this)
         }
     }
 

@@ -279,6 +279,86 @@ test('Node remove removes descendants', async () => {
     expect(grandchild.element).toBe(null)
 })
 
+test('Node detach preserves and reinserts a subtree', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const parent = ui.create()
+    const child = ui.create()
+    const grandchild = ui.create()
+    const sibling = ui.create()
+    const destroyed_nodes = []
+    const destroy_node = renderer.destroyNode.bind(renderer)
+
+    renderer.destroyNode = (node) => {
+        destroyed_nodes.push(node)
+        destroy_node(node)
+    }
+
+    ui.root.add(parent)
+    ui.root.add(sibling)
+    parent.add(child)
+    child.add(grandchild)
+    parent.style('width', '120px')
+
+    parent.detach()
+
+    expect(destroyed_nodes).toEqual([])
+    expect([...ui.nodes]).toEqual([sibling])
+    expect(ui.root.children).toEqual([sibling])
+    expect(sibling.path).toEqual([0])
+    expect(parent.ui).toBe(ui)
+    expect(parent.parent).toBe(null)
+    expect(parent.children).toEqual([child])
+    expect(child.parent).toBe(parent)
+    expect(child.children).toEqual([grandchild])
+    expect(grandchild.parent).toBe(child)
+    expect((renderer as any).pending_styles).toHaveLength(1)
+
+    ui.root.add(parent)
+
+    expect([...ui.nodes]).toEqual([sibling, parent, child, grandchild])
+    expect(ui.root.children).toEqual([sibling, parent])
+    expect(parent.path).toEqual([1])
+    expect(child.path).toEqual([1, 0])
+    expect(grandchild.path).toEqual([1, 0, 0])
+})
+
+test('Node destroy releases attached and detached subtrees in postorder once', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const parent = ui.create()
+    const child = ui.create()
+    const grandchild = ui.create()
+    const attached = ui.create()
+    const destroyed_nodes = []
+    const destroy_node = renderer.destroyNode.bind(renderer)
+
+    renderer.destroyNode = (node) => {
+        destroyed_nodes.push(node)
+        destroy_node(node)
+    }
+
+    ui.root.add(parent)
+    parent.add(child)
+    child.add(grandchild)
+    ui.root.add(attached)
+
+    attached.destroy()
+    parent.detach()
+    parent.destroy()
+    parent.destroy()
+
+    expect(destroyed_nodes).toEqual([attached, grandchild, child, parent])
+    expect([...ui.nodes]).toEqual([])
+    expect(ui.root.children).toEqual([])
+    for (const node of [attached, grandchild, child, parent]) {
+        expect(node.ui).toBe(null)
+        expect(node.parent).toBe(null)
+        expect(node.children).toEqual([])
+        expect(node.element).toBe(null)
+    }
+})
+
 test('Node add and remove throw for invalid tree operations', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })

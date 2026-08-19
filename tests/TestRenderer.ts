@@ -38,8 +38,12 @@ export default class TestRenderer extends Renderer {
         this.engine.insertChild(parent, node, child_index)
     }
 
-    public removeChild(parent, node) {
-        this.engine.removeChild(parent, node)
+    public detachChild(parent, node) {
+        this.engine.detachChild(parent, node)
+    }
+
+    public destroyNode(node) {
+        this.engine.destroyNode(node)
     }
 
     protected updateStyle(node, resolved_style) {
