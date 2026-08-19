@@ -2,10 +2,10 @@ import { useEffect, useState, useRef } from 'octane'
 import { universalFor } from 'octane/universal/native'
 
 const COLOR_ITEMS = [
-    { id: 'red', color: '#e63946' },
-    { id: 'yellow', color: '#ffb703' },
-    { id: 'green', color: '#2a9d8f' },
-    { id: 'blue', color: '#457b9d' },
+    { id: 'red', color: '#e63946', count: 0 },
+    { id: 'yellow', color: '#ffb703', count: 0 },
+    { id: 'green', color: '#2a9d8f', count: 0 },
+    { id: 'blue', color: '#457b9d', count: 0 },
 ]
 
 export function BasicComponent() {
@@ -15,7 +15,12 @@ export function BasicComponent() {
     useEffect(() => {
         const interval = setInterval(() => {
             // console.log(ref.current)
-            setItems((current_items) => [current_items.at(-1), ...current_items.slice(0, -1)])
+            setItems((current_items) =>
+                [current_items.at(-1), ...current_items.slice(0, -1)].map((item) => ({
+                    ...item,
+                    count: item.count + 1,
+                })),
+            )
         }, 1000)
 
         return () => clearInterval(interval)
@@ -25,11 +30,12 @@ export function BasicComponent() {
         <View
             ref={ref}
             style={{
-                width: '500px',
-                height: '140px',
+                width: '800px',
+                height: '300px',
                 padding: '20px',
                 gap: '20px',
                 alignItems: 'center',
+                justifyContent: 'center',
                 backgroundColor: '#1d2027',
             }}
         >
@@ -39,15 +45,15 @@ export function BasicComponent() {
                 (item) => (
                     <View
                         style={{
-                            width: '100px',
-                            height: '100px',
+                            width: '150px',
+                            height: '150px',
                             borderRadius: '12px',
                             backgroundColor: item.color,
                             alignItems: 'center',
                             justifyContent: 'center',
                         }}
                     >
-                        <Text style={{ color: '#fff', textStroke: '2px #1d2027' }}>{item.id}</Text>
+                        <Text style={{ color: '#fff', textStroke: '2px #1d2027' }}>{`${item.id} ${item.count}`}</Text>
                     </View>
                 ),
             )}

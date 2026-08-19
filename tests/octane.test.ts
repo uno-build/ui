@@ -110,6 +110,32 @@ const TEXT_INSIDE_VIEW_PLAN = universalPlan('uno', {
 
 const TEXT_INSIDE_VIEW_COMPONENT = defineUniversalComponent('uno', () => universalValue(TEXT_INSIDE_VIEW_PLAN))
 
+const DYNAMIC_TEXT_PLAN = universalPlan('uno', {
+    kind: 'host',
+    type: 'text',
+    children: [{ kind: 'text', slot: 0 }],
+})
+
+const DYNAMIC_TEXT_COMPONENT = defineUniversalComponent<{ value: string }>('uno', (props) =>
+    universalValue(DYNAMIC_TEXT_PLAN, [props.value]),
+)
+
+const CONDITIONAL_TEXT_PLAN = universalPlan('uno', {
+    kind: 'host',
+    type: 'text',
+    children: [
+        {
+            kind: 'if',
+            conditionSlot: 0,
+            then: { kind: 'text', value: 'Contenido' },
+        },
+    ],
+})
+
+const CONDITIONAL_TEXT_COMPONENT = defineUniversalComponent<{ visible: boolean }>('uno', (props) =>
+    universalValue(CONDITIONAL_TEXT_PLAN, [props.visible]),
+)
+
 test('Octane create and insert build the Uno node tree and apply initial styles', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
@@ -322,4 +348,79 @@ test('Octane rejects unsupported renderer commands', async () => {
     )
 
     expect(() => batch.apply()).toThrow("Octane components does not support command 'visibility'")
+})
+
+test('Octane updates text content without replacing the Text node', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const root = registerRootComponent(DYNAMIC_TEXT_COMPONENT, { ui })
+
+    root.render({ value: 'Antes' })
+
+    const text_node = ui.root.children[0]
+
+    root.render({ value: 'Después' })
+
+    expect(ui.root.children).toEqual([text_node])
+    expect(text_node.text_content).toBe('Después')
+})
+
+test('Octane clears removed conditional text without removing the Text node', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const root = registerRootComponent(CONDITIONAL_TEXT_COMPONENT, { ui })
+
+    root.render({ visible: true })
+
+    const text_node = ui.root.children[0]
+
+    expect(() => root.render({ visible: false })).not.toThrow()
+    expect(ui.root.children).toEqual([text_node])
+    expect(text_node.text_content).toBe('')
+})
+
+test('Octane unmounts Text with text content without retaining nodes', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const root = registerRootComponent(DYNAMIC_TEXT_COMPONENT, { ui })
+
+    root.render({ value: 'Contenido' })
+
+    const text_node = ui.root.children[0]
+
+    expect(() => root.unmount()).not.toThrow()
+    expect(ui.root.children).toEqual([])
+    expect([...ui.nodes]).toEqual([])
+    expect(text_node.ui).toBe(null)
+    expect(text_node.element).toBe(null)
+})
+
+test('Octane moves text content between Text parents', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const driver = createUniversalDriver({ ui })
+    const initial_batch = driver.prepareBatch(
+        {},
+        {
+            commands: [
+                { op: 'create', id: 1, type: 'text', props: {} },
+                { op: 'create', id: 2, type: 'text', props: {} },
+                { op: 'create', id: 3, type: '#text', props: { value: 'Contenido' } },
+                { op: 'insert', id: 1, parent: null, before: null },
+                { op: 'insert', id: 2, parent: null, before: null },
+                { op: 'insert', id: 3, parent: 1, before: null },
+            ],
+        },
+    )
+
+    initial_batch.apply()
+
+    const [first_text, second_text] = ui.root.children
+    const move_batch = driver.prepareBatch(
+        {},
+        {
+            commands: [{ op: 'move', id: 3, parent: 2, before: null }],
+        },
+    )
+
+    move_batch.apply()
+
+    expect(first_text.text_content).toBe('')
+    expect(second_text.text_content).toBe('Contenido')
 })

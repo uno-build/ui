@@ -82,6 +82,10 @@ export function createUniversalDriver({ ui }) {
                                 if (parent.type !== TYPE.TAG_TEXT) {
                                     throw new Error(`Texts must be inserted into a <Text> component.`)
                                 }
+                                if (op === 'move' && child.parent !== parent) {
+                                    child.parent.node.text('')
+                                }
+                                child.parent = parent
                                 parent.node.text(child.props.value)
                             }
 
@@ -98,20 +102,33 @@ export function createUniversalDriver({ ui }) {
                         // Update
                         else if (op === 'update') {
                             const instance = instances.get(id)
-                            applyStyles(instance.node, command)
-                            instance.props = command.props
+                            instance.props = props
+                            if (instance.type === TYPE.TEXT) {
+                                instance.parent.node.text(props.value)
+                            }
+                            else {
+                                applyStyles(instance.node, command)
+                            }
                         }
 
                         // Remove / Detach
                         else if (op === 'remove') {
-                            const node = instances.get(id).node
-                            node.detach()
+                            const instance = instances.get(id)
+                            if (instance.type === TYPE.TEXT) {
+                                instance.parent.node.text('')
+                                instance.parent = null
+                            }
+                            else {
+                                instance.node.detach()
+                            }
                         }
 
                         // Destroy
                         else if (op === 'destroy') {
-                            const node = instances.get(id).node
-                            node.destroy()
+                            const instance = instances.get(id)
+                            if (instance.type !== TYPE.TEXT) {
+                                instance.node.destroy()
+                            }
                             instances.delete(id)
                         }
 
