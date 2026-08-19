@@ -10,7 +10,7 @@ const TEXTURE_SCALAR = window.devicePixelRatio
 export async function main({
     canvas,
     onCanvasEvent,
-    WebGPUResources,
+    ResourcesWebGPU,
     UIWebGPU,
     UIThree,
     loadImage,
@@ -22,12 +22,12 @@ export async function main({
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
     const world_width = WORLD_HEIGHT * (device_width / device_height)
 
-    const webgpu = await WebGPUResources.create({ canvas })
-    const { context, device } = webgpu
+    const resources = await ResourcesWebGPU.create({ canvas })
+    const { context, device } = resources
     const assets = await loadAssets({ loadImage, loadJson })
-    registerAssets({ webgpu, assets })
+    registerAssets({ resources, assets })
 
-    const { ui: overlay_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
@@ -38,7 +38,7 @@ export async function main({
         material: first_material,
         geometry: first_geometry,
     } = await UIThree.create({
-        webgpu,
+        resources,
         loadYoga,
         device_pixel_ratio,
         texture_width: texture_width,
@@ -54,7 +54,7 @@ export async function main({
         material: second_material,
         geometry: second_geometry,
     } = await UIThree.create({
-        webgpu,
+        resources,
         loadYoga,
         device_pixel_ratio,
         texture_width: texture_width,
@@ -141,7 +141,7 @@ export async function main({
         overlay_ui.update()
         overlay_ui.draw()
 
-        webgpu.present()
+        resources.present()
 
         requestAnimationFrame(renderFrame)
     }
@@ -160,7 +160,7 @@ export async function main({
     //     first_ui.destroy()
 
     //     overlay_ui.destroy()
-    //     webgpu.dispose()
+    //     resources.dispose()
     // }, 10000)
 
     requestAnimationFrame(renderFrame)

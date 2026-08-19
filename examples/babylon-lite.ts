@@ -19,7 +19,7 @@ import { loadAssets, registerAssets } from './uis/assets'
 import { createBackgroundUI } from './uis/background-ui'
 import { createForegroundUI } from './uis/foreground-ui'
 
-export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, loadImage, loadJson, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, loadImage, loadJson, loadYoga }) {
     const engine = await createEngine(canvas, { msaaSamples: 1, alphaMode: 'premultiplied' })
     const scene = createSceneContext(engine, { defaultRenderTask: false })
 
@@ -59,18 +59,18 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
     addToScene(scene, cube)
 
     const context = canvas.getContext('webgpu')
-    const webgpu = await WebGPUResources.create({
+    const resources = await ResourcesWebGPU.create({
         canvas,
         device: engine._device,
         context,
         format: engine.format,
     })
     const device_pixel_ratio = window.devicePixelRatio
-    const { ui: background_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
-    const { ui: foreground_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    const { ui: background_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: foreground_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
 
     const assets = await loadAssets({ loadImage, loadJson })
-    registerAssets({ webgpu, assets })
+    registerAssets({ resources, assets })
     const { grid } = createBackgroundUI({ ui: background_ui, assets, background_color: '#fbd0dd' })
     createForegroundUI({ ui: foreground_ui, assets, title: 'Hello Babylon Lite!' })
     syncCanvasSize({ canvas, background_ui, foreground_ui })
@@ -151,7 +151,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
 
         renderFrame(engine, delta)
 
-        webgpu.present()
+        resources.present()
 
         requestAnimationFrame(frame)
     }

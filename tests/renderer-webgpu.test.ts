@@ -117,7 +117,7 @@ test('RendererWebGPU destroy releases UI buffers without disposing shared resour
     expect(image_manager.getTextureView()).toEqual({ id: 'atlas-view' })
     expect(font_manager.getTextureView()).toEqual({ id: 'font-view' })
     expect((renderer as any).pending_styles).toEqual([])
-    expect((renderer as any).webgpu).toBe(null)
+    expect((renderer as any).resources).toBe(null)
 })
 
 test('RendererWebGPU writes layout and clipping bounds into panel instance data', () => {
@@ -1670,7 +1670,7 @@ test('RendererWebGPU writes the explicit viewport and device pixel ratio into th
     const writes = []
     const renderer = createRenderer()
     const empty_buffer_data = { bytes: new Uint8Array(), bytes_offset: 0 }
-    ;(renderer as any).webgpu.device = {
+    ;(renderer as any).resources.device = {
         queue: {
             writeBuffer(buffer, offset, data) {
                 writes.push({ buffer, offset, data })
@@ -3402,7 +3402,7 @@ function collectRenderData(renderer, nodes) {
 
 function createRenderer(image_manager = createImageManager(), font_manager = createFontManager()) {
     const renderer = new RendererWebGPU({
-        webgpu: {
+        resources: {
             image_manager,
             font_manager,
             font_atlas_size: FONT_ATLAS_SIZE,

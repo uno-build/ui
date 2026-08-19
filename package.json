@@ -3,9 +3,13 @@
     "version": "1.0.0-rc.0",
     "type": "module",
     "exports": {
-        "./WebGPUResources": {
-            "types": "./src/renderer/webgpu/WebGPUResources.ts",
-            "import": "./src/renderer/webgpu/WebGPUResources.ts"
+        "./ResourcesWebGPU": {
+            "types": "./src/renderer/webgpu/ResourcesWebGPU.ts",
+            "import": "./src/renderer/webgpu/ResourcesWebGPU.ts"
+        },
+        "./ResourcesDom": {
+            "types": "./src/renderer/dom/ResourcesDom.ts",
+            "import": "./src/renderer/dom/ResourcesDom.ts"
         },
         "./UIWebGPU": {
             "types": "./src/ui/UIWebGPU.ts",
@@ -26,6 +30,10 @@
         "./UIPlayCanvas": {
             "types": "./src/ui/UIPlayCanvas.ts",
             "import": "./src/ui/UIPlayCanvas.ts"
+        },
+        "./UIDom": {
+            "types": "./src/ui/UIDom.ts",
+            "import": "./src/ui/UIDom.ts"
         }
     },
     "dependencies": {

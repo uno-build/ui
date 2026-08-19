@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
+import Resources from '../src/core/Resources.ts'
 import RendererDom from '../src/renderer/RendererDom.ts'
-import DOMResources from '../src/renderer/dom/DOMResources.ts'
+import ResourcesDom from '../src/renderer/dom/ResourcesDom.ts'
 import Style from '../src/style'
 
 test('RendererDom sets the document root font size', () => {
@@ -14,7 +15,7 @@ test('RendererDom sets the document root font size', () => {
     }
 
     try {
-        const renderer = new RendererDom({ canvas: {} })
+        const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas: {} }) })
 
         renderer.setRootSize(20)
 
@@ -25,7 +26,7 @@ test('RendererDom sets the document root font size', () => {
 })
 
 test('RendererDom keeps viewport units as native CSS values', () => {
-    const renderer = new RendererDom({ canvas: {} })
+    const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas: {} }) })
     const element = { style: {} }
     const node = {}
     ;(renderer as any).elements.set(node, element)
@@ -39,7 +40,7 @@ test('RendererDom keeps viewport units as native CSS values', () => {
 })
 
 test('RendererDom maps textStroke only to webkitTextStroke', () => {
-    const renderer = new RendererDom({ canvas: {} })
+    const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas: {} }) })
     const element = { style: {} }
     const node = {}
     ;(renderer as any).elements.set(node, element)
@@ -56,8 +57,8 @@ test('RendererDom maps textStroke only to webkitTextStroke', () => {
 })
 
 test('RendererDom resolves natural and unset lineHeight from registered font metrics', () => {
-    const dom = DOMResources.create()
-    const renderer = new RendererDom({ canvas: {}, dom })
+    const resources = ResourcesDom.create({ canvas: {} })
+    const renderer = new RendererDom({ resources })
     const element = { style: {} }
     const node = {
         styles: {
@@ -65,7 +66,7 @@ test('RendererDom resolves natural and unset lineHeight from registered font met
         },
     }
     ;(renderer as any).elements.set(node, element)
-    dom.registerFont('Poppins-Regular', {}, { metrics: { lineHeight: 1.5 } })
+    resources.registerFont('Poppins-Regular', {}, { metrics: { lineHeight: 1.5 } })
     ;(renderer as any).updateStyle(node, Style.resolveStyle('fontFamily', 'Poppins-Regular'))
     expect(element.style.lineHeight).toBe('1.5')
 
@@ -80,22 +81,30 @@ test('RendererDom resolves natural and unset lineHeight from registered font met
     expect(element.style.lineHeight).toBe('1.5')
 })
 
-test('DOMResources rejects duplicate fonts and allows registration after disposal', () => {
-    const dom = DOMResources.create()
+test('ResourcesDom inherits the canvas resource', () => {
+    const canvas = {}
+    const resources = ResourcesDom.create({ canvas })
+
+    expect(resources).toBeInstanceOf(Resources)
+    expect(resources.canvas).toBe(canvas)
+})
+
+test('ResourcesDom rejects duplicate fonts and allows registration after disposal', () => {
+    const resources = ResourcesDom.create({ canvas: {} })
     const first_metrics = { lineHeight: 1.5 }
     const second_metrics = { lineHeight: 2 }
 
-    dom.registerFont('Poppins', {}, { metrics: first_metrics })
+    resources.registerFont('Poppins', {}, { metrics: first_metrics })
 
-    expect(() => dom.registerFont('Poppins', {}, { metrics: second_metrics })).toThrow(
+    expect(() => resources.registerFont('Poppins', {}, { metrics: second_metrics })).toThrow(
         'Font "Poppins" is already registered.',
     )
-    expect(dom.getFont('Poppins')).toBe(first_metrics)
+    expect(resources.getFont('Poppins')).toBe(first_metrics)
 
-    dom.disposeFont('Poppins')
-    dom.registerFont('Poppins', {}, { metrics: second_metrics })
+    resources.disposeFont('Poppins')
+    resources.registerFont('Poppins', {}, { metrics: second_metrics })
 
-    expect(dom.getFont('Poppins')).toBe(second_metrics)
+    expect(resources.getFont('Poppins')).toBe(second_metrics)
 })
 
 test('RendererDom synchronizes node scroll state after update', () => {
@@ -111,7 +120,7 @@ test('RendererDom synchronizes node scroll state after update', () => {
         client_width: 150,
         client_height: 100,
     })
-    const renderer = new RendererDom({ canvas })
+    const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas }) })
     const root = createNode(0)
     const node = createNode(1)
     root.scroll_left = 40
@@ -147,7 +156,7 @@ test('RendererDom destroy removes UI elements and preserves its external root', 
     }
 
     try {
-        const renderer = new RendererDom({ canvas })
+        const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas }) })
         const root = createNode(0)
         const child = createNode(1)
         const detached = createNode(2)
@@ -176,7 +185,7 @@ test('RendererDom keeps detached elements alive until destroyNode', () => {
     }
 
     try {
-        const renderer = new RendererDom({ canvas })
+        const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas }) })
         const root = createNode(0)
         const child = createNode(1)
         const child_element = renderer.createElement(child)
@@ -210,7 +219,7 @@ test('RendererDom layout remains in content coordinates while the parent is scro
             return { left: 10, top: 20, width: 300, height: 200 }
         },
     }
-    const renderer = new RendererDom({ canvas })
+    const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas }) })
     const root = {
         id: 0,
         parent: null,

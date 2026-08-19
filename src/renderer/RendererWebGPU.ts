@@ -56,7 +56,7 @@ const TEXT_MEASURE_STYLE_NAMES = new Set([
 ])
 
 export default class RendererWebGPU extends Renderer {
-    private webgpu
+    private resources
     private image_min_filter
     private image_mag_filter
     private device_pixel_ratio = 1
@@ -112,15 +112,15 @@ export default class RendererWebGPU extends Renderer {
     private computeStyle = (style) => computeStyleValue(style, this)
 
     constructor({
-        webgpu,
+        resources,
         image_min_filter = 'linear',
         image_mag_filter = 'linear',
         scrollbar_size = SCROLLBAR_SIZE,
         loadYoga,
     }) {
         super()
-        this.webgpu = webgpu
-        this.image_manager = webgpu.image_manager
+        this.resources = resources
+        this.image_manager = resources.image_manager
         this.image_min_filter = image_min_filter
         this.image_mag_filter = image_mag_filter
         this.scrollbar_size = scrollbar_size
@@ -129,37 +129,37 @@ export default class RendererWebGPU extends Renderer {
 
     public async init() {
         this.engine = await createEngine({ loadYoga: this.loadYoga })
-        this.position_buffer = this.webgpu.device.createBuffer({
+        this.position_buffer = this.resources.device.createBuffer({
             size: POSITION_VERTICES.byteLength,
             usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
         })
-        this.viewport_buffer = this.webgpu.device.createBuffer({
+        this.viewport_buffer = this.resources.device.createBuffer({
             size: VIEWPORT_SIZE,
             usage: globalThis.GPUBufferUsage.UNIFORM | globalThis.GPUBufferUsage.COPY_DST,
         })
-        this.command_buffer = this.webgpu.device.createBuffer({
+        this.command_buffer = this.resources.device.createBuffer({
             size: COMMAND_SIZE,
             usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
         })
         this.command_buffer_size = COMMAND_SIZE
-        this.panel_data_buffer = this.webgpu.device.createBuffer({
+        this.panel_data_buffer = this.resources.device.createBuffer({
             size: PANEL_DATA_SIZE,
             usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
         })
         this.panel_data_buffer_size = PANEL_DATA_SIZE
-        this.glyph_data_buffer = this.webgpu.device.createBuffer({
+        this.glyph_data_buffer = this.resources.device.createBuffer({
             size: GLYPH_DATA_SIZE,
             usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
         })
         this.glyph_data_buffer_size = GLYPH_DATA_SIZE
-        this.text_run_buffer = this.webgpu.device.createBuffer({
+        this.text_run_buffer = this.resources.device.createBuffer({
             size: TEXT_RUN_SIZE,
             usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
         })
         this.text_run_buffer_size = TEXT_RUN_SIZE
-        this.webgpu.device.queue.writeBuffer(this.position_buffer, 0, POSITION_VERTICES)
+        this.resources.device.queue.writeBuffer(this.position_buffer, 0, POSITION_VERTICES)
         this.pipeline = this.createPipeline()
-        this.image_sampler = this.webgpu.device.createSampler({
+        this.image_sampler = this.resources.device.createSampler({
             minFilter: this.image_min_filter,
             magFilter: this.image_mag_filter,
             addressModeU: 'clamp-to-edge',
@@ -168,10 +168,10 @@ export default class RendererWebGPU extends Renderer {
         this.bind_group = this.createBindGroup()
 
         return {
-            adapter: this.webgpu.adapter,
-            device: this.webgpu.device,
-            context: this.webgpu.context,
-            format: this.webgpu.format,
+            adapter: this.resources.adapter,
+            device: this.resources.device,
+            context: this.resources.context,
+            format: this.resources.format,
         }
     }
 
@@ -214,7 +214,7 @@ export default class RendererWebGPU extends Renderer {
         this.engine = null
         this.image_manager = null
         this.font_manager = null
-        this.webgpu = null
+        this.resources = null
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
@@ -237,11 +237,11 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private createPipeline() {
-        const shader_module = this.webgpu.device.createShaderModule({
+        const shader_module = this.resources.device.createShaderModule({
             code: createUIWGSL(),
         })
 
-        return this.webgpu.device.createRenderPipeline({
+        return this.resources.device.createRenderPipeline({
             layout: 'auto',
             vertex: {
                 module: shader_module,
@@ -275,7 +275,7 @@ export default class RendererWebGPU extends Renderer {
                 entryPoint: 'fragmentMain',
                 targets: [
                     {
-                        format: this.webgpu.format,
+                        format: this.resources.format,
                         blend: {
                             color: {
                                 srcFactor: 'src-alpha',
@@ -298,7 +298,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private createBindGroup() {
-        const bind_group = this.webgpu.device.createBindGroup({
+        const bind_group = this.resources.device.createBindGroup({
             layout: this.pipeline.getBindGroupLayout(0),
             entries: [
                 {
@@ -317,7 +317,7 @@ export default class RendererWebGPU extends Renderer {
                 },
                 {
                     binding: 3,
-                    resource: this.webgpu.font_manager.getTextureView(),
+                    resource: this.resources.font_manager.getTextureView(),
                 },
                 {
                     binding: 4,
@@ -341,7 +341,7 @@ export default class RendererWebGPU extends Renderer {
         })
 
         this.image_texture_version = this.image_manager.texture_version
-        this.font_texture_version = this.webgpu.font_manager.texture_version
+        this.font_texture_version = this.resources.font_manager.texture_version
 
         return bind_group
     }
@@ -530,13 +530,13 @@ export default class RendererWebGPU extends Renderer {
     public draw({ submit = true, command_encoder, texture_view, load_op = 'load' } = {}) {
         if (
             this.image_texture_version !== this.image_manager.texture_version ||
-            this.font_texture_version !== this.webgpu.font_manager.texture_version
+            this.font_texture_version !== this.resources.font_manager.texture_version
         ) {
             this.bind_group = this.createBindGroup()
         }
 
-        command_encoder ??= this.webgpu.device.createCommandEncoder()
-        texture_view ??= this.webgpu.context.getCurrentTexture().createView()
+        command_encoder ??= this.resources.device.createCommandEncoder()
+        texture_view ??= this.resources.context.getCurrentTexture().createView()
         const pass_encoder = command_encoder.beginRenderPass({
             colorAttachments: [
                 {
@@ -559,7 +559,7 @@ export default class RendererWebGPU extends Renderer {
         pass_encoder.end()
 
         if (submit) {
-            this.webgpu.device.queue.submit([command_encoder.finish()])
+            this.resources.device.queue.submit([command_encoder.finish()])
         }
 
         return { command_encoder, texture_view }
@@ -779,7 +779,7 @@ export default class RendererWebGPU extends Renderer {
             glyphs,
             run: {
                 color: node.styles.color?.parsed.rgba ?? FONT_COLOR,
-                font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.webgpu.font_atlas_size],
+                font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.resources.font_atlas_size],
                 clipping,
                 text_shadow: [...text_shadow_data, 0],
                 text_shadow_color: text_shadow?.color ?? [0, 0, 0, 0],
@@ -795,8 +795,8 @@ export default class RendererWebGPU extends Renderer {
         const font_family = node.styles.fontFamily?.value
         const font =
             font_family === undefined
-                ? this.webgpu.font_manager.getDefaultFont()
-                : this.webgpu.font_manager.getFont(font_family)
+                ? this.resources.font_manager.getDefaultFont()
+                : this.resources.font_manager.getFont(font_family)
 
         if (font === undefined && font_family !== undefined) {
             throw new Error(`Font "${font_family}" is not registered.`)
@@ -950,14 +950,14 @@ export default class RendererWebGPU extends Renderer {
         ) {
             this.command_buffer_size = command_buffer_data.bytes_offset
             this.command_buffer?.destroy()
-            this.command_buffer = this.webgpu.device.createBuffer({
+            this.command_buffer = this.resources.device.createBuffer({
                 size: command_buffer_data.bytes_offset,
                 usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
             })
         }
 
         if (command_buffer_data.bytes_offset > 0) {
-            this.webgpu.device.queue.writeBuffer(
+            this.resources.device.queue.writeBuffer(
                 this.command_buffer,
                 0,
                 command_buffer_data.bytes,
@@ -972,7 +972,7 @@ export default class RendererWebGPU extends Renderer {
         ) {
             this.panel_data_buffer_size = panel_data_buffer_data.bytes_offset
             this.panel_data_buffer?.destroy()
-            this.panel_data_buffer = this.webgpu.device.createBuffer({
+            this.panel_data_buffer = this.resources.device.createBuffer({
                 size: panel_data_buffer_data.bytes_offset,
                 usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
             })
@@ -980,7 +980,7 @@ export default class RendererWebGPU extends Renderer {
         }
 
         if (panel_data_buffer_data.bytes_offset > 0) {
-            this.webgpu.device.queue.writeBuffer(
+            this.resources.device.queue.writeBuffer(
                 this.panel_data_buffer,
                 0,
                 panel_data_buffer_data.bytes,
@@ -995,7 +995,7 @@ export default class RendererWebGPU extends Renderer {
         ) {
             this.glyph_data_buffer_size = glyph_data_buffer_data.bytes_offset
             this.glyph_data_buffer?.destroy()
-            this.glyph_data_buffer = this.webgpu.device.createBuffer({
+            this.glyph_data_buffer = this.resources.device.createBuffer({
                 size: glyph_data_buffer_data.bytes_offset,
                 usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
             })
@@ -1003,7 +1003,7 @@ export default class RendererWebGPU extends Renderer {
         }
 
         if (glyph_data_buffer_data.bytes_offset > 0) {
-            this.webgpu.device.queue.writeBuffer(
+            this.resources.device.queue.writeBuffer(
                 this.glyph_data_buffer,
                 0,
                 glyph_data_buffer_data.bytes,
@@ -1018,7 +1018,7 @@ export default class RendererWebGPU extends Renderer {
         ) {
             this.text_run_buffer_size = text_run_buffer_data.bytes_offset
             this.text_run_buffer?.destroy()
-            this.text_run_buffer = this.webgpu.device.createBuffer({
+            this.text_run_buffer = this.resources.device.createBuffer({
                 size: text_run_buffer_data.bytes_offset,
                 usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
             })
@@ -1026,7 +1026,7 @@ export default class RendererWebGPU extends Renderer {
         }
 
         if (text_run_buffer_data.bytes_offset > 0) {
-            this.webgpu.device.queue.writeBuffer(
+            this.resources.device.queue.writeBuffer(
                 this.text_run_buffer,
                 0,
                 text_run_buffer_data.bytes,
@@ -1039,7 +1039,7 @@ export default class RendererWebGPU extends Renderer {
             this.bind_group = this.createBindGroup()
         }
 
-        this.webgpu.device.queue.writeBuffer(
+        this.resources.device.queue.writeBuffer(
             this.viewport_buffer,
             0,
             new Float32Array([this.viewport_width, this.viewport_height, this.device_pixel_ratio, 0]),

@@ -3,19 +3,19 @@ import { loadAssets, registerAssets } from './uis/assets'
 import { createBackgroundUI } from './uis/background-ui'
 import { createForegroundUI } from './uis/foreground-ui'
 
-export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, loadImage, loadJson, loadYoga }) {
-    const webgpu = await WebGPUResources.create({ canvas })
+export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, loadImage, loadJson, loadYoga }) {
+    const resources = await ResourcesWebGPU.create({ canvas })
     const { ui: background_ui } = await UIWebGPU.create({
-        webgpu,
+        resources,
         loadYoga,
         device_pixel_ratio: devicePixelRatio,
     })
     const { ui: foreground_ui } = await UIWebGPU.create({
-        webgpu,
+        resources,
         loadYoga,
         device_pixel_ratio: devicePixelRatio,
     })
-    const { context, device } = webgpu
+    const { context, device } = resources
 
     const three_renderer = new THREE.WebGPURenderer({
         canvas,
@@ -46,7 +46,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
     scene.add(cube)
 
     const assets = await loadAssets({ loadImage, loadJson })
-    registerAssets({ webgpu, assets })
+    registerAssets({ resources, assets })
     const { grid } = createBackgroundUI({ ui: background_ui, assets, background_color: '#cfeeda' })
     createForegroundUI({ ui: foreground_ui, assets, title: 'Hello Three.js!' })
     syncCanvasSize({ canvas, background_ui, foreground_ui, three_renderer, camera })
@@ -79,7 +79,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
         foreground_ui.update()
         foreground_ui.draw()
 
-        webgpu.present()
+        resources.present()
 
         requestAnimationFrame(frame)
     }

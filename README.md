@@ -1,23 +1,23 @@
 # Uno UI
 
-## WebGPU shared context
+## WebGPU resources
 
-Create one `WebGPUResources` and pass the same instance as `webgpu` to every UI that should share its adapter,
+Create one `ResourcesWebGPU` and pass the same instance as `resources` to every UI that should share its adapter,
 device, canvas context, format, fonts, and image atlases.
 
 ```ts
 import UIWebGPU from 'uno-ui/UIWebGPU'
-import WebGPUResources from 'uno-ui/WebGPUResources'
+import ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
 
-const webgpu = await WebGPUResources.create({ canvas })
+const resources = await ResourcesWebGPU.create({ canvas })
 
-webgpu.registerImage(icon_path, icon)
-webgpu.registerFont('Poppins', font_image, font_json)
+resources.registerImage(icon_path, icon)
+resources.registerFont('Poppins', font_image, font_json)
 
-const { ui } = await UIWebGPU.create({ webgpu, loadYoga })
+const { ui } = await UIWebGPU.create({ resources, loadYoga })
 ```
 
-Fonts and images only need to be registered once per shared context. Registering the same image `src` twice throws, so
+Fonts and images only need to be registered once per `ResourcesWebGPU` instance. Registering the same image `src` twice throws, so
 call `disposeImage` before replacing it.
 
 ## WebGPU composition
@@ -97,7 +97,7 @@ edge pixels into the atlas padding area:
 const icon_path = '/assets/icon.png'
 const icon = await loadImage(icon_path)
 
-webgpu.registerImage(icon_path, { ...icon, preventBleeding: true })
+resources.registerImage(icon_path, { ...icon, preventBleeding: true })
 
 const image = ui.create()
 image.style('width', '200px')
@@ -109,7 +109,7 @@ Use `preventBleeding: true` for small images, icons, sprites, or high-contrast a
 where edge artifacts are visible. Keep the default behavior for larger images
 where the extra padding copies are unlikely to matter.
 
-Atlas resources are keyed by the `src` passed to `webgpu.registerImage`, so use separate srcs
+Atlas resources are keyed by the `src` passed to `resources.registerImage`, so use separate srcs
 when the same source needs different `preventBleeding` modes.
 
 ## RendererWebGPU overflow and border radius

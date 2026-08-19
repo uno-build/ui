@@ -1,12 +1,12 @@
 import { loadImage, loadJson } from '../../utils/load-assets'
 
-export default async function createUnitsViewportLayout({ ui, context, registerFont }) {
+export default async function createUnitsViewportLayout({ ui, resources, registerFont }) {
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
     const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
     const img = await loadImage('/assets/images/texture.jpg')
 
     registerFont('Poppins-Regular', poppins_image, poppins_json)
-    context.registerImage?.(img.src, img)
+    resources.registerImage?.(img.src, img)
 
     const stage = ui.create()
     stage.style('width', '72vw')

@@ -10,7 +10,7 @@ import { loadAssets, registerAssets } from './uis/assets'
 import { createBackgroundUI } from './uis/background-ui'
 import { createForegroundUI } from './uis/foreground-ui'
 
-export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, loadImage, loadJson, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, loadImage, loadJson, loadYoga }) {
     const context = canvas.getContext('webgpu')
     const format = navigator.gpu.getPreferredCanvasFormat()
     const engine = new WebGPUEngine(canvas, {
@@ -24,15 +24,15 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
     await engine.initAsync()
     ;(engine as any).getInputElement = () => null
 
-    const webgpu = await WebGPUResources.create({
+    const resources = await ResourcesWebGPU.create({
         canvas,
         device: engine._device,
         context,
         format,
     })
     const device_pixel_ratio = window.devicePixelRatio
-    const { ui: background_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
-    const { ui: foreground_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    const { ui: background_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: foreground_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
 
     const scene = new Scene(engine)
     scene.autoClear = false
@@ -62,7 +62,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
     cube.material = cube_material
 
     const assets = await loadAssets({ loadImage, loadJson })
-    registerAssets({ webgpu, assets })
+    registerAssets({ resources, assets })
     const { grid } = createBackgroundUI({ ui: background_ui, assets, background_color: '#fde2c0' })
     createForegroundUI({ ui: foreground_ui, assets, title: 'Hello Babylon.js!' })
     syncCanvasSize({ canvas, engine, background_ui, foreground_ui })
@@ -91,7 +91,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
         foreground_ui.update()
         foreground_ui.draw()
 
-        webgpu.present()
+        resources.present()
     })
 
     engine.runRenderLoop(() => {

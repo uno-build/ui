@@ -26,7 +26,7 @@ const TEXTURE_SCALAR = window.devicePixelRatio
 export async function main({
     canvas,
     onCanvasEvent,
-    WebGPUResources,
+    ResourcesWebGPU,
     UIWebGPU,
     UIBabylonLite,
     loadImage,
@@ -43,22 +43,22 @@ export async function main({
     scene.clearColor = { r: 0.067, g: 0.094, b: 0.153, a: 1 }
 
     const context = canvas.getContext('webgpu')
-    const webgpu = await WebGPUResources.create({
+    const resources = await ResourcesWebGPU.create({
         canvas,
         device: engine._device,
         context,
         format: engine.format,
     })
     const assets = await loadAssets({ loadImage, loadJson })
-    registerAssets({ webgpu, assets })
+    registerAssets({ resources, assets })
 
-    const { ui: overlay_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
     const { ui: first_ui, plane: first_plane } = await UIBabylonLite.create({
         engine,
-        webgpu,
+        resources,
         loadYoga,
         device_pixel_ratio,
         texture_width,
@@ -68,7 +68,7 @@ export async function main({
     })
     const { ui: second_ui, plane: second_plane } = await UIBabylonLite.create({
         engine,
-        webgpu,
+        resources,
         loadYoga,
         device_pixel_ratio,
         texture_width,
@@ -158,7 +158,7 @@ export async function main({
         resizeEngine(engine)
         renderFrame(engine, delta)
 
-        webgpu.present()
+        resources.present()
 
         requestAnimationFrame(frame)
     }

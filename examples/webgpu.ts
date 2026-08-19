@@ -21,12 +21,12 @@ const CUBE_VERTEX_ARRAY = new Float32Array([
     1, -1, 1, 1, 1, 0, 1, 0, 0, 1, -1, -1, 1, 1, 0, 0, 1, 0, 1, -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
 ])
 
-export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, loadImage, loadJson, loadYoga }) {
-    const webgpu = await WebGPUResources.create({ canvas })
+export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, loadImage, loadJson, loadYoga }) {
+    const resources = await ResourcesWebGPU.create({ canvas })
     const device_pixel_ratio = window.devicePixelRatio
-    const { ui: background_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
-    const { ui: foreground_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
-    const { device, context, format } = webgpu
+    const { ui: background_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: foreground_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { device, context, format } = resources
 
     syncCanvasSize({ canvas, background_ui, foreground_ui })
     onCanvasEvent('resize', () => {
@@ -36,7 +36,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
     })
 
     const assets = await loadAssets({ loadImage, loadJson })
-    registerAssets({ webgpu, assets })
+    registerAssets({ resources, assets })
     const { grid } = createBackgroundUI({ ui: background_ui, assets, background_color: '#e2cff4' })
     createForegroundUI({ ui: foreground_ui, assets, title: 'Hello WebGPU!' })
     background_ui.update()
@@ -169,7 +169,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, WebGPUResources, l
         foreground_ui.update()
         foreground_ui.draw({ command_encoder, texture_view })
 
-        webgpu.present()
+        resources.present()
 
         requestAnimationFrame(frame)
     }

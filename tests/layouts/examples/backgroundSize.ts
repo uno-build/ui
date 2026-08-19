@@ -1,6 +1,6 @@
 import { loadImage } from '../../utils/load-assets'
 
-export default async function createBackgroundImageLayout({ ui, context }) {
+export default async function createBackgroundImageLayout({ ui, resources }) {
     const size = 100
     const asset_texture = await loadImage('/assets/images/card.png')
     const BACKGROUND_COLOR = '#cdd3f8'
@@ -16,7 +16,7 @@ export default async function createBackgroundImageLayout({ ui, context }) {
         `contain`,
     ]
 
-    context.registerImage?.(asset_texture.src, asset_texture)
+        resources.registerImage?.(asset_texture.src, asset_texture)
 
     const grid = ui.create()
     grid.style('width', '100%')

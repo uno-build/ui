@@ -1,11 +1,11 @@
+import Resources from '../../core/Resources'
 import { FontManager } from './FontManager'
 import { ImageManager } from './ImageManager'
 
 const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 2048
 
-export default class WebGPUResources {
-    public canvas
+export default class ResourcesWebGPU extends Resources {
     public adapter
     public device
     public context
@@ -25,7 +25,7 @@ export default class WebGPUResources {
         image_atlas_size = IMAGE_ATLAS_SIZE,
         font_atlas_size = FONT_ATLAS_SIZE,
     }) {
-        this.canvas = canvas
+        super({ canvas })
         this.adapter = adapter
         this.device = device
         this.context = context
@@ -35,9 +35,9 @@ export default class WebGPUResources {
     }
 
     public static async create(options) {
-        const webgpu = new WebGPUResources(options)
-        await webgpu.initialize()
-        return webgpu
+        const resources = new ResourcesWebGPU(options)
+        await resources.initialize()
+        return resources
     }
 
     protected async initialize() {

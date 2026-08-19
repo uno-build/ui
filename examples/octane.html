@@ -25,18 +25,29 @@
         <script type="module">
             import { createUniversalRendererRoot } from '../src/components/octane/index.js'
             import { BasicComponent } from './octane'
+            import ResourcesWebGPU from '../src/renderer/webgpu/ResourcesWebGPU'
+            import ResourcesDom from '../src/renderer/dom/ResourcesDom'
             import UIWebGPU from '../src/ui/UIWebGPU'
-            import WebGPUResources from '../src/renderer/webgpu/WebGPUResources'
+            import UIDom from '../src/ui/UIDom'
             import { loadImage, loadJson } from '../tests/utils/load-assets'
             import { loadYoga } from 'yoga-layout/load'
 
             async function main() {
                 const canvas = document.querySelector('canvas')
                 const onCanvasEvent = window.addEventListener
-                const webgpu = await WebGPUResources.create({ canvas })
                 const device_pixel_ratio = window.devicePixelRatio
-                const { ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
-                const { device, context, format } = webgpu
+
+                const resources_webgpu = await ResourcesWebGPU.create({ canvas })
+                const resources_dom = await ResourcesDom.create({
+                    canvas: document.body,
+                })
+                // const { ui } = await UIWebGPU.create({
+                //     resources: resources_webgpu,
+                //     loadYoga,
+                //     device_pixel_ratio,
+                // })
+                const { ui } = await UIDom.create({ resources: resources_dom })
+                const { device, context, format } = resources_webgpu
 
                 function syncCanvasSize() {
                     const width = canvas.clientWidth

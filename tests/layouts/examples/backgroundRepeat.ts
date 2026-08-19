@@ -1,6 +1,6 @@
 import { loadImage } from '../../utils/load-assets'
 
-export default async function createBackgroundRepeatLayout({ ui, context }) {
+export default async function createBackgroundRepeatLayout({ ui, resources }) {
     const size = 120
     const GAP = 16
     const asset_texture = await loadImage('/assets/images/coin.png')
@@ -9,7 +9,7 @@ export default async function createBackgroundRepeatLayout({ ui, context }) {
     const BACKGROUND_POSITIONS = ['0% 0%', '50% 50%', '100% 100%', '25px 25px']
     const BACKGROUND_REPEATS = ['no-repeat', 'repeat-x', 'repeat-y', 'repeat']
 
-    context.registerImage?.(asset_texture.src, asset_texture)
+    resources.registerImage?.(asset_texture.src, asset_texture)
 
     const grid = ui.create()
     grid.style('width', `${size * 4 + GAP * 5}px`)

@@ -3,16 +3,14 @@ import { calculateLayoutRect, getParentLayout } from '../layouter/utils'
 import { KEYWORD } from '../style/consts'
 
 export default class RendererDom extends Renderer {
-    private canvas
-    private dom
+    private resources
     private elements = new WeakMap()
     private text_elements = new WeakMap()
     private root_node
 
-    constructor({ canvas, dom }) {
+    constructor({ resources }) {
         super()
-        this.canvas = canvas
-        this.dom = dom
+        this.resources = resources
     }
 
     public setRootSize(root_size) {
@@ -23,7 +21,7 @@ export default class RendererDom extends Renderer {
         let element
         if (node.id === 0) {
             this.root_node = node
-            element = this.canvas
+            element = this.resources.canvas
         } else {
             element = document.createElement('div')
             element.id = `node-${node.id}`
@@ -52,8 +50,7 @@ export default class RendererDom extends Renderer {
 
         super.destroy(nodes)
         this.root_node = null
-        this.canvas = null
-        this.dom = null
+        this.resources = null
     }
 
     protected insertChild(parent, node, child_index) {
@@ -129,7 +126,7 @@ export default class RendererDom extends Renderer {
             return
         }
 
-        const font = this.dom.getFont(node.styles.fontFamily?.value)
+        const font = this.resources.getFont(node.styles.fontFamily?.value)
         element.style.lineHeight = font === undefined ? '' : `${font.lineHeight}`
     }
 
@@ -194,7 +191,7 @@ export default class RendererDom extends Renderer {
         const parent = node.parent
         const parent_layout = getParentLayout(node)
         const node_rect = this.elements.get(node).getBoundingClientRect()
-        const parent_element = parent === null ? this.canvas : this.elements.get(parent)
+        const parent_element = parent === null ? this.resources.canvas : this.elements.get(parent)
         const parent_rect = parent_element.getBoundingClientRect()
 
         return calculateLayoutRect(

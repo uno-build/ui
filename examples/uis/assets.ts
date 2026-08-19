@@ -10,11 +10,11 @@ export async function loadAssets({ loadImage, loadJson }) {
     return { coin, repeat_x, repeat_y, font_image, font_json }
 }
 
-export function registerAssets({ webgpu, assets }) {
+export function registerAssets({ resources, assets }) {
     const { coin, repeat_x, repeat_y, font_image, font_json } = assets
 
-    webgpu.registerImage(coin.src, coin)
-    webgpu.registerImage(repeat_x.src, repeat_x)
-    webgpu.registerImage(repeat_y.src, repeat_y)
-    webgpu.registerFont(FONT_FAMILY, font_image, font_json)
+    resources.registerImage(coin.src, coin)
+    resources.registerImage(repeat_x.src, repeat_x)
+    resources.registerImage(repeat_y.src, repeat_y)
+    resources.registerFont(FONT_FAMILY, font_image, font_json)
 }

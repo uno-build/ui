@@ -1,7 +1,7 @@
 import UIDom from '../../src/ui/UIDom'
 import UIWebGPU from '../../src/ui/UIWebGPU'
-import WebGPUResources from '../../src/renderer/webgpu/WebGPUResources'
-import DOMResources from '../../src/renderer/dom/DOMResources'
+import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
+import ResourcesDom from '../../src/renderer/dom/ResourcesDom'
 import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
 import { loadYoga } from 'yoga-layout/load'
 
@@ -9,8 +9,7 @@ export const SETUPS = {
     RendererDom: {
         elementType: 'div',
         ui: UIDom,
-        shared_context: DOMResources,
-        context_option: 'dom',
+        resources_class: ResourcesDom,
         attributes: {},
         inspectDomPaint: true,
         runOnTests: true,
@@ -19,8 +18,7 @@ export const SETUPS = {
     RendererWebGPU: {
         elementType: 'canvas',
         ui: UIWebGPU,
-        shared_context: WebGPUResources,
-        context_option: 'webgpu',
+        resources_class: ResourcesWebGPU,
         attributes: {},
         inspectDomPaint: false,
         runOnTests: true,
@@ -47,10 +45,9 @@ export async function runLayout({
     for (const rendererName of renderers) {
         const setup = getSetup(rendererName)
         const canvas = createCanvasElement(root, rendererName, setup)
-        const context = await setup.shared_context.create({ canvas })
+        const resources = await setup.resources_class.create({ canvas })
         const { ui } = await setup.ui.create({
-            canvas,
-            [setup.context_option]: context,
+            resources,
             loadYoga,
             device_pixel_ratio: window.devicePixelRatio,
             ...renderer_options,
@@ -60,8 +57,8 @@ export async function runLayout({
         syncViewport({ ui, root, canvas })
         const layoutResult = await createLayout({
             ui,
-            context,
-            registerFont: context.registerFont.bind(context),
+            resources,
+            registerFont: resources.registerFont.bind(resources),
             rendererName,
             animations_enabled,
             viewport_width: root.clientWidth,

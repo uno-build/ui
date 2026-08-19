@@ -35,7 +35,7 @@ export async function main({
     onCanvasEvent,
     UIPlayCanvas,
     UIWebGPU,
-    WebGPUResources,
+    ResourcesWebGPU,
     loadImage,
     loadJson,
     loadYoga,
@@ -48,7 +48,7 @@ export async function main({
     const graphics_device = await createGraphicsDevice(canvas, gfx_options)
     graphics_device.maxPixelRatio = Math.min(devicePixelRatio, 2)
 
-    const webgpu = await WebGPUResources.create({
+    const resources = await ResourcesWebGPU.create({
         canvas,
         device: graphics_device.wgpu,
         context: graphics_device.gpuContext,
@@ -73,14 +73,14 @@ export async function main({
     const world_width = WORLD_HEIGHT * (device_width / device_height)
 
     const assets = await loadAssets({ loadImage, loadJson })
-    registerAssets({ webgpu, assets })
-    const { ui: overlay_ui } = await UIWebGPU.create({ webgpu, loadYoga, device_pixel_ratio })
+    registerAssets({ resources, assets })
+    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
     const { ui: first_ui, plane: first_plane } = await UIPlayCanvas.create({
         app,
-        webgpu,
+        resources,
         loadYoga,
         device_pixel_ratio,
         texture_width,
@@ -90,7 +90,7 @@ export async function main({
     })
     const { ui: second_ui, plane: second_plane } = await UIPlayCanvas.create({
         app,
-        webgpu,
+        resources,
         loadYoga,
         device_pixel_ratio,
         texture_width,
@@ -261,7 +261,7 @@ export async function main({
         })
     })
 
-    app.on('frameend', () => webgpu.present())
+    app.on('frameend', () => resources.present())
     app.start()
 }
 

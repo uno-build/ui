@@ -2,8 +2,8 @@ import UI from '../core/UI'
 import RendererDom from '../renderer/RendererDom'
 
 export default class UIDom extends UI {
-    protected constructor(options) {
-        const renderer = new RendererDom(options)
+    protected constructor({ resources }) {
+        const renderer = new RendererDom({ resources })
         super({ renderer })
     }
 

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
-import WebGPUResources from '../src/renderer/webgpu/WebGPUResources'
+import Resources from '../src/core/Resources'
+import ResourcesWebGPU from '../src/renderer/webgpu/ResourcesWebGPU'
 import UIWorldSpace from '../src/ui/UIWorldSpace.ts'
 import TestRenderer from './TestRenderer.ts'
 import TestUI from './TestUI.ts'
@@ -676,11 +677,11 @@ test('UI forwards viewport changes to the renderer', async () => {
     expect(viewports).toEqual([[320, 180]])
 })
 
-test('WebGPUResources image api delegates to the image manager', () => {
+test('ResourcesWebGPU image api delegates to the image manager', () => {
     const image = createImage('/assets/first.png', 32, 32)
     const calls = []
-    const webgpu = new (WebGPUResources as any)({})
-    webgpu.image_manager = {
+    const resources = new (ResourcesWebGPU as any)({})
+    resources.image_manager = {
         imageUpload(src, next_image) {
             calls.push({ kind: 'upload', src, image: next_image })
         },
@@ -689,18 +690,18 @@ test('WebGPUResources image api delegates to the image manager', () => {
         },
     }
 
-    webgpu.registerImage('/assets/Avatar.png', image)
-    webgpu.disposeImage('/assets/Avatar.png')
+    resources.registerImage('/assets/Avatar.png', image)
+    resources.disposeImage('/assets/Avatar.png')
     expect(calls).toEqual([
         { kind: 'upload', src: '/assets/Avatar.png', image },
         { kind: 'dispose', src: '/assets/Avatar.png' },
     ])
 })
 
-test('WebGPUResources font api delegates to the font manager', () => {
+test('ResourcesWebGPU font api delegates to the font manager', () => {
     const calls = []
-    const webgpu = new (WebGPUResources as any)({})
-    webgpu.font_manager = {
+    const resources = new (ResourcesWebGPU as any)({})
+    resources.font_manager = {
         fontRegister(name, image, json) {
             calls.push({ kind: 'register', name, image, json })
         },
@@ -711,8 +712,8 @@ test('WebGPUResources font api delegates to the font manager', () => {
     const image = createImage('/assets/fonts/Poppins.png', 484, 484)
     const json = { atlas: { type: 'msdf' } }
 
-    webgpu.registerFont('Poppins', image, json)
-    webgpu.disposeFont('Poppins')
+    resources.registerFont('Poppins', image, json)
+    resources.disposeFont('Poppins')
 
     expect(calls).toEqual([
         { kind: 'register', name: 'Poppins', image, json },
@@ -720,7 +721,15 @@ test('WebGPUResources font api delegates to the font manager', () => {
     ])
 })
 
-test('WebGPUResources dispose resets both managers without releasing the shared context', () => {
+test('ResourcesWebGPU inherits the canvas resource', () => {
+    const canvas = {}
+    const resources = new (ResourcesWebGPU as any)({ canvas })
+
+    expect(resources).toBeInstanceOf(Resources)
+    expect(resources.canvas).toBe(canvas)
+})
+
+test('ResourcesWebGPU dispose resets both managers without releasing its WebGPU context', () => {
     let image_dispose_count = 0
     let font_dispose_count = 0
     const image_manager = {
@@ -733,27 +742,27 @@ test('WebGPUResources dispose resets both managers without releasing the shared 
             font_dispose_count++
         },
     }
-    const webgpu = new (WebGPUResources as any)({
+    const resources = new (ResourcesWebGPU as any)({
         canvas: {},
         adapter: {},
         device: {},
         context: {},
         format: 'bgra8unorm',
     })
-    webgpu.image_manager = image_manager
-    webgpu.font_manager = font_manager
+    resources.image_manager = image_manager
+    resources.font_manager = font_manager
 
-    webgpu.dispose()
+    resources.dispose()
 
     expect(image_dispose_count).toBe(1)
     expect(font_dispose_count).toBe(1)
-    expect(webgpu.image_manager).toBe(image_manager)
-    expect(webgpu.font_manager).toBe(font_manager)
-    expect(webgpu.canvas).not.toBe(null)
-    expect(webgpu.adapter).not.toBe(null)
-    expect(webgpu.device).not.toBe(null)
-    expect(webgpu.context).not.toBe(null)
-    expect(webgpu.format).toBe('bgra8unorm')
+    expect(resources.image_manager).toBe(image_manager)
+    expect(resources.font_manager).toBe(font_manager)
+    expect(resources.canvas).not.toBe(null)
+    expect(resources.adapter).not.toBe(null)
+    expect(resources.device).not.toBe(null)
+    expect(resources.context).not.toBe(null)
+    expect(resources.format).toBe('bgra8unorm')
 })
 
 function byId(a, b) {

@@ -1,8 +1,14 @@
-export default class DOMResources {
+import Resources from '../../core/Resources'
+
+export default class ResourcesDom extends Resources {
     private fonts = new Map()
 
-    public static create() {
-        return new DOMResources()
+    protected constructor(options) {
+        super(options)
+    }
+
+    public static create(options) {
+        return new ResourcesDom(options)
     }
 
     public registerFont(name: string, image: any, json: any) {

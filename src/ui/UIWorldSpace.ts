@@ -12,6 +12,7 @@ export default abstract class UIWorldSpace extends UI {
     private createPlane
 
     protected constructor({
+        resources,
         texture_width,
         texture_height,
         world_width,
@@ -20,7 +21,7 @@ export default abstract class UIWorldSpace extends UI {
         createPlane,
         ...renderer_options
     }) {
-        const renderer = new RendererWebGPU({ ...renderer_options })
+        const renderer = new RendererWebGPU({ resources, ...renderer_options })
         super({ renderer })
         this.texture_width = texture_width
         this.texture_height = texture_height
