@@ -2,7 +2,13 @@
 
 import { createUniversalRoot } from 'octane/universal/native';
 
-const RENDERER_ID = 'uno';
+const RENDERER_ID = 'uno'
+const TYPE = {
+    TEXT: '#text',
+    TAG_VIEW: 'view',
+    TAG_TEXT: 'text',
+}
+const TYPES = Object.values(TYPE)
 
 export const viteConfigOctane = {
     renderers: {
@@ -11,7 +17,6 @@ export const viteConfigOctane = {
                 module: 'octane/universal/native',
                 target: 'universal',
                 server: 'client-only',
-                text: 'ignore',
             },
         },
         rules: [
@@ -41,55 +46,78 @@ export function createUniversalRendererRoot({ ui }) {
 
 function createUniversalDriver({ ui }) {
     const instances = new Map()
-    instances.set(null, ui.root)
+    instances.set(null, { node: ui.root, type: null, props: {} })
 
     return {
         id: RENDERER_ID,
-        capabilities: { text: 'ignore' },
+        capabilities: { text: 'host' },
         prepareBatch({ }, { commands }) {
             return {
                 apply() {
                     for (const command of commands) {
+                        const { op, id, type, props } = command
+
                         // Create
-                        if (command.op === 'create') {
-                            const node = ui.create()
+                        if (op === 'create') {
+                            if (!TYPES.includes(type)) {
+                                throw new Error(`Unsupported tag element '<${type}>'`)
+                            }
+                            const node = type === TYPE.TEXT ? null : ui.create()
                             applyStyles(node, command)
-                            instances.set(command.id, node)
+                            instances.set(id, { node, type, props })
                         }
 
                         // Insert / Move
-                        else if (command.op === 'insert' || command.op === 'move') {
+                        else if (op === 'insert' || op === 'move') {
                             const parent = instances.get(command.parent)
-                            const node = instances.get(command.id)
-                            const before_node = command.before === null ? null : instances.get(command.before)
-                            if (command.op === 'move') {
-                                node.detach()
+                            const child = instances.get(id)
+
+                            // If the parent is a <Text> component, it cannot have children that are not text nodes.
+                            if (parent.type === TYPE.TAG_TEXT && child.type !== TYPE.TEXT) {
+                                throw new Error(`<Text> cannot have children.`)
                             }
-                            parent.add(node, before_node)
+
+                            // If the child is a text node, it must be inserted into a <Text> component.
+                            if (child.type === TYPE.TEXT) {
+                                if (parent.type !== TYPE.TAG_TEXT) {
+                                    throw new Error(`Texts must be inserted into a <Text> component.`)
+                                }
+                                parent.node.text(child.props.value)
+                            }
+
+                            // If the child is a non-text node, it must be inserted into a <View> component.
+                            else {
+                                const before_node = command.before === null ? null : instances.get(command.before).node
+                                if (op === 'move') {
+                                    child.node.detach()
+                                }
+                                parent.node.add(child.node, before_node)
+                            }
                         }
 
                         // Update
-                        else if (command.op === 'update') {
-                            const node = instances.get(command.id)
-                            applyStyles(node, command)
+                        else if (op === 'update') {
+                            const instance = instances.get(id)
+                            applyStyles(instance.node, command)
+                            instance.props = command.props
                         }
 
                         // Remove / Detach
-                        else if (command.op === 'remove') {
-                            const node = instances.get(command.id)
+                        else if (op === 'remove') {
+                            const node = instances.get(id).node
                             node.detach()
                         }
 
                         // Destroy
-                        else if (command.op === 'destroy') {
-                            const node = instances.get(command.id)
+                        else if (op === 'destroy') {
+                            const node = instances.get(id).node
                             node.destroy()
-                            instances.delete(command.id)
+                            instances.delete(id)
                         }
 
-                        // else {
-                        //     throw new Error(`Octane components does not support command '${command.op}'`,)
-                        // }
+                        else {
+                            throw new Error(`Octane components does not support command '${op}'`,)
+                        }
                     }
                     ui.update()
                 },
@@ -99,7 +127,7 @@ function createUniversalDriver({ ui }) {
             };
         },
         getPublicInstance(_container, id) {
-            return instances.get(id) ?? null
+            return instances.get(id)?.node ?? null
         },
     };
 }

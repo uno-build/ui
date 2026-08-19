@@ -14,8 +14,7 @@ export function BasicComponent() {
 
     useEffect(() => {
         const interval = setInterval(() => {
-            console.log(ref.current)
-
+            // console.log(ref.current)
             setItems((current_items) => [current_items.at(-1), ...current_items.slice(0, -1)])
         }, 1000)
 
@@ -44,8 +43,12 @@ export function BasicComponent() {
                             height: '100px',
                             borderRadius: '12px',
                             backgroundColor: item.color,
+                            alignItems: 'center',
+                            justifyContent: 'center',
                         }}
-                    />
+                    >
+                        <Text style={{ color: '#fff', textStroke: '2px #1d2027' }}>{item.id}</Text>
+                    </View>
                 ),
             )}
         </View>
@@ -54,4 +57,8 @@ export function BasicComponent() {
 
 function View({ children, ...props }) {
     return <view {...props}>{children}</view>
+}
+
+function Text({ children, ...props }) {
+    return <text {...props}>{children}</text>
 }
