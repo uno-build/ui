@@ -59,7 +59,6 @@ function createUniversalDriver({ ui }) {
 
                         // Insert / Move
                         else if (command.op === 'insert' || command.op === 'move') {
-                            console.log('command', command.op)
                             const parent = instances.get(command.parent)
                             const node = instances.get(command.id)
                             const before_node = command.before === null ? null : instances.get(command.before)
@@ -87,16 +86,20 @@ function createUniversalDriver({ ui }) {
                             node.destroy()
                             instances.delete(command.id)
                         }
+
+                        // else {
+                        //     throw new Error(`Octane components does not support command '${command.op}'`,)
+                        // }
                     }
                     ui.update()
                 },
                 abort() {
-                    // ui.abort()
+                    // no-op
                 },
             };
         },
-        getPublicInstance() {
-            // return null;
+        getPublicInstance(_container, id) {
+            return instances.get(id) ?? null
         },
     };
 }

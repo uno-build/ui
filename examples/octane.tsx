@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'octane'
+import { useEffect, useState, useRef } from 'octane'
 import { universalFor } from 'octane/universal/native'
 
 const COLOR_ITEMS = [
@@ -9,11 +9,14 @@ const COLOR_ITEMS = [
 ]
 
 export function BasicComponent() {
-    const [items, set_items] = useState(COLOR_ITEMS)
+    const [items, setItems] = useState(COLOR_ITEMS)
+    const ref = useRef(null)
 
     useEffect(() => {
         const interval = setInterval(() => {
-            set_items((current_items) => [current_items.at(-1), ...current_items.slice(0, -1)])
+            console.log(ref.current)
+
+            setItems((current_items) => [current_items.at(-1), ...current_items.slice(0, -1)])
         }, 1000)
 
         return () => clearInterval(interval)
@@ -21,6 +24,7 @@ export function BasicComponent() {
 
     return (
         <View
+            ref={ref}
             style={{
                 width: '500px',
                 height: '140px',

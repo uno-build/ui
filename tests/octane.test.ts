@@ -42,6 +42,16 @@ const DYNAMIC_STYLE_COMPONENT = defineUniversalComponent<{ style: Record<string,
     (props) => universalValue(DYNAMIC_STYLE_PLAN, [props.style]),
 )
 
+const REF_PLAN = universalPlan('uno', {
+    kind: 'host',
+    type: 'view',
+    bindings: [['ref', 0]],
+})
+
+const REF_COMPONENT = defineUniversalComponent<{ ref: { current: unknown } }>('uno', (props) =>
+    universalValue(REF_PLAN, [props.ref]),
+)
+
 const CONDITIONAL_TREE_PLAN = universalPlan('uno', {
     kind: 'if',
     conditionSlot: 0,
@@ -148,6 +158,22 @@ test('Octane update changes Uno styles without replacing node identity', async (
     expect(node.styles.width.value).toBe('200px')
     expect(node.styles.height.value).toBe('60px')
     expect(node.styles.backgroundColor.value).toBe('#00f')
+})
+
+test('Octane refs receive the Uno node public instance', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const root = createUniversalRendererRoot({ ui })
+    const ref = { current: null }
+
+    root.render(REF_COMPONENT, { ref })
+
+    const node = ui.root.children[0]
+    expect(ref.current).toBe(node)
+
+    root.unmount()
+
+    expect(ref.current).toBe(null)
 })
 
 test('Octane insert and move place nodes before existing siblings', async () => {
