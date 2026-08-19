@@ -8,7 +8,40 @@ import { createUniversalRendererRoot } from '../src/components/octane/index.js'
 import TestRenderer from './TestRenderer.ts'
 import TestUI from './TestUI.ts'
 
-const CONDITIONAL_PLAN = universalPlan('uno', {
+const STATIC_TREE_PLAN = universalPlan('uno', {
+    kind: 'host',
+    type: 'view',
+    props: { style: { width: '120px', height: '80px' } },
+    children: [
+        {
+            kind: 'host',
+            type: 'view',
+            props: { style: { width: '40px', height: '30px' } },
+        },
+        {
+            kind: 'host',
+            type: 'view',
+            props: { style: { width: '50px', height: '20px' } },
+        },
+    ],
+})
+
+const STATIC_TREE_COMPONENT = defineUniversalComponent('uno', () =>
+    universalValue(STATIC_TREE_PLAN),
+)
+
+const DYNAMIC_STYLE_PLAN = universalPlan('uno', {
+    kind: 'host',
+    type: 'view',
+    bindings: [['style', 0]],
+})
+
+const DYNAMIC_STYLE_COMPONENT = defineUniversalComponent<{ style: Record<string, string> }>(
+    'uno',
+    (props) => universalValue(DYNAMIC_STYLE_PLAN, [props.style]),
+)
+
+const CONDITIONAL_TREE_PLAN = universalPlan('uno', {
     kind: 'if',
     conditionSlot: 0,
     then: {
@@ -25,54 +58,140 @@ const CONDITIONAL_PLAN = universalPlan('uno', {
     },
 })
 
-const CONDITIONAL_COMPONENT = defineUniversalComponent<{ visible: boolean }>('uno', (props) =>
-    universalValue(CONDITIONAL_PLAN, [props.visible]),
+const CONDITIONAL_TREE_COMPONENT = defineUniversalComponent<{ visible: boolean }>('uno', (props) =>
+    universalValue(CONDITIONAL_TREE_PLAN, [props.visible]),
 )
 
-test('Octane remove and destroy detach and release a conditional subtree', async () => {
+test('Octane create and insert build the Uno node tree and apply initial styles', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
     const root = createUniversalRendererRoot({ ui })
-    const destroyed_nodes = []
-    const destroy_node = renderer.destroyNode.bind(renderer)
+    const created_nodes = []
+    const create_node = ui.create.bind(ui)
+    let update_count = 0
+    const update_ui = ui.update.bind(ui)
 
-    renderer.destroyNode = (node) => {
-        destroyed_nodes.push(node)
-        destroy_node(node)
+    ui.create = () => {
+        const node = create_node()
+        created_nodes.push(node)
+        return node
+    }
+    ui.update = () => {
+        update_count++
+        return update_ui()
     }
 
-    root.render(CONDITIONAL_COMPONENT, { visible: true })
+    root.render(STATIC_TREE_COMPONENT, {})
+
+    const parent = ui.root.children[0]
+    const first_child = parent.children[0]
+    const second_child = parent.children[1]
+
+    expect(created_nodes).toEqual([parent, first_child, second_child])
+    expect([...ui.nodes]).toEqual([parent, first_child, second_child])
+    expect(parent.parent).toBe(ui.root)
+    expect(parent.children).toEqual([first_child, second_child])
+    expect(first_child.parent).toBe(parent)
+    expect(second_child.parent).toBe(parent)
+    expect(parent.path).toEqual([0])
+    expect(first_child.path).toEqual([0, 0])
+    expect(second_child.path).toEqual([0, 1])
+    expect(parent.styles.width.value).toBe('120px')
+    expect(parent.styles.height.value).toBe('80px')
+    expect(first_child.styles.width.value).toBe('40px')
+    expect(second_child.styles.width.value).toBe('50px')
+    expect(update_count).toBe(1)
+})
+
+test('Octane update changes Uno styles without replacing node identity', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const root = createUniversalRendererRoot({ ui })
+
+    root.render(DYNAMIC_STYLE_COMPONENT, {
+        style: { width: '100px', height: '40px', backgroundColor: '#f00' },
+    })
+
+    const node = ui.root.children[0]
+
+    root.render(DYNAMIC_STYLE_COMPONENT, {
+        style: { width: '200px', height: '60px', backgroundColor: '#00f' },
+    })
+
+    expect(ui.root.children).toEqual([node])
+    expect([...ui.nodes]).toEqual([node])
+    expect(node.styles.width.value).toBe('200px')
+    expect(node.styles.height.value).toBe('60px')
+    expect(node.styles.backgroundColor.value).toBe('#00f')
+})
+
+test('Octane remove and destroy detach and release the Uno subtree in order', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const root = createUniversalRendererRoot({ ui })
+    const operations = []
+    const detach_child = renderer.detachChild.bind(renderer)
+    const destroy_node = renderer.destroyNode.bind(renderer)
+    let update_count = 0
+    const update_ui = ui.update.bind(ui)
+
+    renderer.detachChild = (parent, node) => {
+        operations.push({ op: 'detach', parent, node })
+        detach_child(parent, node)
+    }
+    renderer.destroyNode = (node) => {
+        operations.push({ op: 'destroy', node })
+        destroy_node(node)
+    }
+    ui.update = () => {
+        update_count++
+        return update_ui()
+    }
+
+    root.render(CONDITIONAL_TREE_COMPONENT, { visible: true })
 
     const parent = ui.root.children[0]
     const child = parent.children[0]
-    expect([...ui.nodes]).toEqual([parent, child])
 
-    root.render(CONDITIONAL_COMPONENT, { visible: false })
+    root.render(CONDITIONAL_TREE_COMPONENT, { visible: false })
 
-    expect(destroyed_nodes).toEqual([child, parent])
+    expect(operations).toEqual([
+        { op: 'detach', parent: ui.root, node: parent },
+        { op: 'detach', parent, node: child },
+        { op: 'destroy', node: child },
+        { op: 'destroy', node: parent },
+    ])
+    expect(update_count).toBe(2)
     expect([...ui.nodes]).toEqual([])
     expect(ui.root.children).toEqual([])
     expect(parent.ui).toBe(null)
     expect(child.ui).toBe(null)
+    expect(parent.element).toBe(null)
+    expect(child.element).toBe(null)
 })
 
-test('Octane roots keep host instance ids isolated', async () => {
+test('Octane roots keep create, insert, remove, and destroy state isolated', async () => {
     const first_ui = await TestUI.create({ renderer: new TestRenderer() })
     const second_ui = await TestUI.create({ renderer: new TestRenderer() })
     const first_root = createUniversalRendererRoot({ ui: first_ui })
     const second_root = createUniversalRendererRoot({ ui: second_ui })
 
-    first_root.render(CONDITIONAL_COMPONENT, { visible: true })
-    second_root.render(CONDITIONAL_COMPONENT, { visible: true })
+    first_root.render(STATIC_TREE_COMPONENT, {})
+    second_root.render(STATIC_TREE_COMPONENT, {})
 
     const second_parent = second_ui.root.children[0]
+    const second_children = [...second_parent.children]
+
     first_root.unmount()
 
     expect(first_ui.root.children).toEqual([])
+    expect([...first_ui.nodes]).toEqual([])
     expect(second_ui.root.children).toEqual([second_parent])
+    expect(second_parent.children).toEqual(second_children)
     expect(second_parent.ui).toBe(second_ui)
 
     second_root.unmount()
 
     expect(second_ui.root.children).toEqual([])
+    expect([...second_ui.nodes]).toEqual([])
 })

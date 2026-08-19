@@ -323,6 +323,59 @@ test('Node detach preserves and reinserts a subtree', async () => {
     expect(grandchild.path).toEqual([1, 0, 0])
 })
 
+test('Node add builds a detached subtree and activates it when attached', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const parent = ui.create()
+    const child = ui.create()
+    const grandchild = ui.create()
+
+    child.add(grandchild)
+    parent.add(child)
+
+    expect([...ui.nodes]).toEqual([])
+    expect(parent.parent).toBe(null)
+    expect(parent.children).toEqual([child])
+    expect(child.parent).toBe(parent)
+    expect(child.children).toEqual([grandchild])
+    expect(grandchild.parent).toBe(child)
+    expect(() => ui.update()).not.toThrow()
+    expect([...ui.nodes]).toEqual([])
+
+    ui.root.add(parent)
+
+    expect([...ui.nodes]).toEqual([parent, child, grandchild])
+    expect(new Set(ui.nodes).size).toBe(3)
+    expect(parent.path).toEqual([0])
+    expect(child.path).toEqual([0, 0])
+    expect(grandchild.path).toEqual([0, 0, 0])
+})
+
+test('Node add extends a detached subtree without activating it', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const parent = ui.create()
+    const child = ui.create()
+    const grandchild = ui.create()
+
+    ui.root.add(parent)
+    parent.add(child)
+    parent.detach()
+    child.add(grandchild)
+
+    expect([...ui.nodes]).toEqual([])
+    expect(child.children).toEqual([grandchild])
+    expect(grandchild.parent).toBe(child)
+
+    ui.root.add(parent)
+
+    expect([...ui.nodes]).toEqual([parent, child, grandchild])
+    expect(new Set(ui.nodes).size).toBe(3)
+    expect(parent.path).toEqual([0])
+    expect(child.path).toEqual([0, 0])
+    expect(grandchild.path).toEqual([0, 0, 0])
+})
+
 test('Node destroy releases attached and detached subtrees in postorder once', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
@@ -362,19 +415,34 @@ test('Node destroy releases attached and detached subtrees in postorder once', a
 test('Node add and remove throw for invalid tree operations', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
+    const another_ui = await TestUI.create({ renderer: new TestRenderer() })
 
     const child = ui.create()
     const detached_parent = ui.create()
     const detached_child = ui.create()
+    const cycle_parent = ui.create()
+    const cycle_child = ui.create()
+    const foreign_child = another_ui.create()
 
     ui.root.add(child)
+    detached_parent.add(detached_child)
+    cycle_parent.add(cycle_child)
 
     expect(() => {
         ui.root.add(child)
     }).toThrow(/child already added/)
     expect(() => {
         detached_parent.add(detached_child)
-    }).toThrow(/cannot add child before adding parent/)
+    }).toThrow(/child already added/)
+    expect(() => {
+        ui.root.add(foreign_child)
+    }).toThrow(/cannot add child from another UI/)
+    expect(() => {
+        ui.root.add(ui.root)
+    }).toThrow(/cannot add root as child/)
+    expect(() => {
+        cycle_child.add(cycle_parent)
+    }).toThrow(/cannot create node cycle/)
     expect(() => {
         ui.root.remove(detached_child)
     }).toThrow(/child not found/)

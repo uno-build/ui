@@ -3,13 +3,6 @@
 import { createUniversalRoot } from 'octane/universal/native';
 
 const RENDERER_ID = 'uno';
-const OP_PRIORITY = {
-    create: 0,
-    update: 1,
-    remove: 2,
-    insert: 3,
-    destroy: 4,
-}
 
 export const viteConfigOctane = {
     renderers: {
@@ -56,53 +49,35 @@ function createUniversalDriver({ ui }) {
         prepareBatch({ }, { commands }) {
             return {
                 apply() {
-                    const sorted_commands = [...commands].sort((a, b) => {
-                        const op_diff = (OP_PRIORITY[a.op] ?? Number.MAX_SAFE_INTEGER) - (OP_PRIORITY[b.op] ?? Number.MAX_SAFE_INTEGER)
-                        if (op_diff !== 0) return op_diff
-
-                        if (a.op === 'insert') {
-                            if (a.id === b.id) return 0
-                            return a.id < b.id ? -1 : 1
-                        }
-
-                        return 0
-                    })
-                    for (const command of sorted_commands) {
-                        // console.log(command)
-
+                    for (const command of commands) {
                         // Create
                         if (command.op === 'create') {
                             const node = ui.create()
-                            const styles = Object.entries(command.props.style || {})
-                            for (const [key, value] of styles) {
-                                node.style(key, value)
-                            }
+                            applyStyles(node, command)
                             instances.set(command.id, node)
-
                         }
 
                         // Insert / Add
-                        if (command.op === 'insert') {
+                        else if (command.op === 'insert') {
                             const parent = instances.get(command.parent)
                             const node = instances.get(command.id)
                             parent.add(node)
                         }
 
                         // Update
-                        if (command.op === 'update') {
+                        else if (command.op === 'update') {
                             const node = instances.get(command.id)
-                            const styles = Object.entries(command.props.style || {})
-                            for (const [key, value] of styles) {
-                                node.style(key, value)
-                            }
+                            applyStyles(node, command)
                         }
 
-                        if (command.op === 'remove') {
+                        // Remove / Detach
+                        else if (command.op === 'remove') {
                             const node = instances.get(command.id)
                             node.detach()
                         }
 
-                        if (command.op === 'destroy') {
+                        // Destroy
+                        else if (command.op === 'destroy') {
                             const node = instances.get(command.id)
                             node.destroy()
                             instances.delete(command.id)
@@ -119,4 +94,11 @@ function createUniversalDriver({ ui }) {
             // return null;
         },
     };
+}
+
+function applyStyles(node, command) {
+    const styles = Object.entries(command.props.style ?? {})
+    for (const [key, value] of styles) {
+        node.style(key, value)
+    }
 }

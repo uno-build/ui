@@ -75,16 +75,31 @@ export default class UI {
     }
 
     private addChild(parent, child) {
-        if (this.nodes.includes(child) === true) {
+        if (child.ui !== this) {
+            throw new Error('cannot add child from another UI')
+        }
+        if (child === this.root) {
+            throw new Error('cannot add root as child')
+        }
+        if (child.parent !== null || this.nodes.includes(child) === true) {
             throw new Error('child already added')
         }
-        if (parent !== this.root && this.nodes.includes(parent) === false) {
-            throw new Error('cannot add child before adding parent')
+
+        let ancestor = parent
+        while (ancestor !== null) {
+            if (ancestor === child) {
+                throw new Error('cannot create node cycle')
+            }
+            ancestor = ancestor.parent
         }
+
+        const parent_is_active = parent === this.root || this.nodes.includes(parent)
         const child_index = this.renderer.getChildIndex(parent)
         child.parent = parent
         parent.children.push(child)
-        this.activateNode(child, [...parent.path, child_index])
+        if (parent_is_active) {
+            this.activateNode(child, [...parent.path, child_index])
+        }
         this.renderer.addChild(parent, child)
     }
 
