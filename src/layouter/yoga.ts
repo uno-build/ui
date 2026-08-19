@@ -50,8 +50,8 @@ export default async function createYogaEngine({ loadYoga } = {}) {
             return getElement(node).getChildCount()
         },
 
-        insertChild(parent, node, childIndex) {
-            getElement(parent).insertChild(getElement(node), childIndex)
+        insertChild(parent, node, child_index) {
+            getElement(parent).insertChild(getElement(node), child_index)
         },
 
         detachChild(parent, node) {

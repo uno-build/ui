@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
     defineUniversalComponent,
+    universalFor,
     universalPlan,
     universalValue,
 } from 'octane/universal/native'
@@ -60,6 +61,30 @@ const CONDITIONAL_TREE_PLAN = universalPlan('uno', {
 
 const CONDITIONAL_TREE_COMPONENT = defineUniversalComponent<{ visible: boolean }>('uno', (props) =>
     universalValue(CONDITIONAL_TREE_PLAN, [props.visible]),
+)
+
+const KEYED_ITEM_PLAN = universalPlan('uno', {
+    kind: 'host',
+    type: 'view',
+    bindings: [['style', 0]],
+})
+
+const KEYED_LIST_PLAN = universalPlan('uno', {
+    kind: 'host',
+    type: 'view',
+    children: [{ kind: 'slot', slot: 0 }],
+})
+
+const KEYED_LIST_COMPONENT = defineUniversalComponent<{ items: { id: string; width: string }[] }>(
+    'uno',
+    (props) =>
+        universalValue(KEYED_LIST_PLAN, [
+            universalFor(
+                props.items,
+                (item) => item.id,
+                (item) => universalValue(KEYED_ITEM_PLAN, [{ width: item.width }]),
+            ),
+        ]),
 )
 
 test('Octane create and insert build the Uno node tree and apply initial styles', async () => {
@@ -123,6 +148,36 @@ test('Octane update changes Uno styles without replacing node identity', async (
     expect(node.styles.width.value).toBe('200px')
     expect(node.styles.height.value).toBe('60px')
     expect(node.styles.backgroundColor.value).toBe('#00f')
+})
+
+test('Octane insert and move place nodes before existing siblings', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const root = createUniversalRendererRoot({ ui })
+    const a = { id: 'a', width: '10px' }
+    const b = { id: 'b', width: '20px' }
+    const c = { id: 'c', width: '30px' }
+    const x = { id: 'x', width: '40px' }
+
+    root.render(KEYED_LIST_COMPONENT, { items: [a, b, c] })
+
+    const parent = ui.root.children[0]
+    const [a_node, b_node, c_node] = parent.children
+
+    root.render(KEYED_LIST_COMPONENT, { items: [c, a, b] })
+
+    expect(parent.children).toEqual([c_node, a_node, b_node])
+    expect(parent.children.map((node) => node.path)).toEqual([
+        [0, 0],
+        [0, 1],
+        [0, 2],
+    ])
+
+    root.render(KEYED_LIST_COMPONENT, { items: [c, x, a, b] })
+
+    const x_node = parent.children[1]
+    expect(parent.children).toEqual([c_node, x_node, a_node, b_node])
+    expect(x_node.styles.width.value).toBe('40px')
 })
 
 test('Octane remove and destroy detach and release the Uno subtree in order', async () => {

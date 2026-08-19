@@ -323,6 +323,26 @@ test('Node detach preserves and reinserts a subtree', async () => {
     expect(grandchild.path).toEqual([1, 0, 0])
 })
 
+test('Node add inserts a detached subtree before an existing child', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const first = ui.create()
+    const second = ui.create()
+    const inserted = ui.create()
+    const grandchild = ui.create()
+
+    ui.root.add(first)
+    ui.root.add(second)
+    inserted.add(grandchild)
+    ui.root.add(inserted, second)
+
+    expect(ui.root.children).toEqual([first, inserted, second])
+    expect(first.path).toEqual([0])
+    expect(inserted.path).toEqual([1])
+    expect(grandchild.path).toEqual([1, 0])
+    expect(second.path).toEqual([2])
+})
+
 test('Node add builds a detached subtree and activates it when attached', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })

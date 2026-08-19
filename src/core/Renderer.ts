@@ -25,8 +25,8 @@ export default abstract class Renderer {
         )
     }
 
-    public addChild(parent, node) {
-        this.insertChild(parent, node, this.getChildIndex(parent))
+    public addChild(parent, node, child_index = this.getChildIndex(parent)) {
+        this.insertChild(parent, node, child_index)
     }
 
     public beforeUpdate(nodes) {
@@ -53,5 +53,5 @@ export default abstract class Renderer {
     public abstract destroyNode(node)
 
     protected abstract updateStyle(node, style)
-    protected abstract insertChild(parent, node, childIndex)
+    protected abstract insertChild(parent, node, child_index)
 }

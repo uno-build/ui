@@ -57,11 +57,16 @@ function createUniversalDriver({ ui }) {
                             instances.set(command.id, node)
                         }
 
-                        // Insert / Add
-                        else if (command.op === 'insert') {
+                        // Insert / Move
+                        else if (command.op === 'insert' || command.op === 'move') {
+                            console.log('command', command.op)
                             const parent = instances.get(command.parent)
                             const node = instances.get(command.id)
-                            parent.add(node)
+                            const before_node = command.before === null ? null : instances.get(command.before)
+                            if (command.op === 'move') {
+                                node.detach()
+                            }
+                            parent.add(node, before_node)
                         }
 
                         // Update

@@ -273,6 +273,11 @@ function createDomElement() {
             child.parent = element
             element.children.push(child)
         },
+        insertBefore(child, before) {
+            child.parent = element
+            const index = before === null ? element.children.length : element.children.indexOf(before)
+            element.children.splice(index, 0, child)
+        },
         removeChild(child) {
             element.children.splice(element.children.indexOf(child), 1)
             child.parent = null

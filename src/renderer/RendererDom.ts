@@ -56,8 +56,9 @@ export default class RendererDom extends Renderer {
         this.dom = null
     }
 
-    protected insertChild(parent, node, childIndex) {
-        this.elements.get(parent).appendChild(this.elements.get(node))
+    protected insertChild(parent, node, child_index) {
+        const parent_element = this.elements.get(parent)
+        parent_element.insertBefore(this.elements.get(node), parent_element.children[child_index] ?? null)
     }
 
     public detachChild(parent, node) {

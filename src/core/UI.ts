@@ -74,7 +74,7 @@ export default class UI {
         }
     }
 
-    private addChild(parent, child) {
+    private addChild(parent, child, before_node) {
         if (child.ui !== this) {
             throw new Error('cannot add child from another UI')
         }
@@ -83,6 +83,10 @@ export default class UI {
         }
         if (child.parent !== null || this.nodes.includes(child) === true) {
             throw new Error('child already added')
+        }
+        const child_index = before_node === null ? parent.children.length : parent.children.indexOf(before_node)
+        if (child_index === -1) {
+            throw new Error('before child not found')
         }
 
         let ancestor = parent
@@ -94,13 +98,15 @@ export default class UI {
         }
 
         const parent_is_active = parent === this.root || this.nodes.includes(parent)
-        const child_index = this.renderer.getChildIndex(parent)
         child.parent = parent
-        parent.children.push(child)
+        parent.children.splice(child_index, 0, child)
         if (parent_is_active) {
             this.activateNode(child, [...parent.path, child_index])
+            for (let i = child_index + 1; i < parent.children.length; i++) {
+                this.updateNodePath(parent.children[i], [...parent.path, i])
+            }
         }
-        this.renderer.addChild(parent, child)
+        this.renderer.addChild(parent, child, child_index)
     }
 
     private activateNode(node, path) {

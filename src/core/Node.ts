@@ -22,13 +22,13 @@ export default class Node {
         this.ui = ui
     }
 
-    public add(child) {
+    public add(child, before_node = null) {
         if (this.ui !== null) {
             if (this.isTextNode()) {
                 throw new Error('Nodes with text cannot have children')
             }
 
-            this.ui.addChild(this, child)
+            this.ui.addChild(this, child, before_node)
         }
     }
 

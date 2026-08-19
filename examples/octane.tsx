@@ -1,35 +1,49 @@
 import { useEffect, useState } from 'octane'
+import { universalFor } from 'octane/universal/native'
+
+const COLOR_ITEMS = [
+    { id: 'red', color: '#e63946' },
+    { id: 'yellow', color: '#ffb703' },
+    { id: 'green', color: '#2a9d8f' },
+    { id: 'blue', color: '#457b9d' },
+]
 
 export function BasicComponent() {
-    const [background_color, setBackgroundColor] = useState('0')
+    const [items, set_items] = useState(COLOR_ITEMS)
 
     useEffect(() => {
-        const timeout = setTimeout(() => setBackgroundColor('f'), 2000)
-        return () => clearTimeout(timeout)
+        const interval = setInterval(() => {
+            set_items((current_items) => [current_items.at(-1), ...current_items.slice(0, -1)])
+        }, 1000)
+
+        return () => clearInterval(interval)
     }, [])
 
     return (
-        <View id="root" style={{ width: '500px', height: '500px', backgroundColor: `#${background_color}00` }}>
-            <View id="first" style={{ width: '100px', height: '100px', backgroundColor: `#0${background_color}0` }}>
-                <View
-                    id="first-a"
-                    style={{ width: '25px', height: '25px', backgroundColor: `#f${background_color}0` }}
-                />
-                <View
-                    id="first-b"
-                    style={{ width: '25px', height: '25px', backgroundColor: `#f0${background_color}` }}
-                />
-            </View>
-            <View id="second" style={{ width: '100px', height: '100px', backgroundColor: `#00${background_color}` }}>
-                <View
-                    id="second-a"
-                    style={{ width: '25px', height: '25px', backgroundColor: `#f${background_color}0` }}
-                />
-                <View
-                    id="second-b"
-                    style={{ width: '25px', height: '25px', backgroundColor: `#f0${background_color}` }}
-                />
-            </View>
+        <View
+            style={{
+                width: '500px',
+                height: '140px',
+                padding: '20px',
+                gap: '20px',
+                alignItems: 'center',
+                backgroundColor: '#1d2027',
+            }}
+        >
+            {universalFor(
+                items,
+                (item) => item.id,
+                (item) => (
+                    <View
+                        style={{
+                            width: '100px',
+                            height: '100px',
+                            borderRadius: '12px',
+                            backgroundColor: item.color,
+                        }}
+                    />
+                ),
+            )}
         </View>
     )
 }
