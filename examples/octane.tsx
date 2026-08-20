@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef } from 'octane'
-import { universalFor } from 'octane/universal/native'
+// import { useEffect, useState, useRef, universalFor } from 'octane'
+// import { universalFor } from 'uno-ui/octane'
+import { View, Text, universalFor, useEffect, useState, useRef } from 'uno-ui/octane'
 
 const COLOR_ITEMS = [
     { id: 'red', color: '#e63946', count: 0 },
@@ -59,12 +60,4 @@ export function BasicComponent() {
             )}
         </View>
     )
-}
-
-function View({ children, ...props }) {
-    return <view {...props}>{children}</view>
-}
-
-function Text({ children, ...props }) {
-    return <text {...props}>{children}</text>
 }
