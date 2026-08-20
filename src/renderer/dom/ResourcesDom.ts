@@ -1,6 +1,7 @@
 import Resources from '../../core/Resources'
 
 export default class ResourcesDom extends Resources {
+    private images = new Map()
     private fonts = new Map()
 
     protected constructor(options) {
@@ -9,6 +10,22 @@ export default class ResourcesDom extends Resources {
 
     public static create(options) {
         return new ResourcesDom(options)
+    }
+
+    public registerImage(src: string, image: any) {
+        if (this.images.has(src)) {
+            throw new Error(`Image "${src}" is already registered.`)
+        }
+
+        this.images.set(src, image)
+    }
+
+    public disposeImage(src: string) {
+        this.images.delete(src)
+    }
+
+    public getImage(src: string) {
+        return this.images.get(src)
     }
 
     public registerFont(name: string, image: any, json: any) {

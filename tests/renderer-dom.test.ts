@@ -107,6 +107,42 @@ test('ResourcesDom rejects duplicate fonts and allows registration after disposa
     expect(resources.getFont('Poppins')).toBe(second_metrics)
 })
 
+test('ResourcesDom rejects duplicate images and allows registration after disposal', () => {
+    const resources = ResourcesDom.create({ canvas: {} })
+    const first_image = { src: '/assets/first.png' }
+    const second_image = { src: '/assets/second.png' }
+
+    resources.registerImage('avatar', first_image)
+
+    expect(() => resources.registerImage('avatar', second_image)).toThrow('Image "avatar" is already registered.')
+    expect(resources.getImage('avatar')).toBe(first_image)
+
+    resources.disposeImage('avatar')
+    resources.registerImage('avatar', second_image)
+
+    expect(resources.getImage('avatar')).toBe(second_image)
+})
+
+test('RendererDom resolves backgroundImage from registered images', () => {
+    const resources = ResourcesDom.create({ canvas: {} })
+    const renderer = new RendererDom({ resources })
+    const element = { style: {} }
+    const node = {
+        styles: {
+            backgroundRepeat: { value: 'repeat-x' },
+        },
+    }
+    ;(renderer as any).elements.set(node, element)
+    resources.registerImage('avatar', { src: '/assets/avatar.png' })
+
+    ;(renderer as any).updateStyle(node, Style.resolveStyle('backgroundImage', 'avatar'))
+
+    expect(element.style).toEqual({
+        backgroundImage: 'url("/assets/avatar.png")',
+        backgroundRepeat: 'repeat-x',
+    })
+})
+
 test('RendererDom synchronizes node scroll state after update', () => {
     const canvas = createScrollableElement({
         scroll_width: 600,

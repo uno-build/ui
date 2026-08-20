@@ -104,7 +104,8 @@ export default class RendererDom extends Renderer {
                 return
             }
 
-            element.style.backgroundImage = toCssBackgroundImage(style.value)
+            const image = this.resources.getImage(style.value)
+            element.style.backgroundImage = image === undefined ? 'none' : toCssBackgroundImage(image.src)
             element.style.backgroundRepeat = node.styles.backgroundRepeat?.value ?? 'no-repeat'
             return
         }

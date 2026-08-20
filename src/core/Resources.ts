@@ -4,4 +4,12 @@ export default abstract class Resources {
     protected constructor({ canvas }) {
         this.canvas = canvas
     }
+
+    public abstract registerImage(src: string, image: any): any
+
+    public abstract disposeImage(src: string): void
+
+    public abstract registerFont(name: string, image: any, json: any): any
+
+    public abstract disposeFont(name: string): void
 }
