@@ -4,9 +4,9 @@ import { createUniversalRoot } from 'octane/universal/native';
 
 const RENDERER_ID = 'uno'
 const TYPE = {
-    TAG_VIEW: 'view',
-    TAG_TEXT: 'text',
-    TEXT: '#text',
+    VIEW: 'view',
+    TEXT: 'text',
+    $TEXT: '#text',
 }
 const TYPES = Object.values(TYPE)
 
@@ -55,34 +55,33 @@ export function createUniversalDriver({ ui }) {
             return {
                 apply() {
                     for (const command of commands) {
-                        const { op, id, type, props } = command
 
                         // Create
-                        if (op === 'create') {
-                            if (!TYPES.includes(type)) {
-                                throw new Error(`Unsupported tag element '<${type}>'`)
+                        if (command.op === 'create') {
+                            if (!TYPES.includes(command.type)) {
+                                throw new Error(`Unsupported tag element '<${command.type}>'`)
                             }
-                            const node = type === TYPE.TEXT ? null : ui.create()
+                            const node = command.type === TYPE.$TEXT ? null : ui.create()
                             applyStyles(node, command)
-                            instances.set(id, { node, type, props })
+                            instances.set(command.id, { node, type: command.type, props: command.props })
                         }
 
                         // Insert / Move
-                        else if (op === 'insert' || op === 'move') {
+                        else if (command.op === 'insert' || command.op === 'move') {
                             const parent = instances.get(command.parent)
-                            const child = instances.get(id)
+                            const child = instances.get(command.id)
 
                             // If the parent is a <Text> component, it cannot have children that are not #text nodes.
-                            if (parent.type === TYPE.TAG_TEXT && child.type !== TYPE.TEXT) {
+                            if (parent.type === TYPE.TEXT && child.type !== TYPE.$TEXT) {
                                 throw new Error(`<Text> cannot have children.`)
                             }
 
                             // If the child is a #text node, it must be inserted into a <Text> component.
-                            if (child.type === TYPE.TEXT) {
-                                if (parent.type !== TYPE.TAG_TEXT) {
+                            if (child.type === TYPE.$TEXT) {
+                                if (parent.type !== TYPE.TEXT) {
                                     throw new Error(`Texts must be inserted into a <Text> component.`)
                                 }
-                                if (op === 'move' && child.parent !== parent) {
+                                if (command.op === 'move' && child.parent !== parent) {
                                     child.parent.node.text('')
                                 }
                                 child.parent = parent
@@ -92,7 +91,7 @@ export function createUniversalDriver({ ui }) {
                             // If the child is a non-text node, it must be inserted into a <View> component.
                             else {
                                 const before_node = command.before === null ? null : instances.get(command.before).node
-                                if (op === 'move') {
+                                if (command.op === 'move') {
                                     child.node.detach()
                                 }
                                 parent.node.add(child.node, before_node)
@@ -100,11 +99,11 @@ export function createUniversalDriver({ ui }) {
                         }
 
                         // Update
-                        else if (op === 'update') {
-                            const instance = instances.get(id)
-                            instance.props = props
-                            if (instance.type === TYPE.TEXT) {
-                                instance.parent.node.text(props.value)
+                        else if (command.op === 'update') {
+                            const instance = instances.get(command.id)
+                            instance.props = command.props
+                            if (instance.type === TYPE.$TEXT) {
+                                instance.parent.node.text(command.props.value)
                             }
                             else {
                                 applyStyles(instance.node, command)
@@ -112,9 +111,9 @@ export function createUniversalDriver({ ui }) {
                         }
 
                         // Remove / Detach
-                        else if (op === 'remove') {
-                            const instance = instances.get(id)
-                            if (instance.type === TYPE.TEXT) {
+                        else if (command.op === 'remove') {
+                            const instance = instances.get(command.id)
+                            if (instance.type === TYPE.$TEXT) {
                                 instance.parent.node.text('')
                                 instance.parent = null
                             }
@@ -124,16 +123,16 @@ export function createUniversalDriver({ ui }) {
                         }
 
                         // Destroy
-                        else if (op === 'destroy') {
-                            const instance = instances.get(id)
-                            if (instance.type !== TYPE.TEXT) {
+                        else if (command.op === 'destroy') {
+                            const instance = instances.get(command.id)
+                            if (instance.type !== TYPE.$TEXT) {
                                 instance.node.destroy()
                             }
-                            instances.delete(id)
+                            instances.delete(command.id)
                         }
 
                         else {
-                            throw new Error(`Octane components does not support command '${op}'`,)
+                            throw new Error(`Octane components does not support command '${command.op}'`,)
                         }
                     }
                     ui.update()

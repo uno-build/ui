@@ -34,6 +34,10 @@
         "./UIDom": {
             "types": "./src/ui/UIDom.ts",
             "import": "./src/ui/UIDom.ts"
+        },
+        "./octane": {
+            "types": "./src/components/octane/index.ts",
+            "import": "./src/components/octane/index.ts"
         }
     },
     "dependencies": {

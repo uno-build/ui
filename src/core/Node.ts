@@ -86,6 +86,10 @@ export default class Node {
             }
 
             if (this.isTextNode()) {
+                if (this.text_content === value) {
+                    return
+                }
+
                 this.text_content = value
                 this.ui.renderer.invalidateTextNode(this)
                 return
