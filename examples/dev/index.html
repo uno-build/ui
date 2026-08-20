@@ -346,6 +346,10 @@
 
                     settingsRenderers.appendChild(rendererLabel)
                 })
+
+                Array.from(settingsRenderers.children)
+                    .sort((renderer_a, renderer_b) => renderer_a.htmlFor.localeCompare(renderer_b.htmlFor))
+                    .forEach((renderer) => settingsRenderers.appendChild(renderer))
             }
 
             if (add_random_node_button) {

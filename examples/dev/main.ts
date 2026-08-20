@@ -9,7 +9,7 @@ if (root == null || settings_layouts == null) {
     throw new Error("Missing '#root' or '#settings-layouts' element")
 }
 
-for (const layout_name of layoutNames) {
+for (const layout_name of [...layoutNames].sort((layout_a, layout_b) => layout_a.localeCompare(layout_b))) {
     const layout_url = new URL(window.location.href)
     layout_url.searchParams.set('layout', layout_name)
 
