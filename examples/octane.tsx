@@ -1,6 +1,6 @@
-// import { useEffect, useState, useRef, universalFor } from 'octane'
-// import { universalFor } from 'uno-ui/octane'
-import { View, Text, universalFor, useEffect, useState, useRef } from 'uno-ui/octane'
+import { useEffect, useState, useRef } from 'octane'
+import { universalFor } from 'octane/universal/native'
+import { View, Text } from 'uno-ui/octane'
 
 const COLOR_ITEMS = [
     { id: 'red', color: '#e63946', count: 0 },

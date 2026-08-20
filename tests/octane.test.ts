@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { defineUniversalComponent, universalFor, universalPlan, universalValue } from 'octane/universal/native'
-import { createUniversalDriver, registerRootComponent } from '../src/components/octane/index.js'
+import { createUniversalDriver, registerRootComponent } from '../src/components/octane/driver.js'
 import TestRenderer from './TestRenderer.ts'
 import TestUI from './TestUI.ts'
 
