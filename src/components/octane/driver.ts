@@ -141,22 +141,13 @@ export function createUniversalDriver({ ui }) {
 }
 
 function applyStyles(node, styles_prev, styles_next) {
-    const prev = Object.entries(styles_prev)
-    const next = Object.entries(styles_next)
-
-    // If a style is present in the previous styles but not in the next styles, we need to unset it.
-    for (const [key, value] of prev) {
-        if (styles_next[key] === undefined) {
-            // console.log([key, value, undefined])
+    for (let key in styles_prev) {
+        if (styles_next.hasOwnProperty(key) === false) {
             node.style(key, 'unset')
         }
     }
 
-    // If a style is present in the next styles but not in the previous styles, or if the value has changed, we need to set it.
-    for (const [key, value] of next) {
-        if (styles_prev[key] !== value) {
-            // console.log([key, styles_prev[key], value])
-            node.style(key, value)
-        }
+    for (let key in styles_next) {
+        node.style(key, styles_next[key])
     }
 }

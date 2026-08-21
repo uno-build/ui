@@ -7,6 +7,7 @@ export default class Node {
     public children = []
     public path = []
     public styles = {}
+    public styles_declared = {}
     public layout = {}
     public text_content = undefined
     public order = 0
@@ -66,8 +67,12 @@ export default class Node {
     public style(name, value) {
         if (this.ui !== null && !this.ui.destroyed) {
             const normalized_name = validateStyle(name, value)
-            if (this.styles[normalized_name]?.value !== value) {
-                const resolved_style = resolveStyle(normalized_name, value)
+            const resolved_style = resolveStyle(normalized_name, value)
+            const has_changes = resolved_style.expanded.some((style) => this.styles[style.name]?.value !== style.value)
+
+            this.styles_declared[normalized_name] = value
+
+            if (has_changes) {
                 for (const style of resolved_style.expanded) {
                     this.styles[style.name] = {
                         value: style.value,
