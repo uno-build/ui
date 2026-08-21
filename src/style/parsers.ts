@@ -1,10 +1,6 @@
 import { KEYWORD, UNIT } from './consts'
 import { readInteger, readNumber, readUnit } from './utils'
 
-function createZeroLength() {
-    return { value: 0, kind: UNIT.PX }
-}
-
 export function parseString(value: string) {
     return {
         value,
@@ -55,21 +51,6 @@ export function parseColor(value: string) {
 }
 
 export function parseBoxShadow(value: string) {
-    if (value === KEYWORD.UNSET) {
-        return {
-            value,
-            parsed: {
-                box_shadow: {
-                    offset_x: createZeroLength(),
-                    offset_y: createZeroLength(),
-                    blur: createZeroLength(),
-                    spread: createZeroLength(),
-                    color: [0, 0, 0, 0],
-                },
-            },
-        }
-    }
-
     const values = value.split(/\s+/)
 
     return {
@@ -87,20 +68,6 @@ export function parseBoxShadow(value: string) {
 }
 
 export function parseTextShadow(value: string) {
-    if (value === KEYWORD.UNSET) {
-        return {
-            value,
-            parsed: {
-                text_shadow: {
-                    offset_x: createZeroLength(),
-                    offset_y: createZeroLength(),
-                    blur: createZeroLength(),
-                    color: [0, 0, 0, 0],
-                },
-            },
-        }
-    }
-
     const values = value.split(/\s+/)
 
     return {
@@ -117,18 +84,6 @@ export function parseTextShadow(value: string) {
 }
 
 export function parseTextStroke(value: string) {
-    if (value === KEYWORD.UNSET) {
-        return {
-            value,
-            parsed: {
-                text_stroke: {
-                    width: createZeroLength(),
-                    color: [0, 0, 0, 0],
-                },
-            },
-        }
-    }
-
     const values = value.split(/\s+/)
 
     return {

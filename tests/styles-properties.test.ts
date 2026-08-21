@@ -36,15 +36,7 @@ test('colors', () => {
 })
 
 test('boxShadow', () => {
-    expectResolved('boxShadow', ' unset ', 'unset', {
-        box_shadow: {
-            offset_x: { value: 0, kind: 'px' },
-            offset_y: { value: 0, kind: 'px' },
-            blur: { value: 0, kind: 'px' },
-            spread: { value: 0, kind: 'px' },
-            color: [0, 0, 0, 0],
-        },
-    })
+    expectKeywordUnit('boxShadow', ' unset ', 'unset')
     expectResolved('boxShadow', ' 0PX 4px 12PX 0px ', '0px 4px 12px 0px', {
         box_shadow: {
             offset_x: { value: 0, kind: 'px' },
@@ -93,14 +85,7 @@ test('boxShadow', () => {
 })
 
 test('textShadow', () => {
-    expectResolved('textShadow', ' unset ', 'unset', {
-        text_shadow: {
-            offset_x: { value: 0, kind: 'px' },
-            offset_y: { value: 0, kind: 'px' },
-            blur: { value: 0, kind: 'px' },
-            color: [0, 0, 0, 0],
-        },
-    })
+    expectKeywordUnit('textShadow', ' unset ', 'unset')
     expectResolved('textShadow', ' 0PX 4px 12PX ', '0px 4px 12px', {
         text_shadow: {
             offset_x: { value: 0, kind: 'px' },
@@ -139,12 +124,7 @@ test('textShadow', () => {
 })
 
 test('textStroke', () => {
-    expectResolved('textStroke', ' unset ', 'unset', {
-        text_stroke: {
-            width: { value: 0, kind: 'px' },
-            color: [0, 0, 0, 0],
-        },
-    })
+    expectKeywordUnit('textStroke', ' unset ', 'unset')
     expectResolved('textStroke', ' 4PX #1234 ', '4px #1234', {
         text_stroke: {
             width: { value: 4, kind: 'px' },
@@ -172,24 +152,6 @@ test('textStroke', () => {
     expectInvalid('textStroke', '4em #000', /expected px, rem, vw or vh unit/)
     expectInvalid('textStroke', '4px red', /expected hex color/)
     expectInvalid('textStroke', true, /style value must be a string/)
-})
-
-test('unset shadow lengths do not share references', () => {
-    const box_shadow = Style.resolveStyle('boxShadow', 'unset').expanded[0].parsed.box_shadow
-    const next_box_shadow = Style.resolveStyle('boxShadow', 'unset').expanded[0].parsed.box_shadow
-    const text_shadow = Style.resolveStyle('textShadow', 'unset').expanded[0].parsed.text_shadow
-    const next_text_shadow = Style.resolveStyle('textShadow', 'unset').expanded[0].parsed.text_shadow
-    const text_stroke = Style.resolveStyle('textStroke', 'unset').expanded[0].parsed.text_stroke
-    const next_text_stroke = Style.resolveStyle('textStroke', 'unset').expanded[0].parsed.text_stroke
-
-    expect(box_shadow.offset_x).not.toBe(box_shadow.offset_y)
-    expect(box_shadow.offset_x).not.toBe(box_shadow.blur)
-    expect(box_shadow.offset_x).not.toBe(box_shadow.spread)
-    expect(box_shadow.offset_x).not.toBe(next_box_shadow.offset_x)
-    expect(text_shadow.offset_x).not.toBe(text_shadow.offset_y)
-    expect(text_shadow.offset_x).not.toBe(text_shadow.blur)
-    expect(text_shadow.offset_x).not.toBe(next_text_shadow.offset_x)
-    expect(text_stroke.width).not.toBe(next_text_stroke.width)
 })
 
 test('backgroundImage', () => {
@@ -621,9 +583,10 @@ test('textAlign', () => {
     expectEnum('textAlign', 'RIGHT', 'right', 1)
     expectEnum('textAlign', 'center', 'center', 2)
     expectResolved(' text-align ', ' Justify ', 'justify', { enum: 3 }, 'textAlign')
-    for (const value of ['start', 'end', 'match-parent', 'justify-all', 'unset', 'unknown']) {
+    for (const value of ['start', 'end', 'match-parent', 'justify-all', 'unknown']) {
         expectInvalid('textAlign', value, /expected one of left, right, center, justify/)
     }
+    expectKeywordUnit('textAlign', ' Unset ', 'unset')
     expectInvalid('textAlign', true, /style value must be a string/)
 })
 
@@ -974,10 +937,11 @@ test('marginTop, marginLeft, marginRight, marginBottom', () => {
         ['-4px', '-4px', -4, 'px'],
         ['-5%', '-5%', -5, '%'],
     ] as const
-    const invalidValues = [true, '12em', 'none', 'unset', 'inherit']
+    const invalidValues = [true, '12em', 'none', 'inherit']
 
     for (const name of styles) {
         expectKeywordUnit(name, ' Auto ', 'auto')
+        expectKeywordUnit(name, ' Unset ', 'unset')
 
         for (const [value, expectedValue, parsedValue, unit] of validUnitCases) {
             expectUnit(name, value, expectedValue, parsedValue, unit)
@@ -1062,11 +1026,11 @@ test('width, height', () => {
         [true, /expected px unit/],
         ['12em', /expected px unit/],
         ['none', /expected px unit/],
-        ['unset', /expected px unit/],
     ] as const
 
     for (const name of styles) {
         expectKeywordUnit(name, ' Auto ', 'auto')
+        expectKeywordUnit(name, ' Unset ', 'unset')
 
         for (const [value, expectedValue, parsedValue, unit] of validUnitCases) {
             expectUnit(name, value, expectedValue, parsedValue, unit)
@@ -1131,12 +1095,13 @@ test('paddingTop, paddingLeft, paddingRight, paddingBottom, rowGap, columnGap, g
         ['-1%', /expected non-negative value/],
         ['auto', /expected px unit/],
         ['none', /expected px unit/],
-        ['unset', /expected px unit/],
         ['6em', /expected px unit/],
         [false, /expected px unit/],
     ] as const
 
     for (const name of styles) {
+        expectKeywordUnit(name, ' Unset ', 'unset')
+
         for (const [value, expectedValue, parsedValue, unit] of validCases) {
             expectUnit(name, value, expectedValue, parsedValue, unit)
         }
@@ -1167,6 +1132,8 @@ test('borderTopWidth, borderLeftWidth, borderRightWidth, borderBottomWidth', () 
     ] as const
 
     for (const name of styles) {
+        expectKeywordUnit(name, ' Unset ', 'unset')
+
         for (const [value, expectedValue, parsedValue, unit] of validCases) {
             expectUnit(name, value, expectedValue, parsedValue, unit)
         }

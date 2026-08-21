@@ -1,4 +1,4 @@
-import { DISPLAY, OVERFLOW, UNIT } from '../../style/consts'
+import { DISPLAY, KEYWORD, OVERFLOW, UNIT } from '../../style/consts'
 import { TRANSPARENT_COLOR } from '../webgpu/buffers'
 
 const EMPTY_BOX_SHADOW = [0, 0, 0, 0]
@@ -102,7 +102,7 @@ export function getNodeBorderWidth(node, side, computeStyleValue) {
     const border_color = node.styles[`border${side}Color`]
     const border_width = computeStyleValue(node.styles[`border${side}Width`])
 
-    if (border_style?.value !== 'solid' || border_color === undefined) {
+    if (border_style?.value !== 'solid' || border_color?.parsed.rgba === undefined) {
         return 0
     }
 
@@ -224,7 +224,7 @@ function resetScrollMetrics(node) {
 }
 
 function getBorderRadius(border_radius, width, height) {
-    if (border_radius === undefined) {
+    if (border_radius === undefined || border_radius.kind === KEYWORD.UNSET) {
         return [0, 0]
     }
     if (border_radius.kind === UNIT.PERCENT) {

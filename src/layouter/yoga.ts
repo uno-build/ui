@@ -1,4 +1,21 @@
-import { UNIT, KEYWORD, EDGE, GUTTER, FLEX_DIRECTION, MEASURE_MODE } from '../style/consts'
+import {
+    UNIT,
+    KEYWORD,
+    EDGE,
+    GUTTER,
+    POSITION,
+    ALIGN_CONTENT,
+    ALIGN_ITEMS,
+    ALIGN_SELF,
+    FLEX_DIRECTION,
+    WRAP,
+    JUSTIFY,
+    OVERFLOW,
+    DISPLAY,
+    DIRECTION,
+    BOX_SIZING,
+    MEASURE_MODE,
+} from '../style/consts'
 import { calculateLayoutRect, getParentLayout } from './utils'
 
 export default async function createYogaEngine({ loadYoga } = {}) {
@@ -147,61 +164,61 @@ function getComputedEdges(element, method) {
 // node_modules/yoga-layout/src/wrapAssembly.ts
 export const YOGA_SETTER = {
     width: (node, { parsed }) => {
-        if (parsed.kind === UNIT.PX) {
+        if (parsed.kind === KEYWORD.UNSET || parsed.kind === KEYWORD.AUTO) {
+            node.setWidthAuto()
+        } else if (parsed.kind === UNIT.PX) {
             node.setWidth(parsed.value)
         } else if (parsed.kind === UNIT.PERCENT) {
             node.setWidthPercent(parsed.value)
-        } else if (parsed.kind === KEYWORD.AUTO) {
-            node.setWidthAuto()
         }
     },
     height: (node, { parsed }) => {
-        if (parsed.kind === UNIT.PX) {
+        if (parsed.kind === KEYWORD.UNSET || parsed.kind === KEYWORD.AUTO) {
+            node.setHeightAuto()
+        } else if (parsed.kind === UNIT.PX) {
             node.setHeight(parsed.value)
         } else if (parsed.kind === UNIT.PERCENT) {
             node.setHeightPercent(parsed.value)
-        } else if (parsed.kind === KEYWORD.AUTO) {
-            node.setHeightAuto()
         }
     },
     minWidth: (node, { parsed }) => {
-        if (parsed.kind === UNIT.PX) {
+        if (parsed.kind === KEYWORD.UNSET) {
+            node.setMinWidth(undefined)
+        } else if (parsed.kind === UNIT.PX) {
             node.setMinWidth(parsed.value)
         } else if (parsed.kind === UNIT.PERCENT) {
             node.setMinWidthPercent(parsed.value)
-        } else if (parsed.kind === KEYWORD.UNSET) {
-            node.setMinWidth(undefined)
         }
     },
     minHeight: (node, { parsed }) => {
-        if (parsed.kind === UNIT.PX) {
+        if (parsed.kind === KEYWORD.UNSET) {
+            node.setMinHeight(undefined)
+        } else if (parsed.kind === UNIT.PX) {
             node.setMinHeight(parsed.value)
         } else if (parsed.kind === UNIT.PERCENT) {
             node.setMinHeightPercent(parsed.value)
-        } else if (parsed.kind === KEYWORD.UNSET) {
-            node.setMinHeight(undefined)
         }
     },
     maxWidth: (node, { parsed }) => {
-        if (parsed.kind === UNIT.PX) {
+        if (parsed.kind === KEYWORD.UNSET) {
+            node.setMaxWidth(undefined)
+        } else if (parsed.kind === UNIT.PX) {
             node.setMaxWidth(parsed.value)
         } else if (parsed.kind === UNIT.PERCENT) {
             node.setMaxWidthPercent(parsed.value)
-        } else if (parsed.kind === KEYWORD.UNSET) {
-            node.setMaxWidth(undefined)
         }
     },
     maxHeight: (node, { parsed }) => {
-        if (parsed.kind === UNIT.PX) {
+        if (parsed.kind === KEYWORD.UNSET) {
+            node.setMaxHeight(undefined)
+        } else if (parsed.kind === UNIT.PX) {
             node.setMaxHeight(parsed.value)
         } else if (parsed.kind === UNIT.PERCENT) {
             node.setMaxHeightPercent(parsed.value)
-        } else if (parsed.kind === KEYWORD.UNSET) {
-            node.setMaxHeight(undefined)
         }
     },
     position: (node, { parsed }) => {
-        node.setPositionType(parsed.enum)
+        node.setPositionType(parsed.kind === KEYWORD.UNSET ? POSITION.relative : parsed.enum)
     },
     top: (node, { parsed }) => {
         setPosition(node, EDGE.top, parsed)
@@ -222,33 +239,31 @@ export const YOGA_SETTER = {
         node.setFlexShrink(parsed.kind === KEYWORD.UNSET ? undefined : parsed.value)
     },
     flexBasis: (node, { parsed }) => {
-        if (parsed.kind === UNIT.PX) {
+        if (parsed.kind === KEYWORD.UNSET || parsed.kind === KEYWORD.AUTO) {
+            node.setFlexBasisAuto()
+        } else if (parsed.kind === UNIT.PX) {
             node.setFlexBasis(parsed.value)
         } else if (parsed.kind === UNIT.PERCENT) {
             node.setFlexBasisPercent(parsed.value)
-        } else if (parsed.kind === KEYWORD.AUTO) {
-            node.setFlexBasisAuto()
-        } else if (parsed.kind === KEYWORD.UNSET) {
-            node.setFlexBasis(undefined)
         }
     },
     flexDirection: (node, { parsed }) => {
-        node.setFlexDirection(parsed.enum)
+        node.setFlexDirection(parsed.kind === KEYWORD.UNSET ? FLEX_DIRECTION.row : parsed.enum)
     },
     flexWrap: (node, { parsed }) => {
-        node.setFlexWrap(parsed.enum)
+        node.setFlexWrap(parsed.kind === KEYWORD.UNSET ? WRAP.nowrap : parsed.enum)
     },
     alignContent: (node, { parsed }) => {
-        node.setAlignContent(parsed.enum)
+        node.setAlignContent(parsed.kind === KEYWORD.UNSET ? ALIGN_CONTENT.stretch : parsed.enum)
     },
     alignItems: (node, { parsed }) => {
-        node.setAlignItems(parsed.enum)
+        node.setAlignItems(parsed.kind === KEYWORD.UNSET ? ALIGN_ITEMS.stretch : parsed.enum)
     },
     alignSelf: (node, { parsed }) => {
-        node.setAlignSelf(parsed.enum)
+        node.setAlignSelf(parsed.kind === KEYWORD.UNSET ? ALIGN_SELF.auto : parsed.enum)
     },
     justifyContent: (node, { parsed }) => {
-        node.setJustifyContent(parsed.enum)
+        node.setJustifyContent(parsed.kind === KEYWORD.UNSET ? JUSTIFY['flex-start'] : parsed.enum)
     },
 
     // margin: (node, { parsed }) => {
@@ -275,28 +290,28 @@ export const YOGA_SETTER = {
     //     node.setMargin(EDGE.vertical, value)
     // },
     boxSizing: (node, { parsed }) => {
-        node.setBoxSizing(parsed.enum)
+        node.setBoxSizing(parsed.kind === KEYWORD.UNSET ? BOX_SIZING['border-box'] : parsed.enum)
     },
     // borderWidth: (node, { parsed }) => {
     //     node.setBorder(EDGE.all, parsed.value)
     // },
     borderTopWidth: (node, { parsed }) => {
-        node.setBorder(EDGE.top, parsed.value)
+        node.setBorder(EDGE.top, parsed.kind === KEYWORD.UNSET ? undefined : parsed.value)
     },
     borderLeftWidth: (node, { parsed }) => {
-        node.setBorder(EDGE.left, parsed.value)
+        node.setBorder(EDGE.left, parsed.kind === KEYWORD.UNSET ? undefined : parsed.value)
     },
     borderRightWidth: (node, { parsed }) => {
-        node.setBorder(EDGE.right, parsed.value)
+        node.setBorder(EDGE.right, parsed.kind === KEYWORD.UNSET ? undefined : parsed.value)
     },
     borderBottomWidth: (node, { parsed }) => {
-        node.setBorder(EDGE.bottom, parsed.value)
+        node.setBorder(EDGE.bottom, parsed.kind === KEYWORD.UNSET ? undefined : parsed.value)
     },
     overflow: (node, { parsed }) => {
-        node.setOverflow(parsed.enum)
+        node.setOverflow(parsed.kind === KEYWORD.UNSET ? OVERFLOW.visible : parsed.enum)
     },
     display: (node, { parsed }) => {
-        node.setDisplay(parsed.enum)
+        node.setDisplay(parsed.kind === KEYWORD.UNSET ? DISPLAY.flex : parsed.enum)
     },
     // padding: (node, { parsed }) => {
     //     setPadding(node, EDGE.all, parsed)
@@ -322,21 +337,27 @@ export const YOGA_SETTER = {
     //     node.setPadding(EDGE.vertical, value)
     // },
     gap: (node, { parsed }) => {
-        if (parsed.kind === UNIT.PX) {
+        if (parsed.kind === KEYWORD.UNSET) {
+            node.setGap(GUTTER.all, undefined)
+        } else if (parsed.kind === UNIT.PX) {
             node.setGap(GUTTER.all, parsed.value)
         } else if (parsed.kind === UNIT.PERCENT) {
             node.setGapPercent(GUTTER.all, parsed.value)
         }
     },
     rowGap: (node, { parsed }) => {
-        if (parsed.kind === UNIT.PX) {
+        if (parsed.kind === KEYWORD.UNSET) {
+            node.setGap(GUTTER.row, undefined)
+        } else if (parsed.kind === UNIT.PX) {
             node.setGap(GUTTER.row, parsed.value)
         } else if (parsed.kind === UNIT.PERCENT) {
             node.setGapPercent(GUTTER.row, parsed.value)
         }
     },
     columnGap: (node, { parsed }) => {
-        if (parsed.kind === UNIT.PX) {
+        if (parsed.kind === KEYWORD.UNSET) {
+            node.setGap(GUTTER.column, undefined)
+        } else if (parsed.kind === UNIT.PX) {
             node.setGap(GUTTER.column, parsed.value)
         } else if (parsed.kind === UNIT.PERCENT) {
             node.setGapPercent(GUTTER.column, parsed.value)
@@ -344,7 +365,7 @@ export const YOGA_SETTER = {
     },
 
     direction: (node, { parsed }) => {
-        node.setDirection(parsed.enum)
+        node.setDirection(parsed.kind === KEYWORD.UNSET ? DIRECTION.inherit : parsed.enum)
     },
     aspectRatio: (node, { parsed }) => {
         if (parsed.kind === KEYWORD.UNSET) {
@@ -462,7 +483,9 @@ function setPosition(node, edge, parsed) {
 }
 
 function setMargin(node, edge, parsed) {
-    if (parsed.kind === UNIT.PX) {
+    if (parsed.kind === KEYWORD.UNSET) {
+        node.setMargin(edge, undefined)
+    } else if (parsed.kind === UNIT.PX) {
         node.setMargin(edge, parsed.value)
     } else if (parsed.kind === UNIT.PERCENT) {
         node.setMarginPercent(edge, parsed.value)
@@ -472,7 +495,9 @@ function setMargin(node, edge, parsed) {
 }
 
 function setPadding(node, edge, parsed) {
-    if (parsed.kind === UNIT.PX) {
+    if (parsed.kind === KEYWORD.UNSET) {
+        node.setPadding(edge, undefined)
+    } else if (parsed.kind === UNIT.PX) {
         node.setPadding(edge, parsed.value)
     } else if (parsed.kind === UNIT.PERCENT) {
         node.setPaddingPercent(edge, parsed.value)

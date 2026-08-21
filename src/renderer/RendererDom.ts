@@ -115,7 +115,12 @@ export default class RendererDom extends Renderer {
             return
         }
 
-        element.style[resolved_style.name] = resolved_style.value
+        const default_value = DEFAULT_NODE_STYLE[resolved_style.name]
+        const value =
+            resolved_style.expanded[0].parsed.kind === KEYWORD.UNSET && default_value !== undefined
+                ? default_value
+                : resolved_style.value
+        element.style[resolved_style.name] = value
     }
 
     private updateTextLineHeight(node) {

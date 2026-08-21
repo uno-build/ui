@@ -792,7 +792,9 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private getTextFont(node) {
-        const font_family = node.styles.fontFamily?.value
+        const font_family_style = node.styles.fontFamily
+        const font_family =
+            font_family_style?.parsed.kind === KEYWORD.UNSET ? undefined : font_family_style?.value
         const font =
             font_family === undefined
                 ? this.resources.font_manager.getDefaultFont()

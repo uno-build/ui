@@ -292,33 +292,15 @@ test('size constraint styles reject none', () => {
     }
 })
 
-test('resettable unit styles accept unset', () => {
-    const styles = ['top', 'left', 'right', 'bottom', 'flexBasis', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight']
+test('all styles accept unset', () => {
+    for (const style of Object.values(Style.STYLE)) {
+        const resolved_style = Style.resolveStyle(style.name, ' Unset ')
+        expect(resolved_style.expanded.length, style.name).toBeGreaterThan(0)
 
-    for (const name of styles) {
-        expect(Style.resolveStyle(name, ' Unset ').expanded).toEqual([
-            {
-                name,
-                value: 'unset',
-                parsed: { kind: 'unset' },
-            },
-        ])
-    }
-
-    for (const name of [
-        'width',
-        'height',
-        'paddingTop',
-        'paddingLeft',
-        'paddingRight',
-        'paddingBottom',
-        'rowGap',
-        'columnGap',
-        'gap',
-    ]) {
-        expect(() => {
-            Style.resolveStyle(name, 'unset')
-        }).toThrow(/expected px unit/)
+        for (const expanded_style of resolved_style.expanded) {
+            expect(expanded_style.value, expanded_style.name).toBe('unset')
+            expect(expanded_style.parsed, expanded_style.name).toEqual({ kind: 'unset' })
+        }
     }
 })
 

@@ -10,10 +10,6 @@ export function validateColor(value: string) {
 }
 
 export function validateBoxShadow(value: string) {
-    if (value === KEYWORD.UNSET) {
-        return
-    }
-
     const values = value.split(/\s+/)
     if (values.length !== 4 && values.length !== 5) {
         throw new Error('expected offset-x offset-y blur-radius spread-radius color')
@@ -33,10 +29,6 @@ export function validateBoxShadow(value: string) {
 }
 
 export function validateTextShadow(value: string) {
-    if (value === KEYWORD.UNSET) {
-        return
-    }
-
     const values = value.split(/\s+/)
     if (values.length !== 3 && values.length !== 4) {
         throw new Error('expected offset-x offset-y blur-radius color')
@@ -56,10 +48,6 @@ export function validateTextShadow(value: string) {
 }
 
 export function validateTextStroke(value: string) {
-    if (value === KEYWORD.UNSET) {
-        return
-    }
-
     const values = value.split(/\s+/)
     if (values.length !== 2) {
         throw new Error('expected width color')
@@ -85,6 +73,12 @@ export function validateAuto(value: any) {
 export function validateUnset(value: any) {
     if (value !== KEYWORD.UNSET) {
         throw new Error('expected unset')
+    }
+}
+
+export function validateNotUnset(value: string) {
+    if (value.toLowerCase() === KEYWORD.UNSET) {
+        throw new Error('expected value')
     }
 }
 

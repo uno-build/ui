@@ -22,7 +22,6 @@ import {
     validateBoxShadow,
     validateTextShadow,
     validateTextStroke,
-    validateUnset,
     validateInteger,
     validateNumber,
     validatePx,
@@ -33,6 +32,8 @@ import {
     validateNonNegative,
     validateMaxOne,
     validateImageSrc,
+    validateUnset,
+    validateNotUnset,
 } from './validators'
 import {
     parseString,
@@ -41,7 +42,6 @@ import {
     parseTextStroke,
     parseColor,
     parseAuto,
-    parseUnset,
     parseInteger,
     parseNumber,
     parsePx,
@@ -49,8 +49,17 @@ import {
     parseRem,
     parseVw,
     parseVh,
+    parseUnset,
 } from './parsers'
 import { createEnumValidator, createEnumParser } from './utils'
+
+export const UNSET_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateUnset],
+        parse: [parseUnset],
+    },
+]
 
 export const INTEGER_DEFINITION = [
     {
@@ -58,6 +67,7 @@ export const INTEGER_DEFINITION = [
         validate: [validateInteger],
         parse: [parseInteger],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const COLOR_DEFINITION = [
@@ -66,6 +76,7 @@ export const COLOR_DEFINITION = [
         validate: [validateColor],
         parse: [parseColor],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const OPACITY_DEFINITION = [
@@ -74,6 +85,7 @@ export const OPACITY_DEFINITION = [
         validate: [validateNumber, validateNonNegative, validateMaxOne],
         parse: [parseNumber],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const BOX_SHADOW_DEFINITION = [
@@ -82,6 +94,7 @@ export const BOX_SHADOW_DEFINITION = [
         validate: [validateBoxShadow],
         parse: [parseBoxShadow],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const TEXT_SHADOW_DEFINITION = [
@@ -90,6 +103,7 @@ export const TEXT_SHADOW_DEFINITION = [
         validate: [validateTextShadow],
         parse: [parseTextShadow],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const TEXT_STROKE_DEFINITION = [
@@ -98,14 +112,16 @@ export const TEXT_STROKE_DEFINITION = [
         validate: [validateTextStroke],
         parse: [parseTextStroke],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const FONT_FAMILY_DEFINITION = [
     {
         normalize: [normalizeTrim],
-        validate: [],
+        validate: [validateNotUnset],
         parse: [parseString],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const FONT_SIZE_DEFINITION = [
@@ -129,6 +145,7 @@ export const FONT_SIZE_DEFINITION = [
         validate: [validateNonNegative, validateVh],
         parse: [parseVh],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const LINE_HEIGHT_DEFINITION = [
@@ -157,11 +174,7 @@ export const LINE_HEIGHT_DEFINITION = [
         validate: [validateNonNegative, validateVh],
         parse: [parseVh],
     },
-    {
-        normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [validateUnset],
-        parse: [parseUnset],
-    },
+    ...UNSET_DEFINITION,
 ]
 
 export const LETTER_SPACING_DEFINITION = [
@@ -185,6 +198,7 @@ export const LETTER_SPACING_DEFINITION = [
         validate: [validateVh],
         parse: [parseVh],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const TEXT_ALIGN_DEFINITION = [
@@ -193,9 +207,10 @@ export const TEXT_ALIGN_DEFINITION = [
         validate: [createEnumValidator(TEXT_ALIGN)],
         parse: [createEnumParser(TEXT_ALIGN)],
     },
+    ...UNSET_DEFINITION,
 ]
 
-export const PX_PERCENT_DEFINITION = [
+const PX_PERCENT_VALUE_DEFINITION = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNonNegative, validatePx],
@@ -222,6 +237,8 @@ export const PX_PERCENT_DEFINITION = [
         parse: [parsePercent],
     },
 ]
+
+export const PX_PERCENT_DEFINITION = [...PX_PERCENT_VALUE_DEFINITION, ...UNSET_DEFINITION]
 
 export const OFFSET_DEFINITION = [
     {
@@ -254,11 +271,7 @@ export const OFFSET_DEFINITION = [
         validate: [validateAuto],
         parse: [parseAuto],
     },
-    {
-        normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [validateUnset],
-        parse: [parseUnset],
-    },
+    ...UNSET_DEFINITION,
 ]
 
 export const OVERFLOW_DEFINITION = [
@@ -267,6 +280,7 @@ export const OVERFLOW_DEFINITION = [
         validate: [createEnumValidator(OVERFLOW)],
         parse: [createEnumParser(OVERFLOW)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const POSITION_DEFINITION = [
@@ -275,6 +289,7 @@ export const POSITION_DEFINITION = [
         validate: [createEnumValidator(POSITION)],
         parse: [createEnumParser(POSITION)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const ALIGN_CONTENT_DEFINITION = [
@@ -283,6 +298,7 @@ export const ALIGN_CONTENT_DEFINITION = [
         validate: [createEnumValidator(ALIGN_CONTENT)],
         parse: [createEnumParser(ALIGN_CONTENT)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const ALIGN_ITEMS_DEFINITION = [
@@ -291,6 +307,7 @@ export const ALIGN_ITEMS_DEFINITION = [
         validate: [createEnumValidator(ALIGN_ITEMS)],
         parse: [createEnumParser(ALIGN_ITEMS)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const ALIGN_SELF_DEFINITION = [
@@ -299,6 +316,7 @@ export const ALIGN_SELF_DEFINITION = [
         validate: [createEnumValidator(ALIGN_SELF)],
         parse: [createEnumParser(ALIGN_SELF)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const FLEX_DIRECTION_DEFINITION = [
@@ -307,6 +325,7 @@ export const FLEX_DIRECTION_DEFINITION = [
         validate: [createEnumValidator(FLEX_DIRECTION)],
         parse: [createEnumParser(FLEX_DIRECTION)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const FLEX_WRAP_DEFINITION = [
@@ -315,6 +334,7 @@ export const FLEX_WRAP_DEFINITION = [
         validate: [createEnumValidator(WRAP)],
         parse: [createEnumParser(WRAP)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const JUSTIFY_CONTENT_DEFINITION = [
@@ -323,6 +343,7 @@ export const JUSTIFY_CONTENT_DEFINITION = [
         validate: [createEnumValidator(JUSTIFY)],
         parse: [createEnumParser(JUSTIFY)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const MARGIN_DEFINITION = [
@@ -356,52 +377,39 @@ export const MARGIN_DEFINITION = [
         validate: [validateAuto],
         parse: [parseAuto],
     },
+    ...UNSET_DEFINITION,
 ]
 
-export const NUMBER_UNSET_DEFINITION = [
+export const NUMBER_DEFINITION = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNumber, validateNonNegative],
         parse: [parseNumber],
     },
-    {
-        normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [validateUnset],
-        parse: [parseUnset],
-    },
+    ...UNSET_DEFINITION,
 ]
 
 export const FLEX_BASIS_DEFINITION = [
-    ...PX_PERCENT_DEFINITION,
+    ...PX_PERCENT_VALUE_DEFINITION,
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateAuto],
         parse: [parseAuto],
     },
-    {
-        normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [validateUnset],
-        parse: [parseUnset],
-    },
+    ...UNSET_DEFINITION,
 ]
 
 export const SIZE_DEFINITION = [
-    ...PX_PERCENT_DEFINITION,
+    ...PX_PERCENT_VALUE_DEFINITION,
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateAuto],
         parse: [parseAuto],
     },
+    ...UNSET_DEFINITION,
 ]
 
-export const MIN_MAX_SIZE_DEFINITION = [
-    ...PX_PERCENT_DEFINITION,
-    {
-        normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [validateUnset],
-        parse: [parseUnset],
-    },
-]
+export const MIN_MAX_SIZE_DEFINITION = [...PX_PERCENT_VALUE_DEFINITION, ...UNSET_DEFINITION]
 
 export const BORDER_WIDTH_DEFINITION = [
     {
@@ -424,6 +432,7 @@ export const BORDER_WIDTH_DEFINITION = [
         validate: [validateNonNegative, validateVh],
         parse: [parseVh],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const BORDER_DEFINITION = [
@@ -432,6 +441,7 @@ export const BORDER_DEFINITION = [
         validate: [createEnumValidator(BORDER_STYLE)],
         parse: [createEnumParser(BORDER_STYLE)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const BOX_SIZING_DEFINITION = [
@@ -440,6 +450,7 @@ export const BOX_SIZING_DEFINITION = [
         validate: [createEnumValidator(BOX_SIZING)],
         parse: [createEnumParser(BOX_SIZING)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const DISPLAY_DEFINITION = [
@@ -448,6 +459,7 @@ export const DISPLAY_DEFINITION = [
         validate: [createEnumValidator(DISPLAY)],
         parse: [createEnumParser(DISPLAY)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const DIRECTION_DEFINITION = [
@@ -456,19 +468,16 @@ export const DIRECTION_DEFINITION = [
         validate: [createEnumValidator(DIRECTION)],
         parse: [createEnumParser(DIRECTION)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const BACKGROUNDIMAGE_DEFINITION = [
-    {
-        normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [validateUnset],
-        parse: [parseUnset],
-    },
     {
         normalize: [normalizeTrim],
         validate: [validateImageSrc],
         parse: [parseString],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const BACKGROUND_SIZE_DEFINITION = [
@@ -502,11 +511,7 @@ export const BACKGROUND_SIZE_DEFINITION = [
         validate: [createEnumValidator(BACKGROUND_SIZE)],
         parse: [createEnumParser(BACKGROUND_SIZE)],
     },
-    {
-        normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [validateUnset],
-        parse: [parseUnset],
-    },
+    ...UNSET_DEFINITION,
 ]
 
 export const BACKGROUND_REPEAT_DEFINITION = [
@@ -515,6 +520,7 @@ export const BACKGROUND_REPEAT_DEFINITION = [
         validate: [createEnumValidator(BACKGROUND_REPEAT)],
         parse: [createEnumParser(BACKGROUND_REPEAT)],
     },
+    ...UNSET_DEFINITION,
 ]
 
 export const BACKGROUND_POSITION_DEFINITION = [
@@ -543,4 +549,5 @@ export const BACKGROUND_POSITION_DEFINITION = [
         validate: [validatePercent],
         parse: [parsePercent],
     },
+    ...UNSET_DEFINITION,
 ]

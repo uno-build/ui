@@ -24,7 +24,7 @@ import {
     JUSTIFY_CONTENT_DEFINITION,
     MARGIN_DEFINITION,
     MIN_MAX_SIZE_DEFINITION,
-    NUMBER_UNSET_DEFINITION,
+    NUMBER_DEFINITION,
     OFFSET_DEFINITION,
     OPACITY_DEFINITION,
     OVERFLOW_DEFINITION,
@@ -376,16 +376,16 @@ export const STYLE = {
     ]),
     FLEX: createStyle('flex', (name, value) => 
         expandHelper(name, value, {
-            flexGrow: NUMBER_UNSET_DEFINITION,
-            flexShrink: NUMBER_UNSET_DEFINITION,
+            flexGrow: NUMBER_DEFINITION,
+            flexShrink: NUMBER_DEFINITION,
             flexBasis: FLEX_BASIS_DEFINITION,
         })
     ),
     FLEXGROW: createStyle('flexGrow', (name, value) => [
-        { name, value, definition: NUMBER_UNSET_DEFINITION },
+        { name, value, definition: NUMBER_DEFINITION },
     ]),
     FLEXSHRINK: createStyle('flexShrink', (name, value) => [
-        { name, value, definition: NUMBER_UNSET_DEFINITION },
+        { name, value, definition: NUMBER_DEFINITION },
     ]),
     FLEXBASIS: createStyle('flexBasis', (name, value) => [
         { name, value, definition: FLEX_BASIS_DEFINITION },
@@ -412,7 +412,7 @@ export const STYLE = {
         { name, value, definition: BOX_SIZING_DEFINITION },
     ]),
     ASPECTRATIO: createStyle('aspectRatio', (name, value) => [
-        { name, value, definition: NUMBER_UNSET_DEFINITION },
+        { name, value, definition: NUMBER_DEFINITION },
     ]),
     BORDERTOPWIDTH: createStyle('borderTopWidth', (name, value) => [
         { name, value, definition: BORDER_WIDTH_DEFINITION },

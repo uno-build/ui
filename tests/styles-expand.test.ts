@@ -52,6 +52,22 @@ test('overflow expands to both axes', () => {
     ])
 })
 
+test('unset expands to every border and background position longhand', () => {
+    const border_names = Style.resolveStyle('border', 'unset').expanded.map((style) => style.name)
+    const expected_border_names = []
+    for (const property of ['Width', 'Style', 'Color']) {
+        for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
+            expected_border_names.push(`border${side}${property}`)
+        }
+    }
+
+    expect(border_names).toEqual(expected_border_names)
+    expect(Style.resolveStyle('backgroundPosition', 'unset').expanded.map((style) => style.name)).toEqual([
+        'backgroundPositionX',
+        'backgroundPositionY',
+    ])
+})
+
 test('padding expands to four edges', () => {
     expect(Style.resolveStyle('padding', '1px 2px 3px 4px').expanded).toEqual([
         { name: 'paddingTop', value: '1px', parsed: { value: 1, kind: 'px' } },

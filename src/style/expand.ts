@@ -119,6 +119,16 @@ function parseBorder(value: string, resolve) {
 }
 
 function expandBorder(value: string) {
+    if (normalizeToLowercase(normalizeTrim(value)) === KEYWORD.UNSET) {
+        const result = {}
+        for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
+            for (const property of ['Width', 'Style', 'Color']) {
+                result[`border${side}${property}`] = KEYWORD.UNSET
+            }
+        }
+        return result
+    }
+
     const values = parseBorder(value, (key) => key)
     const result = {}
 
@@ -215,6 +225,13 @@ function expandBackgroundSize(value: string) {
 }
 
 function expandBackgroundPosition(value: string) {
+    if (normalizeToLowercase(normalizeTrim(value)) === KEYWORD.UNSET) {
+        return {
+            backgroundPositionX: KEYWORD.UNSET,
+            backgroundPositionY: KEYWORD.UNSET,
+        }
+    }
+
     const [x, y = '50%', ...rest] = splitShorthand(value)
 
     if (x === undefined || x === '' || y === '' || rest.length > 0) {
