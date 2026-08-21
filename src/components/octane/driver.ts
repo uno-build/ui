@@ -1,6 +1,6 @@
 // https://github.com/octanejs/octane/blob/main/docs/universal-renderer-architecture.md
 
-import { createUniversalRoot } from 'octane/universal/native';
+import { createUniversalRoot } from 'octane/universal/native'
 
 const RENDERER_ID = 'uno'
 const TYPE = {
@@ -25,23 +25,20 @@ export const viteConfigOctane = {
                 renderer: RENDERER_ID,
             },
         ],
-    }
+    },
 }
 
 export function registerRootComponent(component, { ui }) {
-    const host = createUniversalRoot(
-        { renderer: RENDERER_ID },
-        createUniversalDriver({ ui }),
-    );
+    const host = createUniversalRoot({ renderer: RENDERER_ID }, createUniversalDriver({ ui }))
 
     return {
         render(props) {
-            host.render(component, props);
+            host.render(component, props)
         },
         unmount() {
-            host.unmount();
+            host.unmount()
         },
-    };
+    }
 }
 
 export function createUniversalDriver({ ui }) {
@@ -51,18 +48,17 @@ export function createUniversalDriver({ ui }) {
     return {
         id: RENDERER_ID,
         capabilities: { text: 'host' },
-        prepareBatch({ }, { commands }) {
+        prepareBatch({}, { commands }) {
             return {
                 apply() {
                     for (const command of commands) {
-
                         // Create
                         if (command.op === 'create') {
                             if (!TYPES.includes(command.type)) {
                                 throw new Error(`Unsupported tag element '<${command.type}>'`)
                             }
                             const node = command.type === TYPE.$TEXT ? null : ui.create()
-                            applyStyles(node, command)
+                            applyStyles(node, {}, command.props.style ?? {})
                             instances.set(command.id, { node, type: command.type, props: command.props })
                         }
 
@@ -101,13 +97,12 @@ export function createUniversalDriver({ ui }) {
                         // Update
                         else if (command.op === 'update') {
                             const instance = instances.get(command.id)
-                            instance.props = command.props
                             if (instance.type === TYPE.$TEXT) {
                                 instance.parent.node.text(command.props.value)
+                            } else {
+                                applyStyles(instance.node, instance.props.style ?? {}, command.props.style ?? {})
                             }
-                            else {
-                                applyStyles(instance.node, command)
-                            }
+                            instance.props = command.props
                         }
 
                         // Remove / Detach
@@ -116,8 +111,7 @@ export function createUniversalDriver({ ui }) {
                             if (instance.type === TYPE.$TEXT) {
                                 instance.parent.node.text('')
                                 instance.parent = null
-                            }
-                            else {
+                            } else {
                                 instance.node.detach()
                             }
                         }
@@ -129,10 +123,8 @@ export function createUniversalDriver({ ui }) {
                                 instance.node.destroy()
                             }
                             instances.delete(command.id)
-                        }
-
-                        else {
-                            throw new Error(`Octane components does not support command '${command.op}'`,)
+                        } else {
+                            throw new Error(`Octane components does not support command '${command.op}'`)
                         }
                     }
                     ui.update()
@@ -140,17 +132,31 @@ export function createUniversalDriver({ ui }) {
                 abort() {
                     // no-op
                 },
-            };
+            }
         },
         getPublicInstance(_container, id) {
             return instances.get(id)?.node ?? null
         },
-    };
+    }
 }
 
-function applyStyles(node, command) {
-    const styles = Object.entries(command.props.style ?? {})
-    for (const [key, value] of styles) {
-        node.style(key, value)
+function applyStyles(node, styles_prev, styles_next) {
+    const prev = Object.entries(styles_prev)
+    const next = Object.entries(styles_next)
+
+    // If a style is present in the previous styles but not in the next styles, we need to unset it.
+    for (const [key, value] of prev) {
+        if (styles_next[key] === undefined) {
+            // console.log([key, value, undefined])
+            node.style(key, 'unset')
+        }
+    }
+
+    // If a style is present in the next styles but not in the previous styles, or if the value has changed, we need to set it.
+    for (const [key, value] of next) {
+        if (styles_prev[key] !== value) {
+            // console.log([key, styles_prev[key], value])
+            node.style(key, value)
+        }
     }
 }

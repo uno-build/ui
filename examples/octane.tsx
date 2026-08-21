@@ -11,11 +11,13 @@ const COLOR_ITEMS = [
 
 export function BasicComponent() {
     const [items, setItems] = useState(COLOR_ITEMS)
+    const [disabled_prop, setDisabledProp] = useState(false)
     const ref = useRef(null)
 
     useEffect(() => {
         const interval = setInterval(() => {
             // console.log(ref.current)
+            setDisabledProp((current) => !current)
             setItems((current_items) =>
                 [current_items.at(-1), ...current_items.slice(0, -1)].map((item) => ({
                     ...item,
@@ -27,19 +29,22 @@ export function BasicComponent() {
         return () => clearInterval(interval)
     }, [])
 
+    const styles = {
+        width: '800px',
+        height: '300px',
+        padding: '20px',
+        gap: `${items[0].count}px`,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#1d2027',
+    }
+
+    if (disabled_prop) {
+        delete styles.backgroundColor
+    }
+
     return (
-        <View
-            ref={ref}
-            style={{
-                width: '800px',
-                height: '300px',
-                padding: '20px',
-                gap: '20px',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#1d2027',
-            }}
-        >
+        <View ref={ref} style={styles}>
             {universalFor(
                 items,
                 (item) => item.id,
