@@ -6,11 +6,11 @@ export default class Node {
     public parent = null
     public children = []
     public path = []
-    public styles = {}
-    public styles_declared = {}
     public layout = {}
     public text_content = undefined
     public order = 0
+    public styles = {}
+    private styles_declared = {}
     private scroll_top = 0
     private scroll_left = 0
     private scroll_height = 0
@@ -67,19 +67,29 @@ export default class Node {
     public style(name, value) {
         if (this.ui !== null && !this.ui.destroyed) {
             const normalized_name = validateStyle(name, value)
-            const resolved_style = resolveStyle(normalized_name, value)
-            const has_changes = resolved_style.expanded.some((style) => this.styles[style.name]?.value !== style.value)
+            const previous_resolved = this.styles_declared[normalized_name]
 
-            this.styles_declared[normalized_name] = value
+            if (
+                previous_resolved === undefined ||
+                previous_resolved.value !== value ||
+                previous_resolved.expanded.some((style) => this.styles[style.name]?.value !== style.value)
+            ) {
+                const resolved_style = resolveStyle(normalized_name, value)
+                const has_changes = resolved_style.expanded.some(
+                    (style) => this.styles[style.name]?.value !== style.value,
+                )
 
-            if (has_changes) {
-                for (const style of resolved_style.expanded) {
-                    this.styles[style.name] = {
-                        value: style.value,
-                        parsed: style.parsed,
+                this.styles_declared[normalized_name] = resolved_style
+
+                if (has_changes) {
+                    for (const style of resolved_style.expanded) {
+                        this.styles[style.name] = {
+                            value: style.value,
+                            parsed: style.parsed,
+                        }
                     }
+                    this.ui.renderer.addPendingStyle(this, resolved_style)
                 }
-                this.ui.renderer.addPendingStyle(this, resolved_style)
             }
         }
     }

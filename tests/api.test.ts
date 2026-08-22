@@ -104,14 +104,13 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     expect(sibling.layout).toMatchObject({ x: 20, y: 0, width: 0, height: 200 })
 })
 
-test('Node stores declared shorthand styles and compares their expanded values', async () => {
+test('Node compares shorthand styles by their expanded values', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
     const node = ui.create()
 
     node.style('padding', '20px')
 
-    expect(node.styles_declared).toEqual({ padding: '20px' })
     expect(node.styles).toMatchObject({
         paddingTop: { value: '20px', parsed: { value: 20, kind: 'px' } },
         paddingRight: { value: '20px', parsed: { value: 20, kind: 'px' } },
@@ -127,13 +126,11 @@ test('Node stores declared shorthand styles and compares their expanded values',
     node.style('paddingTop', '10px')
     node.style('padding', '20px')
 
-    expect(node.styles_declared).toEqual({ padding: '20px', paddingTop: '10px' })
     expect(node.styles.paddingTop.value).toBe('20px')
     expect((renderer as any).pending_styles).toHaveLength(3)
 
     node.style('padding', ' 20PX ')
 
-    expect(node.styles_declared.padding).toBe(' 20PX ')
     expect((renderer as any).pending_styles).toHaveLength(3)
 })
 
