@@ -1,8 +1,8 @@
 // https://github.com/octanejs/octane/blob/main/docs/universal-renderer-architecture.md
 
 import { createUniversalRoot } from 'octane/universal/native'
+import { OCTANE_RENDERER_ID } from './config'
 
-const RENDERER_ID = 'uno'
 const TYPE = {
     VIEW: 'view',
     TEXT: 'text',
@@ -10,26 +10,8 @@ const TYPE = {
 }
 const TYPES = Object.values(TYPE)
 
-export const viteConfigOctane = {
-    renderers: {
-        registry: {
-            [RENDERER_ID]: {
-                module: 'octane/universal/native',
-                target: 'universal',
-                server: 'client-only',
-            },
-        },
-        rules: [
-            {
-                include: ['**/*.tsrx', '**/*.tsx', '**/*.jsx'],
-                renderer: RENDERER_ID,
-            },
-        ],
-    },
-}
-
 export function registerRootComponent(component, { ui }) {
-    const host = createUniversalRoot({ renderer: RENDERER_ID }, createUniversalDriver({ ui }))
+    const host = createUniversalRoot({ renderer: OCTANE_RENDERER_ID }, createUniversalDriver({ ui }))
 
     return {
         render(props) {
@@ -46,7 +28,7 @@ export function createUniversalDriver({ ui }) {
     instances.set(null, { node: ui.root, type: null, props: {} })
 
     return {
-        id: RENDERER_ID,
+        id: OCTANE_RENDERER_ID,
         capabilities: { text: 'host' },
         prepareBatch({}, { commands }) {
             return {

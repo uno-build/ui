@@ -1,6 +1,6 @@
 {
     "name": "uno-ui",
-    "version": "1.0.0-rc.0",
+    "version": "0.1.0",
     "type": "module",
     "exports": {
         "./ResourcesWebGPU": {
@@ -38,6 +38,10 @@
         "./octane": {
             "types": "./src/components/octane/index.ts",
             "import": "./src/components/octane/index.ts"
+        },
+        "./octane/config": {
+            "types": "./src/components/octane/config.ts",
+            "import": "./src/components/octane/config.ts"
         }
     },
     "dependencies": {
