@@ -4,5 +4,6 @@ package-lock.json
 tests/.results/
 docs/
 examples/dist/
+examples/dev/events.html
 AGENTS.md
 CLAUDE.md

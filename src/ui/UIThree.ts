@@ -3,10 +3,46 @@ import { materialReference, sRGBTransferEOTF, texture, vec4 } from 'three/tsl'
 import UIWorldSpace from './UIWorldSpace'
 
 export default class UIThree extends UIWorldSpace {
+    private plane
+
     public static async create(options) {
         const ui = new UIThree(options)
         const resources = await ui.initialize()
         return { ui, ...resources }
+    }
+
+    protected async initialize() {
+        const output = await super.initialize()
+        this.plane = output.plane
+        return output
+    }
+
+    public dispatchEvent(source_event, { camera }) {
+        if (source_event.type === 'pointerdown') {
+            const rect = source_event.currentTarget.getBoundingClientRect()
+            const pointer = new THREE.Vector2(
+                ((source_event.clientX - rect.left) / rect.width) * 2 - 1,
+                -((source_event.clientY - rect.top) / rect.height) * 2 + 1,
+            )
+            const raycaster = new THREE.Raycaster()
+            camera.updateWorldMatrix(true, false)
+            this.plane.updateWorldMatrix(true, true)
+            raycaster.setFromCamera(pointer, camera)
+            const intersection = raycaster.intersectObject(this.plane)[0]
+
+            if (intersection !== undefined) {
+                this.dispatchEventAt(source_event, {
+                    x: intersection.uv.x * this.root.layout.width,
+                    y: (1 - intersection.uv.y) * this.root.layout.height,
+                    distance_to_camera: intersection.distance,
+                })
+            }
+        }
+    }
+
+    public destroy() {
+        super.destroy()
+        this.plane = null
     }
 
     protected createTexture({ gpu_texture }) {

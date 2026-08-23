@@ -1,5 +1,5 @@
 import Node from './Node'
-import { sortPaintingOrder } from '../utils/sort-painting-order'
+import { nodeContainsPoint, sortPaintingOrder } from '../utils/nodes'
 
 export default class UI {
     public root = null
@@ -72,6 +72,48 @@ export default class UI {
         if (!this.destroyed) {
             this.renderer.setRootSize(root_size)
         }
+    }
+
+    protected dispatchEventAt(source_event, event_data) {
+        if (!this.destroyed && source_event.type === 'pointerdown') {
+            const target = this.getEventTarget(event_data.x, event_data.y)
+
+            if (target !== null) {
+                const event = {
+                    type: source_event.type,
+                    ...event_data,
+                    target,
+                    current_target: target,
+                    source_event,
+                }
+                const path = []
+                let current_target = target
+
+                while (current_target !== null) {
+                    path.push(current_target)
+                    current_target = current_target.parent
+                }
+
+                for (const node of path) {
+                    event.current_target = node
+                    const listeners = node.event_listeners.get(source_event.type) ?? []
+
+                    for (const listener of listeners) {
+                        listener(event)
+                    }
+                }
+            }
+        }
+    }
+
+    private getEventTarget(x, y) {
+        for (let i = this.nodes.length - 1; i >= 0; i--) {
+            if (nodeContainsPoint(this.nodes[i], x, y)) {
+                return this.nodes[i]
+            }
+        }
+
+        return nodeContainsPoint(this.root, x, y) ? this.root : null
     }
 
     private addChild(parent, child, before_node) {
@@ -155,6 +197,7 @@ export default class UI {
         this.renderer.discardPendingStyles(node)
         this.renderer.destroyNode(node)
         this.created_nodes.delete(node)
+        node.event_listeners.clear()
         node.ui = null
         node.parent = null
         node.children.length = 0
@@ -169,6 +212,7 @@ export default class UI {
             this.renderer.destroy(nodes)
 
             for (const node of nodes) {
+                node.event_listeners.clear()
                 node.ui = null
                 node.parent = null
                 node.children.length = 0
