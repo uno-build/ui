@@ -1,9 +1,11 @@
 import Node from './Node'
+import Events, { EVENT_TYPES } from './Events'
 import { nodeContainsPoint, sortPaintingOrder } from '../utils/nodes'
 
 export default class UI {
     public root = null
     public renderer = null
+    private events = new Events()
     private nodes = []
     private created_nodes = new Set()
     private next_node_id = 0
@@ -74,36 +76,13 @@ export default class UI {
         }
     }
 
+    protected dispatchEvent(source_event) {
+        return !this.destroyed && EVENT_TYPES.includes(source_event.type)
+    }
+
     protected dispatchEventAt(source_event, event_data) {
-        if (!this.destroyed && source_event.type === 'pointerdown') {
-            const target = this.getEventTarget(event_data.x, event_data.y)
-
-            if (target !== null) {
-                const event = {
-                    type: source_event.type,
-                    ...event_data,
-                    target,
-                    current_target: target,
-                    source_event,
-                }
-                const path = []
-                let current_target = target
-
-                while (current_target !== null) {
-                    path.push(current_target)
-                    current_target = current_target.parent
-                }
-
-                for (const node of path) {
-                    event.current_target = node
-                    const listeners = node.event_listeners.get(source_event.type) ?? []
-
-                    for (const listener of listeners) {
-                        listener(event)
-                    }
-                }
-            }
-        }
+        const target = event_data === null ? null : this.getEventTarget(event_data.x, event_data.y)
+        this.events.dispatch(source_event, event_data, target)
     }
 
     private getEventTarget(x, y) {
@@ -197,7 +176,7 @@ export default class UI {
         this.renderer.discardPendingStyles(node)
         this.renderer.destroyNode(node)
         this.created_nodes.delete(node)
-        node.event_listeners.clear()
+        this.events.destroyNode(node)
         node.ui = null
         node.parent = null
         node.children.length = 0
@@ -210,9 +189,9 @@ export default class UI {
             const nodes = [...this.created_nodes]
 
             this.renderer.destroy(nodes)
+            this.events.destroy()
 
             for (const node of nodes) {
-                node.event_listeners.clear()
                 node.ui = null
                 node.parent = null
                 node.children.length = 0

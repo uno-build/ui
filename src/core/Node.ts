@@ -10,7 +10,6 @@ export default class Node {
     public text_content = undefined
     public order = 0
     public styles = {}
-    private event_listeners = new Map()
     private styles_declared = {}
     private scroll_top = 0
     private scroll_left = 0
@@ -67,9 +66,7 @@ export default class Node {
 
     public on(event, listener) {
         if (this.ui !== null) {
-            const listeners = this.event_listeners.get(event) ?? []
-            listeners.push(listener)
-            this.event_listeners.set(event, listeners)
+            this.ui.events.on(this, event, listener)
         }
     }
 

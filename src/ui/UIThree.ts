@@ -18,26 +18,31 @@ export default class UIThree extends UIWorldSpace {
     }
 
     public dispatchEvent(source_event, { camera }) {
-        if (source_event.type === 'pointerdown') {
-            const rect = source_event.currentTarget.getBoundingClientRect()
-            const pointer = new THREE.Vector2(
-                ((source_event.clientX - rect.left) / rect.width) * 2 - 1,
-                -((source_event.clientY - rect.top) / rect.height) * 2 + 1,
-            )
-            const raycaster = new THREE.Raycaster()
-            camera.updateWorldMatrix(true, false)
-            this.plane.updateWorldMatrix(true, true)
-            raycaster.setFromCamera(pointer, camera)
-            const intersection = raycaster.intersectObject(this.plane)[0]
-
-            if (intersection !== undefined) {
-                this.dispatchEventAt(source_event, {
-                    x: intersection.uv.x * this.root.layout.width,
-                    y: (1 - intersection.uv.y) * this.root.layout.height,
-                    distance_to_camera: intersection.distance,
-                })
-            }
+        if (!super.dispatchEvent(source_event)) {
+            return
         }
+
+        const rect = source_event.currentTarget.getBoundingClientRect()
+        const pointer = new THREE.Vector2(
+            ((source_event.clientX - rect.left) / rect.width) * 2 - 1,
+            -((source_event.clientY - rect.top) / rect.height) * 2 + 1,
+        )
+        const raycaster = new THREE.Raycaster()
+        camera.updateWorldMatrix(true, false)
+        this.plane.updateWorldMatrix(true, true)
+        raycaster.setFromCamera(pointer, camera)
+        const intersection = raycaster.intersectObject(this.plane)[0]
+
+        this.dispatchEventAt(
+            source_event,
+            intersection === undefined
+                ? null
+                : {
+                      x: intersection.uv.x * this.root.layout.width,
+                      y: (1 - intersection.uv.y) * this.root.layout.height,
+                      distance_to_camera: intersection.distance,
+                  },
+        )
     }
 
     public destroy() {
