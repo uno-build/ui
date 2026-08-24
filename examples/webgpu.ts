@@ -34,6 +34,12 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
         background_ui.update()
         foreground_ui.update()
     })
+    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
+        canvas.addEventListener(type, (e) => {
+            background_ui.dispatchEvent(e)
+            foreground_ui.dispatchEvent(e)
+        })
+    })
 
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })

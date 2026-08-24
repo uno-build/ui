@@ -266,3 +266,164 @@ test('current_target follows the event path when the target has no listeners', (
         { listener: 'root', target_matches: true, current_target_matches: true },
     ])
 })
+
+test('pointerover and pointerout follow hit targets and bubble', () => {
+    const events = new Events()
+    const root = { parent: null }
+    const first = { parent: root }
+    const second = { parent: root }
+    const names = new Map([
+        [root, 'root'],
+        [first, 'first'],
+        [second, 'second'],
+    ])
+    const received_events = []
+    let current_source_event
+
+    const record = (node, listener) => (event) => {
+        received_events.push([
+            event.type,
+            listener,
+            names.get(event.target),
+            names.get(event.related_target) ?? null,
+            event.x,
+            event.current_target === node,
+            event.source_event === current_source_event,
+        ])
+    }
+    const dispatch = (source_event, event_data, target) => {
+        current_source_event = source_event
+        events.dispatch(source_event, event_data, target)
+    }
+
+    for (const [node, name] of names) {
+        events.on(node, 'pointerover', record(node, name))
+        events.on(node, 'pointerout', record(node, name))
+    }
+
+    dispatch({ type: 'pointermove', pointerId: 1 }, { x: 1 }, first)
+    dispatch({ type: 'pointermove', pointerId: 1 }, { x: 2 }, first)
+    dispatch({ type: 'pointermove', pointerId: 1 }, { x: 3 }, second)
+    dispatch({ type: 'pointermove', pointerId: 1 }, null, null)
+
+    expect(received_events).toEqual([
+        ['pointerover', 'first', 'first', null, 1, true, true],
+        ['pointerover', 'root', 'first', null, 1, true, true],
+        ['pointerout', 'first', 'first', 'second', 3, true, true],
+        ['pointerout', 'root', 'first', 'second', 3, true, true],
+        ['pointerover', 'second', 'second', 'first', 3, true, true],
+        ['pointerover', 'root', 'second', 'first', 3, true, true],
+        ['pointerout', 'second', 'second', null, 3, true, true],
+        ['pointerout', 'root', 'second', null, 3, true, true],
+    ])
+})
+
+test('pointerover and pointerout use hit targets during pointer capture', () => {
+    const events = new Events()
+    const first = { parent: null }
+    const second = { parent: null }
+    const names = new Map([
+        [first, 'first'],
+        [second, 'second'],
+    ])
+    const received_events = []
+    const record = (event) => {
+        received_events.push([
+            event.type,
+            names.get(event.target),
+            names.get(event.related_target) ?? null,
+            'related_target' in event,
+            event.x,
+        ])
+    }
+
+    for (const node of names.keys()) {
+        for (const type of ['pointerover', 'pointerout', 'pointerdown', 'pointermove', 'pointerup']) {
+            events.on(node, type, record)
+        }
+    }
+
+    events.dispatch({ type: 'pointerdown', pointerId: 1, pointerType: 'mouse' }, { x: 1 }, first)
+    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'mouse' }, { x: 2 }, second)
+    events.dispatch({ type: 'pointerup', pointerId: 1, pointerType: 'mouse' }, { x: 3 }, second)
+    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'mouse' }, null, null)
+
+    expect(received_events).toEqual([
+        ['pointerover', 'first', null, true, 1],
+        ['pointerdown', 'first', null, false, 1],
+        ['pointerout', 'first', 'second', true, 2],
+        ['pointerover', 'second', 'first', true, 2],
+        ['pointermove', 'first', null, false, 2],
+        ['pointerup', 'first', null, false, 3],
+        ['pointerout', 'second', null, true, 3],
+    ])
+})
+
+test('pointerup and pointercancel end hover according to the pointer type', () => {
+    const events = new Events()
+    const node = { parent: null }
+    const received_events = []
+    const record = (event) => {
+        received_events.push({
+            type: event.type,
+            pointer_id: event.source_event.pointerId,
+            x: event.x,
+        })
+    }
+
+    for (const type of ['pointerover', 'pointerout', 'pointerup', 'pointercancel']) {
+        events.on(node, type, record)
+    }
+
+    events.dispatch({ type: 'pointerdown', pointerId: 1, pointerType: 'touch' }, { x: 1 }, node)
+    events.dispatch({ type: 'pointerup', pointerId: 1, pointerType: 'touch' }, { x: 2 }, node)
+    events.dispatch({ type: 'pointerdown', pointerId: 2, pointerType: 'mouse' }, { x: 3 }, node)
+    events.dispatch({ type: 'pointerup', pointerId: 2, pointerType: 'mouse' }, { x: 4 }, node)
+    events.dispatch({ type: 'pointerdown', pointerId: 3, pointerType: 'pen' }, { x: 5 }, node)
+    events.dispatch({ type: 'pointerup', pointerId: 3, pointerType: 'pen' }, { x: 6 }, node)
+    events.dispatch({ type: 'pointerdown', pointerId: 4, pointerType: 'mouse' }, { x: 7 }, node)
+    events.dispatch({ type: 'pointercancel', pointerId: 4, pointerType: 'mouse' }, null, null)
+
+    expect(received_events).toEqual([
+        { type: 'pointerover', pointer_id: 1, x: 1 },
+        { type: 'pointerup', pointer_id: 1, x: 2 },
+        { type: 'pointerout', pointer_id: 1, x: 2 },
+        { type: 'pointerover', pointer_id: 2, x: 3 },
+        { type: 'pointerup', pointer_id: 2, x: 4 },
+        { type: 'pointerover', pointer_id: 3, x: 5 },
+        { type: 'pointerup', pointer_id: 3, x: 6 },
+        { type: 'pointerover', pointer_id: 4, x: 7 },
+        { type: 'pointercancel', pointer_id: 4, x: 7 },
+        { type: 'pointerout', pointer_id: 4, x: 7 },
+    ])
+})
+
+test('hover state is isolated by pointer and cleared on destruction', () => {
+    const events = new Events()
+    const root = { parent: null }
+    const first = { parent: root }
+    const second = { parent: root }
+    const received_events = []
+
+    events.on(root, 'pointerout', (event) => {
+        received_events.push({
+            pointer_id: event.source_event.pointerId,
+            target: event.target,
+        })
+    })
+
+    events.dispatch({ type: 'pointermove', pointerId: 1 }, {}, first)
+    events.dispatch({ type: 'pointermove', pointerId: 2 }, {}, second)
+    events.dispatch({ type: 'pointermove', pointerId: 1 }, null, null)
+    events.destroyNode(second)
+    events.dispatch({ type: 'pointermove', pointerId: 2 }, null, null)
+
+    expect(received_events).toEqual([{ pointer_id: 1, target: first }])
+
+    events.dispatch({ type: 'pointermove', pointerId: 3 }, {}, first)
+    events.destroy()
+    events.on(root, 'pointerout', (event) => received_events.push(event))
+    events.dispatch({ type: 'pointermove', pointerId: 3 }, null, null)
+
+    expect(received_events).toEqual([{ pointer_id: 1, target: first }])
+})

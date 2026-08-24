@@ -3,6 +3,7 @@ export const EVENT_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointerc
 export default class Events {
     private listeners = new WeakMap()
     private pointers = new Map()
+    private hovered_pointers = new Map()
 
     public on(node, type, listener) {
         const node_listeners = this.listeners.get(node) ?? new Map()
@@ -31,7 +32,14 @@ export default class Events {
     public dispatch(source_event, event_data, hit_target) {
         const pointer_id = source_event.pointerId
         const pointer = this.pointers.get(pointer_id)
+        const ends_hover =
+            source_event.type === 'pointercancel' ||
+            (source_event.type === 'pointerup' && source_event.pointerType === 'touch')
         let target = hit_target
+
+        if (source_event.type !== 'pointercancel') {
+            this.updateHoveredPointer(source_event, event_data, hit_target)
+        }
 
         if (source_event.type === 'pointerdown') {
             if (target === null) {
@@ -46,15 +54,22 @@ export default class Events {
                 pointer.event_data = event_data
             }
         } else if (source_event.type === 'pointerup' || source_event.type === 'pointercancel') {
+            if (ends_hover) {
+                this.endHoveredPointer(source_event, event_data)
+            }
             return
         }
 
         if (target !== null && event_data !== null) {
-            this.dispatchAt(source_event, event_data, target)
+            this.dispatchAt(source_event.type, source_event, event_data, target)
         }
 
         if (source_event.type === 'pointerup' || source_event.type === 'pointercancel') {
             this.pointers.delete(pointer_id)
+
+            if (ends_hover) {
+                this.endHoveredPointer(source_event, event_data)
+            }
         }
     }
 
@@ -66,19 +81,73 @@ export default class Events {
                 this.pointers.delete(pointer_id)
             }
         }
+
+        for (const [pointer_id, pointer] of this.hovered_pointers) {
+            if (pointer.target === node) {
+                this.hovered_pointers.delete(pointer_id)
+            }
+        }
     }
 
     public destroy() {
         this.listeners = new WeakMap()
         this.pointers.clear()
+        this.hovered_pointers.clear()
     }
 
-    private dispatchAt(source_event, event_data, target) {
+    private updateHoveredPointer(source_event, event_data, target) {
+        const pointer_id = source_event.pointerId
+        const pointer = this.hovered_pointers.get(pointer_id)
+        const previous_target = pointer?.target ?? null
+
+        if (previous_target === target) {
+            if (pointer !== undefined && event_data !== null) {
+                pointer.event_data = event_data
+            }
+            return
+        }
+
+        if (previous_target !== null) {
+            this.dispatchAt(
+                'pointerout',
+                source_event,
+                event_data ?? pointer.event_data,
+                previous_target,
+                target,
+            )
+        }
+
+        if (target === null) {
+            this.hovered_pointers.delete(pointer_id)
+        } else {
+            this.hovered_pointers.set(pointer_id, { target, event_data })
+            this.dispatchAt('pointerover', source_event, event_data, target, previous_target)
+        }
+    }
+
+    private endHoveredPointer(source_event, event_data) {
+        const pointer_id = source_event.pointerId
+        const pointer = this.hovered_pointers.get(pointer_id)
+
+        if (pointer !== undefined) {
+            this.hovered_pointers.delete(pointer_id)
+            this.dispatchAt(
+                'pointerout',
+                source_event,
+                event_data ?? pointer.event_data,
+                pointer.target,
+                null,
+            )
+        }
+    }
+
+    private dispatchAt(type, source_event, event_data, target, related_target) {
         const event = {
-            type: source_event.type,
+            type,
             ...event_data,
             target,
             current_target: target,
+            ...(related_target === undefined ? {} : { related_target }),
             source_event,
         }
         const path = []
@@ -91,7 +160,7 @@ export default class Events {
 
         for (const node of path) {
             event.current_target = node
-            const listeners = this.listeners.get(node)?.get(source_event.type) ?? []
+            const listeners = this.listeners.get(node)?.get(type) ?? []
 
             for (const listener of listeners) {
                 listener(event)
