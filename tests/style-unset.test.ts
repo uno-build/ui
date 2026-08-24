@@ -73,6 +73,7 @@ const STYLE_VALUES: Record<string, string> = {
     borderRightWidth: '4px',
     borderBottomWidth: '4px',
     display: 'none',
+    pointerEvents: 'none',
     direction: 'rtl',
     padding: '10px',
     paddingTop: '10px',
@@ -92,8 +93,8 @@ const STYLE_CASES = STYLE_NAMES.map((name) => ({
 }))
 const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
 
-test('Dom unset restores the undefined state for all 79 styles', async ({ page }) => {
-    expect(STYLE_NAMES).toHaveLength(79)
+test('Dom unset restores the undefined state for all 80 styles', async ({ page }) => {
+    expect(STYLE_NAMES).toHaveLength(80)
     expect(Object.keys(STYLE_VALUES)).toEqual(STYLE_NAMES)
 
     await page.goto('/dev/?renderers=RendererDom')
@@ -170,15 +171,15 @@ test('Dom unset restores the undefined state for all 79 styles', async ({ page }
         },
     )
 
-    expect(states).toHaveLength(79)
+    expect(states).toHaveLength(80)
     for (const { name, undefined_value, defined_value, unset_value } of states) {
         expect(defined_value, `${name}: defined`).not.toBe(undefined_value)
         expect(unset_value, `${name}: unset`).toBe(undefined_value)
     }
 })
 
-test('WebGPU unset restores the undefined state for all 79 styles', async ({ page }) => {
-    expect(STYLE_NAMES).toHaveLength(79)
+test('WebGPU unset restores the undefined state for all 80 styles', async ({ page }) => {
+    expect(STYLE_NAMES).toHaveLength(80)
     expect(Object.keys(STYLE_VALUES)).toEqual(STYLE_NAMES)
 
     await page.goto('/dev/?renderers=RendererDom')
@@ -376,7 +377,7 @@ test('WebGPU unset restores the undefined state for all 79 styles', async ({ pag
         },
     )
 
-    expect(states).toHaveLength(79)
+    expect(states).toHaveLength(80)
     for (const { name, undefined_value, defined_value, unset_value } of states) {
         expect(defined_value, `${name}: defined`).not.toBe(undefined_value)
         expect(unset_value, `${name}: unset`).toBe(undefined_value)

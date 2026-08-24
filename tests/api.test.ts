@@ -134,6 +134,28 @@ test('Node compares shorthand styles by their expanded values', async () => {
     expect((renderer as any).pending_styles).toHaveLength(3)
 })
 
+test('Node stores pointerEvents and adds it to the pending renderer styles', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const node = ui.create()
+
+    node.style('pointer-events', ' none ')
+
+    expect(node.styles.pointerEvents).toEqual({
+        value: 'none',
+        parsed: { enum: 1 },
+    })
+    expect((renderer as any).pending_styles).toHaveLength(1)
+
+    node.style('pointerEvents', 'unset')
+
+    expect(node.styles.pointerEvents).toEqual({
+        value: 'unset',
+        parsed: { kind: 'unset' },
+    })
+    expect((renderer as any).pending_styles).toHaveLength(2)
+})
+
 test('UI destroy releases attached and detached nodes once', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })

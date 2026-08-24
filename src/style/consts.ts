@@ -89,6 +89,10 @@ export const DISPLAY = {
     none: 1,
     contents: 2,
 }
+export const POINTER_EVENTS = {
+    all: 0,
+    none: 1,
+}
 export const DIRECTION = {
     inherit: 0,
     ltr: 1,

@@ -28,6 +28,7 @@ import {
     OFFSET_DEFINITION,
     OPACITY_DEFINITION,
     OVERFLOW_DEFINITION,
+    POINTER_EVENTS_DEFINITION,
     POSITION_DEFINITION,
     PX_PERCENT_DEFINITION,
     SIZE_DEFINITION,
@@ -428,6 +429,9 @@ export const STYLE = {
     ]),
     DISPLAY: createStyle('display', (name, value) => [
         { name, value, definition: DISPLAY_DEFINITION },
+    ]),
+    POINTEREVENTS: createStyle('pointerEvents', (name, value) => [
+        { name, value, definition: POINTER_EVENTS_DEFINITION },
     ]),
     DIRECTION: createStyle('direction', (name, value) => [
         { name, value, definition: DIRECTION_DEFINITION },

@@ -61,34 +61,17 @@ export function createBackgroundUI({ ui, assets, title: title_text, background_c
     inside.style('backgroundImage', repeat_y.src)
     inside.style('backgroundSize', '100% 1px')
     inside.style('backgroundRepeat', 'repeat-y')
+    inside.style('pointerEvents', 'none')
     combined.add(inside)
 
-    function nodeContains(node, target) {
-        while (target !== null) {
-            if (target === node) {
-                return true
-            }
-            target = target.parent
-        }
-        return false
-    }
-
     combined.on('pointerover', (event) => {
-        if (!nodeContains(event.current_target, event.related_target)) {
-            combined.style('border', '4px solid #fff')
-        }
+        console.log('over', event)
+        combined.style('border', '4px solid #fff')
     })
     combined.on('pointerout', (event) => {
-        if (!nodeContains(event.current_target, event.related_target)) {
-            combined.style('border', '4px solid #000')
-        }
+        console.log('out', event)
+        combined.style('border', '4px solid #000')
     })
-    // inside.on('pointerover', (event) => {
-    //     console.log('inside.over', event)
-    // })
-    // inside.on('pointerout', (event) => {
-    //     console.log('inside.out', event)
-    // })
 
     const combined2 = ui.create()
     combined2.style('width', `${ITEM_SIZE}px`)

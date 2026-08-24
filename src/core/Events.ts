@@ -1,3 +1,5 @@
+import { POINTER_EVENTS } from '../style/consts'
+
 export const EVENT_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']
 
 export default class Events {
@@ -29,12 +31,13 @@ export default class Events {
         }
     }
 
-    public dispatch(source_event, event_data, hit_target) {
+    public dispatch(source_event, event_data, hit_targets) {
         const pointer_id = source_event.pointerId
         const pointer = this.pointers.get(pointer_id)
         const ends_hover =
             source_event.type === 'pointercancel' ||
             (source_event.type === 'pointerup' && source_event.pointerType === 'touch')
+        const hit_target = this.getHitTarget(hit_targets)
         let target = hit_target
 
         if (source_event.type !== 'pointercancel') {
@@ -93,6 +96,18 @@ export default class Events {
         this.listeners = new WeakMap()
         this.pointers.clear()
         this.hovered_pointers.clear()
+    }
+
+    private getHitTarget(hit_targets) {
+        for (const target of hit_targets) {
+            const pointer_events = target.styles?.pointerEvents?.parsed.enum ?? POINTER_EVENTS.all
+
+            if (pointer_events === POINTER_EVENTS.all) {
+                return target
+            }
+        }
+
+        return null
     }
 
     private updateHoveredPointer(source_event, event_data, target) {

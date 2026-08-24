@@ -185,6 +185,25 @@ test('enumStyle', () => {
     ])
 })
 
+test('pointerEvents', () => {
+    expect(Style.validateStyle(' pointer-events ', 'all')).toBe('pointerEvents')
+    expect(Style.resolveStyle('pointerEvents', ' All ').expanded).toEqual([
+        {
+            name: 'pointerEvents',
+            value: 'all',
+            parsed: { enum: 0 },
+        },
+    ])
+    expect(Style.resolveStyle('pointerEvents', 'none').expanded).toEqual([
+        {
+            name: 'pointerEvents',
+            value: 'none',
+            parsed: { enum: 1 },
+        },
+    ])
+    expect(() => Style.resolveStyle('pointerEvents', 'auto')).toThrow(/expected one of all, none/)
+})
+
 test('colorStyle', () => {
     expect(() => {
         Style.resolveStyle('backgroundColor', 'rgb(255, 0, 0)')

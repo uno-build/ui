@@ -11,6 +11,7 @@ import {
     FLEX_DIRECTION,
     JUSTIFY,
     OVERFLOW,
+    POINTER_EVENTS,
     POSITION,
     TEXT_ALIGN,
     WRAP,
@@ -458,6 +459,15 @@ export const DISPLAY_DEFINITION = [
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(DISPLAY)],
         parse: [createEnumParser(DISPLAY)],
+    },
+    ...UNSET_DEFINITION,
+]
+
+export const POINTER_EVENTS_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [createEnumValidator(POINTER_EVENTS)],
+        parse: [createEnumParser(POINTER_EVENTS)],
     },
     ...UNSET_DEFINITION,
 ]

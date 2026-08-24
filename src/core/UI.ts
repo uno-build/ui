@@ -81,18 +81,24 @@ export default class UI {
     }
 
     protected dispatchEventAt(source_event, event_data) {
-        const target = event_data === null ? null : this.getEventTarget(event_data.x, event_data.y)
-        this.events.dispatch(source_event, event_data, target)
+        const targets = event_data === null ? [] : this.getEventTargets(event_data.x, event_data.y)
+        this.events.dispatch(source_event, event_data, targets)
     }
 
-    private getEventTarget(x, y) {
+    private getEventTargets(x, y) {
+        const targets = []
+
         for (let i = this.nodes.length - 1; i >= 0; i--) {
             if (nodeContainsPoint(this.nodes[i], x, y)) {
-                return this.nodes[i]
+                targets.push(this.nodes[i])
             }
         }
 
-        return nodeContainsPoint(this.root, x, y) ? this.root : null
+        if (nodeContainsPoint(this.root, x, y)) {
+            targets.push(this.root)
+        }
+
+        return targets
     }
 
     private addChild(parent, child, before_node) {
