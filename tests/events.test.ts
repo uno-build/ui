@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
 import Events from '../src/core/Events'
-import { POINTER_EVENTS } from '../src/style/consts'
 import TestRenderer from './TestRenderer.ts'
 import TestUI from './TestUI.ts'
 
@@ -262,7 +261,7 @@ test('current_target follows the event path when the target has no listeners', (
         })
     })
 
-    events.dispatch({ type: 'pointerdown', pointerId: 1 }, {}, [inside])
+    events.dispatch({ type: 'pointerdown', pointerId: 1 }, {}, inside)
 
     expect(received_events).toEqual([
         { listener: 'combined', target_matches: true, current_target_matches: true },
@@ -270,65 +269,7 @@ test('current_target follows the event path when the target has no listeners', (
     ])
 })
 
-test('pointerEvents excludes none targets without inheritance or blocking bubbling', () => {
-    const events = new Events()
-    const root = { parent: null, styles: {} }
-    const underneath = { parent: root, styles: {} }
-    const disabled_parent = {
-        parent: root,
-        styles: { pointerEvents: { parsed: { enum: POINTER_EVENTS.none } } },
-    }
-    const child = { parent: disabled_parent, styles: {} }
-    const received_events = []
-
-    for (const [node, name] of [
-        [underneath, 'underneath'],
-        [disabled_parent, 'disabled-parent'],
-        [child, 'child'],
-        [root, 'root'],
-    ] as const) {
-        events.on(node, 'pointerdown', (event) => {
-            received_events.push({ name, target: event.target })
-        })
-    }
-
-    events.dispatch({ type: 'pointerdown', pointerId: 1 }, {}, [disabled_parent, underneath, root])
-    events.dispatch({ type: 'pointerdown', pointerId: 2 }, {}, [child, disabled_parent, root])
-
-    expect(received_events).toEqual([
-        { name: 'underneath', target: underneath },
-        { name: 'root', target: underneath },
-        { name: 'child', target: child },
-        { name: 'disabled-parent', target: child },
-        { name: 'root', target: child },
-    ])
-})
-
-test('pointerEvents all, unset, and missing values remain targetable', () => {
-    const events = new Events()
-    const all = {
-        parent: null,
-        styles: { pointerEvents: { parsed: { enum: POINTER_EVENTS.all } } },
-    }
-    const unset = {
-        parent: null,
-        styles: { pointerEvents: { parsed: { kind: 'unset' } } },
-    }
-    const missing = { parent: null, styles: {} }
-    const targets = []
-
-    for (const node of [all, unset, missing]) {
-        events.on(node, 'pointerdown', (event) => targets.push(event.target))
-    }
-
-    events.dispatch({ type: 'pointerdown', pointerId: 1 }, {}, [all, unset, missing])
-    events.dispatch({ type: 'pointerdown', pointerId: 2 }, {}, [unset, missing])
-    events.dispatch({ type: 'pointerdown', pointerId: 3 }, {}, [missing])
-
-    expect(targets).toEqual([all, unset, missing])
-})
-
-test('UI hit testing continues behind nodes with pointerEvents none', async () => {
+test('UI hit testing applies pointerEvents to overlapping nodes', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
     const underneath = ui.create()
@@ -349,7 +290,39 @@ test('UI hit testing continues behind nodes with pointerEvents none', async () =
 
     ;(ui as any).dispatchEventAt({ type: 'pointerdown', pointerId: 1 }, { x: 50, y: 25 })
 
-    expect(received_events).toEqual([underneath])
+    overlay.style('pointerEvents', 'all')
+    ;(ui as any).dispatchEventAt({ type: 'pointerdown', pointerId: 2 }, { x: 50, y: 25 })
+
+    overlay.style('pointerEvents', 'unset')
+    ;(ui as any).dispatchEventAt({ type: 'pointerdown', pointerId: 3 }, { x: 50, y: 25 })
+
+    expect(received_events).toEqual([underneath, overlay, overlay])
+})
+
+test('pointerEvents is not inherited and does not block bubbling', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const parent = ui.create()
+    const child = ui.create()
+    const received_events = []
+
+    ui.root.style('width', '200px')
+    ui.root.style('height', '100px')
+    parent.style('position', 'absolute')
+    parent.style('width', '100px')
+    parent.style('height', '50px')
+    parent.style('pointerEvents', 'none')
+    child.style('width', '100px')
+    child.style('height', '50px')
+    ui.root.add(parent)
+    parent.add(child)
+    child.on('pointerdown', () => received_events.push('child'))
+    parent.on('pointerdown', () => received_events.push('parent'))
+    ui.update()
+
+    ;(ui as any).dispatchEventAt({ type: 'pointerdown', pointerId: 1 }, { x: 50, y: 25 })
+
+    expect(received_events).toEqual(['child', 'parent'])
 })
 
 test('pointerover and pointerout follow hit targets and bubble', () => {
@@ -378,7 +351,7 @@ test('pointerover and pointerout follow hit targets and bubble', () => {
     }
     const dispatch = (source_event, event_data, target) => {
         current_source_event = source_event
-        events.dispatch(source_event, event_data, target === null ? [] : [target])
+        events.dispatch(source_event, event_data, target)
     }
 
     for (const [node, name] of names) {
@@ -405,10 +378,6 @@ test('pointerover and pointerout follow hit targets and bubble', () => {
 
 test('pointerover and pointerout use hit targets during pointer capture', () => {
     const events = new Events()
-    const disabled = {
-        parent: null,
-        styles: { pointerEvents: { parsed: { enum: POINTER_EVENTS.none } } },
-    }
     const first = { parent: null }
     const second = { parent: null }
     const names = new Map([
@@ -432,10 +401,10 @@ test('pointerover and pointerout use hit targets during pointer capture', () => 
         }
     }
 
-    events.dispatch({ type: 'pointerdown', pointerId: 1, pointerType: 'mouse' }, { x: 1 }, [disabled, first])
-    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'mouse' }, { x: 2 }, [disabled, second])
-    events.dispatch({ type: 'pointerup', pointerId: 1, pointerType: 'mouse' }, { x: 3 }, [disabled, second])
-    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'mouse' }, null, [])
+    events.dispatch({ type: 'pointerdown', pointerId: 1, pointerType: 'mouse' }, { x: 1 }, first)
+    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'mouse' }, { x: 2 }, second)
+    events.dispatch({ type: 'pointerup', pointerId: 1, pointerType: 'mouse' }, { x: 3 }, second)
+    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'mouse' }, null, null)
 
     expect(received_events).toEqual([
         ['pointerover', 'first', null, true, 1],
@@ -464,14 +433,14 @@ test('pointerup and pointercancel end hover according to the pointer type', () =
         events.on(node, type, record)
     }
 
-    events.dispatch({ type: 'pointerdown', pointerId: 1, pointerType: 'touch' }, { x: 1 }, [node])
-    events.dispatch({ type: 'pointerup', pointerId: 1, pointerType: 'touch' }, { x: 2 }, [node])
-    events.dispatch({ type: 'pointerdown', pointerId: 2, pointerType: 'mouse' }, { x: 3 }, [node])
-    events.dispatch({ type: 'pointerup', pointerId: 2, pointerType: 'mouse' }, { x: 4 }, [node])
-    events.dispatch({ type: 'pointerdown', pointerId: 3, pointerType: 'pen' }, { x: 5 }, [node])
-    events.dispatch({ type: 'pointerup', pointerId: 3, pointerType: 'pen' }, { x: 6 }, [node])
-    events.dispatch({ type: 'pointerdown', pointerId: 4, pointerType: 'mouse' }, { x: 7 }, [node])
-    events.dispatch({ type: 'pointercancel', pointerId: 4, pointerType: 'mouse' }, null, [])
+    events.dispatch({ type: 'pointerdown', pointerId: 1, pointerType: 'touch' }, { x: 1 }, node)
+    events.dispatch({ type: 'pointerup', pointerId: 1, pointerType: 'touch' }, { x: 2 }, node)
+    events.dispatch({ type: 'pointerdown', pointerId: 2, pointerType: 'mouse' }, { x: 3 }, node)
+    events.dispatch({ type: 'pointerup', pointerId: 2, pointerType: 'mouse' }, { x: 4 }, node)
+    events.dispatch({ type: 'pointerdown', pointerId: 3, pointerType: 'pen' }, { x: 5 }, node)
+    events.dispatch({ type: 'pointerup', pointerId: 3, pointerType: 'pen' }, { x: 6 }, node)
+    events.dispatch({ type: 'pointerdown', pointerId: 4, pointerType: 'mouse' }, { x: 7 }, node)
+    events.dispatch({ type: 'pointercancel', pointerId: 4, pointerType: 'mouse' }, null, null)
 
     expect(received_events).toEqual([
         { type: 'pointerover', pointer_id: 1, x: 1 },
@@ -501,18 +470,18 @@ test('hover state is isolated by pointer and cleared on destruction', () => {
         })
     })
 
-    events.dispatch({ type: 'pointermove', pointerId: 1 }, {}, [first])
-    events.dispatch({ type: 'pointermove', pointerId: 2 }, {}, [second])
-    events.dispatch({ type: 'pointermove', pointerId: 1 }, null, [])
+    events.dispatch({ type: 'pointermove', pointerId: 1 }, {}, first)
+    events.dispatch({ type: 'pointermove', pointerId: 2 }, {}, second)
+    events.dispatch({ type: 'pointermove', pointerId: 1 }, null, null)
     events.destroyNode(second)
-    events.dispatch({ type: 'pointermove', pointerId: 2 }, null, [])
+    events.dispatch({ type: 'pointermove', pointerId: 2 }, null, null)
 
     expect(received_events).toEqual([{ pointer_id: 1, target: first }])
 
-    events.dispatch({ type: 'pointermove', pointerId: 3 }, {}, [first])
+    events.dispatch({ type: 'pointermove', pointerId: 3 }, {}, first)
     events.destroy()
     events.on(root, 'pointerout', (event) => received_events.push(event))
-    events.dispatch({ type: 'pointermove', pointerId: 3 }, null, [])
+    events.dispatch({ type: 'pointermove', pointerId: 3 }, null, null)
 
     expect(received_events).toEqual([{ pointer_id: 1, target: first }])
 })

@@ -76,29 +76,47 @@ export default class UI {
         }
     }
 
+    public destroy() {
+        if (!this.destroyed) {
+            this.destroyed = true
+            const nodes = [...this.created_nodes]
+
+            this.renderer.destroy(nodes)
+            this.events.destroy()
+
+            for (const node of nodes) {
+                node.ui = null
+                node.parent = null
+                node.children.length = 0
+                node.element = null
+            }
+
+            this.created_nodes.clear()
+            this.nodes.length = 0
+            this.root = null
+            this.renderer = null
+            return true
+        }
+        return false
+    }
+
     protected dispatchEvent(source_event) {
         return !this.destroyed && EVENT_TYPES.includes(source_event.type)
     }
 
     protected dispatchEventAt(source_event, event_data) {
-        const targets = event_data === null ? [] : this.getEventTargets(event_data.x, event_data.y)
-        this.events.dispatch(source_event, event_data, targets)
+        const target = event_data === null ? null : this.getEventTarget(event_data.x, event_data.y)
+        this.events.dispatch(source_event, event_data, target)
     }
 
-    private getEventTargets(x, y) {
-        const targets = []
-
+    private getEventTarget(x, y) {
         for (let i = this.nodes.length - 1; i >= 0; i--) {
             if (nodeContainsPoint(this.nodes[i], x, y)) {
-                targets.push(this.nodes[i])
+                return this.nodes[i]
             }
         }
 
-        if (nodeContainsPoint(this.root, x, y)) {
-            targets.push(this.root)
-        }
-
-        return targets
+        return nodeContainsPoint(this.root, x, y) ? this.root : null
     }
 
     private addChild(parent, child, before_node) {
@@ -187,29 +205,5 @@ export default class UI {
         node.parent = null
         node.children.length = 0
         node.element = null
-    }
-
-    public destroy() {
-        if (!this.destroyed) {
-            this.destroyed = true
-            const nodes = [...this.created_nodes]
-
-            this.renderer.destroy(nodes)
-            this.events.destroy()
-
-            for (const node of nodes) {
-                node.ui = null
-                node.parent = null
-                node.children.length = 0
-                node.element = null
-            }
-
-            this.created_nodes.clear()
-            this.nodes.length = 0
-            this.root = null
-            this.renderer = null
-            return true
-        }
-        return false
     }
 }

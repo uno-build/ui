@@ -1,9 +1,10 @@
 import { getAncestorClipping, getNodeRenderLayout } from '../renderer/utils/render-metrics'
-import { DISPLAY } from '../style/consts'
+import { DISPLAY, POINTER_EVENTS } from '../style/consts'
 
 export function nodeContainsPoint(node, x, y) {
     const display = node.styles.display?.parsed.enum ?? DISPLAY.flex
-    if (display === DISPLAY.none) {
+    const pointer_events = node.styles.pointerEvents?.parsed.enum ?? POINTER_EVENTS.all
+    if (display === DISPLAY.none || pointer_events === POINTER_EVENTS.none) {
         return false
     }
 

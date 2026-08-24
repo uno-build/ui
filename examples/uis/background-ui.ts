@@ -65,11 +65,9 @@ export function createBackgroundUI({ ui, assets, title: title_text, background_c
     combined.add(inside)
 
     combined.on('pointerover', (event) => {
-        console.log('over', event)
         combined.style('border', '4px solid #fff')
     })
     combined.on('pointerout', (event) => {
-        console.log('out', event)
         combined.style('border', '4px solid #000')
     })
 
@@ -90,7 +88,15 @@ export function createBackgroundUI({ ui, assets, title: title_text, background_c
     inside2.style('backgroundImage', repeat_x.src)
     inside2.style('backgroundSize', '1px 100%')
     inside2.style('backgroundRepeat', 'repeat-x')
+    inside2.style('pointerEvents', 'none')
     combined2.add(inside2)
+
+    combined2.on('pointerover', (event) => {
+        combined2.style('border', '4px solid #fff')
+    })
+    combined2.on('pointerout', (event) => {
+        combined2.style('border', '4px solid #000')
+    })
 
     if (title_text) {
         const title = ui.create()
