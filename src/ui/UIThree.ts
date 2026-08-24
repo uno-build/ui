@@ -28,7 +28,6 @@ export default class UIThree extends UIWorldSpace {
             -((source_event.clientY - rect.top) / rect.height) * 2 + 1,
         )
         const raycaster = new THREE.Raycaster()
-        camera.updateWorldMatrix(true, false)
         this.plane.updateWorldMatrix(true, true)
         raycaster.setFromCamera(pointer, camera)
         const intersection = raycaster.intersectObject(this.plane)[0]

@@ -12,6 +12,22 @@ export default class Events {
         this.listeners.set(node, node_listeners)
     }
 
+    public off(node, type, listener) {
+        const node_listeners = this.listeners.get(node)
+        const event_listeners = node_listeners?.get(type)
+        const listener_index = event_listeners?.indexOf(listener) ?? -1
+
+        if (listener_index !== -1) {
+            event_listeners.splice(listener_index, 1)
+            if (event_listeners.length === 0) {
+                node_listeners.delete(type)
+            }
+            if (node_listeners.size === 0) {
+                this.listeners.delete(node)
+            }
+        }
+    }
+
     public dispatch(source_event, event_data, hit_target) {
         const pointer_id = source_event.pointerId
         const pointer = this.pointers.get(pointer_id)

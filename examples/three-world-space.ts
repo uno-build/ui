@@ -78,20 +78,20 @@ export async function main({
     const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
     camera.position.set(0, 3.5, 9)
 
-    canvas.addEventListener('pointerdown', (event) => {
-        overlay_ui.dispatchEvent(event)
-        first_ui.dispatchEvent(event, { camera })
-        second_ui.dispatchEvent(event, { camera })
+    //
+    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
+        canvas.addEventListener(type, (e) => {
+            overlay_ui.dispatchEvent(e)
+            first_ui.dispatchEvent(e, { camera })
+            second_ui.dispatchEvent(e, { camera })
+        })
     })
 
-    overlay_ui.root.on('pointerdown', (event) => {
-        // console.log('overlay_ui', Math.round(event.x), Math.round(event.y))
+    first_ui.root.on('pointerdown', (e) => {
+        controls.enabled = false
     })
-    first_ui.root.on('pointerdown', (event) => {
-        console.log('first_ui', Math.round(event.x), Math.round(event.y), event.distance_to_camera)
-    })
-    second_ui.root.on('pointerdown', (event) => {
-        console.log('second_ui', Math.round(event.x), Math.round(event.y), event.distance_to_camera)
+    first_ui.root.on('pointerup', (e) => {
+        controls.enabled = true
     })
 
     const controls = new OrbitControls(camera, canvas)

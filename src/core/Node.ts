@@ -24,101 +24,111 @@ export default class Node {
     }
 
     public add(child, before_node = null) {
-        if (this.ui !== null) {
-            if (this.isTextNode()) {
-                throw new Error('Nodes with text cannot have children')
-            }
-
-            this.ui.addChild(this, child, before_node)
+        if (this.ui === null) {
+            return
         }
+
+        if (this.isTextNode()) {
+            throw new Error('Nodes with text cannot have children')
+        }
+
+        this.ui.addChild(this, child, before_node)
     }
 
     public remove(child) {
-        if (this.ui !== null) {
-            if (child.parent !== this) {
-                throw new Error('child not found')
-            }
-
-            child.destroy()
+        if (this.ui === null) {
+            return
         }
+
+        if (child.parent !== this) {
+            throw new Error('child not found')
+        }
+
+        child.destroy()
     }
 
     public detach() {
-        if (this.ui !== null) {
-            this.ui.detachNode(this)
-        }
+        this.ui?.detachNode(this)
     }
 
     public destroy() {
-        if (this.ui !== null) {
-            if (this === this.ui.root) {
-                this.ui.destroy()
-                return
-            }
-
-            this.detach()
-            for (const child of [...this.children]) {
-                child.destroy()
-            }
-            this.ui.destroyNode(this)
+        if (this.ui === null) {
+            return
         }
+
+        if (this === this.ui.root) {
+            this.ui.destroy()
+            return
+        }
+
+        this.detach()
+        for (const child of [...this.children]) {
+            child.destroy()
+        }
+        this.ui.destroyNode(this)
     }
 
     public on(event, listener) {
-        if (this.ui !== null) {
-            this.ui.events.on(this, event, listener)
-        }
+        this.ui?.events.on(this, event, listener)
+    }
+
+    public off(event, listener) {
+        this.ui?.events.off(this, event, listener)
     }
 
     public style(name, value) {
-        if (this.ui !== null && !this.ui.destroyed) {
-            const normalized_name = validateStyle(name, value)
-            const previous_resolved = this.styles_declared[normalized_name]
+        if (this.ui === null) {
+            return
+        }
 
-            if (
-                previous_resolved === undefined ||
-                previous_resolved.value !== value ||
-                previous_resolved.expanded.some((style) => this.styles[style.name]?.value !== style.value)
-            ) {
-                const resolved_style = resolveStyle(normalized_name, value)
-                const has_changes = resolved_style.expanded.some(
-                    (style) => this.styles[style.name]?.value !== style.value,
-                )
+        const normalized_name = validateStyle(name, value)
+        const previous_resolved = this.styles_declared[normalized_name]
 
-                this.styles_declared[normalized_name] = resolved_style
+        if (
+            previous_resolved === undefined ||
+            previous_resolved.value !== value ||
+            previous_resolved.expanded.some((style) => this.styles[style.name]?.value !== style.value)
+        ) {
+            const resolved_style = resolveStyle(normalized_name, value)
+            const has_changes = resolved_style.expanded.some(
+                (style) => this.styles[style.name]?.value !== style.value,
+            )
 
-                if (has_changes) {
-                    for (const style of resolved_style.expanded) {
-                        this.styles[style.name] = {
-                            value: style.value,
-                            parsed: style.parsed,
-                        }
+            this.styles_declared[normalized_name] = resolved_style
+
+            if (has_changes) {
+                for (const style of resolved_style.expanded) {
+                    this.styles[style.name] = {
+                        value: style.value,
+                        parsed: style.parsed,
                     }
-                    this.ui.renderer.addPendingStyle(this, resolved_style)
                 }
+                this.ui.renderer.addPendingStyle(this, resolved_style)
             }
         }
     }
 
     public text(value: string) {
-        if (this.ui !== null) {
-            if (this.children.length > 0) {
-                throw new Error('Nodes with text cannot have children')
-            }
+        if (this.ui === null) {
+            return
+        }
 
-            if (this.isTextNode()) {
-                if (this.text_content === value) {
-                    return
-                }
+        if (this.children.length > 0) {
+            throw new Error('Nodes with text cannot have children')
+        }
 
-                this.text_content = value
-                this.ui.renderer.invalidateTextNode(this)
+        if (this.isTextNode()) {
+            if (this.text_content === value) {
                 return
             }
 
             this.text_content = value
-            this.ui.renderer.initializeTextNode(this)
+            this.ui.renderer.invalidateTextNode(this)
+            return
         }
+
+        this.text_content = value
+        this.ui.renderer.initializeTextNode(this)
     }
 
     public isTextNode() {
