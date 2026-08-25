@@ -159,144 +159,72 @@ export default async function createEventsLayout({ ui, resources, registerFont, 
         flex: '1',
         flexDirection: 'row',
         flexWrap: 'wrap',
-        alignContent: 'center',
-        justifyContent: 'center',
         gap: '2%',
+        alignItems: 'center',
+        justifyContent: 'center',
         padding: '2%',
     })
 
-    const nested_stage = createInteractiveNode(ui, content, node_names, 'nested.outer', {
-        width: '36%',
+    const events_outer = createInteractiveNode(ui, content, node_names, 'events.outer', {
+        width: '40%',
         height: '45%',
         position: 'relative',
         border: '4px solid #64748b',
         borderRadius: '10px',
     })
-    addLabel(ui, nested_stage, 'outer — bubbling')
 
-    const middle = createInteractiveNode(ui, nested_stage, node_names, 'nested.middle', {
+    const events_middle = createInteractiveNode(ui, events_outer, node_names, 'events.middle', {
         width: '86%',
         height: '70%',
         position: 'absolute',
         left: '6%',
-        top: '19%',
+        top: '15%',
         flexDirection: 'row',
         gap: '4%',
         padding: '5%',
         border: '4px solid #64748b',
         borderRadius: '8px',
     })
-    addLabel(ui, middle, 'middle')
 
-    const left = createInteractiveNode(ui, middle, node_names, 'nested.left', {
+    createInteractiveNode(ui, events_middle, node_names, 'events.target', {
         flex: '1',
-        height: '90%',
-        position: 'relative',
+        height: '100%',
         border: '4px solid #64748b',
         borderRadius: '6px',
     })
-    addLabel(ui, left, 'left')
 
-    const deep = createInteractiveNode(ui, left, node_names, 'nested.deep', {
-        width: '55%',
-        height: '44%',
-        position: 'absolute',
-        left: '21%',
-        top: '38%',
-        // alignItems: 'center',
-        // justifyContent: 'center',
+    const stop_propagation_target = createInteractiveNode(ui, events_middle, node_names, 'events.stopPropagation', {
+        flex: '1',
+        height: '100%',
         border: '4px solid #64748b',
-        borderRadius: '5px',
+        borderRadius: '6px',
         color: '#0f172a',
         fontSize: '12px',
     })
-    deep.text('deep')
+    stop_propagation_target.text('stopPropagation()')
+    for (const type of EVENT_TYPES) {
+        stop_propagation_target.on(type, (event) => event.stopPropagation())
+    }
 
-    const right = createInteractiveNode(ui, middle, node_names, 'nested.right', {
+    const pointer_events_child = createInteractiveNode(ui, events_middle, node_names, 'events.pointerEvents', {
         flex: '1',
-        height: '90%',
-        position: 'relative',
+        height: '100%',
         border: '4px solid #64748b',
         borderRadius: '6px',
-    })
-    addLabel(ui, right, 'right — related target')
-
-    const pointer_events_stage = createInteractiveNode(ui, content, node_names, 'pointerEvents.stage', {
-        width: '36%',
-        height: '45%',
-        position: 'relative',
-        border: '4px solid #64748b',
-        borderRadius: '10px',
-    })
-    addLabel(ui, pointer_events_stage, 'pointerEvents: none')
-
-    const underlay = createInteractiveNode(ui, pointer_events_stage, node_names, 'pointerEvents.underlay', {
-        width: '89%',
-        height: '68%',
-        position: 'absolute',
-        left: '4%',
-        top: '21%',
-        // alignItems: 'center',
-        // justifyContent: 'center',
-        border: '4px solid #64748b',
-        borderRadius: '8px',
-        color: '#78350f',
-        fontSize: '13px',
-    })
-    underlay.text('underlay')
-
-    const overlay = createInteractiveNode(ui, pointer_events_stage, node_names, 'pointerEvents.overlay', {
-        width: '69%',
-        height: '45%',
-        position: 'absolute',
-        left: '14%',
-        top: '33%',
-        border: '4px solid #64748b',
-        borderRadius: '8px',
+        color: '#0f172a',
+        fontSize: '12px',
         pointerEvents: 'none',
-        zIndex: '2',
     })
-    addLabel(ui, overlay, 'overlay: none')
+    pointer_events_child.text('pointerEvents: none')
 
-    const active_child = createInteractiveNode(ui, overlay, node_names, 'pointerEvents.activeChild', {
-        width: '42%',
-        height: '52%',
-        position: 'absolute',
-        left: '28%',
-        top: '30%',
-        // alignItems: 'center',
-        // justifyContent: 'center',
-        border: '4px solid #64748b',
-        borderRadius: '6px',
-        color: '#450a0a',
-        fontSize: '12px',
-        pointerEvents: 'all',
-    })
-    active_child.text('child: all')
-
-    const capture_stage = createInteractiveNode(ui, content, node_names, 'capture.stage', {
-        width: '22%',
+    const capture_target = createInteractiveNode(ui, content, node_names, 'capture.target', {
+        width: '40%',
         height: '45%',
-        position: 'relative',
         border: '4px solid #64748b',
         borderRadius: '10px',
-    })
-    addLabel(ui, capture_stage, 'pointer capture')
-
-    const capture_target = createInteractiveNode(ui, capture_stage, node_names, 'capture.target', {
-        width: '55%',
-        height: '36%',
-        position: 'absolute',
-        left: '21%',
-        top: '35%',
-        // alignItems: 'center',
-        // justifyContent: 'center',
-        border: '4px solid #64748b',
-        borderRadius: '8px',
-        color: '#2e1065',
         fontSize: '12px',
     })
-    capture_target.text('drag outside')
+    capture_target.text('pointer capture')
 
     for (const node of node_names.keys()) {
         applyPattern(node, pattern_image.src)
@@ -330,18 +258,4 @@ function createNode(ui, parent, styles) {
 
     parent.add(node)
     return node
-}
-
-function addLabel(ui, parent, text) {
-    const label = createNode(ui, parent, {
-        position: 'absolute',
-        left: '2%',
-        top: '3%',
-        color: '#0f172a',
-        fontSize: '11px',
-        lineHeight: '14px',
-        pointerEvents: 'none',
-        zIndex: '10',
-    })
-    label.text(text)
 }

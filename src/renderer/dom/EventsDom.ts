@@ -2,6 +2,7 @@ export default class EventsDom {
     private nodes = new Map()
     private event_nodes = new WeakMap()
     private dispatched_events = new WeakMap()
+    private propagation_stopped_at = new WeakMap()
     private root_node = null
 
     public createNode(node, element) {
@@ -23,6 +24,12 @@ export default class EventsDom {
         if (!event_listeners.has(listener)) {
             const native_listener = (source_event) => {
                 const event = this.getEvent(source_event)
+                const propagation_stopped_at = this.propagation_stopped_at.get(source_event)
+
+                if (propagation_stopped_at !== undefined && propagation_stopped_at !== node) {
+                    return
+                }
+
                 event.current_target = node
                 listener(event)
             }
@@ -73,6 +80,7 @@ export default class EventsDom {
         }
 
         this.dispatched_events = new WeakMap()
+        this.propagation_stopped_at = new WeakMap()
     }
 
     private getEvent(source_event) {
@@ -92,6 +100,9 @@ export default class EventsDom {
                     ? { related_target: this.getNode(source_event.relatedTarget) }
                     : {}),
                 source_event,
+                stopPropagation: () => {
+                    this.propagation_stopped_at.set(source_event, event.current_target)
+                },
             }
             this.dispatched_events.set(source_event, event)
         }

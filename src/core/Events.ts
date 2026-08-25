@@ -92,6 +92,7 @@ export default class Events {
     }
 
     private dispatchAt(type, source_event, event_data, target, related_target) {
+        let propagation_stopped = false
         const event = {
             type,
             ...event_data,
@@ -99,6 +100,9 @@ export default class Events {
             current_target: target,
             ...(related_target === undefined ? {} : { related_target }),
             source_event,
+            stopPropagation: () => {
+                propagation_stopped = true
+            },
         }
         const path = []
         let current_target = target
@@ -116,6 +120,10 @@ export default class Events {
                 if (!event_listener.removed) {
                     event_listener.callback(event)
                 }
+            }
+
+            if (propagation_stopped) {
+                break
             }
         }
     }

@@ -3,6 +3,10 @@
     "version": "0.1.0",
     "type": "module",
     "exports": {
+        "./Events": {
+            "types": "./src/core/Events.ts",
+            "import": "./src/core/Events.ts"
+        },
         "./ResourcesWebGPU": {
             "types": "./src/renderer/webgpu/ResourcesWebGPU.ts",
             "import": "./src/renderer/webgpu/ResourcesWebGPU.ts"
@@ -10,10 +14,6 @@
         "./ResourcesDom": {
             "types": "./src/renderer/dom/ResourcesDom.ts",
             "import": "./src/renderer/dom/ResourcesDom.ts"
-        },
-        "./Events": {
-            "types": "./src/core/Events.ts",
-            "import": "./src/core/Events.ts"
         },
         "./UIWebGPU": {
             "types": "./src/ui/UIWebGPU.ts",

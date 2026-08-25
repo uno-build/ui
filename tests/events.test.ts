@@ -274,6 +274,38 @@ test('current_target follows the event path when the target has no listeners', (
     ])
 })
 
+test('stopPropagation stops bubbling after the current target listeners', () => {
+    const events = createEvents()
+    const root = { parent: null }
+    const parent = { parent: root }
+    const child = { parent }
+    const calls = []
+
+    events.on(child, 'pointerdown', (event) => {
+        calls.push(['child-first', event.source_event.pointerId])
+        if (event.source_event.pointerId === 1) {
+            event.stopPropagation()
+        }
+    })
+    events.on(child, 'pointerdown', (event) =>
+        calls.push(['child-second', event.source_event.pointerId]),
+    )
+    events.on(parent, 'pointerdown', (event) => calls.push(['parent', event.source_event.pointerId]))
+    events.on(root, 'pointerdown', (event) => calls.push(['root', event.source_event.pointerId]))
+
+    events.dispatch({ type: 'pointerdown', pointerId: 1 }, {}, child)
+    events.dispatch({ type: 'pointerdown', pointerId: 2 }, {}, child)
+
+    expect(calls).toEqual([
+        ['child-first', 1],
+        ['child-second', 1],
+        ['child-first', 2],
+        ['child-second', 2],
+        ['parent', 2],
+        ['root', 2],
+    ])
+})
+
 test('duplicate listeners are ignored and removed by one off call', () => {
     const events = createEvents()
     const node = { parent: null }

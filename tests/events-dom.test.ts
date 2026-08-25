@@ -141,10 +141,12 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
 
             const propagation = []
             child.on('pointermove', (event) => {
-                propagation.push('child')
-                event.source_event.stopPropagation()
+                propagation.push('child-first')
+                event.stopPropagation()
             })
+            child.on('pointermove', () => propagation.push('child-second'))
             ui.root.on('pointermove', () => propagation.push('root'))
+            canvas.addEventListener('pointermove', () => propagation.push('native-root'))
             nested_element.dispatchEvent(new PointerEvent('pointermove', { bubbles: true }))
 
             let destroyed_calls = 0
@@ -216,7 +218,7 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
         target_matches: true,
         current_target_matches: true,
     })
-    expect(result.propagation).toEqual(['child'])
+    expect(result.propagation).toEqual(['child-first', 'child-second', 'native-root'])
     expect(result.destroyed_calls).toBe(0)
 })
 
