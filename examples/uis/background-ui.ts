@@ -103,9 +103,17 @@ export function createBackgroundUI({ ui, assets, title: title_text, background_c
         title.style('fontFamily', FONT_FAMILY)
         title.style('fontSize', '50px')
         title.style('color', '#ffffff')
-        title.style('textStroke', '5px #000000')
-        title.style('textShadow', '0px 3px 0px #000000')
+        title.style('textStroke', '10px #000000')
+        title.style('textShadow', '0px 4px 0px #000000')
         title.text(title_text)
+        title.on('pointerover', () => {
+            title.style('textStroke', '10px #b24fe3')
+            title.style('textShadow', '0px 4px 0px #743495')
+        })
+        title.on('pointerout', () => {
+            title.style('textStroke', '10px #000000')
+            title.style('textShadow', '0px 4px 0px #000000')
+        })
         grid.add(title)
     }
 

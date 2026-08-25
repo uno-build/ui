@@ -1,9 +1,33 @@
-export const EVENT_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']
+export const EVENT = {
+    POINTER_DOWN: 'pointerdown',
+    POINTER_MOVE: 'pointermove',
+    POINTER_UP: 'pointerup',
+    POINTER_CANCEL: 'pointercancel',
+    POINTER_OVER: 'pointerover',
+    POINTER_OUT: 'pointerout',
+    CLICK: 'click',
+}
 
 export default class Events {
     private listeners = new WeakMap()
-    private pointers = new Map()
-    private hovered_pointers = new Map()
+    private event_handlers
+
+    public static defineEvent(types, setup) {
+        return {
+            types: Array.isArray(types) ? types : [types],
+            setup,
+        }
+    }
+
+    public constructor({ event_definitions = [] } = {}) {
+        this.event_handlers = event_definitions.map(({ setup }) =>
+            setup({
+                emit: (type, { source_event, event_data, target, related_target }) => {
+                    this.dispatchAt(type, source_event, event_data, target, related_target)
+                },
+            }),
+        )
+    }
 
     public on(node, type, listener) {
         const node_listeners = this.listeners.get(node) ?? new Map()
@@ -30,114 +54,36 @@ export default class Events {
     }
 
     public dispatch(source_event, event_data, hit_target) {
-        const pointer_id = source_event.pointerId
-        const pointer = this.pointers.get(pointer_id)
-        const ends_hover =
-            source_event.type === 'pointercancel' ||
-            (source_event.type === 'pointerup' && source_event.pointerType === 'touch')
-        let target = hit_target
-
-        if (source_event.type !== 'pointercancel') {
-            this.updateHoveredPointer(source_event, event_data, hit_target)
+        const context = {
+            source_event,
+            event_data,
+            hit_target,
         }
 
-        if (source_event.type === 'pointerdown') {
-            if (target === null) {
-                return
-            }
-            this.pointers.set(pointer_id, { target, event_data })
-        } else if (pointer !== undefined) {
-            target = pointer.target
-            if (event_data === null) {
-                event_data = pointer.event_data
-            } else {
-                pointer.event_data = event_data
-            }
-        } else if (source_event.type === 'pointerup' || source_event.type === 'pointercancel') {
-            if (ends_hover) {
-                this.endHoveredPointer(source_event, event_data)
-            }
-            return
-        }
-
-        if (target !== null && event_data !== null) {
-            this.dispatchAt(source_event.type, source_event, event_data, target)
-        }
-
-        if (source_event.type === 'pointerup' || source_event.type === 'pointercancel') {
-            this.pointers.delete(pointer_id)
-
-            if (ends_hover) {
-                this.endHoveredPointer(source_event, event_data)
-            }
-        }
+        this.runEvents('before', context)
+        this.runEvents('main', context)
+        this.runEvents('after', context)
     }
 
     public destroyNode(node) {
         this.listeners.delete(node)
 
-        for (const [pointer_id, pointer] of this.pointers) {
-            if (pointer.target === node) {
-                this.pointers.delete(pointer_id)
-            }
-        }
-
-        for (const [pointer_id, pointer] of this.hovered_pointers) {
-            if (pointer.target === node) {
-                this.hovered_pointers.delete(pointer_id)
-            }
+        for (const event_handler of this.event_handlers) {
+            event_handler.destroyNode?.(node)
         }
     }
 
     public destroy() {
         this.listeners = new WeakMap()
-        this.pointers.clear()
-        this.hovered_pointers.clear()
-    }
 
-    private updateHoveredPointer(source_event, event_data, target) {
-        const pointer_id = source_event.pointerId
-        const pointer = this.hovered_pointers.get(pointer_id)
-        const previous_target = pointer?.target ?? null
-
-        if (previous_target === target) {
-            if (pointer !== undefined && event_data !== null) {
-                pointer.event_data = event_data
-            }
-            return
-        }
-
-        if (previous_target !== null) {
-            this.dispatchAt(
-                'pointerout',
-                source_event,
-                event_data ?? pointer.event_data,
-                previous_target,
-                target,
-            )
-        }
-
-        if (target === null) {
-            this.hovered_pointers.delete(pointer_id)
-        } else {
-            this.hovered_pointers.set(pointer_id, { target, event_data })
-            this.dispatchAt('pointerover', source_event, event_data, target, previous_target)
+        for (const event_handler of this.event_handlers) {
+            event_handler.destroy?.()
         }
     }
 
-    private endHoveredPointer(source_event, event_data) {
-        const pointer_id = source_event.pointerId
-        const pointer = this.hovered_pointers.get(pointer_id)
-
-        if (pointer !== undefined) {
-            this.hovered_pointers.delete(pointer_id)
-            this.dispatchAt(
-                'pointerout',
-                source_event,
-                event_data ?? pointer.event_data,
-                pointer.target,
-                null,
-            )
+    private runEvents(phase, context) {
+        for (const event_handler of this.event_handlers) {
+            event_handler[phase]?.[context.source_event.type]?.(context)
         }
     }
 

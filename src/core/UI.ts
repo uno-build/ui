@@ -1,18 +1,22 @@
 import Node from './Node'
-import Events, { EVENT_TYPES } from './Events'
+import Events from './Events'
+import { DEFAULT_EVENTS, SOURCE_EVENT_TYPES } from '../events/pointer'
 import { nodeContainsPoint, sortPaintingOrder } from '../utils/nodes'
 
 export default class UI {
     public root = null
     public renderer = null
-    private events = new Events()
+    private events
     private nodes = []
     private created_nodes = new Set()
     private next_node_id = 0
     private destroyed = false
 
-    protected constructor({ renderer }) {
+    protected constructor({ renderer, custom_events = [] }) {
         this.renderer = renderer
+        this.events = new Events({
+            event_definitions: [...DEFAULT_EVENTS, ...custom_events],
+        })
     }
 
     protected async initialize() {
@@ -100,8 +104,8 @@ export default class UI {
         return false
     }
 
-    protected dispatchEvent(source_event) {
-        return !this.destroyed && EVENT_TYPES.includes(source_event.type)
+    public dispatchEvent(source_event) {
+        return !this.destroyed && SOURCE_EVENT_TYPES.includes(source_event.type)
     }
 
     protected dispatchEventAt(source_event, event_data) {

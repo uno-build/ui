@@ -2,9 +2,9 @@ import UI from '../core/UI'
 import RendererDom from '../renderer/RendererDom'
 
 export default class UIDom extends UI {
-    protected constructor({ resources }) {
+    protected constructor({ resources, custom_events }) {
         const renderer = new RendererDom({ resources })
-        super({ renderer })
+        super({ renderer, custom_events })
     }
 
     public static async create(options) {

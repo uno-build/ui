@@ -2,9 +2,9 @@ import UI from '../core/UI'
 import RendererWebGPU from '../renderer/RendererWebGPU'
 
 export default class UIWebGPU extends UI {
-    protected constructor({ resources, ...renderer_options }) {
+    protected constructor({ resources, custom_events, ...renderer_options }) {
         const renderer = new RendererWebGPU({ resources, ...renderer_options })
-        super({ renderer })
+        super({ renderer, custom_events })
     }
 
     public static async create(options) {

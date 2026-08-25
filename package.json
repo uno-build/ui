@@ -11,6 +11,10 @@
             "types": "./src/renderer/dom/ResourcesDom.ts",
             "import": "./src/renderer/dom/ResourcesDom.ts"
         },
+        "./Events": {
+            "types": "./src/core/Events.ts",
+            "import": "./src/core/Events.ts"
+        },
         "./UIWebGPU": {
             "types": "./src/ui/UIWebGPU.ts",
             "import": "./src/ui/UIWebGPU.ts"

@@ -1,11 +1,16 @@
 import { expect, test } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
 import Events from '../src/core/Events'
+import { DEFAULT_EVENTS } from '../src/events/pointer'
 import TestRenderer from './TestRenderer.ts'
 import TestUI from './TestUI.ts'
 
 const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
 const EVENT_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']
+const createEvents = (custom_events = []) =>
+    new Events({
+        event_definitions: [...DEFAULT_EVENTS, ...custom_events],
+    })
 const EVENT_FLOW = [
     ['pointerdown', 'child'],
     ['pointerdown', 'root'],
@@ -240,7 +245,7 @@ test('UIThree dispatches pointer events from raycast intersections', async ({ pa
 })
 
 test('current_target follows the event path when the target has no listeners', () => {
-    const events = new Events()
+    const events = createEvents()
     const root = { parent: null }
     const combined = { parent: root }
     const inside = { parent: combined }
@@ -326,7 +331,7 @@ test('pointerEvents is not inherited and does not block bubbling', async () => {
 })
 
 test('pointerover and pointerout follow hit targets and bubble', () => {
-    const events = new Events()
+    const events = createEvents()
     const root = { parent: null }
     const first = { parent: root }
     const second = { parent: root }
@@ -377,7 +382,7 @@ test('pointerover and pointerout follow hit targets and bubble', () => {
 })
 
 test('pointerover and pointerout use hit targets during pointer capture', () => {
-    const events = new Events()
+    const events = createEvents()
     const first = { parent: null }
     const second = { parent: null }
     const names = new Map([
@@ -418,7 +423,7 @@ test('pointerover and pointerout use hit targets during pointer capture', () => 
 })
 
 test('pointerup and pointercancel end hover according to the pointer type', () => {
-    const events = new Events()
+    const events = createEvents()
     const node = { parent: null }
     const received_events = []
     const record = (event) => {
@@ -457,7 +462,7 @@ test('pointerup and pointercancel end hover according to the pointer type', () =
 })
 
 test('hover state is isolated by pointer and cleared on destruction', () => {
-    const events = new Events()
+    const events = createEvents()
     const root = { parent: null }
     const first = { parent: root }
     const second = { parent: root }
@@ -484,4 +489,85 @@ test('hover state is isolated by pointer and cleared on destruction', () => {
     events.dispatch({ type: 'pointermove', pointerId: 3 }, null, null)
 
     expect(received_events).toEqual([{ pointer_id: 1, target: first }])
+})
+
+test('click follows pointerup when pointerdown and pointerup hit the same target', () => {
+    const events = createEvents()
+    const root = { parent: null }
+    const first = { parent: root }
+    const second = { parent: root }
+    const received_events = []
+
+    for (const [node, name] of [
+        [first, 'first'],
+        [root, 'root'],
+    ]) {
+        for (const type of ['pointerdown', 'pointerup', 'click']) {
+            events.on(node, type, (event) => {
+                received_events.push([
+                    event.type,
+                    name,
+                    event.target === first,
+                    event.source_event.type,
+                    event.x,
+                ])
+            })
+        }
+    }
+
+    events.dispatch({ type: 'pointerdown', pointerId: 1 }, { x: 1 }, first)
+    events.dispatch({ type: 'pointerup', pointerId: 1 }, { x: 2 }, first)
+    events.dispatch({ type: 'pointerdown', pointerId: 2 }, { x: 3 }, first)
+    events.dispatch({ type: 'pointerup', pointerId: 2 }, { x: 4 }, second)
+    events.dispatch({ type: 'pointerdown', pointerId: 3 }, { x: 5 }, first)
+    events.dispatch({ type: 'pointercancel', pointerId: 3 }, null, null)
+    events.dispatch({ type: 'pointerup', pointerId: 3 }, { x: 6 }, first)
+
+    expect(received_events).toEqual([
+        ['pointerdown', 'first', true, 'pointerdown', 1],
+        ['pointerdown', 'root', true, 'pointerdown', 1],
+        ['pointerup', 'first', true, 'pointerup', 2],
+        ['pointerup', 'root', true, 'pointerup', 2],
+        ['click', 'first', true, 'pointerup', 2],
+        ['click', 'root', true, 'pointerup', 2],
+        ['pointerdown', 'first', true, 'pointerdown', 3],
+        ['pointerdown', 'root', true, 'pointerdown', 3],
+        ['pointerup', 'first', true, 'pointerup', 4],
+        ['pointerup', 'root', true, 'pointerup', 4],
+        ['pointerdown', 'first', true, 'pointerdown', 5],
+        ['pointerdown', 'root', true, 'pointerdown', 5],
+    ])
+})
+
+test('event definitions normalize source events and are instantiated per Events instance', () => {
+    const counts = []
+    const activate_event = Events.defineEvent('activate', ({ emit }) => {
+        let count = 0
+
+        return {
+            main: {
+                activate({ source_event, event_data, hit_target }) {
+                    count++
+                    emit('activate', {
+                        source_event,
+                        event_data: {
+                            ...event_data,
+                            count,
+                        },
+                        target: hit_target,
+                    })
+                },
+            },
+        }
+    })
+
+    for (let i = 0; i < 2; i++) {
+        const events = new Events({ event_definitions: [activate_event] })
+        const node = { parent: null }
+
+        events.on(node, 'activate', (event) => counts.push(event.count))
+        events.dispatch({ type: 'activate' }, {}, node)
+    }
+
+    expect(counts).toEqual([1, 1])
 })

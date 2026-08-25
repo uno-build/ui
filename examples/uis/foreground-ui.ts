@@ -21,6 +21,14 @@ export function createForegroundUI({ ui, assets, title: title_text }) {
     title.style('textShadow', '0px 0.35vw 0px #000000')
     title.style('color', '#ffffff')
     title.text(title_text)
+    title.on('pointerover', () => {
+        title.style('textStroke', '0.4vw #ff3333')
+        title.style('textShadow', '0px 0.35vw 0px #ee2222')
+    })
+    title.on('pointerout', () => {
+        title.style('textStroke', '0.4vw #000000')
+        title.style('textShadow', '0px 0.35vw 0px #000000')
+    })
     overlay.add(title)
 
     return { overlay }
