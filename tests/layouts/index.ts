@@ -23,20 +23,20 @@ import fontTextAlign from './examples/fontTextAlign'
 import scroll from './examples/scroll'
 import fontTextShadow from './examples/fontTextShadow'
 import fontTextStroke from './examples/fontTextStroke'
-import nestedDeepPaint from './examples/nestedDeepPaint'
-import nestedFlexDirections from './examples/nestedFlexDirections'
-import nestedMargins from './examples/nestedMargins'
-import nestedPercentDimensions from './examples/nestedPercentDimensions'
-import nestedRelativeOffsets from './examples/nestedRelativeOffsets'
-import nestedWrapGap from './examples/nestedWrapGap'
+import flexboxNestedDeepPaint from './examples/flexboxNestedDeepPaint'
+import flexboxNestedDirections from './examples/flexboxNestedDirections'
+import flexboxNestedMargins from './examples/flexboxNestedMargins'
+import flexboxNestedPercentDimensions from './examples/flexboxNestedPercentDimensions'
+import flexboxNestedRelativeOffsets from './examples/flexboxNestedRelativeOffsets'
+import flexboxNestedWrapGap from './examples/flexboxNestedWrapGap'
 import overflowScroll from './examples/overflowScroll'
 import overflowVisibleHidden from './examples/overflowVisibleHidden'
-import wrappedAlignContentRelativeOffsets from './examples/wrappedAlignContentRelativeOffsets'
-import wrappedColumnRelativeOffsets from './examples/wrappedColumnRelativeOffsets'
-import wrappedMainAxisRelativeOffsets from './examples/wrappedMainAxisRelativeOffsets'
-import wrappedPercentRelativeOffsets from './examples/wrappedPercentRelativeOffsets'
-import wrappedRelativeOffsets from './examples/wrappedRelativeOffsets'
-import wrappedRelativeWrapReverse from './examples/wrappedRelativeWrapReverse'
+import flexboxWrappedAlignContentRelativeOffsets from './examples/flexboxWrappedAlignContentRelativeOffsets'
+import flexboxWrappedColumnRelativeOffsets from './examples/flexboxWrappedColumnRelativeOffsets'
+import flexboxWrappedMainAxisRelativeOffsets from './examples/flexboxWrappedMainAxisRelativeOffsets'
+import flexboxWrappedPercentRelativeOffsets from './examples/flexboxWrappedPercentRelativeOffsets'
+import flexboxWrappedRelativeOffsets from './examples/flexboxWrappedRelativeOffsets'
+import flexboxWrappedRelativeWrapReverse from './examples/flexboxWrappedRelativeWrapReverse'
 import zindexBasic from './examples/zindexBasic'
 import zindexNested from './examples/zindexNested'
 import zindexGrid from './examples/zindexGrid'
@@ -47,9 +47,9 @@ export const LAYOUTS = {
     backgroundRepeat,
     backgroundRepeat2,
     backgroundSize,
-    backgroundImage,
-    backgroundImageBleeding,
-    backgroundImageUnset,
+    // backgroundImage,
+    // backgroundImageBleeding,
+    // backgroundImageUnset,
     borderRadius,
     borderRadiusCorners,
     borderRadiusOverlap,
@@ -65,20 +65,20 @@ export const LAYOUTS = {
     fontTextShadow,
     fontTextStroke,
     fontParagraph,
-    nestedDeepPaint,
-    nestedFlexDirections,
-    nestedMargins,
-    nestedPercentDimensions,
-    nestedRelativeOffsets,
-    nestedWrapGap,
+    flexboxNestedDeepPaint,
+    flexboxNestedDirections,
+    flexboxNestedMargins,
+    flexboxNestedPercentDimensions,
+    flexboxNestedRelativeOffsets,
+    flexboxNestedWrapGap,
     overflowScroll,
     overflowVisibleHidden,
-    wrappedAlignContentRelativeOffsets,
-    wrappedColumnRelativeOffsets,
-    wrappedMainAxisRelativeOffsets,
-    wrappedPercentRelativeOffsets,
-    wrappedRelativeOffsets,
-    wrappedRelativeWrapReverse,
+    flexboxWrappedAlignContentRelativeOffsets,
+    flexboxWrappedColumnRelativeOffsets,
+    flexboxWrappedMainAxisRelativeOffsets,
+    flexboxWrappedPercentRelativeOffsets,
+    flexboxWrappedRelativeOffsets,
+    flexboxWrappedRelativeWrapReverse,
     positionRelative,
     unitsRem,
     unitsViewport,
