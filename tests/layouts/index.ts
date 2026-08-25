@@ -4,6 +4,7 @@ import borderRadiusOverlap from './examples/borderRadiusOverlap'
 import boxShadow from './examples/boxShadow'
 import boxShadow2 from './examples/boxShadow2'
 import boxShadow3 from './examples/boxShadow3'
+import events from './examples/events'
 import backgroundImage from './examples/backgroundImage'
 import backgroundPosition from './examples/backgroundPosition'
 import backgroundRepeat from './examples/backgroundRepeat'
@@ -55,6 +56,7 @@ export const LAYOUTS = {
     boxShadow,
     boxShadow2,
     boxShadow3,
+    events,
     fontLetterSpacing,
     fontLineHeight,
     fontSize,

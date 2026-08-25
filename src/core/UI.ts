@@ -12,11 +12,13 @@ export default class UI {
     private next_node_id = 0
     private destroyed = false
 
-    protected constructor({ renderer, custom_events = [] }) {
+    protected constructor({ renderer, custom_events = [], events = null }) {
         this.renderer = renderer
-        this.events = new Events({
-            event_definitions: [...DEFAULT_EVENTS, ...custom_events],
-        })
+        this.events =
+            events ??
+            new Events({
+                event_definitions: [...DEFAULT_EVENTS, ...custom_events],
+            })
     }
 
     protected async initialize() {

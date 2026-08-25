@@ -518,7 +518,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public update(nodes) {
-        const render_data = this.collectRenderData(nodes)
+        const render_data = this.collectRenderData([this.root_node, ...nodes])
         const command_buffer_data = this.createCommandBufferData(render_data.commands)
         const panel_data_buffer_data = this.createPanelDataBufferData(render_data.panels)
         const glyph_data_buffer_data = this.createGlyphDataBufferData(render_data.glyphs)
