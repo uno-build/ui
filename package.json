@@ -63,6 +63,8 @@
         "pngjs": "^7.0.0",
         "solid-js": "2.0.0-rc.0",
         "three": "^0.185.1",
+        "typegpu": "^0.12.3",
+        "unplugin-typegpu": "^0.12.2",
         "vite": "^8.2.1",
         "wgpu-matrix": "^3.4.2"
     },
@@ -88,7 +90,9 @@
     },
     "scripts": {
         "test": "playwright test",
-        "dev": "vite ./examples --config ./examples/vite.octane.config.ts",
+        "dev": "vite ./examples",
+        "dev:octane": "vite ./examples --config ./examples/vite.octane.config.ts",
+        "dev:typegpu": "vite ./examples --config ./examples/vite.typegpu.config.ts",
         "build-examples": "vite build ./examples",
         "benchmark:box-shadow": "RUN_BENCHMARKS=1 playwright test tests/benchmarks/webgpuBoxShadowBenchmark.benchmark.test.ts",
         "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"
