@@ -14,10 +14,6 @@ export default class UIWebGPU extends UI {
     }
 
     public dispatchEvent(source_event) {
-        if (!super.dispatchEvent(source_event)) {
-            return
-        }
-
         const rect = source_event.currentTarget.getBoundingClientRect()
         this.dispatchEventAt(source_event, {
             x: ((source_event.clientX - rect.left) / rect.width) * this.root.layout.width,

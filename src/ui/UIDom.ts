@@ -12,4 +12,8 @@ export default class UIDom extends UI {
         await ui.initialize()
         return { ui }
     }
+
+    public dispatchEvent(source_event) {
+        // no-op, the event is already dispatched by the browser
+    }
 }

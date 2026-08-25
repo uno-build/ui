@@ -1,6 +1,6 @@
 import Node from './Node'
 import Events from './Events'
-import { DEFAULT_EVENTS, SOURCE_EVENT_TYPES } from '../events/pointer'
+import { DEFAULT_EVENTS } from '../events/pointer'
 import { nodeContainsPoint, sortPaintingOrder } from '../utils/nodes'
 
 export default class UI {
@@ -104,10 +104,6 @@ export default class UI {
         return false
     }
 
-    public dispatchEvent(source_event) {
-        return !this.destroyed && SOURCE_EVENT_TYPES.includes(source_event.type)
-    }
-
     protected dispatchEventAt(source_event, event_data) {
         const target = event_data === null ? null : this.getEventTarget(event_data.x, event_data.y)
         this.events.dispatch(source_event, event_data, target)
@@ -119,7 +115,6 @@ export default class UI {
                 return this.nodes[i]
             }
         }
-
         return nodeContainsPoint(this.root, x, y) ? this.root : null
     }
 

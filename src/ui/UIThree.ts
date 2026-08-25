@@ -18,10 +18,6 @@ export default class UIThree extends UIWorldSpace {
     }
 
     public dispatchEvent(source_event, { camera }) {
-        if (!super.dispatchEvent(source_event)) {
-            return
-        }
-
         const rect = source_event.currentTarget.getBoundingClientRect()
         const pointer = new THREE.Vector2(
             ((source_event.clientX - rect.left) / rect.width) * 2 - 1,

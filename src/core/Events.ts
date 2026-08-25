@@ -32,7 +32,9 @@ export default class Events {
     public on(node, type, listener) {
         const node_listeners = this.listeners.get(node) ?? new Map()
         const event_listeners = node_listeners.get(type) ?? []
-        event_listeners.push(listener)
+        if (!event_listeners.some((event_listener) => event_listener.callback === listener)) {
+            event_listeners.push({ callback: listener, removed: false })
+        }
         node_listeners.set(type, event_listeners)
         this.listeners.set(node, node_listeners)
     }
@@ -40,9 +42,11 @@ export default class Events {
     public off(node, type, listener) {
         const node_listeners = this.listeners.get(node)
         const event_listeners = node_listeners?.get(type)
-        const listener_index = event_listeners?.indexOf(listener) ?? -1
+        const listener_index =
+            event_listeners?.findIndex((event_listener) => event_listener.callback === listener) ?? -1
 
         if (listener_index !== -1) {
+            event_listeners[listener_index].removed = true
             event_listeners.splice(listener_index, 1)
             if (event_listeners.length === 0) {
                 node_listeners.delete(type)
@@ -106,10 +110,12 @@ export default class Events {
 
         for (const node of path) {
             event.current_target = node
-            const listeners = this.listeners.get(node)?.get(type) ?? []
+            const event_listeners = [...(this.listeners.get(node)?.get(type) ?? [])]
 
-            for (const listener of listeners) {
-                listener(event)
+            for (const event_listener of event_listeners) {
+                if (!event_listener.removed) {
+                    event_listener.callback(event)
+                }
             }
         }
     }

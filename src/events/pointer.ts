@@ -22,10 +22,7 @@ export const POINTER_EVENTS = Events.defineEvent(
                 } else {
                     pointer.event_data = event_data
                 }
-            } else if (
-                source_event.type === EVENT.POINTER_UP ||
-                source_event.type === EVENT.POINTER_CANCEL
-            ) {
+            } else if (source_event.type === EVENT.POINTER_UP || source_event.type === EVENT.POINTER_CANCEL) {
                 return
             }
 
@@ -63,89 +60,84 @@ export const POINTER_EVENTS = Events.defineEvent(
     },
 )
 
-export const SOURCE_EVENT_TYPES = POINTER_EVENTS.types
+export const POINTER_HOVER_EVENTS = Events.defineEvent([EVENT.POINTER_OVER, EVENT.POINTER_OUT], ({ emit }) => {
+    const pointers = new Map()
 
-export const POINTER_HOVER_EVENTS = Events.defineEvent(
-    [EVENT.POINTER_OVER, EVENT.POINTER_OUT],
-    ({ emit }) => {
-        const pointers = new Map()
+    const update = ({ source_event, event_data, hit_target }) => {
+        const pointer_id = source_event.pointerId
+        const pointer = pointers.get(pointer_id)
+        const previous_target = pointer?.target ?? null
 
-        const update = ({ source_event, event_data, hit_target }) => {
-            const pointer_id = source_event.pointerId
-            const pointer = pointers.get(pointer_id)
-            const previous_target = pointer?.target ?? null
-
-            if (previous_target === hit_target) {
-                if (pointer !== undefined && event_data !== null) {
-                    pointer.event_data = event_data
-                }
-                return
+        if (previous_target === hit_target) {
+            if (pointer !== undefined && event_data !== null) {
+                pointer.event_data = event_data
             }
-
-            if (previous_target !== null) {
-                emit(EVENT.POINTER_OUT, {
-                    source_event,
-                    event_data: event_data ?? pointer.event_data,
-                    target: previous_target,
-                    related_target: hit_target,
-                })
-            }
-
-            if (hit_target === null) {
-                pointers.delete(pointer_id)
-            } else {
-                pointers.set(pointer_id, { target: hit_target, event_data })
-                emit(EVENT.POINTER_OVER, {
-                    source_event,
-                    event_data,
-                    target: hit_target,
-                    related_target: previous_target,
-                })
-            }
+            return
         }
 
-        const end = ({ source_event, event_data }) => {
-            const pointer_id = source_event.pointerId
-            const pointer = pointers.get(pointer_id)
-
-            if (pointer !== undefined) {
-                pointers.delete(pointer_id)
-                emit(EVENT.POINTER_OUT, {
-                    source_event,
-                    event_data: event_data ?? pointer.event_data,
-                    target: pointer.target,
-                    related_target: null,
-                })
-            }
+        if (previous_target !== null) {
+            emit(EVENT.POINTER_OUT, {
+                source_event,
+                event_data: event_data ?? pointer.event_data,
+                target: previous_target,
+                related_target: hit_target,
+            })
         }
 
-        return {
-            before: {
-                [EVENT.POINTER_DOWN]: update,
-                [EVENT.POINTER_MOVE]: update,
-                [EVENT.POINTER_UP]: update,
-            },
-            after: {
-                [EVENT.POINTER_UP]: (context) => {
-                    if (context.source_event.pointerType === 'touch') {
-                        end(context)
-                    }
-                },
-                [EVENT.POINTER_CANCEL]: end,
-            },
-            destroyNode(node) {
-                for (const [pointer_id, pointer] of pointers) {
-                    if (pointer.target === node) {
-                        pointers.delete(pointer_id)
-                    }
+        if (hit_target === null) {
+            pointers.delete(pointer_id)
+        } else {
+            pointers.set(pointer_id, { target: hit_target, event_data })
+            emit(EVENT.POINTER_OVER, {
+                source_event,
+                event_data,
+                target: hit_target,
+                related_target: previous_target,
+            })
+        }
+    }
+
+    const end = ({ source_event, event_data }) => {
+        const pointer_id = source_event.pointerId
+        const pointer = pointers.get(pointer_id)
+
+        if (pointer !== undefined) {
+            pointers.delete(pointer_id)
+            emit(EVENT.POINTER_OUT, {
+                source_event,
+                event_data: event_data ?? pointer.event_data,
+                target: pointer.target,
+                related_target: null,
+            })
+        }
+    }
+
+    return {
+        before: {
+            [EVENT.POINTER_DOWN]: update,
+            [EVENT.POINTER_MOVE]: update,
+            [EVENT.POINTER_UP]: update,
+        },
+        after: {
+            [EVENT.POINTER_UP]: (context) => {
+                if (context.source_event.pointerType === 'touch') {
+                    end(context)
                 }
             },
-            destroy() {
-                pointers.clear()
-            },
-        }
-    },
-)
+            [EVENT.POINTER_CANCEL]: end,
+        },
+        destroyNode(node) {
+            for (const [pointer_id, pointer] of pointers) {
+                if (pointer.target === node) {
+                    pointers.delete(pointer_id)
+                }
+            }
+        },
+        destroy() {
+            pointers.clear()
+        },
+    }
+})
 
 export const CLICK_EVENT = Events.defineEvent(EVENT.CLICK, ({ emit }) => {
     const pointers = new Map()

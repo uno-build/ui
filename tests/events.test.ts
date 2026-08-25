@@ -274,6 +274,42 @@ test('current_target follows the event path when the target has no listeners', (
     ])
 })
 
+test('duplicate listeners are ignored and removed by one off call', () => {
+    const events = createEvents()
+    const node = { parent: null }
+    let calls = 0
+    const listener = () => calls++
+
+    events.on(node, 'pointerdown', listener)
+    events.on(node, 'pointerdown', listener)
+    events.dispatch({ type: 'pointerdown', pointerId: 1 }, {}, node)
+
+    events.off(node, 'pointerdown', listener)
+    events.dispatch({ type: 'pointerdown', pointerId: 2 }, {}, node)
+
+    expect(calls).toBe(1)
+})
+
+test('listener mutations follow web dispatch semantics', () => {
+    const events = createEvents()
+    const node = { parent: null }
+    const calls = []
+    const added_listener = () => calls.push('added')
+    const removed_listener = () => calls.push('removed')
+    const first_listener = () => {
+        calls.push('first')
+        events.off(node, 'pointerdown', removed_listener)
+        events.on(node, 'pointerdown', added_listener)
+    }
+
+    events.on(node, 'pointerdown', first_listener)
+    events.on(node, 'pointerdown', removed_listener)
+    events.dispatch({ type: 'pointerdown', pointerId: 1 }, {}, node)
+    events.dispatch({ type: 'pointerdown', pointerId: 2 }, {}, node)
+
+    expect(calls).toEqual(['first', 'first', 'added'])
+})
+
 test('UI hit testing applies pointerEvents to overlapping nodes', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
@@ -539,7 +575,7 @@ test('click follows pointerup when pointerdown and pointerup hit the same target
     ])
 })
 
-test('event definitions normalize source events and are instantiated per Events instance', () => {
+test('UI dispatches custom source events and instantiates definitions per instance', async () => {
     const counts = []
     const activate_event = Events.defineEvent('activate', ({ emit }) => {
         let count = 0
@@ -562,11 +598,17 @@ test('event definitions normalize source events and are instantiated per Events 
     })
 
     for (let i = 0; i < 2; i++) {
-        const events = new Events({ event_definitions: [activate_event] })
-        const node = { parent: null }
+        const ui = await TestUI.create({
+            renderer: new TestRenderer(),
+            custom_events: [activate_event],
+        })
 
-        events.on(node, 'activate', (event) => counts.push(event.count))
-        events.dispatch({ type: 'activate' }, {}, node)
+        ui.root.style('width', '1px')
+        ui.root.style('height', '1px')
+        ui.root.on('activate', (event) => counts.push(event.count))
+        ui.update()
+        ui.dispatchEvent({ type: 'activate' }, { x: 0, y: 0 })
+        ui.destroy()
     }
 
     expect(counts).toEqual([1, 1])
