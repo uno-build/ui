@@ -135,6 +135,7 @@ export default async function createEventsLayout({ ui, resources, registerFont, 
         })
         const indicator_text = createNode(ui, indicator, {
             color: '#0f172a',
+            fontFamily: 'Poppins-Regular',
             fontSize: '12px',
             lineHeight: '16px',
             textAlign: 'center',
