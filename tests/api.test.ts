@@ -213,6 +213,9 @@ test('UIWorldSpace destroy releases only its GPU texture once', () => {
                 expect(nodes).toEqual([])
             },
         },
+        events: {
+            destroy() {},
+        },
         nodes: [],
         created_nodes: new Set(),
         destroyed: false,
