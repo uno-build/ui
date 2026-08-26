@@ -29,16 +29,18 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     const { device, context, format } = resources
 
     syncCanvasSize({ canvas, background_ui, foreground_ui })
-    onCanvasEvent('resize', () => {
-        syncCanvasSize({ canvas, background_ui, foreground_ui })
-        background_ui.update()
-        foreground_ui.update()
-    })
+
+    // Event handling
     ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
         canvas.addEventListener(type, (e) => {
             background_ui.dispatchEvent(e)
             foreground_ui.dispatchEvent(e)
         })
+    })
+    onCanvasEvent('resize', () => {
+        syncCanvasSize({ canvas, background_ui, foreground_ui })
+        background_ui.update()
+        foreground_ui.update()
     })
 
     const assets = await loadAssets({ loadImage, loadJson })

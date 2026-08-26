@@ -83,6 +83,27 @@ export async function main({
     })
     const camera = new ArcRotateCamera('camera', -Math.PI / 2, 1.25, 9.5, new Vector3(0, 0.8, 0), scene)
 
+    // Event handling
+    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
+        canvas.addEventListener(type, (e) => {
+            overlay_ui.dispatchEvent(e)
+            first_ui.dispatchEvent(e, { camera })
+            second_ui.dispatchEvent(e, { camera })
+        })
+    })
+    first_ui.root.on('pointerdown', (e) => {
+        camera.detachControl()
+    })
+    first_ui.root.on('pointerup', () => {
+        camera.attachControl(canvas, true)
+    })
+    second_ui.root.on('pointerdown', (e) => {
+        camera.detachControl()
+    })
+    second_ui.root.on('pointerup', (e) => {
+        camera.attachControl(canvas, true)
+    })
+
     if (typeof document !== 'undefined') {
         camera.attachControl(canvas, true)
     }

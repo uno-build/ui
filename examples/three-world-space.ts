@@ -93,6 +93,12 @@ export async function main({
     first_ui.root.on('pointerup', (e) => {
         controls.enabled = true
     })
+    second_ui.root.on('pointerdown', (e) => {
+        controls.enabled = false
+    })
+    second_ui.root.on('pointerup', (e) => {
+        controls.enabled = true
+    })
 
     const controls = new OrbitControls(camera, canvas)
     controls.enableDamping = true

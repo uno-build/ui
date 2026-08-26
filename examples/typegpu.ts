@@ -38,16 +38,18 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     const root = tgpu.initFromDevice({ device })
 
     syncCanvasSize({ canvas, background_ui, foreground_ui })
-    onCanvasEvent('resize', () => {
-        syncCanvasSize({ canvas, background_ui, foreground_ui })
-        background_ui.update()
-        foreground_ui.update()
-    })
+
+    // Event handling
     ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
         canvas.addEventListener(type, (e) => {
             background_ui.dispatchEvent(e)
             foreground_ui.dispatchEvent(e)
         })
+    })
+    onCanvasEvent('resize', () => {
+        syncCanvasSize({ canvas, background_ui, foreground_ui })
+        background_ui.update()
+        foreground_ui.update()
     })
 
     const assets = await loadAssets({ loadImage, loadJson })
@@ -56,6 +58,12 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     createForegroundUI({ ui: foreground_ui, assets, title: 'Hello TypeGPU!' })
     background_ui.update()
     foreground_ui.update()
+    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
+        canvas.addEventListener(type, (e) => {
+            background_ui.dispatchEvent(e)
+            foreground_ui.dispatchEvent(e)
+        })
+    })
 
     const vertex_buffer = root
         .createBuffer(CUBE_VERTEX_LAYOUT.schemaForCount(CUBE_VERTEX_COUNT), (buffer) =>
