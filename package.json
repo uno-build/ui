@@ -51,27 +51,12 @@
     "dependencies": {
         "yoga-layout": "^3.2.1"
     },
-    "devDependencies": {
-        "@babylonjs/core": "9.5.2",
-        "@babylonjs/lite": "^1.16.0",
-        "@octanejs/vite-plugin": "^0.1.38",
-        "@playwright/test": "^1.52.0",
-        "@solidjs/universal": "2.0.0-rc.0",
-        "@solidjs/vite-plugin": "3.0.0-next.28",
-        "octane": "^0.1.38",
-        "playcanvas": "^2.21.3",
-        "pngjs": "^7.0.0",
-        "solid-js": "2.0.0-rc.0",
-        "three": "^0.185.1",
-        "typegpu": "^0.12.3",
-        "unplugin-typegpu": "^0.12.2",
-        "vite": "^8.2.1",
-        "wgpu-matrix": "^3.4.2"
-    },
     "peerDependencies": {
-        "@babylonjs/core": "9.5.2",
-        "@babylonjs/lite": "^1.16.0",
-        "playcanvas": "^2.21.3",
+        "@babylonjs/core": "^9.22.2",
+        "@babylonjs/lite": "^1.24.0",
+        "octane": "^0.1.47",
+        "playcanvas": "^2.21.4",
+        "solid-js": "^2.0.0-rc.0",
         "three": "^0.185.1"
     },
     "peerDependenciesMeta": {
@@ -81,12 +66,32 @@
         "@babylonjs/lite": {
             "optional": true
         },
+        "octane": {
+            "optional": true
+        },
         "playcanvas": {
             "optional": true
         },
         "three": {
             "optional": true
         }
+    },
+    "devDependencies": {
+        "@babylonjs/core": "^9.22.2",
+        "@babylonjs/lite": "^1.24.0",
+        "octane": "^0.1.47",
+        "playcanvas": "^2.21.4",
+        "solid-js": "^2.0.0-rc.0",
+        "three": "^0.185.1",
+        "@octanejs/vite-plugin": "^0.1.47",
+        "@playwright/test": "^1.52.0",
+        "@solidjs/universal": "2.0.0-rc.0",
+        "@solidjs/vite-plugin": "3.0.0-next.28",
+        "pngjs": "^7.0.0",
+        "typegpu": "^0.12.3",
+        "unplugin-typegpu": "^0.12.2",
+        "vite": "^8.2.1",
+        "wgpu-matrix": "^3.4.2"
     },
     "scripts": {
         "test": "playwright test",
