@@ -6,7 +6,7 @@ import { nodeContainsPoint, sortPaintingOrder } from '../utils/nodes'
 export default class UI {
     public root = null
     public renderer = null
-    private events
+    public events
     private nodes = []
     private created_nodes = new Set()
     private next_node_id = 0

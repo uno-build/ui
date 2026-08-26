@@ -50,6 +50,14 @@ export function BasicComponent() {
                 (item) => item.id,
                 (item) => (
                     <View
+                        onClick={(e) => {
+                            console.log('clicked', item.id, e)
+                            setItems((current_items) =>
+                                current_items.map((entry) =>
+                                    entry.id === item.id ? { ...entry, count: entry.count + 1 } : entry,
+                                ),
+                            )
+                        }}
                         style={{
                             width: '150px',
                             height: '150px',

@@ -1,8 +1,19 @@
 import { expect, test } from '@playwright/test'
-import { defineUniversalComponent, universalFor, universalPlan, universalValue } from 'octane/universal/native'
+import {
+    defineUniversalComponent,
+    universalFor,
+    universalPlan,
+    universalValue,
+    useState,
+} from 'octane/universal/native'
 import { createUniversalDriver, registerRootComponent } from '../src/components/octane/driver.js'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'
+
+const clickAt = (ui, x, y) => {
+    ui.dispatchEvent({ type: 'pointerdown', pointerId: 1 }, { x, y })
+    ui.dispatchEvent({ type: 'pointerup', pointerId: 1 }, { x, y })
+}
 
 const STATIC_TREE_PLAN = universalPlan('uno', {
     kind: 'host',
@@ -135,6 +146,43 @@ const CONDITIONAL_TEXT_PLAN = universalPlan('uno', {
 const CONDITIONAL_TEXT_COMPONENT = defineUniversalComponent<{ visible: boolean }>('uno', (props) =>
     universalValue(CONDITIONAL_TEXT_PLAN, [props.visible]),
 )
+
+const EVENT_TREE_PLAN = universalPlan('uno', {
+    kind: 'host',
+    type: 'view',
+    props: { style: { width: '100px', height: '50px' } },
+    bindings: [['onClick', 0]],
+    children: [
+        {
+            kind: 'host',
+            type: 'view',
+            props: { style: { width: '40px', height: '20px' } },
+        },
+    ],
+})
+
+const EVENT_TREE_COMPONENT = defineUniversalComponent<{ onClick: ((event: unknown) => void) | null }>(
+    'uno',
+    (props) => universalValue(EVENT_TREE_PLAN, [props.onClick]),
+)
+
+const COUNTER_PLAN = universalPlan('uno', {
+    kind: 'host',
+    type: 'view',
+    bindings: [
+        ['style', 0],
+        ['onClick', 1],
+    ],
+})
+
+const COUNTER_COMPONENT = defineUniversalComponent('uno', () => {
+    const [count, setCount] = useState(0)
+
+    return universalValue(COUNTER_PLAN, [
+        { width: `${100 + count}px`, height: '50px' },
+        () => setCount((current) => current + 1),
+    ])
+})
 
 test('Octane create and insert build the Uno node tree and apply initial styles', async () => {
     const renderer = new TestRenderer()
@@ -390,6 +438,109 @@ test('Octane unmounts Text with text content without retaining nodes', async () 
     expect([...ui.nodes]).toEqual([])
     expect(text_node.ui).toBe(null)
     expect(text_node.element).toBe(null)
+})
+
+test('Octane classifies event props from the Uno event metadata', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const driver = createUniversalDriver({ ui })
+
+    expect(driver.events.classify('onClick')).toEqual({ type: 'click', priority: 'discrete' })
+    expect(driver.events.classify('onPointerMove')).toEqual({ type: 'pointermove', priority: 'continuous' })
+    expect(driver.events.classify('onPointerOut')).toEqual({ type: 'pointerout', priority: 'continuous' })
+    expect(driver.events.classify('onScroll')).toBe(null)
+    expect(driver.events.classify('style')).toBe(null)
+})
+
+test('Octane event handlers receive Uno events through hit testing and bubbling', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const root = registerRootComponent(EVENT_TREE_COMPONENT, { ui })
+    const received_events = []
+
+    root.render({
+        onClick: (event) =>
+            received_events.push({
+                type: event.type,
+                target: event.target,
+                current_target: event.current_target,
+            }),
+    })
+
+    const parent = ui.root.children[0]
+    const child = parent.children[0]
+
+    clickAt(ui, 10, 10)
+
+    expect(received_events).toEqual([{ type: 'click', target: child, current_target: parent }])
+})
+
+test('Octane keeps a single Uno listener when the handler changes between renders', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const root = registerRootComponent(EVENT_TREE_COMPONENT, { ui })
+    const registrations = []
+    const removals = []
+    const received_events = []
+    const register_listener = ui.events.on.bind(ui.events)
+    const remove_listener = ui.events.off.bind(ui.events)
+
+    ui.events.on = (node, type, listener) => {
+        registrations.push([node, type])
+        register_listener(node, type, listener)
+    }
+    ui.events.off = (node, type, listener) => {
+        removals.push([node, type])
+        remove_listener(node, type, listener)
+    }
+
+    root.render({ onClick: () => received_events.push('first') })
+
+    const parent = ui.root.children[0]
+
+    root.render({ onClick: () => received_events.push('second') })
+
+    clickAt(ui, 10, 10)
+
+    expect(received_events).toEqual(['second'])
+    expect(registrations).toEqual([[parent, 'click']])
+    expect(removals).toEqual([])
+})
+
+test('Octane removes the Uno listener when the event prop is cleared', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const root = registerRootComponent(EVENT_TREE_COMPONENT, { ui })
+    const received_events = []
+
+    root.render({ onClick: () => received_events.push('first') })
+
+    const parent = ui.root.children[0]
+
+    root.render({ onClick: null })
+
+    clickAt(ui, 10, 10)
+
+    expect(received_events).toEqual([])
+
+    root.render({ onClick: () => received_events.push('second') })
+
+    clickAt(ui, 10, 10)
+
+    expect(ui.root.children).toEqual([parent])
+    expect(received_events).toEqual(['second'])
+})
+
+test('Octane commits state updates from an event handler within the dispatch', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const root = registerRootComponent(COUNTER_COMPONENT, { ui })
+
+    root.render({})
+
+    const node = ui.root.children[0]
+
+    expect(node.styles.width.value).toBe('100px')
+
+    clickAt(ui, 10, 10)
+
+    expect(ui.root.children).toEqual([node])
+    expect(node.styles.width.value).toBe('101px')
 })
 
 test('Octane moves text content between Text parents', async () => {

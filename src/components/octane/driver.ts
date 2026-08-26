@@ -11,7 +11,9 @@ const TYPE = {
 const TYPES = Object.values(TYPE)
 
 export function registerRootComponent(component, { ui }) {
-    const host = createUniversalRoot({ renderer: OCTANE_RENDERER_ID }, createUniversalDriver({ ui }))
+    const driver = createUniversalDriver({ ui })
+    const host = createUniversalRoot({ renderer: OCTANE_RENDERER_ID }, driver)
+    driver.root = host
 
     return {
         render(props) {
@@ -27,9 +29,21 @@ export function createUniversalDriver({ ui }) {
     const instances = new Map()
     instances.set(null, { node: ui.root, type: null, props: {} })
 
-    return {
+    const event_types = new Map()
+    for (const type of ui.events.types.values()) {
+        event_types.set(type.component, type)
+    }
+
+    const driver = {
+        root: null,
         id: OCTANE_RENDERER_ID,
         capabilities: { text: 'host' },
+        events: {
+            classify(name) {
+                const type = event_types.get(name)
+                return type === undefined ? null : { type: type.name, priority: type.priority }
+            },
+        },
         prepareBatch({}, { commands }) {
             return {
                 apply() {
@@ -87,6 +101,27 @@ export function createUniversalDriver({ ui }) {
                             instance.props = command.props
                         }
 
+                        // Event
+                        else if (command.op === 'event') {
+                            const instance = instances.get(command.id)
+                            const listeners = (instance.listeners ??= new Map())
+                            const listener = listeners.get(command.type)
+
+                            if (command.listener === null) {
+                                instance.node.off(command.type, listener.dispatch)
+                                listeners.delete(command.type)
+                            } else if (listener === undefined) {
+                                const entry = {
+                                    id: command.listener.id,
+                                    dispatch: (event) => driver.root.dispatchEvent(entry.id, event),
+                                }
+                                listeners.set(command.type, entry)
+                                instance.node.on(command.type, entry.dispatch)
+                            } else {
+                                listener.id = command.listener.id
+                            }
+                        }
+
                         // Remove / Detach
                         else if (command.op === 'remove') {
                             const instance = instances.get(command.id)
@@ -120,6 +155,8 @@ export function createUniversalDriver({ ui }) {
             return instances.get(id)?.node ?? null
         },
     }
+
+    return driver
 }
 
 function applyStyles(node, styles_prev, styles_next) {

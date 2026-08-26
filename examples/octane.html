@@ -58,6 +58,9 @@
 
                 syncCanvasSize()
                 onCanvasEvent('resize', syncCanvasSize)
+                ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
+                    canvas.addEventListener(type, (e) => ui.dispatchEvent(e))
+                })
 
                 requestAnimationFrame(function render() {
                     ui.draw()
