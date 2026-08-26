@@ -103,15 +103,9 @@ export default async function createEventsLayout({ ui, resources, registerFont, 
         })
     }
 
-    const registerEvents = (node, capture_pointer = false) => {
+    const registerEvents = (node) => {
         for (const type of EVENT_TYPES) {
-            node.on(type, (event) => {
-                if (capture_pointer && type === 'pointerdown') {
-                    event.source_event.currentTarget.setPointerCapture(event.source_event.pointerId)
-                }
-
-                handleEvent(event)
-            })
+            node.on(type, handleEvent)
         }
     }
 
@@ -217,18 +211,56 @@ export default async function createEventsLayout({ ui, resources, registerFont, 
     })
     pointer_events_child.text('pointerEvents: none')
 
-    const capture_target = createInteractiveNode(ui, content, node_names, 'capture.target', {
+    const overlay_target = createInteractiveNode(ui, content, node_names, 'overlay.target', {
         width: '40%',
         height: '45%',
+        flexDirection: 'row',
         border: '4px solid #64748b',
         borderRadius: '10px',
         fontSize: '12px',
     })
-    capture_target.text('pointer capture')
+    const overlay_first = createInteractiveNode(ui, overlay_target, node_names, 'overlay.first', {
+        width: '55%',
+        height: '55%',
+        position: 'relative',
+        left: '5%',
+        top: '10%',
+        border: '4px solid #64748b',
+        borderRadius: '8px',
+        fontSize: '12px',
+    })
+    overlay_first.text('overlay 1')
+
+    const overlay_second = createInteractiveNode(ui, overlay_target, node_names, 'overlay.second', {
+        width: '55%',
+        height: '55%',
+        position: 'relative',
+        left: '15%',
+        top: '20%',
+        marginLeft: '-55%',
+        border: '4px solid #64748b',
+        borderRadius: '8px',
+        fontSize: '12px',
+    })
+    overlay_second.text('overlay 2')
+
+    const overlay_third = createInteractiveNode(ui, overlay_target, node_names, 'overlay.third', {
+        width: '55%',
+        height: '55%',
+        position: 'relative',
+        left: '25%',
+        top: '30%',
+        marginLeft: '-55%',
+        border: '4px solid #64748b',
+        borderRadius: '8px',
+        fontSize: '12px',
+        pointerEvents: 'none',
+    })
+    overlay_third.text('overlay 3 (pointerEvents: none)')
 
     for (const node of node_names.keys()) {
         applyPattern(node, pattern_image.src)
-        registerEvents(node, node === capture_target)
+        registerEvents(node)
     }
 
     for (const type of SOURCE_EVENT_TYPES) {
