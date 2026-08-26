@@ -17,7 +17,7 @@ export default class UI {
         this.events =
             events ??
             new Events({
-                event_definitions: [...DEFAULT_EVENTS, ...custom_events],
+                definitions: [...DEFAULT_EVENTS, ...custom_events],
             })
     }
 

@@ -9,7 +9,7 @@ const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
 const EVENT_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']
 const createEvents = (custom_events = []) =>
     new Events({
-        event_definitions: [...DEFAULT_EVENTS, ...custom_events],
+        definitions: [...DEFAULT_EVENTS, ...custom_events],
     })
 const EVENT_FLOW = [
     ['pointerdown', 'child'],
@@ -483,26 +483,28 @@ test('click follows pointerup when pointerdown and pointerup hit the same target
 
 test('UI dispatches custom source events and instantiates definitions per instance', async () => {
     const counts = []
-    const activate_event = Events.defineEvent('activate', ({ emit }) => {
-        let count = 0
+    const activate_event = Events.defineEvent(
+        { name: 'activate', component: 'onActivate', priority: 'discrete' },
+        ({ emit }) => {
+            let count = 0
 
-        return {
-            main: {
-                activate({ source_event, event_data, hit_target }) {
-                    count++
-                    emit('activate', {
-                        source_event,
-                        event_data: {
-                            ...event_data,
-                            count,
-                        },
-                        target: hit_target,
-                    })
+            return {
+                main: {
+                    activate({ source_event, event_data, hit_target }) {
+                        count++
+                        emit('activate', {
+                            source_event,
+                            event_data: {
+                                ...event_data,
+                                count,
+                            },
+                            target: hit_target,
+                        })
+                    },
                 },
-            },
-        }
-    })
-
+            }
+        },
+    )
     for (let i = 0; i < 2; i++) {
         const ui = await TestUI.create({
             renderer: new TestRenderer(),

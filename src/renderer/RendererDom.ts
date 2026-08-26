@@ -1,10 +1,11 @@
 import Renderer from '../core/Renderer'
+import { DEFAULT_EVENTS } from '../events/pointer'
 import { calculateLayoutRect, getParentLayout } from '../layouter/utils'
 import { KEYWORD } from '../style/consts'
 import EventsDom from './dom/EventsDom'
 
 export default class RendererDom extends Renderer {
-    public events = new EventsDom()
+    public events = new EventsDom({ definitions: DEFAULT_EVENTS })
     private resources
     private elements = new WeakMap()
     private text_elements = new WeakMap()

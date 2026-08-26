@@ -1,14 +1,5 @@
-export const EVENT = {
-    POINTER_DOWN: 'pointerdown',
-    POINTER_MOVE: 'pointermove',
-    POINTER_UP: 'pointerup',
-    POINTER_CANCEL: 'pointercancel',
-    POINTER_OVER: 'pointerover',
-    POINTER_OUT: 'pointerout',
-    CLICK: 'click',
-}
-
 export default class Events {
+    public readonly types
     private listeners = new WeakMap()
     private event_handlers
 
@@ -19,8 +10,9 @@ export default class Events {
         }
     }
 
-    public constructor({ event_definitions = [] } = {}) {
-        this.event_handlers = event_definitions.map(({ setup }) =>
+    public constructor({ definitions = [] } = {}) {
+        this.types = createEventTypes(definitions)
+        this.event_handlers = definitions.map(({ setup }) =>
             setup({
                 emit: (type, { source_event, event_data, target, related_target }) => {
                     this.dispatchAt(type, source_event, event_data, target, related_target)
@@ -127,4 +119,19 @@ export default class Events {
             }
         }
     }
+}
+
+export function createEventTypes(definitions) {
+    const types = new Map()
+
+    for (const definition of definitions) {
+        for (const type of definition.types) {
+            if (types.has(type.name)) {
+                throw new Error(`Event type '${type.name}' is already defined.`)
+            }
+            types.set(type.name, type)
+        }
+    }
+
+    return types
 }

@@ -22,8 +22,8 @@ export function createForegroundUI({ ui, assets, title: title_text }) {
     title.style('color', '#ffffff')
     title.text(title_text)
     title.on('pointerover', () => {
-        title.style('textStroke', '0.4vw #ff3333')
-        title.style('textShadow', '0px 0.35vw 0px #ee2222')
+        title.style('textStroke', '0.4vw #FF00C2')
+        title.style('textShadow', '0px 0.35vw 0px #d200a1')
     })
     title.on('pointerout', () => {
         title.style('textStroke', '0.4vw #000000')

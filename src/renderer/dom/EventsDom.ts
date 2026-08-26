@@ -1,9 +1,16 @@
+import { createEventTypes } from '../../core/Events'
+
 export default class EventsDom {
+    public readonly types
     private nodes = new Map()
     private event_nodes = new WeakMap()
     private dispatched_events = new WeakMap()
     private propagation_stopped_at = new WeakMap()
     private root_node = null
+
+    public constructor({ definitions = [] } = {}) {
+        this.types = createEventTypes(definitions)
+    }
 
     public createNode(node, element) {
         this.nodes.set(node, {

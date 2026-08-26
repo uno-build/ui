@@ -107,8 +107,8 @@ export function createBackgroundUI({ ui, assets, title: title_text, background_c
         title.style('textShadow', '0px 4px 0px #000000')
         title.text(title_text)
         title.on('pointerover', () => {
-            title.style('textStroke', '10px #b24fe3')
-            title.style('textShadow', '0px 4px 0px #743495')
+            title.style('textStroke', '10px #00cb8b')
+            title.style('textShadow', '0px 4px 0px #00cb8b')
         })
         title.on('pointerout', () => {
             title.style('textStroke', '10px #000000')
