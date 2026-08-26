@@ -9,26 +9,6 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector.js'
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js'
 import UIWorldSpace from './UIWorldSpace'
 
-class UITexturePlugin extends MaterialPluginBase {
-    public constructor(material) {
-        super(material, 'uno-ui-texture', 200, undefined, true, true)
-    }
-
-    public isCompatible(shader_language) {
-        return shader_language === ShaderLanguage.WGSL
-    }
-
-    public getCustomCode(shader_type) {
-        if (shader_type === 'vertex') {
-            return null
-        }
-
-        return {
-            CUSTOM_FRAGMENT_UPDATE_ALPHA: 'baseColor = vec4f(baseColor.rgb / max(baseColor.a, 0.0001), baseColor.a);',
-        }
-    }
-}
-
 export default class UIBabylon extends UIWorldSpace {
     private scene
     private plane
@@ -146,5 +126,25 @@ export default class UIBabylon extends UIWorldSpace {
         )
         plane.material = material
         return { plane, geometry: plane.geometry }
+    }
+}
+
+class UITexturePlugin extends MaterialPluginBase {
+    public constructor(material) {
+        super(material, 'uno-ui-texture', 200, undefined, true, true)
+    }
+
+    public isCompatible(shader_language) {
+        return shader_language === ShaderLanguage.WGSL
+    }
+
+    public getCustomCode(shader_type) {
+        if (shader_type === 'vertex') {
+            return null
+        }
+
+        return {
+            CUSTOM_FRAGMENT_UPDATE_ALPHA: 'baseColor = vec4f(baseColor.rgb / max(baseColor.a, 0.0001), baseColor.a);',
+        }
     }
 }

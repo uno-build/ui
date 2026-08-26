@@ -1,18 +1,86 @@
-import { createPlane, createStandardMaterial, type MaterialPlugin, type Texture2D } from '@babylonjs/lite'
+import {
+    createGpuPicker,
+    createPlane,
+    createStandardMaterial,
+    disposePicker,
+    getCameraPosition,
+    mat4Invert,
+    pickAsync,
+    type MaterialPlugin,
+    type Texture2D,
+} from '@babylonjs/lite'
 import UIWorldSpace from './UIWorldSpace'
 
 export default class UIBabylonLite extends UIWorldSpace {
     private engine
+    private scene
+    private picker
+    private plane
 
-    protected constructor({ engine, ...options }) {
+    protected constructor({ engine, scene, ...options }) {
         super(options)
         this.engine = engine
+        this.scene = scene
+        this.picker = createGpuPicker(scene)
     }
 
     public static async create(options) {
         const ui = new UIBabylonLite(options)
         const resources = await ui.initialize()
         return { ui, ...resources }
+    }
+
+    protected async initialize() {
+        const output = await super.initialize()
+        this.plane = output.plane
+        return output
+    }
+
+    public dispatchEvent(source_event, { camera }) {
+        const rect = source_event.currentTarget.getBoundingClientRect()
+        const canvas = this.scene.surface.canvas
+        const x = ((source_event.clientX - rect.left) / rect.width) * canvas.clientWidth
+        const y = ((source_event.clientY - rect.top) / rect.height) * canvas.clientHeight
+
+        return pickAsync(this.picker, x, y, { filter: (mesh) => mesh === this.plane }).then((intersection) => {
+            if (intersection.hit === false) {
+                this.dispatchEventAt(source_event, null)
+                return
+            }
+
+            const picked_point = intersection.pickedPoint!
+            const camera_position = getCameraPosition(camera)
+            const inverse_world_matrix = mat4Invert(this.plane.worldMatrix)!
+            const local_x =
+                picked_point[0] * inverse_world_matrix[0] +
+                picked_point[1] * inverse_world_matrix[4] +
+                picked_point[2] * inverse_world_matrix[8] +
+                inverse_world_matrix[12]
+            const local_y =
+                picked_point[0] * inverse_world_matrix[1] +
+                picked_point[1] * inverse_world_matrix[5] +
+                picked_point[2] * inverse_world_matrix[9] +
+                inverse_world_matrix[13]
+
+            this.dispatchEventAt(source_event, {
+                x: (local_x / this.world_width + 0.5) * this.root.layout.width,
+                y: (0.5 - local_y / this.world_height) * this.root.layout.height,
+                distance_to_camera: Math.hypot(
+                    picked_point[0] - camera_position.x,
+                    picked_point[1] - camera_position.y,
+                    picked_point[2] - camera_position.z,
+                ),
+            })
+        })
+    }
+
+    public destroy() {
+        super.destroy()
+        if (this.picker !== null) {
+            disposePicker(this.picker)
+            this.picker = null
+        }
+        this.plane = null
     }
 
     protected createTexture({ output, gpu_texture, gpu_texture_view }) {

@@ -58,6 +58,7 @@ export async function main({
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
     const { ui: first_ui, plane: first_plane } = await UIBabylonLite.create({
         engine,
+        scene,
         resources,
         loadYoga,
         device_pixel_ratio,
@@ -68,6 +69,7 @@ export async function main({
     })
     const { ui: second_ui, plane: second_plane } = await UIBabylonLite.create({
         engine,
+        scene,
         resources,
         loadYoga,
         device_pixel_ratio,
@@ -78,7 +80,30 @@ export async function main({
     })
     const camera = createArcRotateCamera(-Math.PI / 2, 1.25, 9.5, { x: 0, y: 0.8, z: 0 })
     scene.camera = camera
-    attachControl(camera, canvas, scene)
+
+    // Event handling
+    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
+        canvas.addEventListener(type, (e) => {
+            overlay_ui.dispatchEvent(e)
+            first_ui.dispatchEvent(e, { camera })
+            second_ui.dispatchEvent(e, { camera })
+        })
+    })
+    let detach_camera_control
+    first_ui.root.on('pointerdown', () => {
+        detach_camera_control()
+    })
+    first_ui.root.on('pointerup', () => {
+        detach_camera_control = attachControl(camera, canvas, scene)
+    })
+    second_ui.root.on('pointerdown', () => {
+        detach_camera_control()
+    })
+    second_ui.root.on('pointerup', () => {
+        detach_camera_control = attachControl(camera, canvas, scene)
+    })
+
+    detach_camera_control = attachControl(camera, canvas, scene)
 
     first_plane.position.set(-world_width / 2 - 0.25, 1, 0)
     first_plane.rotation.y = -0.35
