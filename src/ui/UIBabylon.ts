@@ -1,9 +1,11 @@
+import '@babylonjs/core/Culling/ray.js'
 import { Constants } from '@babylonjs/core/Engines/constants.js'
 import { WebGPUHardwareTexture } from '@babylonjs/core/Engines/WebGPU/webgpuHardwareTexture.js'
 import { MaterialPluginBase } from '@babylonjs/core/Materials/materialPluginBase.js'
 import { ShaderLanguage } from '@babylonjs/core/Materials/shaderLanguage.js'
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js'
 import { Texture } from '@babylonjs/core/Materials/Textures/texture.js'
+import { Vector3 } from '@babylonjs/core/Maths/math.vector.js'
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js'
 import UIWorldSpace from './UIWorldSpace'
 
@@ -29,6 +31,7 @@ class UITexturePlugin extends MaterialPluginBase {
 
 export default class UIBabylon extends UIWorldSpace {
     private scene
+    private plane
 
     protected constructor({ scene, ...options }) {
         super(options)
@@ -39,6 +42,42 @@ export default class UIBabylon extends UIWorldSpace {
         const ui = new UIBabylon(options)
         const resources = await ui.initialize()
         return { ui, ...resources }
+    }
+
+    protected async initialize() {
+        const output = await super.initialize()
+        this.plane = output.plane
+        return output
+    }
+
+    public dispatchEvent(source_event, { camera }) {
+        const rect = source_event.currentTarget.getBoundingClientRect()
+        const engine = this.scene.getEngine()
+        const scaling_level = engine.getHardwareScalingLevel()
+        const intersection = this.scene.pick(
+            ((source_event.clientX - rect.left) / rect.width) * engine.getRenderWidth() * scaling_level,
+            ((source_event.clientY - rect.top) / rect.height) * engine.getRenderHeight() * scaling_level,
+            (mesh) => mesh === this.plane,
+            false,
+            camera,
+        )
+        const uv = intersection.getTextureCoordinates()
+
+        this.dispatchEventAt(
+            source_event,
+            intersection.hit === false
+                ? null
+                : {
+                      x: uv.x * this.root.layout.width,
+                      y: (1 - uv.y) * this.root.layout.height,
+                      distance_to_camera: Vector3.Distance(camera.globalPosition, intersection.pickedPoint),
+                  },
+        )
+    }
+
+    public destroy() {
+        super.destroy()
+        this.plane = null
     }
 
     protected createTexture({ output, gpu_texture }) {
