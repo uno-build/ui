@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'octane'
 import { universalFor } from 'octane/universal/native'
-import { View, Text } from 'uno-ui/octane'
+import { View, Text, Image } from 'uno-ui/octane'
 
 const COLOR_ITEMS = [
     { id: 'red', color: '#e63946', count: 0 },
@@ -44,33 +44,38 @@ export function BasicComponent() {
     }
 
     return (
-        <View ref={ref} style={styles}>
-            {universalFor(
-                items,
-                (item) => item.id,
-                (item) => (
-                    <View
-                        onClick={(e) => {
-                            console.log('clicked', item.id, e)
-                            setItems((current_items) =>
-                                current_items.map((entry) =>
-                                    entry.id === item.id ? { ...entry, count: entry.count + 1 } : entry,
-                                ),
-                            )
-                        }}
-                        style={{
-                            width: '150px',
-                            height: '150px',
-                            borderRadius: '12px',
-                            backgroundColor: item.color,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <Text style={{ color: '#fff', textStroke: '2px #1d2027' }}>{`${item.id} ${item.count}`}</Text>
-                    </View>
-                ),
-            )}
+        <View>
+            <Image src="assets/images/coin.png" style={{ width: '100%', height: '100%' }} />
+            {/* <View style={styles} ref={ref}>
+                {universalFor(
+                    items,
+                    (item) => item.id,
+                    (item) => (
+                        <View
+                            onClick={(e) => {
+                                console.log('clicked', item.id, e)
+                                setItems((current_items) =>
+                                    current_items.map((entry) =>
+                                        entry.id === item.id ? { ...entry, count: entry.count + 1 } : entry,
+                                    ),
+                                )
+                            }}
+                            style={{
+                                width: '150px',
+                                height: '150px',
+                                borderRadius: '12px',
+                                backgroundColor: item.color,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Text
+                                style={{ color: '#fff', textStroke: '2px #1d2027' }}
+                            >{`${item.id} ${item.count}`}</Text>
+                        </View>
+                    ),
+                )}
+            </View> */}
         </View>
     )
 }
