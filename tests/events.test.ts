@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
 import Events from '../src/core/Events'
 import { DEFAULT_EVENTS } from '../src/events/pointer'
-import TestRenderer from './TestRenderer.ts'
-import TestUI from './TestUI.ts'
+import TestRenderer from './utils/TestRenderer.ts'
+import TestUI from './utils/TestUI.ts'
 
 const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
 const EVENT_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']
@@ -171,9 +171,7 @@ test('stopPropagation stops bubbling after the current target listeners', () => 
             event.stopPropagation()
         }
     })
-    events.on(child, 'pointerdown', (event) =>
-        calls.push(['child-second', event.source_event.pointerId]),
-    )
+    events.on(child, 'pointerdown', (event) => calls.push(['child-second', event.source_event.pointerId]))
     events.on(parent, 'pointerdown', (event) => calls.push(['parent', event.source_event.pointerId]))
     events.on(root, 'pointerdown', (event) => calls.push(['root', event.source_event.pointerId]))
 
@@ -244,7 +242,6 @@ test('UI hit testing applies pointerEvents to overlapping nodes', async () => {
     }
     overlay.style('pointerEvents', 'none')
     ui.update()
-
     ;(ui as any).dispatchEventAt({ type: 'pointerdown', pointerId: 1 }, { x: 50, y: 25 })
 
     overlay.style('pointerEvents', 'all')
@@ -276,7 +273,6 @@ test('pointerEvents is not inherited and does not block bubbling', async () => {
     child.on('pointerdown', () => received_events.push('child'))
     parent.on('pointerdown', () => received_events.push('parent'))
     ui.update()
-
     ;(ui as any).dispatchEventAt({ type: 'pointerdown', pointerId: 1 }, { x: 50, y: 25 })
 
     expect(received_events).toEqual(['child', 'parent'])
@@ -456,13 +452,7 @@ test('click follows pointerup when pointerdown and pointerup hit the same target
     ]) {
         for (const type of ['pointerdown', 'pointerup', 'click']) {
             events.on(node, type, (event) => {
-                received_events.push([
-                    event.type,
-                    name,
-                    event.target === first,
-                    event.source_event.type,
-                    event.x,
-                ])
+                received_events.push([event.type, name, event.target === first, event.source_event.type, event.x])
             })
         }
     }

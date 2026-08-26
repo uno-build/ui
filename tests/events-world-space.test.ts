@@ -409,3 +409,150 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', async
     }
 })
 
+test('UIPlayCanvas dispatches pointer events from raycast intersections', async ({ page }) => {
+    await page.goto('/dev/?renderers=RendererDom')
+
+    const events = await page.evaluate(
+        async ({ event_types, module_urls }) => {
+            const [{ default: UIPlayCanvas }, { default: ResourcesWebGPU }, { loadYoga }, PLAYCANVAS] =
+                await Promise.all([
+                    import(module_urls.ui),
+                    import(module_urls.resources),
+                    import('/@id/yoga-layout/load'),
+                    import('/@id/playcanvas'),
+                ])
+            const canvas = document.createElement('canvas')
+            canvas.width = 400
+            canvas.height = 200
+            Object.assign(canvas.style, {
+                position: 'absolute',
+                left: '0',
+                top: '0',
+                width: '400px',
+                height: '200px',
+            })
+            document.body.appendChild(canvas)
+
+            const graphics_device = await PLAYCANVAS.createGraphicsDevice(canvas, {
+                deviceTypes: ['webgpu'],
+                antialias: false,
+                alpha: true,
+            })
+            const resources = await ResourcesWebGPU.create({
+                canvas,
+                device: graphics_device.wgpu,
+                context: graphics_device.gpuContext,
+                format: graphics_device.canvasConfig.format,
+            })
+            const app_options = new PLAYCANVAS.AppOptions()
+            app_options.graphicsDevice = graphics_device
+            app_options.componentSystems = [
+                PLAYCANVAS.RenderComponentSystem,
+                PLAYCANVAS.CameraComponentSystem,
+            ]
+            app_options.resourceHandlers = [PLAYCANVAS.TextureHandler, PLAYCANVAS.ContainerHandler]
+
+            const app = new PLAYCANVAS.AppBase(canvas)
+            app.init(app_options)
+
+            const { ui, plane, mesh, material, texture } = await UIPlayCanvas.create({
+                app,
+                resources,
+                loadYoga,
+                texture_width: 200,
+                texture_height: 100,
+                world_width: 2,
+                world_height: 1,
+            })
+            const camera = new PLAYCANVAS.Entity('camera', app)
+            camera.addComponent('camera', {
+                fov: 60,
+                nearClip: 0.1,
+                farClip: 100,
+            })
+            camera.setPosition(0, 0, 2)
+            camera.lookAt(0, 0, 0)
+            app.root.addChild(camera)
+            app.root.addChild(plane)
+
+            const child = ui.create()
+            const events = []
+            let current_source_event
+
+            ui.root.style('width', '200px')
+            ui.root.style('height', '100px')
+            child.style('width', '200px')
+            child.style('height', '100px')
+            ui.root.add(child)
+            ui.update()
+
+            const record = (expected_current_target, current_target) => (event) => {
+                events.push({
+                    type: event.type,
+                    x: event.x,
+                    y: event.y,
+                    distance_to_camera: event.distance_to_camera,
+                    target: event.target === child ? 'child' : 'root',
+                    current_target,
+                    current_target_matches: event.current_target === expected_current_target,
+                    source_event_matches: event.source_event === current_source_event,
+                })
+            }
+
+            for (const type of event_types) {
+                child.on(type, record(child, 'child'))
+                ui.root.on(type, record(ui.root, 'root'))
+                canvas.addEventListener(type, (source_event) => {
+                    current_source_event = source_event
+                    ui.dispatchEvent(source_event, { camera })
+                })
+            }
+
+            const rect = canvas.getBoundingClientRect()
+            const dispatch = (type, pointer_id, x, y) => {
+                canvas.dispatchEvent(
+                    new PointerEvent(type, {
+                        pointerId: pointer_id,
+                        clientX: rect.left + x,
+                        clientY: rect.top + y,
+                    }),
+                )
+            }
+
+            dispatch('pointerdown', 1, 200, 100)
+            dispatch('pointermove', 1, 200, 100)
+            dispatch('pointerup', 1, 200, 100)
+            dispatch('pointerdown', 2, 200, 100)
+            dispatch('pointercancel', 2, 200, 100)
+            dispatch('pointerdown', 3, 1, 1)
+
+            ui.destroy()
+            plane.destroy()
+            mesh.destroy()
+            material.destroy()
+            texture.destroy()
+            resources.dispose()
+            app.destroy()
+            canvas.remove()
+            return events
+        },
+        {
+            event_types: EVENT_TYPES,
+            module_urls: {
+                ui: `/@fs${WORKSPACE_PATH}src/ui/UIPlayCanvas.ts`,
+                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
+            },
+        },
+    )
+
+    expect(events.map(({ type, current_target }) => [type, current_target])).toEqual(EVENT_FLOW)
+    expect(events.every(({ target }) => target === 'child')).toBe(true)
+    expect(events.every(({ current_target_matches }) => current_target_matches)).toBe(true)
+    expect(events.every(({ source_event_matches }) => source_event_matches)).toBe(true)
+
+    for (const event of events) {
+        expect(event.x).toBeCloseTo(100)
+        expect(event.y).toBeCloseTo(50)
+        expect(event.distance_to_camera).toBeCloseTo(2)
+    }
+})

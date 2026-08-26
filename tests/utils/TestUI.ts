@@ -1,4 +1,4 @@
-import UI from '../src/core/UI'
+import UI from '../../src/core/UI'
 
 export default class TestUI extends UI {
     public static async create(options) {

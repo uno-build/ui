@@ -158,6 +158,7 @@ export async function main({
     camera.lookAt(0, 0.8, 0)
     app.root.addChild(camera)
 
+    let camera_controls_enabled = true
     const touch_source = new MultiTouchSource()
     touch_source.attach(canvas)
     const mouse_buttons = [false, false, false]
@@ -171,7 +172,7 @@ export async function main({
         setMouseButtons(mouse_buttons, event.buttons)
     })
     onCanvasEvent('pointermove', (event: PointerEvent) => {
-        if (event.pointerType !== 'mouse' || event.buttons === 0) return
+        if (!camera_controls_enabled || event.pointerType !== 'mouse' || event.buttons === 0) return
         mouse_x += event.movementX
         mouse_y += event.movementY
     })
@@ -182,6 +183,7 @@ export async function main({
     })
     onCanvasEvent('wheel', (event: WheelEvent) => {
         event.preventDefault()
+        if (!camera_controls_enabled) return
         mouse_wheel += event.deltaY
     })
     onCanvasEvent('contextmenu', (event: MouseEvent) => event.preventDefault())
@@ -191,6 +193,27 @@ export async function main({
     orbit_controller.attach(new Pose().look(camera.getPosition(), new Vec3(0, 0.8, 0)), false)
     const orbit_frame = new InputFrame({ move: [0, 0, 0], rotate: [0, 0] })
     let touch_count = 0
+
+    // Event handling
+    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
+        canvas.addEventListener(type, (e) => {
+            overlay_ui.dispatchEvent(e)
+            first_ui.dispatchEvent(e, { camera })
+            second_ui.dispatchEvent(e, { camera })
+        })
+    })
+    first_ui.root.on('pointerdown', () => {
+        camera_controls_enabled = false
+    })
+    first_ui.root.on('pointerup', () => {
+        camera_controls_enabled = true
+    })
+    second_ui.root.on('pointerdown', () => {
+        camera_controls_enabled = false
+    })
+    second_ui.root.on('pointerup', () => {
+        camera_controls_enabled = true
+    })
 
     const { grid: first_grid } = createBackgroundUI({ ui: first_ui, assets, title: 'First UI' })
     const { grid: second_grid } = createBackgroundUI({ ui: second_ui, assets, title: 'Second UI' })
@@ -214,19 +237,21 @@ export async function main({
         const move: [number, number, number] = [0, 0, mouse_wheel * 0.001]
         const rotate: [number, number] = [0, 0]
 
-        if (mouse_buttons[0]) {
-            rotate[0] += mouse_x * 0.2
-            rotate[1] += mouse_y * 0.2
-        } else if (mouse_buttons[1] || mouse_buttons[2]) {
-            move[0] -= mouse_x * 0.005
-            move[1] += mouse_y * 0.005
-        } else if (touch_count === 1) {
-            rotate[0] += touch_input.touch[0] * 0.2
-            rotate[1] += touch_input.touch[1] * 0.2
-        } else if (touch_count === 2) {
-            move[0] -= touch_input.touch[0] * 0.005
-            move[1] += touch_input.touch[1] * 0.005
-            move[2] += touch_input.pinch[0] * 0.003
+        if (camera_controls_enabled) {
+            if (mouse_buttons[0]) {
+                rotate[0] += mouse_x * 0.2
+                rotate[1] += mouse_y * 0.2
+            } else if (mouse_buttons[1] || mouse_buttons[2]) {
+                move[0] -= mouse_x * 0.005
+                move[1] += mouse_y * 0.005
+            } else if (touch_count === 1) {
+                rotate[0] += touch_input.touch[0] * 0.2
+                rotate[1] += touch_input.touch[1] * 0.2
+            } else if (touch_count === 2) {
+                move[0] -= touch_input.touch[0] * 0.005
+                move[1] += touch_input.touch[1] * 0.005
+                move[2] += touch_input.pinch[0] * 0.003
+            }
         }
 
         mouse_x = 0

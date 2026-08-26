@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
 import { defineUniversalComponent, universalFor, universalPlan, universalValue } from 'octane/universal/native'
 import { createUniversalDriver, registerRootComponent } from '../src/components/octane/driver.js'
-import TestRenderer from './TestRenderer.ts'
-import TestUI from './TestUI.ts'
+import TestRenderer from './utils/TestRenderer.ts'
+import TestUI from './utils/TestUI.ts'
 
 const STATIC_TREE_PLAN = universalPlan('uno', {
     kind: 'host',

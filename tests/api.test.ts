@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test'
 import Resources from '../src/core/Resources'
 import ResourcesWebGPU from '../src/renderer/webgpu/ResourcesWebGPU'
 import UIWorldSpace from '../src/ui/UIWorldSpace.ts'
-import TestRenderer from './TestRenderer.ts'
-import TestUI from './TestUI.ts'
+import TestRenderer from './utils/TestRenderer.ts'
+import TestUI from './utils/TestUI.ts'
 
 test('UI and Node api creates, styles, updates, and removes nodes', async () => {
     const renderer = new TestRenderer()

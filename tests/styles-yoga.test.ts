@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
-import TestRenderer from './TestRenderer.ts'
-import TestUI from './TestUI.ts'
+import TestRenderer from './utils/TestRenderer.ts'
+import TestUI from './utils/TestUI.ts'
 
 test('width', async () => {
     const { ui, root, child } = await createUI({ width: '200px' })

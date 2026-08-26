@@ -7,6 +7,7 @@ import {
     Entity,
     FILTER_LINEAR,
     Geometry,
+    Mat4,
     Mesh,
     MeshInstance,
     PIXELFORMAT_BGRA8,
@@ -18,6 +19,7 @@ import UIWorldSpace from './UIWorldSpace'
 
 export default class UIPlayCanvas extends UIWorldSpace {
     private app
+    private plane
 
     protected constructor({ app, ...options }) {
         super(options)
@@ -28,6 +30,62 @@ export default class UIPlayCanvas extends UIWorldSpace {
         const ui = new UIPlayCanvas(options)
         const resources = await ui.initialize()
         return { ui, ...resources }
+    }
+
+    protected async initialize() {
+        const output = await super.initialize()
+        this.plane = output.plane
+        return output
+    }
+
+    public dispatchEvent(source_event, { camera }) {
+        const rect = source_event.currentTarget.getBoundingClientRect()
+        const { width, height } = this.app.graphicsDevice.clientRect
+        const x = ((source_event.clientX - rect.left) / rect.width) * width
+        const y = ((source_event.clientY - rect.top) / rect.height) * height
+        const camera_component = camera.camera
+        const ray_start = camera_component.screenToWorld(x, y, 0)
+        const ray_end = camera_component.screenToWorld(
+            x,
+            y,
+            camera_component.farClip - camera_component.nearClip,
+        )
+        const inverse_world_matrix = new Mat4().copy(this.plane.getWorldTransform()).invert()
+        const local_ray_start = inverse_world_matrix.transformPoint(ray_start)
+        const local_ray_end = inverse_world_matrix.transformPoint(ray_end)
+        const direction_x = local_ray_end.x - local_ray_start.x
+        const direction_y = local_ray_end.y - local_ray_start.y
+        const direction_z = local_ray_end.z - local_ray_start.z
+
+        if (direction_z === 0) {
+            this.dispatchEventAt(source_event, null)
+            return
+        }
+
+        const intersection_scale = -local_ray_start.z / direction_z
+        const local_x = local_ray_start.x + direction_x * intersection_scale
+        const local_y = local_ray_start.y + direction_y * intersection_scale
+
+        if (
+            intersection_scale < 0 ||
+            Math.abs(local_x) > this.world_width / 2 ||
+            Math.abs(local_y) > this.world_height / 2
+        ) {
+            this.dispatchEventAt(source_event, null)
+            return
+        }
+
+        const intersection = ray_end.sub(ray_start).mulScalar(intersection_scale).add(ray_start)
+        this.dispatchEventAt(source_event, {
+            x: (local_x / this.world_width + 0.5) * this.root.layout.width,
+            y: (0.5 - local_y / this.world_height) * this.root.layout.height,
+            distance_to_camera: intersection.distance(camera.getPosition()),
+        })
+    }
+
+    public destroy() {
+        super.destroy()
+        this.plane = null
     }
 
     protected createTexture({ output, gpu_texture, gpu_texture_view }) {
