@@ -130,9 +130,9 @@ test('UIWebGPU dispatches pointer events in UI coordinates', async ({ page }) =>
 
 test('current_target follows the event path when the target has no listeners', () => {
     const events = createEvents()
-    const root = { parent: null }
-    const combined = { parent: root }
-    const inside = { parent: combined }
+    const root = { parent: null, styles: {} }
+    const combined = { parent: root, styles: {} }
+    const inside = { parent: combined, styles: {} }
     const received_events = []
 
     events.on(combined, 'pointerdown', (event) => {
@@ -160,9 +160,9 @@ test('current_target follows the event path when the target has no listeners', (
 
 test('stopPropagation stops bubbling after the current target listeners', () => {
     const events = createEvents()
-    const root = { parent: null }
-    const parent = { parent: root }
-    const child = { parent }
+    const root = { parent: null, styles: {} }
+    const parent = { parent: root, styles: {} }
+    const child = { parent, styles: {} }
     const calls = []
 
     events.on(child, 'pointerdown', (event) => {
@@ -190,7 +190,7 @@ test('stopPropagation stops bubbling after the current target listeners', () => 
 
 test('duplicate listeners are ignored and removed by one off call', () => {
     const events = createEvents()
-    const node = { parent: null }
+    const node = { parent: null, styles: {} }
     let calls = 0
     const listener = () => calls++
 
@@ -206,7 +206,7 @@ test('duplicate listeners are ignored and removed by one off call', () => {
 
 test('listener mutations follow web dispatch semantics', () => {
     const events = createEvents()
-    const node = { parent: null }
+    const node = { parent: null, styles: {} }
     const calls = []
     const added_listener = () => calls.push('added')
     const removed_listener = () => calls.push('removed')
@@ -280,9 +280,9 @@ test('pointerEvents is not inherited and does not block bubbling', async () => {
 
 test('pointerover and pointerout follow hit targets and bubble', () => {
     const events = createEvents()
-    const root = { parent: null }
-    const first = { parent: root }
-    const second = { parent: root }
+    const root = { parent: null, styles: {} }
+    const first = { parent: root, styles: {} }
+    const second = { parent: root, styles: {} }
     const names = new Map([
         [root, 'root'],
         [first, 'first'],
@@ -331,8 +331,8 @@ test('pointerover and pointerout follow hit targets and bubble', () => {
 
 test('pointerover and pointerout use hit targets during pointer capture', () => {
     const events = createEvents()
-    const first = { parent: null }
-    const second = { parent: null }
+    const first = { parent: null, styles: {} }
+    const second = { parent: null, styles: {} }
     const names = new Map([
         [first, 'first'],
         [second, 'second'],
@@ -372,7 +372,7 @@ test('pointerover and pointerout use hit targets during pointer capture', () => 
 
 test('pointerup and pointercancel end hover according to the pointer type', () => {
     const events = createEvents()
-    const node = { parent: null }
+    const node = { parent: null, styles: {} }
     const received_events = []
     const record = (event) => {
         received_events.push({
@@ -411,9 +411,9 @@ test('pointerup and pointercancel end hover according to the pointer type', () =
 
 test('hover state is isolated by pointer and cleared on destruction', () => {
     const events = createEvents()
-    const root = { parent: null }
-    const first = { parent: root }
-    const second = { parent: root }
+    const root = { parent: null, styles: {} }
+    const first = { parent: root, styles: {} }
+    const second = { parent: root, styles: {} }
     const received_events = []
 
     events.on(root, 'pointerout', (event) => {
@@ -441,9 +441,9 @@ test('hover state is isolated by pointer and cleared on destruction', () => {
 
 test('click follows pointerup when pointerdown and pointerup hit the same target', () => {
     const events = createEvents()
-    const root = { parent: null }
-    const first = { parent: root }
-    const second = { parent: root }
+    const root = { parent: null, styles: {} }
+    const first = { parent: root, styles: {} }
+    const second = { parent: root, styles: {} }
     const received_events = []
 
     for (const [node, name] of [
@@ -483,9 +483,9 @@ test('click follows pointerup when pointerdown and pointerup hit the same target
 
 test('click is suppressed while an ancestor is scrolling', () => {
     const events = createEvents()
-    const root = { parent: null, scrolling: false }
-    const scroller = { parent: root, scrolling: false }
-    const child = { parent: scroller, scrolling: false }
+    const root = { parent: null, scrolling: false, styles: {} }
+    const scroller = { parent: root, scrolling: false, styles: {} }
+    const child = { parent: scroller, scrolling: false, styles: {} }
     const received_events = []
 
     for (const type of ['pointerup', 'click']) {

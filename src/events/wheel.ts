@@ -24,6 +24,6 @@ export const WHEEL = Events.defineEvent(EVENT.WHEEL, ({ emit }) => ({
     },
 }))
 
-function normalizeDelta(delta, delta_mode) {
+export function normalizeDelta(delta, delta_mode) {
     return delta_mode === DELTA_MODE_LINE ? delta * ROOT_SIZE : delta
 }

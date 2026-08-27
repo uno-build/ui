@@ -7,4 +7,5 @@ export const EVENT = {
     POINTER_OUT: { name: 'pointerout', component: 'onPointerOut', priority: 'continuous' },
     CLICK: { name: 'click', component: 'onClick', priority: 'discrete' },
     WHEEL: { name: 'wheel', component: 'onWheel', priority: 'continuous' },
+    SCROLL: { name: 'scroll', component: 'onScroll', priority: 'continuous' },
 }

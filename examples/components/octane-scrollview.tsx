@@ -109,7 +109,11 @@ const INNER_TEXT_STYLE = {
 
 export function OctaneScrollView() {
     return (
-        <ScrollView style={PAGE_STYLE} contentStyle={PAGE_CONTENT_STYLE}>
+        <ScrollView
+            style={PAGE_STYLE}
+            contentStyle={PAGE_CONTENT_STYLE}
+            onScroll={(event) => console.log('Scroll event:', event)}
+        >
             <ScrollView style={{ ...PANEL_STYLE, border: '2px solid #1b2a38' }} contentStyle={PANEL_CONTENT_STYLE}>
                 <Text style={TITLE_STYLE}>Vertical drag scroll example</Text>
                 <Image src={LOGO_SRC} style={{ width: '100%', height: '300px', objectFit: 'cover' }} />
