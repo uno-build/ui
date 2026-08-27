@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
 import Events from '../src/core/Events'
 import { DEFAULT_EVENTS } from '../src/events'
+import { OVERFLOW } from '../src/style/consts'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'
 
@@ -11,6 +12,29 @@ const createEvents = (custom_events = []) =>
     new Events({
         definitions: [...DEFAULT_EVENTS, ...custom_events],
     })
+const createScrollNode = ({ parent = null, horizontal = false, scroll_size = 1000, client_size = 200 } = {}) => {
+    const node = {
+        parent,
+        scrolling: false,
+        scrollLeft: 0,
+        scrollTop: 0,
+        scrollWidth: horizontal ? scroll_size : client_size,
+        scrollHeight: horizontal ? client_size : scroll_size,
+        clientWidth: client_size,
+        clientHeight: client_size,
+        styles: horizontal
+            ? { overflowX: { parsed: { enum: OVERFLOW.scroll } } }
+            : { overflowY: { parsed: { enum: OVERFLOW.scroll } } },
+        ui: {
+            update() {
+                node.scrollLeft = Math.max(0, Math.min(node.scrollLeft, node.scrollWidth - node.clientWidth))
+                node.scrollTop = Math.max(0, Math.min(node.scrollTop, node.scrollHeight - node.clientHeight))
+            },
+        },
+    }
+
+    return node
+}
 const EVENT_FLOW = [
     ['pointerdown', 'child'],
     ['pointerdown', 'root'],
@@ -505,6 +529,103 @@ test('click is suppressed while an ancestor is scrolling', () => {
         ['click', 4],
     ])
     expect(root.scrolling).toBe(false)
+})
+
+test('a touch drag scrolls the nearest scrollable ancestor and emits scroll', () => {
+    const events = createEvents()
+    const scroller = createScrollNode()
+    const child = { parent: scroller, styles: {} }
+    const received_events = []
+
+    events.on(scroller, 'scroll', (event) => received_events.push([event.scroll_left, event.scroll_top]))
+
+    events.dispatch({ type: 'pointerdown', pointerId: 1, pointerType: 'touch' }, { x: 0, y: 100 }, child)
+    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'touch' }, { x: 0, y: 60 }, child)
+
+    expect(scroller.scrollTop).toBe(40)
+    expect(received_events).toEqual([[0, 40]])
+})
+
+test('a mouse drag does not scroll', () => {
+    const events = createEvents()
+    const scroller = createScrollNode()
+    const child = { parent: scroller, styles: {} }
+    const received_events = []
+
+    events.on(scroller, 'scroll', () => received_events.push('scroll'))
+
+    events.dispatch({ type: 'pointerdown', pointerId: 1, pointerType: 'mouse' }, { x: 0, y: 100 }, child)
+    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'mouse' }, { x: 0, y: 60 }, child)
+
+    expect(scroller.scrollTop).toBe(0)
+    expect(received_events).toEqual([])
+})
+
+test('the scrolling flag is only set past the drag slop', () => {
+    const events = createEvents()
+    const scroller = createScrollNode()
+    const child = { parent: scroller, styles: {} }
+
+    events.dispatch({ type: 'pointerdown', pointerId: 1, pointerType: 'touch' }, { x: 0, y: 100 }, child)
+    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'touch' }, { x: 0, y: 92 }, child)
+
+    expect(scroller.scrollTop).toBe(8)
+    expect(scroller.scrolling).toBe(false)
+
+    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'touch' }, { x: 0, y: 80 }, child)
+
+    expect(scroller.scrollTop).toBe(20)
+    expect(scroller.scrolling).toBe(true)
+})
+
+test('the wheel scrolls with normalized deltas scaled by the scrollable content', () => {
+    const events = createEvents()
+    const scroller = createScrollNode()
+    const child = { parent: scroller, styles: {} }
+
+    events.dispatch({ type: 'wheel', deltaX: 0, deltaY: 3, deltaMode: 1 }, { x: 0, y: 0 }, child)
+
+    expect(scroller.scrollTop).toBe(48)
+})
+
+test('the wheel moves a horizontal scroller with the vertical delta', () => {
+    const events = createEvents()
+    const scroller = createScrollNode({ horizontal: true })
+    const child = { parent: scroller, styles: {} }
+
+    events.dispatch({ type: 'wheel', deltaX: 0, deltaY: 12, deltaMode: 0 }, { x: 0, y: 0 }, child)
+
+    expect(scroller.scrollLeft).toBe(12)
+    expect(scroller.scrollTop).toBe(0)
+})
+
+test('the wheel chains to the ancestor when the inner scroller is at its end', () => {
+    const events = createEvents()
+    const outer = createScrollNode()
+    const inner = createScrollNode({ parent: outer })
+    const child = { parent: inner, styles: {} }
+
+    inner.scrollTop = inner.scrollHeight - inner.clientHeight
+
+    events.dispatch({ type: 'wheel', deltaX: 0, deltaY: 3, deltaMode: 1 }, { x: 0, y: 0 }, child)
+
+    expect(inner.scrollTop).toBe(800)
+    expect(outer.scrollTop).toBe(48)
+})
+
+test('scroll is not emitted when the clamped offset does not change', () => {
+    const events = createEvents()
+    const scroller = createScrollNode()
+    const child = { parent: scroller, styles: {} }
+    const received_events = []
+
+    events.on(scroller, 'scroll', () => received_events.push('scroll'))
+
+    events.dispatch({ type: 'pointerdown', pointerId: 1, pointerType: 'touch' }, { x: 0, y: 100 }, child)
+    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'touch' }, { x: 0, y: 140 }, child)
+
+    expect(scroller.scrollTop).toBe(0)
+    expect(received_events).toEqual([])
 })
 
 test('UI dispatches custom source events and instantiates definitions per instance', async () => {

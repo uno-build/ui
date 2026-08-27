@@ -1,8 +1,17 @@
 import { loadImage, loadJson } from '../../utils/load-assets'
 
-const EVENT_TYPES = ['pointercancel', 'pointerover', 'pointermove', 'pointerdown', 'pointerup', 'pointerout', 'click']
+const EVENT_TYPES = [
+    'pointercancel',
+    'pointerover',
+    'pointermove',
+    'pointerdown',
+    'pointerup',
+    'pointerout',
+    'click',
+    'wheel',
+]
 
-const SOURCE_EVENT_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']
+const SOURCE_EVENT_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'wheel']
 const COUNTER_RESET_DELAY = 250
 const PATTERN_SIZE = 16
 const PATTERN_SRC =
@@ -15,6 +24,7 @@ const EVENT_COLORS = {
     pointerup: '#f59e0b',
     pointerout: '#8b5cf6',
     click: '#ec4899',
+    wheel: '#06b6d4',
 }
 
 export default async function createEventsLayout({ ui, resources, registerFont, rendererName: renderer_name }) {

@@ -582,7 +582,7 @@ test('Octane classifies event props from the Uno event metadata', async () => {
     expect(driver.events.classify('onClick')).toEqual({ type: 'click', priority: 'discrete' })
     expect(driver.events.classify('onPointerMove')).toEqual({ type: 'pointermove', priority: 'continuous' })
     expect(driver.events.classify('onPointerOut')).toEqual({ type: 'pointerout', priority: 'continuous' })
-    expect(driver.events.classify('onScroll')).toBe(null)
+    expect(driver.events.classify('onScroll')).toEqual({ type: 'scroll', priority: 'continuous' })
     expect(driver.events.classify('style')).toBe(null)
 })
 

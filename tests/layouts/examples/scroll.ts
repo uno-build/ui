@@ -187,50 +187,14 @@ export default async function createFontTextScrollLayout({ ui, resources, regist
         horizontal_scroll.add(horizontal_image)
     }
 
-    const scroll_states = [
-        { node: scroll, direction: 1 },
-        { node: outer_scroll, direction: 1 },
-        { node: inner_scroll, direction: 2 },
-    ]
-    const horizontal_scroll_states = [
-        { node: scroll, direction: 1 },
-        { node: horizontal_scroll, direction: 1 },
-    ]
+    for (const node of [scroll, outer_scroll, inner_scroll, horizontal_scroll]) {
+        node.on('scroll', (event) => {
+            event.stopPropagation()
+            ui.draw()
+        })
+    }
 
-    // setInterval(() => {
-    //     for (const scroll_state of scroll_states) {
-    //         const scroll_max = scroll_state.node.scrollHeight - scroll_state.node.clientHeight
-    //         let next_scroll_top = scroll_state.node.scrollTop + scroll_state.direction
-
-    //         if (next_scroll_top >= scroll_max) {
-    //             next_scroll_top = scroll_max
-    //             scroll_state.direction = -Math.abs(scroll_state.direction)
-    //         } else if (next_scroll_top <= 0) {
-    //             next_scroll_top = 0
-    //             scroll_state.direction = Math.abs(scroll_state.direction)
-    //         }
-
-    //         scroll_state.node.scrollTop = next_scroll_top
-    //     }
-
-    //     for (const scroll_state of horizontal_scroll_states) {
-    //         const scroll_max = scroll_state.node.scrollWidth - scroll_state.node.clientWidth
-    //         let next_scroll_left = scroll_state.node.scrollLeft + scroll_state.direction
-
-    //         if (next_scroll_left >= scroll_max) {
-    //             next_scroll_left = scroll_max
-    //             scroll_state.direction = -Math.abs(scroll_state.direction)
-    //         } else if (next_scroll_left <= 0) {
-    //             next_scroll_left = 0
-    //             scroll_state.direction = Math.abs(scroll_state.direction)
-    //         }
-
-    //         scroll_state.node.scrollLeft = next_scroll_left
-    //     }
-
-    //     const now = performance.now()
-    //     ui.update()
-    //     ui.draw()
-    //     // console.log(`${performance.now() - now}ms`)
-    // }, 10)
+    for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'wheel']) {
+        resources.canvas.addEventListener(type, (event) => ui.dispatchEvent(event))
+    }
 }
