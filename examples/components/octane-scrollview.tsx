@@ -124,7 +124,11 @@ export function OctaneScrollView() {
                 <ScrollView style={INNER_PANEL_STYLE} contentStyle={INNER_PANEL_CONTENT_STYLE}>
                     {PARAGRAPHS.flatMap((paragraph) => [
                         <Text style={INNER_TEXT_STYLE}>{paragraph}</Text>,
-                        <Image src={TEXTURE_SRC} style={{ width: '100%', height: '140px', objectFit: 'cover' }} />,
+                        <Image
+                            onClick={() => console.log('Image clicked')}
+                            src={TEXTURE_SRC}
+                            style={{ width: '100%', height: '140px', objectFit: 'cover' }}
+                        />,
                     ])}
                 </ScrollView>
                 <Text style={FOOTER_TEXT_STYLE}>{PARAGRAPHS[0]}</Text>

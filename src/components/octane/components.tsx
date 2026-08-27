@@ -20,6 +20,7 @@ export function ScrollView({ children, horizontal = false, style, contentStyle, 
     const drag = useRef(null)
 
     function onPointerDown(event) {
+        console.log('Pointer down event:', event.source_event.pointerType)
         const node = event.current_target
         if (horizontal ? node.scrollWidth <= node.clientWidth : node.scrollHeight <= node.clientHeight) {
             return
