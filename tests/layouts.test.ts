@@ -161,7 +161,6 @@ async function renderLayout(page, layout) {
             layoutRunnerUrl,
             layout,
             renderers: defaultRendererNames,
-            renderer_options: { scrollbar_size: 0 },
         },
     )
 }

@@ -423,65 +423,6 @@ test('RendererWebGPU propagates descendant overflow independently by axis', () =
     expect(vertical_root.scrollHeight).toBe(100)
 })
 
-test('RendererWebGPU reserves native scrollbar space independently by axis', () => {
-    const applied_styles = []
-    const renderer = createRenderer()
-    ;(renderer as any).engine = {
-        applyStyle(node, style) {
-            applied_styles.push(style)
-        },
-    }
-    const node = {
-        styles: {
-            overflowX: { parsed: { enum: OVERFLOW.visible } },
-            overflowY: { parsed: { enum: OVERFLOW.scroll } },
-            borderRightWidth: { parsed: { value: 1 } },
-            borderBottomWidth: { parsed: { value: 2 } },
-        },
-    }
-    ;(renderer as any).scrollbar_size = 15
-    ;(renderer as any).updateResolvedStyle(node, {
-        name: 'overflowY',
-        parsed: { enum: OVERFLOW.scroll },
-    })
-
-    expect(getAppliedStyle(applied_styles, 'overflow').parsed.enum).toBe(OVERFLOW.visible)
-    expect(getAppliedStyle(applied_styles, 'borderRightWidth').parsed.value).toBe(16)
-    expect(getAppliedStyle(applied_styles, 'borderBottomWidth').parsed.value).toBe(2)
-
-    node.styles.overflowX.parsed.enum = OVERFLOW.scroll
-    node.styles.overflowY.parsed.enum = OVERFLOW.visible
-    ;(renderer as any).updateResolvedStyle(node, {
-        name: 'overflowX',
-        parsed: { enum: OVERFLOW.scroll },
-    })
-
-    expect(getAppliedStyle(applied_styles, 'overflow').parsed.enum).toBe(OVERFLOW.scroll)
-    expect(getAppliedStyle(applied_styles, 'borderRightWidth').parsed.value).toBe(1)
-    expect(getAppliedStyle(applied_styles, 'borderBottomWidth').parsed.value).toBe(17)
-
-    node.styles.overflowX.parsed.enum = OVERFLOW.hidden
-    ;(renderer as any).updateResolvedStyle(node, {
-        name: 'overflowX',
-        parsed: { enum: OVERFLOW.hidden },
-    })
-
-    expect(getAppliedStyle(applied_styles, 'overflow').parsed.enum).toBe(OVERFLOW.hidden)
-    expect(getAppliedStyle(applied_styles, 'borderRightWidth').parsed.value).toBe(1)
-    expect(getAppliedStyle(applied_styles, 'borderBottomWidth').parsed.value).toBe(2)
-
-    node.styles.overflowX.parsed.enum = OVERFLOW.scroll
-    node.styles.overflowY.parsed.enum = OVERFLOW.scroll
-    ;(renderer as any).updateResolvedStyle(node, {
-        name: 'overflowY',
-        parsed: { enum: OVERFLOW.scroll },
-    })
-
-    expect(getAppliedStyle(applied_styles, 'overflow').parsed.enum).toBe(OVERFLOW.scroll)
-    expect(getAppliedStyle(applied_styles, 'borderRightWidth').parsed.value).toBe(16)
-    expect(getAppliedStyle(applied_styles, 'borderBottomWidth').parsed.value).toBe(17)
-})
-
 test('RendererWebGPU maps the main-axis overflow to Yoga when flexDirection changes', () => {
     const applied_styles = []
     const renderer = createRenderer()

@@ -2,7 +2,6 @@ import Renderer from '../core/Renderer'
 import { computeStyleValue, STYLE } from '../style'
 import {
     ROOT_SIZE,
-    SCROLLBAR_SIZE,
     BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
     DISPLAY,
@@ -64,7 +63,6 @@ export default class RendererWebGPU extends Renderer {
     private viewport_height
     private root_size = ROOT_SIZE
     private style_context_dirty = false
-    private scrollbar_size
     private engine!: any
     private device
     private context
@@ -115,7 +113,6 @@ export default class RendererWebGPU extends Renderer {
         resources,
         image_min_filter = 'linear',
         image_mag_filter = 'linear',
-        scrollbar_size = SCROLLBAR_SIZE,
         loadYoga,
     }) {
         super()
@@ -123,7 +120,6 @@ export default class RendererWebGPU extends Renderer {
         this.image_manager = resources.image_manager
         this.image_min_filter = image_min_filter
         this.image_mag_filter = image_mag_filter
-        this.scrollbar_size = scrollbar_size
         this.loadYoga = loadYoga
     }
 
@@ -437,32 +433,6 @@ export default class RendererWebGPU extends Renderer {
             this.engine.applyStyle(node, {
                 name: STYLE.OVERFLOW.name,
                 parsed: { enum: overflow },
-            })
-        }
-
-        if (
-            style.name === STYLE.OVERFLOWX.name ||
-            style.name === STYLE.OVERFLOWY.name ||
-            style.name === STYLE.BORDERRIGHTWIDTH.name ||
-            style.name === STYLE.BORDERBOTTOMWIDTH.name
-        ) {
-            const has_vertical_scrollbar = node.styles.overflowY?.parsed.enum === OVERFLOW.scroll
-            const has_horizontal_scrollbar = node.styles.overflowX?.parsed.enum === OVERFLOW.scroll
-            this.engine.applyStyle(node, {
-                name: STYLE.BORDERRIGHTWIDTH.name,
-                parsed: {
-                    value:
-                        (this.computeStyle(node.styles.borderRightWidth)?.parsed.value ?? 0) +
-                        (has_vertical_scrollbar ? this.scrollbar_size : 0),
-                },
-            })
-            this.engine.applyStyle(node, {
-                name: STYLE.BORDERBOTTOMWIDTH.name,
-                parsed: {
-                    value:
-                        (this.computeStyle(node.styles.borderBottomWidth)?.parsed.value ?? 0) +
-                        (has_horizontal_scrollbar ? this.scrollbar_size : 0),
-                },
             })
         }
     }
