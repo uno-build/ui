@@ -1,18 +1,23 @@
 export default class Events {
-    public readonly types
+    public readonly types = new Map()
     private listeners = new WeakMap()
     private event_handlers
 
-    public static defineEvent(types, setup) {
-        return {
-            types: Array.isArray(types) ? types : [types],
-            setup,
-        }
+    public static defineEvent(type, setup) {
+        return { type, setup }
     }
 
     public constructor({ definitions = [] } = {}) {
-        this.types = createEventTypes(definitions)
-        this.event_handlers = definitions.map(({ setup }) =>
+        for (const definition of definitions) {
+            const type = definition.type
+            if (this.types.has(type.name)) {
+                throw new Error(`Event type '${type.name}' is already defined.`)
+            }
+            this.types.set(type.name, type)
+        }
+
+        const setups = new Set(definitions.map(({ setup }) => setup))
+        this.event_handlers = [...setups].map((setup) =>
             setup({
                 emit: (type, { source_event, event_data, target, related_target }) => {
                     this.dispatchAt(type, source_event, event_data, target, related_target)
@@ -119,19 +124,4 @@ export default class Events {
             }
         }
     }
-}
-
-export function createEventTypes(definitions) {
-    const types = new Map()
-
-    for (const definition of definitions) {
-        for (const type of definition.types) {
-            if (types.has(type.name)) {
-                throw new Error(`Event type '${type.name}' is already defined.`)
-            }
-            types.set(type.name, type)
-        }
-    }
-
-    return types
 }

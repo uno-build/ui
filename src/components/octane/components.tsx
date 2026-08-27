@@ -53,10 +53,30 @@ export function ScrollView({ children, horizontal = false, style, contentStyle, 
         ui.update()
     }
 
+    function onWheel(event) {
+        const node = event.current_target
+        const delta = horizontal ? event.delta_x || event.delta_y : event.delta_y
+        const offset = horizontal ? node.scrollLeft : node.scrollTop
+        const scroll_max = horizontal ? node.scrollWidth - node.clientWidth : node.scrollHeight - node.clientHeight
+
+        if (delta === 0 || (delta < 0 && offset === 0) || (delta > 0 && offset === scroll_max)) {
+            return
+        }
+
+        if (horizontal) {
+            node.scrollLeft = offset + delta
+        } else {
+            node.scrollTop = offset + delta
+        }
+        ui.update()
+        event.stopPropagation()
+    }
+
     return (
         <view
             {...props}
             style={getScrollViewStyle(horizontal, style)}
+            onWheel={onWheel}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={() => (drag.current = null)}

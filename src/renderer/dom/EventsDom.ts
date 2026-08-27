@@ -1,7 +1,5 @@
-import { createEventTypes } from '../../core/Events'
-
 export default class EventsDom {
-    public readonly types
+    public readonly types = new Map()
     private nodes = new Map()
     private event_nodes = new WeakMap()
     private dispatched_events = new WeakMap()
@@ -9,7 +7,13 @@ export default class EventsDom {
     private root_node = null
 
     public constructor({ definitions = [] } = {}) {
-        this.types = createEventTypes(definitions)
+        for (const definition of definitions) {
+            const type = definition.type
+            if (this.types.has(type.name)) {
+                throw new Error(`Event type '${type.name}' is already defined.`)
+            }
+            this.types.set(type.name, type)
+        }
     }
 
     public createNode(node, element) {

@@ -1,6 +1,6 @@
 import Node from './Node'
 import Events from './Events'
-import { DEFAULT_EVENTS } from '../events/pointer'
+import { DEFAULT_EVENTS } from '../events'
 import { nodeContainsPoint, sortPaintingOrder } from '../utils/nodes'
 
 export default class UI {

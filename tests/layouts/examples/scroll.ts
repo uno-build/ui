@@ -197,40 +197,40 @@ export default async function createFontTextScrollLayout({ ui, resources, regist
         { node: horizontal_scroll, direction: 1 },
     ]
 
-    setInterval(() => {
-        for (const scroll_state of scroll_states) {
-            const scroll_max = scroll_state.node.scrollHeight - scroll_state.node.clientHeight
-            let next_scroll_top = scroll_state.node.scrollTop + scroll_state.direction
+    // setInterval(() => {
+    //     for (const scroll_state of scroll_states) {
+    //         const scroll_max = scroll_state.node.scrollHeight - scroll_state.node.clientHeight
+    //         let next_scroll_top = scroll_state.node.scrollTop + scroll_state.direction
 
-            if (next_scroll_top >= scroll_max) {
-                next_scroll_top = scroll_max
-                scroll_state.direction = -Math.abs(scroll_state.direction)
-            } else if (next_scroll_top <= 0) {
-                next_scroll_top = 0
-                scroll_state.direction = Math.abs(scroll_state.direction)
-            }
+    //         if (next_scroll_top >= scroll_max) {
+    //             next_scroll_top = scroll_max
+    //             scroll_state.direction = -Math.abs(scroll_state.direction)
+    //         } else if (next_scroll_top <= 0) {
+    //             next_scroll_top = 0
+    //             scroll_state.direction = Math.abs(scroll_state.direction)
+    //         }
 
-            scroll_state.node.scrollTop = next_scroll_top
-        }
+    //         scroll_state.node.scrollTop = next_scroll_top
+    //     }
 
-        for (const scroll_state of horizontal_scroll_states) {
-            const scroll_max = scroll_state.node.scrollWidth - scroll_state.node.clientWidth
-            let next_scroll_left = scroll_state.node.scrollLeft + scroll_state.direction
+    //     for (const scroll_state of horizontal_scroll_states) {
+    //         const scroll_max = scroll_state.node.scrollWidth - scroll_state.node.clientWidth
+    //         let next_scroll_left = scroll_state.node.scrollLeft + scroll_state.direction
 
-            if (next_scroll_left >= scroll_max) {
-                next_scroll_left = scroll_max
-                scroll_state.direction = -Math.abs(scroll_state.direction)
-            } else if (next_scroll_left <= 0) {
-                next_scroll_left = 0
-                scroll_state.direction = Math.abs(scroll_state.direction)
-            }
+    //         if (next_scroll_left >= scroll_max) {
+    //             next_scroll_left = scroll_max
+    //             scroll_state.direction = -Math.abs(scroll_state.direction)
+    //         } else if (next_scroll_left <= 0) {
+    //             next_scroll_left = 0
+    //             scroll_state.direction = Math.abs(scroll_state.direction)
+    //         }
 
-            scroll_state.node.scrollLeft = next_scroll_left
-        }
+    //         scroll_state.node.scrollLeft = next_scroll_left
+    //     }
 
-        const now = performance.now()
-        ui.update()
-        ui.draw()
-        // console.log(`${performance.now() - now}ms`)
-    }, 10)
+    //     const now = performance.now()
+    //     ui.update()
+    //     ui.draw()
+    //     // console.log(`${performance.now() - now}ms`)
+    // }, 10)
 }

@@ -1,5 +1,5 @@
 import Renderer from '../core/Renderer'
-import { DEFAULT_EVENTS } from '../events/pointer'
+import { DEFAULT_EVENTS } from '../events'
 import { calculateLayoutRect, getParentLayout } from '../layouter/utils'
 import { KEYWORD } from '../style/consts'
 import EventsDom from './dom/EventsDom'

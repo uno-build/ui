@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
 import Events from '../src/core/Events'
-import { DEFAULT_EVENTS } from '../src/events/pointer'
+import { DEFAULT_EVENTS } from '../src/events'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'
 
@@ -479,6 +479,32 @@ test('click follows pointerup when pointerdown and pointerup hit the same target
         ['pointerdown', 'first', true, 'pointerdown', 5],
         ['pointerdown', 'root', true, 'pointerdown', 5],
     ])
+})
+
+test('click is suppressed while an ancestor is scrolling', () => {
+    const events = createEvents()
+    const root = { parent: null, scrolling: false }
+    const scroller = { parent: root, scrolling: false }
+    const child = { parent: scroller, scrolling: false }
+    const received_events = []
+
+    for (const type of ['pointerup', 'click']) {
+        events.on(child, type, (event) => received_events.push([event.type, event.x]))
+    }
+
+    events.dispatch({ type: 'pointerdown', pointerId: 1 }, { x: 1 }, child)
+    root.scrolling = true
+    events.dispatch({ type: 'pointerup', pointerId: 1 }, { x: 2 }, child)
+
+    events.dispatch({ type: 'pointerdown', pointerId: 2 }, { x: 3 }, child)
+    events.dispatch({ type: 'pointerup', pointerId: 2 }, { x: 4 }, child)
+
+    expect(received_events).toEqual([
+        ['pointerup', 2],
+        ['pointerup', 4],
+        ['click', 4],
+    ])
+    expect(root.scrolling).toBe(false)
 })
 
 test('UI dispatches custom source events and instantiates definitions per instance', async () => {

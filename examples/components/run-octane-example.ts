@@ -24,7 +24,7 @@ export default async function runOctaneExample(create_example: CreateExample) {
 
     syncCanvasSize()
     window.addEventListener('resize', syncCanvasSize)
-    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
+    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel', 'wheel'].forEach((type) => {
         canvas.addEventListener(type, (event) => ui.dispatchEvent(event))
     })
 
