@@ -9,6 +9,8 @@ export default abstract class Resources {
 
     public abstract disposeImage(src: string): void
 
+    public abstract getImageSize(src: string): { width: number; height: number } | undefined
+
     public abstract registerFont(name: string, image: any, json: any): any
 
     public abstract disposeFont(name: string): void

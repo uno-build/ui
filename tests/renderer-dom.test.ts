@@ -109,18 +109,21 @@ test('ResourcesDom rejects duplicate fonts and allows registration after disposa
 
 test('ResourcesDom rejects duplicate images and allows registration after disposal', () => {
     const resources = ResourcesDom.create({ canvas: {} })
-    const first_image = { src: '/assets/first.png' }
-    const second_image = { src: '/assets/second.png' }
+    const first_image = { src: '/assets/first.png', width: 32, height: 16 }
+    const second_image = { src: '/assets/second.png', width: 64, height: 48 }
 
     resources.registerImage('avatar', first_image)
 
     expect(() => resources.registerImage('avatar', second_image)).toThrow('Image "avatar" is already registered.')
     expect(resources.getImage('avatar')).toBe(first_image)
+    expect(resources.getImageSize('avatar')).toEqual({ width: 32, height: 16 })
 
     resources.disposeImage('avatar')
+    expect(resources.getImageSize('avatar')).toBeUndefined()
     resources.registerImage('avatar', second_image)
 
     expect(resources.getImage('avatar')).toBe(second_image)
+    expect(resources.getImageSize('avatar')).toEqual({ width: 64, height: 48 })
 })
 
 test('RendererDom resolves backgroundImage from registered images', () => {

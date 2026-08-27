@@ -28,6 +28,11 @@ export default class ResourcesDom extends Resources {
         return this.images.get(src)
     }
 
+    public getImageSize(src: string) {
+        const image = this.getImage(src)
+        return image === undefined ? undefined : { width: image.width, height: image.height }
+    }
+
     public registerFont(name: string, image: any, json: any) {
         if (this.fonts.has(name)) {
             throw new Error(`Font "${name}" is already registered.`)

@@ -4,7 +4,7 @@ import RendererDom from '../renderer/RendererDom'
 export default class UIDom extends UI {
     protected constructor({ resources }) {
         const renderer = new RendererDom({ resources })
-        super({ renderer, events: renderer.events })
+        super({ renderer, resources, events: renderer.events })
     }
 
     public static async create(options) {

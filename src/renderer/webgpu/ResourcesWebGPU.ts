@@ -77,6 +77,11 @@ export default class ResourcesWebGPU extends Resources {
         this.image_manager.imageDispose(src)
     }
 
+    public getImageSize(src: string) {
+        const image = this.image_manager.getImage(src)
+        return image === undefined ? undefined : { width: image.image_size[0], height: image.image_size[1] }
+    }
+
     public registerFont(name: string, image: any, json: any) {
         return this.font_manager.fontRegister(name, image, json)
     }

@@ -158,7 +158,8 @@ test('Node stores pointerEvents and adds it to the pending renderer styles', asy
 
 test('UI destroy releases attached and detached nodes once', async () => {
     const renderer = new TestRenderer()
-    const ui = await TestUI.create({ renderer })
+    const resources = {}
+    const ui = await TestUI.create({ renderer, resources })
     const root = ui.root
     const parent = ui.create()
     const child = ui.create()
@@ -185,6 +186,7 @@ test('UI destroy releases attached and detached nodes once', async () => {
     expect(ui.destroyed).toBe(true)
     expect(ui.root).toBe(null)
     expect(ui.renderer).toBe(null)
+    expect(ui.resources).toBe(null)
     expect((ui as any).nodes).toEqual([])
     expect((ui as any).created_nodes.size).toBe(0)
     expect((renderer as any).pending_styles).toEqual([])
@@ -200,6 +202,13 @@ test('UI destroy releases attached and detached nodes once', async () => {
     expect(ui.update()).toBe(undefined)
     expect(ui.draw()).toBe(undefined)
     expect(() => detached.style('width', '40px')).not.toThrow()
+})
+
+test('UI exposes its resources before destruction', async () => {
+    const resources = {}
+    const ui = await TestUI.create({ renderer: new TestRenderer(), resources })
+
+    expect(ui.resources).toBe(resources)
 })
 
 test('UIWorldSpace destroy releases only its GPU texture once', () => {
@@ -751,6 +760,18 @@ test('ResourcesWebGPU image api delegates to the image manager', () => {
         { kind: 'upload', src: '/assets/Avatar.png', image },
         { kind: 'dispose', src: '/assets/Avatar.png' },
     ])
+})
+
+test('ResourcesWebGPU reads registered image sizes from the image manager', () => {
+    const resources = new (ResourcesWebGPU as any)({})
+    resources.image_manager = {
+        getImage(src) {
+            return src === 'avatar' ? { image_size: [64, 32] } : undefined
+        },
+    }
+
+    expect(resources.getImageSize('avatar')).toEqual({ width: 64, height: 32 })
+    expect(resources.getImageSize('missing')).toBeUndefined()
 })
 
 test('ResourcesWebGPU font api delegates to the font manager', () => {

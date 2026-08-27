@@ -6,7 +6,9 @@ import {
     universalValue,
     useState,
 } from 'octane/universal/native'
+import { useUI } from '../src/components/octane/context.js'
 import { createUniversalDriver, registerRootComponent } from '../src/components/octane/driver.js'
+import { getImageStyle } from '../src/components/octane/utils.js'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'
 
@@ -34,6 +36,11 @@ const STATIC_TREE_PLAN = universalPlan('uno', {
 })
 
 const STATIC_TREE_COMPONENT = defineUniversalComponent('uno', () => universalValue(STATIC_TREE_PLAN))
+const received_uis = []
+const UI_CONTEXT_COMPONENT = defineUniversalComponent('uno', () => {
+    received_uis.push(useUI())
+    return universalValue(STATIC_TREE_PLAN)
+})
 
 const DYNAMIC_STYLE_PLAN = universalPlan('uno', {
     kind: 'host',
@@ -161,9 +168,8 @@ const EVENT_TREE_PLAN = universalPlan('uno', {
     ],
 })
 
-const EVENT_TREE_COMPONENT = defineUniversalComponent<{ onClick: ((event: unknown) => void) | null }>(
-    'uno',
-    (props) => universalValue(EVENT_TREE_PLAN, [props.onClick]),
+const EVENT_TREE_COMPONENT = defineUniversalComponent<{ onClick: ((event: unknown) => void) | null }>('uno', (props) =>
+    universalValue(EVENT_TREE_PLAN, [props.onClick]),
 )
 
 const COUNTER_PLAN = universalPlan('uno', {
@@ -362,6 +368,95 @@ test('Octane roots keep create, insert, remove, and destroy state isolated', asy
 
     expect(second_ui.root.children).toEqual([])
     expect([...second_ui.nodes]).toEqual([])
+})
+
+test('Octane roots expose their own UI through useUI', async () => {
+    const first_ui = await TestUI.create({ renderer: new TestRenderer() })
+    const second_ui = await TestUI.create({ renderer: new TestRenderer() })
+    const first_root = registerRootComponent(UI_CONTEXT_COMPONENT, { ui: first_ui })
+    const second_root = registerRootComponent(UI_CONTEXT_COMPONENT, { ui: second_ui })
+    received_uis.length = 0
+
+    first_root.render({})
+    second_root.render({})
+
+    expect(received_uis).toEqual([first_ui, second_ui])
+})
+
+test('Image derives intrinsic size from registered resources', () => {
+    const resources = {
+        getImageSize() {
+            return { width: 40, height: 20 }
+        },
+    }
+
+    expect(getImageStyle(resources, 'coin')).toEqual({
+        width: '40px',
+        height: '20px',
+        backgroundImage: 'coin',
+        backgroundSize: '100% 100%',
+    })
+    expect(getImageStyle(resources, 'coin', { width: '100px' })).toEqual({
+        width: '100px',
+        aspectRatio: '2',
+        backgroundImage: 'coin',
+        backgroundSize: '100% 100%',
+    })
+    expect(getImageStyle(resources, 'coin', { height: '100px' })).toEqual({
+        height: '100px',
+        aspectRatio: '2',
+        backgroundImage: 'coin',
+        backgroundSize: '100% 100%',
+    })
+    expect(getImageStyle(resources, 'coin', { width: '100px', height: '80px' })).toEqual({
+        width: '100px',
+        height: '80px',
+        backgroundImage: 'coin',
+        backgroundSize: '100% 100%',
+    })
+})
+
+test('Image preserves explicit aspect ratio and owns its background styles', () => {
+    const resources = {
+        getImageSize() {
+            return { width: 40, height: 20 }
+        },
+    }
+
+    expect(
+        getImageStyle(resources, 'coin', {
+            width: '100px',
+            aspectRatio: '3',
+            backgroundImage: 'other',
+            backgroundSize: 'contain',
+        }),
+    ).toEqual({
+        width: '100px',
+        aspectRatio: '3',
+        backgroundImage: 'coin',
+        backgroundSize: '100% 100%',
+    })
+})
+
+test('Image recalculates its ratio when src changes', () => {
+    const sizes = {
+        coin: { width: 40, height: 20 },
+        card: { width: 30, height: 60 },
+    }
+    const resources = {
+        getImageSize(src) {
+            return sizes[src]
+        },
+    }
+
+    expect(getImageStyle(resources, 'coin', { width: '100px' }).aspectRatio).toBe('2')
+    expect(getImageStyle(resources, 'card', { width: '100px' }).aspectRatio).toBe('0.5')
+})
+
+test('Image rejects unregistered sources', () => {
+    const resources = { getImageSize: () => undefined }
+
+    expect(() => getImageStyle(resources, 'missing.png')).toThrow('Image source "missing.png" is not registered.')
 })
 
 test('Octane rejects unsupported tag elements', async () => {

@@ -1,7 +1,13 @@
 // https://github.com/octanejs/octane/blob/main/docs/universal-renderer-architecture.md
 
-import { createUniversalRoot } from 'octane/universal/native'
+import {
+    createUniversalRoot,
+    defineUniversalComponent,
+    universalComponent,
+    universalContext,
+} from 'octane/universal/native'
 import { OCTANE_RENDERER_ID } from './config'
+import { UI_CONTEXT } from './context'
 
 const TYPE = {
     VIEW: 'view',
@@ -13,11 +19,14 @@ const TYPES = Object.values(TYPE)
 export function registerRootComponent(component, { ui }) {
     const driver = createUniversalDriver({ ui })
     const host = createUniversalRoot({ renderer: OCTANE_RENDERER_ID }, driver)
+    const RootComponent = defineUniversalComponent(OCTANE_RENDERER_ID, (props) =>
+        universalContext(UI_CONTEXT, ui, universalComponent(OCTANE_RENDERER_ID, component, props)),
+    )
     driver.root = host
 
     return {
         render(props) {
-            host.render(component, props)
+            host.render(RootComponent, props)
         },
         unmount() {
             host.unmount()

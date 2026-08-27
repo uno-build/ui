@@ -23,7 +23,7 @@ export default abstract class UIWorldSpace extends UI {
         ...renderer_options
     }) {
         const renderer = new RendererWebGPU({ resources, ...renderer_options })
-        super({ renderer, custom_events })
+        super({ renderer, resources, custom_events })
         this.texture_width = texture_width
         this.texture_height = texture_height
         this.world_width = world_width

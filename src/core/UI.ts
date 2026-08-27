@@ -6,14 +6,16 @@ import { nodeContainsPoint, sortPaintingOrder } from '../utils/nodes'
 export default class UI {
     public root = null
     public renderer = null
+    public resources = null
     public events
     private nodes = []
     private created_nodes = new Set()
     private next_node_id = 0
     private destroyed = false
 
-    protected constructor({ renderer, custom_events = [], events = null }) {
+    protected constructor({ renderer, resources = null, custom_events = [], events = null }) {
         this.renderer = renderer
+        this.resources = resources
         this.events =
             events ??
             new Events({
@@ -101,6 +103,7 @@ export default class UI {
             this.nodes.length = 0
             this.root = null
             this.renderer = null
+            this.resources = null
             return true
         }
         return false

@@ -8,44 +8,92 @@ const COLOR_ITEMS = [
     { id: 'green', color: '#2a9d8f', count: 0 },
     { id: 'blue', color: '#457b9d', count: 0 },
 ]
+const IMAGE_SRC = 'assets/images/coin.png'
+const IMAGE_CARD_STYLE = {
+    width: '350px',
+    height: '330px',
+    padding: '16px',
+    gap: '12px',
+    backgroundColor: '#252b36',
+    flexDirection: 'column',
+}
+const IMAGE_STAGE_STYLE = {
+    flex: '1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#151922',
+}
+const IMAGE_LABEL_STYLE = {
+    color: '#ffffff',
+    fontSize: '16px',
+}
 
 export function BasicComponent() {
-    const [items, setItems] = useState(COLOR_ITEMS)
-    const [disabled_prop, setDisabledProp] = useState(false)
-    const ref = useRef(null)
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            // console.log(ref.current)
-            setDisabledProp((current) => !current)
-            setItems((current_items) =>
-                [current_items.at(-1), ...current_items.slice(0, -1)].map((item) => ({
-                    ...item,
-                    count: item.count + 1,
-                })),
-            )
-        }, 1000)
-
-        return () => clearInterval(interval)
-    }, [])
-
-    const styles = {
-        width: '800px',
-        height: '300px',
-        padding: '20px',
-        gap: `${items[0].count}px`,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#1d2027',
-    }
-
-    if (disabled_prop) {
-        delete styles.backgroundColor
-    }
+    // const ref = useRef(null)
 
     return (
-        <View>
-            <Image src="assets/images/coin.png" style={{ width: '100%', height: '100%' }} />
+        <View
+            style={{
+                backgroundColor: '#1d2027',
+                width: '100%',
+                height: '100%',
+                padding: '20px',
+                gap: '20px',
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                alignContent: 'flex-start',
+                overflow: 'scroll',
+            }}
+        >
+            <View style={IMAGE_CARD_STYLE}>
+                <Text style={IMAGE_LABEL_STYLE}>Sin width ni height · 256 × 256</Text>
+                <View style={IMAGE_STAGE_STYLE}>
+                    <Image src={IMAGE_SRC} />
+                </View>
+            </View>
+
+            <View style={IMAGE_CARD_STYLE}>
+                <Text style={IMAGE_LABEL_STYLE}>Solo width: 160px · resultado 160 × 160</Text>
+                <View style={IMAGE_STAGE_STYLE}>
+                    <Image src={IMAGE_SRC} style={{ width: '160px' }} />
+                </View>
+            </View>
+
+            <View style={IMAGE_CARD_STYLE}>
+                <Text style={IMAGE_LABEL_STYLE}>Solo height: 120px · resultado 120 × 120</Text>
+                <View style={IMAGE_STAGE_STYLE}>
+                    <Image src={IMAGE_SRC} style={{ height: '120px' }} />
+                </View>
+            </View>
+
+            <View style={IMAGE_CARD_STYLE}>
+                <Text style={IMAGE_LABEL_STYLE}>Width y height · resultado 180 × 90</Text>
+                <View style={IMAGE_STAGE_STYLE}>
+                    <Image src={IMAGE_SRC} style={{ width: '180px', height: '90px' }} />
+                </View>
+            </View>
+
+            <View style={IMAGE_CARD_STYLE}>
+                <Text style={IMAGE_LABEL_STYLE}>Solo width: 50% · height mantiene el ratio</Text>
+                <View style={IMAGE_STAGE_STYLE}>
+                    <Image src={IMAGE_SRC} style={{ width: '50%' }} />
+                </View>
+            </View>
+
+            <View style={IMAGE_CARD_STYLE}>
+                <Text style={IMAGE_LABEL_STYLE}>Solo height: 50% · width mantiene el ratio</Text>
+                <View style={IMAGE_STAGE_STYLE}>
+                    <Image src={IMAGE_SRC} style={{ height: '50%' }} />
+                </View>
+            </View>
+
+            <View style={IMAGE_CARD_STYLE}>
+                <Text style={IMAGE_LABEL_STYLE}>Width y height: 50% · caja independiente</Text>
+                <View style={IMAGE_STAGE_STYLE}>
+                    <Image src={IMAGE_SRC} style={{ width: '50%', height: '50%' }} />
+                </View>
+            </View>
+
             {/* <View style={styles} ref={ref}>
                 {universalFor(
                     items,
