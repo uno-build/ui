@@ -3,8 +3,13 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Octane universal renderer</title>
+        <title>Octane image components</title>
         <style>
+            @font-face {
+                font-family: 'Supercell-Magic';
+                src: url('/assets/fonts/Supercell-Magic.ttf') format('truetype');
+            }
+
             html,
             body {
                 margin: 0;
@@ -23,15 +28,12 @@
     <body>
         <canvas></canvas>
         <script type="module">
-            import { registerRootComponent } from 'uno-ui/octane'
             import ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
             import ResourcesDom from 'uno-ui/ResourcesDom'
             import UIWebGPU from 'uno-ui/UIWebGPU'
             import UIDom from 'uno-ui/UIDom'
-            import { loadAssets, registerAssets } from './uis/assets'
-            import { loadImage, loadJson } from '../tests/utils/load-assets'
             import { loadYoga } from 'yoga-layout/load'
-            import { BasicComponent } from './octane'
+            import createOctaneImage from './octane-image'
 
             async function main() {
                 const canvas = document.querySelector('canvas')
@@ -42,9 +44,6 @@
                 const { ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
                 // const resources = await ResourcesDom.create({ canvas: document.body })
                 // const { ui } = await UIDom.create({ resources })
-                const { device, context, format } = resources
-                const assets = await loadAssets({ loadImage, loadJson })
-                registerAssets({ resources, assets })
 
                 function syncCanvasSize() {
                     const width = canvas.clientWidth
@@ -67,10 +66,7 @@
                     requestAnimationFrame(render)
                 })
 
-                // Octane
-                const renderer = registerRootComponent(BasicComponent, { ui })
-                renderer.render({})
-                // renderer.unmount()
+                await createOctaneImage({ ui, resources })
             }
 
             main()
