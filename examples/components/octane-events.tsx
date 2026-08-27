@@ -2,10 +2,8 @@ import { useState } from 'octane/universal/native'
 import { registerRootComponent, Text, View } from 'uno-ui/octane'
 import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
-const FONT_FAMILY = 'Supercell-Magic'
 const LABEL_STYLE = {
     color: '#ffffff',
-    fontFamily: FONT_FAMILY,
     fontSize: '18px',
 }
 
@@ -55,10 +53,10 @@ export function OctaneEvents() {
 
 export default function createOctaneEvents({ ui, resources }) {
     return Promise.all([
-        loadImage(`/assets/fonts/${FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${FONT_FAMILY}.mtsdf.json`),
+        loadImage(`/assets/fonts/Poppins-Regular.mtsdf.png`),
+        loadJson(`/assets/fonts/Poppins-Regular.mtsdf.json`),
     ]).then(([font_image, font_json]) => {
-        resources.registerFont(FONT_FAMILY, font_image, font_json)
+        resources.registerFont('Poppins-Regular', font_image, font_json)
 
         const renderer = registerRootComponent(OctaneEvents, { ui })
         renderer.render({})

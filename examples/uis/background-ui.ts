@@ -1,5 +1,3 @@
-import { FONT_FAMILY } from './assets'
-
 const GAP = 16
 const ITEM_SIZE = 120
 
@@ -100,7 +98,7 @@ export function createBackgroundUI({ ui, assets, title: title_text, background_c
 
     if (title_text) {
         const title = ui.create()
-        title.style('fontFamily', FONT_FAMILY)
+        title.style('fontFamily', 'Supercell-Magic')
         title.style('fontSize', '50px')
         title.style('color', '#ffffff')
         title.style('textStroke', '10px #000000')

@@ -40,3 +40,19 @@ export function getImageStyle(resources, src, style = {}) {
         backgroundPosition: '50% 50%',
     }
 }
+
+export function getScrollViewStyle(horizontal, style = {}) {
+    return {
+        flexDirection: horizontal ? 'row' : 'column',
+        [horizontal ? 'overflowX' : 'overflowY']: 'scroll',
+        ...style,
+    }
+}
+
+export function getScrollContentStyle(horizontal, style = {}) {
+    return {
+        flexDirection: horizontal ? 'row' : 'column',
+        flexShrink: '0',
+        ...style,
+    }
+}

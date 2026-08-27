@@ -128,11 +128,7 @@ export function getNodeRenderLayout(node) {
     }
 }
 
-export function updateScrollMetrics(root, get_content_size) {
-    updateNodeScrollMetrics(root, get_content_size)
-}
-
-function updateNodeScrollMetrics(node, get_content_size) {
+export function updateScrollMetrics(node, get_content_size) {
     const display = node.styles.display?.parsed.enum ?? DISPLAY.flex
     if (display === DISPLAY.none) {
         resetScrollMetrics(node)
@@ -175,7 +171,7 @@ function updateNodeScrollMetrics(node, get_content_size) {
     }
 
     for (const child of node.children) {
-        const child_overflow = updateNodeScrollMetrics(child, get_content_size)
+        const child_overflow = updateScrollMetrics(child, get_content_size)
         const child_display = child.styles.display?.parsed.enum ?? DISPLAY.flex
         if (child_display === DISPLAY.none) {
             continue
