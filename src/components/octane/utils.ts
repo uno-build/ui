@@ -1,3 +1,10 @@
+const OBJECT_FIT_BACKGROUND_SIZE = {
+    fill: '100% 100%',
+    contain: 'contain',
+    cover: 'cover',
+    none: 'unset',
+}
+
 export function getImageStyle(resources, src, style = {}) {
     const image_size = resources.getImageSize(src)
 
@@ -5,8 +12,15 @@ export function getImageStyle(resources, src, style = {}) {
         throw new Error(`Image source "${src}" is not registered.`)
     }
 
-    const has_width = style.width !== undefined
-    const has_height = style.height !== undefined
+    const { objectFit = 'fill', ...view_style } = style
+    const background_size = OBJECT_FIT_BACKGROUND_SIZE[objectFit]
+
+    if (background_size === undefined) {
+        throw new Error(`Unsupported objectFit "${objectFit}".`)
+    }
+
+    const has_width = view_style.width !== undefined
+    const has_height = view_style.height !== undefined
     let size_style = {}
 
     if (has_width === false && has_height === false) {
@@ -20,8 +34,9 @@ export function getImageStyle(resources, src, style = {}) {
 
     return {
         ...size_style,
-        ...style,
+        ...view_style,
         backgroundImage: src,
-        backgroundSize: '100% 100%',
+        backgroundSize: background_size,
+        backgroundPosition: '50% 50%',
     }
 }

@@ -46,49 +46,70 @@ export function BasicComponent() {
             }}
         >
             <View style={IMAGE_CARD_STYLE}>
-                <Text style={IMAGE_LABEL_STYLE}>Sin width ni height · 256 × 256</Text>
+                <Text style={IMAGE_LABEL_STYLE}>No width or height · 256x256</Text>
                 <View style={IMAGE_STAGE_STYLE}>
                     <Image src={IMAGE_SRC} />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
-                <Text style={IMAGE_LABEL_STYLE}>Solo width: 160px · resultado 160 × 160</Text>
+                <Text style={IMAGE_LABEL_STYLE}>Width only: 160px · result 160x160</Text>
                 <View style={IMAGE_STAGE_STYLE}>
                     <Image src={IMAGE_SRC} style={{ width: '160px' }} />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
-                <Text style={IMAGE_LABEL_STYLE}>Solo height: 120px · resultado 120 × 120</Text>
+                <Text style={IMAGE_LABEL_STYLE}>Height only: 120px · result 120x120</Text>
                 <View style={IMAGE_STAGE_STYLE}>
                     <Image src={IMAGE_SRC} style={{ height: '120px' }} />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
-                <Text style={IMAGE_LABEL_STYLE}>Width y height · resultado 180 × 90</Text>
+                <Text style={IMAGE_LABEL_STYLE}>objectFit: fill · 180x90 box</Text>
                 <View style={IMAGE_STAGE_STYLE}>
-                    <Image src={IMAGE_SRC} style={{ width: '180px', height: '90px' }} />
+                    <Image src={IMAGE_SRC} style={{ width: '180px', height: '90px', objectFit: 'fill' }} />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
-                <Text style={IMAGE_LABEL_STYLE}>Solo width: 50% · height mantiene el ratio</Text>
+                <Text style={IMAGE_LABEL_STYLE}>objectFit: contain · 180x90 box</Text>
+                <View style={IMAGE_STAGE_STYLE}>
+                    <Image src={IMAGE_SRC} style={{ width: '180px', height: '90px', objectFit: 'contain' }} />
+                </View>
+            </View>
+
+            <View style={IMAGE_CARD_STYLE}>
+                <Text style={IMAGE_LABEL_STYLE}>objectFit: cover · 180x90 box</Text>
+                <View style={IMAGE_STAGE_STYLE}>
+                    <Image src={IMAGE_SRC} style={{ width: '180px', height: '90px', objectFit: 'cover' }} />
+                </View>
+            </View>
+
+            <View style={IMAGE_CARD_STYLE}>
+                <Text style={IMAGE_LABEL_STYLE}>objectFit: none · 180x90 box</Text>
+                <View style={IMAGE_STAGE_STYLE}>
+                    <Image src={IMAGE_SRC} style={{ width: '180px', height: '90px', objectFit: 'none' }} />
+                </View>
+            </View>
+
+            <View style={IMAGE_CARD_STYLE}>
+                <Text style={IMAGE_LABEL_STYLE}>Width only: 50% · height preserves the aspect ratio</Text>
                 <View style={IMAGE_STAGE_STYLE}>
                     <Image src={IMAGE_SRC} style={{ width: '50%' }} />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
-                <Text style={IMAGE_LABEL_STYLE}>Solo height: 50% · width mantiene el ratio</Text>
+                <Text style={IMAGE_LABEL_STYLE}>Height only: 50% · width preserves the aspect ratio</Text>
                 <View style={IMAGE_STAGE_STYLE}>
                     <Image src={IMAGE_SRC} style={{ height: '50%' }} />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
-                <Text style={IMAGE_LABEL_STYLE}>Width y height: 50% · caja independiente</Text>
+                <Text style={IMAGE_LABEL_STYLE}>Width and height: 50% · independent box</Text>
                 <View style={IMAGE_STAGE_STYLE}>
                     <Image src={IMAGE_SRC} style={{ width: '50%', height: '50%' }} />
                 </View>

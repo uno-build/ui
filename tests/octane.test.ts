@@ -395,24 +395,28 @@ test('Image derives intrinsic size from registered resources', () => {
         height: '20px',
         backgroundImage: 'coin',
         backgroundSize: '100% 100%',
+        backgroundPosition: '50% 50%',
     })
     expect(getImageStyle(resources, 'coin', { width: '100px' })).toEqual({
         width: '100px',
         aspectRatio: '2',
         backgroundImage: 'coin',
         backgroundSize: '100% 100%',
+        backgroundPosition: '50% 50%',
     })
     expect(getImageStyle(resources, 'coin', { height: '100px' })).toEqual({
         height: '100px',
         aspectRatio: '2',
         backgroundImage: 'coin',
         backgroundSize: '100% 100%',
+        backgroundPosition: '50% 50%',
     })
     expect(getImageStyle(resources, 'coin', { width: '100px', height: '80px' })).toEqual({
         width: '100px',
         height: '80px',
         backgroundImage: 'coin',
         backgroundSize: '100% 100%',
+        backgroundPosition: '50% 50%',
     })
 })
 
@@ -435,7 +439,43 @@ test('Image preserves explicit aspect ratio and owns its background styles', () 
         aspectRatio: '3',
         backgroundImage: 'coin',
         backgroundSize: '100% 100%',
+        backgroundPosition: '50% 50%',
     })
+})
+
+test('Image maps objectFit to background styles', () => {
+    const resources = {
+        getImageSize() {
+            return { width: 40, height: 20 }
+        },
+    }
+
+    for (const [object_fit, background_size] of [
+        ['fill', '100% 100%'],
+        ['contain', 'contain'],
+        ['cover', 'cover'],
+        ['none', 'unset'],
+    ]) {
+        expect(getImageStyle(resources, 'coin', { width: '100px', height: '50px', objectFit: object_fit })).toEqual({
+            width: '100px',
+            height: '50px',
+            backgroundImage: 'coin',
+            backgroundSize: background_size,
+            backgroundPosition: '50% 50%',
+        })
+    }
+})
+
+test('Image rejects unsupported objectFit values', () => {
+    const resources = {
+        getImageSize() {
+            return { width: 40, height: 20 }
+        },
+    }
+
+    expect(() => getImageStyle(resources, 'coin', { objectFit: 'scale-down' })).toThrow(
+        'Unsupported objectFit "scale-down".',
+    )
 })
 
 test('Image recalculates its ratio when src changes', () => {
