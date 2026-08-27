@@ -8,7 +8,7 @@ let update_scheduled = false;
 export const viteConfigSolid = {
 	include: ['**/*.tsx', '**/*.jsx'],
 	solid: {
-		moduleName: '../src/components/solid/index.js',
+		moduleName: '../../src/components/solid/index.js',
 		generate: 'universal',
 	},
 }
