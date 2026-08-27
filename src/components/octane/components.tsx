@@ -2,6 +2,8 @@ import { useRef } from 'octane/universal/native'
 import { useUI } from './context'
 import { getImageStyle, getScrollContentStyle, getScrollViewStyle } from './utils'
 
+const SCROLL_SLOP = 10
+
 export function View({ children, ...props }) {
     return <view {...props}>{children}</view>
 }
@@ -20,7 +22,10 @@ export function ScrollView({ children, horizontal = false, style, contentStyle, 
     const drag = useRef(null)
 
     function onPointerDown(event) {
-        console.log('Pointer down event:', event.source_event.pointerType)
+        if (event.source_event.pointerType === 'mouse') {
+            return
+        }
+
         const node = event.current_target
         if (horizontal ? node.scrollWidth <= node.clientWidth : node.scrollHeight <= node.clientHeight) {
             return
@@ -35,10 +40,15 @@ export function ScrollView({ children, horizontal = false, style, contentStyle, 
         }
 
         const node = event.current_target
+        const delta = horizontal ? event.x - drag.current.x : event.y - drag.current.y
+
         if (horizontal) {
-            node.scrollLeft = drag.current.left - (event.x - drag.current.x)
+            node.scrollLeft = drag.current.left - delta
         } else {
-            node.scrollTop = drag.current.top - (event.y - drag.current.y)
+            node.scrollTop = drag.current.top - delta
+        }
+        if (Math.abs(delta) > SCROLL_SLOP) {
+            node.scrolling = true
         }
         ui.update()
     }

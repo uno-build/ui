@@ -15,6 +15,7 @@ export default class Node {
     public scrollWidth = 0
     public clientHeight = 0
     public clientWidth = 0
+    public scrolling = false
     public styles = {}
     private styles_declared = {}
 
