@@ -3,13 +3,8 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Octane image components</title>
+        <title>Octane event components</title>
         <style>
-            @font-face {
-                font-family: 'Supercell-Magic';
-                src: url('/assets/fonts/Supercell-Magic.ttf') format('truetype');
-            }
-
             html,
             body {
                 margin: 0;
@@ -28,10 +23,10 @@
     <body>
         <canvas></canvas>
         <script type="module">
-            import createOctaneImage from './octane-image'
+            import createOctaneEvents from './octane-events'
             import runOctaneExample from './run-octane-example'
 
-            runOctaneExample(createOctaneImage)
+            runOctaneExample(createOctaneEvents)
         </script>
     </body>
 </html>
