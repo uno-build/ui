@@ -137,7 +137,6 @@ test('RendererDom resolves backgroundImage from registered images', () => {
     }
     ;(renderer as any).elements.set(node, element)
     resources.registerImage('avatar', { src: '/assets/avatar.png' })
-
     ;(renderer as any).updateStyle(node, Style.resolveStyle('backgroundImage', 'avatar'))
 
     expect(element.style).toEqual({
@@ -148,24 +147,24 @@ test('RendererDom resolves backgroundImage from registered images', () => {
 
 test('RendererDom synchronizes node scroll state after update', () => {
     const canvas = createScrollableElement({
-        scroll_width: 600,
-        scroll_height: 500,
-        client_width: 300,
-        client_height: 200,
+        scrollWidth: 600,
+        scrollHeight: 500,
+        clientWidth: 300,
+        clientHeight: 200,
     })
     const element = createScrollableElement({
-        scroll_width: 400,
-        scroll_height: 350,
-        client_width: 150,
-        client_height: 100,
+        scrollWidth: 400,
+        scrollHeight: 350,
+        clientWidth: 150,
+        clientHeight: 100,
     })
     const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas }) })
     const root = createNode(0)
     const node = createNode(1)
-    root.scroll_left = 40
-    root.scroll_top = 30
-    node.scroll_left = 25
-    node.scroll_top = 20
+    root.scrollLeft = 40
+    root.scrollTop = 30
+    node.scrollLeft = 25
+    node.scrollTop = 20
     renderer.createElement(root)
     ;(renderer as any).elements.set(node, element)
 
@@ -174,16 +173,16 @@ test('RendererDom synchronizes node scroll state after update', () => {
 
     expect(canvas.scrollLeft).toBe(40)
     expect(canvas.scrollTop).toBe(30)
-    expect(root.scroll_width).toBe(600)
-    expect(root.scroll_height).toBe(500)
-    expect(root.client_width).toBe(300)
-    expect(root.client_height).toBe(200)
+    expect(root.scrollWidth).toBe(600)
+    expect(root.scrollHeight).toBe(500)
+    expect(root.clientWidth).toBe(300)
+    expect(root.clientHeight).toBe(200)
     expect(element.scrollLeft).toBe(25)
     expect(element.scrollTop).toBe(20)
-    expect(node.scroll_width).toBe(400)
-    expect(node.scroll_height).toBe(350)
-    expect(node.client_width).toBe(150)
-    expect(node.client_height).toBe(100)
+    expect(node.scrollWidth).toBe(400)
+    expect(node.scrollHeight).toBe(350)
+    expect(node.clientWidth).toBe(150)
+    expect(node.clientHeight).toBe(100)
 })
 
 test('RendererDom destroy removes UI elements and preserves its external root', () => {
@@ -288,26 +287,26 @@ test('RendererDom layout remains in content coordinates while the parent is scro
 function createNode(id) {
     return {
         id,
-        scroll_left: 0,
-        scroll_top: 0,
-        scroll_width: 0,
-        scroll_height: 0,
-        client_width: 0,
-        client_height: 0,
+        scrollLeft: 0,
+        scrollTop: 0,
+        scrollWidth: 0,
+        scrollHeight: 0,
+        clientWidth: 0,
+        clientHeight: 0,
         hasTextContent() {
             return false
         },
     }
 }
 
-function createScrollableElement({ scroll_width, scroll_height, client_width, client_height }) {
+function createScrollableElement({ scrollWidth, scrollHeight, clientWidth, clientHeight }) {
     return {
         scrollLeft: 0,
         scrollTop: 0,
-        scrollWidth: scroll_width,
-        scrollHeight: scroll_height,
-        clientWidth: client_width,
-        clientHeight: client_height,
+        scrollWidth: scrollWidth,
+        scrollHeight: scrollHeight,
+        clientWidth: clientWidth,
+        clientHeight: clientHeight,
     }
 }
 

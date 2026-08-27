@@ -115,8 +115,8 @@ export function getNodeRenderLayout(node) {
     let ancestor = node.parent
 
     while (ancestor !== null) {
-        x -= ancestor.scroll_left
-        y -= ancestor.scroll_top
+        x -= ancestor.scrollLeft
+        y -= ancestor.scrollTop
         ancestor = ancestor.parent
     }
 
@@ -153,14 +153,14 @@ function updateNodeScrollMetrics(node, get_content_size) {
     const padding_right = node.layout.padding.right
     const padding_bottom = node.layout.padding.bottom
 
-    node.client_width = Math.round(Math.max(0, node.layout.width - border_left - border_right))
-    node.client_height = Math.round(Math.max(0, node.layout.height - border_top - border_bottom))
+    node.clientWidth = Math.round(Math.max(0, node.layout.width - border_left - border_right))
+    node.clientHeight = Math.round(Math.max(0, node.layout.height - border_top - border_bottom))
 
     const overflow_rect = {
         left: node.layout.x + border_left,
         top: node.layout.y + border_top,
-        right: node.layout.x + border_left + node.client_width,
-        bottom: node.layout.y + border_top + node.client_height,
+        right: node.layout.x + border_left + node.clientWidth,
+        bottom: node.layout.y + border_top + node.clientHeight,
     }
     const content_size = get_content_size(node)
     if (content_size !== null) {
@@ -198,25 +198,21 @@ function updateNodeScrollMetrics(node, get_content_size) {
         }
     }
 
-    node.scroll_width = Math.round(
-        Math.max(node.client_width, overflow_rect.right - node.layout.x - border_left),
-    )
-    node.scroll_height = Math.round(
-        Math.max(node.client_height, overflow_rect.bottom - node.layout.y - border_top),
-    )
-    node.scroll_left = Math.max(0, Math.min(node.scroll_left, node.scroll_width - node.client_width))
-    node.scroll_top = Math.max(0, Math.min(node.scroll_top, node.scroll_height - node.client_height))
+    node.scrollWidth = Math.round(Math.max(node.clientWidth, overflow_rect.right - node.layout.x - border_left))
+    node.scrollHeight = Math.round(Math.max(node.clientHeight, overflow_rect.bottom - node.layout.y - border_top))
+    node.scrollLeft = Math.max(0, Math.min(node.scrollLeft, node.scrollWidth - node.clientWidth))
+    node.scrollTop = Math.max(0, Math.min(node.scrollTop, node.scrollHeight - node.clientHeight))
 
     return overflow_rect
 }
 
 function resetScrollMetrics(node) {
-    node.client_width = 0
-    node.client_height = 0
-    node.scroll_width = 0
-    node.scroll_height = 0
-    node.scroll_left = 0
-    node.scroll_top = 0
+    node.clientWidth = 0
+    node.clientHeight = 0
+    node.scrollWidth = 0
+    node.scrollHeight = 0
+    node.scrollLeft = 0
+    node.scrollTop = 0
 
     for (const child of node.children) {
         resetScrollMetrics(child)
@@ -268,23 +264,23 @@ export function getAncestorClipping(node) {
         left: Number.NEGATIVE_INFINITY,
     }
     let has_clip = false
-    let scroll_left = 0
-    let scroll_top = 0
+    let scrollLeft = 0
+    let scrollTop = 0
     let ancestor = node.parent
 
     while (ancestor !== null) {
-        scroll_left += ancestor.scroll_left
-        scroll_top += ancestor.scroll_top
+        scrollLeft += ancestor.scrollLeft
+        scrollTop += ancestor.scrollTop
         ancestor = ancestor.parent
     }
 
-    const render_x = node.layout.x - scroll_left
-    const render_y = node.layout.y - scroll_top
+    const render_x = node.layout.x - scrollLeft
+    const render_y = node.layout.y - scrollTop
     ancestor = node.parent
 
     while (ancestor !== null) {
-        scroll_left -= ancestor.scroll_left
-        scroll_top -= ancestor.scroll_top
+        scrollLeft -= ancestor.scrollLeft
+        scrollTop -= ancestor.scrollTop
         const overflow_x = ancestor.styles.overflowX?.parsed.enum ?? OVERFLOW.visible
         const overflow_y = ancestor.styles.overflowY?.parsed.enum ?? OVERFLOW.visible
         const clip_x = overflow_x === OVERFLOW.hidden || overflow_x === OVERFLOW.scroll
@@ -295,17 +291,14 @@ export function getAncestorClipping(node) {
             const border_top = ancestor.layout.border.top
             const border_bottom = ancestor.layout.border.bottom
             if (clip_x) {
-                clip.left = Math.max(clip.left, ancestor.layout.x - scroll_left + border_left)
-                clip.right = Math.min(
-                    clip.right,
-                    ancestor.layout.x - scroll_left + ancestor.layout.width - border_right,
-                )
+                clip.left = Math.max(clip.left, ancestor.layout.x - scrollLeft + border_left)
+                clip.right = Math.min(clip.right, ancestor.layout.x - scrollLeft + ancestor.layout.width - border_right)
             }
             if (clip_y) {
-                clip.top = Math.max(clip.top, ancestor.layout.y - scroll_top + border_top)
+                clip.top = Math.max(clip.top, ancestor.layout.y - scrollTop + border_top)
                 clip.bottom = Math.min(
                     clip.bottom,
-                    ancestor.layout.y - scroll_top + ancestor.layout.height - border_bottom,
+                    ancestor.layout.y - scrollTop + ancestor.layout.height - border_bottom,
                 )
             }
             has_clip = true

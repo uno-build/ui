@@ -166,18 +166,18 @@ export default class RendererDom extends Renderer {
 
     private applyNodeScroll(node) {
         const element = this.elements.get(node)
-        element.scrollLeft = node.scroll_left
-        element.scrollTop = node.scroll_top
+        element.scrollLeft = node.scrollLeft
+        element.scrollTop = node.scrollTop
     }
 
     private readNodeScroll(node) {
         const element = this.elements.get(node)
-        node.scroll_left = element.scrollLeft
-        node.scroll_top = element.scrollTop
-        node.scroll_width = element.scrollWidth
-        node.scroll_height = element.scrollHeight
-        node.client_width = element.clientWidth
-        node.client_height = element.clientHeight
+        node.scrollLeft = element.scrollLeft
+        node.scrollTop = element.scrollTop
+        node.scrollWidth = element.scrollWidth
+        node.scrollHeight = element.scrollHeight
+        node.clientWidth = element.clientWidth
+        node.clientHeight = element.clientHeight
     }
 
     private updateText(node) {
