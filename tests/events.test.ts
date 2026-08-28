@@ -546,6 +546,29 @@ test('a touch drag scrolls the nearest scrollable ancestor and emits scroll', ()
     expect(received_events).toEqual([[0, 40]])
 })
 
+test('only the first touch can control scrolling', () => {
+    const events = createEvents()
+    const scroller = createScrollNode()
+    const child = { parent: scroller, styles: {} }
+
+    events.dispatch({ type: 'pointerdown', pointerId: 1, pointerType: 'touch' }, { x: 0, y: 100 }, child)
+    events.dispatch({ type: 'pointerdown', pointerId: 2, pointerType: 'touch' }, { x: 0, y: 200 }, child)
+    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'touch' }, { x: 0, y: 80 }, child)
+    events.dispatch({ type: 'pointermove', pointerId: 2, pointerType: 'touch' }, { x: 0, y: 100 }, child)
+
+    expect(scroller.scrollTop).toBe(20)
+
+    events.dispatch({ type: 'pointerup', pointerId: 1, pointerType: 'touch' }, { x: 0, y: 80 }, child)
+    events.dispatch({ type: 'pointermove', pointerId: 2, pointerType: 'touch' }, { x: 0, y: 80 }, child)
+
+    expect(scroller.scrollTop).toBe(20)
+
+    events.dispatch({ type: 'pointerdown', pointerId: 3, pointerType: 'touch' }, { x: 0, y: 100 }, child)
+    events.dispatch({ type: 'pointermove', pointerId: 3, pointerType: 'touch' }, { x: 0, y: 60 }, child)
+
+    expect(scroller.scrollTop).toBe(60)
+})
+
 test('a mouse drag does not scroll', () => {
     const events = createEvents()
     const scroller = createScrollNode()
@@ -626,6 +649,22 @@ test('scroll is not emitted when the clamped offset does not change', () => {
 
     expect(scroller.scrollTop).toBe(0)
     expect(received_events).toEqual([])
+})
+
+test('scroll emits the clamped offset when a drag moves past the start', () => {
+    const events = createEvents()
+    const scroller = createScrollNode()
+    const child = { parent: scroller, styles: {} }
+    const received_events = []
+
+    scroller.scrollTop = 100
+    events.on(scroller, 'scroll', (event) => received_events.push([event.scroll_left, event.scroll_top]))
+
+    events.dispatch({ type: 'pointerdown', pointerId: 1, pointerType: 'touch' }, { x: 0, y: 100 }, child)
+    events.dispatch({ type: 'pointermove', pointerId: 1, pointerType: 'touch' }, { x: 0, y: 300 }, child)
+
+    expect(scroller.scrollTop).toBe(0)
+    expect(received_events).toEqual([[0, 0]])
 })
 
 test('UI dispatches custom source events and instantiates definitions per instance', async () => {

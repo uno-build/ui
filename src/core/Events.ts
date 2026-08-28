@@ -125,3 +125,43 @@ export default class Events {
         }
     }
 }
+
+// // Usage example
+// const POINTERDOWN = { name: 'pointerdown' }
+
+// const message_event = Events.defineEvent(POINTERDOWN, ({ emit }) => ({
+//     main: {
+//         pointerdown({ source_event, event_data, hit_target }) {
+//             emit(POINTERDOWN.name, {
+//                 source_event,
+//                 event_data,
+//                 target: hit_target,
+//             })
+//         },
+//     },
+//     destroyNode(node) {
+//         // console.log(`Node destroyed: ${node.name}`)
+//     },
+//     destroy() {
+//         // pointers.clear()
+//     },
+// }))
+
+// const events = new Events({
+//     definitions: [message_event],
+// })
+
+// const root = { name: 'root', parent: null }
+// const child = { name: 'child', parent: root }
+
+// events.on(child, POINTERDOWN.name, (event) => {
+//     console.log(`${event.current_target.name}: ${event.text}`)
+// })
+
+// events.on(root, POINTERDOWN.name, (event) => {
+//     console.log(`${event.current_target.name}: ${event.text}`, event)
+// })
+
+// events.dispatch({ type: POINTERDOWN.name }, { text: 'hola' }, child)
+
+// events.destroy()

@@ -10,12 +10,11 @@ export const SCROLL = Events.defineEvent(EVENT.SCROLL, ({ emit }) => {
     const pointers = new Map()
 
     const scrollTo = (node, scroll_left, scroll_top, source_event) => {
-        const previous_left = node.scrollLeft
-        const previous_top = node.scrollTop
+        const previous_left = Math.round(node.scrollLeft)
+        const previous_top = Math.round(node.scrollTop)
 
-        node.scrollLeft = scroll_left
-        node.scrollTop = scroll_top
-        node.ui.update()
+        node.scrollLeft = Math.round(Math.max(0, Math.min(scroll_left, node.scrollWidth - node.clientWidth)))
+        node.scrollTop = Math.round(Math.max(0, Math.min(scroll_top, node.scrollHeight - node.clientHeight)))
 
         if (node.scrollLeft !== previous_left || node.scrollTop !== previous_top) {
             emit(EVENT.SCROLL.name, {
@@ -26,13 +25,19 @@ export const SCROLL = Events.defineEvent(EVENT.SCROLL, ({ emit }) => {
                 },
                 target: node,
             })
+            node.ui.update()
         }
     }
 
     return {
         main: {
             [EVENT.POINTER_DOWN.name]: ({ source_event, event_data, hit_target }) => {
-                if (source_event.pointerType === 'mouse' || hit_target === null || event_data === null) {
+                if (
+                    source_event.pointerType === 'mouse' ||
+                    pointers.size > 0 ||
+                    hit_target === null ||
+                    event_data === null
+                ) {
                     return
                 }
 
