@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test'
 import Events from '../src/core/Events'
+import { DEFAULT_EVENTS, definePointer } from '../src/events'
+import { OVERFLOW } from '../src/style/consts'
+import UIDom from '../src/ui/UIDom'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'
 
@@ -35,6 +38,7 @@ test('Events registers, removes, emits, and destroys listeners', () => {
 test('UI instantiates definitions, emits raw events, and runs definition cleanup', async () => {
     const initialized_uis = []
     const destroyed_uis = []
+    const destroyed_nodes = []
     const define_activate = ({ ui }) => {
         initialized_uis.push(ui)
         const off = ui.events.on('activate', (event) => {
@@ -51,9 +55,14 @@ test('UI instantiates definitions, emits raw events, and runs definition cleanup
             }
         })
 
-        return () => {
-            destroyed_uis.push(ui)
-            off()
+        return {
+            destroyNode(node) {
+                destroyed_nodes.push(node)
+            },
+            destroy() {
+                destroyed_uis.push(ui)
+                off()
+            },
         }
     }
     const ui = await TestUI.create({
@@ -116,6 +125,9 @@ test('UI instantiates definitions, emits raw events, and runs definition cleanup
         },
     ])
 
+    child.destroy()
+    expect(destroyed_nodes).toEqual([child])
+
     expect(ui.destroy()).toBe(true)
     expect(ui.destroy()).toBe(false)
     expect(destroyed_uis).toEqual([ui])
@@ -137,6 +149,487 @@ test('UI instantiates definitions, emits raw events, and runs definition cleanup
     expect(initialized_uis).toEqual([ui, second_ui])
     second_ui.destroy()
     expect(destroyed_uis).toEqual([ui, second_ui])
+})
+
+test('UI notifies every stateful definition when destroying a node subtree', async () => {
+    const destroyed_nodes = []
+    const define_event = (name) => () => ({
+        destroyNode(node) {
+            destroyed_nodes.push([name, node])
+        },
+        destroy() {},
+    })
+    const ui = await TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: [define_event('first'), () => ({ destroy() {} }), define_event('second')],
+    })
+    const parent = ui.create()
+    const child = ui.create()
+
+    ui.root.add(parent)
+    parent.add(child)
+    parent.destroy()
+
+    expect(destroyed_nodes).toEqual([
+        ['first', child],
+        ['second', child],
+        ['first', parent],
+        ['second', parent],
+    ])
+
+    ui.destroy()
+})
+
+test('UIDom converts native source events to raw input and removes its listeners on destroy', async () => {
+    const listeners = new Map()
+    const canvas = {
+        addEventListener(type, listener) {
+            if (!listeners.has(type)) {
+                listeners.set(type, new Set())
+            }
+            listeners.get(type).add(listener)
+        },
+        removeEventListener(type, listener) {
+            listeners.get(type).delete(listener)
+        },
+        getBoundingClientRect() {
+            return {
+                left: 20,
+                top: 30,
+                width: 400,
+                height: 200,
+            }
+        },
+        dispatchEvent(source_event) {
+            listeners.get(source_event.type)?.forEach((listener) => listener(source_event))
+        },
+    }
+    const { ui } = await UIDom.create({ resources: { canvas } })
+    const received_events = []
+
+    ui.root.layout = { x: 0, y: 0, width: 200, height: 100 }
+    ui.root.on('pointerdown', (event) => received_events.push(event))
+
+    const source_event = {
+        type: 'pointerdown',
+        pointerId: 1,
+        pointerType: 'mouse',
+        clientX: 120,
+        clientY: 80,
+    }
+    canvas.dispatchEvent(source_event)
+
+    expect(received_events).toHaveLength(1)
+    expect(received_events[0]).toMatchObject({
+        type: 'pointerdown',
+        x: 50,
+        y: 25,
+        target: ui.root,
+        current_target: ui.root,
+        source_event,
+    })
+    expect([...listeners.values()].every((event_listeners) => event_listeners.size === 1)).toBe(true)
+
+    ui.destroy()
+    canvas.dispatchEvent(source_event)
+
+    expect(received_events).toHaveLength(1)
+    expect([...listeners.values()].every((event_listeners) => event_listeners.size === 0)).toBe(true)
+})
+
+test('pointer events use capture while hover follows the hit node', async () => {
+    const ui = await TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: [definePointer],
+    })
+    const first = ui.create()
+    const second = ui.create()
+    const names = new Map([
+        [first, 'first'],
+        [second, 'second'],
+    ])
+    const received_events = []
+
+    ui.root.add(first)
+    ui.root.add(second)
+
+    const record = (event) => {
+        received_events.push({
+            type: event.type,
+            target: names.get(event.target),
+            related_target:
+                'related_target' in event
+                    ? event.related_target === null
+                        ? null
+                        : names.get(event.related_target)
+                    : undefined,
+            x: event.x,
+        })
+    }
+
+    for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointerover', 'pointerout']) {
+        ui.root.on(type, record)
+    }
+
+    const dispatch = (type, pointer_id, event_data, node) => {
+        ui.events.emit(type, {
+            raw: true,
+            source_event: {
+                type,
+                pointerId: pointer_id,
+                pointerType: 'mouse',
+            },
+            event_data,
+            node,
+        })
+    }
+
+    dispatch('pointerdown', 1, { x: 1 }, first)
+    dispatch('pointermove', 1, { x: 2 }, second)
+    dispatch('pointerup', 1, { x: 3 }, second)
+    dispatch('pointermove', 1, null, null)
+
+    expect(received_events).toEqual([
+        { type: 'pointerover', target: 'first', related_target: null, x: 1 },
+        { type: 'pointerdown', target: 'first', related_target: undefined, x: 1 },
+        { type: 'pointerout', target: 'first', related_target: 'second', x: 2 },
+        { type: 'pointerover', target: 'second', related_target: 'first', x: 2 },
+        { type: 'pointermove', target: 'first', related_target: undefined, x: 2 },
+        { type: 'pointerup', target: 'first', related_target: undefined, x: 3 },
+        { type: 'pointerout', target: 'second', related_target: null, x: 3 },
+    ])
+
+    ui.destroy()
+})
+
+test('touch pointerup and pointercancel end hover after the pointer event', async () => {
+    const ui = await TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: [definePointer],
+    })
+    const node = ui.create()
+    const received_events = []
+
+    ui.root.add(node)
+
+    for (const type of ['pointerover', 'pointerout', 'pointerup', 'pointercancel']) {
+        ui.root.on(type, (event) => {
+            received_events.push({
+                type: event.type,
+                pointer_id: event.source_event.pointerId,
+                x: event.x,
+            })
+        })
+    }
+
+    const dispatch = (type, pointer_id, pointer_type, event_data, target) => {
+        ui.events.emit(type, {
+            raw: true,
+            source_event: {
+                type,
+                pointerId: pointer_id,
+                pointerType: pointer_type,
+            },
+            event_data,
+            node: target,
+        })
+    }
+
+    dispatch('pointerdown', 1, 'touch', { x: 1 }, node)
+    dispatch('pointerup', 1, 'touch', { x: 2 }, node)
+    dispatch('pointerdown', 2, 'mouse', { x: 3 }, node)
+    dispatch('pointercancel', 2, 'mouse', null, null)
+
+    expect(received_events).toEqual([
+        { type: 'pointerover', pointer_id: 1, x: 1 },
+        { type: 'pointerup', pointer_id: 1, x: 2 },
+        { type: 'pointerout', pointer_id: 1, x: 2 },
+        { type: 'pointerover', pointer_id: 2, x: 3 },
+        { type: 'pointercancel', pointer_id: 2, x: 3 },
+        { type: 'pointerout', pointer_id: 2, x: 3 },
+    ])
+
+    ui.destroy()
+})
+
+test('destroying a node clears its pointer capture and hover state', async () => {
+    const ui = await TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: [definePointer],
+    })
+    const first = ui.create()
+    const second = ui.create()
+    const received_events = []
+
+    ui.root.add(first)
+    ui.root.add(second)
+
+    for (const type of ['pointerover', 'pointerout', 'pointermove']) {
+        ui.root.on(type, (event) => {
+            received_events.push({
+                type: event.type,
+                target: event.target,
+                related_target: event.related_target,
+            })
+        })
+    }
+
+    ui.events.emit('pointerdown', {
+        raw: true,
+        source_event: { type: 'pointerdown', pointerId: 1, pointerType: 'mouse' },
+        event_data: { x: 1 },
+        node: first,
+    })
+    first.destroy()
+    received_events.length = 0
+
+    ui.events.emit('pointermove', {
+        raw: true,
+        source_event: { type: 'pointermove', pointerId: 1, pointerType: 'mouse' },
+        event_data: { x: 2 },
+        node: second,
+    })
+
+    expect(received_events).toEqual([
+        { type: 'pointerover', target: second, related_target: null },
+        { type: 'pointermove', target: second, related_target: undefined },
+    ])
+
+    ui.destroy()
+})
+
+test('click requires a matching hit node and is cancelled by scrolling or pointercancel', async () => {
+    const ui = await TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: DEFAULT_EVENTS,
+    })
+    const first = ui.create()
+    const second = ui.create()
+    const received_events = []
+
+    ui.root.add(first)
+    ui.root.add(second)
+    ui.root.on('click', (event) => {
+        received_events.push({
+            pointer_id: event.source_event.pointerId,
+            target: event.target,
+            x: event.x,
+        })
+    })
+
+    const dispatch = (type, pointer_id, event_data, node) => {
+        ui.events.emit(type, {
+            raw: true,
+            source_event: {
+                type,
+                pointerId: pointer_id,
+                pointerType: 'mouse',
+            },
+            event_data,
+            node,
+        })
+    }
+
+    dispatch('pointerdown', 1, { x: 1 }, first)
+    dispatch('pointerup', 1, { x: 2 }, first)
+
+    dispatch('pointerdown', 2, { x: 3 }, first)
+    dispatch('pointerup', 2, { x: 4 }, second)
+
+    dispatch('pointerdown', 3, { x: 5 }, first)
+    dispatch('pointercancel', 3, null, null)
+    dispatch('pointerup', 3, { x: 6 }, first)
+
+    dispatch('pointerdown', 4, { x: 7 }, first)
+    ui.root.scrolling = true
+    dispatch('pointerup', 4, { x: 8 }, first)
+
+    dispatch('pointerdown', 5, { x: 9 }, first)
+    expect(ui.root.scrolling).toBe(false)
+    dispatch('pointerup', 5, { x: 10 }, first)
+
+    expect(received_events).toEqual([
+        { pointer_id: 1, target: first, x: 2 },
+        { pointer_id: 5, target: first, x: 10 },
+    ])
+
+    ui.destroy()
+})
+
+test('wheel is normalized before scrolling the nearest available node', async () => {
+    const ui = await TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: DEFAULT_EVENTS,
+    })
+    const scroller = ui.create()
+    const child = ui.create()
+    const received_events = []
+    let update_count = 0
+
+    ui.root.add(scroller)
+    scroller.add(child)
+    scroller.styles.overflowY = { parsed: { enum: OVERFLOW.scroll } }
+    scroller.scrollWidth = 200
+    scroller.scrollHeight = 1000
+    scroller.clientWidth = 200
+    scroller.clientHeight = 200
+    ui.update = () => update_count++
+
+    ui.root.on('wheel', (event) => {
+        received_events.push({
+            type: event.type,
+            target: event.target,
+            delta_x: event.delta_x,
+            delta_y: event.delta_y,
+        })
+    })
+    ui.root.on('scroll', (event) => {
+        received_events.push({
+            type: event.type,
+            target: event.target,
+            scroll_left: event.scroll_left,
+            scroll_top: event.scroll_top,
+        })
+    })
+
+    const source_event = {
+        type: 'wheel',
+        deltaX: 0,
+        deltaY: 3,
+        deltaMode: 1,
+    }
+    ui.events.emit('wheel', {
+        raw: true,
+        source_event,
+        event_data: { x: 10, y: 20 },
+        node: child,
+    })
+
+    expect(received_events).toEqual([
+        {
+            type: 'wheel',
+            target: child,
+            delta_x: 0,
+            delta_y: 48,
+        },
+        {
+            type: 'scroll',
+            target: scroller,
+            scroll_left: 0,
+            scroll_top: 48,
+        },
+    ])
+    expect(scroller.scrollTop).toBe(48)
+    expect(update_count).toBe(1)
+
+    ui.destroy()
+})
+
+test('touch drag emits scroll and suppresses click past the scroll slop', async () => {
+    const ui = await TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: DEFAULT_EVENTS,
+    })
+    const scroller = ui.create()
+    const child = ui.create()
+    const received_scrolls = []
+    const received_clicks = []
+    let update_count = 0
+
+    ui.root.add(scroller)
+    scroller.add(child)
+    scroller.styles.overflowY = { parsed: { enum: OVERFLOW.scroll } }
+    scroller.scrollWidth = 200
+    scroller.scrollHeight = 1000
+    scroller.clientWidth = 200
+    scroller.clientHeight = 200
+    ui.update = () => update_count++
+
+    ui.root.on('scroll', (event) => {
+        received_scrolls.push([event.scroll_left, event.scroll_top])
+    })
+    ui.root.on('click', (event) => {
+        received_clicks.push(event.source_event.pointerId)
+    })
+
+    const dispatch = (type, pointer_id, x, y) => {
+        ui.events.emit(type, {
+            raw: true,
+            source_event: {
+                type,
+                pointerId: pointer_id,
+                pointerType: 'touch',
+            },
+            event_data: { x, y },
+            node: child,
+        })
+    }
+
+    dispatch('pointerdown', 1, 0, 100)
+    dispatch('pointermove', 1, 0, 60)
+    dispatch('pointerup', 1, 0, 60)
+
+    dispatch('pointerdown', 2, 0, 100)
+    dispatch('pointerup', 2, 0, 100)
+
+    expect(received_scrolls).toEqual([[0, 40]])
+    expect(received_clicks).toEqual([2])
+    expect(scroller.scrolling).toBe(false)
+    expect(update_count).toBe(1)
+
+    ui.destroy()
+})
+
+test('destroying referenced nodes clears click and scroll state', async () => {
+    const ui = await TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: DEFAULT_EVENTS,
+    })
+    const scroller = ui.create()
+    const child = ui.create()
+    const normalized_events = []
+
+    ui.root.add(scroller)
+    scroller.add(child)
+    scroller.styles.overflowY = { parsed: { enum: OVERFLOW.scroll } }
+    scroller.scrollWidth = 200
+    scroller.scrollHeight = 1000
+    scroller.clientWidth = 200
+    scroller.clientHeight = 200
+
+    for (const type of ['click', 'scroll']) {
+        ui.events.on(type, (event) => {
+            if (!event.raw) {
+                normalized_events.push(event)
+            }
+        })
+    }
+
+    ui.events.emit('pointerdown', {
+        raw: true,
+        source_event: { type: 'pointerdown', pointerId: 1, pointerType: 'touch' },
+        event_data: { x: 0, y: 100 },
+        node: child,
+    })
+    scroller.destroy()
+
+    ui.events.emit('pointermove', {
+        raw: true,
+        source_event: { type: 'pointermove', pointerId: 1, pointerType: 'touch' },
+        event_data: { x: 0, y: 50 },
+        node: null,
+    })
+    ui.events.emit('pointerup', {
+        raw: true,
+        source_event: { type: 'pointerup', pointerId: 1, pointerType: 'touch' },
+        event_data: { x: 0, y: 50 },
+        node: child,
+    })
+
+    expect(normalized_events).toEqual([])
+    expect(scroller.scrollTop).toBe(0)
+
+    ui.destroy()
 })
 
 test('Node ignores raw events and bubbles normalized events from the target', async () => {

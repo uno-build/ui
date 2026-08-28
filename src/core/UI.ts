@@ -11,13 +11,13 @@ export default class UI {
     private created_nodes = new Set()
     private next_node_id = 0
     private destroyed = false
-    private destroy_defined_events = []
+    private defined_events = []
 
     protected constructor({ renderer, resources = null, defined_events = [] }) {
         this.renderer = renderer
         this.resources = resources
         this.events = new Events()
-        this.destroy_defined_events = defined_events.map((define_event) => define_event({ ui: this }))
+        this.defined_events = defined_events.map((defineEvent) => defineEvent({ ui: this }))
     }
 
     protected async initialize() {
@@ -87,8 +87,8 @@ export default class UI {
             const nodes = [...this.created_nodes]
 
             this.renderer.destroy(nodes)
-            this.destroy_defined_events.forEach((destroyEvent) => destroyEvent())
-            this.destroy_defined_events.length = 0
+            this.defined_events.forEach((defined_event) => defined_event.destroy())
+            this.defined_events.length = 0
             nodes.forEach((node) => node.destroyEvents())
             this.events.destroy()
 
@@ -219,6 +219,7 @@ export default class UI {
             this.destroySubtree(child)
         }
 
+        this.defined_events.forEach((defined_event) => defined_event.destroyNode?.(node))
         node.destroyEvents()
         this.renderer.discardPendingStyles(node)
         this.renderer.destroyNode(node)

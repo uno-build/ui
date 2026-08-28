@@ -1,11 +1,8 @@
 import Renderer from '../core/Renderer'
-import { DEFAULT_EVENTS } from '../events'
 import { calculateLayoutRect, getParentLayout } from '../layouter/utils'
 import { KEYWORD } from '../style/consts'
-import EventsDom from './dom/EventsDom'
 
 export default class RendererDom extends Renderer {
-    public events = new EventsDom({ definitions: DEFAULT_EVENTS })
     private resources
     private elements = new WeakMap()
     private text_elements = new WeakMap()
@@ -32,7 +29,6 @@ export default class RendererDom extends Renderer {
         }
 
         this.elements.set(node, element)
-        this.events.createNode(node, element)
         return element
     }
 
@@ -53,7 +49,6 @@ export default class RendererDom extends Renderer {
         }
 
         super.destroy(nodes)
-        this.events.destroy()
         this.root_node = null
         this.resources = null
     }
@@ -71,7 +66,6 @@ export default class RendererDom extends Renderer {
         this.elements.get(node).remove()
         this.elements.delete(node)
         this.text_elements.delete(node)
-        this.events.destroyNode(node)
     }
 
     public getChildIndex(node) {

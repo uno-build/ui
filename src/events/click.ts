@@ -1,38 +1,52 @@
-import Events from '../core/Events'
 import { EVENT } from './const'
 
-export const CLICK = Events.defineEvent(EVENT.CLICK, ({ emit }) => {
+export function defineClick({ ui }) {
     const pointers = new Map()
 
-    return {
-        before: {
-            [EVENT.POINTER_DOWN.name]: ({ source_event, event_data, hit_target }) => {
-                if (hit_target !== null) {
-                    clearScrollingNodes(hit_target)
-                    pointers.set(source_event.pointerId, {
-                        target: hit_target,
-                        event_data,
-                    })
-                }
-            },
-            [EVENT.POINTER_CANCEL.name]: ({ source_event }) => {
-                pointers.delete(source_event.pointerId)
-            },
-        },
-        after: {
-            [EVENT.POINTER_UP.name]: ({ source_event, event_data, hit_target }) => {
-                const pointer = pointers.get(source_event.pointerId)
-                pointers.delete(source_event.pointerId)
+    const processPointerDown = ({ raw, source_event, event_data, node }) => {
+        if (!raw || node === null) {
+            return
+        }
 
-                if (pointer?.target === hit_target && !isScrollingNode(hit_target)) {
-                    emit(EVENT.CLICK.name, {
-                        source_event,
-                        event_data: event_data ?? pointer.event_data,
-                        target: hit_target,
-                    })
-                }
-            },
-        },
+        clearScrollingNodes(node)
+        pointers.set(source_event.pointerId, {
+            target: node,
+            event_data,
+        })
+    }
+
+    const processPointerCancel = ({ raw, source_event }) => {
+        if (raw) {
+            pointers.delete(source_event.pointerId)
+        }
+    }
+
+    const processPointerUp = ({ raw, source_event, event_data, node }) => {
+        if (!raw) {
+            return
+        }
+
+        const pointer = pointers.get(source_event.pointerId)
+        pointers.delete(source_event.pointerId)
+
+        if (pointer?.target === node && !isScrollingNode(node)) {
+            ui.events.emit(EVENT.CLICK.name, {
+                raw: false,
+                source_event,
+                event_data: event_data ?? pointer.event_data,
+                target: node,
+            })
+        }
+    }
+
+    const remove_listeners = [
+        ui.events.on(EVENT.POINTER_DOWN.name, processPointerDown),
+        ui.events.on(EVENT.POINTER_CANCEL.name, processPointerCancel),
+        ui.events.on(EVENT.POINTER_UP.name, processPointerUp),
+    ]
+
+    return {
+        types: [EVENT.CLICK],
         destroyNode(node) {
             for (const [pointer_id, pointer] of pointers) {
                 if (pointer.target === node) {
@@ -40,11 +54,13 @@ export const CLICK = Events.defineEvent(EVENT.CLICK, ({ emit }) => {
                 }
             }
         },
+
         destroy() {
+            remove_listeners.forEach((removeListener) => removeListener())
             pointers.clear()
         },
     }
-})
+}
 
 function clearScrollingNodes(node) {
     let current_node = node

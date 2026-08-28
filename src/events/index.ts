@@ -1,16 +1,8 @@
-import { POINTER_DOWN, POINTER_MOVE, POINTER_UP, POINTER_CANCEL, POINTER_OVER, POINTER_OUT } from './pointer'
-import { CLICK } from './click'
-import { WHEEL } from './wheel'
-import { SCROLL } from './scroll'
+import { definePointer } from './pointer'
+import { defineClick } from './click'
+import { defineWheel } from './wheel'
+import { defineScroll } from './scroll'
 
-export const DEFAULT_EVENTS = [
-    POINTER_DOWN,
-    POINTER_MOVE,
-    POINTER_UP,
-    POINTER_CANCEL,
-    POINTER_OVER,
-    POINTER_OUT,
-    CLICK,
-    WHEEL,
-    SCROLL,
-]
+export { definePointer, defineClick, defineWheel, defineScroll }
+
+export const DEFAULT_EVENTS = [definePointer, defineWheel, defineScroll, defineClick]

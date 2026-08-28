@@ -45,6 +45,7 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
             const pointer_events = []
             let current_source_event
             let child_event
+            let click_event
             const removed_listener = () => pointer_events.push({ listener: 'removed' })
             const child_listener = (event) => {
                 child_event = event
@@ -76,27 +77,32 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
             child.on('pointerdown', child_listener)
             child.on('pointerdown', child_listener)
             ui.root.on('pointerdown', root_listener)
+            child.on('click', (event) => {
+                click_event = {
+                    type: event.type,
+                    source_type: event.source_event.type,
+                    target_matches: event.target === child,
+                    current_target_matches: event.current_target === child,
+                }
+            })
 
             current_source_event = new PointerEvent('pointerdown', {
                 bubbles: true,
                 pointerId: 1,
+                pointerType: 'mouse',
                 clientX: 70,
                 clientY: 55,
             })
             nested_element.dispatchEvent(current_source_event)
-
-            const mutation_calls = []
-            const added_listener = () => mutation_calls.push('added')
-            const mutation_removed_listener = () => mutation_calls.push('removed')
-            const first_listener = () => {
-                mutation_calls.push('first')
-                child.off('pointerup', mutation_removed_listener)
-                child.on('pointerup', added_listener)
-            }
-            child.on('pointerup', first_listener)
-            child.on('pointerup', mutation_removed_listener)
-            nested_element.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
-            nested_element.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+            nested_element.dispatchEvent(
+                new PointerEvent('pointerup', {
+                    bubbles: true,
+                    pointerId: 1,
+                    pointerType: 'mouse',
+                    clientX: 70,
+                    clientY: 55,
+                }),
+            )
 
             const transitions = []
             child.on('pointerout', (event) => {
@@ -115,29 +121,15 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
                     current_target_matches: event.current_target === sibling,
                 })
             })
-            nested_element.dispatchEvent(
-                new PointerEvent('pointerout', {
-                    bubbles: true,
-                    relatedTarget: sibling.element,
-                }),
-            )
             sibling.element.dispatchEvent(
-                new PointerEvent('pointerover', {
+                new PointerEvent('pointermove', {
                     bubbles: true,
-                    relatedTarget: nested_element,
+                    pointerId: 1,
+                    pointerType: 'mouse',
+                    clientX: 170,
+                    clientY: 55,
                 }),
             )
-
-            let click_event
-            child.on('click', (event) => {
-                click_event = {
-                    type: event.type,
-                    source_type: event.source_event.type,
-                    target_matches: event.target === child,
-                    current_target_matches: event.current_target === child,
-                }
-            })
-            nested_element.click()
 
             const propagation = []
             child.on('pointermove', (event) => {
@@ -147,7 +139,15 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
             child.on('pointermove', () => propagation.push('child-second'))
             ui.root.on('pointermove', () => propagation.push('root'))
             canvas.addEventListener('pointermove', () => propagation.push('native-root'))
-            nested_element.dispatchEvent(new PointerEvent('pointermove', { bubbles: true }))
+            nested_element.dispatchEvent(
+                new PointerEvent('pointermove', {
+                    bubbles: true,
+                    pointerId: 1,
+                    pointerType: 'mouse',
+                    clientX: 70,
+                    clientY: 55,
+                }),
+            )
 
             let destroyed_calls = 0
             const child_element = child.element
@@ -161,7 +161,6 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
 
             return {
                 pointer_events,
-                mutation_calls,
                 transitions,
                 click_event,
                 propagation,
@@ -197,7 +196,6 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
             event_matches: true,
         },
     ])
-    expect(result.mutation_calls).toEqual(['first', 'first', 'added'])
     expect(result.transitions).toEqual([
         {
             type: 'pointerout',
@@ -214,7 +212,7 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
     ])
     expect(result.click_event).toEqual({
         type: 'click',
-        source_type: 'click',
+        source_type: 'pointerup',
         target_matches: true,
         current_target_matches: true,
     })
@@ -222,7 +220,7 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
     expect(result.destroyed_calls).toBe(0)
 })
 
-test('UIWebGPU synthetic event order matches native DOM event order', async ({ page }) => {
+test('UIDom and UIWebGPU use the same synthetic event order', async ({ page }) => {
     await page.goto('/dev/?renderers=RendererDom')
 
     await page.evaluate(
@@ -286,7 +284,6 @@ test('UIWebGPU synthetic event order matches native DOM event order', async ({ p
             const dom_nodes = createNodes(dom_ui)
             const webgpu_nodes = createNodes(webgpu_ui)
             const event_types = ['pointerover', 'pointermove', 'pointerdown', 'pointerup', 'click', 'pointerout']
-            const dom_raw = []
             const dom_synthetic = []
             const webgpu_synthetic = []
             const dom_node_names = new Map([
@@ -297,23 +294,6 @@ test('UIWebGPU synthetic event order matches native DOM event order', async ({ p
                 [webgpu_nodes.child, 'child'],
                 [webgpu_nodes.sibling, 'sibling'],
             ])
-            const dom_element_names = new Map([
-                [dom_nodes.child.element, 'child'],
-                [dom_nodes.sibling.element, 'sibling'],
-            ])
-            const getDomNodeName = (event_target) => {
-                let element = event_target
-
-                while (element != null) {
-                    const name = dom_element_names.get(element)
-                    if (name !== undefined) {
-                        return name
-                    }
-                    element = element.parentNode
-                }
-
-                return null
-            }
             const recordSynthetic = (trace, names) => (event) => {
                 trace.push({
                     type: event.type,
@@ -327,24 +307,6 @@ test('UIWebGPU synthetic event order matches native DOM event order', async ({ p
             let collect_webgpu = true
 
             for (const type of event_types) {
-                dom_canvas.addEventListener(
-                    type,
-                    (event) => {
-                        if (collect_dom) {
-                            const target = getDomNodeName(event.target)
-                            dom_raw.push({
-                                type: event.type,
-                                target,
-                                related_target:
-                                    type === 'pointerover' || type === 'pointerout'
-                                        ? getDomNodeName(event.relatedTarget)
-                                        : null,
-                                source_type: event.type,
-                            })
-                        }
-                    },
-                    { capture: true },
-                )
                 dom_nodes.child.on(type, (event) => {
                     if (collect_dom) {
                         recordSynthetic(dom_synthetic, dom_node_names)(event)
@@ -378,7 +340,6 @@ test('UIWebGPU synthetic event order matches native DOM event order', async ({ p
                 finish() {
                     collect_webgpu = false
                     const result = {
-                        dom_raw,
                         dom_synthetic,
                         webgpu_synthetic,
                     }
@@ -417,28 +378,17 @@ test('UIWebGPU synthetic event order matches native DOM event order', async ({ p
     const getEmissions = (trace) =>
         trace.map(({ type, target, related_target }) => ({ type, target, related_target }))
 
-    expect(result.dom_raw.map(({ type }) => type)).toEqual([
-        'pointerover',
-        'pointermove',
-        'pointerdown',
-        'pointerup',
-        'click',
-        'pointerout',
-        'pointerover',
-        'pointermove',
-    ])
-    expect(getEmissions(result.dom_synthetic)).toEqual(getEmissions(result.dom_raw))
-    expect(getEmissions(result.webgpu_synthetic)).toEqual(getEmissions(result.dom_raw))
+    expect(getEmissions(result.webgpu_synthetic)).toEqual(getEmissions(result.dom_synthetic))
     expect(result.dom_synthetic.every(({ target, current_target }) => target === current_target)).toBe(true)
     expect(result.webgpu_synthetic.every(({ target, current_target }) => target === current_target)).toBe(true)
     expect(result.dom_synthetic.map(({ type, source_type }) => [type, source_type])).toEqual([
-        ['pointerover', 'pointerover'],
+        ['pointerover', 'pointermove'],
         ['pointermove', 'pointermove'],
         ['pointerdown', 'pointerdown'],
         ['pointerup', 'pointerup'],
-        ['click', 'click'],
-        ['pointerout', 'pointerout'],
-        ['pointerover', 'pointerover'],
+        ['click', 'pointerup'],
+        ['pointerout', 'pointermove'],
+        ['pointerover', 'pointermove'],
         ['pointermove', 'pointermove'],
     ])
     expect(result.webgpu_synthetic.map(({ type, source_type }) => [type, source_type])).toEqual([

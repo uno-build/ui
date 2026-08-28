@@ -615,7 +615,7 @@ test('Octane keeps a single Uno listener when the handler changes between render
     const removals = []
     const received_events = []
     const register_listener = ui.events.on.bind(ui.events)
-    const remove_listener = ui.events.off.bind(ui.events)
+    const removeListener = ui.events.off.bind(ui.events)
 
     ui.events.on = (node, type, listener) => {
         registrations.push([node, type])
@@ -623,7 +623,7 @@ test('Octane keeps a single Uno listener when the handler changes between render
     }
     ui.events.off = (node, type, listener) => {
         removals.push([node, type])
-        remove_listener(node, type, listener)
+        removeListener(node, type, listener)
     }
 
     root.render({ onClick: () => received_events.push('first') })

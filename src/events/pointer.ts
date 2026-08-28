@@ -1,20 +1,20 @@
-import Events from '../core/Events'
 import { EVENT } from './const'
 
-export const POINTER_DOWN = Events.defineEvent(EVENT.POINTER_DOWN, pointerEvents)
-export const POINTER_MOVE = Events.defineEvent(EVENT.POINTER_MOVE, pointerEvents)
-export const POINTER_UP = Events.defineEvent(EVENT.POINTER_UP, pointerEvents)
-export const POINTER_CANCEL = Events.defineEvent(EVENT.POINTER_CANCEL, pointerEvents)
-export const POINTER_OVER = Events.defineEvent(EVENT.POINTER_OVER, pointerOverEvents)
-export const POINTER_OUT = Events.defineEvent(EVENT.POINTER_OUT, pointerOverEvents)
+const POINTER_TYPES = [
+    EVENT.POINTER_DOWN.name,
+    EVENT.POINTER_MOVE.name,
+    EVENT.POINTER_UP.name,
+    EVENT.POINTER_CANCEL.name,
+]
 
-function pointerEvents({ emit }) {
+export function definePointer({ ui }) {
     const pointers = new Map()
+    const hovered_pointers = new Map()
 
-    const normalize = ({ source_event, event_data, hit_target }) => {
+    const normalizePointer = ({ source_event, event_data, node }) => {
         const pointer_id = source_event.pointerId
         const pointer = pointers.get(pointer_id)
-        let target = hit_target
+        let target = node
 
         if (source_event.type === EVENT.POINTER_DOWN.name) {
             if (target === null) {
@@ -33,7 +33,8 @@ function pointerEvents({ emit }) {
         }
 
         if (target !== null && event_data !== null) {
-            emit(source_event.type, {
+            ui.events.emit(source_event.type, {
+                raw: false,
                 source_event,
                 event_data,
                 target,
@@ -45,35 +46,12 @@ function pointerEvents({ emit }) {
         }
     }
 
-    return {
-        main: {
-            [EVENT.POINTER_DOWN.name]: normalize,
-            [EVENT.POINTER_MOVE.name]: normalize,
-            [EVENT.POINTER_UP.name]: normalize,
-            [EVENT.POINTER_CANCEL.name]: normalize,
-        },
-        destroyNode(node) {
-            for (const [pointer_id, pointer] of pointers) {
-                if (pointer.target === node) {
-                    pointers.delete(pointer_id)
-                }
-            }
-        },
-        destroy() {
-            pointers.clear()
-        },
-    }
-}
-
-function pointerOverEvents({ emit }) {
-    const pointers = new Map()
-
-    const update = ({ source_event, event_data, hit_target }) => {
+    const updatePointerOver = ({ source_event, event_data, node }) => {
         const pointer_id = source_event.pointerId
-        const pointer = pointers.get(pointer_id)
+        const pointer = hovered_pointers.get(pointer_id)
         const previous_target = pointer?.target ?? null
 
-        if (previous_target === hit_target) {
+        if (previous_target === node) {
             if (pointer !== undefined && event_data !== null) {
                 pointer.event_data = event_data
             }
@@ -81,34 +59,37 @@ function pointerOverEvents({ emit }) {
         }
 
         if (previous_target !== null) {
-            emit(EVENT.POINTER_OUT.name, {
+            ui.events.emit(EVENT.POINTER_OUT.name, {
+                raw: false,
                 source_event,
                 event_data: event_data ?? pointer.event_data,
                 target: previous_target,
-                related_target: hit_target,
+                related_target: node,
             })
         }
 
-        if (hit_target === null) {
-            pointers.delete(pointer_id)
+        if (node === null) {
+            hovered_pointers.delete(pointer_id)
         } else {
-            pointers.set(pointer_id, { target: hit_target, event_data })
-            emit(EVENT.POINTER_OVER.name, {
+            hovered_pointers.set(pointer_id, { target: node, event_data })
+            ui.events.emit(EVENT.POINTER_OVER.name, {
+                raw: false,
                 source_event,
                 event_data,
-                target: hit_target,
+                target: node,
                 related_target: previous_target,
             })
         }
     }
 
-    const end = ({ source_event, event_data }) => {
+    const endPointerOver = ({ source_event, event_data }) => {
         const pointer_id = source_event.pointerId
-        const pointer = pointers.get(pointer_id)
+        const pointer = hovered_pointers.get(pointer_id)
 
         if (pointer !== undefined) {
-            pointers.delete(pointer_id)
-            emit(EVENT.POINTER_OUT.name, {
+            hovered_pointers.delete(pointer_id)
+            ui.events.emit(EVENT.POINTER_OUT.name, {
+                raw: false,
                 source_event,
                 event_data: event_data ?? pointer.event_data,
                 target: pointer.target,
@@ -117,29 +98,48 @@ function pointerOverEvents({ emit }) {
         }
     }
 
+    const processPointer = (event) => {
+        if (!event.raw) {
+            return
+        }
+
+        const type = event.source_event.type
+
+        if (type !== EVENT.POINTER_CANCEL.name) {
+            updatePointerOver(event)
+        }
+
+        normalizePointer(event)
+
+        if (
+            type === EVENT.POINTER_CANCEL.name ||
+            (type === EVENT.POINTER_UP.name && event.source_event.pointerType === 'touch')
+        ) {
+            endPointerOver(event)
+        }
+    }
+
+    const remove_listeners = POINTER_TYPES.map((type) => ui.events.on(type, processPointer))
+
     return {
-        before: {
-            [EVENT.POINTER_DOWN.name]: update,
-            [EVENT.POINTER_MOVE.name]: update,
-            [EVENT.POINTER_UP.name]: update,
-        },
-        after: {
-            [EVENT.POINTER_UP.name]: (context) => {
-                if (context.source_event.pointerType === 'touch') {
-                    end(context)
-                }
-            },
-            [EVENT.POINTER_CANCEL.name]: end,
-        },
         destroyNode(node) {
             for (const [pointer_id, pointer] of pointers) {
                 if (pointer.target === node) {
                     pointers.delete(pointer_id)
                 }
             }
+
+            for (const [pointer_id, pointer] of hovered_pointers) {
+                if (pointer.target === node) {
+                    hovered_pointers.delete(pointer_id)
+                }
+            }
         },
+
         destroy() {
+            remove_listeners.forEach((removeListener) => removeListener())
             pointers.clear()
+            hovered_pointers.clear()
         },
     }
 }
