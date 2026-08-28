@@ -54,21 +54,7 @@ export default class Node {
     }
 
     public destroy() {
-        if (this.ui === null) {
-            return
-        }
-
-        if (this === this.ui.root) {
-            this.ui.destroy()
-            return
-        }
-
-        this.detach()
-        for (const child of [...this.children]) {
-            child.destroy()
-        }
-        this.destroyEvents()
-        this.ui.destroyNode(this)
+        this.ui?.destroyNode(this)
     }
 
     public on(type, listener) {

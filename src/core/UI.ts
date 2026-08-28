@@ -93,10 +93,7 @@ export default class UI {
             this.events.destroy()
 
             for (const node of nodes) {
-                node.ui = null
-                node.parent = null
-                node.children.length = 0
-                node.element = null
+                this.releaseNode(node)
             }
 
             this.created_nodes.clear()
@@ -206,9 +203,30 @@ export default class UI {
     }
 
     private destroyNode(node) {
+        if (node === this.root) {
+            this.destroy()
+            return
+        }
+
+        this.detachNode(node)
+        this.destroySubtree(node)
+    }
+
+    private destroySubtree(node) {
+        for (const child of [...node.children]) {
+            this.renderer.detachChild(node, child)
+            child.parent = null
+            this.destroySubtree(child)
+        }
+
+        node.destroyEvents()
         this.renderer.discardPendingStyles(node)
         this.renderer.destroyNode(node)
         this.created_nodes.delete(node)
+        this.releaseNode(node)
+    }
+
+    private releaseNode(node) {
         node.ui = null
         node.parent = null
         node.children.length = 0
