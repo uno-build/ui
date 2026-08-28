@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import Events from '../src/core/Events'
-import { DEFAULT_EVENTS, definePointer } from '../src/events'
+import { DEFAULT_EVENTS } from '../src/events'
+import { EVENT } from '../src/events/const'
 import { OVERFLOW } from '../src/style/consts'
 import UIDom from '../src/ui/UIDom'
 import TestRenderer from './utils/TestRenderer.ts'
@@ -33,6 +34,29 @@ test('Events registers, removes, emits, and destroys listeners', () => {
     events.emit('first', first_event)
 
     expect(received_events).toEqual([first_event, second_event])
+})
+
+test('default event definitions expose their public types through UI', async () => {
+    const ui = await TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: DEFAULT_EVENTS,
+    })
+
+    expect(ui.defined_events.map((defined_event) => defined_event.types)).toEqual([
+        [
+            EVENT.POINTER_DOWN,
+            EVENT.POINTER_MOVE,
+            EVENT.POINTER_UP,
+            EVENT.POINTER_CANCEL,
+            EVENT.POINTER_OVER,
+            EVENT.POINTER_OUT,
+        ],
+        [EVENT.WHEEL],
+        [EVENT.SCROLL],
+        [EVENT.CLICK],
+    ])
+
+    ui.destroy()
 })
 
 test('UI instantiates definitions, emits raw events, and runs definition cleanup', async () => {
@@ -240,7 +264,7 @@ test('UIDom converts native source events to raw input and removes its listeners
 test('pointer events use capture while hover follows the hit node', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: [definePointer],
+        defined_events: DEFAULT_EVENTS,
     })
     const first = ui.create()
     const second = ui.create()
@@ -305,7 +329,7 @@ test('pointer events use capture while hover follows the hit node', async () => 
 test('touch pointerup and pointercancel end hover after the pointer event', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: [definePointer],
+        defined_events: DEFAULT_EVENTS,
     })
     const node = ui.create()
     const received_events = []
@@ -355,7 +379,7 @@ test('touch pointerup and pointercancel end hover after the pointer event', asyn
 test('destroying a node clears its pointer capture and hover state', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: [definePointer],
+        defined_events: DEFAULT_EVENTS,
     })
     const first = ui.create()
     const second = ui.create()

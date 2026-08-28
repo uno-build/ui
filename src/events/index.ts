@@ -3,6 +3,4 @@ import { defineClick } from './click'
 import { defineWheel } from './wheel'
 import { defineScroll } from './scroll'
 
-export { definePointer, defineClick, defineWheel, defineScroll }
-
 export const DEFAULT_EVENTS = [definePointer, defineWheel, defineScroll, defineClick]

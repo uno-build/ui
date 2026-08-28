@@ -22,6 +22,7 @@ export function defineWheel({ ui }) {
     })
 
     return {
+        types: [EVENT.WHEEL],
         destroy() {
             removeListener()
         },

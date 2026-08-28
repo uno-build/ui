@@ -7,11 +7,11 @@ export default class UI {
     public renderer = null
     public resources = null
     public events
+    public defined_events = []
     private nodes = []
     private created_nodes = new Set()
     private next_node_id = 0
     private destroyed = false
-    private defined_events = []
 
     protected constructor({ renderer, resources = null, defined_events = [] }) {
         this.renderer = renderer

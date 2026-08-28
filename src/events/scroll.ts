@@ -121,6 +121,7 @@ export function defineScroll({ ui }) {
     ]
 
     return {
+        types: [EVENT.SCROLL],
         destroyNode(node) {
             for (const [pointer_id, pointer] of pointers) {
                 if (pointer.node === node) {

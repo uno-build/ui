@@ -122,6 +122,14 @@ export function definePointer({ ui }) {
     const remove_listeners = POINTER_TYPES.map((type) => ui.events.on(type, processPointer))
 
     return {
+        types: [
+            EVENT.POINTER_DOWN,
+            EVENT.POINTER_MOVE,
+            EVENT.POINTER_UP,
+            EVENT.POINTER_CANCEL,
+            EVENT.POINTER_OVER,
+            EVENT.POINTER_OUT,
+        ],
         destroyNode(node) {
             for (const [pointer_id, pointer] of pointers) {
                 if (pointer.target === node) {

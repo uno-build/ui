@@ -9,6 +9,7 @@ import {
 import { useUI } from '../src/components/octane/context.js'
 import { createUniversalDriver, registerRootComponent } from '../src/components/octane/driver.js'
 import { getImageStyle } from '../src/components/octane/utils.js'
+import { DEFAULT_EVENTS } from '../src/events'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'
 
@@ -16,6 +17,12 @@ const clickAt = (ui, x, y) => {
     ui.dispatchEvent({ type: 'pointerdown', pointerId: 1 }, { x, y })
     ui.dispatchEvent({ type: 'pointerup', pointerId: 1 }, { x, y })
 }
+
+const createEventUI = () =>
+    TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: DEFAULT_EVENTS,
+    })
 
 const STATIC_TREE_PLAN = universalPlan('uno', {
     kind: 'host',
@@ -576,7 +583,7 @@ test('Octane unmounts Text with text content without retaining nodes', async () 
 })
 
 test('Octane classifies event props from the Uno event metadata', async () => {
-    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const ui = await createEventUI()
     const driver = createUniversalDriver({ ui })
 
     expect(driver.events.classify('onClick')).toEqual({ type: 'click', priority: 'discrete' })
@@ -587,7 +594,7 @@ test('Octane classifies event props from the Uno event metadata', async () => {
 })
 
 test('Octane event handlers receive Uno events through hit testing and bubbling', async () => {
-    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const ui = await createEventUI()
     const root = registerRootComponent(EVENT_TREE_COMPONENT, { ui })
     const received_events = []
 
@@ -609,38 +616,36 @@ test('Octane event handlers receive Uno events through hit testing and bubbling'
 })
 
 test('Octane keeps a single Uno listener when the handler changes between renders', async () => {
-    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const ui = await createEventUI()
     const root = registerRootComponent(EVENT_TREE_COMPONENT, { ui })
     const registrations = []
     const removals = []
     const received_events = []
     const register_listener = ui.events.on.bind(ui.events)
-    const removeListener = ui.events.off.bind(ui.events)
+    const remove_listener = ui.events.off.bind(ui.events)
 
-    ui.events.on = (node, type, listener) => {
-        registrations.push([node, type])
-        register_listener(node, type, listener)
+    ui.events.on = (type, listener) => {
+        registrations.push(type)
+        return register_listener(type, listener)
     }
-    ui.events.off = (node, type, listener) => {
-        removals.push([node, type])
-        removeListener(node, type, listener)
+    ui.events.off = (type, listener) => {
+        removals.push(type)
+        remove_listener(type, listener)
     }
 
     root.render({ onClick: () => received_events.push('first') })
-
-    const parent = ui.root.children[0]
 
     root.render({ onClick: () => received_events.push('second') })
 
     clickAt(ui, 10, 10)
 
     expect(received_events).toEqual(['second'])
-    expect(registrations).toEqual([[parent, 'click']])
+    expect(registrations).toEqual(['click'])
     expect(removals).toEqual([])
 })
 
 test('Octane removes the Uno listener when the event prop is cleared', async () => {
-    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const ui = await createEventUI()
     const root = registerRootComponent(EVENT_TREE_COMPONENT, { ui })
     const received_events = []
 
@@ -663,7 +668,7 @@ test('Octane removes the Uno listener when the event prop is cleared', async () 
 })
 
 test('Octane commits state updates from an event handler within the dispatch', async () => {
-    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const ui = await createEventUI()
     const root = registerRootComponent(COUNTER_COMPONENT, { ui })
 
     root.render({})

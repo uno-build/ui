@@ -39,9 +39,10 @@ export function createUniversalDriver({ ui }) {
     instances.set(null, { node: ui.root, type: null, props: {} })
 
     const event_types = new Map()
-    console.log(ui)
-    for (const type of ui.events.types.values()) {
-        event_types.set(type.component, type)
+    for (const defined_event of ui.defined_events) {
+        for (const type of defined_event.types) {
+            event_types.set(type.prop, type)
+        }
     }
 
     const driver = {
