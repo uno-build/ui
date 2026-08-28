@@ -1,6 +1,5 @@
 import Node from './Node'
 import Events from './Events'
-import { DEFAULT_EVENTS } from '../events'
 import { nodeContainsPoint, sortPaintingOrder } from '../utils/nodes'
 
 export default class UI {
@@ -12,16 +11,13 @@ export default class UI {
     private created_nodes = new Set()
     private next_node_id = 0
     private destroyed = false
+    private destroy_defined_events = []
 
-    protected constructor({ renderer, resources = null, custom_events = [], events = null }) {
+    protected constructor({ renderer, resources = null, defined_events = [] }) {
         this.renderer = renderer
         this.resources = resources
-        this.events =
-            events ??
-            new Events({
-                definitions: [...DEFAULT_EVENTS, ...custom_events],
-                update: () => this.update(),
-            })
+        this.events = new Events()
+        this.destroy_defined_events = defined_events.map((define_event) => define_event({ ui: this }))
     }
 
     protected async initialize() {
@@ -91,6 +87,9 @@ export default class UI {
             const nodes = [...this.created_nodes]
 
             this.renderer.destroy(nodes)
+            this.destroy_defined_events.forEach((destroyEvent) => destroyEvent())
+            this.destroy_defined_events.length = 0
+            nodes.forEach((node) => node.destroyEvents())
             this.events.destroy()
 
             for (const node of nodes) {
@@ -111,8 +110,13 @@ export default class UI {
     }
 
     protected dispatchEventAt(source_event, event_data) {
-        const target = event_data === null ? null : this.getEventTarget(event_data.x, event_data.y)
-        this.events.dispatch(source_event, event_data, target)
+        const node = event_data === null ? null : this.getEventTarget(event_data.x, event_data.y)
+        this.events.emit(source_event.type, {
+            raw: true,
+            source_event,
+            event_data,
+            node,
+        })
     }
 
     private getEventTarget(x, y) {
@@ -205,7 +209,6 @@ export default class UI {
         this.renderer.discardPendingStyles(node)
         this.renderer.destroyNode(node)
         this.created_nodes.delete(node)
-        this.events.destroyNode(node)
         node.ui = null
         node.parent = null
         node.children.length = 0

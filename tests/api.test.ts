@@ -228,6 +228,7 @@ test('UIWorldSpace destroy releases only its GPU texture once', () => {
         nodes: [],
         created_nodes: new Set(),
         destroyed: false,
+        destroy_defined_events: [],
         gpu_texture: {
             destroy() {
                 texture_destroy_count++

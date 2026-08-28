@@ -18,6 +18,7 @@ export default class Node {
     public scrolling = false
     public styles = {}
     private styles_declared = {}
+    private listeners = new Map()
 
     constructor({ id, ui }) {
         this.id = id
@@ -66,15 +67,106 @@ export default class Node {
         for (const child of [...this.children]) {
             child.destroy()
         }
+        this.destroyEvents()
         this.ui.destroyNode(this)
     }
 
-    public on(event, listener) {
-        this.ui?.events.on(this, event, listener)
+    public on(type, listener) {
+        if (this.ui === null) {
+            return
+        }
+
+        let node_event = this.listeners.get(type)
+
+        if (node_event === undefined) {
+            const process_event = (event) => this.processEvent(type, event)
+            node_event = {
+                listeners: new Set(),
+                process_event,
+            }
+            this.listeners.set(type, node_event)
+            this.ui.events.on(type, process_event)
+        }
+
+        node_event.listeners.add(listener)
     }
 
-    public off(event, listener) {
-        this.ui?.events.off(this, event, listener)
+    public off(type, listener) {
+        if (this.ui === null) {
+            return
+        }
+
+        const node_event = this.listeners.get(type)
+
+        if (node_event !== undefined) {
+            node_event.listeners.delete(listener)
+
+            if (node_event.listeners.size === 0) {
+                this.ui.events.off(type, node_event.process_event)
+                this.listeners.delete(type)
+            }
+        }
+    }
+
+    public destroyEvents() {
+        for (const [type, node_event] of this.listeners) {
+            this.ui.events.off(type, node_event.process_event)
+        }
+
+        this.listeners.clear()
+    }
+
+    private processEvent(type, event) {
+        if (event.raw || !this.isEventDispatcher(type, event.target)) {
+            return
+        }
+
+        let propagation_stopped = false
+        const propagated_event = {
+            type,
+            ...event.event_data,
+            source_event: event.source_event,
+            target: event.target,
+            current_target: event.target,
+            ...(event.related_target === undefined ? {} : { related_target: event.related_target }),
+            stopPropagation: () => {
+                propagation_stopped = true
+            },
+        }
+        let current_target = event.target
+
+        while (current_target !== null) {
+            propagated_event.current_target = current_target
+            current_target.dispatchListeners(type, propagated_event)
+
+            if (propagation_stopped) {
+                break
+            }
+
+            current_target = current_target.parent
+        }
+    }
+
+    private isEventDispatcher(type, target) {
+        let current_target = target
+
+        while (current_target !== null) {
+            if (current_target.listeners.get(type)?.listeners.size > 0) {
+                return current_target === this
+            }
+
+            current_target = current_target.parent
+        }
+
+        return false
+    }
+
+    private dispatchListeners(type, event) {
+        const listeners = this.listeners.get(type)?.listeners
+
+        if (listeners !== undefined) {
+            listeners.forEach((listener) => listener(event))
+        }
     }
 
     public style(name, value) {
