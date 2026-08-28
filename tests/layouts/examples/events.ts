@@ -138,6 +138,7 @@ export default async function createEventsLayout({ ui, resources, registerFont, 
     for (const type of EVENT_TYPES) {
         const indicator = createNode(ui, event_monitor, {
             flex: '1',
+            minWidth: '0px',
             height: '100%',
             alignItems: 'center',
             justifyContent: 'center',

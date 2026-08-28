@@ -7,7 +7,7 @@ export default class Events {
         return { type, setup }
     }
 
-    public constructor({ definitions = [] } = {}) {
+    public constructor({ definitions = [], update } = {}) {
         for (const definition of definitions) {
             const type = definition.type
             if (this.types.has(type.name)) {
@@ -22,6 +22,7 @@ export default class Events {
                 emit: (type, { source_event, event_data, target, related_target }) => {
                     this.dispatchAt(type, source_event, event_data, target, related_target)
                 },
+                update,
             }),
         )
     }

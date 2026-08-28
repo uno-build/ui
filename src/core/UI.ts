@@ -20,6 +20,7 @@ export default class UI {
             events ??
             new Events({
                 definitions: [...DEFAULT_EVENTS, ...custom_events],
+                update: () => this.update(),
             })
     }
 

@@ -8,9 +8,10 @@ import TestUI from './utils/TestUI.ts'
 
 const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
 const EVENT_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']
-const createEvents = (custom_events = []) =>
+const createEvents = (custom_events = [], update = () => {}) =>
     new Events({
         definitions: [...DEFAULT_EVENTS, ...custom_events],
+        update,
     })
 const createScrollNode = ({ parent = null, horizontal = false, scroll_size = 1000, client_size = 200 } = {}) => {
     const node = {
@@ -25,12 +26,6 @@ const createScrollNode = ({ parent = null, horizontal = false, scroll_size = 100
         styles: horizontal
             ? { overflowX: { parsed: { enum: OVERFLOW.scroll } } }
             : { overflowY: { parsed: { enum: OVERFLOW.scroll } } },
-        ui: {
-            update() {
-                node.scrollLeft = Math.max(0, Math.min(node.scrollLeft, node.scrollWidth - node.clientWidth))
-                node.scrollTop = Math.max(0, Math.min(node.scrollTop, node.scrollHeight - node.clientHeight))
-            },
-        },
     }
 
     return node
@@ -532,7 +527,8 @@ test('click is suppressed while an ancestor is scrolling', () => {
 })
 
 test('a touch drag scrolls the nearest scrollable ancestor and emits scroll', () => {
-    const events = createEvents()
+    let update_count = 0
+    const events = createEvents([], () => update_count++)
     const scroller = createScrollNode()
     const child = { parent: scroller, styles: {} }
     const received_events = []
@@ -544,6 +540,7 @@ test('a touch drag scrolls the nearest scrollable ancestor and emits scroll', ()
 
     expect(scroller.scrollTop).toBe(40)
     expect(received_events).toEqual([[0, 40]])
+    expect(update_count).toBe(1)
 })
 
 test('only the first touch can control scrolling', () => {

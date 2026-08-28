@@ -6,7 +6,7 @@ import { normalizeDelta } from './wheel'
 const SCROLL_SLOP = 10 // The minimum drag distance in pixels to mark the node as scrolling
 const WHEEL_FACTOR = 0.25 // The factor to scale the wheel scroll delta
 
-export const SCROLL = Events.defineEvent(EVENT.SCROLL, ({ emit }) => {
+export const SCROLL = Events.defineEvent(EVENT.SCROLL, ({ emit, update }) => {
     const pointers = new Map()
 
     const scrollTo = (node, scroll_left, scroll_top, source_event) => {
@@ -25,7 +25,7 @@ export const SCROLL = Events.defineEvent(EVENT.SCROLL, ({ emit }) => {
                 },
                 target: node,
             })
-            node.ui.update()
+            update()
         }
     }
 
