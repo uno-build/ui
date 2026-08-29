@@ -159,7 +159,7 @@ function findWheelScroll(node, delta_x, delta_y) {
             return { node: current_node, horizontal: false, delta: delta_y }
         }
 
-        const delta = delta_x || delta_y
+        const delta = Math.abs(delta_x) > Math.abs(delta_y) ? delta_x : delta_y
         const scroll_max_x = current_node.scrollWidth - current_node.clientWidth
         if (canScrollX(current_node) && canMove(current_node.scrollLeft, delta, scroll_max_x)) {
             return { node: current_node, horizontal: true, delta }

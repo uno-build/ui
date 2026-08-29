@@ -8,7 +8,7 @@ import {
 } from 'octane/universal/native'
 import { useUI } from '../src/components/octane/context.js'
 import { createUniversalDriver, registerRootComponent } from '../src/components/octane/driver.js'
-import { getImageStyle } from '../src/components/octane/utils.js'
+import { getImageStyle } from '../src/components/utils.js'
 import { DEFAULT_EVENTS } from '../src/events'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'

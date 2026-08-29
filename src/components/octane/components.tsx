@@ -1,5 +1,5 @@
 import { useUI } from './context'
-import { getImageStyle, getScrollViewStyle, getScrollContentStyle } from './utils'
+import { getImageStyle, getScrollViewStyle, getScrollContentStyle } from '../utils'
 
 export function View({ children, ...props }) {
     return <view {...props}>{children}</view>
