@@ -31,22 +31,34 @@ export function ScrollView({ children, horizontal = false, style, contentStyle, 
     )
 }
 
-export function Input({ style, value, ...props }) {
+export function Input({ style = {}, value, ...props }) {
+    const text_value = value == undefined || value == null || value === '' ? '\u00A0' : value
+    const text_style = {
+        fontSize: style.fontSize || '13.5px',
+        whiteSpace: 'nowrap',
+        ...(style.fontFamily !== undefined && { fontFamily: style.fontFamily }),
+        ...(style.lineHeight !== undefined && { lineHeight: style.lineHeight }),
+        ...(style.letterSpacing !== undefined && { letterSpacing: style.letterSpacing }),
+        ...(style.color !== undefined && { color: style.color }),
+        ...(style.textAlign !== undefined && { textAlign: style.textAlign }),
+        ...(style.textShadow !== undefined && { textShadow: style.textShadow }),
+        ...(style.textStroke !== undefined && { textStroke: style.textStroke }),
+    }
+
     return (
         <view
             style={{
                 backgroundColor: '#ffffff',
-                border: '1px solid #999999',
-                borderRadius: '3px',
-                minWidth: '150px',
-                maxWidth: '150px',
+                border: '1px solid #777777',
+                borderRadius: '2px',
+                width: '100%',
                 alignSelf: 'flex-start',
                 overflowX: 'hidden',
                 ...style,
             }}
             {...props}
         >
-            <text style={{ fontSize: style.fontSize || '12px', whiteSpace: 'nowrap' }}>{value}</text>
+            <text style={text_style}>{text_value}</text>
         </view>
     )
 }

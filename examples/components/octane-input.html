@@ -16,9 +16,14 @@
                 width: 100%;
                 height: 100%;
                 overflow: hidden;
-                font-family: 'Poppins-Regular';
+                display: flex;
+                flex-direction: column;
             }
-
+            input {
+                font-family: 'Poppins-Regular';
+                padding: 0;
+                width: 50%;
+            }
             canvas {
                 display: block;
                 width: 100%;
@@ -28,6 +33,8 @@
         </style>
     </head>
     <body>
+        <input />
+        <input placeholder="Enter text" />
         <input value="Hello World esto es un mundo cruel de ejemplo hola que tal" />
         <canvas></canvas>
         <script type="module">

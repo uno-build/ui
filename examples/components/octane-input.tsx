@@ -10,8 +10,11 @@ export function OctaneImage() {
                 // backgroundColor: '#1d2027',
                 width: '100%',
                 height: '100%',
+                flexDirection: 'column',
             }}
         >
+            <Input />
+            <Input value="Hello World esto es un mundo cruel de ejemplo hola que tal" style={{ width: '50%' }} />
             <Input value="Hello World esto es un mundo cruel de ejemplo hola que tal" style={{}} />
         </View>
     )
