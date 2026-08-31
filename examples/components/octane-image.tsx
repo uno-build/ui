@@ -46,63 +46,63 @@ export function OctaneImage() {
             <View style={IMAGE_CARD_STYLE}>
                 <Text style={IMAGE_LABEL_STYLE}>Width only: 160px - result 160x160</Text>
                 <View style={IMAGE_STAGE_STYLE}>
-                    <Image src={IMAGE_SRC} style={{ width: '160px' }} />
+                    <Image src={IMAGE_SRC} width="160px" />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
                 <Text style={IMAGE_LABEL_STYLE}>Height only: 120px - result 120x120</Text>
                 <View style={IMAGE_STAGE_STYLE}>
-                    <Image src={IMAGE_SRC} style={{ height: '120px' }} />
+                    <Image src={IMAGE_SRC} height="120px" />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
                 <Text style={IMAGE_LABEL_STYLE}>objectFit: fill - 180x90 box</Text>
                 <View style={IMAGE_STAGE_STYLE}>
-                    <Image src={IMAGE_SRC} style={{ width: '180px', height: '90px', objectFit: 'fill' }} />
+                    <Image src={IMAGE_SRC} width="180px" height="90px" style={{ objectFit: 'fill' }} />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
                 <Text style={IMAGE_LABEL_STYLE}>objectFit: contain - 180x90 box</Text>
                 <View style={IMAGE_STAGE_STYLE}>
-                    <Image src={IMAGE_SRC} style={{ width: '180px', height: '90px', objectFit: 'contain' }} />
+                    <Image src={IMAGE_SRC} width="180px" height="90px" style={{ objectFit: 'contain' }} />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
                 <Text style={IMAGE_LABEL_STYLE}>objectFit: cover - 180x90 box</Text>
                 <View style={IMAGE_STAGE_STYLE}>
-                    <Image src={IMAGE_SRC} style={{ width: '180px', height: '90px', objectFit: 'cover' }} />
+                    <Image src={IMAGE_SRC} width="180px" height="90px" style={{ objectFit: 'cover' }} />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
                 <Text style={IMAGE_LABEL_STYLE}>objectFit: none - 180x90 box</Text>
                 <View style={IMAGE_STAGE_STYLE}>
-                    <Image src={IMAGE_SRC} style={{ width: '180px', height: '90px', objectFit: 'none' }} />
+                    <Image src={IMAGE_SRC} width="180px" height="90px" style={{ objectFit: 'none' }} />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
                 <Text style={IMAGE_LABEL_STYLE}>Width only: 50% - height preserves the aspect ratio</Text>
                 <View style={IMAGE_STAGE_STYLE}>
-                    <Image src={IMAGE_SRC} style={{ width: '50%' }} />
+                    <Image src={IMAGE_SRC} width="50%" />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
                 <Text style={IMAGE_LABEL_STYLE}>Height only: 50% - width preserves the aspect ratio</Text>
                 <View style={IMAGE_STAGE_STYLE}>
-                    <Image src={IMAGE_SRC} style={{ height: '50%' }} />
+                    <Image src={IMAGE_SRC} height="50%" />
                 </View>
             </View>
 
             <View style={IMAGE_CARD_STYLE}>
                 <Text style={IMAGE_LABEL_STYLE}>Width and height: 50% - independent box</Text>
                 <View style={IMAGE_STAGE_STYLE}>
-                    <Image src={IMAGE_SRC} style={{ width: '50%', height: '50%' }} />
+                    <Image src={IMAGE_SRC} width="50%" height="50%" />
                 </View>
             </View>
         </View>

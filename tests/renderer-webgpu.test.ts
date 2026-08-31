@@ -10,6 +10,7 @@ import {
     KEYWORD,
     OVERFLOW,
     TEXT_ALIGN,
+    WHITE_SPACE,
     UNIT,
     MEASURE_MODE,
 } from '../src/style/consts.ts'
@@ -1829,6 +1830,37 @@ test('RendererWebGPU measures wrapped text with the available width', () => {
     expect(renderer.getTextMeasure(node, 24)).toEqual({ width: 24, height: 60 })
 })
 
+test('RendererWebGPU measures nowrap text as a single line', () => {
+    const font = {
+        ...createManagedFont(),
+        metrics: {
+            ascender: 1,
+            descender: -0.25,
+            lineHeight: 1.5,
+        },
+    }
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: font,
+        }),
+    )
+    const node = createNode({
+        text_content: 'AA AA',
+        styles: {
+            fontSize: {
+                value: '20px',
+                parsed: { value: 20, kind: UNIT.PX },
+            },
+            whiteSpace: {
+                parsed: { enum: WHITE_SPACE.nowrap },
+            },
+        },
+    })
+
+    expect(renderer.getTextMeasure(node, 24)).toEqual({ width: 24, height: 30 })
+})
+
 test('RendererWebGPU uses resolved lineHeight for every wrapped line', () => {
     const renderer = createRenderer(
         createImageManager(),
@@ -1967,6 +1999,33 @@ test('RendererWebGPU paints wrapped glyphs on separate lines', () => {
     expect(render_data.glyphs).toHaveLength(2)
     expect(render_data.glyphs[0].layout).toEqual([10, 20, 8, 16])
     expect(render_data.glyphs[1].layout).toEqual([10, 40, 8, 16])
+})
+
+test('RendererWebGPU paints nowrap glyphs on a single line', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node = createNode({
+        text_content: 'A A',
+        layout: { x: 10, y: 20, width: 10, height: 20 },
+        styles: {
+            backgroundColor: {
+                parsed: {
+                    rgba: [0, 0, 0, 0],
+                },
+            },
+            whiteSpace: {
+                parsed: { enum: WHITE_SPACE.nowrap },
+            },
+        },
+    })
+    const render_data = collectRenderData(renderer, [node])
+
+    expect(render_data.glyphs).toHaveLength(2)
+    expect(render_data.glyphs.map(({ layout }) => layout[1])).toEqual([20, 20])
 })
 
 test('RendererWebGPU preserves width and line breaks when only lineHeight changes', () => {

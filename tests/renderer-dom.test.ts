@@ -56,6 +56,20 @@ test('RendererDom maps textStroke only to webkitTextStroke', () => {
     })
 })
 
+test('RendererDom maps whiteSpace and restores its default with unset', () => {
+    const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas: {} }) })
+    const element = { style: {} }
+    const node = {}
+    ;(renderer as any).elements.set(node, element)
+    ;(renderer as any).updateStyle(node, Style.resolveStyle('whiteSpace', 'nowrap'))
+
+    expect(element.style.whiteSpace).toBe('nowrap')
+
+    ;(renderer as any).updateStyle(node, Style.resolveStyle('whiteSpace', 'unset'))
+
+    expect(element.style.whiteSpace).toBe('pre-wrap')
+})
+
 test('RendererDom resolves natural and unset lineHeight from registered font metrics', () => {
     const resources = ResourcesDom.create({ canvas: {} })
     const renderer = new RendererDom({ resources })

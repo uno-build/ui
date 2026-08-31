@@ -590,6 +590,15 @@ test('textAlign', () => {
     expectInvalid('textAlign', true, /style value must be a string/)
 })
 
+test('whiteSpace', () => {
+    expectEnum('whiteSpace', ' Normal ', 'normal', 0)
+    expectEnum('whiteSpace', 'NOWRAP', 'nowrap', 1)
+    expectResolved(' white-space ', ' Pre-Wrap ', 'pre-wrap', { enum: 2 }, 'whiteSpace')
+    expectKeywordUnit('whiteSpace', ' Unset ', 'unset')
+    expectInvalid('whiteSpace', 'pre', /expected one of normal, nowrap, pre-wrap/)
+    expectInvalid('whiteSpace', true, /style value must be a string/)
+})
+
 test('opacity', () => {
     const valid_cases = [
         ['0', '0', 0],

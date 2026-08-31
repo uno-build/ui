@@ -21,6 +21,7 @@ import {
     LETTER_SPACING_DEFINITION,
     LINE_HEIGHT_DEFINITION,
     TEXT_ALIGN_DEFINITION,
+    WHITE_SPACE_DEFINITION,
     JUSTIFY_CONTENT_DEFINITION,
     MARGIN_DEFINITION,
     MIN_MAX_SIZE_DEFINITION,
@@ -319,6 +320,9 @@ export const STYLE = {
     ]),
     TEXTALIGN: createStyle('textAlign', (name, value) => [
         { name, value, definition: TEXT_ALIGN_DEFINITION },
+    ]),
+    WHITESPACE: createStyle('whiteSpace', (name, value) => [
+        { name, value, definition: WHITE_SPACE_DEFINITION },
     ]),
 
     // YOGA PROPERTIES

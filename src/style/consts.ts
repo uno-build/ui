@@ -121,6 +121,11 @@ export const TEXT_ALIGN = {
     center: 2,
     justify: 3,
 }
+export const WHITE_SPACE = {
+    normal: 0,
+    nowrap: 1,
+    'pre-wrap': 2,
+}
 export const MEASURE_MODE = {
     UNDEFINED: 'undefined',
     EXACTLY: 'exactly',

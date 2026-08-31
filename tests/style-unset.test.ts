@@ -40,6 +40,7 @@ const STYLE_VALUES: Record<string, string> = {
     lineHeight: '30px',
     letterSpacing: '2px',
     textAlign: 'center',
+    whiteSpace: 'nowrap',
     position: 'absolute',
     top: '10px',
     left: '10px',
@@ -93,8 +94,8 @@ const STYLE_CASES = STYLE_NAMES.map((name) => ({
 }))
 const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
 
-test('Dom unset restores the undefined state for all 80 styles', async ({ page }) => {
-    expect(STYLE_NAMES).toHaveLength(80)
+test('Dom unset restores the undefined state for all 81 styles', async ({ page }) => {
+    expect(STYLE_NAMES).toHaveLength(81)
     expect(Object.keys(STYLE_VALUES)).toEqual(STYLE_NAMES)
 
     await page.goto('/dev/?renderers=RendererDom')
@@ -171,15 +172,15 @@ test('Dom unset restores the undefined state for all 80 styles', async ({ page }
         },
     )
 
-    expect(states).toHaveLength(80)
+    expect(states).toHaveLength(81)
     for (const { name, undefined_value, defined_value, unset_value } of states) {
         expect(defined_value, `${name}: defined`).not.toBe(undefined_value)
         expect(unset_value, `${name}: unset`).toBe(undefined_value)
     }
 })
 
-test('WebGPU unset restores the undefined state for all 80 styles', async ({ page }) => {
-    expect(STYLE_NAMES).toHaveLength(80)
+test('WebGPU unset restores the undefined state for all 81 styles', async ({ page }) => {
+    expect(STYLE_NAMES).toHaveLength(81)
     expect(Object.keys(STYLE_VALUES)).toEqual(STYLE_NAMES)
 
     await page.goto('/dev/?renderers=RendererDom')
@@ -211,6 +212,7 @@ test('WebGPU unset restores the undefined state for all 80 styles', async ({ pag
                 'lineHeight',
                 'letterSpacing',
                 'textAlign',
+                'whiteSpace',
                 'textShadow',
                 'textStroke',
             ])
@@ -377,7 +379,7 @@ test('WebGPU unset restores the undefined state for all 80 styles', async ({ pag
         },
     )
 
-    expect(states).toHaveLength(80)
+    expect(states).toHaveLength(81)
     for (const { name, undefined_value, defined_value, unset_value } of states) {
         expect(defined_value, `${name}: defined`).not.toBe(undefined_value)
         expect(unset_value, `${name}: unset`).toBe(undefined_value)

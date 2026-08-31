@@ -14,6 +14,7 @@ import {
     POINTER_EVENTS,
     POSITION,
     TEXT_ALIGN,
+    WHITE_SPACE,
     WRAP,
 } from './consts'
 import { normalizeTrim, normalizeToLowercase } from './normalizers'
@@ -207,6 +208,15 @@ export const TEXT_ALIGN_DEFINITION = [
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(TEXT_ALIGN)],
         parse: [createEnumParser(TEXT_ALIGN)],
+    },
+    ...UNSET_DEFINITION,
+]
+
+export const WHITE_SPACE_DEFINITION = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [createEnumValidator(WHITE_SPACE)],
+        parse: [createEnumParser(WHITE_SPACE)],
     },
     ...UNSET_DEFINITION,
 ]
