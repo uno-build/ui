@@ -9,9 +9,9 @@ export function Text({ children, ...props }) {
     return <text {...props}>{children}</text>
 }
 
-export function Image({ src, style, ...props }) {
+export function Image({ src, width, height, style, ...props }) {
     const ui = useUI()
-    return <view {...props} style={getImageStyle(ui.resources, src, style)} />
+    return <view {...props} style={getImageStyle(ui.resources, src, { width, height, ...style })} />
 }
 
 export function ScrollView({ children, horizontal = false, style, contentStyle, ...props }) {
