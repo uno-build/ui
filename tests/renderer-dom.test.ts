@@ -249,6 +249,7 @@ test('RendererDom keeps detached elements alive until destroyNode', () => {
 })
 
 test('RendererDom layout remains in content coordinates while the parent is scrolled', () => {
+    const original_get_computed_style = globalThis.getComputedStyle
     const canvas = {
         scrollLeft: 40,
         scrollTop: 30,
@@ -274,14 +275,32 @@ test('RendererDom layout remains in content coordinates while the parent is scro
     renderer.createElement(root)
     ;(renderer as any).elements.set(node, element)
 
-    expect(renderer.getLayout(node)).toMatchObject({
-        left: 50,
-        top: 50,
-        x: 50,
-        y: 50,
-        width: 100,
-        height: 50,
-    })
+    globalThis.getComputedStyle = () =>
+        ({
+            borderTopWidth: '1px',
+            borderRightWidth: '2px',
+            borderBottomWidth: '3px',
+            borderLeftWidth: '4px',
+        }) as CSSStyleDeclaration
+
+    try {
+        expect(renderer.getLayout(node)).toMatchObject({
+            left: 50,
+            top: 50,
+            x: 50,
+            y: 50,
+            width: 100,
+            height: 50,
+            border: {
+                top: 1,
+                right: 2,
+                bottom: 3,
+                left: 4,
+            },
+        })
+    } finally {
+        globalThis.getComputedStyle = original_get_computed_style
+    }
 })
 
 function createNode(id) {

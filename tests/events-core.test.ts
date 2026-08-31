@@ -204,7 +204,7 @@ test('UI notifies every stateful definition when destroying a node subtree', asy
     ui.destroy()
 })
 
-test('UIDom converts native source events to raw input and removes its listeners on destroy', async () => {
+test('UIDom adapts native source events and removes its listeners on destroy', async () => {
     const listeners = new Map()
     const canvas = {
         addEventListener(type, listener) {
@@ -236,6 +236,7 @@ test('UIDom converts native source events to raw input and removes its listeners
 
     const source_event = {
         type: 'pointerdown',
+        target: canvas,
         pointerId: 1,
         pointerType: 'mouse',
         clientX: 120,

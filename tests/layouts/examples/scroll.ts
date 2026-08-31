@@ -8,7 +8,12 @@ Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagit
 
 const INNER_TEXTS = TEXT.split('\n\n')
 
-export default async function createFontTextScrollLayout({ ui, resources, registerFont }) {
+export default async function createFontTextScrollLayout({
+    ui,
+    resources,
+    registerFont,
+    rendererName: renderer_name,
+}) {
     const changa_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
     const changa_json = await loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json')
     const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
@@ -194,7 +199,9 @@ export default async function createFontTextScrollLayout({ ui, resources, regist
         })
     }
 
-    for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'wheel']) {
-        resources.canvas.addEventListener(type, (event) => ui.dispatchEvent(event))
+    if (renderer_name !== 'RendererDom') {
+        for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'wheel']) {
+            resources.canvas.addEventListener(type, (event) => ui.dispatchEvent(event))
+        }
     }
 }

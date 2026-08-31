@@ -5,6 +5,7 @@ import { KEYWORD } from '../style/consts'
 export default class RendererDom extends Renderer {
     private resources
     private elements = new WeakMap()
+    private element_nodes = new WeakMap()
     private text_elements = new WeakMap()
     private root_node
 
@@ -29,6 +30,7 @@ export default class RendererDom extends Renderer {
         }
 
         this.elements.set(node, element)
+        this.element_nodes.set(element, node)
         return element
     }
 
@@ -45,6 +47,7 @@ export default class RendererDom extends Renderer {
             }
 
             this.elements.delete(node)
+            this.element_nodes.delete(element)
             this.text_elements.delete(node)
         }
 
@@ -63,8 +66,10 @@ export default class RendererDom extends Renderer {
     }
 
     public destroyNode(node) {
-        this.elements.get(node).remove()
+        const element = this.elements.get(node)
+        element.remove()
         this.elements.delete(node)
+        this.element_nodes.delete(element)
         this.text_elements.delete(node)
     }
 
@@ -174,6 +179,30 @@ export default class RendererDom extends Renderer {
         node.clientHeight = element.clientHeight
     }
 
+    public syncScroll(element) {
+        const node = this.element_nodes.get(element)
+
+        if (node !== undefined) {
+            this.readNodeScroll(node)
+        }
+
+        return node
+    }
+
+    public getEventNode(element) {
+        let current_element = element
+
+        while (current_element != null) {
+            const node = this.element_nodes.get(current_element)
+            if (node !== undefined) {
+                return node
+            }
+            current_element = current_element.parentNode
+        }
+
+        return null
+    }
+
     private updateText(node) {
         let text_element = this.text_elements.get(node)
 
@@ -197,22 +226,31 @@ export default class RendererDom extends Renderer {
         const parent = node.parent
         const parent_layout = getParentLayout(node)
         const node_rect = this.elements.get(node).getBoundingClientRect()
+        const computed_style = getComputedStyle(this.elements.get(node))
         const parent_element = parent === null ? this.resources.canvas : this.elements.get(parent)
         const parent_rect = parent_element.getBoundingClientRect()
 
-        return calculateLayoutRect(
-            {
-                width: node_rect.width,
-                height: node_rect.height,
-                left: node_rect.left - parent_rect.left + (parent === null ? 0 : parent_element.scrollLeft),
-                top: node_rect.top - parent_rect.top + (parent === null ? 0 : parent_element.scrollTop),
+        return {
+            ...calculateLayoutRect(
+                {
+                    width: node_rect.width,
+                    height: node_rect.height,
+                    left: node_rect.left - parent_rect.left + (parent === null ? 0 : parent_element.scrollLeft),
+                    top: node_rect.top - parent_rect.top + (parent === null ? 0 : parent_element.scrollTop),
+                },
+                {
+                    ...parent_layout,
+                    width: parent_rect.width,
+                    height: parent_rect.height,
+                },
+            ),
+            border: {
+                top: parseFloat(computed_style.borderTopWidth),
+                right: parseFloat(computed_style.borderRightWidth),
+                bottom: parseFloat(computed_style.borderBottomWidth),
+                left: parseFloat(computed_style.borderLeftWidth),
             },
-            {
-                ...parent_layout,
-                width: parent_rect.width,
-                height: parent_rect.height,
-            },
-        )
+        }
     }
 }
 

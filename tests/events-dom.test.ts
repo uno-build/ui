@@ -90,8 +90,8 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
                 bubbles: true,
                 pointerId: 1,
                 pointerType: 'mouse',
-                clientX: 70,
-                clientY: 55,
+                clientX: 190,
+                clientY: 90,
             })
             nested_element.dispatchEvent(current_source_event)
             nested_element.dispatchEvent(
@@ -99,8 +99,15 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
                     bubbles: true,
                     pointerId: 1,
                     pointerType: 'mouse',
-                    clientX: 70,
-                    clientY: 55,
+                    clientX: 190,
+                    clientY: 90,
+                }),
+            )
+            nested_element.dispatchEvent(
+                new MouseEvent('click', {
+                    bubbles: true,
+                    clientX: 190,
+                    clientY: 90,
                 }),
             )
 
@@ -121,13 +128,24 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
                     current_target_matches: event.current_target === sibling,
                 })
             })
-            sibling.element.dispatchEvent(
-                new PointerEvent('pointermove', {
+            child.element.dispatchEvent(
+                new PointerEvent('pointerout', {
                     bubbles: true,
                     pointerId: 1,
                     pointerType: 'mouse',
                     clientX: 170,
                     clientY: 55,
+                    relatedTarget: sibling.element,
+                }),
+            )
+            sibling.element.dispatchEvent(
+                new PointerEvent('pointerover', {
+                    bubbles: true,
+                    pointerId: 1,
+                    pointerType: 'mouse',
+                    clientX: 170,
+                    clientY: 55,
+                    relatedTarget: child.element,
                 }),
             )
 
@@ -179,8 +197,8 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
         {
             listener: 'child',
             type: 'pointerdown',
-            x: 50,
-            y: 25,
+            x: 170,
+            y: 60,
             target_matches: true,
             current_target_matches: true,
             source_event_matches: true,
@@ -188,8 +206,8 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
         {
             listener: 'root',
             type: 'pointerdown',
-            x: 50,
-            y: 25,
+            x: 170,
+            y: 60,
             target_matches: true,
             current_target_matches: true,
             source_event_matches: true,
@@ -212,7 +230,7 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
     ])
     expect(result.click_event).toEqual({
         type: 'click',
-        source_type: 'pointerup',
+        source_type: 'click',
         target_matches: true,
         current_target_matches: true,
     })
@@ -220,7 +238,134 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
     expect(result.destroyed_calls).toBe(0)
 })
 
-test('UIDom and UIWebGPU use the same synthetic event order', async ({ page }) => {
+test('UIDom uses native scrolling inside bordered scroll containers', async ({ page }) => {
+    await page.goto('/dev/?renderers=RendererDom')
+
+    const result = await page.evaluate(
+        async ({ module_urls }) => {
+            const [{ default: UIDom }, { default: ResourcesDom }] = await Promise.all([
+                import(module_urls.ui),
+                import(module_urls.resources),
+            ])
+            const canvas = document.createElement('div')
+            Object.assign(canvas.style, {
+                boxSizing: 'border-box',
+                display: 'flex',
+                position: 'absolute',
+                left: '20px',
+                top: '30px',
+                width: '200px',
+                height: '200px',
+                zIndex: '1000',
+            })
+            document.body.appendChild(canvas)
+
+            const resources = ResourcesDom.create({ canvas })
+            const { ui } = await UIDom.create({ resources })
+            const scroll = ui.create()
+            const child = ui.create()
+
+            ui.root.style('width', '200px')
+            ui.root.style('height', '200px')
+            scroll.style('width', '100px')
+            scroll.style('height', '100px')
+            scroll.style('overflow', 'scroll')
+            scroll.style('border', '4px solid #000000')
+            child.style('width', '100px')
+            child.style('height', '200px')
+            child.style('flexShrink', '0')
+            ui.root.add(scroll)
+            scroll.add(child)
+            ui.update()
+
+            let pointer_down_calls = 0
+            const scroll_events = []
+            let wheel_event
+            child.on('pointerdown', () => pointer_down_calls++)
+            scroll.on('wheel', (event) => {
+                wheel_event = {
+                    source_type: event.source_event.type,
+                    target_matches: event.target === child,
+                    current_target_matches: event.current_target === scroll,
+                    delta_y: event.delta_y,
+                }
+            })
+            scroll.on('scroll', (event) => {
+                scroll_events.push({
+                    source_type: event.source_event.type,
+                    target_matches: event.target === scroll,
+                    scroll_left: event.scroll_left,
+                    scroll_top: event.scroll_top,
+                })
+            })
+            child.element.dispatchEvent(
+                new PointerEvent('pointerdown', {
+                    bubbles: true,
+                    pointerId: 1,
+                    pointerType: 'mouse',
+                    clientX: 30,
+                    clientY: 40,
+                }),
+            )
+            child.element.dispatchEvent(
+                new WheelEvent('wheel', {
+                    bubbles: true,
+                    clientX: 30,
+                    clientY: 40,
+                    deltaY: 40,
+                }),
+            )
+
+            const scroll_top_after_wheel = scroll.scrollTop
+            const native_scroll = new Promise((resolve) => {
+                scroll.element.addEventListener('scroll', resolve, { once: true })
+            })
+            scroll.element.scrollTop = 40
+            await native_scroll
+
+            const border = scroll.layout.border
+            const scroll_top = scroll.scrollTop
+            ui.destroy()
+            canvas.remove()
+
+            return { border, pointer_down_calls, scroll_events, scroll_top, scroll_top_after_wheel, wheel_event }
+        },
+        {
+            module_urls: {
+                ui: `/@fs${WORKSPACE_PATH}src/ui/UIDom.ts`,
+                resources: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.ts`,
+            },
+        },
+    )
+
+    expect(result).toEqual({
+        border: {
+            top: 4,
+            right: 4,
+            bottom: 4,
+            left: 4,
+        },
+        pointer_down_calls: 1,
+        scroll_events: [
+            {
+                source_type: 'scroll',
+                target_matches: true,
+                scroll_left: 0,
+                scroll_top: 40,
+            },
+        ],
+        scroll_top: 40,
+        scroll_top_after_wheel: 0,
+        wheel_event: {
+            source_type: 'wheel',
+            target_matches: true,
+            current_target_matches: true,
+            delta_y: 40,
+        },
+    })
+})
+
+test('UIDom preserves native event sources alongside UIWebGPU normalization', async ({ page }) => {
     await page.goto('/dev/?renderers=RendererDom')
 
     await page.evaluate(
@@ -382,13 +527,13 @@ test('UIDom and UIWebGPU use the same synthetic event order', async ({ page }) =
     expect(result.dom_synthetic.every(({ target, current_target }) => target === current_target)).toBe(true)
     expect(result.webgpu_synthetic.every(({ target, current_target }) => target === current_target)).toBe(true)
     expect(result.dom_synthetic.map(({ type, source_type }) => [type, source_type])).toEqual([
-        ['pointerover', 'pointermove'],
+        ['pointerover', 'pointerover'],
         ['pointermove', 'pointermove'],
         ['pointerdown', 'pointerdown'],
         ['pointerup', 'pointerup'],
-        ['click', 'pointerup'],
-        ['pointerout', 'pointermove'],
-        ['pointerover', 'pointermove'],
+        ['click', 'click'],
+        ['pointerout', 'pointerout'],
+        ['pointerover', 'pointerover'],
         ['pointermove', 'pointermove'],
     ])
     expect(result.webgpu_synthetic.map(({ type, source_type }) => [type, source_type])).toEqual([
