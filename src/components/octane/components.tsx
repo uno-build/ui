@@ -134,7 +134,6 @@ export function Input({
               ? { color: style.color }
               : {}),
         ...(style.textAlign !== undefined && { textAlign: style.textAlign }),
-        ...(is_focused && { textAlign: 'right' }),
         ...(style.textShadow !== undefined && { textShadow: style.textShadow }),
         ...(style.textStroke !== undefined && { textStroke: style.textStroke }),
     }
@@ -159,6 +158,12 @@ export function Input({
                     flex: '1',
                     flexDirection: 'row',
                     alignItems: 'center',
+                    justifyContent:
+                        style.textAlign === 'center'
+                            ? 'center'
+                            : style.textAlign === 'right'
+                              ? 'flex-end'
+                              : 'flex-start',
                     overflowX: 'hidden',
                     pointerEvents: 'none',
                 }}

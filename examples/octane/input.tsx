@@ -213,7 +213,6 @@ export function OctaneInput() {
                         style={{
                             ...NICKNAME_STYLE,
                             ...(focused === 'nickname' && NICKNAME_FOCUS_STYLE),
-                            textAlign: 'center',
                         }}
                         value={values.nickname}
                         placeholder="Player one"
@@ -242,7 +241,7 @@ export function OctaneInput() {
                         <Text style={LABEL_STYLE}>ACCESS CODE</Text>
                         <Input
                             id="code"
-                            style={{ ...CODE_STYLE, ...(focused === 'code' && CODE_FOCUS_STYLE) }}
+                            style={{ ...CODE_STYLE, ...(focused === 'code' && CODE_FOCUS_STYLE), textAlign: 'center' }}
                             value={values.code}
                             placeholder="000000"
                             placeholderTextColor="#6b3f42"
