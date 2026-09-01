@@ -32,11 +32,16 @@ export function ScrollView({ children, horizontal = false, style, ...props }) {
     )
 }
 
-export function Input({ ref, style = {}, value, ...props }) {
+export function Input({ ref, style = {}, value, onFocus, onBlur, ...props }) {
     const input_ref = useRef(null)
 
-    function focus() {}
-    function blur() {}
+    function focus() {
+        input_ref.current.node.focus()
+    }
+
+    function blur() {
+        input_ref.current.node.blur()
+    }
 
     useImperativeHandle(
         ref ?? null,
@@ -61,6 +66,8 @@ export function Input({ ref, style = {}, value, ...props }) {
     return (
         <view
             ref={input_ref}
+            onFocus={onFocus}
+            onBlur={onBlur}
             style={{
                 backgroundColor: '#ffffff',
                 border: '1px solid #777777',
@@ -69,8 +76,10 @@ export function Input({ ref, style = {}, value, ...props }) {
             }}
             {...props}
         >
-            <view style={{ flex: '1', overflowX: 'hidden' }}>
-                <text style={text_style}>{text_value}</text>
+            <view style={{ flex: '1', overflowX: 'hidden', pointerEvents: 'none' }}>
+                <text style={{ ...text_style, pointerEvents: 'none' }}>
+                    {text_value}
+                </text>
             </view>
         </view>
     )

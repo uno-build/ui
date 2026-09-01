@@ -36,17 +36,13 @@
         </style>
         <script>
             function onFocus(event) {
-                console.log(event.target.id)
+                // console.log({ focus: event.target.id })
                 event.target.style.borderColor = 'blue'
             }
             function onBlur(event) {
+                // console.log({ blur: event.target.id })
                 event.target.style.borderColor = 'black'
             }
-            setTimeout(() => {
-                console.log('Focusing input3')
-                const input = document.getElementById('input3')
-                input.focus()
-            }, 2000)
         </script>
     </head>
     <body>

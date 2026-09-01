@@ -260,7 +260,7 @@ test('Octane update changes Uno styles without replacing node identity', async (
     expect(node.styles.backgroundColor.value).toBe('#00f')
 })
 
-test('Octane refs receive the Uno node public instance', async () => {
+test('Octane refs receive the public instance containing the Uno node', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
     const root = registerRootComponent(REF_COMPONENT, { ui })
@@ -269,7 +269,7 @@ test('Octane refs receive the Uno node public instance', async () => {
     root.render({ ref })
 
     const node = ui.root.children[0]
-    expect(ref.current).toBe(node)
+    expect(ref.current).toEqual({ node })
 
     root.unmount()
 
