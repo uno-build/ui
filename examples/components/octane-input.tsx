@@ -8,9 +8,9 @@ export function OctaneImage() {
     const input1Ref = useRef(null)
     const [focused, setFocused] = useState(null)
     const [values, setValues] = useState({
-        input1: 'Hi',
-        input2: 'Hello World esto es un mundo cruel de ejemplo hola que tal',
-        input3: 'Hello World esto es un mundo cruel de ejemplo hola que tal',
+        input1: '',
+        input2: '',
+        input3: '',
     })
 
     const styles = {
@@ -48,6 +48,7 @@ export function OctaneImage() {
                 ref={input1Ref}
                 style={styles.input1}
                 value={values.input1}
+                placeholder="Enter text"
                 onFocus={(event) => {
                     setFocused('input1')
                     ShowPlatformKeyboard({
@@ -61,6 +62,8 @@ export function OctaneImage() {
             <Input
                 id="input2"
                 value={values.input2}
+                placeholder="Enter text"
+                placeholderTextColor="#ff0000"
                 style={styles.input2}
                 onFocus={(event) => {
                     setFocused('input2')

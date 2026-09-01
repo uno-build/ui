@@ -48,7 +48,17 @@ export function ScrollView({ ref, children, horizontal = false, style, ...props 
     )
 }
 
-export function Input({ ref, style = {}, value, onFocus, onBlur, onPointerDown, ...props }) {
+export function Input({
+    ref,
+    style = {},
+    value,
+    placeholder,
+    placeholderTextColor: placeholder_text_color = '#777777',
+    onFocus,
+    onBlur,
+    onPointerDown,
+    ...props
+}) {
     const input_ref = useRef(null)
     const content_ref = useRef(null)
     const text_ref = useRef(null)
@@ -110,13 +120,19 @@ export function Input({ ref, style = {}, value, onFocus, onBlur, onPointerDown, 
         [],
     )
 
-    const text_value = value == undefined || value == null || value === '' ? '\u00A0' : value
+    const has_value = value != null && value !== ''
+    const show_placeholder = !has_value && !is_focused && placeholder != null
+    const text_value = show_placeholder ? placeholder : has_value ? value : '\u00A0'
     const text_style = {
         whiteSpace: 'nowrap',
         ...(style.fontFamily !== undefined && { fontFamily: style.fontFamily }),
         ...(style.lineHeight !== undefined && { lineHeight: style.lineHeight }),
         ...(style.letterSpacing !== undefined && { letterSpacing: style.letterSpacing }),
-        ...(style.color !== undefined && { color: style.color }),
+        ...(show_placeholder
+            ? { color: placeholder_text_color }
+            : style.color !== undefined
+              ? { color: style.color }
+              : {}),
         ...(style.textAlign !== undefined && { textAlign: style.textAlign }),
         ...(is_focused && { textAlign: 'right' }),
         ...(style.textShadow !== undefined && { textShadow: style.textShadow }),
