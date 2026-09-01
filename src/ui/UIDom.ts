@@ -1,5 +1,6 @@
 import UI from '../core/UI'
 import { EVENT } from '../events/const'
+import { defineFocus } from '../events/focus'
 import { normalizeDelta } from '../events/wheel'
 import RendererDom from '../renderer/RendererDom'
 
@@ -11,7 +12,7 @@ const DOM_POINTER_EVENTS = [
     EVENT.POINTEROVER,
     EVENT.POINTEROUT,
 ]
-const DOM_EVENTS = [defineDomPointer, defineDomWheel, defineDomScroll, defineDomClick]
+const DOM_EVENTS = [defineDomPointer, defineDomWheel, defineDomScroll, defineDomClick, defineFocus]
 
 export default class UIDom extends UI {
     protected constructor({ resources, defined_events = [] }) {

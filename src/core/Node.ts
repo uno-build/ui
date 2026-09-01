@@ -1,4 +1,5 @@
 import { resolveStyle, validateStyle } from '../style'
+import { EVENT } from '../events/const'
 
 export default class Node {
     public ui
@@ -55,6 +56,26 @@ export default class Node {
 
     public destroy() {
         this.ui?.destroyNode(this)
+    }
+
+    public focus(source_event = null) {
+        if (this.ui !== null) {
+            this.ui.events_source.emit(EVENT.FOCUS.name, {
+                source_event,
+                event_data: null,
+                node: this,
+            })
+        }
+    }
+
+    public blur(source_event = null) {
+        if (this.ui !== null) {
+            this.ui.events_source.emit(EVENT.BLUR.name, {
+                source_event,
+                event_data: null,
+                node: this,
+            })
+        }
     }
 
     public on(type, listener) {

@@ -8,4 +8,6 @@ export const EVENT = {
     CLICK: { name: 'click', prop: 'onClick', priority: 'discrete' },
     WHEEL: { name: 'wheel', prop: 'onWheel', priority: 'continuous' },
     SCROLL: { name: 'scroll', prop: 'onScroll', priority: 'continuous' },
+    FOCUS: { name: 'focus', prop: 'onFocus', priority: 'discrete' },
+    BLUR: { name: 'blur', prop: 'onBlur', priority: 'discrete' },
 }

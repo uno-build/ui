@@ -54,6 +54,144 @@ test('default event definitions expose their public types through UI', async () 
         [EVENT.WHEEL],
         [EVENT.SCROLL],
         [EVENT.CLICK],
+        [EVENT.FOCUS, EVENT.BLUR],
+    ])
+
+    ui.destroy()
+})
+
+test('focus and blur keep a single focused node and emit public transitions', async () => {
+    const ui = await TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: DEFAULT_EVENTS,
+    })
+    const first = ui.create()
+    const second = ui.create()
+    const received_events = []
+    const first_source_event = { type: 'programmatic-focus' }
+    const second_source_event = { type: 'programmatic-focus' }
+
+    ui.root.add(first)
+    ui.root.add(second)
+
+    for (const type of ['focus', 'blur']) {
+        ui.root.on(type, (event) => {
+            received_events.push({
+                type: event.type,
+                target: event.target,
+                current_target: event.current_target,
+                related_target: event.related_target,
+                source_event: event.source_event,
+            })
+        })
+    }
+
+    first.focus(first_source_event)
+    first.focus()
+    second.focus(second_source_event)
+    first.blur()
+    second.blur()
+
+    expect(received_events).toEqual([
+        {
+            type: 'focus',
+            target: first,
+            current_target: ui.root,
+            related_target: null,
+            source_event: first_source_event,
+        },
+        {
+            type: 'blur',
+            target: first,
+            current_target: ui.root,
+            related_target: second,
+            source_event: second_source_event,
+        },
+        {
+            type: 'focus',
+            target: second,
+            current_target: ui.root,
+            related_target: first,
+            source_event: second_source_event,
+        },
+        {
+            type: 'blur',
+            target: second,
+            current_target: ui.root,
+            related_target: null,
+            source_event: null,
+        },
+    ])
+
+    ui.destroy()
+})
+
+test('pointerdown moves focus to its target', async () => {
+    const ui = await TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: DEFAULT_EVENTS,
+    })
+    const first = ui.create()
+    const second = ui.create()
+    const received_events = []
+    const first_source_event = { type: 'pointerdown' }
+    const second_source_event = { type: 'pointerdown' }
+
+    ui.root.add(first)
+    ui.root.add(second)
+    ui.root.on('focus', (event) =>
+        received_events.push([event.type, event.target, event.related_target, event.source_event]),
+    )
+    ui.root.on('blur', (event) =>
+        received_events.push([event.type, event.target, event.related_target, event.source_event]),
+    )
+
+    ui.events.emit(EVENT.POINTERDOWN.name, {
+        source_event: first_source_event,
+        event_data: { x: 0, y: 0 },
+        target: first,
+    })
+    ui.events.emit(EVENT.POINTERDOWN.name, {
+        source_event: first_source_event,
+        event_data: { x: 0, y: 0 },
+        target: first,
+    })
+    ui.events.emit(EVENT.POINTERDOWN.name, {
+        source_event: second_source_event,
+        event_data: { x: 10, y: 10 },
+        target: second,
+    })
+
+    expect(received_events).toEqual([
+        ['focus', first, null, first_source_event],
+        ['blur', first, second, second_source_event],
+        ['focus', second, first, second_source_event],
+    ])
+
+    ui.destroy()
+})
+
+test('destroying the focused node clears focus state', async () => {
+    const ui = await TestUI.create({
+        renderer: new TestRenderer(),
+        defined_events: DEFAULT_EVENTS,
+    })
+    const first = ui.create()
+    const second = ui.create()
+    const received_events = []
+
+    ui.root.add(first)
+    ui.root.add(second)
+    ui.root.on('focus', (event) => received_events.push([event.target, event.related_target]))
+    ui.root.on('blur', (event) => received_events.push([event.target, event.related_target]))
+
+    first.focus()
+    first.destroy()
+    second.focus()
+
+    expect(received_events).toEqual([
+        [first, null],
+        [second, null],
     ])
 
     ui.destroy()
