@@ -29,12 +29,7 @@ export function defineScroll({ ui }) {
     }
 
     const processPointerDown = ({ source_event, event_data, node: target }) => {
-        if (
-            source_event.pointerType === 'mouse' ||
-            pointers.size > 0 ||
-            target === null ||
-            event_data === null
-        ) {
+        if (source_event.pointerType === 'mouse' || pointers.size > 0 || target === null || event_data === null) {
             return
         }
 
@@ -105,10 +100,10 @@ export function defineScroll({ ui }) {
     }
 
     const remove_listeners = [
-        ui.events_source.on(EVENT.POINTER_DOWN.name, processPointerDown),
-        ui.events_source.on(EVENT.POINTER_MOVE.name, processPointerMove),
-        ui.events_source.on(EVENT.POINTER_UP.name, processPointerEnd),
-        ui.events_source.on(EVENT.POINTER_CANCEL.name, processPointerEnd),
+        ui.events_source.on(EVENT.POINTERDOWN.name, processPointerDown),
+        ui.events_source.on(EVENT.POINTERMOVE.name, processPointerMove),
+        ui.events_source.on(EVENT.POINTERUP.name, processPointerEnd),
+        ui.events_source.on(EVENT.POINTERCANCEL.name, processPointerEnd),
         ui.events_source.on(EVENT.WHEEL.name, processWheel),
     ]
 

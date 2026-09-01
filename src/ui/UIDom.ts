@@ -4,12 +4,12 @@ import { normalizeDelta } from '../events/wheel'
 import RendererDom from '../renderer/RendererDom'
 
 const DOM_POINTER_EVENTS = [
-    EVENT.POINTER_DOWN,
-    EVENT.POINTER_MOVE,
-    EVENT.POINTER_UP,
-    EVENT.POINTER_CANCEL,
-    EVENT.POINTER_OVER,
-    EVENT.POINTER_OUT,
+    EVENT.POINTERDOWN,
+    EVENT.POINTERMOVE,
+    EVENT.POINTERUP,
+    EVENT.POINTERCANCEL,
+    EVENT.POINTEROVER,
+    EVENT.POINTEROUT,
 ]
 const DOM_EVENTS = [defineDomPointer, defineDomWheel, defineDomScroll, defineDomClick]
 
@@ -36,7 +36,7 @@ function defineDomPointer({ ui }) {
                 source_event,
                 event_data: getDomEventData(ui, source_event),
                 target,
-                ...(source_event.type === EVENT.POINTER_OVER.name || source_event.type === EVENT.POINTER_OUT.name
+                ...(source_event.type === EVENT.POINTEROVER.name || source_event.type === EVENT.POINTEROUT.name
                     ? { related_target: ui.renderer.getEventNode(source_event.relatedTarget) }
                     : {}),
             })

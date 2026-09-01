@@ -33,9 +33,9 @@ export function defineClick({ ui }) {
     }
 
     const remove_listeners = [
-        ui.events_source.on(EVENT.POINTER_DOWN.name, processPointerDown),
-        ui.events_source.on(EVENT.POINTER_CANCEL.name, processPointerCancel),
-        ui.events_source.on(EVENT.POINTER_UP.name, processPointerUp),
+        ui.events_source.on(EVENT.POINTERDOWN.name, processPointerDown),
+        ui.events_source.on(EVENT.POINTERCANCEL.name, processPointerCancel),
+        ui.events_source.on(EVENT.POINTERUP.name, processPointerUp),
     ]
 
     return {

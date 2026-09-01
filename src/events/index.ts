@@ -1,6 +1,6 @@
-import { definePointer } from './pointer'
+import { definePointers } from './pointers'
 import { defineClick } from './click'
 import { defineWheel } from './wheel'
 import { defineScroll } from './scroll'
 
-export const DEFAULT_EVENTS = [definePointer, defineWheel, defineScroll, defineClick]
+export const DEFAULT_EVENTS = [definePointers, defineWheel, defineScroll, defineClick]

@@ -44,12 +44,12 @@ test('default event definitions expose their public types through UI', async () 
 
     expect(ui.defined_events.map((defined_event) => defined_event.types)).toEqual([
         [
-            EVENT.POINTER_DOWN,
-            EVENT.POINTER_MOVE,
-            EVENT.POINTER_UP,
-            EVENT.POINTER_CANCEL,
-            EVENT.POINTER_OVER,
-            EVENT.POINTER_OUT,
+            EVENT.POINTERDOWN,
+            EVENT.POINTERMOVE,
+            EVENT.POINTERUP,
+            EVENT.POINTERCANCEL,
+            EVENT.POINTEROVER,
+            EVENT.POINTEROUT,
         ],
         [EVENT.WHEEL],
         [EVENT.SCROLL],

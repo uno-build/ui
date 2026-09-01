@@ -1,13 +1,8 @@
 import { EVENT } from './const'
 
-const POINTER_TYPES = [
-    EVENT.POINTER_DOWN.name,
-    EVENT.POINTER_MOVE.name,
-    EVENT.POINTER_UP.name,
-    EVENT.POINTER_CANCEL.name,
-]
+const POINTER_TYPES = [EVENT.POINTERDOWN.name, EVENT.POINTERMOVE.name, EVENT.POINTERUP.name, EVENT.POINTERCANCEL.name]
 
-export function definePointer({ ui }) {
+export function definePointers({ ui }) {
     const pointers = new Map()
     const hovered_pointers = new Map()
 
@@ -16,7 +11,7 @@ export function definePointer({ ui }) {
         const pointer = pointers.get(pointer_id)
         let target = node
 
-        if (source_event.type === EVENT.POINTER_DOWN.name) {
+        if (source_event.type === EVENT.POINTERDOWN.name) {
             if (target === null) {
                 return
             }
@@ -28,7 +23,7 @@ export function definePointer({ ui }) {
             } else {
                 pointer.event_data = event_data
             }
-        } else if (source_event.type === EVENT.POINTER_UP.name || source_event.type === EVENT.POINTER_CANCEL.name) {
+        } else if (source_event.type === EVENT.POINTERUP.name || source_event.type === EVENT.POINTERCANCEL.name) {
             return
         }
 
@@ -40,7 +35,7 @@ export function definePointer({ ui }) {
             })
         }
 
-        if (source_event.type === EVENT.POINTER_UP.name || source_event.type === EVENT.POINTER_CANCEL.name) {
+        if (source_event.type === EVENT.POINTERUP.name || source_event.type === EVENT.POINTERCANCEL.name) {
             pointers.delete(pointer_id)
         }
     }
@@ -58,7 +53,7 @@ export function definePointer({ ui }) {
         }
 
         if (previous_target !== null) {
-            ui.events.emit(EVENT.POINTER_OUT.name, {
+            ui.events.emit(EVENT.POINTEROUT.name, {
                 source_event,
                 event_data: event_data ?? pointer.event_data,
                 target: previous_target,
@@ -70,7 +65,7 @@ export function definePointer({ ui }) {
             hovered_pointers.delete(pointer_id)
         } else {
             hovered_pointers.set(pointer_id, { target: node, event_data })
-            ui.events.emit(EVENT.POINTER_OVER.name, {
+            ui.events.emit(EVENT.POINTEROVER.name, {
                 source_event,
                 event_data,
                 target: node,
@@ -85,7 +80,7 @@ export function definePointer({ ui }) {
 
         if (pointer !== undefined) {
             hovered_pointers.delete(pointer_id)
-            ui.events.emit(EVENT.POINTER_OUT.name, {
+            ui.events.emit(EVENT.POINTEROUT.name, {
                 source_event,
                 event_data: event_data ?? pointer.event_data,
                 target: pointer.target,
@@ -97,15 +92,15 @@ export function definePointer({ ui }) {
     const processPointer = (event) => {
         const type = event.source_event.type
 
-        if (type !== EVENT.POINTER_CANCEL.name) {
+        if (type !== EVENT.POINTERCANCEL.name) {
             updatePointerOver(event)
         }
 
         normalizePointer(event)
 
         if (
-            type === EVENT.POINTER_CANCEL.name ||
-            (type === EVENT.POINTER_UP.name && event.source_event.pointerType === 'touch')
+            type === EVENT.POINTERCANCEL.name ||
+            (type === EVENT.POINTERUP.name && event.source_event.pointerType === 'touch')
         ) {
             endPointerOver(event)
         }
@@ -115,12 +110,12 @@ export function definePointer({ ui }) {
 
     return {
         types: [
-            EVENT.POINTER_DOWN,
-            EVENT.POINTER_MOVE,
-            EVENT.POINTER_UP,
-            EVENT.POINTER_CANCEL,
-            EVENT.POINTER_OVER,
-            EVENT.POINTER_OUT,
+            EVENT.POINTERDOWN,
+            EVENT.POINTERMOVE,
+            EVENT.POINTERUP,
+            EVENT.POINTERCANCEL,
+            EVENT.POINTEROVER,
+            EVENT.POINTEROUT,
         ],
         destroyNode(node) {
             for (const [pointer_id, pointer] of pointers) {
