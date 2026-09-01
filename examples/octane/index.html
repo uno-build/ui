@@ -29,9 +29,9 @@
             import { loadYoga } from 'yoga-layout/load'
 
             const EXAMPLES = {
-                image: () => import('./octane-image'),
-                input: () => import('./octane-input'),
-                scrollview: () => import('./octane-scrollview'),
+                image: () => import('./image'),
+                input: () => import('./input'),
+                scrollview: () => import('./scrollview'),
             }
 
             const example_name = new URLSearchParams(location.search).get('example') ?? 'image'
