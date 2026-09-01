@@ -1,6 +1,6 @@
 import Node from './Node'
 import EventEmitter from './EventEmitter'
-import { nodeContainsPoint, sortPaintingOrder } from '../utils/nodes'
+import { isNodeAtPoint, sortPaintingOrder } from '../utils/nodes'
 
 export default class UI {
     public root = null
@@ -110,7 +110,7 @@ export default class UI {
     }
 
     protected dispatchEventAt(source_event, event_data) {
-        const node = event_data === null ? null : this.getEventTarget(event_data.x, event_data.y)
+        const node = event_data === null ? null : this.getNodeAtPoint(event_data.x, event_data.y)
         this.events_source.emit(source_event.type, {
             source_event,
             event_data,
@@ -118,13 +118,13 @@ export default class UI {
         })
     }
 
-    private getEventTarget(x, y) {
+    private getNodeAtPoint(x, y) {
         for (let i = this.nodes.length - 1; i >= 0; i--) {
-            if (nodeContainsPoint(this.nodes[i], x, y)) {
+            if (isNodeAtPoint(this.nodes[i], x, y)) {
                 return this.nodes[i]
             }
         }
-        return nodeContainsPoint(this.root, x, y) ? this.root : null
+        return isNodeAtPoint(this.root, x, y) ? this.root : null
     }
 
     private addChild(parent, child, before_node) {

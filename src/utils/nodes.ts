@@ -1,7 +1,7 @@
 import { getAncestorClipping, getNodeRenderLayout } from '../renderer/utils/render-metrics'
 import { DISPLAY, POINTER_EVENTS } from '../style/consts'
 
-export function nodeContainsPoint(node, x, y) {
+export function isNodeAtPoint(node, x, y) {
     const display = node.styles.display?.parsed.enum ?? DISPLAY.flex
     const pointer_events = node.styles.pointerEvents?.parsed.enum ?? POINTER_EVENTS.all
     if (display === DISPLAY.none || pointer_events === POINTER_EVENTS.none) {
@@ -39,9 +39,7 @@ export function sortPaintingOrder(a, b) {
 }
 
 function readDivergentDepth(a, b, depth = 0) {
-    return depth < a.length && depth < b.length && a[depth] === b[depth]
-        ? readDivergentDepth(a, b, depth + 1)
-        : depth
+    return depth < a.length && depth < b.length && a[depth] === b[depth] ? readDivergentDepth(a, b, depth + 1) : depth
 }
 
 function readAncestorAtDepth(node, depth) {

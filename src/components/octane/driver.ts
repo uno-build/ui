@@ -38,7 +38,7 @@ export function createUniversalDriver({ ui }) {
     const instances = new Map()
     instances.set(null, {
         node: ui.root,
-        public_instance: { node: ui.root },
+        public_instance: { nodes: { main: ui.root } },
         type: null,
         props: {},
     })
@@ -73,7 +73,7 @@ export function createUniversalDriver({ ui }) {
                             applyStyles(node, {}, command.props.style ?? {})
                             instances.set(command.id, {
                                 node,
-                                public_instance: { node },
+                                public_instance: { nodes: { main: node } },
                                 type: command.type,
                                 props: command.props,
                             })

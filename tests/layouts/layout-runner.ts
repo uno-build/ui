@@ -314,7 +314,7 @@ function readPaintSamples({ canvas, nodes, samples }) {
         const expectedStack =
             sample.expectedStack?.map(readNodePath) ??
             nodesList
-                .filter((node) => nodeContainsPoint(node, x, y))
+                .filter((node) => isNodeAtPoint(node, x, y))
                 .sort((a, b) => b.order - a.order)
                 .map(readNodePath)
 
@@ -414,7 +414,7 @@ function findNodeByPath(ui, path) {
     return ui.nodes.find((node) => readNodePath(node) === path_key)
 }
 
-function nodeContainsPoint(node, x, y) {
+function isNodeAtPoint(node, x, y) {
     const { layout } = node
 
     return x >= layout.x && x < layout.x + layout.width && y >= layout.y && y < layout.y + layout.height

@@ -24,16 +24,35 @@ export function Image({ src, width, height, style, ...props }) {
     )
 }
 
-export function ScrollView({ children, horizontal = false, style, ...props }) {
+export function ScrollView({ ref, children, horizontal = false, style, ...props }) {
+    const main_ref = useRef(null)
+    const content_ref = useRef(null)
+
+    useImperativeHandle(
+        ref ?? null,
+        () => ({
+            nodes: {
+                main: main_ref.current.nodes.main,
+                content: content_ref.current.nodes.main,
+            },
+        }),
+        [],
+    )
+
     return (
-        <view {...props} style={getScrollViewStyle(horizontal, style)}>
-            <view style={getScrollContentStyle(horizontal)}>{children}</view>
+        <view ref={main_ref} {...props} style={getScrollViewStyle(horizontal, style)}>
+            <view ref={content_ref} style={getScrollContentStyle(horizontal)}>
+                {children}
+            </view>
         </view>
     )
 }
 
 export function Input({ ref, style = {}, value, onFocus, onBlur, onPointerDown, ...props }) {
     const input_ref = useRef(null)
+    const content_ref = useRef(null)
+    const text_ref = useRef(null)
+    const caret_ref = useRef(null)
     const [is_focused, setIsFocused] = useState(false)
     const [caret_visible, setCaretVisible] = useState(true)
 
@@ -53,11 +72,11 @@ export function Input({ ref, style = {}, value, onFocus, onBlur, onPointerDown, 
     }
 
     function focus() {
-        input_ref.current.node.focus()
+        input_ref.current.nodes.main.focus()
     }
 
     function blur() {
-        input_ref.current.node.blur()
+        input_ref.current.nodes.main.blur()
     }
 
     useEffect(() => {
@@ -77,7 +96,14 @@ export function Input({ ref, style = {}, value, onFocus, onBlur, onPointerDown, 
     useImperativeHandle(
         ref ?? null,
         () => ({
-            node: input_ref.current.node,
+            get nodes() {
+                return {
+                    main: input_ref.current.nodes.main,
+                    content: content_ref.current.nodes.main,
+                    text: text_ref.current.nodes.main,
+                    caret: caret_ref.current?.nodes.main ?? null,
+                }
+            },
             focus,
             blur,
         }),
@@ -112,6 +138,7 @@ export function Input({ ref, style = {}, value, onFocus, onBlur, onPointerDown, 
             {...props}
         >
             <view
+                ref={content_ref}
                 style={{
                     flex: '1',
                     flexDirection: 'row',
@@ -120,9 +147,12 @@ export function Input({ ref, style = {}, value, onFocus, onBlur, onPointerDown, 
                     pointerEvents: 'none',
                 }}
             >
-                <text style={{ ...text_style, pointerEvents: 'none' }}>{text_value}</text>
+                <text ref={text_ref} style={{ ...text_style, pointerEvents: 'none' }}>
+                    {text_value}
+                </text>
                 {is_focused && (
                     <view
+                        ref={caret_ref}
                         style={{
                             backgroundColor: style.color ?? '#000000',
                             width: '1px',
