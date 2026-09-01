@@ -1,6 +1,6 @@
 import { useEffect, useImperativeHandle, useRef, useState } from 'octane'
 import { useUI } from './context'
-import { getImageStyle, getScrollViewStyle, getScrollContentStyle } from '../utils'
+import { getImageStyle, getScrollViewStyle, getScrollContentStyle } from '../shared'
 
 export function View({ children, ...props }) {
     return <view {...props}>{children}</view>
