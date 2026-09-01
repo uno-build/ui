@@ -1,4 +1,5 @@
 import { layoutNames, readLayoutName, runLayoutFromSearchParams } from '../../tests/layouts/layout-runner'
+import { initSettingsPanel } from '../settings/settings-panel'
 
 const params = new URLSearchParams(window.location.search)
 const root = document.getElementById('root')
@@ -22,6 +23,8 @@ for (const layout_name of [...layoutNames].sort((layout_a, layout_b) => layout_a
     }
     settings_layouts.appendChild(layout_link)
 }
+
+initSettingsPanel({ root })
 
 await runLayoutFromSearchParams({
     root,

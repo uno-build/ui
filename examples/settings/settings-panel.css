@@ -1,0 +1,45 @@
+#settings-panel {
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    z-index: 999;
+    min-width: 140px;
+    min-height: 40px;
+    padding: 8px 10px;
+    border-radius: 5px;
+    background: rgba(18, 18, 18, 0.88);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+    color: white;
+    cursor: grab;
+    font:
+        11px system-ui,
+        sans-serif;
+}
+#settings-panel.dragging {
+    cursor: grabbing;
+}
+.settings-panel-title {
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.settings-renderer {
+    display: block;
+    padding: 2px 0;
+    cursor: pointer;
+}
+.settings-renderer-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+.settings-renderer-opacity {
+    color: rgba(255, 255, 255, 0.6);
+}
+.settings-renderer input {
+    display: block;
+    margin: 2px 0 0;
+    width: 100%;
+    height: 12px;
+    accent-color: #56ccf2;
+    cursor: pointer;
+}

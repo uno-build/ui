@@ -76,30 +76,6 @@
                 transform: translate(12px, 12px);
                 white-space: nowrap;
             }
-            #settings-panel {
-                position: absolute;
-                left: 16px;
-                top: 16px;
-                z-index: 999;
-                min-width: 140px;
-                min-height: 40px;
-                padding: 8px 10px;
-                border-radius: 5px;
-                background: rgba(18, 18, 18, 0.88);
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
-                color: white;
-                cursor: grab;
-                font:
-                    11px system-ui,
-                    sans-serif;
-            }
-            #settings-panel.dragging {
-                cursor: grabbing;
-            }
-            .settings-panel-title {
-                margin-bottom: 8px;
-                font-weight: 600;
-            }
             .settings-layouts-title {
                 margin-top: 8px;
                 padding-top: 8px;
@@ -124,27 +100,6 @@
             #settings-buttons {
                 display: flex;
                 gap: 4px;
-            }
-            .settings-renderer {
-                display: block;
-                padding: 2px 0;
-                cursor: pointer;
-            }
-            .settings-renderer-header {
-                display: flex;
-                justify-content: space-between;
-                gap: 8px;
-            }
-            .settings-renderer-opacity {
-                color: rgba(255, 255, 255, 0.6);
-            }
-            .settings-renderer input {
-                display: block;
-                margin: 2px 0 0;
-                width: 100%;
-                height: 12px;
-                accent-color: #56ccf2;
-                cursor: pointer;
             }
             #settings-panel button {
                 display: block;
@@ -177,184 +132,15 @@
         </div>
         <div id="mouse-tooltip">x: 0, y: 0</div>
         <script>
-            const root = document.getElementById('root')
             const tooltip = document.getElementById('mouse-tooltip')
-            const settingsPanel = document.getElementById('settings-panel')
-            const settingsRenderers = document.getElementById('settings-renderers')
             const add_random_node_button = document.getElementById('add-random-node-button')
             const remove_random_node_button = document.getElementById('remove-random-node-button')
-            const SETTINGS_PANEL_POSITION_STORAGE_KEY = 'settings-panel-position'
-            const SETTINGS_RENDERERS_STORAGE_KEY = 'settings-renderers'
-            const DEFAULT_RENDERER_OPACITY = 100
-            let settingsDragX = 0
-            let settingsDragY = 0
-            let settingsDragPointerId = null
-            const saved_renderer_opacities = getSavedRendererOpacities()
-
-            function moveSettingsPanel(left, top) {
-                settingsPanel.style.left = `${left}px`
-                settingsPanel.style.top = `${top}px`
-            }
-
-            function saveSettingsPanelPosition() {
-                localStorage.setItem(
-                    SETTINGS_PANEL_POSITION_STORAGE_KEY,
-                    JSON.stringify({ left: settingsPanel.offsetLeft, top: settingsPanel.offsetTop }),
-                )
-            }
-
-            function restoreSettingsPanelPosition() {
-                const saved_settings_panel_position = localStorage.getItem(SETTINGS_PANEL_POSITION_STORAGE_KEY)
-
-                if (saved_settings_panel_position == null) {
-                    return
-                }
-
-                const settings_panel_position = JSON.parse(saved_settings_panel_position)
-                let left = settings_panel_position.left
-                let top = settings_panel_position.top
-
-                if (left + settingsPanel.offsetWidth <= 0) {
-                    left = 0
-                } else if (left >= window.innerWidth) {
-                    left = window.innerWidth - settingsPanel.offsetWidth
-                }
-
-                if (top + settingsPanel.offsetHeight <= 0) {
-                    top = 0
-                } else if (top >= window.innerHeight) {
-                    top = window.innerHeight - settingsPanel.offsetHeight
-                }
-
-                moveSettingsPanel(left, top)
-            }
-
-            restoreSettingsPanelPosition()
-
-            function getSavedRendererOpacities() {
-                const saved_renderer_opacities = localStorage.getItem(SETTINGS_RENDERERS_STORAGE_KEY)
-
-                if (saved_renderer_opacities == null) {
-                    return {}
-                }
-
-                try {
-                    return JSON.parse(saved_renderer_opacities)
-                } catch {
-                    // Settings used to be a comma separated list of visible renderer names.
-                    return {}
-                }
-            }
-
-            function getRendererOpacity(rendererName) {
-                const saved_opacity = saved_renderer_opacities[rendererName]
-
-                return typeof saved_opacity === 'number' ? saved_opacity : DEFAULT_RENDERER_OPACITY
-            }
-
-            function saveRendererSettings() {
-                const renderer_opacities = {}
-
-                settingsRenderers.querySelectorAll('input').forEach((rendererSlider) => {
-                    renderer_opacities[rendererSlider.id.replace('settings-', '')] = Number(rendererSlider.value)
-                })
-
-                localStorage.setItem(SETTINGS_RENDERERS_STORAGE_KEY, JSON.stringify(renderer_opacities))
-            }
 
             window.addEventListener('mousemove', (event) => {
                 tooltip.textContent = `x: ${event.clientX}, y: ${event.clientY}`
                 tooltip.style.left = `${event.clientX}px`
                 tooltip.style.top = `${event.clientY}px`
             })
-
-            function endSettingsPanelDrag(event) {
-                if (event.pointerId !== settingsDragPointerId) {
-                    return
-                }
-
-                settingsDragPointerId = null
-                settingsPanel.classList.remove('dragging')
-                saveSettingsPanelPosition()
-            }
-
-            settingsPanel.addEventListener('pointerdown', (event) => {
-                if (settingsDragPointerId != null || event.button !== 0) {
-                    return
-                }
-
-                if (event.target.closest('.settings-layout, .settings-renderer, button')) {
-                    return
-                }
-
-                settingsDragPointerId = event.pointerId
-                settingsDragX = event.clientX - settingsPanel.offsetLeft
-                settingsDragY = event.clientY - settingsPanel.offsetTop
-                settingsPanel.classList.add('dragging')
-                settingsPanel.setPointerCapture(event.pointerId)
-            })
-
-            settingsPanel.addEventListener('pointermove', (event) => {
-                if (event.pointerId !== settingsDragPointerId) {
-                    return
-                }
-
-                moveSettingsPanel(event.clientX - settingsDragX, event.clientY - settingsDragY)
-            })
-
-            settingsPanel.addEventListener('pointerup', endSettingsPanelDrag)
-            settingsPanel.addEventListener('pointercancel', endSettingsPanelDrag)
-            settingsPanel.addEventListener('lostpointercapture', endSettingsPanelDrag)
-
-            function addRendererSettings() {
-                Array.from(root.children).forEach((renderer) => {
-                    if (settingsRenderers.querySelector(`#settings-${renderer.id}`)) {
-                        return
-                    }
-
-                    const rendererSlider = document.createElement('input')
-                    rendererSlider.type = 'range'
-                    rendererSlider.min = '0'
-                    rendererSlider.max = '100'
-                    rendererSlider.step = '1'
-                    rendererSlider.id = `settings-${renderer.id}`
-                    rendererSlider.value = getRendererOpacity(renderer.id)
-
-                    const rendererName = document.createElement('span')
-                    rendererName.textContent = renderer.id
-
-                    const rendererOpacity = document.createElement('span')
-                    rendererOpacity.className = 'settings-renderer-opacity'
-
-                    const rendererHeader = document.createElement('div')
-                    rendererHeader.className = 'settings-renderer-header'
-                    rendererHeader.append(rendererName, rendererOpacity)
-
-                    const rendererLabel = document.createElement('label')
-                    rendererLabel.className = 'settings-renderer'
-                    rendererLabel.htmlFor = rendererSlider.id
-                    rendererLabel.append(rendererHeader, rendererSlider)
-
-                    function applyRendererOpacity() {
-                        const renderer_opacity = Number(rendererSlider.value)
-
-                        renderer.style.display = renderer_opacity === 0 ? 'none' : 'flex'
-                        renderer.style.opacity = `${renderer_opacity / 100}`
-                        rendererOpacity.textContent = `${rendererSlider.value}%`
-                    }
-
-                    applyRendererOpacity()
-
-                    rendererSlider.addEventListener('input', applyRendererOpacity)
-                    rendererSlider.addEventListener('change', saveRendererSettings)
-
-                    settingsRenderers.appendChild(rendererLabel)
-                })
-
-                Array.from(settingsRenderers.children)
-                    .sort((renderer_a, renderer_b) => renderer_a.htmlFor.localeCompare(renderer_b.htmlFor))
-                    .forEach((renderer) => settingsRenderers.appendChild(renderer))
-            }
 
             if (add_random_node_button) {
                 add_random_node_button.addEventListener('click', () => {
@@ -367,16 +153,6 @@
                     window.removeRandomNode()
                 })
             }
-
-            document.addEventListener('DOMContentLoaded', () => {
-                addRendererSettings()
-                new MutationObserver(addRendererSettings).observe(root, {
-                    childList: true,
-                })
-                // The panel is only fully sized once its renderers and layouts exist,
-                // so clamp the restored position against its final size.
-                restoreSettingsPanelPosition()
-            })
         </script>
     </body>
 </html>
