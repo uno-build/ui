@@ -14,7 +14,10 @@ export function OctaneImage() {
     })
 
     const styles = {
-        input1: { border: focused === 'input1' ? '1px solid #007aff' : '1px solid #777777', width: '50%' },
+        input1: {
+            border: focused === 'input1' ? '1px solid #007aff' : '1px solid #777777',
+            width: '50%',
+        },
         input2: {
             border: focused === 'input2' ? '1px solid #007aff' : '1px solid #777777',
             padding: '4px',

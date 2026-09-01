@@ -1,4 +1,4 @@
-import { useImperativeHandle, useRef, useState } from 'octane'
+import { useEffect, useImperativeHandle, useRef, useState } from 'octane'
 import { useUI } from './context'
 import { getImageStyle, getScrollViewStyle, getScrollContentStyle } from '../utils'
 
@@ -35,6 +35,7 @@ export function ScrollView({ children, horizontal = false, style, ...props }) {
 export function Input({ ref, style = {}, value, onFocus, onBlur, onPointerDown, ...props }) {
     const input_ref = useRef(null)
     const [is_focused, setIsFocused] = useState(false)
+    const [caret_visible, setCaretVisible] = useState(true)
 
     function handleFocus(event) {
         setIsFocused(true)
@@ -59,11 +60,27 @@ export function Input({ ref, style = {}, value, onFocus, onBlur, onPointerDown, 
         input_ref.current.node.blur()
     }
 
+    useEffect(() => {
+        if (!is_focused) {
+            return
+        }
+
+        setCaretVisible(true)
+
+        const interval_id = setInterval(() => {
+            setCaretVisible((visible) => !visible)
+        }, 500)
+
+        return () => clearInterval(interval_id)
+    }, [is_focused, value])
+
     useImperativeHandle(
         ref ?? null,
-        () => {
-            return { node: input_ref.current.node, focus, blur }
-        },
+        () => ({
+            node: input_ref.current.node,
+            focus,
+            blur,
+        }),
         [],
     )
 
@@ -94,8 +111,29 @@ export function Input({ ref, style = {}, value, onFocus, onBlur, onPointerDown, 
             }}
             {...props}
         >
-            <view style={{ flex: '1', overflowX: 'hidden', pointerEvents: 'none' }}>
+            <view
+                style={{
+                    flex: '1',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    overflowX: 'hidden',
+                    pointerEvents: 'none',
+                }}
+            >
                 <text style={{ ...text_style, pointerEvents: 'none' }}>{text_value}</text>
+                {is_focused && (
+                    <view
+                        style={{
+                            backgroundColor: style.color ?? '#000000',
+                            width: '1px',
+                            height: '16px',
+                            marginLeft: '1px',
+                            flexShrink: '0',
+                            opacity: caret_visible ? '1' : '0',
+                            pointerEvents: 'none',
+                        }}
+                    />
+                )}
             </view>
         </view>
     )
