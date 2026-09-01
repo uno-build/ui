@@ -5,6 +5,7 @@ import { loadImage, loadJson } from '../../tests/utils/load-assets'
 const IMAGE_SRC = 'assets/images/coin.png'
 
 export function OctaneImage() {
+    const input1Ref = useRef(null)
     const [focused, setFocused] = useState(null)
     const [values, setValues] = useState({
         input1: 'Hi',
@@ -14,13 +15,21 @@ export function OctaneImage() {
 
     const styles = {
         input1: { border: focused === 'input1' ? '1px solid #007aff' : '1px solid #777777', width: '50%' },
-        input2: { border: focused === 'input2' ? '1px solid #007aff' : '1px solid #777777', width: '75%' },
+        input2: {
+            border: focused === 'input2' ? '1px solid #007aff' : '1px solid #777777',
+            padding: '4px',
+            width: '75%',
+        },
         input3: { border: focused === 'input3' ? '1px solid #007aff' : '1px solid #777777', width: '100%' },
     }
 
     function onChange(id, value) {
         setValues({ ...values, [id]: value })
     }
+
+    useEffect(() => {
+        input1Ref.current.focus()
+    }, [])
 
     return (
         <View
@@ -33,11 +42,13 @@ export function OctaneImage() {
         >
             <Input
                 id="input1"
+                ref={input1Ref}
                 style={styles.input1}
                 value={values.input1}
-                onFocus={() => {
+                onFocus={(event) => {
                     setFocused('input1')
                     ShowPlatformKeyboard({
+                        node: event.target,
                         value: values.input1,
                         onChange: (value) => onChange('input1', value),
                     })
@@ -48,9 +59,10 @@ export function OctaneImage() {
                 id="input2"
                 value={values.input2}
                 style={styles.input2}
-                onFocus={() => {
+                onFocus={(event) => {
                     setFocused('input2')
                     ShowPlatformKeyboard({
+                        node: event.target,
                         value: values.input2,
                         onChange: (value) => onChange('input2', value),
                     })
@@ -61,9 +73,10 @@ export function OctaneImage() {
                 id="input3"
                 value={values.input3}
                 style={styles.input3}
-                onFocus={() => {
+                onFocus={(event) => {
                     setFocused('input3')
                     ShowPlatformKeyboard({
+                        node: event.target,
                         value: values.input3,
                         onChange: (value) => onChange('input3', value),
                     })
@@ -76,7 +89,7 @@ export function OctaneImage() {
 
 const ShowPlatformKeyboard = (function () {
     const input = document.createElement('input')
-    input.id = 'SymbolHiddenInput' + Math.random().toString(36).substr(2, 9)
+    input.id = 'HiddenInput' + Math.random().toString(36).substr(2, 9)
     input.style.position = 'fixed'
     input.style.width = '1px'
     input.style.height = '1px'
@@ -87,10 +100,11 @@ const ShowPlatformKeyboard = (function () {
     input.tabIndex = -1
     document.body.appendChild(input)
 
-    return ({ value, onChange }) => {
+    return ({ node, value, onChange }) => {
         input.value = value
         input.oninput = () => onChange(input.value)
-        requestAnimationFrame(() => requestAnimationFrame(() => input.focus()))
+        input.onblur = () => node.blur()
+        input.focus({ preventScroll: true })
     }
 })()
 

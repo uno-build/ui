@@ -1,4 +1,4 @@
-import { useImperativeHandle, useRef } from 'octane'
+import { useImperativeHandle, useRef, useState } from 'octane'
 import { useUI } from './context'
 import { getImageStyle, getScrollViewStyle, getScrollContentStyle } from '../utils'
 
@@ -32,8 +32,24 @@ export function ScrollView({ children, horizontal = false, style, ...props }) {
     )
 }
 
-export function Input({ ref, style = {}, value, onFocus, onBlur, ...props }) {
+export function Input({ ref, style = {}, value, onFocus, onBlur, onPointerDown, ...props }) {
     const input_ref = useRef(null)
+    const [is_focused, setIsFocused] = useState(false)
+
+    function handleFocus(event) {
+        setIsFocused(true)
+        onFocus?.(event)
+    }
+
+    function handleBlur(event) {
+        setIsFocused(false)
+        onBlur?.(event)
+    }
+
+    function handlePointerDown(event) {
+        event.source_event.preventDefault()
+        onPointerDown?.(event)
+    }
 
     function focus() {
         input_ref.current.node.focus()
@@ -59,6 +75,7 @@ export function Input({ ref, style = {}, value, onFocus, onBlur, ...props }) {
         ...(style.letterSpacing !== undefined && { letterSpacing: style.letterSpacing }),
         ...(style.color !== undefined && { color: style.color }),
         ...(style.textAlign !== undefined && { textAlign: style.textAlign }),
+        ...(is_focused && { textAlign: 'right' }),
         ...(style.textShadow !== undefined && { textShadow: style.textShadow }),
         ...(style.textStroke !== undefined && { textStroke: style.textStroke }),
     }
@@ -66,8 +83,9 @@ export function Input({ ref, style = {}, value, onFocus, onBlur, ...props }) {
     return (
         <view
             ref={input_ref}
-            onFocus={onFocus}
-            onBlur={onBlur}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onPointerDown={handlePointerDown}
             style={{
                 backgroundColor: '#ffffff',
                 border: '1px solid #777777',
@@ -77,9 +95,7 @@ export function Input({ ref, style = {}, value, onFocus, onBlur, ...props }) {
             {...props}
         >
             <view style={{ flex: '1', overflowX: 'hidden', pointerEvents: 'none' }}>
-                <text style={{ ...text_style, pointerEvents: 'none' }}>
-                    {text_value}
-                </text>
+                <text style={{ ...text_style, pointerEvents: 'none' }}>{text_value}</text>
             </view>
         </view>
     )
