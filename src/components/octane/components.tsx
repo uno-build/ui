@@ -24,10 +24,10 @@ export function Image({ src, width, height, style, ...props }) {
     )
 }
 
-export function ScrollView({ children, horizontal = false, style, contentStyle, ...props }) {
+export function ScrollView({ children, horizontal = false, style, ...props }) {
     return (
         <view {...props} style={getScrollViewStyle(horizontal, style)}>
-            <view style={getScrollContentStyle(horizontal, contentStyle)}>{children}</view>
+            <view style={getScrollContentStyle(horizontal)}>{children}</view>
         </view>
     )
 }

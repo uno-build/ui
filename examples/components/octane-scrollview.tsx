@@ -1,4 +1,4 @@
-import { Image, registerRootComponent, ScrollView, Text } from 'uno-ui/octane'
+import { Image, registerRootComponent, View, ScrollView, Text } from 'uno-ui/octane'
 import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
 const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
@@ -50,6 +50,7 @@ const PANEL_STYLE = {
 const PANEL_CONTENT_STYLE = {
     padding: '24px',
     gap: '20px',
+    flexDirection: 'column',
 }
 const STRIP_STYLE = {
     width: '940px',
@@ -73,6 +74,7 @@ const INNER_PANEL_STYLE = {
 const INNER_PANEL_CONTENT_STYLE = {
     padding: '16px',
     gap: '12px',
+    flexDirection: 'column',
 }
 const TITLE_STYLE = {
     width: '100%',
@@ -109,41 +111,47 @@ const INNER_TEXT_STYLE = {
 
 export function OctaneScrollView() {
     return (
-        <ScrollView
-            style={PAGE_STYLE}
-            contentStyle={PAGE_CONTENT_STYLE}
-            onScroll={(event) => console.log('Scroll event:', event)}
-        >
-            <ScrollView style={{ ...PANEL_STYLE, border: '2px solid #1b2a38' }} contentStyle={PANEL_CONTENT_STYLE}>
-                <Text style={TITLE_STYLE}>Vertical drag scroll example</Text>
-                <Image src={LOGO_SRC} style={{ width: '100%', height: '300px', objectFit: 'cover' }} />
-                {PARAGRAPHS.map((paragraph) => (
-                    <Text style={TEXT_STYLE}>{paragraph}</Text>
-                ))}
-            </ScrollView>
-
-            <ScrollView style={PANEL_STYLE} contentStyle={{ ...PANEL_CONTENT_STYLE, gap: '24px' }}>
-                <Text style={TITLE_STYLE}>Vertical scroll with inner scroll example</Text>
-                <Image src={LOGO_SRC} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
-                <ScrollView style={INNER_PANEL_STYLE} contentStyle={INNER_PANEL_CONTENT_STYLE}>
-                    {PARAGRAPHS.flatMap((paragraph) => [
-                        <Text style={INNER_TEXT_STYLE}>{paragraph}</Text>,
-                        <Image
-                            onClick={() => console.log('Image clicked')}
-                            src={TEXTURE_SRC}
-                            style={{ width: '100%', height: '140px', objectFit: 'cover' }}
-                        />,
-                    ])}
+        <ScrollView style={PAGE_STYLE} onScroll={(event) => console.log('Scroll event:', event)}>
+            <View style={{ ...PAGE_CONTENT_STYLE }}>
+                <ScrollView style={{ ...PANEL_STYLE, border: '2px solid #1b2a38' }}>
+                    <View style={{ ...PANEL_CONTENT_STYLE }}>
+                        <Text style={TITLE_STYLE}>Vertical drag scroll example</Text>
+                        <Image src={LOGO_SRC} style={{ width: '100%', height: '300px', objectFit: 'cover' }} />
+                        {PARAGRAPHS.map((paragraph) => (
+                            <Text style={TEXT_STYLE}>{paragraph}</Text>
+                        ))}
+                    </View>
                 </ScrollView>
-                <Text style={FOOTER_TEXT_STYLE}>{PARAGRAPHS[0]}</Text>
-            </ScrollView>
 
-            <ScrollView horizontal style={{ ...STRIP_STYLE, width: '100%' }} contentStyle={STRIP_CONTENT_STYLE}>
-                <Text style={STRIP_TITLE_STYLE}>Horizontal drag scroll example</Text>
-                {STRIP_SOURCES.map((src) => (
-                    <Image src={src} style={{ width: '180px', height: '180px', objectFit: 'cover' }} />
-                ))}
-            </ScrollView>
+                <ScrollView style={PANEL_STYLE}>
+                    <View style={{ ...PANEL_CONTENT_STYLE, gap: '24px' }}>
+                        <Text style={TITLE_STYLE}>Vertical scroll with inner scroll example</Text>
+                        <Image src={LOGO_SRC} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
+                        <ScrollView style={INNER_PANEL_STYLE}>
+                            <View style={{ ...INNER_PANEL_CONTENT_STYLE }}>
+                                {PARAGRAPHS.flatMap((paragraph) => [
+                                    <Text style={INNER_TEXT_STYLE}>{paragraph}</Text>,
+                                    <Image
+                                        onClick={() => console.log('Image clicked')}
+                                        src={TEXTURE_SRC}
+                                        style={{ width: '100%', height: '140px', objectFit: 'cover' }}
+                                    />,
+                                ])}
+                            </View>
+                        </ScrollView>
+                        <Text style={FOOTER_TEXT_STYLE}>{PARAGRAPHS[0]}</Text>
+                    </View>
+                </ScrollView>
+
+                <ScrollView horizontal style={{ ...STRIP_STYLE, width: '100%' }}>
+                    <View style={{ ...STRIP_CONTENT_STYLE }}>
+                        <Text style={STRIP_TITLE_STYLE}>Horizontal drag scroll example</Text>
+                        {STRIP_SOURCES.map((src) => (
+                            <Image src={src} style={{ width: '180px', height: '180px', objectFit: 'cover' }} />
+                        ))}
+                    </View>
+                </ScrollView>
+            </View>
         </ScrollView>
     )
 }

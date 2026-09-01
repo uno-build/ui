@@ -53,6 +53,5 @@ export function getScrollContentStyle(horizontal, style = {}) {
     return {
         flexDirection: horizontal ? 'row' : 'column',
         flexShrink: '0',
-        ...style,
     }
 }
