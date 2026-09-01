@@ -36,7 +36,12 @@ export function registerRootComponent(component, { ui }) {
 
 export function createUniversalDriver({ ui }) {
     const instances = new Map()
-    instances.set(null, { node: ui.root, type: null, props: {} })
+    instances.set(null, {
+        node: ui.root,
+        public_instance: { node: ui.root },
+        type: null,
+        props: {},
+    })
 
     const event_types = new Map()
     for (const defined_event of ui.defined_events) {
@@ -66,7 +71,12 @@ export function createUniversalDriver({ ui }) {
                             }
                             const node = command.type === TYPE.$TEXT ? null : ui.create()
                             applyStyles(node, {}, command.props.style ?? {})
-                            instances.set(command.id, { node, type: command.type, props: command.props })
+                            instances.set(command.id, {
+                                node,
+                                public_instance: { node },
+                                type: command.type,
+                                props: command.props,
+                            })
                         }
 
                         // Insert / Move
@@ -163,7 +173,7 @@ export function createUniversalDriver({ ui }) {
             }
         },
         getPublicInstance(_container, id) {
-            return instances.get(id)?.node ?? null
+            return instances.get(id)?.public_instance ?? null
         },
     }
 

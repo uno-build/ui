@@ -1,9 +1,16 @@
+import { useRef, useEffect } from 'octane'
 import { registerRootComponent, View, Input } from 'uno-ui/octane'
 import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
 const IMAGE_SRC = 'assets/images/coin.png'
 
 export function OctaneImage() {
+    const inputRef = useRef()
+
+    useEffect(() => {
+        console.log(inputRef.current)
+    })
+
     return (
         <View
             style={{
@@ -14,7 +21,11 @@ export function OctaneImage() {
             }}
         >
             <Input />
-            <Input value="Hello World esto es un mundo cruel de ejemplo hola que tal" style={{ width: '50%' }} />
+            <Input
+                ref={inputRef}
+                value="Hello World esto es un mundo cruel de ejemplo hola que tal"
+                style={{ width: '50%', padding: '4px' }}
+            />
             <Input value="Hello World esto es un mundo cruel de ejemplo hola que tal" style={{}} />
         </View>
     )

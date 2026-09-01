@@ -83,7 +83,7 @@ function syncCanvasSize({ canvas, pixi_renderer, square, background_ui, foregrou
 
     pixi_renderer.resize(width, height, device_pixel_ratio)
 
-    const square_size = Math.min(width, height) * 0.35
+    const square_size = Math.min(width, height) * 0.5
     square.position.set(width / 2, height / 2)
     square.width = square_size
     square.height = square_size

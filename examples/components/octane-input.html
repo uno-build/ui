@@ -21,8 +21,11 @@
             }
             input {
                 font-family: 'Poppins-Regular';
-                padding: 0;
+                padding: 4px;
                 width: 50%;
+                outline: none;
+                font-size: 15px;
+                border: 1px solid #777777;
             }
             canvas {
                 display: block;
@@ -31,12 +34,31 @@
                 touch-action: none;
             }
         </style>
+        <script>
+            function onFocus(event) {
+                console.log(event.target.id)
+                event.target.style.borderColor = 'blue'
+            }
+            function onBlur(event) {
+                event.target.style.borderColor = 'black'
+            }
+            setTimeout(() => {
+                console.log('Focusing input3')
+                const input = document.getElementById('input3')
+                input.focus()
+            }, 2000)
+        </script>
     </head>
     <body>
-        <input />
-        <input placeholder="Enter text" />
-        <input value="Hello World esto es un mundo cruel de ejemplo hola que tal" />
-        <canvas></canvas>
+        <input id="input1" onfocus="onFocus(event)" onblur="onBlur(event)" />
+        <input id="input2" onfocus="onFocus(event)" onblur="onBlur(event)" placeholder="Enter text" />
+        <input
+            id="input3"
+            value="Hello World esto es un mundo cruel de ejemplo hola que tal"
+            onfocus="onFocus(event)"
+            onblur="onBlur(event)"
+        />
+        <canvas id="canvas1"></canvas>
         <script type="module">
             import runOctaneExample from './run-octane-example'
             import createOctaneExample from './octane-input'

@@ -1,3 +1,4 @@
+import { useImperativeHandle, useRef } from 'octane'
 import { useUI } from './context'
 import { getImageStyle, getScrollViewStyle, getScrollContentStyle } from '../utils'
 
@@ -31,10 +32,22 @@ export function ScrollView({ children, horizontal = false, style, contentStyle, 
     )
 }
 
-export function Input({ style = {}, value, ...props }) {
+export function Input({ ref, style = {}, value, ...props }) {
+    const input_ref = useRef(null)
+
+    function focus() {}
+    function blur() {}
+
+    useImperativeHandle(
+        ref ?? null,
+        () => {
+            return { node: input_ref.current.node, focus, blur }
+        },
+        [],
+    )
+
     const text_value = value == undefined || value == null || value === '' ? '\u00A0' : value
     const text_style = {
-        fontSize: style.fontSize || '13.5px',
         whiteSpace: 'nowrap',
         ...(style.fontFamily !== undefined && { fontFamily: style.fontFamily }),
         ...(style.lineHeight !== undefined && { lineHeight: style.lineHeight }),
@@ -47,18 +60,18 @@ export function Input({ style = {}, value, ...props }) {
 
     return (
         <view
+            ref={input_ref}
             style={{
                 backgroundColor: '#ffffff',
                 border: '1px solid #777777',
-                borderRadius: '2px',
                 width: '100%',
-                alignSelf: 'flex-start',
-                overflowX: 'hidden',
                 ...style,
             }}
             {...props}
         >
-            <text style={text_style}>{text_value}</text>
+            <view style={{ flex: '1', overflowX: 'hidden' }}>
+                <text style={text_style}>{text_value}</text>
+            </view>
         </view>
     )
 }
