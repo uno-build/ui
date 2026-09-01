@@ -17,7 +17,6 @@ export function defineScroll({ ui }) {
 
         if (node.scrollLeft !== previous_left || node.scrollTop !== previous_top) {
             ui.events.emit(EVENT.SCROLL.name, {
-                raw: false,
                 source_event,
                 event_data: {
                     scroll_left: node.scrollLeft,
@@ -29,9 +28,8 @@ export function defineScroll({ ui }) {
         }
     }
 
-    const processPointerDown = ({ raw, source_event, event_data, node: target }) => {
+    const processPointerDown = ({ source_event, event_data, node: target }) => {
         if (
-            !raw ||
             source_event.pointerType === 'mouse' ||
             pointers.size > 0 ||
             target === null ||
@@ -54,11 +52,7 @@ export function defineScroll({ ui }) {
         })
     }
 
-    const processPointerMove = ({ raw, source_event, event_data }) => {
-        if (!raw) {
-            return
-        }
-
+    const processPointerMove = ({ source_event, event_data }) => {
         const pointer = pointers.get(source_event.pointerId)
         if (pointer === undefined || event_data === null) {
             return
@@ -80,14 +74,12 @@ export function defineScroll({ ui }) {
         )
     }
 
-    const processPointerEnd = ({ raw, source_event }) => {
-        if (raw) {
-            pointers.delete(source_event.pointerId)
-        }
+    const processPointerEnd = ({ source_event }) => {
+        pointers.delete(source_event.pointerId)
     }
 
-    const processWheel = ({ raw, source_event, node: target }) => {
-        if (!raw || target === null) {
+    const processWheel = ({ source_event, node: target }) => {
+        if (target === null) {
             return
         }
 
@@ -113,11 +105,11 @@ export function defineScroll({ ui }) {
     }
 
     const remove_listeners = [
-        ui.events.on(EVENT.POINTER_DOWN.name, processPointerDown),
-        ui.events.on(EVENT.POINTER_MOVE.name, processPointerMove),
-        ui.events.on(EVENT.POINTER_UP.name, processPointerEnd),
-        ui.events.on(EVENT.POINTER_CANCEL.name, processPointerEnd),
-        ui.events.on(EVENT.WHEEL.name, processWheel),
+        ui.events_source.on(EVENT.POINTER_DOWN.name, processPointerDown),
+        ui.events_source.on(EVENT.POINTER_MOVE.name, processPointerMove),
+        ui.events_source.on(EVENT.POINTER_UP.name, processPointerEnd),
+        ui.events_source.on(EVENT.POINTER_CANCEL.name, processPointerEnd),
+        ui.events_source.on(EVENT.WHEEL.name, processWheel),
     ]
 
     return {

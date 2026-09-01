@@ -1,13 +1,14 @@
 import Node from './Node'
-import Events from './Events'
+import EventEmitter from './EventEmitter'
 import { nodeContainsPoint, sortPaintingOrder } from '../utils/nodes'
 
 export default class UI {
     public root = null
     public renderer = null
     public resources = null
-    public events
     public defined_events = []
+    public events
+    public events_source
     private nodes = []
     private created_nodes = new Set()
     private next_node_id = 0
@@ -16,7 +17,8 @@ export default class UI {
     protected constructor({ renderer, resources = null, defined_events = [] }) {
         this.renderer = renderer
         this.resources = resources
-        this.events = new Events()
+        this.events = new EventEmitter()
+        this.events_source = new EventEmitter()
         this.defined_events = defined_events.map((defineEvent) => defineEvent({ ui: this }))
     }
 
@@ -91,6 +93,7 @@ export default class UI {
             this.defined_events.length = 0
             nodes.forEach((node) => node.destroyEvents())
             this.events.destroy()
+            this.events_source.destroy()
 
             for (const node of nodes) {
                 this.releaseNode(node)
@@ -108,8 +111,7 @@ export default class UI {
 
     protected dispatchEventAt(source_event, event_data) {
         const node = event_data === null ? null : this.getEventTarget(event_data.x, event_data.y)
-        this.events.emit(source_event.type, {
-            raw: true,
+        this.events_source.emit(source_event.type, {
             source_event,
             event_data,
             node,

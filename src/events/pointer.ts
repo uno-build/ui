@@ -34,7 +34,6 @@ export function definePointer({ ui }) {
 
         if (target !== null && event_data !== null) {
             ui.events.emit(source_event.type, {
-                raw: false,
                 source_event,
                 event_data,
                 target,
@@ -60,7 +59,6 @@ export function definePointer({ ui }) {
 
         if (previous_target !== null) {
             ui.events.emit(EVENT.POINTER_OUT.name, {
-                raw: false,
                 source_event,
                 event_data: event_data ?? pointer.event_data,
                 target: previous_target,
@@ -73,7 +71,6 @@ export function definePointer({ ui }) {
         } else {
             hovered_pointers.set(pointer_id, { target: node, event_data })
             ui.events.emit(EVENT.POINTER_OVER.name, {
-                raw: false,
                 source_event,
                 event_data,
                 target: node,
@@ -89,7 +86,6 @@ export function definePointer({ ui }) {
         if (pointer !== undefined) {
             hovered_pointers.delete(pointer_id)
             ui.events.emit(EVENT.POINTER_OUT.name, {
-                raw: false,
                 source_event,
                 event_data: event_data ?? pointer.event_data,
                 target: pointer.target,
@@ -99,10 +95,6 @@ export function definePointer({ ui }) {
     }
 
     const processPointer = (event) => {
-        if (!event.raw) {
-            return
-        }
-
         const type = event.source_event.type
 
         if (type !== EVENT.POINTER_CANCEL.name) {
@@ -119,7 +111,7 @@ export function definePointer({ ui }) {
         }
     }
 
-    const remove_listeners = POINTER_TYPES.map((type) => ui.events.on(type, processPointer))
+    const remove_listeners = POINTER_TYPES.map((type) => ui.events_source.on(type, processPointer))
 
     return {
         types: [

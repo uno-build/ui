@@ -33,7 +33,6 @@ function defineDomPointer({ ui }) {
 
         if (target !== null) {
             ui.events.emit(source_event.type, {
-                raw: false,
                 source_event,
                 event_data: getDomEventData(ui, source_event),
                 target,
@@ -65,7 +64,6 @@ function defineDomWheel({ ui }) {
 
         if (target !== null) {
             ui.events.emit(EVENT.WHEEL.name, {
-                raw: false,
                 source_event,
                 event_data: {
                     ...getDomEventData(ui, source_event),
@@ -94,7 +92,6 @@ function defineDomScroll({ ui }) {
 
         if (node !== undefined) {
             ui.events.emit(EVENT.SCROLL.name, {
-                raw: false,
                 source_event,
                 event_data: {
                     scroll_left: node.scrollLeft,
@@ -122,7 +119,6 @@ function defineDomClick({ ui }) {
 
         if (target !== null) {
             ui.events.emit(EVENT.CLICK.name, {
-                raw: false,
                 source_event,
                 event_data: getDomEventData(ui, source_event),
                 target,

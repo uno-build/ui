@@ -4,13 +4,12 @@ import { ROOT_SIZE } from '../style/consts'
 const DELTA_MODE_LINE = 1
 
 export function defineWheel({ ui }) {
-    const removeListener = ui.events.on(EVENT.WHEEL.name, ({ raw, source_event, event_data, node }) => {
-        if (!raw || node === null) {
+    const removeListener = ui.events_source.on(EVENT.WHEEL.name, ({ source_event, event_data, node }) => {
+        if (node === null) {
             return
         }
 
         ui.events.emit(EVENT.WHEEL.name, {
-            raw: false,
             source_event,
             event_data: {
                 ...event_data,

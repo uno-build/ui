@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import Events from '../src/core/Events'
+import EventEmitter from '../src/core/EventEmitter'
 import { DEFAULT_EVENTS } from '../src/events'
 import { EVENT } from '../src/events/const'
 import { OVERFLOW } from '../src/style/consts'
@@ -7,8 +7,8 @@ import UIDom from '../src/ui/UIDom'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'
 
-test('Events registers, removes, emits, and destroys listeners', () => {
-    const events = new Events()
+test('EventEmitter registers, removes, emits, and destroys listeners', () => {
+    const events = new EventEmitter()
     const received_events = []
     const first_event = { value: 1 }
     const second_event = { value: 2 }
@@ -59,16 +59,15 @@ test('default event definitions expose their public types through UI', async () 
     ui.destroy()
 })
 
-test('UI instantiates definitions, emits raw events, and runs definition cleanup', async () => {
+test('UI instantiates definitions, emits source events, and runs definition cleanup', async () => {
     const initialized_uis = []
     const destroyed_uis = []
     const destroyed_nodes = []
     const define_activate = ({ ui }) => {
         initialized_uis.push(ui)
-        const off = ui.events.on('activate', (event) => {
-            if (event.raw && event.node !== null) {
+        const off = ui.events_source.on('activate', (event) => {
+            if (event.node !== null) {
                 ui.events.emit('activate', {
-                    raw: false,
                     source_event: event.source_event,
                     event_data: {
                         ...event.event_data,
@@ -94,7 +93,7 @@ test('UI instantiates definitions, emits raw events, and runs definition cleanup
         defined_events: [define_activate],
     })
     const child = ui.create()
-    const raw_events = []
+    const source_events = []
     const propagated_events = []
 
     ui.root.style('width', '100px')
@@ -104,11 +103,7 @@ test('UI instantiates definitions, emits raw events, and runs definition cleanup
     ui.root.add(child)
     ui.update()
 
-    ui.events.on('activate', (event) => {
-        if (event.raw) {
-            raw_events.push(event)
-        }
-    })
+    ui.events_source.on('activate', (event) => source_events.push(event))
     ui.root.on('activate', (event) => {
         propagated_events.push({
             type: event.type,
@@ -125,15 +120,13 @@ test('UI instantiates definitions, emits raw events, and runs definition cleanup
     ui.dispatchEvent(source_event, null)
 
     expect(initialized_uis).toEqual([ui])
-    expect(raw_events).toEqual([
+    expect(source_events).toEqual([
         {
-            raw: true,
             source_event,
             event_data,
             node: child,
         },
         {
-            raw: true,
             source_event,
             event_data: null,
             node: null,
@@ -156,14 +149,13 @@ test('UI instantiates definitions, emits raw events, and runs definition cleanup
     expect(ui.destroy()).toBe(false)
     expect(destroyed_uis).toEqual([ui])
 
-    ui.events.emit('activate', {
-        raw: true,
+    ui.events_source.emit('activate', {
         source_event,
         event_data,
         node: child,
     })
 
-    expect(raw_events).toHaveLength(2)
+    expect(source_events).toHaveLength(2)
 
     const second_ui = await TestUI.create({
         renderer: new TestRenderer(),
@@ -297,8 +289,7 @@ test('pointer events use capture while hover follows the hit node', async () => 
     }
 
     const dispatch = (type, pointer_id, event_data, node) => {
-        ui.events.emit(type, {
-            raw: true,
+        ui.events_source.emit(type, {
             source_event: {
                 type,
                 pointerId: pointer_id,
@@ -348,8 +339,7 @@ test('touch pointerup and pointercancel end hover after the pointer event', asyn
     }
 
     const dispatch = (type, pointer_id, pointer_type, event_data, target) => {
-        ui.events.emit(type, {
-            raw: true,
+        ui.events_source.emit(type, {
             source_event: {
                 type,
                 pointerId: pointer_id,
@@ -399,8 +389,7 @@ test('destroying a node clears its pointer capture and hover state', async () =>
         })
     }
 
-    ui.events.emit('pointerdown', {
-        raw: true,
+    ui.events_source.emit('pointerdown', {
         source_event: { type: 'pointerdown', pointerId: 1, pointerType: 'mouse' },
         event_data: { x: 1 },
         node: first,
@@ -408,8 +397,7 @@ test('destroying a node clears its pointer capture and hover state', async () =>
     first.destroy()
     received_events.length = 0
 
-    ui.events.emit('pointermove', {
-        raw: true,
+    ui.events_source.emit('pointermove', {
         source_event: { type: 'pointermove', pointerId: 1, pointerType: 'mouse' },
         event_data: { x: 2 },
         node: second,
@@ -443,8 +431,7 @@ test('click requires a matching hit node and is cancelled by scrolling or pointe
     })
 
     const dispatch = (type, pointer_id, event_data, node) => {
-        ui.events.emit(type, {
-            raw: true,
+        ui.events_source.emit(type, {
             source_event: {
                 type,
                 pointerId: pointer_id,
@@ -523,8 +510,7 @@ test('wheel is normalized before scrolling the nearest available node', async ()
         deltaY: 3,
         deltaMode: 1,
     }
-    ui.events.emit('wheel', {
-        raw: true,
+    ui.events_source.emit('wheel', {
         source_event,
         event_data: { x: 10, y: 20 },
         node: child,
@@ -578,8 +564,7 @@ test('touch drag emits scroll and suppresses click past the scroll slop', async 
     })
 
     const dispatch = (type, pointer_id, x, y) => {
-        ui.events.emit(type, {
-            raw: true,
+        ui.events_source.emit(type, {
             source_event: {
                 type,
                 pointerId: pointer_id,
@@ -623,29 +608,22 @@ test('destroying referenced nodes clears click and scroll state', async () => {
     scroller.clientHeight = 200
 
     for (const type of ['click', 'scroll']) {
-        ui.events.on(type, (event) => {
-            if (!event.raw) {
-                normalized_events.push(event)
-            }
-        })
+        ui.events.on(type, (event) => normalized_events.push(event))
     }
 
-    ui.events.emit('pointerdown', {
-        raw: true,
+    ui.events_source.emit('pointerdown', {
         source_event: { type: 'pointerdown', pointerId: 1, pointerType: 'touch' },
         event_data: { x: 0, y: 100 },
         node: child,
     })
     scroller.destroy()
 
-    ui.events.emit('pointermove', {
-        raw: true,
+    ui.events_source.emit('pointermove', {
         source_event: { type: 'pointermove', pointerId: 1, pointerType: 'touch' },
         event_data: { x: 0, y: 50 },
         node: null,
     })
-    ui.events.emit('pointerup', {
-        raw: true,
+    ui.events_source.emit('pointerup', {
         source_event: { type: 'pointerup', pointerId: 1, pointerType: 'touch' },
         event_data: { x: 0, y: 50 },
         node: child,
@@ -657,7 +635,7 @@ test('destroying referenced nodes clears click and scroll state', async () => {
     ui.destroy()
 })
 
-test('Node ignores raw events and bubbles normalized events from the target', async () => {
+test('Node receives public events without receiving source events', async () => {
     const ui = await TestUI.create({ renderer: new TestRenderer() })
     const parent = ui.create()
     const child = ui.create()
@@ -696,14 +674,12 @@ test('Node ignores raw events and bubbles normalized events from the target', as
     })
     sibling.on('activate', () => calls.push({ listener: 'sibling' }))
 
-    ui.events.emit('activate', {
-        raw: true,
+    ui.events_source.emit('activate', {
         source_event,
         event_data: { value: 0 },
         node: child,
     })
     ui.events.emit('activate', {
-        raw: false,
         source_event,
         event_data: { value: 1 },
         target: child,
@@ -737,7 +713,6 @@ test('Node ignores raw events and bubbles normalized events from the target', as
         has_related_target = 'related_target' in event
     })
     ui.events.emit('plain', {
-        raw: false,
         source_event,
         event_data: {},
         target: child,
@@ -768,7 +743,6 @@ test('Node handles duplicate listeners, off, stopPropagation, and destruction', 
     parent.on('activate', () => calls.push('parent'))
 
     ui.events.emit('activate', {
-        raw: false,
         source_event: { type: 'activate' },
         event_data: {},
         target: child,
@@ -779,7 +753,6 @@ test('Node handles duplicate listeners, off, stopPropagation, and destruction', 
     child.off('activate', duplicate_listener)
     calls.length = 0
     ui.events.emit('activate', {
-        raw: false,
         source_event: { type: 'activate' },
         event_data: {},
         target: child,
@@ -792,7 +765,6 @@ test('Node handles duplicate listeners, off, stopPropagation, and destruction', 
     child.on('destroyed', () => destroyed_calls++)
     child.destroy()
     ui.events.emit('destroyed', {
-        raw: false,
         source_event: { type: 'destroyed' },
         event_data: {},
         target: destroyed_child,
@@ -805,7 +777,6 @@ test('Node handles duplicate listeners, off, stopPropagation, and destruction', 
     root.on('destroyed', () => ui_destroyed_calls++)
     ui.destroy()
     ui.events.emit('destroyed', {
-        raw: false,
         source_event: { type: 'destroyed' },
         event_data: {},
         target: root,

@@ -1,4 +1,4 @@
-export default class Events {
+export default class EventEmitter {
     private listeners = new Map()
 
     public on(type, listener) {

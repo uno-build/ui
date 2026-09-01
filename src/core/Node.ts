@@ -103,7 +103,7 @@ export default class Node {
     }
 
     private processEvent(type, event) {
-        if (event.raw || !this.isEventDispatcher(type, event.target)) {
+        if (!this.isEventDispatcher(type, event.target)) {
             return
         }
 

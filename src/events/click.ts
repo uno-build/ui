@@ -3,8 +3,8 @@ import { EVENT } from './const'
 export function defineClick({ ui }) {
     const pointers = new Map()
 
-    const processPointerDown = ({ raw, source_event, event_data, node }) => {
-        if (!raw || node === null) {
+    const processPointerDown = ({ source_event, event_data, node }) => {
+        if (node === null) {
             return
         }
 
@@ -15,23 +15,16 @@ export function defineClick({ ui }) {
         })
     }
 
-    const processPointerCancel = ({ raw, source_event }) => {
-        if (raw) {
-            pointers.delete(source_event.pointerId)
-        }
+    const processPointerCancel = ({ source_event }) => {
+        pointers.delete(source_event.pointerId)
     }
 
-    const processPointerUp = ({ raw, source_event, event_data, node }) => {
-        if (!raw) {
-            return
-        }
-
+    const processPointerUp = ({ source_event, event_data, node }) => {
         const pointer = pointers.get(source_event.pointerId)
         pointers.delete(source_event.pointerId)
 
         if (pointer?.target === node && !isScrollingNode(node)) {
             ui.events.emit(EVENT.CLICK.name, {
-                raw: false,
                 source_event,
                 event_data: event_data ?? pointer.event_data,
                 target: node,
@@ -40,9 +33,9 @@ export function defineClick({ ui }) {
     }
 
     const remove_listeners = [
-        ui.events.on(EVENT.POINTER_DOWN.name, processPointerDown),
-        ui.events.on(EVENT.POINTER_CANCEL.name, processPointerCancel),
-        ui.events.on(EVENT.POINTER_UP.name, processPointerUp),
+        ui.events_source.on(EVENT.POINTER_DOWN.name, processPointerDown),
+        ui.events_source.on(EVENT.POINTER_CANCEL.name, processPointerCancel),
+        ui.events_source.on(EVENT.POINTER_UP.name, processPointerUp),
     ]
 
     return {
