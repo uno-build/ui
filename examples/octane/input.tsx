@@ -242,7 +242,7 @@ export function OctaneInput() {
                         <Input
                             id="code"
                             style={{ ...CODE_STYLE, ...(focused === 'code' && CODE_FOCUS_STYLE), textAlign: 'center' }}
-                            value={values.code}
+                            value={values.code.replace(/./g, '•').trim()}
                             placeholder="000000"
                             placeholderTextColor="#6b3f42"
                             onFocus={(event) => handleFocus('code', event)}

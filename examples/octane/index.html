@@ -6,7 +6,7 @@
         <title>Octane components</title>
         <script>
             if (new URLSearchParams(location.search).has('example') === false) {
-                location.replace('?example=image')
+                location.replace('?example=input')
             }
         </script>
         <style>
@@ -73,8 +73,8 @@
             import { initSettingsPanel } from '../settings/settings-panel'
 
             const EXAMPLES = {
-                image: () => import('./image'),
                 input: () => import('./input'),
+                image: () => import('./image'),
                 scrollview: () => import('./scrollview'),
             }
             const RENDERERS = {

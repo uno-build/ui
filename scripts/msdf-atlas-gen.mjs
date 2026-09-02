@@ -20,7 +20,7 @@ const parsed_path = path.parse(font_path);
 const output_base = path.join(parsed_path.dir, `${parsed_path.name}.${type}`);
 const script_dir = path.dirname(fileURLToPath(import.meta.url));
 const binary_path = path.join(script_dir, "msdf-atlas-gen/darwin-x64");
-const charset = `[0x20, 0x7E], "áéíóúÁÉÍÓÚñÑüÜ¿¡"`;
+const charset = `[0x20, 0x7E], "áéíóúÁÉÍÓÚñÑüÜ¿¡•"`;
 const direct_output = type === 'msdf' || EFFECT_DISTANCE_RANGE === DISTANCE_RANGE;
 const temporary_directory = direct_output ? null : fs.mkdtempSync(path.join(os.tmpdir(), "uno-mtsdf-"));
 const image_path = direct_output ? `${output_base}.png` : path.join(temporary_directory, "atlas.bin");
