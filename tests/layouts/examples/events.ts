@@ -10,6 +10,8 @@ const EVENT_TYPES = [
     'click',
     'wheel',
     'scroll',
+    'focus',
+    'blur',
 ]
 
 const SOURCE_EVENT_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'wheel']
@@ -28,6 +30,8 @@ const EVENT_COLORS = {
     click: '#ec4899',
     wheel: '#06b6d4',
     scroll: '#14b8a6',
+    focus: '#84cc16',
+    blur: '#f97316',
 }
 
 export default async function createEventsLayout({ ui, resources, registerFont, rendererName: renderer_name }) {
