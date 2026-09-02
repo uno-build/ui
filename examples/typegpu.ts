@@ -32,20 +32,17 @@ const CUBE_VERTEX_LAYOUT = tgpu.vertexLayout((count) => d.disarrayOf(CUBE_VERTEX
 export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, loadImage, loadJson, loadYoga }) {
     const resources = await ResourcesWebGPU.create({ canvas })
     const device_pixel_ratio = window.devicePixelRatio
-    const { ui: background_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
-    const { ui: foreground_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: background_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio, onPlatformEvent })
+    const { ui: foreground_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio, onPlatformEvent })
     const { device, context, format } = resources
     const root = tgpu.initFromDevice({ device })
 
     syncCanvasSize({ canvas, background_ui, foreground_ui })
 
-    // Event handling
-    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            background_ui.dispatchPlatformEvent(e)
-            foreground_ui.dispatchPlatformEvent(e)
-        })
-    })
+    function onPlatformEvent({ event, dispatchPlatformEvent: dispatch_platform_event }) {
+        dispatch_platform_event(event)
+    }
+
     onCanvasEvent('resize', () => {
         syncCanvasSize({ canvas, background_ui, foreground_ui })
         background_ui.update()
@@ -58,13 +55,6 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     createForegroundUI({ ui: foreground_ui, assets, title: 'Hello TypeGPU!' })
     background_ui.update()
     foreground_ui.update()
-    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            background_ui.dispatchPlatformEvent(e)
-            foreground_ui.dispatchPlatformEvent(e)
-        })
-    })
-
     const vertex_buffer = root
         .createBuffer(CUBE_VERTEX_LAYOUT.schemaForCount(CUBE_VERTEX_COUNT), (buffer) =>
             buffer.write(CUBE_VERTEX_ARRAY.buffer),

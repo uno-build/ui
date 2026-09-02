@@ -74,7 +74,7 @@ export async function main({
 
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })
-    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio, onPlatformEvent })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
@@ -87,6 +87,7 @@ export async function main({
         texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
+        onPlatformEvent,
     })
     const { ui: second_ui, plane: second_plane } = await UIPlayCanvas.create({
         app,
@@ -97,6 +98,7 @@ export async function main({
         texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
+        onPlatformEvent,
     })
 
     first_plane.setPosition(-world_width / 2 - 0.25, 1, 0)
@@ -194,14 +196,10 @@ export async function main({
     const orbit_frame = new InputFrame({ move: [0, 0, 0], rotate: [0, 0] })
     let touch_count = 0
 
-    // Event handling
-    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            overlay_ui.dispatchPlatformEvent(e)
-            first_ui.dispatchPlatformEvent(e, { camera })
-            second_ui.dispatchPlatformEvent(e, { camera })
-        })
-    })
+    function onPlatformEvent({ event, dispatchPlatformEvent: dispatch_platform_event }) {
+        dispatch_platform_event(event, { camera })
+    }
+
     first_ui.root.on('pointerdown', () => {
         camera_controls_enabled = false
     })

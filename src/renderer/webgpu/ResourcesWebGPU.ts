@@ -93,6 +93,7 @@ export default class ResourcesWebGPU extends Resources {
     public dispose(): void {
         this.image_manager.dispose()
         this.font_manager.dispose()
+        super.dispose()
     }
 
     public present() {

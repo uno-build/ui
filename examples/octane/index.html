@@ -101,8 +101,6 @@
                 RendererDom: { element_type: 'div', ui_class: UIDom, resources_class: ResourcesDom },
                 RendererWebGPU: { element_type: 'canvas', ui_class: UIWebGPU, resources_class: ResourcesWebGPU },
             }
-            const POINTER_EVENTS = ['pointerdown', 'pointerup', 'pointermove', 'pointercancel', 'wheel']
-
             const root = document.getElementById('root')
             const settings_examples = document.getElementById('settings-examples')
             const example_name = new URLSearchParams(location.search).get('example')
@@ -133,7 +131,16 @@
                 root.appendChild(element)
 
                 const resources = await setup.resources_class.create({ canvas: element })
-                const { ui } = await setup.ui_class.create({ resources, loadYoga, device_pixel_ratio })
+                const { ui } = await setup.ui_class.create({
+                    resources,
+                    loadYoga,
+                    device_pixel_ratio,
+                    onPlatformEvent,
+                })
+
+                function onPlatformEvent({ event, dispatchPlatformEvent: dispatch_platform_event }) {
+                    dispatch_platform_event(event)
+                }
 
                 function syncRendererSize() {
                     const width = root.clientWidth
@@ -151,13 +158,6 @@
 
                 syncRendererSize()
                 window.addEventListener('resize', syncRendererSize)
-
-                // UIDom listens on its own element, UIWebGPU needs the canvas events forwarded.
-                if (is_canvas) {
-                    POINTER_EVENTS.forEach((type) => {
-                        element.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))
-                    })
-                }
 
                 await create_example({ ui, resources })
                 uis.push(ui)

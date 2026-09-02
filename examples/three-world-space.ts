@@ -27,7 +27,7 @@ export async function main({
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })
 
-    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio, onPlatformEvent })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
@@ -45,6 +45,7 @@ export async function main({
         texture_height: texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
+        onPlatformEvent,
         createMaterial: () => new THREE.MeshPhongNodeMaterial(),
     })
     const {
@@ -61,6 +62,7 @@ export async function main({
         texture_height: texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
+        onPlatformEvent,
         createMaterial: () => new THREE.MeshPhongNodeMaterial(),
     })
     const three_renderer = new THREE.WebGPURenderer({
@@ -78,14 +80,9 @@ export async function main({
     const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
     camera.position.set(0, 3.5, 9)
 
-    //
-    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            overlay_ui.dispatchPlatformEvent(e)
-            first_ui.dispatchPlatformEvent(e, { camera })
-            second_ui.dispatchPlatformEvent(e, { camera })
-        })
-    })
+    function onPlatformEvent({ event, dispatchPlatformEvent: dispatch_platform_event }) {
+        dispatch_platform_event(event, { camera })
+    }
 
     first_ui.root.on('pointerdown', (e) => {
         controls.enabled = false

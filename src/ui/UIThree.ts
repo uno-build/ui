@@ -8,6 +8,7 @@ export default class UIThree extends UIWorldSpace {
     public static async create(options) {
         const ui = new UIThree(options)
         const resources = await ui.initialize()
+        ui.listenPlatformEvents(ui.dispatchPlatformEvent)
         return { ui, ...resources }
     }
 

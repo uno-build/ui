@@ -52,7 +52,7 @@ export async function main({
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })
 
-    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio, onPlatformEvent })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
@@ -66,6 +66,7 @@ export async function main({
         texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
+        onPlatformEvent,
     })
     const { ui: second_ui, plane: second_plane } = await UIBabylonLite.create({
         engine,
@@ -77,18 +78,15 @@ export async function main({
         texture_height,
         world_width,
         world_height: WORLD_HEIGHT,
+        onPlatformEvent,
     })
     const camera = createArcRotateCamera(-Math.PI / 2, 1.25, 9.5, { x: 0, y: 0.8, z: 0 })
     scene.camera = camera
 
-    // Event handling
-    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            overlay_ui.dispatchPlatformEvent(e)
-            first_ui.dispatchPlatformEvent(e, { camera })
-            second_ui.dispatchPlatformEvent(e, { camera })
-        })
-    })
+    function onPlatformEvent({ event, dispatchPlatformEvent: dispatch_platform_event }) {
+        dispatch_platform_event(event, { camera })
+    }
+
     let detach_camera_control
     first_ui.root.on('pointerdown', () => {
         detach_camera_control()

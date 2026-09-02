@@ -13,12 +13,15 @@ export default class UI {
     private created_nodes = new Set()
     private next_node_id = 0
     private destroyed = false
+    private on_platform_event = null
+    private remove_platform_event_listener = null
 
-    protected constructor({ renderer, resources = null, defined_events = [] }) {
+    protected constructor({ renderer, resources = null, defined_events = [], onPlatformEvent: on_platform_event }) {
         this.renderer = renderer
         this.resources = resources
         this.events = new EventEmitter()
         this.events_source = new EventEmitter()
+        this.on_platform_event = on_platform_event
         this.defined_events = defined_events.map((definedEvent) => definedEvent({ ui: this }))
     }
 
@@ -94,6 +97,9 @@ export default class UI {
             nodes.forEach((node) => node.destroyEvents())
             this.events.destroy()
             this.events_source.destroy()
+            this.remove_platform_event_listener?.()
+            this.remove_platform_event_listener = null
+            this.on_platform_event = null
 
             for (const node of nodes) {
                 this.releaseNode(node)
@@ -116,6 +122,15 @@ export default class UI {
             event_data,
             node,
         })
+    }
+
+    protected listenPlatformEvents(dispatch_platform_event) {
+        if (this.on_platform_event !== undefined) {
+            const bound_dispatch_platform_event = dispatch_platform_event.bind(this)
+            this.remove_platform_event_listener = this.resources.events.on('platformevent', (event) => {
+                this.on_platform_event({ event, dispatchPlatformEvent: bound_dispatch_platform_event })
+            })
+        }
     }
 
     private getNodeAtPoint(x, y) {

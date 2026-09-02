@@ -27,6 +27,7 @@ export default class UIBabylonLite extends UIWorldSpace {
     public static async create(options) {
         const ui = new UIBabylonLite(options)
         const resources = await ui.initialize()
+        ui.listenPlatformEvents(ui.dispatchPlatformEvent)
         return { ui, ...resources }
     }
 

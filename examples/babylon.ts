@@ -31,8 +31,8 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
         format,
     })
     const device_pixel_ratio = window.devicePixelRatio
-    const { ui: background_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
-    const { ui: foreground_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: background_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio, onPlatformEvent })
+    const { ui: foreground_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio, onPlatformEvent })
 
     const scene = new Scene(engine)
     scene.autoClear = false
@@ -69,13 +69,10 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     background_ui.update()
     foreground_ui.update()
 
-    // Event handling
-    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            background_ui.dispatchPlatformEvent(e)
-            foreground_ui.dispatchPlatformEvent(e)
-        })
-    })
+    function onPlatformEvent({ event, dispatchPlatformEvent: dispatch_platform_event }) {
+        dispatch_platform_event(event)
+    }
+
     onCanvasEvent('resize', () => {
         syncCanvasSize({ canvas, engine, background_ui, foreground_ui })
         background_ui.update()

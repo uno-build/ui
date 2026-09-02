@@ -11,8 +11,8 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     const adapter = await navigator.gpu.requestAdapter()
     const resources = await ResourcesWebGPU.create({ canvas, adapter })
     const device_pixel_ratio = window.devicePixelRatio
-    const { ui: background_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
-    const { ui: foreground_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: background_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio, onPlatformEvent })
+    const { ui: foreground_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio, onPlatformEvent })
 
     const pixi_renderer = new WebGPURenderer()
     await pixi_renderer.init({
@@ -41,13 +41,10 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     background_ui.update()
     foreground_ui.update()
 
-    // Event handling
-    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            background_ui.dispatchPlatformEvent(e)
-            foreground_ui.dispatchPlatformEvent(e)
-        })
-    })
+    function onPlatformEvent({ event, dispatchPlatformEvent: dispatch_platform_event }) {
+        dispatch_platform_event(event)
+    }
+
     onCanvasEvent('resize', () => {
         syncCanvasSize({ canvas, pixi_renderer, square, background_ui, foreground_ui })
         background_ui.update()

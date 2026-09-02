@@ -21,10 +21,16 @@ export default abstract class UIWorldSpace extends UI {
         createMaterial,
         createPlane,
         defined_events = [],
+        onPlatformEvent: on_platform_event,
         ...renderer_options
     }) {
         const renderer = new RendererWebGPU({ resources, ...renderer_options })
-        super({ renderer, resources, defined_events: [...DEFAULT_EVENTS, ...defined_events] })
+        super({
+            renderer,
+            resources,
+            defined_events: [...DEFAULT_EVENTS, ...defined_events],
+            onPlatformEvent: on_platform_event,
+        })
         this.texture_width = texture_width
         this.texture_height = texture_height
         this.world_width = world_width
@@ -32,6 +38,8 @@ export default abstract class UIWorldSpace extends UI {
         this.createMaterial = createMaterial
         this.createPlane = createPlane
     }
+
+    public abstract dispatchPlatformEvent(source_event, options)
 
     protected async initialize() {
         const output = await super.initialize()
