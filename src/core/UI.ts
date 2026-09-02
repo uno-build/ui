@@ -19,7 +19,7 @@ export default class UI {
         this.resources = resources
         this.events = new EventEmitter()
         this.events_source = new EventEmitter()
-        this.defined_events = defined_events.map((defineEvent) => defineEvent({ ui: this }))
+        this.defined_events = defined_events.map((definedEvent) => definedEvent({ ui: this }))
     }
 
     protected async initialize() {
