@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import EventEmitter from '../src/core/EventEmitter'
-import { DEFAULT_EVENTS } from '../src/events'
+import { DEFINED_EVENTS } from '../src/events'
 import { EVENT } from '../src/events/const'
 import { OVERFLOW } from '../src/style/consts'
 import UIDom from '../src/ui/UIDom'
@@ -39,7 +39,7 @@ test('EventEmitter registers, removes, emits, and destroys listeners', () => {
 test('default event definitions expose their public types through UI', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: DEFAULT_EVENTS,
+        defined_events: DEFINED_EVENTS,
     })
 
     expect(ui.defined_events.map((defined_event) => defined_event.types)).toEqual([
@@ -63,7 +63,7 @@ test('default event definitions expose their public types through UI', async () 
 test('focus and blur keep a single focused node and emit public transitions', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: DEFAULT_EVENTS,
+        defined_events: DEFINED_EVENTS,
     })
     const first = ui.create()
     const second = ui.create()
@@ -129,7 +129,7 @@ test('focus and blur keep a single focused node and emit public transitions', as
 test('pointerdown moves focus to its target', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: DEFAULT_EVENTS,
+        defined_events: DEFINED_EVENTS,
     })
     const first = ui.create()
     const second = ui.create()
@@ -174,7 +174,7 @@ test('pointerdown moves focus to its target', async () => {
 test('destroying the focused node clears focus state', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: DEFAULT_EVENTS,
+        defined_events: DEFINED_EVENTS,
     })
     const first = ui.create()
     const second = ui.create()
@@ -395,7 +395,7 @@ test('UIDom adapts native source events and removes its listeners on destroy', a
 test('pointer events use capture while hover follows the hit node', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: DEFAULT_EVENTS,
+        defined_events: DEFINED_EVENTS,
     })
     const first = ui.create()
     const second = ui.create()
@@ -459,7 +459,7 @@ test('pointer events use capture while hover follows the hit node', async () => 
 test('touch pointerup and pointercancel end hover after the pointer event', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: DEFAULT_EVENTS,
+        defined_events: DEFINED_EVENTS,
     })
     const node = ui.create()
     const received_events = []
@@ -508,7 +508,7 @@ test('touch pointerup and pointercancel end hover after the pointer event', asyn
 test('destroying a node clears its pointer capture and hover state', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: DEFAULT_EVENTS,
+        defined_events: DEFINED_EVENTS,
     })
     const first = ui.create()
     const second = ui.create()
@@ -552,7 +552,7 @@ test('destroying a node clears its pointer capture and hover state', async () =>
 test('click requires a matching hit node and is cancelled by scrolling or pointercancel', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: DEFAULT_EVENTS,
+        defined_events: DEFINED_EVENTS,
     })
     const first = ui.create()
     const second = ui.create()
@@ -609,7 +609,7 @@ test('click requires a matching hit node and is cancelled by scrolling or pointe
 test('wheel is normalized before scrolling the nearest available node', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: DEFAULT_EVENTS,
+        defined_events: DEFINED_EVENTS,
     })
     const scroller = ui.create()
     const child = ui.create()
@@ -677,7 +677,7 @@ test('wheel is normalized before scrolling the nearest available node', async ()
 test('touch drag emits scroll and suppresses click past the scroll slop', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: DEFAULT_EVENTS,
+        defined_events: DEFINED_EVENTS,
     })
     const scroller = ui.create()
     const child = ui.create()
@@ -731,7 +731,7 @@ test('touch drag emits scroll and suppresses click past the scroll slop', async 
 test('destroying referenced nodes clears click and scroll state', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: DEFAULT_EVENTS,
+        defined_events: DEFINED_EVENTS,
     })
     const scroller = ui.create()
     const child = ui.create()

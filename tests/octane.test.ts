@@ -12,7 +12,7 @@ import {
 import { useUI } from '../src/components/octane/context.js'
 import { createUniversalDriver, registerRootComponent } from '../src/components/octane/driver.js'
 import { getImageStyle } from '../src/components/shared.js'
-import { DEFAULT_EVENTS } from '../src/events'
+import { DEFINED_EVENTS } from '../src/events'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'
 
@@ -29,8 +29,8 @@ const compiled_components = compile(readFileSync(COMPONENTS_URL, 'utf8'), fileUR
     mode: 'client',
     renderer: OCTANE_RENDERER,
     rendererRegistry: { uno: OCTANE_RENDERER },
-}).code
-    .replaceAll("from 'octane/universal/native'", `from '${import.meta.resolve('octane/universal/native')}'`)
+})
+    .code.replaceAll("from 'octane/universal/native'", `from '${import.meta.resolve('octane/universal/native')}'`)
     .replace("from './context'", `from '${new URL('../src/components/octane/context.ts', import.meta.url)}'`)
     .replace("from '../shared'", `from '${new URL('../src/components/shared.ts', import.meta.url)}'`)
 
@@ -46,7 +46,7 @@ const clickAt = (ui, x, y) => {
 const createEventUI = () =>
     TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: DEFAULT_EVENTS,
+        defined_events: DEFINED_EVENTS,
     })
 
 const STATIC_TREE_PLAN = universalPlan('uno', {

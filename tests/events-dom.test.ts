@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
+import { PLATFORM_EVENT_NAMES } from '../src/events/const'
 
 const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
 
@@ -369,7 +370,7 @@ test('UIDom preserves native event sources alongside UIWebGPU normalization', as
     await page.goto('/dev/?renderers=RendererDom')
 
     await page.evaluate(
-        async ({ module_urls }) => {
+        async ({ module_urls, platform_event_names }) => {
             const [
                 { default: UIDom },
                 { default: UIWebGPU },
@@ -474,7 +475,7 @@ test('UIDom preserves native event sources alongside UIWebGPU normalization', as
                 })
             }
 
-            for (const type of ['pointerdown', 'pointerup', 'pointermove', 'pointercancel']) {
+            for (const type of platform_event_names) {
                 webgpu_canvas.addEventListener(type, (event) => webgpu_ui.dispatchPlatformEvent(event))
             }
 
@@ -498,6 +499,7 @@ test('UIDom preserves native event sources alongside UIWebGPU normalization', as
             }
         },
         {
+            platform_event_names: PLATFORM_EVENT_NAMES,
             module_urls: {
                 ui_dom: `/@fs${WORKSPACE_PATH}src/ui/UIDom.ts`,
                 ui_webgpu: `/@fs${WORKSPACE_PATH}src/ui/UIWebGPU.ts`,

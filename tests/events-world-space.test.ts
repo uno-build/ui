@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
+import { PLATFORM_EVENT_NAMES } from '../src/events/const'
 
 const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
-const EVENT_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']
 const EVENT_FLOW = [
     ['pointerdown', 'child'],
     ['pointerdown', 'root'],
@@ -112,7 +112,7 @@ test('UIThree dispatches pointer events from raycast intersections', async ({ pa
             return events
         },
         {
-            event_types: EVENT_TYPES,
+            event_types: PLATFORM_EVENT_NAMES,
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIThree.ts`,
                 resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
@@ -259,7 +259,7 @@ test('UIBabylon dispatches pointer events from raycast intersections', async ({ 
             return events
         },
         {
-            event_types: EVENT_TYPES,
+            event_types: PLATFORM_EVENT_NAMES,
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIBabylon.ts`,
                 resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
@@ -389,7 +389,7 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', async
             return events
         },
         {
-            event_types: EVENT_TYPES,
+            event_types: PLATFORM_EVENT_NAMES,
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIBabylonLite.ts`,
                 resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
@@ -537,7 +537,7 @@ test('UIPlayCanvas dispatches pointer events from raycast intersections', async 
             return events
         },
         {
-            event_types: EVENT_TYPES,
+            event_types: PLATFORM_EVENT_NAMES,
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIPlayCanvas.ts`,
                 resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,

@@ -16,6 +16,7 @@ import {
     renderFrame,
     resizeEngine,
 } from '@babylonjs/lite'
+import { PLATFORM_EVENT_NAMES } from '../src/events/const'
 import { loadAssets, registerAssets } from './uis/assets'
 import { createBackgroundUI } from './uis/background-ui'
 import { createForegroundUI } from './uis/foreground-ui'
@@ -82,7 +83,7 @@ export async function main({
     scene.camera = camera
 
     // Event handling
-    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
+    PLATFORM_EVENT_NAMES.forEach((type) => {
         canvas.addEventListener(type, (e) => {
             overlay_ui.dispatchPlatformEvent(e)
             first_ui.dispatchPlatformEvent(e, { camera })

@@ -3,9 +3,9 @@
     "version": "0.1.0",
     "type": "module",
     "exports": {
-        "./EventEmitter": {
-            "types": "./src/core/EventEmitter.ts",
-            "import": "./src/core/EventEmitter.ts"
+        "./events": {
+            "types": "./src/events/index.ts",
+            "import": "./src/events/index.ts"
         },
         "./ResourcesWebGPU": {
             "types": "./src/renderer/webgpu/ResourcesWebGPU.ts",

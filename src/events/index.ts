@@ -4,4 +4,8 @@ import { defineWheel } from './wheel'
 import { defineScroll } from './scroll'
 import { defineFocus } from './focus'
 
-export const DEFAULT_EVENTS = [definePointers, defineWheel, defineScroll, defineClick, defineFocus]
+export { default as EventEmitter } from '../core/EventEmitter'
+
+export * from './const'
+
+export const DEFINED_EVENTS = [definePointers, defineWheel, defineScroll, defineClick, defineFocus]

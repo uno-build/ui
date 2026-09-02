@@ -1,3 +1,4 @@
+import { PLATFORM_EVENT_NAMES } from '../../../src/events/const'
 import { loadImage, loadJson } from '../../utils/load-assets'
 
 const EVENT_TYPES = [
@@ -14,7 +15,6 @@ const EVENT_TYPES = [
     'blur',
 ]
 
-const SOURCE_EVENT_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'wheel']
 const COUNTER_RESET_DELAY = 250
 const PATTERN_SIZE = 16
 const PATTERN_SRC =
@@ -386,7 +386,7 @@ export default async function createEventsLayout({ ui, resources, registerFont, 
     }
 
     if (renderer_name !== 'RendererDom') {
-        for (const type of SOURCE_EVENT_TYPES) {
+        for (const type of PLATFORM_EVENT_NAMES) {
             resources.canvas.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))
         }
     }

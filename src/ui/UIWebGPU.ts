@@ -1,11 +1,11 @@
 import UI from '../core/UI'
-import { DEFAULT_EVENTS } from '../events'
+import { DEFINED_EVENTS } from '../events'
 import RendererWebGPU from '../renderer/RendererWebGPU'
 
 export default class UIWebGPU extends UI {
     protected constructor({ resources, defined_events = [], ...renderer_options }) {
         const renderer = new RendererWebGPU({ resources, ...renderer_options })
-        super({ renderer, resources, defined_events: [...DEFAULT_EVENTS, ...defined_events] })
+        super({ renderer, resources, defined_events: [...DEFINED_EVENTS, ...defined_events] })
     }
 
     public static async create(options) {

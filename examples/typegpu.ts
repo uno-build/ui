@@ -2,6 +2,7 @@ import tgpu from 'typegpu'
 import * as d from 'typegpu/data'
 import * as std from 'typegpu/std'
 import { mat4 } from 'wgpu-matrix'
+import { PLATFORM_EVENT_NAMES } from '../src/events/const'
 import { loadAssets, registerAssets } from './uis/assets'
 import { createBackgroundUI } from './uis/background-ui'
 import { createForegroundUI } from './uis/foreground-ui'
@@ -40,7 +41,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     syncCanvasSize({ canvas, background_ui, foreground_ui })
 
     // Event handling
-    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
+    PLATFORM_EVENT_NAMES.forEach((type) => {
         canvas.addEventListener(type, (e) => {
             background_ui.dispatchPlatformEvent(e)
             foreground_ui.dispatchPlatformEvent(e)
@@ -58,7 +59,7 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     createForegroundUI({ ui: foreground_ui, assets, title: 'Hello TypeGPU!' })
     background_ui.update()
     foreground_ui.update()
-    ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
+    PLATFORM_EVENT_NAMES.forEach((type) => {
         canvas.addEventListener(type, (e) => {
             background_ui.dispatchPlatformEvent(e)
             foreground_ui.dispatchPlatformEvent(e)
