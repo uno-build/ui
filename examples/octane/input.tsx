@@ -170,6 +170,7 @@ export function OctaneInput() {
     })
 
     function handleFocus(id, event) {
+        setTaps((count) => count + 1)
         setFocused(id)
         ShowPlatformKeyboard({
             node: event.target,
@@ -180,10 +181,6 @@ export function OctaneInput() {
 
     function handleBlur() {
         setFocused(null)
-    }
-
-    function handlePointerDown() {
-        setTaps((count) => count + 1)
     }
 
     useEffect(() => {
@@ -219,7 +216,6 @@ export function OctaneInput() {
                         placeholderTextColor="#4e5a6e"
                         onFocus={(event) => handleFocus('nickname', event)}
                         onBlur={handleBlur}
-                        onPointerDown={handlePointerDown}
                     />
                 </View>
 
@@ -234,7 +230,6 @@ export function OctaneInput() {
                             placeholderTextColor="#8a6a2f"
                             onFocus={(event) => handleFocus('clan', event)}
                             onBlur={handleBlur}
-                            onPointerDown={handlePointerDown}
                         />
                     </View>
                     <View style={ROW_FIELD_STYLE}>
@@ -247,7 +242,6 @@ export function OctaneInput() {
                             placeholderTextColor="#6b3f42"
                             onFocus={(event) => handleFocus('code', event)}
                             onBlur={handleBlur}
-                            onPointerDown={handlePointerDown}
                         />
                     </View>
                 </View>
@@ -262,7 +256,6 @@ export function OctaneInput() {
                         placeholderTextColor="#3f6b5d"
                         onFocus={(event) => handleFocus('cry', event)}
                         onBlur={handleBlur}
-                        onPointerDown={handlePointerDown}
                     />
                 </View>
 

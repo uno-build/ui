@@ -11,6 +11,7 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
     color: white;
     cursor: grab;
+    touch-action: none;
     font:
         11px system-ui,
         sans-serif;
