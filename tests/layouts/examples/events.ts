@@ -387,7 +387,7 @@ export default async function createEventsLayout({ ui, resources, registerFont, 
 
     if (renderer_name !== 'RendererDom') {
         for (const type of SOURCE_EVENT_TYPES) {
-            resources.canvas.addEventListener(type, (event) => ui.dispatchEvent(event))
+            resources.canvas.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))
         }
     }
 }

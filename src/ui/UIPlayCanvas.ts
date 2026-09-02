@@ -38,18 +38,14 @@ export default class UIPlayCanvas extends UIWorldSpace {
         return output
     }
 
-    public dispatchEvent(source_event, { camera }) {
+    public dispatchPlatformEvent(source_event, { camera }) {
         const rect = source_event.currentTarget.getBoundingClientRect()
         const { width, height } = this.app.graphicsDevice.clientRect
         const x = ((source_event.clientX - rect.left) / rect.width) * width
         const y = ((source_event.clientY - rect.top) / rect.height) * height
         const camera_component = camera.camera
         const ray_start = camera_component.screenToWorld(x, y, 0)
-        const ray_end = camera_component.screenToWorld(
-            x,
-            y,
-            camera_component.farClip - camera_component.nearClip,
-        )
+        const ray_end = camera_component.screenToWorld(x, y, camera_component.farClip - camera_component.nearClip)
         const inverse_world_matrix = new Mat4().copy(this.plane.getWorldTransform()).invert()
         const local_ray_start = inverse_world_matrix.transformPoint(ray_start)
         const local_ray_end = inverse_world_matrix.transformPoint(ray_end)
@@ -58,7 +54,7 @@ export default class UIPlayCanvas extends UIWorldSpace {
         const direction_z = local_ray_end.z - local_ray_start.z
 
         if (direction_z === 0) {
-            this.dispatchEventAt(source_event, null)
+            this.emitPlatformEvent(source_event, null)
             return
         }
 
@@ -71,12 +67,12 @@ export default class UIPlayCanvas extends UIWorldSpace {
             Math.abs(local_x) > this.world_width / 2 ||
             Math.abs(local_y) > this.world_height / 2
         ) {
-            this.dispatchEventAt(source_event, null)
+            this.emitPlatformEvent(source_event, null)
             return
         }
 
         const intersection = ray_end.sub(ray_start).mulScalar(intersection_scale).add(ray_start)
-        this.dispatchEventAt(source_event, {
+        this.emitPlatformEvent(source_event, {
             x: (local_x / this.world_width + 0.5) * this.root.layout.width,
             y: (0.5 - local_y / this.world_height) * this.root.layout.height,
             distance_to_camera: intersection.distance(camera.getPosition()),

@@ -254,8 +254,8 @@ test('UI instantiates definitions, emits source events, and runs definition clea
 
     const source_event = { type: 'activate' }
     const event_data = { x: 10, y: 20, value: 1 }
-    ui.dispatchEvent(source_event, event_data)
-    ui.dispatchEvent(source_event, null)
+    ui.dispatchPlatformEvent(source_event, event_data)
+    ui.dispatchPlatformEvent(source_event, null)
 
     expect(initialized_uis).toEqual([ui])
     expect(source_events).toEqual([

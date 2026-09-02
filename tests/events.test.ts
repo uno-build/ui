@@ -72,7 +72,7 @@ test('UIWebGPU dispatches pointer events in UI coordinates', async ({ page }) =>
                 ui.root.on(type, record(ui.root, 'root'))
                 canvas.addEventListener(type, (source_event) => {
                     current_source_event = source_event
-                    ui.dispatchEvent(source_event)
+                    ui.dispatchPlatformEvent(source_event)
                 })
             }
 

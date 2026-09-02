@@ -109,7 +109,7 @@ export default class UI {
         return false
     }
 
-    protected dispatchEventAt(source_event, event_data) {
+    protected emitPlatformEvent(source_event, event_data) {
         const node = event_data === null ? null : this.getNodeAtPoint(event_data.x, event_data.y)
         this.events_source.emit(source_event.type, {
             source_event,

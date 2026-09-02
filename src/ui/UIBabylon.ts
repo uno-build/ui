@@ -30,7 +30,7 @@ export default class UIBabylon extends UIWorldSpace {
         return output
     }
 
-    public dispatchEvent(source_event, { camera }) {
+    public dispatchPlatformEvent(source_event, { camera }) {
         const rect = source_event.currentTarget.getBoundingClientRect()
         const engine = this.scene.getEngine()
         const scaling_level = engine.getHardwareScalingLevel()
@@ -43,7 +43,7 @@ export default class UIBabylon extends UIWorldSpace {
         )
         const uv = intersection.getTextureCoordinates()
 
-        this.dispatchEventAt(
+        this.emitPlatformEvent(
             source_event,
             intersection.hit === false
                 ? null

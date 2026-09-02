@@ -39,8 +39,8 @@ const { Image, Input, ScrollView, Text, View } = await import(
 )
 
 const clickAt = (ui, x, y) => {
-    ui.dispatchEvent({ type: 'pointerdown', pointerId: 1 }, { x, y })
-    ui.dispatchEvent({ type: 'pointerup', pointerId: 1 }, { x, y })
+    ui.dispatchPlatformEvent({ type: 'pointerdown', pointerId: 1 }, { x, y })
+    ui.dispatchPlatformEvent({ type: 'pointerup', pointerId: 1 }, { x, y })
 }
 
 const createEventUI = () =>

@@ -17,7 +17,7 @@ export default class UIThree extends UIWorldSpace {
         return output
     }
 
-    public dispatchEvent(source_event, { camera }) {
+    public dispatchPlatformEvent(source_event, { camera }) {
         const rect = source_event.currentTarget.getBoundingClientRect()
         const pointer = new THREE.Vector2(
             ((source_event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -28,7 +28,7 @@ export default class UIThree extends UIWorldSpace {
         raycaster.setFromCamera(pointer, camera)
         const intersection = raycaster.intersectObject(this.plane)[0]
 
-        this.dispatchEventAt(
+        this.emitPlatformEvent(
             source_event,
             intersection === undefined
                 ? null

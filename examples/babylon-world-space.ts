@@ -86,9 +86,9 @@ export async function main({
     // Event handling
     ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
         canvas.addEventListener(type, (e) => {
-            overlay_ui.dispatchEvent(e)
-            first_ui.dispatchEvent(e, { camera })
-            second_ui.dispatchEvent(e, { camera })
+            overlay_ui.dispatchPlatformEvent(e)
+            first_ui.dispatchPlatformEvent(e, { camera })
+            second_ui.dispatchPlatformEvent(e, { camera })
         })
     })
     first_ui.root.on('pointerdown', (e) => {

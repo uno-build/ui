@@ -42,8 +42,8 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     // Event handling
     ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
         canvas.addEventListener(type, (e) => {
-            background_ui.dispatchEvent(e)
-            foreground_ui.dispatchEvent(e)
+            background_ui.dispatchPlatformEvent(e)
+            foreground_ui.dispatchPlatformEvent(e)
         })
     })
     onCanvasEvent('resize', () => {
@@ -60,8 +60,8 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     foreground_ui.update()
     ;['pointerdown', 'pointerup', 'pointermove', 'pointercancel'].forEach((type) => {
         canvas.addEventListener(type, (e) => {
-            background_ui.dispatchEvent(e)
-            foreground_ui.dispatchEvent(e)
+            background_ui.dispatchPlatformEvent(e)
+            foreground_ui.dispatchPlatformEvent(e)
         })
     })
 

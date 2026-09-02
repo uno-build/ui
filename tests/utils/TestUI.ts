@@ -7,7 +7,7 @@ export default class TestUI extends UI {
         return ui
     }
 
-    public dispatchEvent(source_event, event_data) {
-        this.dispatchEventAt(source_event, event_data)
+    public dispatchPlatformEvent(source_event, event_data) {
+        this.emitPlatformEvent(source_event, event_data)
     }
 }

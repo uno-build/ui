@@ -475,7 +475,7 @@ test('UIDom preserves native event sources alongside UIWebGPU normalization', as
             }
 
             for (const type of ['pointerdown', 'pointerup', 'pointermove', 'pointercancel']) {
-                webgpu_canvas.addEventListener(type, (event) => webgpu_ui.dispatchEvent(event))
+                webgpu_canvas.addEventListener(type, (event) => webgpu_ui.dispatchPlatformEvent(event))
             }
 
             ;(window as any).event_parity = {

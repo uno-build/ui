@@ -155,7 +155,7 @@
                 // UIDom listens on its own element, UIWebGPU needs the canvas events forwarded.
                 if (is_canvas) {
                     POINTER_EVENTS.forEach((type) => {
-                        element.addEventListener(type, (event) => ui.dispatchEvent(event))
+                        element.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))
                     })
                 }
 

@@ -81,7 +81,7 @@ test('UIThree dispatches pointer events from raycast intersections', async ({ pa
                 ui.root.on(type, record(ui.root, 'root'))
                 canvas.addEventListener(type, (source_event) => {
                     current_source_event = source_event
-                    ui.dispatchEvent(source_event, { camera })
+                    ui.dispatchPlatformEvent(source_event, { camera })
                 })
             }
 
@@ -226,7 +226,7 @@ test('UIBabylon dispatches pointer events from raycast intersections', async ({ 
                 ui.root.on(type, record(ui.root, 'root'))
                 canvas.addEventListener(type, (source_event) => {
                     current_source_event = source_event
-                    ui.dispatchEvent(source_event, { camera })
+                    ui.dispatchPlatformEvent(source_event, { camera })
                 })
             }
 
@@ -358,7 +358,7 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', async
                 ui.root.on(type, record(ui.root, 'root'))
                 canvas.addEventListener(type, (source_event) => {
                     source_events.set(`${source_event.type}:${source_event.pointerId}`, source_event)
-                    dispatch_promises.push(ui.dispatchEvent(source_event, { camera }))
+                    dispatch_promises.push(ui.dispatchPlatformEvent(source_event, { camera }))
                 })
             }
 
@@ -504,7 +504,7 @@ test('UIPlayCanvas dispatches pointer events from raycast intersections', async 
                 ui.root.on(type, record(ui.root, 'root'))
                 canvas.addEventListener(type, (source_event) => {
                     current_source_event = source_event
-                    ui.dispatchEvent(source_event, { camera })
+                    ui.dispatchPlatformEvent(source_event, { camera })
                 })
             }
 

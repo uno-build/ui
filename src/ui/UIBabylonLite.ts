@@ -36,7 +36,7 @@ export default class UIBabylonLite extends UIWorldSpace {
         return output
     }
 
-    public dispatchEvent(source_event, { camera }) {
+    public dispatchPlatformEvent(source_event, { camera }) {
         const rect = source_event.currentTarget.getBoundingClientRect()
         const canvas = this.scene.surface.canvas
         const x = ((source_event.clientX - rect.left) / rect.width) * canvas.clientWidth
@@ -44,7 +44,7 @@ export default class UIBabylonLite extends UIWorldSpace {
 
         return pickAsync(this.picker, x, y, { filter: (mesh) => mesh === this.plane }).then((intersection) => {
             if (intersection.hit === false) {
-                this.dispatchEventAt(source_event, null)
+                this.emitPlatformEvent(source_event, null)
                 return
             }
 
@@ -62,7 +62,7 @@ export default class UIBabylonLite extends UIWorldSpace {
                 picked_point[2] * inverse_world_matrix[9] +
                 inverse_world_matrix[13]
 
-            this.dispatchEventAt(source_event, {
+            this.emitPlatformEvent(source_event, {
                 x: (local_x / this.world_width + 0.5) * this.root.layout.width,
                 y: (0.5 - local_y / this.world_height) * this.root.layout.height,
                 distance_to_camera: Math.hypot(
