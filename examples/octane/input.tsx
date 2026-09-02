@@ -6,6 +6,12 @@ const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const GAME_FONT_FAMILY = 'Nougat-ExtraBlack'
 const COIN_SRC = 'assets/images/coin.png'
+const MAX_LENGTHS = {
+    nickname: 16,
+    clan: 3,
+    code: 6,
+    cry: 40,
+}
 
 const PAGE_STYLE = {
     width: '100%',
@@ -75,7 +81,7 @@ const ROW_FIELD_STYLE = {
     gap: '8px',
 }
 const CLAN_FIELD_STYLE = {
-    width: '190px',
+    width: '96px',
     flexDirection: 'column',
     gap: '8px',
 }
@@ -175,6 +181,7 @@ export function OctaneInput() {
         ShowPlatformKeyboard({
             node: event.target,
             value: values[id],
+            max_length: MAX_LENGTHS[id],
             onChange: (value) => setValues({ ...values, [id]: value }),
         })
     }
@@ -283,8 +290,9 @@ const ShowPlatformKeyboard = (function () {
     input.tabIndex = -1
     document.body.appendChild(input)
 
-    return ({ node, value, onChange }) => {
+    return ({ node, value, max_length, onChange }) => {
         input.value = value
+        input.maxLength = max_length
         input.oninput = () => onChange(input.value)
         input.onblur = () => node.blur()
         input.focus({ preventScroll: true })

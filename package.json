@@ -102,7 +102,7 @@
         "dev": "vite ./examples --config ./examples/vite/typegpu.config.ts",
         "dev:octane": "vite ./examples --config ./examples/vite/octane.config.ts",
         "dev:solid": "vite ./examples --config ./examples/vite/solid.config.ts",
-        "build-examples": "vite build ./examples",
+        "build-octane": "vite build ./examples/octane --config ./examples/vite/octane.config.ts",
         "benchmark:box-shadow": "RUN_BENCHMARKS=1 playwright test tests/benchmarks/webgpuBoxShadowBenchmark.benchmark.test.ts",
         "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"
     }

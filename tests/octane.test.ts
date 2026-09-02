@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { compile } from 'octane/compiler'
 import {
     defineUniversalComponent,
     universalFor,
@@ -12,6 +15,28 @@ import { getImageStyle } from '../src/components/shared.js'
 import { DEFAULT_EVENTS } from '../src/events'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'
+
+const COMPONENTS_URL = new URL('../src/components/octane/components.tsx', import.meta.url)
+const OCTANE_RENDERER = {
+    id: 'uno',
+    module: 'octane/universal/native',
+    target: 'universal' as const,
+    server: 'client-only',
+    text: 'host',
+}
+
+const compiled_components = compile(readFileSync(COMPONENTS_URL, 'utf8'), fileURLToPath(COMPONENTS_URL), {
+    mode: 'client',
+    renderer: OCTANE_RENDERER,
+    rendererRegistry: { uno: OCTANE_RENDERER },
+}).code
+    .replaceAll("from 'octane/universal/native'", `from '${import.meta.resolve('octane/universal/native')}'`)
+    .replace("from './context'", `from '${new URL('../src/components/octane/context.ts', import.meta.url)}'`)
+    .replace("from '../shared'", `from '${new URL('../src/components/shared.ts', import.meta.url)}'`)
+
+const { Image, Input, ScrollView, Text, View } = await import(
+    `data:text/javascript;base64,${Buffer.from(compiled_components).toString('base64')}`
+)
 
 const clickAt = (ui, x, y) => {
     ui.dispatchEvent({ type: 'pointerdown', pointerId: 1 }, { x, y })
@@ -270,6 +295,87 @@ test('Octane refs receive the public instance containing the main Uno node', asy
 
     const node = ui.root.children[0]
     expect(ref.current).toEqual({ nodes: { main: node } })
+
+    root.unmount()
+
+    expect(ref.current).toBe(null)
+})
+
+for (const [name, Component, props] of [
+    ['View', View, {}],
+    ['Text', Text, {}],
+    ['Image', Image, { src: 'image' }],
+]) {
+    test(`${name} refs expose the main Uno node`, async () => {
+        const resources = { getImageSize: () => ({ width: 10, height: 10 }) }
+        const ui = await TestUI.create({ renderer: new TestRenderer(), resources })
+        const root = registerRootComponent(Component, { ui })
+        const ref = { current: null }
+
+        root.render({ ...props, ref })
+
+        const node = ui.root.children[0]
+        expect(ref.current).toEqual({ nodes: { main: node } })
+
+        root.unmount()
+
+        expect(ref.current).toBe(null)
+    })
+}
+
+test('ScrollView refs expose the main and content Uno nodes', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const root = registerRootComponent(ScrollView, { ui })
+    const ref = { current: null }
+
+    root.render({ ref })
+
+    const main = ui.root.children[0]
+    const content = main.children[0]
+    expect(ref.current).toEqual({ nodes: { main, content } })
+
+    root.unmount()
+
+    expect(ref.current).toBe(null)
+})
+
+test('Input refs expose its Uno nodes and focus and blur the main node', async () => {
+    const ui = await createEventUI()
+    const root = registerRootComponent(Input, { ui })
+    const ref = { current: null }
+
+    root.render({ ref, value: 'Value' })
+
+    const main = ui.root.children[0]
+    const content = main.children[0]
+    const text = content.children[0]
+    let focus_count = 0
+    let blur_count = 0
+    const focus = main.focus.bind(main)
+    const blur = main.blur.bind(main)
+    main.focus = (...args) => {
+        focus_count++
+        focus(...args)
+    }
+    main.blur = (...args) => {
+        blur_count++
+        blur(...args)
+    }
+
+    expect(ref.current.nodes).toEqual({ main, content, text, caret: null })
+    expect(ref.current.focus).toEqual(expect.any(Function))
+    expect(ref.current.blur).toEqual(expect.any(Function))
+
+    ref.current.focus()
+
+    const caret = content.children[1]
+    expect(focus_count).toBe(1)
+    expect(ref.current.nodes).toEqual({ main, content, text, caret })
+
+    ref.current.blur()
+
+    expect(blur_count).toBe(1)
+    expect(ref.current.nodes).toEqual({ main, content, text, caret: null })
 
     root.unmount()
 
