@@ -1,6 +1,16 @@
 import { useEffect, useImperativeHandle, useRef, useState } from 'octane'
 import { useUI } from './context'
-import { getImageStyle, getScrollViewStyle, getScrollContentStyle } from '../shared'
+import {
+    getImageStyle,
+    getInputCaretStyle,
+    getInputContentStyle,
+    getInputStyle,
+    getInputTextStyle,
+    getInputTextValue,
+    getScrollContentStyle,
+    getScrollViewStyle,
+    showInputPlaceholder,
+} from '../shared'
 
 export function View({ children, ...props }) {
     return <view {...props}>{children}</view>
@@ -120,23 +130,7 @@ export function Input({
         [],
     )
 
-    const has_value = value != null && value !== ''
-    const show_placeholder = !has_value && !is_focused && placeholder != null
-    const text_value = show_placeholder ? placeholder : has_value ? value : '\u00A0'
-    const text_style = {
-        whiteSpace: 'nowrap',
-        ...(style.fontFamily !== undefined && { fontFamily: style.fontFamily }),
-        ...(style.lineHeight !== undefined && { lineHeight: style.lineHeight }),
-        ...(style.letterSpacing !== undefined && { letterSpacing: style.letterSpacing }),
-        ...(show_placeholder
-            ? { color: placeholder_text_color }
-            : style.color !== undefined
-              ? { color: style.color }
-              : {}),
-        ...(style.textAlign !== undefined && { textAlign: style.textAlign }),
-        ...(style.textShadow !== undefined && { textShadow: style.textShadow }),
-        ...(style.textStroke !== undefined && { textStroke: style.textStroke }),
-    }
+    const show_placeholder = showInputPlaceholder(value, placeholder, is_focused)
 
     return (
         <view
@@ -144,47 +138,14 @@ export function Input({
             onFocus={handleFocus}
             onBlur={handleBlur}
             onPointerDown={handlePointerDown}
-            style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #777777',
-                width: '100%',
-                ...style,
-            }}
+            style={getInputStyle(style)}
             {...props}
         >
-            <view
-                ref={content_ref}
-                style={{
-                    flex: '1',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent:
-                        style.textAlign === 'center'
-                            ? 'center'
-                            : style.textAlign === 'right'
-                              ? 'flex-end'
-                              : 'flex-start',
-                    overflowX: 'hidden',
-                    pointerEvents: 'none',
-                }}
-            >
-                <text ref={text_ref} style={{ ...text_style, pointerEvents: 'none' }}>
-                    {text_value}
+            <view ref={content_ref} style={getInputContentStyle(style)}>
+                <text ref={text_ref} style={getInputTextStyle(style, show_placeholder, placeholder_text_color)}>
+                    {getInputTextValue(value, placeholder, show_placeholder)}
                 </text>
-                {is_focused && (
-                    <view
-                        ref={caret_ref}
-                        style={{
-                            backgroundColor: style.color ?? '#000000',
-                            width: '1px',
-                            height: '16px',
-                            marginLeft: '1px',
-                            flexShrink: '0',
-                            opacity: caret_visible ? '1' : '0',
-                            pointerEvents: 'none',
-                        }}
-                    />
-                )}
+                {is_focused && <view ref={caret_ref} style={getInputCaretStyle(style, caret_visible)} />}
             </view>
         </view>
     )

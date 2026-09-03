@@ -16,7 +16,7 @@ const MODULE_PATHS = {
 
 const FIXTURE_SOURCE = `
 import { createSignal, For, Show } from '__SOLID_JS__'
-import { Text, View } from '__SOLID_COMPONENTS__'
+import { Input, ScrollView, Text, View } from '__SOLID_COMPONENTS__'
 import { useUI } from '__SOLID_CONTEXT__'
 
 export function StaticTree() {
@@ -91,6 +91,22 @@ export function DynamicText(props) {
 
 export function MultiText(props) {
     return <Text>Hola {props.getName()}!</Text>
+}
+
+export function ScrollViewTree(props) {
+    return (
+        <ScrollView ref={props.setRef} style={{ height: '100px' }}>
+            <view style={{ height: '10px' }} />
+        </ScrollView>
+    )
+}
+
+export function InputTree(props) {
+    return <Input ref={props.setRef} value="Value" />
+}
+
+export function InputPlaceholder(props) {
+    return <Input value={props.getValue()} placeholder="Escribe" placeholderTextColor="#123456" />
 }
 
 export function MixedChildren(props) {
@@ -713,6 +729,161 @@ test('Solid commits state updates from an event handler within the dispatch', as
     }, MODULE_PATHS)
 
     expect(result).toEqual({ before: '100px', after: '101px', same_node: true })
+})
+
+test('ScrollView refs expose the main and content Uno nodes', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] =
+            await Promise.all([
+                import(module_paths.renderer),
+                import(module_paths.test_renderer),
+                import(module_paths.test_ui),
+            ])
+        const fixture = (globalThis as any).solid_fixture
+        const ui = await TestUI.create({ renderer: new TestRenderer() })
+        let reference = null
+
+        registerRootComponent(fixture.ScrollViewTree, { ui }).render({
+            setRef(value) {
+                reference = value
+            },
+        })
+
+        const main = ui.root.children[0]
+        const content = main.children[0]
+
+        return {
+            handle_keys: Object.keys(reference),
+            nodes_match: reference.nodes.main === main && reference.nodes.content === content,
+            main_height: main.styles.height.value,
+            content_children: content.children.length,
+            child_height: content.children[0].styles.height.value,
+        }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({
+        handle_keys: ['nodes'],
+        nodes_match: true,
+        main_height: '100px',
+        content_children: 1,
+        child_height: '10px',
+    })
+})
+
+test('Input refs expose its Uno nodes and focus and blur the main node', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [
+            { registerRootComponent },
+            { flush },
+            { default: TestRenderer },
+            { default: TestUI },
+            { DEFINED_EVENTS },
+        ] = await Promise.all([
+            import(module_paths.renderer),
+            import('/@id/solid-js'),
+            import(module_paths.test_renderer),
+            import(module_paths.test_ui),
+            import(module_paths.events),
+        ])
+        const fixture = (globalThis as any).solid_fixture
+        const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
+        let reference = null
+
+        registerRootComponent(fixture.InputTree, { ui }).render({
+            setRef(value) {
+                reference = value
+            },
+        })
+
+        const main = ui.root.children[0]
+        const content = main.children[0]
+        const text = content.children[0]
+        let focus_count = 0
+        let blur_count = 0
+        const focus = main.focus.bind(main)
+        const blur = main.blur.bind(main)
+        main.focus = (...args) => {
+            focus_count++
+            focus(...args)
+        }
+        main.blur = (...args) => {
+            blur_count++
+            blur(...args)
+        }
+
+        const initial =
+            reference.nodes.main === main &&
+            reference.nodes.content === content &&
+            reference.nodes.text === text &&
+            reference.nodes.caret === null
+
+        reference.focus()
+        flush()
+        const caret = content.children[1]
+        const focused = reference.nodes.caret === caret && caret.styles.width.value === '1px'
+
+        reference.blur()
+        flush()
+
+        return {
+            handle_keys: Object.keys(reference),
+            initial,
+            text_value: text.text_content,
+            focused,
+            focus_count,
+            blurred: reference.nodes.caret === null && content.children[1].styles.display.value === 'none',
+            blur_count,
+        }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({
+        handle_keys: ['nodes', 'focus', 'blur'],
+        initial: true,
+        text_value: 'Value',
+        focused: true,
+        focus_count: 1,
+        blurred: true,
+        blur_count: 1,
+    })
+})
+
+test('Input swaps placeholder and value styling', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [
+            { registerRootComponent },
+            { createSignal, flush },
+            { default: TestRenderer },
+            { default: TestUI },
+            { DEFINED_EVENTS },
+        ] = await Promise.all([
+            import(module_paths.renderer),
+            import('/@id/solid-js'),
+            import(module_paths.test_renderer),
+            import(module_paths.test_ui),
+            import(module_paths.events),
+        ])
+        const fixture = (globalThis as any).solid_fixture
+        const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
+        const [value, setValue] = createSignal('')
+
+        registerRootComponent(fixture.InputPlaceholder, { ui }).render({ getValue: value })
+        const text = ui.root.children[0].children[0].children[0]
+        const placeholder = { text: text.text_content, color: text.styles.color.value }
+
+        flush(() => setValue('Valor'))
+
+        return {
+            placeholder,
+            filled: { text: text.text_content, color: text.styles.color.value },
+            same_node: ui.root.children[0].children[0].children[0] === text,
+        }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({
+        placeholder: { text: 'Escribe', color: '#123456' },
+        filled: { text: 'Valor', color: 'unset' },
+        same_node: true,
+    })
 })
 
 test('Solid keeps sibling order around an empty conditional slot', async ({ page }) => {
