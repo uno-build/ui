@@ -19,6 +19,7 @@ export type ManagedGlyph = {
 export class FontManager {
     public fonts = new Map<string, ManagedFont>()
     public texture_version = 0
+    public registry_version = 0
     private device
     private atlas_size
     private font_texture
@@ -42,6 +43,7 @@ export class FontManager {
         this.default_font_name = null
         this.font_texture = null
         this.texture_version++
+        this.registry_version++
     }
 
     public fontDispose(name: string): void {
@@ -52,6 +54,7 @@ export class FontManager {
         }
 
         this.fonts.delete(name)
+        this.registry_version++
         this.free_font_layers.push(font.layer)
 
         if (this.default_font_name === name) {
@@ -95,6 +98,7 @@ export class FontManager {
         } as ManagedFont
 
         this.fonts.set(name, font)
+        this.registry_version++
         this.default_font_name ??= name
 
         return font

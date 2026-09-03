@@ -3411,7 +3411,22 @@ function createPoolBufferData(pool, items, writeItem) {
 }
 
 function collectRenderData(renderer, nodes) {
-    return (renderer as any).collectRenderData(nodes)
+    const panels = []
+    const glyphs = []
+    const text_runs = []
+
+    for (const node of nodes) {
+        const { panel_data, text_data } = (renderer as any).updateRecord(node, (renderer as any).getRecord(node))
+        if (panel_data !== null) {
+            panels.push(panel_data)
+        }
+        if (text_data !== null) {
+            text_runs.push(text_data.run)
+            glyphs.push(...text_data.glyphs)
+        }
+    }
+
+    return { commands: (renderer as any).createCommands(nodes), panels, glyphs, text_runs }
 }
 
 function createRenderer(image_manager = createImageManager(), font_manager = createFontManager()) {
@@ -3427,7 +3442,7 @@ function createRenderer(image_manager = createImageManager(), font_manager = cre
     ;(renderer as any).grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
     ;(renderer as any).command_pool = new GpuPool({ device, usage: 0, stride: COMMAND_SIZE })
     ;(renderer as any).panel_data_pool = new GpuPool({ device, usage: 0, stride: PANEL_DATA_SIZE })
-    ;(renderer as any).glyph_data_pool = new GpuPool({ device, usage: 0, stride: GLYPH_DATA_SIZE })
+    ;(renderer as any).glyph_data_pool = new GpuPool({ device, usage: 0, stride: GLYPH_DATA_SIZE, min_capacity: 8 })
     ;(renderer as any).text_run_pool = new GpuPool({ device, usage: 0, stride: TEXT_RUN_SIZE })
 
     return renderer
