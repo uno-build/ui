@@ -1,0 +1,655 @@
+import { expect, test } from '@playwright/test'
+import { transform } from '@dom-expressions/compiler'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+
+const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
+const COMPONENTS_PATH = fileURLToPath(new URL('../src/components/solid/components.jsx', import.meta.url))
+const MODULE_PATHS = {
+    renderer: `/@fs${WORKSPACE_PATH}src/components/solid/driver.ts`,
+    context: `/@fs${WORKSPACE_PATH}src/components/solid/context.ts`,
+    shared: `/@fs${WORKSPACE_PATH}src/components/shared.ts`,
+    test_renderer: `/@fs${WORKSPACE_PATH}tests/utils/TestRenderer.ts`,
+    test_ui: `/@fs${WORKSPACE_PATH}tests/utils/TestUI.ts`,
+    events: `/@fs${WORKSPACE_PATH}src/events/index.ts`,
+}
+
+const FIXTURE_SOURCE = `
+import { createSignal, For, Show } from '__SOLID_JS__'
+import {
+    createElement,
+    createTextNode,
+    insertNode,
+} from '__SOLID_RENDERER__'
+import { Text, View } from '__SOLID_COMPONENTS__'
+import { useUI } from '__SOLID_CONTEXT__'
+
+export function StaticTree() {
+    return (
+        <view style={{ width: '120px', height: '80px' }}>
+            <view style={{ width: '40px', height: '30px' }} />
+            <view style={{ width: '50px', height: '20px' }} />
+        </view>
+    )
+}
+
+export function DynamicStyle(props) {
+    return <View style={props.style} />
+}
+
+export function HostRef(props) {
+    return <view ref={props.setRef} />
+}
+
+export function ViewRef(props) {
+    return <View ref={props.setRef} />
+}
+
+export function TextRef(props) {
+    return <Text ref={props.setRef} />
+}
+
+export function KeyedList(props) {
+    return (
+        <view>
+            <For each={props.items}>{(item) => <view style={{ width: item.width }} />}</For>
+        </view>
+    )
+}
+
+export function ConditionalTree(props) {
+    return (
+        <Show when={props.visible}>
+            <view style={{ width: '100px' }}>
+                <view style={{ height: '50px' }} />
+            </view>
+        </Show>
+    )
+}
+
+export const received_uis = []
+
+export function UIContextTree() {
+    received_uis.push(useUI())
+    return <view />
+}
+
+export function UnsupportedTag() {
+    return <image />
+}
+
+export function ViewInsideText() {
+    return <text><view /></text>
+}
+
+export function TextInsideView() {
+    return <view>Text</view>
+}
+
+export function DynamicText(props) {
+    return <Text>{props.value}</Text>
+}
+
+export function ConditionalText(props) {
+    return <Text>{props.visible && 'Contenido'}</Text>
+}
+
+export function EventTree(props) {
+    return (
+        <view style={{ width: '100px', height: '50px' }} onClick={props.onClick}>
+            <view style={{ width: '40px', height: '20px' }} />
+        </view>
+    )
+}
+
+export function Counter() {
+    const [count, setCount] = createSignal(0)
+
+    return (
+        <view
+            style={{ width: \`\${100 + count()}px\`, height: '50px' }}
+            onClick={() => setCount((current) => current + 1)}
+        />
+    )
+}
+
+export let moveText
+
+export function MovingText() {
+    const first_text = createElement('text')
+    const second_text = createElement('text')
+    const content = createTextNode('Contenido')
+
+    insertNode(first_text, content)
+    moveText = () => insertNode(second_text, content)
+
+    return [first_text, second_text]
+}
+`
+
+const FIXTURE_CODE = transform(FIXTURE_SOURCE, {
+    filename: 'solid-fixture.tsx',
+    moduleName: '__SOLID_RENDERER__',
+    generate: 'universal',
+    builtIns: ['Errored', 'For', 'Loading', 'Match', 'Repeat', 'Reveal', 'Show', 'Switch'],
+    wrapConditionals: true,
+}).code
+
+const COMPONENTS_CODE = transform(readFileSync(COMPONENTS_PATH, 'utf8'), {
+    filename: COMPONENTS_PATH,
+    moduleName: '__SOLID_RENDERER__',
+    generate: 'universal',
+    builtIns: ['Errored', 'For', 'Loading', 'Match', 'Repeat', 'Reveal', 'Show', 'Switch'],
+    wrapConditionals: true,
+}).code
+
+async function loadFixture(page) {
+    await page.goto('/dev/')
+    await page.evaluate(
+        async ({ components_code, fixture_code, module_paths }) => {
+            const renderer_url = new URL(module_paths.renderer, window.location.origin).href
+            const context_url = new URL(module_paths.context, window.location.origin).href
+            const shared_url = new URL(module_paths.shared, window.location.origin).href
+            const solid_url = new URL('/@id/solid-js', window.location.origin).href
+            const compiled_components = components_code
+                .replaceAll('__SOLID_RENDERER__', renderer_url)
+                .replaceAll('"./context"', JSON.stringify(context_url))
+                .replaceAll('"../shared"', JSON.stringify(shared_url))
+            const components_url = URL.createObjectURL(
+                new Blob([compiled_components], { type: 'text/javascript' }),
+            )
+            const compiled_code = fixture_code
+                .replaceAll('__SOLID_RENDERER__', renderer_url)
+                .replaceAll('__SOLID_COMPONENTS__', components_url)
+                .replaceAll('__SOLID_CONTEXT__', context_url)
+                .replaceAll('__SOLID_JS__', solid_url)
+            const module_url = URL.createObjectURL(new Blob([compiled_code], { type: 'text/javascript' }))
+            ;(globalThis as any).solid_fixture = await import(module_url)
+            URL.revokeObjectURL(module_url)
+            URL.revokeObjectURL(components_url)
+        },
+        { components_code: COMPONENTS_CODE, fixture_code: FIXTURE_CODE, module_paths: MODULE_PATHS },
+    )
+}
+
+test.beforeEach(async ({ page }) => {
+    await loadFixture(page)
+})
+
+test('Solid create and insert build the Uno node tree and apply initial styles', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
+            import(module_paths.renderer),
+            import(module_paths.test_renderer),
+            import(module_paths.test_ui),
+        ])
+        const fixture = (globalThis as any).solid_fixture
+        const renderer = new TestRenderer()
+        const ui = await TestUI.create({ renderer })
+        const created_nodes = []
+        const createNode = ui.create.bind(ui)
+        const updateUI = ui.update.bind(ui)
+        let update_count = 0
+
+        ui.create = () => {
+            const node = createNode()
+            created_nodes.push(node)
+            return node
+        }
+        ui.update = () => {
+            update_count++
+            return updateUI()
+        }
+
+        const root = registerRootComponent(fixture.StaticTree, { ui })
+        root.render({})
+
+        const parent = ui.root.children[0]
+        const first_child = parent.children[0]
+        const second_child = parent.children[1]
+
+        return {
+            created_nodes_match:
+                created_nodes[0] === parent &&
+                created_nodes[1] === first_child &&
+                created_nodes[2] === second_child,
+            active_nodes_match:
+                ui.nodes[0] === parent && ui.nodes[1] === first_child && ui.nodes[2] === second_child,
+            parents_match:
+                parent.parent === ui.root && first_child.parent === parent && second_child.parent === parent,
+            paths: [parent.path, first_child.path, second_child.path],
+            styles: {
+                parent_width: parent.styles.width.value,
+                parent_height: parent.styles.height.value,
+                first_width: first_child.styles.width.value,
+                second_width: second_child.styles.width.value,
+            },
+            update_count,
+        }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({
+        created_nodes_match: true,
+        active_nodes_match: true,
+        parents_match: true,
+        paths: [[0], [0, 0], [0, 1]],
+        styles: {
+            parent_width: '120px',
+            parent_height: '80px',
+            first_width: '40px',
+            second_width: '50px',
+        },
+        update_count: 1,
+    })
+})
+
+test('Solid updates styles without replacing node identity and unsets removed styles', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
+            import(module_paths.renderer),
+            import(module_paths.test_renderer),
+            import(module_paths.test_ui),
+        ])
+        const fixture = (globalThis as any).solid_fixture
+        const ui = await TestUI.create({ renderer: new TestRenderer() })
+        const root = registerRootComponent(fixture.DynamicStyle, { ui })
+
+        root.render({ style: { width: '100px', height: '40px', backgroundColor: '#f00' } })
+        const node = ui.root.children[0]
+        root.render({ style: { width: '200px', backgroundColor: '#00f' } })
+
+        return {
+            same_node: ui.root.children[0] === node && ui.nodes[0] === node,
+            width: node.styles.width.value,
+            height: node.styles.height.value,
+            background_color: node.styles.backgroundColor.value,
+        }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({
+        same_node: true,
+        width: '200px',
+        height: 'unset',
+        background_color: '#00f',
+    })
+})
+
+for (const component_name of ['HostRef', 'ViewRef', 'TextRef']) {
+    test(`${component_name} refs expose the main Uno node and clear on unmount`, async ({ page }) => {
+        const result = await page.evaluate(
+            async ({ component_name, module_paths }) => {
+                const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] =
+                    await Promise.all([
+                        import(module_paths.renderer),
+                        import(module_paths.test_renderer),
+                        import(module_paths.test_ui),
+                    ])
+                const fixture = (globalThis as any).solid_fixture
+                const ui = await TestUI.create({ renderer: new TestRenderer() })
+                const root = registerRootComponent(fixture[component_name], { ui })
+                let reference
+
+                root.render({
+                    setRef(value) {
+                        reference = value
+                    },
+                })
+
+                const node = ui.root.children[0]
+                const exposes_node =
+                    reference.nodes.main === node &&
+                    Object.keys(reference).length === 1 &&
+                    Object.keys(reference)[0] === 'nodes'
+
+                root.unmount()
+
+                return {
+                    exposes_node,
+                    cleared: reference === null,
+                    released: node.ui === null && node.element === null,
+                }
+            },
+            { component_name, module_paths: MODULE_PATHS },
+        )
+
+        expect(result).toEqual({ exposes_node: true, cleared: true, released: true })
+    })
+}
+
+test('Solid keyed lists insert and move nodes before existing siblings', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
+            import(module_paths.renderer),
+            import(module_paths.test_renderer),
+            import(module_paths.test_ui),
+        ])
+        const fixture = (globalThis as any).solid_fixture
+        const ui = await TestUI.create({ renderer: new TestRenderer() })
+        const root = registerRootComponent(fixture.KeyedList, { ui })
+        const a = { id: 'a', width: '10px' }
+        const b = { id: 'b', width: '20px' }
+        const c = { id: 'c', width: '30px' }
+        const x = { id: 'x', width: '40px' }
+
+        root.render({ items: [a, b, c] })
+        const parent = ui.root.children[0]
+        const [a_node, b_node, c_node] = parent.children
+
+        root.render({ items: [c, a, b] })
+        const moved =
+            parent.children[0] === c_node && parent.children[1] === a_node && parent.children[2] === b_node
+        const moved_paths = parent.children.map((node) => node.path)
+
+        root.render({ items: [c, x, a, b] })
+        const x_node = parent.children[1]
+
+        return {
+            moved,
+            moved_paths,
+            inserted:
+                parent.children[0] === c_node &&
+                parent.children[2] === a_node &&
+                parent.children[3] === b_node,
+            x_width: x_node.styles.width.value,
+        }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({
+        moved: true,
+        moved_paths: [[0, 0], [0, 1], [0, 2]],
+        inserted: true,
+        x_width: '40px',
+    })
+})
+
+test('Solid removes and destroys a conditional Uno subtree in order', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
+            import(module_paths.renderer),
+            import(module_paths.test_renderer),
+            import(module_paths.test_ui),
+        ])
+        const fixture = (globalThis as any).solid_fixture
+        const renderer = new TestRenderer()
+        const ui = await TestUI.create({ renderer })
+        const operations = []
+        const detachChild = renderer.detachChild.bind(renderer)
+        const destroyNode = renderer.destroyNode.bind(renderer)
+        const updateUI = ui.update.bind(ui)
+        let update_count = 0
+
+        renderer.detachChild = (parent, node) => {
+            operations.push({ operation: 'detach', parent, node })
+            detachChild(parent, node)
+        }
+        renderer.destroyNode = (node) => {
+            operations.push({ operation: 'destroy', node })
+            destroyNode(node)
+        }
+        ui.update = () => {
+            update_count++
+            return updateUI()
+        }
+
+        const root = registerRootComponent(fixture.ConditionalTree, { ui })
+        root.render({ visible: true })
+        const parent = ui.root.children[0]
+        const child = parent.children[0]
+        root.render({ visible: false })
+
+        return {
+            operations_match:
+                operations.length === 4 &&
+                operations[0].operation === 'detach' &&
+                operations[0].parent === ui.root &&
+                operations[0].node === parent &&
+                operations[1].operation === 'detach' &&
+                operations[1].parent === parent &&
+                operations[1].node === child &&
+                operations[2].operation === 'destroy' &&
+                operations[2].node === child &&
+                operations[3].operation === 'destroy' &&
+                operations[3].node === parent,
+            update_count,
+            active_count: ui.nodes.length,
+            root_count: ui.root.children.length,
+            released:
+                parent.ui === null && child.ui === null && parent.element === null && child.element === null,
+        }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({
+        operations_match: true,
+        update_count: 2,
+        active_count: 0,
+        root_count: 0,
+        released: true,
+    })
+})
+
+test('Solid roots isolate their node state and expose their own UI context', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
+            import(module_paths.renderer),
+            import(module_paths.test_renderer),
+            import(module_paths.test_ui),
+        ])
+        const fixture = (globalThis as any).solid_fixture
+        const first_ui = await TestUI.create({ renderer: new TestRenderer() })
+        const second_ui = await TestUI.create({ renderer: new TestRenderer() })
+        const first_root = registerRootComponent(fixture.UIContextTree, { ui: first_ui })
+        const second_root = registerRootComponent(fixture.UIContextTree, { ui: second_ui })
+
+        first_root.render({})
+        second_root.render({})
+        const second_node = second_ui.root.children[0]
+        first_root.unmount()
+
+        return {
+            contexts_match:
+                fixture.received_uis[0] === first_ui && fixture.received_uis[1] === second_ui,
+            first_empty: first_ui.root.children.length === 0 && first_ui.nodes.length === 0,
+            second_unchanged:
+                second_ui.root.children.length === 1 &&
+                second_ui.root.children[0] === second_node &&
+                second_node.ui === second_ui,
+        }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({ contexts_match: true, first_empty: true, second_unchanged: true })
+})
+
+for (const [component_name, message] of [
+    ['UnsupportedTag', "Unsupported tag element '<image>'"],
+    ['ViewInsideText', '<Text> cannot have children.'],
+    ['TextInsideView', 'Texts must be inserted into a <Text> component.'],
+]) {
+    test(`Solid rejects invalid tree: ${component_name}`, async ({ page }) => {
+        const error_message = await page.evaluate(
+            async ({ component_name, module_paths }) => {
+                const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] =
+                    await Promise.all([
+                        import(module_paths.renderer),
+                        import(module_paths.test_renderer),
+                        import(module_paths.test_ui),
+                    ])
+                const fixture = (globalThis as any).solid_fixture
+                const ui = await TestUI.create({ renderer: new TestRenderer() })
+                const root = registerRootComponent(fixture[component_name], { ui })
+
+                try {
+                    root.render({})
+                } catch (error) {
+                    return error.message
+                }
+
+                return null
+            },
+            { component_name, module_paths: MODULE_PATHS },
+        )
+
+        expect(error_message).toBe(message)
+    })
+}
+
+test('Solid updates, clears, moves, and unmounts text without retaining Uno nodes', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
+            import(module_paths.renderer),
+            import(module_paths.test_renderer),
+            import(module_paths.test_ui),
+        ])
+        const fixture = (globalThis as any).solid_fixture
+
+        const dynamic_ui = await TestUI.create({ renderer: new TestRenderer() })
+        const dynamic_root = registerRootComponent(fixture.DynamicText, { ui: dynamic_ui })
+        dynamic_root.render({ value: 'Antes' })
+        const dynamic_node = dynamic_ui.root.children[0]
+        dynamic_root.render({ value: 'Después' })
+        const dynamic_updated =
+            dynamic_ui.root.children[0] === dynamic_node && dynamic_node.text_content === 'Después'
+
+        const conditional_ui = await TestUI.create({ renderer: new TestRenderer() })
+        const conditional_root = registerRootComponent(fixture.ConditionalText, { ui: conditional_ui })
+        conditional_root.render({ visible: true })
+        const conditional_node = conditional_ui.root.children[0]
+        conditional_root.render({ visible: false })
+        const conditional_cleared =
+            conditional_ui.root.children[0] === conditional_node && conditional_node.text_content === ''
+
+        const moving_ui = await TestUI.create({ renderer: new TestRenderer() })
+        const moving_root = registerRootComponent(fixture.MovingText, { ui: moving_ui })
+        moving_root.render({})
+        const [first_text, second_text] = moving_ui.root.children
+        fixture.moveText()
+        const moved = first_text.text_content === '' && second_text.text_content === 'Contenido'
+
+        dynamic_root.unmount()
+
+        return {
+            dynamic_updated,
+            conditional_cleared,
+            moved,
+            unmounted:
+                dynamic_ui.root.children.length === 0 &&
+                dynamic_ui.nodes.length === 0 &&
+                dynamic_node.ui === null &&
+                dynamic_node.element === null,
+        }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({
+        dynamic_updated: true,
+        conditional_cleared: true,
+        moved: true,
+        unmounted: true,
+    })
+})
+
+test('Solid event props use one Uno listener and dispatch the latest handler', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }, { DEFINED_EVENTS }] =
+            await Promise.all([
+                import(module_paths.renderer),
+                import(module_paths.test_renderer),
+                import(module_paths.test_ui),
+                import(module_paths.events),
+            ])
+        const fixture = (globalThis as any).solid_fixture
+        const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
+        const registrations = []
+        const removals = []
+        const received = []
+        const registerListener = ui.events.on.bind(ui.events)
+        const removeListener = ui.events.off.bind(ui.events)
+
+        ui.events.on = (type, listener) => {
+            registrations.push(type)
+            return registerListener(type, listener)
+        }
+        ui.events.off = (type, listener) => {
+            removals.push(type)
+            removeListener(type, listener)
+        }
+
+        const root = registerRootComponent(fixture.EventTree, { ui })
+        root.render({ onClick: () => received.push('first') })
+        const parent = ui.root.children[0]
+        const child = parent.children[0]
+        root.render({
+            onClick(event) {
+                received.push({
+                    handler: 'second',
+                    type: event.type,
+                    target_is_child: event.target === child,
+                    current_target_is_parent: event.current_target === parent,
+                })
+            },
+        })
+
+        ui.dispatchPlatformEvent({ type: 'pointerdown', pointerId: 1 }, { x: 10, y: 10 })
+        ui.dispatchPlatformEvent({ type: 'pointerup', pointerId: 1 }, { x: 10, y: 10 })
+
+        root.render({ onClick: null })
+        ui.dispatchPlatformEvent({ type: 'pointerdown', pointerId: 1 }, { x: 10, y: 10 })
+        ui.dispatchPlatformEvent({ type: 'pointerup', pointerId: 1 }, { x: 10, y: 10 })
+
+        root.render({ onClick: () => received.push('third') })
+        ui.dispatchPlatformEvent({ type: 'pointerdown', pointerId: 1 }, { x: 10, y: 10 })
+        ui.dispatchPlatformEvent({ type: 'pointerup', pointerId: 1 }, { x: 10, y: 10 })
+
+        return {
+            received,
+            registrations,
+            removals,
+            same_parent: ui.root.children[0] === parent,
+            target_is_child: child.parent === parent,
+        }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({
+        received: [
+            {
+                handler: 'second',
+                type: 'click',
+                target_is_child: true,
+                current_target_is_parent: true,
+            },
+            'third',
+        ],
+        registrations: ['click', 'click'],
+        removals: ['click'],
+        same_parent: true,
+        target_is_child: true,
+    })
+})
+
+test('Solid commits state updates from an event handler within the dispatch', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }, { DEFINED_EVENTS }] =
+            await Promise.all([
+                import(module_paths.renderer),
+                import(module_paths.test_renderer),
+                import(module_paths.test_ui),
+                import(module_paths.events),
+            ])
+        const fixture = (globalThis as any).solid_fixture
+        const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
+        const root = registerRootComponent(fixture.Counter, { ui })
+
+        root.render({})
+        const node = ui.root.children[0]
+        const before = node.styles.width.value
+
+        ui.dispatchPlatformEvent({ type: 'pointerdown', pointerId: 1 }, { x: 10, y: 10 })
+        ui.dispatchPlatformEvent({ type: 'pointerup', pointerId: 1 }, { x: 10, y: 10 })
+
+        return {
+            before,
+            after: node.styles.width.value,
+            same_node: ui.root.children[0] === node,
+        }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({ before: '100px', after: '101px', same_node: true })
+})

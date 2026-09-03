@@ -3,17 +3,111 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Solid universal renderer</title>
+        <title>Solid components</title>
+        <style>
+            @font-face {
+                font-family: 'Poppins-Regular';
+                src: url('/assets/fonts/Poppins-Regular.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+
+            html,
+            body {
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                overscroll-behavior: none;
+                font-family: 'Poppins-Regular', system-ui, sans-serif;
+            }
+
+            #root {
+                position: fixed;
+                inset: 0;
+                overflow: hidden;
+            }
+            #root > * {
+                display: flex;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+            canvas {
+                touch-action: none;
+            }
+        </style>
     </head>
     <body>
+        <div id="root"></div>
+        <div id="settings-panel">
+            <div class="settings-panel-title">Renderers</div>
+            <div id="settings-renderers"></div>
+        </div>
         <script type="module">
-            import { createSolidContainer, render } from '../../src/components/solid/index.js'
-            import { BasicComponent } from './solid'
+            import ResourcesDom from 'uno-ui/ResourcesDom'
+            import ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
+            import UIDom from 'uno-ui/UIDom'
+            import UIWebGPU from 'uno-ui/UIWebGPU'
+            import { PLATFORM_EVENT_NAMES } from 'uno-ui/events'
+            import { loadYoga } from 'yoga-layout/load'
+            import { initSettingsPanel } from '../settings/settings-panel'
+            import createSolidImage from './image'
 
-            const container = createSolidContainer({ ui: 123 })
+            const RENDERERS = {
+                RendererDom: { element_type: 'div', ui_class: UIDom, resources_class: ResourcesDom },
+                RendererWebGPU: { element_type: 'canvas', ui_class: UIWebGPU, resources_class: ResourcesWebGPU },
+            }
+            const root = document.getElementById('root')
+            const device_pixel_ratio = window.devicePixelRatio
+            const uis = []
 
-            const dispose = render(BasicComponent, container)
-            // dispose()
+            initSettingsPanel({ root })
+
+            for (const [renderer_name, setup] of Object.entries(RENDERERS)) {
+                const is_canvas = setup.element_type === 'canvas'
+                const element = document.createElement(setup.element_type)
+                element.id = renderer_name
+                root.appendChild(element)
+
+                const resources = await setup.resources_class.create({ canvas: element })
+                const { ui } = await setup.ui_class.create({ resources, loadYoga, device_pixel_ratio })
+
+                function syncRendererSize() {
+                    const width = root.clientWidth
+                    const height = root.clientHeight
+
+                    if (is_canvas) {
+                        element.width = Math.max(1, Math.round(width * device_pixel_ratio))
+                        element.height = Math.max(1, Math.round(height * device_pixel_ratio))
+                    }
+
+                    ui.setViewport(width, height)
+                    ui.setDevicePixelRatio(device_pixel_ratio)
+                    ui.update()
+                }
+
+                syncRendererSize()
+                window.addEventListener('resize', syncRendererSize)
+
+                // UIDom listens on its own element, UIWebGPU needs the canvas events forwarded.
+                if (is_canvas) {
+                    PLATFORM_EVENT_NAMES.forEach((type) => {
+                        element.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))
+                    })
+                }
+
+                await createSolidImage({ ui, resources })
+                uis.push(ui)
+            }
+
+            requestAnimationFrame(function render() {
+                uis.forEach((ui) => ui.draw())
+                requestAnimationFrame(render)
+            })
         </script>
     </body>
 </html>

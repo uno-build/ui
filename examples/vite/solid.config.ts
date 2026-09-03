@@ -1,10 +1,10 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import solid from '@solidjs/vite-plugin'
-import { viteConfigSolid } from '../../src/components/solid/index.js'
+import { rendererConfig } from '../../src/components/solid/config.js'
 
 export default defineConfig({
-    plugins: [solid(viteConfigSolid)],
+    plugins: [solid(rendererConfig)],
     build: {
         rollupOptions: {
             input: fileURLToPath(new URL('../components/solid.html', import.meta.url)),
