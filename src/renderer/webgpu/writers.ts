@@ -1,6 +1,6 @@
 import { FLOAT32_SIZE, UINT32_SIZE, COMMAND, PANEL_DATA, GLYPH_DATA, TEXT_RUN } from './buffers'
 
-export function writeCommandData(floats, u32, bytes_offset, command) {
+export function writeCommandData({ floats, u32 }, bytes_offset, command) {
     const command_u32_offset = (bytes_offset + COMMAND.KIND_DATA.OFFSET) / UINT32_SIZE
     u32[command_u32_offset] = command.kind
     u32[command_u32_offset + 1] = command.panel_index
@@ -8,7 +8,7 @@ export function writeCommandData(floats, u32, bytes_offset, command) {
     floats[command_u32_offset + 3] = command.text_stroke_width ?? 0
 }
 
-export function writePanelData(floats, u32, bytes_offset, panel) {
+export function writePanelData({ floats, u32 }, bytes_offset, panel) {
     const layout_float_offset = (bytes_offset + PANEL_DATA.LAYOUT.OFFSET) / FLOAT32_SIZE
     floats.set(panel.layout, layout_float_offset)
 
@@ -51,7 +51,7 @@ export function writePanelData(floats, u32, bytes_offset, panel) {
     u32.set(panel.box_shadow, box_shadow_u32_offset)
 }
 
-export function writeGlyphData(floats, u32, bytes_offset, glyph) {
+export function writeGlyphData({ floats, u32 }, bytes_offset, glyph) {
     const layout_float_offset = (bytes_offset + GLYPH_DATA.LAYOUT.OFFSET) / FLOAT32_SIZE
     floats.set(glyph.layout, layout_float_offset)
 
@@ -63,7 +63,7 @@ export function writeGlyphData(floats, u32, bytes_offset, glyph) {
     floats.set(glyph.text_shadow, run_data_u32_offset + 1)
 }
 
-export function writeTextRunData(floats, bytes_offset, text_run) {
+export function writeTextRunData({ floats }, bytes_offset, text_run) {
     const {
         color,
         font_data,

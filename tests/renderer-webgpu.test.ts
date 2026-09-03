@@ -31,10 +31,12 @@ import {
     UINT32_SIZE,
 } from '../src/renderer/webgpu/buffers.ts'
 import { FontManager } from '../src/renderer/webgpu/FontManager.ts'
+import { GpuPool } from '../src/renderer/webgpu/GpuPool.ts'
 import { ATLAS_PADDING, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
 import { createUIWGSL } from '../src/renderer/webgpu/shaders/'
 import { TEXT_EFFECT_WGSL as MTSDF_TEXT_EFFECT_WGSL } from '../src/renderer/webgpu/shaders/text-mtsdf.ts'
 import { TEXT_WGSL } from '../src/renderer/webgpu/shaders/text.ts'
+import { writeCommandData, writeGlyphData, writePanelData, writeTextRunData } from '../src/renderer/webgpu/writers.ts'
 ;(globalThis as any).GPUTextureUsage = {
     TEXTURE_BINDING: 1,
     COPY_SRC: 2,
@@ -88,10 +90,10 @@ test('RendererWebGPU destroy releases UI buffers without disposing shared resour
     const buffer_names = [
         'position_buffer',
         'viewport_buffer',
-        'command_buffer',
-        'panel_data_buffer',
-        'glyph_data_buffer',
-        'text_run_buffer',
+        'command_pool',
+        'panel_data_pool',
+        'glyph_data_pool',
+        'text_run_pool',
     ]
     let destroyed_engine_nodes
 
@@ -1119,7 +1121,7 @@ test('RendererWebGPU creates panel commands for consecutive panels', () => {
 test('RendererWebGPU writes panel commands into command buffer data', () => {
     const renderer = createRenderer()
     const render_data = collectRenderData(renderer, [createNode(), createNode()])
-    const command_buffer_data = (renderer as any).createCommandBufferData(render_data.commands)
+    const command_buffer_data = createCommandBufferData(renderer, render_data.commands)
     const u32 = new Uint32Array(command_buffer_data.bytes.buffer)
     const command_u32_offset = COMMAND.KIND_DATA.OFFSET / UINT32_SIZE
 
@@ -1214,7 +1216,7 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
     expect(render_data.glyphs[0].uv_rect).toEqual([0.1, 0.2, 0.3, 0.4])
     expect(render_data.glyphs[0].run_index).toBe(0)
     expect(render_data.glyphs[1].layout).toEqual([expect.closeTo(25.2), expect.closeTo(23.2), 8, 16])
-    expect((renderer as any).text_runs).toEqual([
+    expect(render_data.text_runs).toEqual([
         {
             color: [255, 128, 0, 64],
             font_data: [2, 1, 6, FONT_ATLAS_SIZE],
@@ -1274,7 +1276,7 @@ test('RendererWebGPU scrolls glyph geometry and keeps text clipping fixed to the
     const render_data = collectRenderData(renderer, [node])
 
     expect(render_data.glyphs[0].layout).toEqual([5, 13, 8, 16])
-    expect((renderer as any).text_runs[0].clipping).toEqual([0, 100, 100, 0])
+    expect(render_data.text_runs[0].clipping).toEqual([0, 100, 100, 0])
 })
 
 test('RendererWebGPU positions and wraps text inside the content box', () => {
@@ -1611,7 +1613,6 @@ test('RendererWebGPU wraps text using letter spacing', () => {
 test('RendererWebGPU writes the explicit viewport and device pixel ratio into the viewport uniform', () => {
     const writes = []
     const renderer = createRenderer()
-    const empty_buffer_data = { bytes: new Uint8Array(), bytes_offset: 0 }
     ;(renderer as any).resources.device = {
         queue: {
             writeBuffer(buffer, offset, data) {
@@ -1622,12 +1623,7 @@ test('RendererWebGPU writes the explicit viewport and device pixel ratio into th
     ;(renderer as any).viewport_buffer = { id: 'viewport' }
     renderer.setDevicePixelRatio(2)
     renderer.setViewport(320, 180)
-    ;(renderer as any).updateBuffers(
-        { ...empty_buffer_data, count: 0 },
-        empty_buffer_data,
-        empty_buffer_data,
-        empty_buffer_data,
-    )
+    ;(renderer as any).updateBuffers()
 
     expect(writes).toHaveLength(1)
     expect(Array.from(writes[0].data)).toEqual([320, 180, 2, 0])
@@ -2472,7 +2468,7 @@ test('RendererWebGPU resolves text font from fontFamily', () => {
 
     expect(render_data.glyphs[0].layout).toEqual([10, 20, 16, 16])
     expect(render_data.glyphs[0].uv_rect).toEqual([0.6, 0.7, 0.1, 0.2])
-    expect((renderer as any).text_runs[0].font_data).toEqual([5, 1, 6, FONT_ATLAS_SIZE])
+    expect(render_data.text_runs[0].font_data).toEqual([5, 1, 6, FONT_ATLAS_SIZE])
 })
 
 test('RendererWebGPU throws when fontFamily is not registered', () => {
@@ -2504,7 +2500,7 @@ test('RendererWebGPU writes glyph instance data into a glyph buffer', () => {
         styles: {},
     })
     const render_data = collectRenderData(renderer, [node])
-    const glyph_buffer_data = (renderer as any).createGlyphDataBufferData(render_data.glyphs)
+    const glyph_buffer_data = createGlyphDataBufferData(renderer, render_data.glyphs)
     const floats = new Float32Array(glyph_buffer_data.bytes.buffer)
     const u32 = new Uint32Array(glyph_buffer_data.bytes.buffer)
 
@@ -2539,8 +2535,8 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
             },
         },
     })
-    collectRenderData(renderer, [node])
-    const text_run_buffer_data = (renderer as any).createTextRunBufferData()
+    const render_data = collectRenderData(renderer, [node])
+    const text_run_buffer_data = createTextRunBufferData(renderer, render_data.text_runs)
     const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
 
     expect(text_run_buffer_data.bytes_offset).toBe(TEXT_RUN_SIZE)
@@ -2595,8 +2591,8 @@ test('RendererWebGPU writes the MTSDF effect distance range into the shared text
             default_font: createManagedFont('mtsdf', 48),
         }),
     )
-    collectRenderData(renderer, [createNode({ text_content: 'A' })])
-    const text_run_buffer_data = (renderer as any).createTextRunBufferData()
+    const render_data = collectRenderData(renderer, [createNode({ text_content: 'A' })])
+    const text_run_buffer_data = createTextRunBufferData(renderer, render_data.text_runs)
     const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
 
     expect(floats[TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET / FLOAT32_SIZE]).toBe(48)
@@ -2624,8 +2620,8 @@ test('RendererWebGPU writes text stroke data into the shared text run', () => {
     })
 
     const render_data = collectRenderData(renderer, [node])
-    const command_buffer_data = (renderer as any).createCommandBufferData(render_data.commands)
-    const text_run_buffer_data = (renderer as any).createTextRunBufferData()
+    const command_buffer_data = createCommandBufferData(renderer, render_data.commands)
+    const text_run_buffer_data = createTextRunBufferData(renderer, render_data.text_runs)
     const command_floats = new Float32Array(command_buffer_data.bytes.buffer)
     const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
 
@@ -2683,8 +2679,8 @@ test('RendererWebGPU enables residual multisampling beyond the safe MTSDF alpha 
 
     const render_data = collectRenderData(renderer, [node])
 
-    expect((renderer as any).text_runs[0].text_stroke_width).toBe(2)
-    expect((renderer as any).text_runs[0].text_stroke_multisampling).toBe(1)
+    expect(render_data.text_runs[0].text_stroke_width).toBe(2)
+    expect(render_data.text_runs[0].text_stroke_multisampling).toBe(1)
     expect(render_data.commands.map((command) => command.kind)).toEqual([
         COMMAND_KIND_PANEL,
         COMMAND_KIND_TEXT_STROKE,
@@ -2724,8 +2720,8 @@ test('RendererWebGPU writes text shadow data into the shared text run', () => {
     })
 
     const render_data = collectRenderData(renderer, [node])
-    const glyph_buffer_data = (renderer as any).createGlyphDataBufferData(render_data.glyphs)
-    const text_run_buffer_data = (renderer as any).createTextRunBufferData()
+    const glyph_buffer_data = createGlyphDataBufferData(renderer, render_data.glyphs)
+    const text_run_buffer_data = createTextRunBufferData(renderer, render_data.text_runs)
     const glyph_floats = new Float32Array(glyph_buffer_data.bytes.buffer)
     const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
 
@@ -2790,8 +2786,8 @@ test('RendererWebGPU resolves text shadow and stroke units with the current root
     renderer.setRootSize(20)
     renderer.setViewport(320, 180)
 
-    collectRenderData(renderer, [node])
-    const text_run_buffer_data = (renderer as any).createTextRunBufferData()
+    const render_data = collectRenderData(renderer, [node])
+    const text_run_buffer_data = createTextRunBufferData(renderer, render_data.text_runs)
     const floats = new Float32Array(text_run_buffer_data.bytes.buffer)
 
     expect(
@@ -2907,7 +2903,7 @@ test('RendererWebGPU expands text shadow commands by the visible text stroke wid
         },
     })
     const render_data = collectRenderData(renderer, [node])
-    const command_buffer_data = (renderer as any).createCommandBufferData(render_data.commands)
+    const command_buffer_data = createCommandBufferData(renderer, render_data.commands)
     const command_floats = new Float32Array(command_buffer_data.bytes.buffer)
 
     expect(render_data.commands.map((command) => command.kind)).toEqual([
@@ -2966,7 +2962,7 @@ test('RendererWebGPU writes glyph commands into command buffer data', () => {
         },
     })
     const render_data = collectRenderData(renderer, [node])
-    const command_buffer_data = (renderer as any).createCommandBufferData(render_data.commands)
+    const command_buffer_data = createCommandBufferData(renderer, render_data.commands)
     const u32 = new Uint32Array(command_buffer_data.bytes.buffer)
 
     expect(command_buffer_data.bytes_offset).toBe(2 * COMMAND_SIZE)
@@ -3393,7 +3389,25 @@ test('FontManager throws when font texture growth exceeds the device layer limit
 function createNodesBufferData(renderer, nodes) {
     const render_data = collectRenderData(renderer, nodes)
 
-    return (renderer as any).createPanelDataBufferData(render_data.panels)
+    return createPoolBufferData((renderer as any).panel_data_pool, render_data.panels, writePanelData)
+}
+
+function createCommandBufferData(renderer, commands) {
+    return createPoolBufferData((renderer as any).command_pool, commands, writeCommandData)
+}
+
+function createGlyphDataBufferData(renderer, glyphs) {
+    return createPoolBufferData((renderer as any).glyph_data_pool, glyphs, writeGlyphData)
+}
+
+function createTextRunBufferData(renderer, text_runs) {
+    return createPoolBufferData((renderer as any).text_run_pool, text_runs, writeTextRunData)
+}
+
+function createPoolBufferData(pool, items, writeItem) {
+    pool.fill(items, writeItem)
+
+    return { bytes: pool.bytes, bytes_offset: pool.length }
 }
 
 function collectRenderData(renderer, nodes) {
@@ -3408,8 +3422,13 @@ function createRenderer(image_manager = createImageManager(), font_manager = cre
             font_atlas_size: FONT_ATLAS_SIZE,
         },
     })
+    const device = createFakeDevice()
     ;(renderer as any).engine = { applyStyle() {} }
     ;(renderer as any).grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
+    ;(renderer as any).command_pool = new GpuPool({ device, usage: 0, stride: COMMAND_SIZE })
+    ;(renderer as any).panel_data_pool = new GpuPool({ device, usage: 0, stride: PANEL_DATA_SIZE })
+    ;(renderer as any).glyph_data_pool = new GpuPool({ device, usage: 0, stride: GLYPH_DATA_SIZE })
+    ;(renderer as any).text_run_pool = new GpuPool({ device, usage: 0, stride: TEXT_RUN_SIZE })
 
     return renderer
 }
@@ -3586,6 +3605,12 @@ function createFakeDevice({ max_texture_array_layers = 8 } = {}) {
             textures.push(texture)
 
             return texture
+        },
+        createBuffer(descriptor) {
+            return {
+                descriptor,
+                destroy() {},
+            }
         },
         createBindGroup(descriptor) {
             const bind_group = {

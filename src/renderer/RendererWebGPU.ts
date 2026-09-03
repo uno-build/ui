@@ -42,6 +42,7 @@ import {
     TEXT_RUN_SIZE,
 } from './webgpu/buffers'
 import { writeCommandData, writeGlyphData, writePanelData, writeTextRunData } from './webgpu/writers'
+import { GpuPool } from './webgpu/GpuPool'
 import Segmenter from './pretext/segmenter'
 
 const FONT_COLOR = [0, 0, 0, 255]
@@ -75,34 +76,11 @@ export default class RendererWebGPU extends Renderer {
     private font_texture_version
     private position_buffer
     private viewport_buffer
-    private command_buffer
-    private command_buffer_size = 0
-    private command_array_buffer
-    private command_array_buffer_size = 0
-    private command_u32
-    private command_floats
-    private command_bytes
+    private command_pool
     private command_count = 0
-    private panel_data_buffer
-    private panel_data_buffer_size = 0
-    private panel_data_array_buffer
-    private panel_data_array_buffer_size = 0
-    private panel_data_floats
-    private panel_data_u32
-    private panel_data_buffer_bytes
-    private glyph_data_buffer
-    private glyph_data_buffer_size = 0
-    private glyph_data_array_buffer
-    private glyph_data_array_buffer_size = 0
-    private glyph_data_floats
-    private glyph_data_u32
-    private glyph_data_buffer_bytes
-    private text_runs = []
-    private text_run_buffer
-    private text_run_buffer_size = 0
-    private text_run_array_buffer
-    private text_run_array_buffer_size = 0
-    private text_run_floats
+    private panel_data_pool
+    private glyph_data_pool
+    private text_run_pool
     private prepared_texts = new WeakMap()
     private root_node
     private grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
@@ -132,26 +110,26 @@ export default class RendererWebGPU extends Renderer {
             size: VIEWPORT_SIZE,
             usage: globalThis.GPUBufferUsage.UNIFORM | globalThis.GPUBufferUsage.COPY_DST,
         })
-        this.command_buffer = this.resources.device.createBuffer({
-            size: COMMAND_SIZE,
+        this.command_pool = new GpuPool({
+            device: this.resources.device,
             usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
+            stride: COMMAND_SIZE,
         })
-        this.command_buffer_size = COMMAND_SIZE
-        this.panel_data_buffer = this.resources.device.createBuffer({
-            size: PANEL_DATA_SIZE,
+        this.panel_data_pool = new GpuPool({
+            device: this.resources.device,
             usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
+            stride: PANEL_DATA_SIZE,
         })
-        this.panel_data_buffer_size = PANEL_DATA_SIZE
-        this.glyph_data_buffer = this.resources.device.createBuffer({
-            size: GLYPH_DATA_SIZE,
+        this.glyph_data_pool = new GpuPool({
+            device: this.resources.device,
             usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
+            stride: GLYPH_DATA_SIZE,
         })
-        this.glyph_data_buffer_size = GLYPH_DATA_SIZE
-        this.text_run_buffer = this.resources.device.createBuffer({
-            size: TEXT_RUN_SIZE,
+        this.text_run_pool = new GpuPool({
+            device: this.resources.device,
             usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
+            stride: TEXT_RUN_SIZE,
         })
-        this.text_run_buffer_size = TEXT_RUN_SIZE
         this.resources.device.queue.writeBuffer(this.position_buffer, 0, POSITION_VERTICES)
         this.pipeline = this.createPipeline()
         this.image_sampler = this.resources.device.createSampler({
@@ -174,33 +152,18 @@ export default class RendererWebGPU extends Renderer {
         this.engine.destroy(nodes)
         this.position_buffer.destroy()
         this.viewport_buffer.destroy()
-        this.command_buffer.destroy()
-        this.panel_data_buffer.destroy()
-        this.glyph_data_buffer.destroy()
-        this.text_run_buffer.destroy()
+        this.command_pool.destroy()
+        this.panel_data_pool.destroy()
+        this.glyph_data_pool.destroy()
+        this.text_run_pool.destroy()
         super.destroy(nodes)
 
         this.position_buffer = null
         this.viewport_buffer = null
-        this.command_buffer = null
-        this.panel_data_buffer = null
-        this.glyph_data_buffer = null
-        this.text_run_buffer = null
-        this.command_array_buffer = null
-        this.command_u32 = null
-        this.command_floats = null
-        this.command_bytes = null
-        this.panel_data_array_buffer = null
-        this.panel_data_floats = null
-        this.panel_data_u32 = null
-        this.panel_data_buffer_bytes = null
-        this.glyph_data_array_buffer = null
-        this.glyph_data_floats = null
-        this.glyph_data_u32 = null
-        this.glyph_data_buffer_bytes = null
-        this.text_run_array_buffer = null
-        this.text_run_floats = null
-        this.text_runs.length = 0
+        this.command_pool = null
+        this.panel_data_pool = null
+        this.glyph_data_pool = null
+        this.text_run_pool = null
         this.prepared_texts = null
         this.pipeline = null
         this.bind_group = null
@@ -317,19 +280,19 @@ export default class RendererWebGPU extends Renderer {
                 {
                     binding: 4,
                     resource: {
-                        buffer: this.panel_data_buffer,
+                        buffer: this.panel_data_pool.buffer,
                     },
                 },
                 {
                     binding: 5,
                     resource: {
-                        buffer: this.glyph_data_buffer,
+                        buffer: this.glyph_data_pool.buffer,
                     },
                 },
                 {
                     binding: 6,
                     resource: {
-                        buffer: this.text_run_buffer,
+                        buffer: this.text_run_pool.buffer,
                     },
                 },
             ],
@@ -491,12 +454,13 @@ export default class RendererWebGPU extends Renderer {
 
     public update(nodes) {
         const render_data = this.collectRenderData([this.root_node, ...nodes])
-        const command_buffer_data = this.createCommandBufferData(render_data.commands)
-        const panel_data_buffer_data = this.createPanelDataBufferData(render_data.panels)
-        const glyph_data_buffer_data = this.createGlyphDataBufferData(render_data.glyphs)
-        const text_run_buffer_data = this.createTextRunBufferData()
 
-        this.updateBuffers(command_buffer_data, panel_data_buffer_data, glyph_data_buffer_data, text_run_buffer_data)
+        this.command_count = render_data.commands.length
+        this.command_pool.fill(render_data.commands, writeCommandData)
+        this.panel_data_pool.fill(render_data.panels, writePanelData)
+        this.glyph_data_pool.fill(render_data.glyphs, writeGlyphData)
+        this.text_run_pool.fill(render_data.text_runs, writeTextRunData)
+        this.updateBuffers()
     }
 
     public draw({ submit = true, command_encoder, texture_view, load_op = 'load' } = {}) {
@@ -524,7 +488,7 @@ export default class RendererWebGPU extends Renderer {
             pass_encoder.setPipeline(this.pipeline)
             pass_encoder.setBindGroup(0, this.bind_group)
             pass_encoder.setVertexBuffer(0, this.position_buffer)
-            pass_encoder.setVertexBuffer(1, this.command_buffer)
+            pass_encoder.setVertexBuffer(1, this.command_pool.buffer)
             pass_encoder.draw(POSITION_VERTEX_COUNT, this.command_count, 0, 0)
         }
 
@@ -541,7 +505,7 @@ export default class RendererWebGPU extends Renderer {
         const commands = []
         const panels = []
         const glyphs = []
-        this.text_runs = []
+        const text_runs = []
 
         for (const node of nodes) {
             const drawing_data = getNodeDrawingData(node, this.computeStyle)
@@ -575,13 +539,13 @@ export default class RendererWebGPU extends Renderer {
                 })
             }
 
-            const text_run_index = this.text_runs.length
+            const text_run_index = text_runs.length
             const text_data = this.collectTextInstanceData(node, text_run_index)
             if (text_data === null) {
                 continue
             }
 
-            this.text_runs.push(text_data.run)
+            text_runs.push(text_data.run)
 
             const glyph_indices = []
             for (const glyph_data of text_data.glyphs) {
@@ -621,7 +585,7 @@ export default class RendererWebGPU extends Renderer {
             }
         }
 
-        return { commands, panels, glyphs }
+        return { commands, panels, glyphs, text_runs }
     }
 
     private collectTextInstanceData(node, run_index) {
@@ -798,180 +762,13 @@ export default class RendererWebGPU extends Renderer {
         return width
     }
 
-    private createCommandBufferData(commands) {
-        const command_array_buffer_size = commands.length * COMMAND_SIZE
-        let bytes_offset = 0
+    private updateBuffers() {
+        this.command_pool.flush()
+        const panel_data_recreated = this.panel_data_pool.flush()
+        const glyph_data_recreated = this.glyph_data_pool.flush()
+        const text_run_recreated = this.text_run_pool.flush()
 
-        if (this.command_array_buffer_size < command_array_buffer_size || !this.command_array_buffer) {
-            this.command_array_buffer_size = command_array_buffer_size
-            this.command_array_buffer = new ArrayBuffer(command_array_buffer_size)
-            this.command_u32 = new Uint32Array(this.command_array_buffer)
-            this.command_floats = new Float32Array(this.command_array_buffer)
-            this.command_bytes = new Uint8Array(this.command_array_buffer)
-        }
-
-        for (const command of commands) {
-            writeCommandData(this.command_floats, this.command_u32, bytes_offset, command)
-            bytes_offset += COMMAND_SIZE
-        }
-
-        return { bytes: this.command_bytes, bytes_offset, count: commands.length }
-    }
-
-    private createPanelDataBufferData(panels) {
-        const panel_data_array_buffer_size = panels.length * PANEL_DATA_SIZE
-        let bytes_offset = 0
-
-        if (this.panel_data_array_buffer_size < panel_data_array_buffer_size || !this.panel_data_array_buffer) {
-            this.panel_data_array_buffer_size = panel_data_array_buffer_size
-            this.panel_data_array_buffer = new ArrayBuffer(panel_data_array_buffer_size)
-            this.panel_data_floats = new Float32Array(this.panel_data_array_buffer)
-            this.panel_data_u32 = new Uint32Array(this.panel_data_array_buffer)
-            this.panel_data_buffer_bytes = new Uint8Array(this.panel_data_array_buffer)
-        }
-
-        for (const panel of panels) {
-            writePanelData(this.panel_data_floats, this.panel_data_u32, bytes_offset, panel)
-            bytes_offset += PANEL_DATA_SIZE
-        }
-
-        return { bytes: this.panel_data_buffer_bytes, bytes_offset }
-    }
-
-    private createGlyphDataBufferData(glyphs) {
-        const glyph_data_array_buffer_size = glyphs.length * GLYPH_DATA_SIZE
-        let bytes_offset = 0
-
-        if (this.glyph_data_array_buffer_size < glyph_data_array_buffer_size || !this.glyph_data_array_buffer) {
-            this.glyph_data_array_buffer_size = glyph_data_array_buffer_size
-            this.glyph_data_array_buffer = new ArrayBuffer(glyph_data_array_buffer_size)
-            this.glyph_data_floats = new Float32Array(this.glyph_data_array_buffer)
-            this.glyph_data_u32 = new Uint32Array(this.glyph_data_array_buffer)
-            this.glyph_data_buffer_bytes = new Uint8Array(this.glyph_data_array_buffer)
-        }
-
-        for (const glyph of glyphs) {
-            writeGlyphData(this.glyph_data_floats, this.glyph_data_u32, bytes_offset, glyph)
-            bytes_offset += GLYPH_DATA_SIZE
-        }
-
-        return { bytes: this.glyph_data_buffer_bytes, bytes_offset }
-    }
-
-    private createTextRunBufferData() {
-        const text_run_array_buffer_size = this.text_runs.length * TEXT_RUN_SIZE
-        let bytes_offset = 0
-
-        if (this.text_run_array_buffer_size < text_run_array_buffer_size || !this.text_run_array_buffer) {
-            this.text_run_array_buffer_size = text_run_array_buffer_size
-            this.text_run_array_buffer = new ArrayBuffer(text_run_array_buffer_size)
-            this.text_run_floats = new Float32Array(this.text_run_array_buffer)
-        }
-
-        for (const text_run of this.text_runs) {
-            writeTextRunData(this.text_run_floats, bytes_offset, text_run)
-            bytes_offset += TEXT_RUN_SIZE
-        }
-
-        return { bytes: new Uint8Array(this.text_run_array_buffer), bytes_offset }
-    }
-
-    private updateBuffers(command_buffer_data, panel_data_buffer_data, glyph_data_buffer_data, text_run_buffer_data) {
-        this.command_count = command_buffer_data.count
-        let bind_group_dirty = false
-
-        if (
-            command_buffer_data.bytes_offset > 0 &&
-            (this.command_buffer_size < command_buffer_data.bytes_offset || !this.command_buffer)
-        ) {
-            this.command_buffer_size = command_buffer_data.bytes_offset
-            this.command_buffer?.destroy()
-            this.command_buffer = this.resources.device.createBuffer({
-                size: command_buffer_data.bytes_offset,
-                usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
-            })
-        }
-
-        if (command_buffer_data.bytes_offset > 0) {
-            this.resources.device.queue.writeBuffer(
-                this.command_buffer,
-                0,
-                command_buffer_data.bytes,
-                0,
-                command_buffer_data.bytes_offset,
-            )
-        }
-
-        if (
-            panel_data_buffer_data.bytes_offset > 0 &&
-            (this.panel_data_buffer_size < panel_data_buffer_data.bytes_offset || !this.panel_data_buffer)
-        ) {
-            this.panel_data_buffer_size = panel_data_buffer_data.bytes_offset
-            this.panel_data_buffer?.destroy()
-            this.panel_data_buffer = this.resources.device.createBuffer({
-                size: panel_data_buffer_data.bytes_offset,
-                usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
-            })
-            bind_group_dirty = true
-        }
-
-        if (panel_data_buffer_data.bytes_offset > 0) {
-            this.resources.device.queue.writeBuffer(
-                this.panel_data_buffer,
-                0,
-                panel_data_buffer_data.bytes,
-                0,
-                panel_data_buffer_data.bytes_offset,
-            )
-        }
-
-        if (
-            glyph_data_buffer_data.bytes_offset > 0 &&
-            (this.glyph_data_buffer_size < glyph_data_buffer_data.bytes_offset || !this.glyph_data_buffer)
-        ) {
-            this.glyph_data_buffer_size = glyph_data_buffer_data.bytes_offset
-            this.glyph_data_buffer?.destroy()
-            this.glyph_data_buffer = this.resources.device.createBuffer({
-                size: glyph_data_buffer_data.bytes_offset,
-                usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
-            })
-            bind_group_dirty = true
-        }
-
-        if (glyph_data_buffer_data.bytes_offset > 0) {
-            this.resources.device.queue.writeBuffer(
-                this.glyph_data_buffer,
-                0,
-                glyph_data_buffer_data.bytes,
-                0,
-                glyph_data_buffer_data.bytes_offset,
-            )
-        }
-
-        if (
-            text_run_buffer_data.bytes_offset > 0 &&
-            (this.text_run_buffer_size < text_run_buffer_data.bytes_offset || !this.text_run_buffer)
-        ) {
-            this.text_run_buffer_size = text_run_buffer_data.bytes_offset
-            this.text_run_buffer?.destroy()
-            this.text_run_buffer = this.resources.device.createBuffer({
-                size: text_run_buffer_data.bytes_offset,
-                usage: globalThis.GPUBufferUsage.STORAGE | globalThis.GPUBufferUsage.COPY_DST,
-            })
-            bind_group_dirty = true
-        }
-
-        if (text_run_buffer_data.bytes_offset > 0) {
-            this.resources.device.queue.writeBuffer(
-                this.text_run_buffer,
-                0,
-                text_run_buffer_data.bytes,
-                0,
-                text_run_buffer_data.bytes_offset,
-            )
-        }
-
-        if (bind_group_dirty) {
+        if (panel_data_recreated || glyph_data_recreated || text_run_recreated) {
             this.bind_group = this.createBindGroup()
         }
 
@@ -980,15 +777,6 @@ export default class RendererWebGPU extends Renderer {
             0,
             new Float32Array([this.viewport_width, this.viewport_height, this.device_pixel_ratio, 0]),
         )
-
-        const uploaded_bytes =
-            command_buffer_data.bytes_offset +
-            panel_data_buffer_data.bytes_offset +
-            glyph_data_buffer_data.bytes_offset +
-            text_run_buffer_data.bytes_offset +
-            VIEWPORT_SIZE
-
-        return { uploaded_bytes }
     }
 }
 
