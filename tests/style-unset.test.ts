@@ -246,7 +246,29 @@ test('WebGPU unset restores the undefined state for all 81 styles', async ({ pag
                 ui.update()
                 const nodes = [...(ui as any).nodes]
                 const renderer = ui.renderer as any
-                const render_data = renderer.collectRenderData(nodes)
+                const panels = []
+                const glyphs = []
+                const text_runs = []
+                const records = []
+
+                for (const node of nodes) {
+                    const record = renderer.getRecord(node)
+                    const { panel_data, text_data } = renderer.updateRecord(node, record)
+                    if (panel_data !== null) {
+                        panels.push(panel_data)
+                    }
+                    if (text_data !== null) {
+                        text_runs.push(text_data.run)
+                        glyphs.push(...text_data.glyphs)
+                    }
+                    records.push({
+                        has_panel: record.panel_slot !== -1,
+                        glyph_count: record.glyph_count,
+                        has_text_shadow: record.has_text_shadow,
+                        text_stroke_width: record.text_stroke_width,
+                    })
+                }
+
                 const node_state = nodes.map((node) => ({
                     id: node.id,
                     path: node.path,
@@ -263,7 +285,7 @@ test('WebGPU unset restores the undefined state for all 81 styles', async ({ pag
                     ),
                 }))
 
-                return JSON.stringify({ node_state, render_data, text_runs: renderer.text_runs })
+                return JSON.stringify({ node_state, records, panels, glyphs, text_runs })
             }
 
             function setSetupStyle(node, expanded_names, name, value) {

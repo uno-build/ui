@@ -92,8 +92,8 @@ export function Input(props) {
 
     createEffect(
         () => [isFocused(), props.value],
-        () => {
-            if (isFocused() === false) {
+        ([is_focused]) => {
+            if (is_focused === false) {
                 return
             }
 
