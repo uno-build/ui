@@ -1,4 +1,5 @@
-import { For, registerRootComponent, Image, ScrollView, Text, View } from 'uno-ui/solid'
+import { registerRootComponent, Image, ScrollView, Text, View } from 'uno-ui/solid'
+import { For } from 'solid-js'
 import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
 const TITLE_FONT_FAMILY = 'ChangaOne-Regular'

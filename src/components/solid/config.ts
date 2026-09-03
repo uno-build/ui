@@ -1,4 +1,4 @@
-export const rendererConfig = {
+export const compilerConfig = {
     include: ['**/*.tsx', '**/*.jsx'],
     solid: {
         moduleName: 'uno-ui/solid',

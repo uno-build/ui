@@ -1,6 +1,6 @@
 export const OCTANE_RENDERER_ID = 'uno'
 
-export const rendererConfig = {
+export const compilerConfig = {
     renderers: {
         registry: {
             [OCTANE_RENDERER_ID]: {
