@@ -1,41 +1,49 @@
 import { Image, registerRootComponent, Text, View } from 'uno-ui/octane'
 import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
+const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const IMAGE_SRC = 'assets/images/coin.png'
+const PAGE_STYLE = {
+    width: '100%',
+    height: '100%',
+    padding: '32px',
+    gap: '24px',
+    backgroundColor: '#0b0e14',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignContent: 'flex-start',
+    overflow: 'scroll',
+}
 const IMAGE_CARD_STYLE = {
     width: '350px',
     height: '330px',
-    padding: '16px',
-    gap: '12px',
-    backgroundColor: '#252b36',
+    padding: '20px',
+    gap: '14px',
+    backgroundColor: '#141a24',
+    border: '1px solid #232c3a',
+    borderRadius: '24px',
+    boxShadow: '0px 24px 50px -12px #000000cc',
     flexDirection: 'column',
 }
 const IMAGE_STAGE_STYLE = {
     flex: '1',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#151922',
+    backgroundColor: '#0d121b',
+    border: '1px solid #253044',
+    borderRadius: '18px',
 }
 const IMAGE_LABEL_STYLE = {
-    color: '#ffffff',
-    fontSize: '16px',
+    fontFamily: TEXT_FONT_FAMILY,
+    fontSize: '13px',
+    lineHeight: '18px',
+    letterSpacing: '0.3px',
+    color: '#9fb0c6',
 }
 
 export function OctaneImage() {
     return (
-        <View
-            style={{
-                backgroundColor: '#1d2027',
-                width: '100%',
-                height: '100%',
-                padding: '20px',
-                gap: '20px',
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                alignContent: 'flex-start',
-                overflow: 'scroll',
-            }}
-        >
+        <View style={PAGE_STYLE}>
             <View style={IMAGE_CARD_STYLE}>
                 <Text style={IMAGE_LABEL_STYLE}>No width or height - 256x256</Text>
                 <View style={IMAGE_STAGE_STYLE}>
@@ -111,12 +119,12 @@ export function OctaneImage() {
 
 export default function createOctaneImage({ ui, resources }) {
     return Promise.all([
-        loadImage('/assets/images/coin.png'),
-        loadImage(`/assets/fonts/Poppins-Regular.mtsdf.png`),
-        loadJson(`/assets/fonts/Poppins-Regular.mtsdf.json`),
+        loadImage(`/${IMAGE_SRC}`),
+        loadImage(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
+        loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
     ]).then(([image, font_image, font_json]) => {
         resources.registerImage(IMAGE_SRC, image)
-        resources.registerFont('Poppins-Regular', font_image, font_json)
+        resources.registerFont(TEXT_FONT_FAMILY, font_image, font_json)
 
         const renderer = registerRootComponent(OctaneImage, { ui })
         renderer.render({})

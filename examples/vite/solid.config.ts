@@ -7,7 +7,7 @@ export default defineConfig({
     plugins: [solid(rendererConfig)],
     build: {
         rollupOptions: {
-            input: fileURLToPath(new URL('../components/solid.html', import.meta.url)),
+            input: fileURLToPath(new URL('../solid/index.html', import.meta.url)),
         },
     },
 })

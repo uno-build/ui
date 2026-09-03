@@ -1,4 +1,4 @@
-import { Image, registerRootComponent, View, ScrollView, Text } from 'uno-ui/octane'
+import { For, registerRootComponent, Image, ScrollView, Text, View } from 'uno-ui/solid'
 import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
 const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
@@ -233,7 +233,7 @@ const FOOTER_STYLE = {
     color: '#4c8dff',
 }
 
-export function OctaneScrollView() {
+export function SolidScrollView() {
     return (
         <ScrollView style={PAGE_STYLE}>
             <View style={PAGE_CONTENT_STYLE}>
@@ -257,17 +257,15 @@ export function OctaneScrollView() {
 
                             <ScrollView horizontal style={GALLERY_STYLE}>
                                 <View style={GALLERY_CONTENT_STYLE}>
-                                    {GALLERY_SOURCES.map((src) => (
-                                        <Image src={src} style={GALLERY_IMAGE_STYLE} />
-                                    ))}
+                                    <For each={GALLERY_SOURCES}>
+                                        {(src) => <Image src={src} style={GALLERY_IMAGE_STYLE} />}
+                                    </For>
                                 </View>
                             </ScrollView>
 
                             <View style={DIVIDER_STYLE} />
 
-                            {PARAGRAPHS.map((paragraph) => (
-                                <Text style={TEXT_STYLE}>{paragraph}</Text>
-                            ))}
+                            <For each={PARAGRAPHS}>{(paragraph) => <Text style={TEXT_STYLE}>{paragraph}</Text>}</For>
                             <Text style={FOOTER_STYLE}>Drag the strip sideways</Text>
                         </View>
                     </ScrollView>
@@ -280,23 +278,23 @@ export function OctaneScrollView() {
 
                             <ScrollView style={ENTRIES_STYLE}>
                                 <View style={ENTRIES_CONTENT_STYLE}>
-                                    {ENTRIES.map((entry) => (
-                                        <View style={ENTRY_STYLE}>
-                                            <Image src={COIN_SRC} style={ENTRY_THUMB_STYLE} />
-                                            <View style={ENTRY_TEXTS_STYLE}>
-                                                <Text style={ENTRY_TITLE_STYLE}>{entry.title}</Text>
-                                                <Text style={ENTRY_BODY_STYLE}>{entry.body}</Text>
+                                    <For each={ENTRIES}>
+                                        {(entry) => (
+                                            <View style={ENTRY_STYLE}>
+                                                <Image src={COIN_SRC} style={ENTRY_THUMB_STYLE} />
+                                                <View style={ENTRY_TEXTS_STYLE}>
+                                                    <Text style={ENTRY_TITLE_STYLE}>{entry.title}</Text>
+                                                    <Text style={ENTRY_BODY_STYLE}>{entry.body}</Text>
+                                                </View>
                                             </View>
-                                        </View>
-                                    ))}
+                                        )}
+                                    </For>
                                 </View>
                             </ScrollView>
 
                             <View style={DIVIDER_STYLE} />
 
-                            {PARAGRAPHS.map((paragraph) => (
-                                <Text style={TEXT_STYLE}>{paragraph}</Text>
-                            ))}
+                            <For each={PARAGRAPHS}>{(paragraph) => <Text style={TEXT_STYLE}>{paragraph}</Text>}</For>
                             <Text style={FOOTER_STYLE}>Inner list scrolls on its own</Text>
                         </View>
                     </ScrollView>
@@ -309,13 +307,15 @@ export function OctaneScrollView() {
                             <Text style={PANEL_TITLE_STYLE}>Night market</Text>
                             <Text style={ENTRY_BODY_STYLE}>Drag left and right to browse the offers.</Text>
                         </View>
-                        {ITEMS.map((item) => (
-                            <View style={CARD_STYLE}>
-                                <Image src={item.src} style={CARD_IMAGE_STYLE} />
-                                <Text style={CARD_TITLE_STYLE}>{item.title}</Text>
-                                <Text style={CARD_PRICE_STYLE}>{item.price}</Text>
-                            </View>
-                        ))}
+                        <For each={ITEMS}>
+                            {(item) => (
+                                <View style={CARD_STYLE}>
+                                    <Image src={item.src} style={CARD_IMAGE_STYLE} />
+                                    <Text style={CARD_TITLE_STYLE}>{item.title}</Text>
+                                    <Text style={CARD_PRICE_STYLE}>{item.price}</Text>
+                                </View>
+                            )}
+                        </For>
                     </View>
                 </ScrollView>
             </View>
@@ -323,7 +323,7 @@ export function OctaneScrollView() {
     )
 }
 
-export default function createOctaneScrollView({ ui, resources }) {
+export default function createSolidScrollView({ ui, resources }) {
     return Promise.all([
         loadImage(`/${LOGO_SRC}`),
         loadImage(`/${TEXTURE_SRC}`),
@@ -339,7 +339,7 @@ export default function createOctaneScrollView({ ui, resources }) {
         resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
         resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
 
-        const renderer = registerRootComponent(OctaneScrollView, { ui })
+        const renderer = registerRootComponent(SolidScrollView, { ui })
         renderer.render({})
     })
 }
