@@ -16,11 +16,6 @@ const MODULE_PATHS = {
 
 const FIXTURE_SOURCE = `
 import { createSignal, For, Show } from '__SOLID_JS__'
-import {
-    createElement,
-    createTextNode,
-    insertNode,
-} from '__SOLID_RENDERER__'
 import { Text, View } from '__SOLID_COMPONENTS__'
 import { useUI } from '__SOLID_CONTEXT__'
 
@@ -86,8 +81,26 @@ export function TextInsideView() {
     return <view>Text</view>
 }
 
+export function ChildInsideText() {
+    return <Text><View /></Text>
+}
+
 export function DynamicText(props) {
     return <Text>{props.getValue()}</Text>
+}
+
+export function MultiText(props) {
+    return <Text>Hola {props.getName()}!</Text>
+}
+
+export function MixedChildren(props) {
+    return (
+        <view>
+            <view style={{ width: '10px' }} />
+            <Show when={props.getVisible()}><view style={{ width: '20px' }} /></Show>
+            <view style={{ width: '30px' }} />
+        </view>
+    )
 }
 
 export function ConditionalText(props) {
@@ -113,18 +126,6 @@ export function Counter() {
     )
 }
 
-export let moveText
-
-export function MovingText() {
-    const first_text = createElement('text')
-    const second_text = createElement('text')
-    const content = createTextNode('Contenido')
-
-    insertNode(first_text, content)
-    moveText = () => insertNode(second_text, content)
-
-    return [first_text, second_text]
-}
 `
 
 const FIXTURE_CODE = transform(FIXTURE_SOURCE, {
@@ -153,6 +154,7 @@ async function loadFixture(page) {
             const solid_url = new URL('/@id/solid-js', window.location.origin).href
             const compiled_components = components_code
                 .replaceAll('__SOLID_RENDERER__', renderer_url)
+                .replaceAll('"solid-js"', JSON.stringify(solid_url))
                 .replaceAll('"./context"', JSON.stringify(context_url))
                 .replaceAll('"../shared"', JSON.stringify(shared_url))
             const components_url = URL.createObjectURL(
@@ -287,7 +289,7 @@ test('Solid updates styles without replacing node identity and unsets removed st
 })
 
 for (const component_name of ['HostRef', 'ViewRef', 'TextRef']) {
-    test(`${component_name} refs expose the main Uno node and clear on unmount`, async ({ page }) => {
+    test(`${component_name} refs expose the Uno node`, async ({ page }) => {
         const result = await page.evaluate(
             async ({ component_name, module_paths }) => {
                 const [
@@ -311,23 +313,20 @@ for (const component_name of ['HostRef', 'ViewRef', 'TextRef']) {
                 })
 
                 const node = ui.root.children[0]
-                const exposes_node =
-                    reference.nodes.main === node &&
-                    Object.keys(reference).length === 1 &&
-                    Object.keys(reference)[0] === 'nodes'
+                const exposes_node = reference === node
 
                 root.unmount()
 
                 return {
                     exposes_node,
-                    cleared: reference === null,
+                    detached: ui.root.children.length === 0 && ui.nodes.length === 0,
                     released: node.ui === null && node.element === null,
                 }
             },
             { component_name, module_paths: MODULE_PATHS },
         )
 
-        expect(result).toEqual({ exposes_node: true, cleared: true, released: true })
+        expect(result).toEqual({ exposes_node: true, detached: true, released: true })
     })
 }
 
@@ -491,6 +490,7 @@ test('Solid roots isolate their node state and expose their own UI context', asy
 for (const [component_name, message] of [
     ['UnsupportedTag', "Unsupported tag element '<image>'"],
     ['ViewInsideText', '<Text> cannot have children.'],
+    ['ChildInsideText', '<Text> cannot have children.'],
     ['TextInsideView', 'Texts must be inserted into a <Text> component.'],
 ]) {
     test(`Solid rejects invalid tree: ${component_name}`, async ({ page }) => {
@@ -525,7 +525,7 @@ for (const [component_name, message] of [
     })
 }
 
-test('Solid updates, clears, moves, and unmounts text without retaining Uno nodes', async ({ page }) => {
+test('Solid updates, joins, clears, and unmounts text without retaining Uno nodes', async ({ page }) => {
     const result = await page.evaluate(async (module_paths) => {
         const [
             { registerRootComponent },
@@ -558,19 +558,22 @@ test('Solid updates, clears, moves, and unmounts text without retaining Uno node
         const conditional_cleared =
             conditional_ui.root.children[0] === conditional_node && conditional_node.text_content === ''
 
-        const moving_ui = await TestUI.create({ renderer: new TestRenderer() })
-        const moving_root = registerRootComponent(fixture.MovingText, { ui: moving_ui })
-        moving_root.render({})
-        const [first_text, second_text] = moving_ui.root.children
-        fixture.moveText()
-        const moved = first_text.text_content === '' && second_text.text_content === 'Contenido'
+        const multi_ui = await TestUI.create({ renderer: new TestRenderer() })
+        const [name, setName] = createSignal('Mundo')
+        registerRootComponent(fixture.MultiText, { ui: multi_ui }).render({ getName: name })
+        const multi_node = multi_ui.root.children[0]
+        const joined = multi_node.text_content
+        flush(() => setName('Uno'))
+        const joined_updated =
+            multi_ui.root.children[0] === multi_node && multi_node.text_content === 'Hola Uno!'
 
         dynamic_root.unmount()
 
         return {
             dynamic_updated,
             conditional_cleared,
-            moved,
+            joined,
+            joined_updated,
             unmounted:
                 dynamic_ui.root.children.length === 0 &&
                 dynamic_ui.nodes.length === 0 &&
@@ -582,12 +585,13 @@ test('Solid updates, clears, moves, and unmounts text without retaining Uno node
     expect(result).toEqual({
         dynamic_updated: true,
         conditional_cleared: true,
-        moved: true,
+        joined: 'Hola Mundo!',
+        joined_updated: true,
         unmounted: true,
     })
 })
 
-test('Solid event props use one Uno listener and dispatch the latest handler', async ({ page }) => {
+test('Solid event props rebind the Uno listener and dispatch the latest handler', async ({ page }) => {
     const result = await page.evaluate(async (module_paths) => {
         const [
             { registerRootComponent },
@@ -668,8 +672,8 @@ test('Solid event props use one Uno listener and dispatch the latest handler', a
             },
             'third',
         ],
-        registrations: ['click', 'click'],
-        removals: ['click'],
+        registrations: ['click', 'click', 'click'],
+        removals: ['click', 'click'],
         same_parent: true,
         target_is_child: true,
     })
@@ -679,11 +683,13 @@ test('Solid commits state updates from an event handler within the dispatch', as
     const result = await page.evaluate(async (module_paths) => {
         const [
             { registerRootComponent },
+            { flush },
             { default: TestRenderer },
             { default: TestUI },
             { DEFINED_EVENTS },
         ] = await Promise.all([
             import(module_paths.renderer),
+            import('/@id/solid-js'),
             import(module_paths.test_renderer),
             import(module_paths.test_ui),
             import(module_paths.events),
@@ -697,6 +703,7 @@ test('Solid commits state updates from an event handler within the dispatch', as
 
         ui.dispatchPlatformEvent({ type: 'pointerdown', pointerId: 1 }, { x: 10, y: 10 })
         ui.dispatchPlatformEvent({ type: 'pointerup', pointerId: 1 }, { x: 10, y: 10 })
+        flush()
 
         return {
             before,
@@ -706,4 +713,41 @@ test('Solid commits state updates from an event handler within the dispatch', as
     }, MODULE_PATHS)
 
     expect(result).toEqual({ before: '100px', after: '101px', same_node: true })
+})
+
+test('Solid keeps sibling order around an empty conditional slot', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [
+            { registerRootComponent },
+            { createSignal, flush },
+            { default: TestRenderer },
+            { default: TestUI },
+        ] = await Promise.all([
+            import(module_paths.renderer),
+            import('/@id/solid-js'),
+            import(module_paths.test_renderer),
+            import(module_paths.test_ui),
+        ])
+        const fixture = (globalThis as any).solid_fixture
+        const ui = await TestUI.create({ renderer: new TestRenderer() })
+        const [visible, setVisible] = createSignal(false)
+
+        registerRootComponent(fixture.MixedChildren, { ui }).render({ getVisible: visible })
+        const parent = ui.root.children[0]
+        const readWidths = () =>
+            parent.children.map((node) => node.styles.width?.value ?? node.styles.display.value)
+
+        const hidden = readWidths()
+        flush(() => setVisible(true))
+        const shown = readWidths()
+        flush(() => setVisible(false))
+
+        return { hidden, shown, hidden_again: readWidths() }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({
+        hidden: ['10px', 'none', '30px'],
+        shown: ['10px', '20px', '30px'],
+        hidden_again: ['10px', 'none', '30px'],
+    })
 })

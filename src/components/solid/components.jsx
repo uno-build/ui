@@ -1,3 +1,4 @@
+import { flatten, omit } from 'solid-js'
 import { useUI } from './context'
 import { getImageStyle } from '../shared'
 
@@ -6,7 +7,7 @@ export function View(props) {
 }
 
 export function Text(props) {
-    return <text {...props}>{props.children}</text>
+    return <text {...omit(props, 'children')} value={joinText(props.children)} />
 }
 
 export function Image({ src, width, height, style, ...props }) {
@@ -21,4 +22,17 @@ export function Image({ src, width, height, style, ...props }) {
             })}
         />
     )
+}
+
+function joinText(children) {
+    const values = flatten(children, { skipNonRendered: true })
+    return (Array.isArray(values) ? values : [values ?? '']).map(toTextValue).join('')
+}
+
+function toTextValue(value) {
+    if (typeof value !== 'string' && typeof value !== 'number') {
+        throw new Error('<Text> cannot have children.')
+    }
+
+    return value
 }
