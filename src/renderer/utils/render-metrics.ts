@@ -1,4 +1,4 @@
-import { DISPLAY, KEYWORD, OVERFLOW, UNIT } from '../../style/consts'
+import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, KEYWORD, OVERFLOW, UNIT } from '../../style/consts'
 import { TRANSPARENT_COLOR } from '../webgpu/buffers'
 
 const EMPTY_BOX_SHADOW = [0, 0, 0, 0]
@@ -321,4 +321,74 @@ export function getAncestorClipping(node) {
         bottom: clip.bottom - render_y,
         left: clip.left - render_x,
     }
+}
+
+export function getBackgroundImageRect(node, image_size, computeStyleValue) {
+    const [image_width, image_height] = image_size
+    const [background_width, background_height] = getBackgroundAreaSize(node, computeStyleValue)
+    const width_style = computeStyleValue(node.styles.backgroundSizeWidth)
+    const height_style = computeStyleValue(node.styles.backgroundSizeHeight)
+    const background_size_mode = width_style?.parsed.enum ?? height_style?.parsed.enum
+    let width
+    let height
+
+    if (background_size_mode === BACKGROUND_SIZE.cover || background_size_mode === BACKGROUND_SIZE.contain) {
+        const scale =
+            background_size_mode === BACKGROUND_SIZE.cover
+                ? Math.max(background_width / image_width, background_height / image_height)
+                : Math.min(background_width / image_width, background_height / image_height)
+
+        width = image_width * scale
+        height = image_height * scale
+    } else {
+        const size_width = readBackgroundSize(width_style, background_width)
+        const size_height = readBackgroundSize(height_style, background_height)
+        width = size_width ?? (size_height === undefined ? image_width : image_width * (size_height / image_height))
+        height = size_height ?? image_height * (width / image_width)
+    }
+
+    const x = readBackgroundPosition(computeStyleValue(node.styles.backgroundPositionX), background_width, width)
+    const y = readBackgroundPosition(computeStyleValue(node.styles.backgroundPositionY), background_height, height)
+
+    return [x, y, width, height]
+}
+
+function getBackgroundAreaSize(node, computeStyleValue) {
+    const border_width_top = getNodeBorderWidth(node, 'Top', computeStyleValue)
+    const border_width_right = getNodeBorderWidth(node, 'Right', computeStyleValue)
+    const border_width_bottom = getNodeBorderWidth(node, 'Bottom', computeStyleValue)
+    const border_width_left = getNodeBorderWidth(node, 'Left', computeStyleValue)
+
+    return [
+        node.layout.width - border_width_left - border_width_right,
+        node.layout.height - border_width_top - border_width_bottom,
+    ]
+}
+
+function readBackgroundSize(style, reference_size) {
+    if (style?.parsed.kind === UNIT.PERCENT) {
+        return (reference_size * style.parsed.value) / 100
+    }
+
+    if (style?.parsed.kind === UNIT.PX) {
+        return style.parsed.value
+    }
+
+    return undefined
+}
+
+function readBackgroundPosition(style, background_size, image_size) {
+    if (style?.parsed.kind === UNIT.PERCENT) {
+        return ((background_size - image_size) * style.parsed.value) / 100
+    }
+
+    if (style?.parsed.kind === UNIT.PX) {
+        return style.parsed.value
+    }
+
+    return 0
+}
+
+export function readBackgroundImageMode(node) {
+    return 1 + (node.styles.backgroundRepeat?.parsed.enum ?? BACKGROUND_REPEAT['no-repeat'])
 }

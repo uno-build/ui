@@ -2,8 +2,6 @@ import Renderer from '../core/Renderer'
 import { computeStyleValue, STYLE } from '../style'
 import {
     ROOT_SIZE,
-    BACKGROUND_REPEAT,
-    BACKGROUND_SIZE,
     DISPLAY,
     EDGE,
     FLEX_DIRECTION,
@@ -17,17 +15,18 @@ import {
 import createEngine from '../layouter/yoga'
 import {
     getAncestorClipping,
+    getBackgroundImageRect,
     getNodeBorderWidth,
     getNodeDrawingData,
     getNodeOpacity,
     getNodeRenderLayout,
+    readBackgroundImageMode,
     updateScrollMetrics,
 } from './utils/render-metrics'
+import { placeGlyphs } from './utils/text-placement'
 import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
 import { createUIWGSL } from './webgpu/shaders/'
 import {
-    FLOAT32_SIZE,
-    UINT32_SIZE,
     VIEWPORT_SIZE,
     POSITION_VERTEX_COUNT,
     POSITION_VERTEX_SIZE,
@@ -38,13 +37,11 @@ import {
     COMMAND_KIND_TEXT_STROKE,
     COMMAND,
     COMMAND_SIZE,
-    PANEL_DATA,
     PANEL_DATA_SIZE,
-    GLYPH_DATA,
     GLYPH_DATA_SIZE,
-    TEXT_RUN,
     TEXT_RUN_SIZE,
 } from './webgpu/buffers'
+import { writeCommandData, writeGlyphData, writePanelData, writeTextRunData } from './webgpu/writers'
 import Segmenter from './pretext/segmenter'
 
 const FONT_COLOR = [0, 0, 0, 255]
@@ -674,7 +671,6 @@ export default class RendererWebGPU extends Renderer {
         const prepared_text = this.getPreparedText(node, font, font_size)
         const layout_width = this.getTextWhiteSpace(node) === WHITE_SPACE.nowrap ? Infinity : content_width
         const text_layout = layoutWithLines(prepared_text, layout_width, line_height)
-        const letter_spacing = prepared_text.letterSpacing
         const text_align = node.styles.textAlign?.parsed.enum ?? TEXT_ALIGN.left
         const space_advance = this.measureGlyphAdvances(font, font_size, ' ')
         const text_shadow = this.computeStyle(node.styles.textShadow)?.parsed.text_shadow
@@ -689,63 +685,21 @@ export default class RendererWebGPU extends Renderer {
             text_shadow?.offset_y.value ?? 0,
             text_shadow?.blur.value ?? 0,
         ]
-        const glyphs = []
-
-        for (let line_index = 0; line_index < text_layout.lines.length; line_index++) {
-            const line = text_layout.lines[line_index]!
-            const baseline = content_y + leading / 2 + raster_metrics.ascender + line_index * line_height
-            const line_width = getTextAlignmentWidth(line, space_advance, letter_spacing)
-            const line_x = content_x + getTextAlignOffset(text_align, content_width, line_width)
-            const justify_data = getJustifyData(text_align, prepared_text, line, content_width, line_width)
-            let cursor_x = line_x
-            let character_offset = 0
-
-            const segments = letter_spacing === 0 ? line.text : this.grapheme_segmenter.segment(line.text)
-
-            for (const segment of segments) {
-                const grapheme = typeof segment === 'string' ? segment : segment.segment
-                if (grapheme === '\t') {
-                    cursor_x += getTabAdvance(cursor_x - line_x, space_advance * 8)
-                } else {
-                    for (let character_index = 0; character_index < grapheme.length; ) {
-                        const code_point = grapheme.codePointAt(character_index)
-                        const glyph = font.glyphs_by_unicode.get(code_point)
-                        if (glyph !== undefined) {
-                            if (glyph.plane_bounds !== undefined && glyph.uv_rect !== undefined) {
-                                const [left, bottom, right, top] = glyph.plane_bounds
-                                glyphs.push({
-                                    layout: [
-                                        cursor_x + left * font_size,
-                                        baseline - top * font_size,
-                                        (right - left) * font_size,
-                                        (top - bottom) * font_size,
-                                    ],
-                                    uv_rect: glyph.uv_rect,
-                                    run_index,
-                                    text_shadow: text_shadow_data,
-                                })
-                            }
-
-                            cursor_x += glyph.advance * font_size
-                        }
-
-                        character_index += code_point > 0xffff ? 2 : 1
-                    }
-                }
-
-                if (
-                    grapheme === ' ' &&
-                    justify_data !== null &&
-                    character_offset >= justify_data.start &&
-                    character_offset < justify_data.end
-                ) {
-                    cursor_x += justify_data.advance
-                }
-
-                cursor_x += letter_spacing
-                character_offset += grapheme.length
-            }
-        }
+        const glyphs = placeGlyphs({
+            prepared_text,
+            text_layout,
+            font,
+            font_size,
+            line_height,
+            baseline_y: content_y + leading / 2 + raster_metrics.ascender,
+            content_x,
+            content_width,
+            text_align,
+            space_advance,
+            grapheme_segmenter: this.grapheme_segmenter,
+            run_index,
+            text_shadow: text_shadow_data,
+        })
 
         if (glyphs.length === 0) {
             return null
@@ -857,7 +811,7 @@ export default class RendererWebGPU extends Renderer {
         }
 
         for (const command of commands) {
-            this.writeCommandData(command, bytes_offset)
+            writeCommandData(this.command_floats, this.command_u32, bytes_offset, command)
             bytes_offset += COMMAND_SIZE
         }
 
@@ -877,7 +831,7 @@ export default class RendererWebGPU extends Renderer {
         }
 
         for (const panel of panels) {
-            this.writePanelData(panel, bytes_offset)
+            writePanelData(this.panel_data_floats, this.panel_data_u32, bytes_offset, panel)
             bytes_offset += PANEL_DATA_SIZE
         }
 
@@ -897,7 +851,7 @@ export default class RendererWebGPU extends Renderer {
         }
 
         for (const glyph of glyphs) {
-            this.writeGlyphData(glyph, bytes_offset)
+            writeGlyphData(this.glyph_data_floats, this.glyph_data_u32, bytes_offset, glyph)
             bytes_offset += GLYPH_DATA_SIZE
         }
 
@@ -915,7 +869,7 @@ export default class RendererWebGPU extends Renderer {
         }
 
         for (const text_run of this.text_runs) {
-            this.writeTextRunData(text_run, bytes_offset)
+            writeTextRunData(this.text_run_floats, bytes_offset, text_run)
             bytes_offset += TEXT_RUN_SIZE
         }
 
@@ -1036,124 +990,6 @@ export default class RendererWebGPU extends Renderer {
 
         return { uploaded_bytes }
     }
-
-    private writeCommandData(command, bytes_offset) {
-        const command_u32_offset = (bytes_offset + COMMAND.KIND_DATA.OFFSET) / UINT32_SIZE
-        this.command_u32[command_u32_offset] = command.kind
-        this.command_u32[command_u32_offset + 1] = command.panel_index
-        this.command_u32[command_u32_offset + 2] = command.glyph_index
-        this.command_floats[command_u32_offset + 3] = command.text_stroke_width ?? 0
-    }
-
-    private writePanelData(panel, bytes_offset) {
-        const layout_float_offset = (bytes_offset + PANEL_DATA.LAYOUT.OFFSET) / FLOAT32_SIZE
-        this.panel_data_floats.set(panel.layout, layout_float_offset)
-
-        const clipping_float_offset = (bytes_offset + PANEL_DATA.CLIPPING.OFFSET) / FLOAT32_SIZE
-        this.panel_data_floats.set(panel.clipping, clipping_float_offset)
-
-        const border_radius_x_float_offset = (bytes_offset + PANEL_DATA.BORDER_RADIUS_X.OFFSET) / FLOAT32_SIZE
-        const border_radius_y_float_offset = (bytes_offset + PANEL_DATA.BORDER_RADIUS_Y.OFFSET) / FLOAT32_SIZE
-        this.panel_data_floats.set(panel.border_radius_x, border_radius_x_float_offset)
-        this.panel_data_floats.set(panel.border_radius_y, border_radius_y_float_offset)
-
-        const border_widths_float_offset = (bytes_offset + PANEL_DATA.BORDER_WIDTHS.OFFSET) / FLOAT32_SIZE
-        this.panel_data_floats.set(panel.border_widths, border_widths_float_offset)
-
-        const background_uv_rect_float_offset = (bytes_offset + PANEL_DATA.BACKGROUND_UV_RECT.OFFSET) / FLOAT32_SIZE
-        this.panel_data_floats.set(panel.background_uv_rect, background_uv_rect_float_offset)
-
-        const background_image_rect_float_offset =
-            (bytes_offset + PANEL_DATA.BACKGROUND_IMAGE_RECT.OFFSET) / FLOAT32_SIZE
-        this.panel_data_floats.set(panel.background_image_rect, background_image_rect_float_offset)
-
-        const image_data_float_offset = (bytes_offset + PANEL_DATA.IMAGE_DATA.OFFSET) / FLOAT32_SIZE
-        this.panel_data_floats[image_data_float_offset] = panel.opacity
-        this.panel_data_floats[image_data_float_offset + 1] = panel.background_image_mode
-        this.panel_data_floats[image_data_float_offset + 2] = panel.background_atlas_layer
-        this.panel_data_floats[image_data_float_offset + 3] = 0
-
-        const border_colors_u32_offset = (bytes_offset + PANEL_DATA.BORDER_COLORS.OFFSET) / UINT32_SIZE
-        this.panel_data_u32[border_colors_u32_offset] = packColor(panel.border_color_top)
-        this.panel_data_u32[border_colors_u32_offset + 1] = packColor(panel.border_color_right)
-        this.panel_data_u32[border_colors_u32_offset + 2] = packColor(panel.border_color_bottom)
-        this.panel_data_u32[border_colors_u32_offset + 3] = packColor(panel.border_color_left)
-
-        const background_color_u32_offset = (bytes_offset + PANEL_DATA.BACKGROUND_COLOR.OFFSET) / UINT32_SIZE
-        this.panel_data_u32[background_color_u32_offset] = packColor(panel.background_color)
-        this.panel_data_u32[background_color_u32_offset + 1] = 0
-        this.panel_data_u32[background_color_u32_offset + 2] = 0
-        this.panel_data_u32[background_color_u32_offset + 3] = 0
-
-        const box_shadow_u32_offset = (bytes_offset + PANEL_DATA.BOX_SHADOW.OFFSET) / UINT32_SIZE
-        this.panel_data_u32.set(panel.box_shadow, box_shadow_u32_offset)
-    }
-
-    private writeGlyphData(glyph, bytes_offset) {
-        const layout_float_offset = (bytes_offset + GLYPH_DATA.LAYOUT.OFFSET) / FLOAT32_SIZE
-        this.glyph_data_floats.set(glyph.layout, layout_float_offset)
-
-        const uv_rect_float_offset = (bytes_offset + GLYPH_DATA.UV_RECT.OFFSET) / FLOAT32_SIZE
-        this.glyph_data_floats.set(glyph.uv_rect, uv_rect_float_offset)
-
-        const run_data_u32_offset = (bytes_offset + GLYPH_DATA.RUN_DATA.OFFSET) / UINT32_SIZE
-        this.glyph_data_u32[run_data_u32_offset] = glyph.run_index
-        this.glyph_data_floats.set(glyph.text_shadow, run_data_u32_offset + 1)
-    }
-
-    private writeTextRunData(text_run, bytes_offset) {
-        const {
-            color,
-            font_data,
-            clipping,
-            text_shadow,
-            text_shadow_color,
-            text_stroke_width,
-            effect_distance_range,
-            text_stroke_multisampling,
-            text_stroke_color,
-        } = text_run
-        const color_float_offset = (bytes_offset + TEXT_RUN.COLOR.OFFSET) / FLOAT32_SIZE
-        this.text_run_floats[color_float_offset] = color[0] / 255
-        this.text_run_floats[color_float_offset + 1] = color[1] / 255
-        this.text_run_floats[color_float_offset + 2] = color[2] / 255
-        this.text_run_floats[color_float_offset + 3] = color[3] / 255
-
-        const font_data_float_offset = (bytes_offset + TEXT_RUN.FONT_DATA.OFFSET) / FLOAT32_SIZE
-        this.text_run_floats.set(font_data, font_data_float_offset)
-
-        const clipping_float_offset = (bytes_offset + TEXT_RUN.CLIPPING.OFFSET) / FLOAT32_SIZE
-        this.text_run_floats.set(clipping, clipping_float_offset)
-
-        const text_shadow_float_offset = (bytes_offset + TEXT_RUN.TEXT_SHADOW.OFFSET) / FLOAT32_SIZE
-        this.text_run_floats.set(text_shadow, text_shadow_float_offset)
-
-        const text_shadow_color_float_offset = (bytes_offset + TEXT_RUN.TEXT_SHADOW_COLOR.OFFSET) / FLOAT32_SIZE
-        this.text_run_floats[text_shadow_color_float_offset] = text_shadow_color[0] / 255
-        this.text_run_floats[text_shadow_color_float_offset + 1] = text_shadow_color[1] / 255
-        this.text_run_floats[text_shadow_color_float_offset + 2] = text_shadow_color[2] / 255
-        this.text_run_floats[text_shadow_color_float_offset + 3] = text_shadow_color[3] / 255
-
-        const text_stroke_width_float_offset = (bytes_offset + TEXT_RUN.TEXT_STROKE_WIDTH.OFFSET) / FLOAT32_SIZE
-        this.text_run_floats[text_stroke_width_float_offset] = text_stroke_width
-
-        const effect_distance_range_float_offset = (bytes_offset + TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET) / FLOAT32_SIZE
-        this.text_run_floats[effect_distance_range_float_offset] = effect_distance_range
-
-        const text_stroke_multisampling_float_offset =
-            (bytes_offset + TEXT_RUN.TEXT_STROKE_MULTISAMPLING.OFFSET) / FLOAT32_SIZE
-        this.text_run_floats[text_stroke_multisampling_float_offset] = text_stroke_multisampling
-
-        const text_stroke_color_float_offset = (bytes_offset + TEXT_RUN.TEXT_STROKE_COLOR.OFFSET) / FLOAT32_SIZE
-        this.text_run_floats[text_stroke_color_float_offset] = text_stroke_color[0] / 255
-        this.text_run_floats[text_stroke_color_float_offset + 1] = text_stroke_color[1] / 255
-        this.text_run_floats[text_stroke_color_float_offset + 2] = text_stroke_color[2] / 255
-        this.text_run_floats[text_stroke_color_float_offset + 3] = text_stroke_color[3] / 255
-    }
-}
-
-function packColor(color) {
-    return ((color[0] & 255) | ((color[1] & 255) << 8) | ((color[2] & 255) << 16) | ((color[3] & 255) << 24)) >>> 0
 }
 
 function roundToDevicePixel(value, device_pixel_ratio) {
@@ -1170,142 +1006,4 @@ function constrainMeasuredSize(measured_size, available_size, measure_mode) {
     }
 
     return measured_size
-}
-
-function getTabAdvance(line_width, tab_stop_advance) {
-    if (tab_stop_advance <= 0) {
-        return 0
-    }
-
-    const remainder = line_width % tab_stop_advance
-    return Math.abs(remainder) <= 1e-6 ? tab_stop_advance : tab_stop_advance - remainder
-}
-
-function getTextAlignOffset(text_align, content_width, line_width) {
-    if (text_align === TEXT_ALIGN.right) {
-        return content_width - line_width
-    }
-
-    if (text_align === TEXT_ALIGN.center) {
-        return (content_width - line_width) / 2
-    }
-
-    return 0
-}
-
-function getTextAlignmentWidth(line, space_advance, letter_spacing) {
-    let end = line.text.length
-    while (end > 0 && line.text[end - 1] === ' ') {
-        end--
-    }
-
-    return line.width - (line.text.length - end) * (space_advance + letter_spacing)
-}
-
-function getJustifyData(text_align, prepared_text, line, content_width, line_width) {
-    if (text_align !== TEXT_ALIGN.justify || isParagraphEnd(prepared_text, line)) {
-        return null
-    }
-
-    const start = line.text.length - line.text.trimStart().length
-    let end = line.text.length
-    while (end > start && line.text[end - 1] === ' ') {
-        end--
-    }
-    let space_count = 0
-
-    for (let index = start; index < end; index++) {
-        if (line.text[index] === ' ') {
-            space_count++
-        }
-    }
-
-    const remaining_width = content_width - line_width
-    if (space_count === 0 || remaining_width <= 0) {
-        return null
-    }
-
-    return {
-        start,
-        end,
-        advance: remaining_width / space_count,
-    }
-}
-
-function isParagraphEnd(prepared_text, line) {
-    if (line.end.segmentIndex >= prepared_text.segments.length) {
-        return true
-    }
-
-    return line.end.graphemeIndex === 0 && prepared_text.kinds[line.end.segmentIndex - 1] === 'hard-break'
-}
-
-function getBackgroundImageRect(node, image_size, computeStyleValue) {
-    const [image_width, image_height] = image_size
-    const [background_width, background_height] = getBackgroundAreaSize(node, computeStyleValue)
-    const width_style = computeStyleValue(node.styles.backgroundSizeWidth)
-    const height_style = computeStyleValue(node.styles.backgroundSizeHeight)
-    const background_size_mode = width_style?.parsed.enum ?? height_style?.parsed.enum
-    let width
-    let height
-
-    if (background_size_mode === BACKGROUND_SIZE.cover || background_size_mode === BACKGROUND_SIZE.contain) {
-        const scale =
-            background_size_mode === BACKGROUND_SIZE.cover
-                ? Math.max(background_width / image_width, background_height / image_height)
-                : Math.min(background_width / image_width, background_height / image_height)
-
-        width = image_width * scale
-        height = image_height * scale
-    } else {
-        const size_width = readBackgroundSize(width_style, background_width)
-        const size_height = readBackgroundSize(height_style, background_height)
-        width = size_width ?? (size_height === undefined ? image_width : image_width * (size_height / image_height))
-        height = size_height ?? image_height * (width / image_width)
-    }
-
-    const x = readBackgroundPosition(computeStyleValue(node.styles.backgroundPositionX), background_width, width)
-    const y = readBackgroundPosition(computeStyleValue(node.styles.backgroundPositionY), background_height, height)
-
-    return [x, y, width, height]
-}
-
-function getBackgroundAreaSize(node, computeStyleValue) {
-    const border_width_top = getNodeBorderWidth(node, 'Top', computeStyleValue)
-    const border_width_right = getNodeBorderWidth(node, 'Right', computeStyleValue)
-    const border_width_bottom = getNodeBorderWidth(node, 'Bottom', computeStyleValue)
-    const border_width_left = getNodeBorderWidth(node, 'Left', computeStyleValue)
-
-    return [
-        node.layout.width - border_width_left - border_width_right,
-        node.layout.height - border_width_top - border_width_bottom,
-    ]
-}
-
-function readBackgroundSize(style, reference_size) {
-    if (style?.parsed.kind === UNIT.PERCENT) {
-        return (reference_size * style.parsed.value) / 100
-    }
-
-    if (style?.parsed.kind === UNIT.PX) {
-        return style.parsed.value
-    }
-
-    return undefined
-}
-
-function readBackgroundPosition(style, background_size, image_size) {
-    if (style?.parsed.kind === UNIT.PERCENT) {
-        return ((background_size - image_size) * style.parsed.value) / 100
-    }
-
-    if (style?.parsed.kind === UNIT.PX) {
-        return style.parsed.value
-    }
-
-    return 0
-}
-
-function readBackgroundImageMode(node) {
-    return 1 + (node.styles.backgroundRepeat?.parsed.enum ?? BACKGROUND_REPEAT['no-repeat'])
 }
