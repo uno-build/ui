@@ -34,7 +34,7 @@ export function StaticTree() {
 }
 
 export function DynamicStyle(props) {
-    return <View style={props.style} />
+    return <View style={props.getStyle()} />
 }
 
 export function HostRef(props) {
@@ -52,14 +52,14 @@ export function TextRef(props) {
 export function KeyedList(props) {
     return (
         <view>
-            <For each={props.items}>{(item) => <view style={{ width: item.width }} />}</For>
+            <For each={props.getItems()}>{(item) => <view style={{ width: item.width }} />}</For>
         </view>
     )
 }
 
 export function ConditionalTree(props) {
     return (
-        <Show when={props.visible}>
+        <Show when={props.getVisible()}>
             <view style={{ width: '100px' }}>
                 <view style={{ height: '50px' }} />
             </view>
@@ -87,16 +87,16 @@ export function TextInsideView() {
 }
 
 export function DynamicText(props) {
-    return <Text>{props.value}</Text>
+    return <Text>{props.getValue()}</Text>
 }
 
 export function ConditionalText(props) {
-    return <Text>{props.visible && 'Contenido'}</Text>
+    return <Text>{props.getVisible() && 'Contenido'}</Text>
 }
 
 export function EventTree(props) {
     return (
-        <view style={{ width: '100px', height: '50px' }} onClick={props.onClick}>
+        <view style={{ width: '100px', height: '50px' }} onClick={props.getOnClick()}>
             <view style={{ width: '40px', height: '20px' }} />
         </view>
     )
@@ -178,11 +178,12 @@ test.beforeEach(async ({ page }) => {
 
 test('Solid create and insert build the Uno node tree and apply initial styles', async ({ page }) => {
     const result = await page.evaluate(async (module_paths) => {
-        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
-            import(module_paths.renderer),
-            import(module_paths.test_renderer),
-            import(module_paths.test_ui),
-        ])
+        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] =
+            await Promise.all([
+                import(module_paths.renderer),
+                import(module_paths.test_renderer),
+                import(module_paths.test_ui),
+            ])
         const fixture = (globalThis as any).solid_fixture
         const renderer = new TestRenderer()
         const ui = await TestUI.create({ renderer })
@@ -245,18 +246,29 @@ test('Solid create and insert build the Uno node tree and apply initial styles',
 
 test('Solid updates styles without replacing node identity and unsets removed styles', async ({ page }) => {
     const result = await page.evaluate(async (module_paths) => {
-        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
+        const [
+            { registerRootComponent },
+            { createSignal, flush },
+            { default: TestRenderer },
+            { default: TestUI },
+        ] = await Promise.all([
             import(module_paths.renderer),
+            import('/@id/solid-js'),
             import(module_paths.test_renderer),
             import(module_paths.test_ui),
         ])
         const fixture = (globalThis as any).solid_fixture
         const ui = await TestUI.create({ renderer: new TestRenderer() })
-        const root = registerRootComponent(fixture.DynamicStyle, { ui })
+        const [style, setStyle] = createSignal({
+            width: '100px',
+            height: '40px',
+            backgroundColor: '#f00',
+        })
 
-        root.render({ style: { width: '100px', height: '40px', backgroundColor: '#f00' } })
+        const root = registerRootComponent(fixture.DynamicStyle, { ui })
+        root.render({ getStyle: style })
         const node = ui.root.children[0]
-        root.render({ style: { width: '200px', backgroundColor: '#00f' } })
+        flush(() => setStyle({ width: '200px', backgroundColor: '#00f' }))
 
         return {
             same_node: ui.root.children[0] === node && ui.nodes[0] === node,
@@ -278,17 +290,20 @@ for (const component_name of ['HostRef', 'ViewRef', 'TextRef']) {
     test(`${component_name} refs expose the main Uno node and clear on unmount`, async ({ page }) => {
         const result = await page.evaluate(
             async ({ component_name, module_paths }) => {
-                const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] =
-                    await Promise.all([
-                        import(module_paths.renderer),
-                        import(module_paths.test_renderer),
-                        import(module_paths.test_ui),
-                    ])
+                const [
+                    { registerRootComponent },
+                    { default: TestRenderer },
+                    { default: TestUI },
+                ] = await Promise.all([
+                    import(module_paths.renderer),
+                    import(module_paths.test_renderer),
+                    import(module_paths.test_ui),
+                ])
                 const fixture = (globalThis as any).solid_fixture
                 const ui = await TestUI.create({ renderer: new TestRenderer() })
-                const root = registerRootComponent(fixture[component_name], { ui })
                 let reference
 
+                const root = registerRootComponent(fixture[component_name], { ui })
                 root.render({
                     setRef(value) {
                         reference = value
@@ -318,29 +333,36 @@ for (const component_name of ['HostRef', 'ViewRef', 'TextRef']) {
 
 test('Solid keyed lists insert and move nodes before existing siblings', async ({ page }) => {
     const result = await page.evaluate(async (module_paths) => {
-        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
+        const [
+            { registerRootComponent },
+            { createSignal, flush },
+            { default: TestRenderer },
+            { default: TestUI },
+        ] = await Promise.all([
             import(module_paths.renderer),
+            import('/@id/solid-js'),
             import(module_paths.test_renderer),
             import(module_paths.test_ui),
         ])
         const fixture = (globalThis as any).solid_fixture
         const ui = await TestUI.create({ renderer: new TestRenderer() })
-        const root = registerRootComponent(fixture.KeyedList, { ui })
         const a = { id: 'a', width: '10px' }
         const b = { id: 'b', width: '20px' }
         const c = { id: 'c', width: '30px' }
         const x = { id: 'x', width: '40px' }
+        const [items, setItems] = createSignal([a, b, c])
 
-        root.render({ items: [a, b, c] })
+        const root = registerRootComponent(fixture.KeyedList, { ui })
+        root.render({ getItems: items })
         const parent = ui.root.children[0]
         const [a_node, b_node, c_node] = parent.children
 
-        root.render({ items: [c, a, b] })
+        flush(() => setItems([c, a, b]))
         const moved =
             parent.children[0] === c_node && parent.children[1] === a_node && parent.children[2] === b_node
         const moved_paths = parent.children.map((node) => node.path)
 
-        root.render({ items: [c, x, a, b] })
+        flush(() => setItems([c, x, a, b]))
         const x_node = parent.children[1]
 
         return {
@@ -364,8 +386,14 @@ test('Solid keyed lists insert and move nodes before existing siblings', async (
 
 test('Solid removes and destroys a conditional Uno subtree in order', async ({ page }) => {
     const result = await page.evaluate(async (module_paths) => {
-        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
+        const [
+            { registerRootComponent },
+            { createSignal, flush },
+            { default: TestRenderer },
+            { default: TestUI },
+        ] = await Promise.all([
             import(module_paths.renderer),
+            import('/@id/solid-js'),
             import(module_paths.test_renderer),
             import(module_paths.test_ui),
         ])
@@ -391,11 +419,12 @@ test('Solid removes and destroys a conditional Uno subtree in order', async ({ p
             return updateUI()
         }
 
+        const [visible, setVisible] = createSignal(true)
         const root = registerRootComponent(fixture.ConditionalTree, { ui })
-        root.render({ visible: true })
+        root.render({ getVisible: visible })
         const parent = ui.root.children[0]
         const child = parent.children[0]
-        root.render({ visible: false })
+        flush(() => setVisible(false))
 
         return {
             operations_match:
@@ -429,17 +458,17 @@ test('Solid removes and destroys a conditional Uno subtree in order', async ({ p
 
 test('Solid roots isolate their node state and expose their own UI context', async ({ page }) => {
     const result = await page.evaluate(async (module_paths) => {
-        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
-            import(module_paths.renderer),
-            import(module_paths.test_renderer),
-            import(module_paths.test_ui),
-        ])
+        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] =
+            await Promise.all([
+                import(module_paths.renderer),
+                import(module_paths.test_renderer),
+                import(module_paths.test_ui),
+            ])
         const fixture = (globalThis as any).solid_fixture
         const first_ui = await TestUI.create({ renderer: new TestRenderer() })
         const second_ui = await TestUI.create({ renderer: new TestRenderer() })
         const first_root = registerRootComponent(fixture.UIContextTree, { ui: first_ui })
         const second_root = registerRootComponent(fixture.UIContextTree, { ui: second_ui })
-
         first_root.render({})
         second_root.render({})
         const second_node = second_ui.root.children[0]
@@ -467,14 +496,18 @@ for (const [component_name, message] of [
     test(`Solid rejects invalid tree: ${component_name}`, async ({ page }) => {
         const error_message = await page.evaluate(
             async ({ component_name, module_paths }) => {
-                const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] =
-                    await Promise.all([
-                        import(module_paths.renderer),
-                        import(module_paths.test_renderer),
-                        import(module_paths.test_ui),
-                    ])
+                const [
+                    { registerRootComponent },
+                    { default: TestRenderer },
+                    { default: TestUI },
+                ] = await Promise.all([
+                    import(module_paths.renderer),
+                    import(module_paths.test_renderer),
+                    import(module_paths.test_ui),
+                ])
                 const fixture = (globalThis as any).solid_fixture
                 const ui = await TestUI.create({ renderer: new TestRenderer() })
+
                 const root = registerRootComponent(fixture[component_name], { ui })
 
                 try {
@@ -494,26 +527,34 @@ for (const [component_name, message] of [
 
 test('Solid updates, clears, moves, and unmounts text without retaining Uno nodes', async ({ page }) => {
     const result = await page.evaluate(async (module_paths) => {
-        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
+        const [
+            { registerRootComponent },
+            { createSignal, flush },
+            { default: TestRenderer },
+            { default: TestUI },
+        ] = await Promise.all([
             import(module_paths.renderer),
+            import('/@id/solid-js'),
             import(module_paths.test_renderer),
             import(module_paths.test_ui),
         ])
         const fixture = (globalThis as any).solid_fixture
 
         const dynamic_ui = await TestUI.create({ renderer: new TestRenderer() })
+        const [value, setValue] = createSignal('Antes')
         const dynamic_root = registerRootComponent(fixture.DynamicText, { ui: dynamic_ui })
-        dynamic_root.render({ value: 'Antes' })
+        dynamic_root.render({ getValue: value })
         const dynamic_node = dynamic_ui.root.children[0]
-        dynamic_root.render({ value: 'Después' })
+        flush(() => setValue('Después'))
         const dynamic_updated =
             dynamic_ui.root.children[0] === dynamic_node && dynamic_node.text_content === 'Después'
 
         const conditional_ui = await TestUI.create({ renderer: new TestRenderer() })
+        const [visible, setVisible] = createSignal(true)
         const conditional_root = registerRootComponent(fixture.ConditionalText, { ui: conditional_ui })
-        conditional_root.render({ visible: true })
+        conditional_root.render({ getVisible: visible })
         const conditional_node = conditional_ui.root.children[0]
-        conditional_root.render({ visible: false })
+        flush(() => setVisible(false))
         const conditional_cleared =
             conditional_ui.root.children[0] === conditional_node && conditional_node.text_content === ''
 
@@ -548,13 +589,19 @@ test('Solid updates, clears, moves, and unmounts text without retaining Uno node
 
 test('Solid event props use one Uno listener and dispatch the latest handler', async ({ page }) => {
     const result = await page.evaluate(async (module_paths) => {
-        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }, { DEFINED_EVENTS }] =
-            await Promise.all([
-                import(module_paths.renderer),
-                import(module_paths.test_renderer),
-                import(module_paths.test_ui),
-                import(module_paths.events),
-            ])
+        const [
+            { registerRootComponent },
+            { createSignal, flush },
+            { default: TestRenderer },
+            { default: TestUI },
+            { DEFINED_EVENTS },
+        ] = await Promise.all([
+            import(module_paths.renderer),
+            import('/@id/solid-js'),
+            import(module_paths.test_renderer),
+            import(module_paths.test_ui),
+            import(module_paths.events),
+        ])
         const fixture = (globalThis as any).solid_fixture
         const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
         const registrations = []
@@ -572,29 +619,33 @@ test('Solid event props use one Uno listener and dispatch the latest handler', a
             removeListener(type, listener)
         }
 
+        const [onClick, setOnClick] = createSignal(null)
+        setOnClick(() => () => received.push('first'))
         const root = registerRootComponent(fixture.EventTree, { ui })
-        root.render({ onClick: () => received.push('first') })
+        root.render({ getOnClick: onClick })
         const parent = ui.root.children[0]
         const child = parent.children[0]
-        root.render({
-            onClick(event) {
-                received.push({
-                    handler: 'second',
-                    type: event.type,
-                    target_is_child: event.target === child,
-                    current_target_is_parent: event.current_target === parent,
-                })
-            },
-        })
+        flush(() =>
+            setOnClick(
+                () => (event) => {
+                    received.push({
+                        handler: 'second',
+                        type: event.type,
+                        target_is_child: event.target === child,
+                        current_target_is_parent: event.current_target === parent,
+                    })
+                },
+            ),
+        )
 
         ui.dispatchPlatformEvent({ type: 'pointerdown', pointerId: 1 }, { x: 10, y: 10 })
         ui.dispatchPlatformEvent({ type: 'pointerup', pointerId: 1 }, { x: 10, y: 10 })
 
-        root.render({ onClick: null })
+        flush(() => setOnClick(null))
         ui.dispatchPlatformEvent({ type: 'pointerdown', pointerId: 1 }, { x: 10, y: 10 })
         ui.dispatchPlatformEvent({ type: 'pointerup', pointerId: 1 }, { x: 10, y: 10 })
 
-        root.render({ onClick: () => received.push('third') })
+        flush(() => setOnClick(() => () => received.push('third')))
         ui.dispatchPlatformEvent({ type: 'pointerdown', pointerId: 1 }, { x: 10, y: 10 })
         ui.dispatchPlatformEvent({ type: 'pointerup', pointerId: 1 }, { x: 10, y: 10 })
 
@@ -626,17 +677,20 @@ test('Solid event props use one Uno listener and dispatch the latest handler', a
 
 test('Solid commits state updates from an event handler within the dispatch', async ({ page }) => {
     const result = await page.evaluate(async (module_paths) => {
-        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }, { DEFINED_EVENTS }] =
-            await Promise.all([
-                import(module_paths.renderer),
-                import(module_paths.test_renderer),
-                import(module_paths.test_ui),
-                import(module_paths.events),
-            ])
+        const [
+            { registerRootComponent },
+            { default: TestRenderer },
+            { default: TestUI },
+            { DEFINED_EVENTS },
+        ] = await Promise.all([
+            import(module_paths.renderer),
+            import(module_paths.test_renderer),
+            import(module_paths.test_ui),
+            import(module_paths.events),
+        ])
         const fixture = (globalThis as any).solid_fixture
         const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
         const root = registerRootComponent(fixture.Counter, { ui })
-
         root.render({})
         const node = ui.root.children[0]
         const before = node.styles.width.value

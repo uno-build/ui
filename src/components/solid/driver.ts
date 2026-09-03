@@ -1,14 +1,7 @@
 // https://github.com/solidjs/solid/tree/v2.0.0-rc.0/packages/solid-universal
 
 import { createRenderer } from '@solidjs/universal'
-import {
-    createComponent as createSolidComponent,
-    createSignal,
-    flush,
-    onSettled,
-    runWithOwner,
-    useContext,
-} from 'solid-js'
+import { createComponent as createSolidComponent, flush, onSettled, runWithOwner, useContext } from 'solid-js'
 import { UI_CONTEXT } from './context'
 
 const TYPE = {
@@ -23,67 +16,16 @@ const INSTANCES = new WeakMap()
 const PENDING_UIS = new Set()
 let update_scheduled = false
 
-function getInstance(instance) {
-    return INSTANCES.get(instance)
-}
-
-function enqueueUpdate(ui) {
-    PENDING_UIS.add(ui)
-
-    if (update_scheduled) {
-        return
-    }
-
-    update_scheduled = true
-    runWithOwner(null, () => onSettled(flushUpdates))
-}
-
-function flushUpdates() {
-    const pending_uis = [...PENDING_UIS]
-    PENDING_UIS.clear()
-    update_scheduled = false
-
-    for (const ui of pending_uis) {
-        ui.update()
-    }
-}
-
-function createEventTypes(ui) {
-    const event_types = new Map()
-
-    for (const defined_event of ui.defined_events) {
-        for (const type of defined_event.types) {
-            event_types.set(type.prop, type)
-        }
-    }
-
-    return event_types
-}
-
-export function registerRootComponent(RootComponent, { ui }) {
-    const container = createSolidContainer({ ui })
-    let setProps = null
-    let disposeRoot = null
+export function registerRootComponent(RootComponent, options) {
+    const container = createSolidContainer(options)
+    let disposeRoot = () => {}
 
     return {
         render(props) {
-            if (disposeRoot === null) {
-                disposeRoot = render(() => {
-                    const [getProps, setNextProps] = createSignal(props, { equals: false })
-                    setProps = setNextProps
-                    return createComponent(RootComponent, createReactiveProps(getProps))
-                }, container)
-            } else {
-                flush(() => setProps(props))
-                flushUpdates()
-            }
+            disposeRoot = render(() => createSolidComponent(RootComponent, props), container)
         },
         unmount() {
-            if (disposeRoot !== null) {
-                disposeRoot()
-                disposeRoot = null
-                setProps = null
-            }
+            disposeRoot()
         },
     }
 }
@@ -518,28 +460,39 @@ export function render(code, container) {
     }
 }
 
-function createReactiveProps(getProps) {
-    return new Proxy(
-        {},
-        {
-            get(_target, name) {
-                return getProps()[name]
-            },
-            has(_target, name) {
-                return name in getProps()
-            },
-            ownKeys() {
-                return Reflect.ownKeys(getProps())
-            },
-            getOwnPropertyDescriptor(_target, name) {
-                return {
-                    configurable: true,
-                    enumerable: true,
-                    get() {
-                        return getProps()[name]
-                    },
-                }
-            },
-        },
-    )
+function getInstance(instance) {
+    return INSTANCES.get(instance)
+}
+
+function enqueueUpdate(ui) {
+    PENDING_UIS.add(ui)
+
+    if (update_scheduled) {
+        return
+    }
+
+    update_scheduled = true
+    runWithOwner(null, () => onSettled(flushUpdates))
+}
+
+function flushUpdates() {
+    const pending_uis = [...PENDING_UIS]
+    PENDING_UIS.clear()
+    update_scheduled = false
+
+    for (const ui of pending_uis) {
+        ui.update()
+    }
+}
+
+function createEventTypes(ui) {
+    const event_types = new Map()
+
+    for (const defined_event of ui.defined_events) {
+        for (const type of defined_event.types) {
+            event_types.set(type.prop, type)
+        }
+    }
+
+    return event_types
 }

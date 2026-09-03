@@ -1,4 +1,4 @@
-import { Image, registerRootComponent, Text, View } from 'uno-ui/solid'
+import { registerRootComponent, Image, Text, View } from 'uno-ui/solid'
 import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
 const IMAGE_SRC = 'assets/images/coin.png'
