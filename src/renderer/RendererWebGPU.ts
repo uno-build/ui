@@ -14,6 +14,7 @@ import {
 } from '../style/consts'
 import createEngine from '../layouter/yoga'
 import {
+    FEATURES,
     getAncestorClipping,
     getBackgroundImageRect,
     getNodeBorderWidth,
@@ -521,13 +522,19 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private logUpdate(full_rebuild, node_count, updated_nodes, structural) {
+        const bytes =
+            this.panel_data_pool.uploaded +
+            this.glyph_data_pool.uploaded +
+            this.text_run_pool.uploaded +
+            this.command_pool.uploaded
         console.log('[RendererWebGPU] update', {
+            structural,
             mode: full_rebuild === null ? 'partial' : `full (${full_rebuild})`,
+            kb: `${(bytes / 1024).toFixed(1)}kb`,
             nodes: node_count,
             updated: updated_nodes,
-            structural,
             commands: this.command_count,
-            uploaded_bytes: {
+            bytes: {
                 panel: this.panel_data_pool.uploaded,
                 glyph: this.glyph_data_pool.uploaded,
                 run: this.text_run_pool.uploaded,
@@ -612,7 +619,7 @@ export default class RendererWebGPU extends Renderer {
             this.panel_data_pool.write(record.panel_slot, panel_data, writePanelData)
         }
 
-        if (node.hasTextContent()) {
+        if (FEATURES.text && node.hasTextContent()) {
             if (record.run_slot === -1) {
                 record.run_slot = this.text_run_pool.allocate(1)
             }
@@ -701,11 +708,18 @@ export default class RendererWebGPU extends Renderer {
             background_atlas_layer: 0,
         }
 
-        const atlas_image = this.image_manager.getImage(node.styles.backgroundImage?.value)
+        const atlas_image = FEATURES.background_image
+            ? this.image_manager.getImage(node.styles.backgroundImage?.value)
+            : undefined
         if (atlas_image !== undefined) {
             panel_data.background_image_mode = readBackgroundImageMode(node)
             panel_data.background_uv_rect = atlas_image.uv_rect
-            panel_data.background_image_rect = getBackgroundImageRect(node, atlas_image.image_size, this.computeStyle)
+            panel_data.background_image_rect = getBackgroundImageRect(
+                node,
+                atlas_image.image_size,
+                this.computeStyle,
+                panel_data.border_widths,
+            )
             panel_data.background_atlas_layer = atlas_image.layer
         }
 
@@ -869,8 +883,12 @@ export default class RendererWebGPU extends Renderer {
         const text_layout = this.getTextLayout(record, prepared_text, layout_width, line_height)
         const text_align = node.styles.textAlign?.parsed.enum ?? TEXT_ALIGN.left
         const space_advance = this.measureGlyphAdvances(font, font_size, ' ')
-        const text_shadow = this.computeStyle(node.styles.textShadow)?.parsed.text_shadow
-        const text_stroke = this.computeStyle(node.styles.textStroke)?.parsed.text_stroke
+        const text_shadow = FEATURES.text_shadow
+            ? this.computeStyle(node.styles.textShadow)?.parsed.text_shadow
+            : undefined
+        const text_stroke = FEATURES.text_stroke
+            ? this.computeStyle(node.styles.textStroke)?.parsed.text_stroke
+            : undefined
         const effect_distance_range = font.json.atlas.effectDistanceRange ?? font.json.atlas.distanceRange
         const text_stroke_width = text_stroke?.width.value ?? 0
         const text_stroke_width_limit =

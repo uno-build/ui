@@ -2,6 +2,22 @@ import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, KEYWORD, OVERFLOW, UNIT } 
 import { TRANSPARENT_COLOR } from '../webgpu/buffers'
 
 const EMPTY_BOX_SHADOW = [0, 0, 0, 0]
+const EMPTY_BORDER_WIDTHS = [0, 0, 0, 0]
+const EMPTY_BORDER_RADIUS = [
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+]
+
+export const FEATURES = {
+    panel: true,
+    background_image: true,
+    border: true,
+    border_radius: true,
+    box_shadow: true,
+    text: true,
+    text_shadow: true,
+    text_stroke: true,
+}
 
 // If null is returned, the node should not be drawn
 export function getNodeDrawingData(node, computeStyleValue) {
@@ -12,15 +28,16 @@ export function getNodeDrawingData(node, computeStyleValue) {
     }
 
     const background_color = node.styles.backgroundColor?.parsed.rgba
-    const has_background = background_color !== undefined && background_color[3] > 0
-    const has_background_image = node.styles.backgroundImage !== undefined
+    const has_background = FEATURES.panel && background_color !== undefined && background_color[3] > 0
+    const has_background_image = FEATURES.background_image && node.styles.backgroundImage !== undefined
     const border_width_top = getNodeBorderWidth(node, 'Top', computeStyleValue)
     const border_width_right = getNodeBorderWidth(node, 'Right', computeStyleValue)
     const border_width_bottom = getNodeBorderWidth(node, 'Bottom', computeStyleValue)
     const border_width_left = getNodeBorderWidth(node, 'Left', computeStyleValue)
     const has_border =
-        border_width_top > 0 || border_width_right > 0 || border_width_bottom > 0 || border_width_left > 0
-    const box_shadow = getNodeBoxShadow(node, computeStyleValue)
+        FEATURES.border &&
+        (border_width_top > 0 || border_width_right > 0 || border_width_bottom > 0 || border_width_left > 0)
+    const box_shadow = FEATURES.box_shadow ? getNodeBoxShadow(node, computeStyleValue) : EMPTY_BOX_SHADOW
     const has_box_shadow = box_shadow[2] >>> 24 > 0 && (box_shadow[0] !== 0 || box_shadow[1] !== 0)
 
     if (!has_background && !has_background_image && !has_border && !has_box_shadow) {
@@ -38,49 +55,24 @@ export function getNodeDrawingData(node, computeStyleValue) {
         return null
     }
 
-    const border_top_left_radius = getBorderRadius(
-        computeStyleValue(node.styles.borderTopLeftRadius)?.parsed,
-        width,
-        height,
-    )
-    const border_top_right_radius = getBorderRadius(
-        computeStyleValue(node.styles.borderTopRightRadius)?.parsed,
-        width,
-        height,
-    )
-    const border_bottom_right_radius = getBorderRadius(
-        computeStyleValue(node.styles.borderBottomRightRadius)?.parsed,
-        width,
-        height,
-    )
-    const border_bottom_left_radius = getBorderRadius(
-        computeStyleValue(node.styles.borderBottomLeftRadius)?.parsed,
-        width,
-        height,
-    )
+    const [border_radius_x, border_radius_y] = FEATURES.border_radius
+        ? getNodeBorderRadius(node, computeStyleValue, width, height)
+        : EMPTY_BORDER_RADIUS
 
     return {
         layout: [x, y, width, height],
         clipping: normalized_clipping,
         opacity,
-        border_radius_x: [
-            border_top_left_radius[0],
-            border_top_right_radius[0],
-            border_bottom_right_radius[0],
-            border_bottom_left_radius[0],
-        ],
-        border_radius_y: [
-            border_top_left_radius[1],
-            border_top_right_radius[1],
-            border_bottom_right_radius[1],
-            border_bottom_left_radius[1],
-        ],
+        border_radius_x,
+        border_radius_y,
         border_color_top: node.styles.borderTopColor?.parsed.rgba ?? TRANSPARENT_COLOR,
         border_color_right: node.styles.borderRightColor?.parsed.rgba ?? TRANSPARENT_COLOR,
         border_color_bottom: node.styles.borderBottomColor?.parsed.rgba ?? TRANSPARENT_COLOR,
         border_color_left: node.styles.borderLeftColor?.parsed.rgba ?? TRANSPARENT_COLOR,
-        border_widths: [border_width_top, border_width_right, border_width_bottom, border_width_left],
-        background_color: background_color ?? TRANSPARENT_COLOR,
+        border_widths: has_border
+            ? [border_width_top, border_width_right, border_width_bottom, border_width_left]
+            : EMPTY_BORDER_WIDTHS,
+        background_color: has_background ? background_color : TRANSPARENT_COLOR,
         box_shadow,
     }
 }
@@ -215,6 +207,18 @@ function resetScrollMetrics(node) {
     }
 }
 
+function getNodeBorderRadius(node, computeStyleValue, width, height) {
+    const top_left = getBorderRadius(computeStyleValue(node.styles.borderTopLeftRadius)?.parsed, width, height)
+    const top_right = getBorderRadius(computeStyleValue(node.styles.borderTopRightRadius)?.parsed, width, height)
+    const bottom_right = getBorderRadius(computeStyleValue(node.styles.borderBottomRightRadius)?.parsed, width, height)
+    const bottom_left = getBorderRadius(computeStyleValue(node.styles.borderBottomLeftRadius)?.parsed, width, height)
+
+    return [
+        [top_left[0], top_right[0], bottom_right[0], bottom_left[0]],
+        [top_left[1], top_right[1], bottom_right[1], bottom_left[1]],
+    ]
+}
+
 function getBorderRadius(border_radius, width, height) {
     if (border_radius === undefined || border_radius.kind === KEYWORD.UNSET) {
         return [0, 0]
@@ -323,9 +327,9 @@ export function getAncestorClipping(node) {
     }
 }
 
-export function getBackgroundImageRect(node, image_size, computeStyleValue) {
+export function getBackgroundImageRect(node, image_size, computeStyleValue, border_widths) {
     const [image_width, image_height] = image_size
-    const [background_width, background_height] = getBackgroundAreaSize(node, computeStyleValue)
+    const [background_width, background_height] = getBackgroundAreaSize(node, border_widths)
     const width_style = computeStyleValue(node.styles.backgroundSizeWidth)
     const height_style = computeStyleValue(node.styles.backgroundSizeHeight)
     const background_size_mode = width_style?.parsed.enum ?? height_style?.parsed.enum
@@ -353,11 +357,8 @@ export function getBackgroundImageRect(node, image_size, computeStyleValue) {
     return [x, y, width, height]
 }
 
-function getBackgroundAreaSize(node, computeStyleValue) {
-    const border_width_top = getNodeBorderWidth(node, 'Top', computeStyleValue)
-    const border_width_right = getNodeBorderWidth(node, 'Right', computeStyleValue)
-    const border_width_bottom = getNodeBorderWidth(node, 'Bottom', computeStyleValue)
-    const border_width_left = getNodeBorderWidth(node, 'Left', computeStyleValue)
+function getBackgroundAreaSize(node, border_widths) {
+    const [border_width_top, border_width_right, border_width_bottom, border_width_left] = border_widths
 
     return [
         node.layout.width - border_width_left - border_width_right,
