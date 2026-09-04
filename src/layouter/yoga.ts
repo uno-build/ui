@@ -18,7 +18,7 @@ import {
 } from '../style/consts'
 import { calculateLayoutRect, getParentLayout } from './utils'
 
-export default async function createYogaEngine({ loadYoga } = {}) {
+export default async function createYogaLayouter({ loadYoga } = {}) {
     // if (typeof loadYoga !== 'function') {
     //     loadYoga = (await import('yoga-layout/load')).loadYoga
     // }

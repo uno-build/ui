@@ -12,7 +12,7 @@ import {
     UNIT,
     MEASURE_MODE,
 } from '../style/consts'
-import createEngine from '../layouter/yoga'
+import createYogaLayouter from '../layouter/yoga'
 import {
     FEATURES,
     getAncestorClipping,
@@ -65,7 +65,7 @@ export default class RendererWebGPU extends Renderer {
     private viewport_height
     private root_size = ROOT_SIZE
     private style_context_dirty = false
-    private engine!: any
+    private layouter!: any
     private device
     private context
     private format
@@ -103,7 +103,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public async init() {
-        this.engine = await createEngine({ loadYoga: this.loadYoga })
+        this.layouter = await createYogaLayouter({ loadYoga: this.loadYoga })
         this.position_buffer = this.resources.device.createBuffer({
             size: POSITION_VERTICES.byteLength,
             usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
@@ -152,7 +152,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public destroy(nodes) {
-        this.engine.destroy(nodes)
+        this.layouter.destroy(nodes)
         this.position_buffer.destroy()
         this.viewport_buffer.destroy()
         this.command_pool.destroy()
@@ -173,7 +173,7 @@ export default class RendererWebGPU extends Renderer {
         this.bind_group = null
         this.image_sampler = null
         this.root_node = null
-        this.engine = null
+        this.layouter = null
         this.image_manager = null
         this.font_manager = null
         this.resources = null
@@ -208,15 +208,15 @@ export default class RendererWebGPU extends Renderer {
             this.root_node = node
         }
 
-        this.engine.createNode(node)
+        this.layouter.createNode(node)
     }
 
     public getChildIndex(node) {
-        return this.engine.getChildIndex(node)
+        return this.layouter.getChildIndex(node)
     }
 
     public initializeTextNode(node) {
-        this.engine.setMeasureFunction(node, (width, width_mode, height, height_mode) =>
+        this.layouter.setMeasureFunction(node, (width, width_mode, height, height_mode) =>
             this.getTextMeasure(node, width, width_mode, height, height_mode),
         )
         this.markRecord(node, 'text')
@@ -224,7 +224,7 @@ export default class RendererWebGPU extends Renderer {
 
     public invalidateTextNode(node) {
         this.prepared_texts.delete(node)
-        this.engine.markDirty(node)
+        this.layouter.markDirty(node)
         this.markRecord(node, 'text')
     }
 
@@ -261,16 +261,16 @@ export default class RendererWebGPU extends Renderer {
     }
 
     protected insertChild(parent, node, child_index) {
-        this.engine.insertChild(parent, node, child_index)
+        this.layouter.insertChild(parent, node, child_index)
     }
 
     public detachChild(parent, node) {
-        this.engine.detachChild(parent, node)
+        this.layouter.detachChild(parent, node)
         this.releaseRecord(node)
     }
 
     public destroyNode(node) {
-        this.engine.destroyNode(node)
+        this.layouter.destroyNode(node)
         this.releaseRecord(node)
     }
 
@@ -404,7 +404,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private updateResolvedStyle(node, style) {
-        this.engine.applyStyle(node, this.computeStyle(style))
+        this.layouter.applyStyle(node, this.computeStyle(style))
 
         if (
             style.name === STYLE.OVERFLOWX.name ||
@@ -417,7 +417,7 @@ export default class RendererWebGPU extends Renderer {
                     ? (node.styles.overflowY?.parsed.enum ?? OVERFLOW.visible)
                     : (node.styles.overflowX?.parsed.enum ?? OVERFLOW.visible)
 
-            this.engine.applyStyle(node, {
+            this.layouter.applyStyle(node, {
                 name: STYLE.OVERFLOW.name,
                 parsed: { enum: overflow },
             })
@@ -425,7 +425,7 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public getLayout(node) {
-        return this.engine.getLayout(node)
+        return this.layouter.getLayout(node)
     }
 
     public beforeUpdate(nodes) {
@@ -452,26 +452,12 @@ export default class RendererWebGPU extends Renderer {
             this.style_context_dirty = false
         }
 
-        this.engine.calculate(this.viewport_width, this.viewport_height)
+        this.layouter.calculate(this.viewport_width, this.viewport_height)
     }
 
     public afterUpdate(nodes) {
         super.afterUpdate(nodes)
         updateScrollMetrics(this.root_node, (node) => this.getNodeContentSize(node))
-    }
-
-    private getNodeContentSize(node) {
-        if (!node.hasTextContent()) {
-            return null
-        }
-
-        const border_left = node.layout.border.left
-        const border_right = node.layout.border.right
-        const padding_left = node.layout.padding.left
-        const padding_right = node.layout.padding.right
-        const content_width = node.layout.width - border_left - border_right - padding_left - padding_right
-
-        return this.getTextMeasure(node, content_width)
     }
 
     public update(nodes) {
@@ -579,6 +565,20 @@ export default class RendererWebGPU extends Renderer {
         }
 
         return { command_encoder, texture_view }
+    }
+
+    private getNodeContentSize(node) {
+        if (!node.hasTextContent()) {
+            return null
+        }
+
+        const border_left = node.layout.border.left
+        const border_right = node.layout.border.right
+        const padding_left = node.layout.padding.left
+        const padding_right = node.layout.padding.right
+        const content_width = node.layout.width - border_left - border_right - padding_left - padding_right
+
+        return this.getTextMeasure(node, content_width)
     }
 
     private diffRecord(node) {

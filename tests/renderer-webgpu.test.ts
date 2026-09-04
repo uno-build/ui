@@ -95,7 +95,7 @@ test('RendererWebGPU destroy releases UI buffers without disposing shared resour
         'glyph_data_pool',
         'text_run_pool',
     ]
-    let destroyed_engine_nodes
+    let destroyed_layouter_nodes
 
     for (const buffer_name of buffer_names) {
         ;(renderer as any)[buffer_name] = {
@@ -104,16 +104,16 @@ test('RendererWebGPU destroy releases UI buffers without disposing shared resour
             },
         }
     }
-    ;(renderer as any).engine = {
+    ;(renderer as any).layouter = {
         destroy(next_nodes) {
-            destroyed_engine_nodes = next_nodes
+            destroyed_layouter_nodes = next_nodes
         },
     }
     ;(renderer as any).pending_styles.push({})
 
     renderer.destroy(nodes)
 
-    expect(destroyed_engine_nodes).toBe(nodes)
+    expect(destroyed_layouter_nodes).toBe(nodes)
     expect(destroyed_buffers).toEqual(buffer_names)
     expect(image_manager_dispose_count).toBe(0)
     expect(font_manager_dispose_count).toBe(0)
@@ -429,7 +429,7 @@ test('RendererWebGPU propagates descendant overflow independently by axis', () =
 test('RendererWebGPU maps the main-axis overflow to Yoga when flexDirection changes', () => {
     const applied_styles = []
     const renderer = createRenderer()
-    ;(renderer as any).engine = {
+    ;(renderer as any).layouter = {
         applyStyle(node, style) {
             applied_styles.push(style)
         },
@@ -2099,7 +2099,7 @@ test('RendererWebGPU invalidates prepared text', () => {
     )
     const node: any = createNode({ text_content: 'A' })
     let marked_dirty = false
-    ;(renderer as any).engine = {
+    ;(renderer as any).layouter = {
         markDirty() {
             marked_dirty = true
         },
@@ -2126,7 +2126,7 @@ for (const [style_name, style_value] of TEXT_MEASURE_STYLES) {
         const renderer = createRenderer()
         const dirty_nodes = []
         const node = createNode({ text_content: 'Text' })
-        ;(renderer as any).engine = {
+        ;(renderer as any).layouter = {
             applyStyle() {},
             markDirty(target) {
                 dirty_nodes.push(target)
@@ -2150,7 +2150,7 @@ test('RendererWebGPU ignores text invalidation for unrelated styles and nodes wi
     const dirty_nodes = []
     const text_node = createNode({ text_content: 'Text' })
     const empty_node = createNode()
-    ;(renderer as any).engine = {
+    ;(renderer as any).layouter = {
         applyStyle() {},
         markDirty(target) {
             dirty_nodes.push(target)
@@ -2186,7 +2186,7 @@ test('RendererWebGPU recalculates rem text after the root size changes', () => {
     const dirty_nodes = []
     const calculations = []
     ;(renderer as any).root_node = root
-    ;(renderer as any).engine = {
+    ;(renderer as any).layouter = {
         applyStyle(target, style) {
             applied_styles.push({ target, style })
         },
@@ -2261,7 +2261,7 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     const dirty_nodes = []
     const read_applied_styles = () => applied_styles.map(({ style }) => style)
     ;(renderer as any).root_node = root
-    ;(renderer as any).engine = {
+    ;(renderer as any).layouter = {
         applyStyle(target, style) {
             applied_styles.push({ target, style })
         },
@@ -3438,7 +3438,7 @@ function createRenderer(image_manager = createImageManager(), font_manager = cre
         },
     })
     const device = createFakeDevice()
-    ;(renderer as any).engine = { applyStyle() {} }
+    ;(renderer as any).layouter = { applyStyle() {} }
     ;(renderer as any).grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
     ;(renderer as any).command_pool = new GpuPool({ device, usage: 0, stride: COMMAND_SIZE })
     ;(renderer as any).panel_data_pool = new GpuPool({ device, usage: 0, stride: PANEL_DATA_SIZE })
