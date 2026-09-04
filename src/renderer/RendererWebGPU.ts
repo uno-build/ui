@@ -14,6 +14,7 @@ import {
 } from './utils/render-metrics'
 import { placeGlyphs } from './utils/text-placement'
 import {
+    TEXT_MEASURE_STYLE_NAMES,
     constrainMeasuredSize,
     getTextFont,
     getTextFontSize,
@@ -39,16 +40,6 @@ import {
 import { writeCommandData, writeGlyphData, writePanelData, writeTextRunData } from './webgpu/writers'
 import { GpuPool } from './webgpu/GpuPool'
 import Segmenter from './pretext/segmenter'
-
-const FONT_COLOR = [0, 0, 0, 255]
-const TEXT_MEASURE_STYLE_NAMES = new Set([
-    STYLE.FONTFAMILY.name,
-    STYLE.FONTSIZE.name,
-    STYLE.LINEHEIGHT.name,
-    STYLE.LETTERSPACING.name,
-    STYLE.WHITESPACE.name,
-])
-const INHERITED_STYLE_NAMES = new Set([STYLE.OPACITY.name, STYLE.OVERFLOWX.name, STYLE.OVERFLOWY.name])
 
 export default class RendererWebGPU extends Renderer {
     private resources
@@ -273,7 +264,7 @@ export default class RendererWebGPU extends Renderer {
 
         for (const style of resolved_style.expanded) {
             this.updateResolvedStyle(node, style)
-            inherited ||= INHERITED_STYLE_NAMES.has(style.name)
+            inherited ||= [STYLE.OPACITY.name, STYLE.OVERFLOWX.name, STYLE.OVERFLOWY.name].includes(style.name)
         }
 
         if (inherited) {
@@ -282,7 +273,7 @@ export default class RendererWebGPU extends Renderer {
             this.markRecord(node, 'style')
         }
 
-        if (node.isTextNode() && TEXT_MEASURE_STYLE_NAMES.has(resolved_style.name)) {
+        if (node.isTextNode() && TEXT_MEASURE_STYLE_NAMES.includes(resolved_style.name)) {
             this.invalidateTextNode(node)
         }
     }
@@ -304,7 +295,7 @@ export default class RendererWebGPU extends Renderer {
                     }
 
                     this.updateResolvedStyle(node, { name, ...style })
-                    invalidate_text ||= TEXT_MEASURE_STYLE_NAMES.has(name)
+                    invalidate_text ||= TEXT_MEASURE_STYLE_NAMES.includes(name)
                 }
 
                 if (invalidate_text && node.isTextNode()) {
@@ -316,11 +307,6 @@ export default class RendererWebGPU extends Renderer {
         }
 
         this.layouter.calculate(this.viewport_width, this.viewport_height)
-    }
-
-    public afterUpdate(nodes) {
-        super.afterUpdate(nodes)
-        updateScrollMetrics(this.root_node, (node) => this.getNodeContentSize(node))
     }
 
     public update(nodes) {
@@ -365,9 +351,32 @@ export default class RendererWebGPU extends Renderer {
 
         this.updateBuffers()
 
-        if (full_rebuild !== null || structural || updated_nodes.length > 0) {
-            this.logUpdate(full_rebuild, ordered_nodes.length, updated_nodes, structural)
-        }
+        // if (full_rebuild !== null || structural || updated_nodes.length > 0) {
+        //     const bytes =
+        //         this.panel_data_pool.uploaded +
+        //         this.glyph_data_pool.uploaded +
+        //         this.text_run_pool.uploaded +
+        //         this.command_pool.uploaded
+        //     console.log('[RendererWebGPU] update', {
+        //         structural,
+        //         mode: full_rebuild === null ? 'partial' : `full (${full_rebuild})`,
+        //         kb: `${(bytes / 1024).toFixed(1)}kb`,
+        //         nodes: ordered_nodes.length,
+        //         updated: updated_nodes,
+        //         commands: this.command_count,
+        //         bytes: {
+        //             panel: this.panel_data_pool.uploaded,
+        //             glyph: this.glyph_data_pool.uploaded,
+        //             run: this.text_run_pool.uploaded,
+        //             command: this.command_pool.uploaded,
+        //         },
+        //     })
+        // }
+    }
+
+    public afterUpdate(nodes) {
+        super.afterUpdate(nodes)
+        updateScrollMetrics(this.root_node, (node) => this.getNodeContentSize(node))
     }
 
     public draw({ submit = true, command_encoder, texture_view, load_op = 'load' } = {}) {
@@ -406,28 +415,6 @@ export default class RendererWebGPU extends Renderer {
         }
 
         return { command_encoder, texture_view }
-    }
-
-    private logUpdate(full_rebuild, node_count, updated_nodes, structural) {
-        const bytes =
-            this.panel_data_pool.uploaded +
-            this.glyph_data_pool.uploaded +
-            this.text_run_pool.uploaded +
-            this.command_pool.uploaded
-        console.log('[RendererWebGPU] update', {
-            structural,
-            mode: full_rebuild === null ? 'partial' : `full (${full_rebuild})`,
-            kb: `${(bytes / 1024).toFixed(1)}kb`,
-            nodes: node_count,
-            updated: updated_nodes,
-            commands: this.command_count,
-            bytes: {
-                panel: this.panel_data_pool.uploaded,
-                glyph: this.glyph_data_pool.uploaded,
-                run: this.text_run_pool.uploaded,
-                command: this.command_pool.uploaded,
-            },
-        })
     }
 
     private createBindGroup() {
@@ -738,7 +725,7 @@ export default class RendererWebGPU extends Renderer {
         return {
             glyphs,
             run: {
-                color: node.styles.color?.parsed.rgba ?? FONT_COLOR,
+                color: node.styles.color?.parsed.rgba ?? [0, 0, 0, 255],
                 font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.resources.font_atlas_size],
                 clipping,
                 text_shadow: [...text_shadow_data, 0],

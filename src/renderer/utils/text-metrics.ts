@@ -1,5 +1,14 @@
+import { STYLE } from '../../style'
 import { KEYWORD, MEASURE_MODE, ROOT_SIZE, UNIT, WHITE_SPACE } from '../../style/consts'
 import { layoutWithLines } from '../pretext/layout'
+
+export const TEXT_MEASURE_STYLE_NAMES = [
+    STYLE.FONTFAMILY.name,
+    STYLE.FONTSIZE.name,
+    STYLE.LINEHEIGHT.name,
+    STYLE.LETTERSPACING.name,
+    STYLE.WHITESPACE.name,
+]
 
 export function getTextFont(node, font_manager) {
     const font_family_style = node.styles.fontFamily
