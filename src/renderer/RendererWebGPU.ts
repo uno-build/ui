@@ -1,42 +1,36 @@
 import Renderer from '../core/Renderer'
 import { computeStyleValue, STYLE } from '../style'
-import {
-    ROOT_SIZE,
-    DISPLAY,
-    EDGE,
-    FLEX_DIRECTION,
-    KEYWORD,
-    OVERFLOW,
-    TEXT_ALIGN,
-    WHITE_SPACE,
-    UNIT,
-    MEASURE_MODE,
-} from '../style/consts'
+import { ROOT_SIZE, DISPLAY, EDGE, TEXT_ALIGN, WHITE_SPACE, MEASURE_MODE } from '../style/consts'
 import createYogaLayouter from '../layouter/yoga'
 import {
     FEATURES,
+    collectPanelData,
     getAncestorClipping,
-    getBackgroundImageRect,
+    getMainAxisOverflow,
     getNodeBorderWidth,
-    getNodeDrawingData,
     getNodeOpacity,
     getNodeRenderLayout,
-    readBackgroundImageMode,
     updateScrollMetrics,
 } from './utils/render-metrics'
 import { placeGlyphs } from './utils/text-placement'
-import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
-import { createUIWGSL } from './webgpu/shaders/'
+import {
+    constrainMeasuredSize,
+    getTextFont,
+    getTextFontSize,
+    getTextLayout,
+    getTextLineHeight,
+    getTextNaturalLineHeight,
+    getTextRasterMetrics,
+    getTextWhiteSpace,
+    measureGlyphAdvances,
+} from './utils/text-metrics'
+import { createCommands, createRecord, isSameLayout } from './utils/render-records'
+import { measureLineStats, prepareWithSegments } from './pretext/layout'
+import { createPipeline } from './webgpu/pipeline'
 import {
     VIEWPORT_SIZE,
     POSITION_VERTEX_COUNT,
-    POSITION_VERTEX_SIZE,
     POSITION_VERTICES,
-    COMMAND_KIND_PANEL,
-    COMMAND_KIND_GLYPH,
-    COMMAND_KIND_TEXT_SHADOW,
-    COMMAND_KIND_TEXT_STROKE,
-    COMMAND,
     COMMAND_SIZE,
     PANEL_DATA_SIZE,
     GLYPH_DATA_SIZE,
@@ -134,7 +128,7 @@ export default class RendererWebGPU extends Renderer {
             stride: TEXT_RUN_SIZE,
         })
         this.resources.device.queue.writeBuffer(this.position_buffer, 0, POSITION_VERTICES)
-        this.pipeline = this.createPipeline()
+        this.pipeline = createPipeline(this.resources.device, this.resources.format)
         this.image_sampler = this.resources.device.createSampler({
             minFilter: this.image_min_filter,
             magFilter: this.image_mag_filter,
@@ -239,13 +233,13 @@ export default class RendererWebGPU extends Renderer {
         let measured_height = 0
 
         if (node.hasTextContent()) {
-            const font = this.getTextFont(node)
+            const font = getTextFont(node, this.resources.font_manager)
             if (font !== undefined) {
-                const font_size = this.getTextFontSize(node)
-                const natural_line_height = this.getTextNaturalLineHeight(font, font_size)
-                const line_height = this.getTextLineHeight(node, natural_line_height, font_size)
+                const font_size = getTextFontSize(node, this.computeStyle)
+                const natural_line_height = getTextNaturalLineHeight(font, font_size)
+                const line_height = getTextLineHeight(node, natural_line_height, font_size, this.computeStyle)
                 const max_width =
-                    this.getTextWhiteSpace(node) === WHITE_SPACE.nowrap || width_mode === MEASURE_MODE.UNDEFINED
+                    getTextWhiteSpace(node) === WHITE_SPACE.nowrap || width_mode === MEASURE_MODE.UNDEFINED
                         ? Infinity
                         : available_width
                 const text_layout = measureLineStats(this.getPreparedText(node, font, font_size), max_width)
@@ -290,137 +284,6 @@ export default class RendererWebGPU extends Renderer {
 
         if (node.isTextNode() && TEXT_MEASURE_STYLE_NAMES.has(resolved_style.name)) {
             this.invalidateTextNode(node)
-        }
-    }
-
-    private createPipeline() {
-        const shader_module = this.resources.device.createShaderModule({
-            code: createUIWGSL(),
-        })
-
-        return this.resources.device.createRenderPipeline({
-            layout: 'auto',
-            vertex: {
-                module: shader_module,
-                entryPoint: 'vertexMain',
-                buffers: [
-                    {
-                        arrayStride: POSITION_VERTEX_SIZE,
-                        attributes: [
-                            {
-                                shaderLocation: 0,
-                                offset: 0,
-                                format: 'float32x2',
-                            },
-                        ],
-                    },
-                    {
-                        arrayStride: COMMAND_SIZE,
-                        stepMode: 'instance',
-                        attributes: [
-                            {
-                                shaderLocation: COMMAND.KIND_DATA.LOCATION,
-                                offset: COMMAND.KIND_DATA.OFFSET,
-                                format: COMMAND.KIND_DATA.FORMAT,
-                            },
-                        ],
-                    },
-                ],
-            },
-            fragment: {
-                module: shader_module,
-                entryPoint: 'fragmentMain',
-                targets: [
-                    {
-                        format: this.resources.format,
-                        blend: {
-                            color: {
-                                srcFactor: 'src-alpha',
-                                dstFactor: 'one-minus-src-alpha',
-                                operation: 'add',
-                            },
-                            alpha: {
-                                srcFactor: 'one',
-                                dstFactor: 'one-minus-src-alpha',
-                                operation: 'add',
-                            },
-                        },
-                    },
-                ],
-            },
-            primitive: {
-                topology: 'triangle-list',
-            },
-        })
-    }
-
-    private createBindGroup() {
-        const bind_group = this.resources.device.createBindGroup({
-            layout: this.pipeline.getBindGroupLayout(0),
-            entries: [
-                {
-                    binding: 0,
-                    resource: {
-                        buffer: this.viewport_buffer,
-                    },
-                },
-                {
-                    binding: 1,
-                    resource: this.image_sampler,
-                },
-                {
-                    binding: 2,
-                    resource: this.image_manager.getTextureView(),
-                },
-                {
-                    binding: 3,
-                    resource: this.resources.font_manager.getTextureView(),
-                },
-                {
-                    binding: 4,
-                    resource: {
-                        buffer: this.panel_data_pool.buffer,
-                    },
-                },
-                {
-                    binding: 5,
-                    resource: {
-                        buffer: this.glyph_data_pool.buffer,
-                    },
-                },
-                {
-                    binding: 6,
-                    resource: {
-                        buffer: this.text_run_pool.buffer,
-                    },
-                },
-            ],
-        })
-
-        this.image_texture_version = this.image_manager.texture_version
-        this.font_texture_version = this.resources.font_manager.texture_version
-
-        return bind_group
-    }
-
-    private updateResolvedStyle(node, style) {
-        this.layouter.applyStyle(node, this.computeStyle(style))
-
-        if (
-            style.name === STYLE.OVERFLOWX.name ||
-            style.name === STYLE.OVERFLOWY.name ||
-            style.name === STYLE.FLEXDIRECTION.name
-        ) {
-            const flex_direction = node.styles.flexDirection?.parsed.enum ?? FLEX_DIRECTION.row
-            const overflow =
-                flex_direction === FLEX_DIRECTION.column || flex_direction === FLEX_DIRECTION['column-reverse']
-                    ? (node.styles.overflowY?.parsed.enum ?? OVERFLOW.visible)
-                    : (node.styles.overflowX?.parsed.enum ?? OVERFLOW.visible)
-
-            this.layouter.applyStyle(node, {
-                name: STYLE.OVERFLOW.name,
-                parsed: { enum: overflow },
-            })
         }
     }
 
@@ -495,7 +358,7 @@ export default class RendererWebGPU extends Renderer {
         const structural = this.structural
         if (structural) {
             this.structural = false
-            const commands = this.createCommands(ordered_nodes)
+            const commands = createCommands(ordered_nodes, this.records)
             this.command_count = commands.length
             this.command_pool.fill(commands, writeCommandData)
         }
@@ -505,28 +368,6 @@ export default class RendererWebGPU extends Renderer {
         if (full_rebuild !== null || structural || updated_nodes.length > 0) {
             this.logUpdate(full_rebuild, ordered_nodes.length, updated_nodes, structural)
         }
-    }
-
-    private logUpdate(full_rebuild, node_count, updated_nodes, structural) {
-        const bytes =
-            this.panel_data_pool.uploaded +
-            this.glyph_data_pool.uploaded +
-            this.text_run_pool.uploaded +
-            this.command_pool.uploaded
-        console.log('[RendererWebGPU] update', {
-            structural,
-            mode: full_rebuild === null ? 'partial' : `full (${full_rebuild})`,
-            kb: `${(bytes / 1024).toFixed(1)}kb`,
-            nodes: node_count,
-            updated: updated_nodes,
-            commands: this.command_count,
-            bytes: {
-                panel: this.panel_data_pool.uploaded,
-                glyph: this.glyph_data_pool.uploaded,
-                run: this.text_run_pool.uploaded,
-                command: this.command_pool.uploaded,
-            },
-        })
     }
 
     public draw({ submit = true, command_encoder, texture_view, load_op = 'load' } = {}) {
@@ -565,6 +406,92 @@ export default class RendererWebGPU extends Renderer {
         }
 
         return { command_encoder, texture_view }
+    }
+
+    private logUpdate(full_rebuild, node_count, updated_nodes, structural) {
+        const bytes =
+            this.panel_data_pool.uploaded +
+            this.glyph_data_pool.uploaded +
+            this.text_run_pool.uploaded +
+            this.command_pool.uploaded
+        console.log('[RendererWebGPU] update', {
+            structural,
+            mode: full_rebuild === null ? 'partial' : `full (${full_rebuild})`,
+            kb: `${(bytes / 1024).toFixed(1)}kb`,
+            nodes: node_count,
+            updated: updated_nodes,
+            commands: this.command_count,
+            bytes: {
+                panel: this.panel_data_pool.uploaded,
+                glyph: this.glyph_data_pool.uploaded,
+                run: this.text_run_pool.uploaded,
+                command: this.command_pool.uploaded,
+            },
+        })
+    }
+
+    private createBindGroup() {
+        const bind_group = this.resources.device.createBindGroup({
+            layout: this.pipeline.getBindGroupLayout(0),
+            entries: [
+                {
+                    binding: 0,
+                    resource: {
+                        buffer: this.viewport_buffer,
+                    },
+                },
+                {
+                    binding: 1,
+                    resource: this.image_sampler,
+                },
+                {
+                    binding: 2,
+                    resource: this.image_manager.getTextureView(),
+                },
+                {
+                    binding: 3,
+                    resource: this.resources.font_manager.getTextureView(),
+                },
+                {
+                    binding: 4,
+                    resource: {
+                        buffer: this.panel_data_pool.buffer,
+                    },
+                },
+                {
+                    binding: 5,
+                    resource: {
+                        buffer: this.glyph_data_pool.buffer,
+                    },
+                },
+                {
+                    binding: 6,
+                    resource: {
+                        buffer: this.text_run_pool.buffer,
+                    },
+                },
+            ],
+        })
+
+        this.image_texture_version = this.image_manager.texture_version
+        this.font_texture_version = this.resources.font_manager.texture_version
+
+        return bind_group
+    }
+
+    private updateResolvedStyle(node, style) {
+        this.layouter.applyStyle(node, this.computeStyle(style))
+
+        if (
+            style.name === STYLE.OVERFLOWX.name ||
+            style.name === STYLE.OVERFLOWY.name ||
+            style.name === STYLE.FLEXDIRECTION.name
+        ) {
+            this.layouter.applyStyle(node, {
+                name: STYLE.OVERFLOW.name,
+                parsed: { enum: getMainAxisOverflow(node) },
+            })
+        }
     }
 
     private getNodeContentSize(node) {
@@ -609,7 +536,7 @@ export default class RendererWebGPU extends Renderer {
         const previous_has_text_shadow = record.has_text_shadow
         const previous_text_stroke_width = record.text_stroke_width
 
-        const panel_data = this.collectPanelData(node)
+        const panel_data = collectPanelData(node, this.image_manager, this.computeStyle)
         if (panel_data === null) {
             this.releasePanel(record)
         } else {
@@ -679,121 +606,10 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
-    private getTextLayout(record, prepared_text, layout_width, line_height) {
-        if (
-            record.prepared_text !== prepared_text ||
-            record.layout_width !== layout_width ||
-            record.line_height !== line_height
-        ) {
-            record.prepared_text = prepared_text
-            record.layout_width = layout_width
-            record.line_height = line_height
-            record.text_layout = layoutWithLines(prepared_text, layout_width, line_height)
-        }
-
-        return record.text_layout
-    }
-
-    private collectPanelData(node) {
-        const drawing_data = getNodeDrawingData(node, this.computeStyle)
-        if (drawing_data === null) {
-            return null
-        }
-
-        const panel_data = {
-            ...drawing_data,
-            background_image_mode: 0,
-            background_uv_rect: [0, 0, 1, 1],
-            background_image_rect: [0, 0, 0, 0],
-            background_atlas_layer: 0,
-        }
-
-        const atlas_image = FEATURES.background_image
-            ? this.image_manager.getImage(node.styles.backgroundImage?.value)
-            : undefined
-        if (atlas_image !== undefined) {
-            panel_data.background_image_mode = readBackgroundImageMode(node)
-            panel_data.background_uv_rect = atlas_image.uv_rect
-            panel_data.background_image_rect = getBackgroundImageRect(
-                node,
-                atlas_image.image_size,
-                this.computeStyle,
-                panel_data.border_widths,
-            )
-            panel_data.background_atlas_layer = atlas_image.layer
-        }
-
-        return panel_data
-    }
-
-    private createCommands(nodes) {
-        const commands = []
-
-        for (const node of nodes) {
-            const { panel_slot, glyph_start, glyph_count, has_text_shadow, text_stroke_width } = this.records.get(node)
-            if (panel_slot !== -1) {
-                commands.push({
-                    kind: COMMAND_KIND_PANEL,
-                    panel_index: panel_slot,
-                    glyph_index: 0,
-                })
-            }
-
-            if (has_text_shadow) {
-                for (let index = 0; index < glyph_count; index++) {
-                    commands.push({
-                        kind: COMMAND_KIND_TEXT_SHADOW,
-                        panel_index: 0,
-                        glyph_index: glyph_start + index,
-                        text_stroke_width,
-                    })
-                }
-            }
-
-            if (text_stroke_width > 0) {
-                for (let index = 0; index < glyph_count; index++) {
-                    commands.push({
-                        kind: COMMAND_KIND_TEXT_STROKE,
-                        panel_index: 0,
-                        glyph_index: glyph_start + index,
-                        text_stroke_width,
-                    })
-                }
-            }
-
-            for (let index = 0; index < glyph_count; index++) {
-                commands.push({
-                    kind: COMMAND_KIND_GLYPH,
-                    panel_index: 0,
-                    glyph_index: glyph_start + index,
-                })
-            }
-        }
-
-        return commands
-    }
-
     private getRecord(node) {
         let record = this.records.get(node)
         if (record === undefined) {
-            record = {
-                dirty: 'new',
-                order: node.order,
-                layout: node.layout,
-                scroll_left: node.scrollLeft,
-                scroll_top: node.scrollTop,
-                panel_slot: -1,
-                run_slot: -1,
-                glyph_start: 0,
-                glyph_count: 0,
-                glyph_capacity: 0,
-                has_text_shadow: false,
-                text_stroke_width: 0,
-                prepared_text: undefined,
-                layout_width: 0,
-                line_height: 0,
-                text_layout: undefined,
-            }
+            record = createRecord(node)
             this.records.set(node, record)
             this.structural = true
         }
@@ -841,8 +657,8 @@ export default class RendererWebGPU extends Renderer {
             return null
         }
 
-        const font = this.getTextFont(node)
-        const font_size = this.getTextFontSize(node)
+        const font = getTextFont(node, this.resources.font_manager)
+        const font_size = getTextFontSize(node, this.computeStyle)
 
         if (font === undefined) {
             return null
@@ -874,15 +690,15 @@ export default class RendererWebGPU extends Renderer {
         }
 
         const clipping = clip === null ? [0, 0, 0, 0] : [y + clip.top, x + clip.right, y + clip.bottom, x + clip.left]
-        const natural_line_height = this.getTextNaturalLineHeight(font, font_size)
-        const line_height = this.getTextLineHeight(node, natural_line_height, font_size)
-        const raster_metrics = this.getTextRasterMetrics(font, font_size)
+        const natural_line_height = getTextNaturalLineHeight(font, font_size)
+        const line_height = getTextLineHeight(node, natural_line_height, font_size, this.computeStyle)
+        const raster_metrics = getTextRasterMetrics(font, font_size, this.device_pixel_ratio)
         const leading = line_height - raster_metrics.ascender - raster_metrics.descender
         const prepared_text = this.getPreparedText(node, font, font_size)
-        const layout_width = this.getTextWhiteSpace(node) === WHITE_SPACE.nowrap ? Infinity : content_width
-        const text_layout = this.getTextLayout(record, prepared_text, layout_width, line_height)
+        const layout_width = getTextWhiteSpace(node) === WHITE_SPACE.nowrap ? Infinity : content_width
+        const text_layout = getTextLayout(record, prepared_text, layout_width, line_height)
         const text_align = node.styles.textAlign?.parsed.enum ?? TEXT_ALIGN.left
-        const space_advance = this.measureGlyphAdvances(font, font_size, ' ')
+        const space_advance = measureGlyphAdvances(font, font_size, ' ')
         const text_shadow = FEATURES.text_shadow
             ? this.computeStyle(node.styles.textShadow)?.parsed.text_shadow
             : undefined
@@ -935,80 +751,19 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
-    private getTextFont(node) {
-        const font_family_style = node.styles.fontFamily
-        const font_family = font_family_style?.parsed.kind === KEYWORD.UNSET ? undefined : font_family_style?.value
-        const font =
-            font_family === undefined
-                ? this.resources.font_manager.getDefaultFont()
-                : this.resources.font_manager.getFont(font_family)
-
-        if (font === undefined && font_family !== undefined) {
-            throw new Error(`Font "${font_family}" is not registered.`)
-        }
-
-        return font
-    }
-
-    private getTextFontSize(node) {
-        return this.computeStyle(node.styles.fontSize)?.parsed.value ?? ROOT_SIZE
-    }
-
-    private getTextNaturalLineHeight(font, font_size) {
-        return font.metrics.lineHeight * font_size
-    }
-
-    private getTextRasterMetrics(font, font_size) {
-        return {
-            ascender: roundToDevicePixel(font.metrics.ascender * font_size, this.device_pixel_ratio),
-            descender: roundToDevicePixel(-font.metrics.descender * font_size, this.device_pixel_ratio),
-        }
-    }
-
-    private getTextLineHeight(node, natural_line_height, font_size) {
-        const line_height_style = this.computeStyle(node.styles.lineHeight)
-
-        if (line_height_style === undefined || line_height_style.parsed.kind === KEYWORD.UNSET) {
-            return natural_line_height
-        }
-
-        if (line_height_style.parsed.kind === UNIT.PX) {
-            return line_height_style.parsed.value
-        }
-
-        return line_height_style.parsed.value * font_size
-    }
-
-    private getTextWhiteSpace(node) {
-        return node.styles.whiteSpace?.parsed.enum ?? WHITE_SPACE['pre-wrap']
-    }
-
     private getPreparedText(node, font, font_size) {
         let prepared_text = this.prepared_texts.get(node)
 
         if (prepared_text === undefined) {
             prepared_text = prepareWithSegments(node.text_content, {
-                measure: (text) => this.measureGlyphAdvances(font, font_size, text),
-                whiteSpace: this.getTextWhiteSpace(node) === WHITE_SPACE['pre-wrap'] ? 'pre-wrap' : 'normal',
+                measure: (text) => measureGlyphAdvances(font, font_size, text),
+                whiteSpace: getTextWhiteSpace(node) === WHITE_SPACE['pre-wrap'] ? 'pre-wrap' : 'normal',
                 letterSpacing: this.computeStyle(node.styles.letterSpacing)?.parsed.value ?? 0,
             })
             this.prepared_texts.set(node, prepared_text)
         }
 
         return prepared_text
-    }
-
-    private measureGlyphAdvances(font, font_size, text) {
-        let width = 0
-
-        for (const character of text) {
-            const glyph = font.glyphs_by_unicode.get(character.codePointAt(0))
-            if (glyph !== undefined) {
-                width += glyph.advance * font_size
-            }
-        }
-
-        return width
     }
 
     private updateBuffers() {
@@ -1027,35 +782,4 @@ export default class RendererWebGPU extends Renderer {
             new Float32Array([this.viewport_width, this.viewport_height, this.device_pixel_ratio, 0]),
         )
     }
-}
-
-function roundToDevicePixel(value, device_pixel_ratio) {
-    return Math.round(value * device_pixel_ratio) / device_pixel_ratio
-}
-
-function constrainMeasuredSize(measured_size, available_size, measure_mode) {
-    if (measure_mode === MEASURE_MODE.EXACTLY) {
-        return available_size
-    }
-
-    if (measure_mode === MEASURE_MODE.AT_MOST) {
-        return Math.min(measured_size, available_size)
-    }
-
-    return measured_size
-}
-
-function isSameLayout(a, b) {
-    return (
-        a.x === b.x &&
-        a.y === b.y &&
-        a.width === b.width &&
-        a.height === b.height &&
-        isSameEdges(a.padding, b.padding) &&
-        isSameEdges(a.border, b.border)
-    )
-}
-
-function isSameEdges(a, b) {
-    return a.top === b.top && a.right === b.right && a.bottom === b.bottom && a.left === b.left
 }

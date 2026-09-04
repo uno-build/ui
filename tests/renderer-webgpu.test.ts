@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
+import { createCommands } from '../src/renderer/utils/render-records.ts'
 import Segmenter from '../src/renderer/pretext/segmenter.ts'
 import { resolveStyle, validateStyle } from '../src/style/index.ts'
 import {
@@ -3426,7 +3427,7 @@ function collectRenderData(renderer, nodes) {
         }
     }
 
-    return { commands: (renderer as any).createCommands(nodes), panels, glyphs, text_runs }
+    return { commands: createCommands(nodes, (renderer as any).records), panels, glyphs, text_runs }
 }
 
 function createRenderer(image_manager = createImageManager(), font_manager = createFontManager()) {

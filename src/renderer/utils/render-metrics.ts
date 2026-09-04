@@ -1,4 +1,12 @@
-import { BACKGROUND_REPEAT, BACKGROUND_SIZE, DISPLAY, KEYWORD, OVERFLOW, UNIT } from '../../style/consts'
+import {
+    BACKGROUND_REPEAT,
+    BACKGROUND_SIZE,
+    DISPLAY,
+    FLEX_DIRECTION,
+    KEYWORD,
+    OVERFLOW,
+    UNIT,
+} from '../../style/consts'
 import { TRANSPARENT_COLOR } from '../webgpu/buffers'
 
 const EMPTY_BOX_SHADOW = [0, 0, 0, 0]
@@ -392,4 +400,44 @@ function readBackgroundPosition(style, background_size, image_size) {
 
 export function readBackgroundImageMode(node) {
     return 1 + (node.styles.backgroundRepeat?.parsed.enum ?? BACKGROUND_REPEAT['no-repeat'])
+}
+
+export function getMainAxisOverflow(node) {
+    const flex_direction = node.styles.flexDirection?.parsed.enum ?? FLEX_DIRECTION.row
+
+    return flex_direction === FLEX_DIRECTION.column || flex_direction === FLEX_DIRECTION['column-reverse']
+        ? (node.styles.overflowY?.parsed.enum ?? OVERFLOW.visible)
+        : (node.styles.overflowX?.parsed.enum ?? OVERFLOW.visible)
+}
+
+export function collectPanelData(node, image_manager, computeStyle) {
+    const drawing_data = getNodeDrawingData(node, computeStyle)
+    if (drawing_data === null) {
+        return null
+    }
+
+    const panel_data = {
+        ...drawing_data,
+        background_image_mode: 0,
+        background_uv_rect: [0, 0, 1, 1],
+        background_image_rect: [0, 0, 0, 0],
+        background_atlas_layer: 0,
+    }
+
+    const atlas_image = FEATURES.background_image
+        ? image_manager.getImage(node.styles.backgroundImage?.value)
+        : undefined
+    if (atlas_image !== undefined) {
+        panel_data.background_image_mode = readBackgroundImageMode(node)
+        panel_data.background_uv_rect = atlas_image.uv_rect
+        panel_data.background_image_rect = getBackgroundImageRect(
+            node,
+            atlas_image.image_size,
+            computeStyle,
+            panel_data.border_widths,
+        )
+        panel_data.background_atlas_layer = atlas_image.layer
+    }
+
+    return panel_data
 }
