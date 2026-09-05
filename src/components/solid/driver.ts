@@ -12,6 +12,7 @@ const TYPES = Object.values(TYPE)
 const TEXT_NODES = new WeakSet()
 const EVENT_TYPES = new WeakMap()
 const PENDING_UIS = new Set()
+const DETACHED_NODES = new Set()
 
 const {
     render,
@@ -69,8 +70,11 @@ const {
         parent.add(node, anchor)
         enqueueUpdate(parent.ui)
     },
+    // Moving a node is a removal followed by an insertion in the same pass, so the node is only
+    // destroyed once the update settles and it is still out of the tree.
     removeNode(parent, node) {
-        node.destroy()
+        node.detach()
+        DETACHED_NODES.add(node)
         enqueueUpdate(parent.ui)
     },
     getParentNode(node) {
@@ -201,6 +205,14 @@ function enqueueUpdate(ui) {
     runWithOwner(null, () =>
         onSettled(() => {
             PENDING_UIS.delete(ui)
+
+            for (const node of DETACHED_NODES) {
+                if (node.parent === null) {
+                    node.destroy()
+                }
+            }
+            DETACHED_NODES.clear()
+
             ui.update()
         }),
     )
