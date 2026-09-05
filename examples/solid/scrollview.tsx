@@ -2,7 +2,7 @@ import { registerRootComponent, Image, ScrollView, Text, View } from 'uno-ui/sol
 import { For } from 'solid-js'
 import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
-const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
+const TITLE_FONT_FAMILY = 'Nougat-ExtraBlack'
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const LOGO_SRC = 'assets/images/logo.jpg'
 const TEXTURE_SRC = 'assets/images/texture.jpg'
@@ -39,7 +39,7 @@ const ITEMS = [
 const PAGE_STYLE = {
     width: '100%',
     height: '100%',
-    backgroundColor: '#0b0e14',
+    backgroundColor: '#f2f3f5',
 }
 const PAGE_CONTENT_STYLE = {
     flexDirection: 'column',
@@ -58,22 +58,21 @@ const BADGE_STYLE = {
     height: '58px',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#141a24',
-    border: '1px solid #232c3a',
-    borderRadius: '18px',
+    backgroundColor: '#fdf3dc',
+    border: '2px solid #1c1c1c',
+    borderRadius: '20px',
 }
 const PAGE_TITLE_STYLE = {
     fontFamily: TITLE_FONT_FAMILY,
     fontSize: '30px',
-    color: '#ffffff',
+    color: '#1b1b1b',
     letterSpacing: '0.5px',
-    textShadow: '0px 3px 0px #00000066',
 }
 const PAGE_SUBTITLE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '13px',
     lineHeight: '18px',
-    color: '#7d8ba0',
+    color: '#9a9aa4',
 }
 const PANELS_STYLE = {
     flexDirection: 'row',
@@ -82,10 +81,10 @@ const PANELS_STYLE = {
 const PANEL_STYLE = {
     width: '480px',
     height: '560px',
-    backgroundColor: '#141a24',
-    border: '1px solid #232c3a',
-    borderRadius: '24px',
-    boxShadow: '0px 24px 50px -12px #000000cc',
+    backgroundColor: '#ffffff',
+    border: '2px solid #1c1c1c',
+    borderRadius: '28px',
+    boxShadow: '0px 18px 40px -14px #1b1b1b33',
 }
 const PANEL_CONTENT_STYLE = {
     flexDirection: 'column',
@@ -101,31 +100,31 @@ const HERO_STYLE = {
 const PANEL_TITLE_STYLE = {
     fontFamily: TITLE_FONT_FAMILY,
     fontSize: '22px',
-    color: '#e9f0fb',
+    color: '#1b1b1b',
     letterSpacing: '0.4px',
 }
 const LABEL_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '11px',
     letterSpacing: '1.6px',
-    color: '#7c8aa0',
+    color: '#9a9aa4',
 }
 const TEXT_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '14px',
     lineHeight: '22px',
-    color: '#9fb0c6',
+    color: '#3a3a42',
     textAlign: 'justify',
 }
 const DIVIDER_STYLE = {
     height: '1px',
-    backgroundColor: '#222b39',
+    backgroundColor: '#ececef',
 }
 const GALLERY_STYLE = {
     width: '100%',
     height: '150px',
-    backgroundColor: '#0d121b',
-    border: '1px solid #253044',
+    backgroundColor: '#f7f7f9',
+    border: '1px solid #e6e6ec',
     borderRadius: '18px',
 }
 const GALLERY_CONTENT_STYLE = {
@@ -142,8 +141,8 @@ const GALLERY_IMAGE_STYLE = {
 const ENTRIES_STYLE = {
     width: '100%',
     height: '290px',
-    backgroundColor: '#0d121b',
-    border: '1px solid #253044',
+    backgroundColor: '#f7f7f9',
+    border: '1px solid #e6e6ec',
     borderRadius: '18px',
 }
 const ENTRIES_CONTENT_STYLE = {
@@ -155,8 +154,8 @@ const ENTRY_STYLE = {
     flexDirection: 'row',
     gap: '12px',
     padding: '12px',
-    backgroundColor: '#141c28',
-    border: '1px solid #222e40',
+    backgroundColor: '#ffffff',
+    border: '1px solid #1c1c1c',
     borderRadius: '14px',
 }
 const ENTRY_THUMB_STYLE = {
@@ -173,22 +172,22 @@ const ENTRY_TEXTS_STYLE = {
 const ENTRY_TITLE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '14px',
-    color: '#8ef7c8',
+    color: '#1b1b1b',
     letterSpacing: '0.3px',
 }
 const ENTRY_BODY_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
     lineHeight: '18px',
-    color: '#7d8ba0',
+    color: '#9a9aa4',
 }
 const STRIP_STYLE = {
     width: '988px',
     height: '250px',
-    backgroundColor: '#141a24',
-    border: '1px solid #232c3a',
-    borderRadius: '24px',
-    boxShadow: '0px 24px 50px -12px #000000cc',
+    backgroundColor: '#ffffff',
+    border: '2px solid #1c1c1c',
+    borderRadius: '28px',
+    boxShadow: '0px 18px 40px -14px #1b1b1b33',
 }
 const STRIP_CONTENT_STYLE = {
     padding: '20px',
@@ -207,8 +206,8 @@ const CARD_STYLE = {
     flexDirection: 'column',
     gap: '10px',
     padding: '12px',
-    backgroundColor: '#0d121b',
-    border: '1px solid #253044',
+    backgroundColor: '#f7f7f9',
+    border: '1px solid #1c1c1c',
     borderRadius: '18px',
 }
 const CARD_IMAGE_STYLE = {
@@ -220,18 +219,18 @@ const CARD_IMAGE_STYLE = {
 const CARD_TITLE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '13px',
-    color: '#e9f0fb',
+    color: '#1b1b1b',
 }
 const CARD_PRICE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
     letterSpacing: '0.4px',
-    color: '#ffd76a',
+    color: '#4fae7f',
 }
 const FOOTER_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
-    color: '#4c8dff',
+    color: '#8f83ea',
 }
 
 export function SolidScrollView() {

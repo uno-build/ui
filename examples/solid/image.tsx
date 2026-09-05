@@ -8,7 +8,7 @@ const PAGE_STYLE = {
     height: '100%',
     padding: '32px',
     gap: '24px',
-    backgroundColor: '#0b0e14',
+    backgroundColor: '#f2f3f5',
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignContent: 'flex-start',
@@ -19,18 +19,18 @@ const IMAGE_CARD_STYLE = {
     height: '330px',
     padding: '20px',
     gap: '14px',
-    backgroundColor: '#141a24',
-    border: '1px solid #232c3a',
-    borderRadius: '24px',
-    boxShadow: '0px 24px 50px -12px #000000cc',
+    backgroundColor: '#ffffff',
+    border: '2px solid #1c1c1c',
+    borderRadius: '28px',
+    boxShadow: '0px 18px 40px -14px #1b1b1b33',
     flexDirection: 'column',
 }
 const IMAGE_STAGE_STYLE = {
     flex: '1',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0d121b',
-    border: '1px solid #253044',
+    backgroundColor: '#f7f7f9',
+    border: '1px solid #e6e6ec',
     borderRadius: '18px',
 }
 const IMAGE_LABEL_STYLE = {
@@ -38,7 +38,7 @@ const IMAGE_LABEL_STYLE = {
     fontSize: '13px',
     lineHeight: '18px',
     letterSpacing: '0.3px',
-    color: '#9fb0c6',
+    color: '#9a9aa4',
 }
 
 export function SolidImage() {

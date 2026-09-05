@@ -2,9 +2,8 @@ import { createSignal, onSettled } from 'solid-js'
 import { registerRootComponent, View, Text, Image, Input } from 'uno-ui/solid'
 import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
-const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
+const TITLE_FONT_FAMILY = 'Nougat-ExtraBlack'
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
-const GAME_FONT_FAMILY = 'Nougat-ExtraBlack'
 const COIN_SRC = 'assets/images/coin.png'
 const MAX_LENGTHS = {
     nickname: 16,
@@ -17,7 +16,7 @@ const PAGE_STYLE = {
     width: '100%',
     height: '100%',
     padding: '32px',
-    backgroundColor: '#0b0e14',
+    backgroundColor: '#f2f3f5',
     alignItems: 'center',
     justifyContent: 'center',
 }
@@ -26,10 +25,10 @@ const CARD_STYLE = {
     flexDirection: 'column',
     gap: '22px',
     padding: '30px',
-    backgroundColor: '#141a24',
-    border: '1px solid #232c3a',
-    borderRadius: '24px',
-    boxShadow: '0px 24px 50px -12px #000000cc',
+    backgroundColor: '#ffffff',
+    border: '2px solid #1c1c1c',
+    borderRadius: '28px',
+    boxShadow: '0px 18px 40px -14px #1b1b1b33',
 }
 const HEADER_STYLE = {
     flexDirection: 'row',
@@ -41,9 +40,9 @@ const BADGE_STYLE = {
     height: '64px',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1b2432',
-    border: '1px solid #2c3849',
-    borderRadius: '20px',
+    backgroundColor: '#fdf3dc',
+    border: '2px solid #1c1c1c',
+    borderRadius: '22px',
 }
 const HEADER_TEXTS_STYLE = {
     flex: '1',
@@ -53,19 +52,18 @@ const HEADER_TEXTS_STYLE = {
 const TITLE_STYLE = {
     fontFamily: TITLE_FONT_FAMILY,
     fontSize: '30px',
-    color: '#ffffff',
+    color: '#1b1b1b',
     letterSpacing: '0.5px',
-    textShadow: '0px 3px 0px #00000066',
 }
 const SUBTITLE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '13px',
     lineHeight: '18px',
-    color: '#7d8ba0',
+    color: '#9a9aa4',
 }
 const DIVIDER_STYLE = {
     height: '1px',
-    backgroundColor: '#222b39',
+    backgroundColor: '#ececef',
 }
 const ROW_STYLE = {
     flexDirection: 'row',
@@ -89,64 +87,64 @@ const LABEL_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '11px',
     letterSpacing: '1.6px',
-    color: '#7c8aa0',
+    color: '#9a9aa4',
 }
 const NICKNAME_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
-    color: '#e9f0fb',
+    color: '#1b1b1b',
     letterSpacing: '0.3px',
-    backgroundColor: '#0d121b',
-    border: '2px solid #253044',
-    borderRadius: '12px',
-    padding: '10px 14px',
+    backgroundColor: '#ffffff',
+    border: '2px solid #dedee4',
+    borderRadius: '14px',
+    padding: '12px 16px',
 }
 const NICKNAME_FOCUS_STYLE = {
-    border: '2px solid #4c8dff',
-    boxShadow: '0px 0px 0px 4px #4c8dff2e',
+    border: '2px solid #1c1c1c',
+    boxShadow: '0px 0px 0px 4px #c3bcf566',
 }
 const CLAN_STYLE = {
-    fontFamily: GAME_FONT_FAMILY,
-    color: '#ffd76a',
+    fontFamily: TITLE_FONT_FAMILY,
+    color: '#ffffff',
     letterSpacing: '3px',
     textAlign: 'center',
-    textStroke: '1px #4a2f00',
-    textShadow: '0px 2px 0px #00000073',
-    backgroundColor: '#2a2114',
-    border: '2px solid #6d5220',
+    textStroke: '1px #1c1c1c',
+    textShadow: '0px 2px 0px #1b1b1b33',
+    backgroundColor: '#f8d38a',
+    border: '2px solid #1c1c1c',
     borderRadius: '14px',
-    padding: '10px 14px',
+    padding: '12px 16px',
 }
 const CLAN_FOCUS_STYLE = {
-    border: '2px solid #ffb020',
-    boxShadow: '0px 0px 0px 4px #ffb0202e',
+    border: '2px solid #1c1c1c',
+    boxShadow: '0px 0px 0px 4px #f8d38a66',
 }
 const CODE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
-    color: '#ff9f7d',
+    color: '#c96f72',
     letterSpacing: '8px',
     textAlign: 'center',
-    backgroundColor: '#1c1116',
-    border: '2px solid #40242c',
-    borderRadius: '12px',
-    padding: '10px 14px',
+    backgroundColor: '#fff1f1',
+    border: '2px solid #f6d4d4',
+    borderRadius: '14px',
+    padding: '12px 16px',
 }
 const CODE_FOCUS_STYLE = {
-    border: '2px solid #ff6b6b',
-    boxShadow: '0px 0px 0px 4px #ff6b6b2e',
+    border: '2px solid #1c1c1c',
+    boxShadow: '0px 0px 0px 4px #ff6b6b66',
 }
 const CRY_STYLE = {
     fontFamily: TITLE_FONT_FAMILY,
-    color: '#8ef7c8',
+    color: '#1b1b1b',
     letterSpacing: '0.5px',
     lineHeight: '22px',
-    backgroundColor: '#0c1a16',
-    border: '2px solid #1f4c3f',
+    backgroundColor: '#f4f1ff',
+    border: '2px solid #8f83ea',
     borderRadius: '999px',
-    padding: '10px 20px',
+    padding: '12px 20px',
 }
 const CRY_FOCUS_STYLE = {
-    border: '2px solid #3ddc9a',
-    boxShadow: '0px 0px 0px 4px #3ddc9a2e',
+    border: '2px solid #1c1c1c',
+    boxShadow: '0px 0px 0px 4px #c3bcf566',
 }
 const FOOTER_STYLE = {
     flexDirection: 'row',
@@ -156,12 +154,12 @@ const FOOTER_STYLE = {
 const STATUS_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
-    color: '#6d7b90',
+    color: '#9a9aa4',
 }
 const TAPS_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
-    color: '#4c8dff',
+    color: '#8f83ea',
 }
 
 export function SolidInput() {
@@ -220,7 +218,7 @@ export function SolidInput() {
                         }}
                         value={values().nickname}
                         placeholder="Player one"
-                        placeholderTextColor="#4e5a6e"
+                        placeholderTextColor="#a8a8b2"
                         onFocus={(event) => handleFocus('nickname', event)}
                         onBlur={handleBlur}
                     />
@@ -234,7 +232,7 @@ export function SolidInput() {
                             style={{ ...CLAN_STYLE, ...(focused() === 'clan' && CLAN_FOCUS_STYLE) }}
                             value={values().clan}
                             placeholder="UNO"
-                            placeholderTextColor="#8a6a2f"
+                            placeholderTextColor="#fdf3dc"
                             onFocus={(event) => handleFocus('clan', event)}
                             onBlur={handleBlur}
                         />
@@ -250,7 +248,7 @@ export function SolidInput() {
                             }}
                             value={values().code.replace(/./g, '•').trim()}
                             placeholder="000000"
-                            placeholderTextColor="#6b3f42"
+                            placeholderTextColor="#cf9a9a"
                             onFocus={(event) => handleFocus('code', event)}
                             onBlur={handleBlur}
                         />
@@ -264,7 +262,7 @@ export function SolidInput() {
                         style={{ ...CRY_STYLE, ...(focused() === 'cry' && CRY_FOCUS_STYLE) }}
                         value={values().cry}
                         placeholder="For glory and coins!"
-                        placeholderTextColor="#3f6b5d"
+                        placeholderTextColor="#a8a8b2"
                         onFocus={(event) => handleFocus('cry', event)}
                         onBlur={handleBlur}
                     />
@@ -312,25 +310,12 @@ export default function createSolidInput({ ui, resources }) {
         loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
         loadImage(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
         loadJson(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
-        loadImage(`/assets/fonts/${GAME_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${GAME_FONT_FAMILY}.mtsdf.json`),
-    ]).then(
-        ([
-            coin,
-            text_font_image,
-            text_font_json,
-            title_font_image,
-            title_font_json,
-            game_font_image,
-            game_font_json,
-        ]) => {
-            resources.registerImage(COIN_SRC, coin)
-            resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
-            resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
-            resources.registerFont(GAME_FONT_FAMILY, game_font_image, game_font_json)
+    ]).then(([coin, text_font_image, text_font_json, title_font_image, title_font_json]) => {
+        resources.registerImage(COIN_SRC, coin)
+        resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
+        resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
 
-            const renderer = registerRootComponent(SolidInput, { ui })
-            renderer.render({})
-        },
-    )
+        const renderer = registerRootComponent(SolidInput, { ui })
+        renderer.render({})
+    })
 }

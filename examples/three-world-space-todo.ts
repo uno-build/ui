@@ -43,7 +43,7 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIThree, lo
         texture_height: texture_height,
         world_width: WORLD_WIDTH,
         world_height: WORLD_HEIGHT,
-        createMaterial: () => new THREE.MeshPhongNodeMaterial(),
+        createMaterial: () => new THREE.MeshBasicNodeMaterial(),
     })
     const three_renderer = new THREE.WebGPURenderer({
         canvas,
@@ -103,25 +103,11 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIThree, lo
 
     plane.position.set(0, PANEL_Y, 0)
     plane.material.side = THREE.DoubleSide
-    // Diffuse light multiplies the albedo, so on a dark UI it does nothing visible. The specular term
-    // is additive, so it is what actually shows the light — kept dark and broad to not wash the text out.
-    plane.material.specular = new THREE.Color(0x333c4d)
-    plane.material.shininess = 20
     scene.add(plane)
 
     const floor = new THREE.GridHelper(20, 20, 0x475569, 0x263244)
     floor.position.y = FLOOR_Y
     scene.add(floor)
-
-    // White on both hemispheres is an irradiance floor of 1: the UI keeps its authored colors and
-    // every other light can only add on top of it, never darken it.
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xffffff, 1))
-    const light = new THREE.DirectionalLight(0xffffff, 0.1)
-    light.position.set(3, 5, 4)
-    scene.add(light)
-    const accent_light = new THREE.PointLight(0x60a5fa, 2, 3)
-    accent_light.position.set(plane.position.x - 0.5, plane.position.y + 0.5, 2)
-    scene.add(accent_light)
 
     registerRootComponent(OctaneTodo, { ui }).render({ backgroundColor: 'unset', boxShadow: 'unset' })
 
