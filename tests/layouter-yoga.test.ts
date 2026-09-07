@@ -131,6 +131,25 @@ test('Yoga layouter resolves root percentages against the available size', async
     expect(layouter.getLayout(root).height).toBe(600)
 })
 
+test('Yoga layouter reports whether its tree needs layout', async () => {
+    const layouter = await createYogaLayouter({ loadYoga })
+    const root = createNode(0)
+
+    layouter.createNode(root)
+    expect(layouter.isDirty()).toBe(true)
+
+    layouter.calculate()
+    expect(layouter.isDirty()).toBe(false)
+
+    applyStyle(layouter, root, 'backgroundColor', '#123')
+    expect(layouter.isDirty()).toBe(false)
+
+    applyStyle(layouter, root, 'width', '100px')
+    expect(layouter.isDirty()).toBe(true)
+
+    layouter.destroy([root])
+})
+
 function createNode(id, parent = null) {
     return {
         id,

@@ -1,6 +1,6 @@
 import { resolveStyle, validateStyle } from '../style'
 import { EVENT } from '../events/const'
-import { OPERATIONS } from './UI'
+import { OPERATIONS } from './operations'
 
 export default class Node {
     public ui
@@ -202,7 +202,7 @@ export default class Node {
                         parsed: style.parsed,
                     }
                 }
-                this.ui.operations.add({ op: OPERATIONS.STYLE, node: this, style: resolved_style })
+                this.ui.operations.push({ op: OPERATIONS.STYLE, node: this, style: resolved_style })
             }
         }
     }
@@ -223,13 +223,13 @@ export default class Node {
 
             this.text_content = value
             this.ui.renderer.invalidateTextNode(this)
-            this.ui.operations.add({ op: OPERATIONS.TEXT, node: this, value })
+            this.ui.operations.push({ op: OPERATIONS.TEXT, node: this, value })
             return
         }
 
         this.text_content = value
         this.ui.renderer.initializeTextNode(this)
-        this.ui.operations.add({ op: OPERATIONS.TEXT, node: this, value })
+        this.ui.operations.push({ op: OPERATIONS.TEXT, node: this, value })
     }
 
     public isTextNode() {
@@ -245,8 +245,10 @@ export default class Node {
     }
 
     public set scrollTop(value) {
-        this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'top', value })
-        this.scroll_top = value
+        if (this.ui !== null && this.scroll_top !== value) {
+            this.scroll_top = value
+            this.ui.operations.push({ op: OPERATIONS.SCROLL, node: this, direction: 'top', value })
+        }
     }
 
     public get scrollLeft() {
@@ -254,8 +256,10 @@ export default class Node {
     }
 
     public set scrollLeft(value) {
-        this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'left', value })
-        this.scroll_left = value
+        if (this.ui !== null && this.scroll_left !== value) {
+            this.scroll_left = value
+            this.ui.operations.push({ op: OPERATIONS.SCROLL, node: this, direction: 'left', value })
+        }
     }
 
     public get scrollHeight() {
@@ -263,7 +267,6 @@ export default class Node {
     }
 
     public set scrollHeight(value) {
-        this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'height', value })
         this.scroll_height = value
     }
 
@@ -272,7 +275,6 @@ export default class Node {
     }
 
     public set scrollWidth(value) {
-        this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'width', value })
         this.scroll_width = value
     }
 }

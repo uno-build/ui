@@ -117,24 +117,24 @@ test('Node compares shorthand styles by their expanded values', async () => {
         paddingBottom: { value: '20px', parsed: { value: 20, kind: 'px' } },
         paddingLeft: { value: '20px', parsed: { value: 20, kind: 'px' } },
     })
-    expect((renderer as any).pending_styles).toHaveLength(1)
+    expect((ui as any).operations).toHaveLength(1)
 
     node.style('padding', '20px')
 
-    expect((renderer as any).pending_styles).toHaveLength(1)
+    expect((ui as any).operations).toHaveLength(1)
 
     node.style('paddingTop', '10px')
     node.style('padding', '20px')
 
     expect(node.styles.paddingTop.value).toBe('20px')
-    expect((renderer as any).pending_styles).toHaveLength(3)
+    expect((ui as any).operations).toHaveLength(3)
 
     node.style('padding', ' 20PX ')
 
-    expect((renderer as any).pending_styles).toHaveLength(3)
+    expect((ui as any).operations).toHaveLength(3)
 })
 
-test('Node stores pointerEvents and adds it to the pending renderer styles', async () => {
+test('Node stores pointerEvents and adds a style operation', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
     const node = ui.create()
@@ -145,7 +145,7 @@ test('Node stores pointerEvents and adds it to the pending renderer styles', asy
         value: 'none',
         parsed: { enum: 1 },
     })
-    expect((renderer as any).pending_styles).toHaveLength(1)
+    expect((ui as any).operations).toHaveLength(1)
 
     node.style('pointerEvents', 'unset')
 
@@ -153,7 +153,7 @@ test('Node stores pointerEvents and adds it to the pending renderer styles', asy
         value: 'unset',
         parsed: { kind: 'unset' },
     })
-    expect((renderer as any).pending_styles).toHaveLength(2)
+    expect((ui as any).operations).toHaveLength(2)
 })
 
 test('UI destroy releases attached and detached nodes once', async () => {
@@ -189,7 +189,7 @@ test('UI destroy releases attached and detached nodes once', async () => {
     expect(ui.resources).toBe(null)
     expect((ui as any).nodes).toEqual([])
     expect((ui as any).nodes_created.size).toBe(0)
-    expect((renderer as any).pending_styles).toEqual([])
+    expect((ui as any).operations).toEqual([])
 
     for (const node of [root, parent, child, detached]) {
         expect(node.ui).toBe(null)
@@ -381,7 +381,7 @@ test('Node detach preserves and reinserts a subtree', async () => {
     expect(child.parent).toBe(parent)
     expect(child.children).toEqual([grandchild])
     expect(grandchild.parent).toBe(child)
-    expect((renderer as any).pending_styles).toHaveLength(1)
+    expect((ui as any).operations.filter(({ op }) => op === 'style')).toHaveLength(1)
 
     ui.root.add(parent)
 
@@ -537,7 +537,7 @@ test('Node add and remove throw for invalid tree operations', async () => {
     }).toThrow(/child not found/)
 })
 
-test('Node remove discards pending styles', async () => {
+test('Node remove ignores style operations for destroyed nodes', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
 
@@ -554,6 +554,20 @@ test('Node remove discards pending styles', async () => {
     }).not.toThrow()
     expect([...ui.nodes]).toEqual([])
     expect(child.element).toBe(null)
+})
+
+test('UI applies styles to detached nodes before they become active', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const child = ui.create()
+
+    child.style('width', '120px')
+    ui.update()
+
+    ui.root.add(child)
+    ui.update()
+
+    expect(child.layout.width).toBe(120)
 })
 
 test('Node text stores, replaces, and clears text content', async () => {
@@ -743,6 +757,80 @@ test('UI forwards viewport changes to the renderer', async () => {
     ui.setViewport(320, 180)
 
     expect(viewports).toEqual([[320, 180]])
+})
+
+test('UI does not enqueue unchanged renderer settings or scroll positions', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const node = ui.create()
+
+    ui.setDevicePixelRatio(2)
+    ui.setViewport(320, 180)
+    ui.setRootSize(20)
+    node.scrollTop = 10
+    node.scrollLeft = 20
+    ui.update()
+
+    ui.setDevicePixelRatio(2)
+    ui.setViewport(320, 180)
+    ui.setRootSize(20)
+    node.scrollTop = 10
+    node.scrollLeft = 20
+
+    expect((ui as any).operations).toEqual([])
+})
+
+test('UI updates when the renderer reports an external operation', async () => {
+    const renderer = new TestRenderer()
+    let pending = true
+    let update_count = 0
+    renderer.getPendingOperations = () => (pending ? [{ op: 'resources' }] : [])
+    renderer.update = () => {
+        pending = false
+        update_count++
+    }
+
+    const ui = await TestUI.create({ renderer })
+    ui.update()
+    ui.update()
+
+    expect(update_count).toBe(1)
+})
+
+test('UI keeps operations queued during the current update', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    renderer.update = () => {
+        ui.root.style('height', '20px')
+    }
+
+    ui.root.style('width', '10px')
+    ui.update()
+
+    expect((ui as any).operations.map(({ style }) => style.name)).toEqual(['height'])
+
+    renderer.update = () => {}
+    ui.update()
+
+    expect((ui as any).operations).toEqual([])
+    expect(ui.root.layout).toMatchObject({ width: 10, height: 20 })
+})
+
+test('UI includes only changed layouts in the update plan', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const update_plans = []
+    renderer.update = (_nodes, update_plan) => {
+        update_plans.push(update_plan)
+    }
+
+    ui.root.style('width', '10px')
+    ui.update()
+
+    ui.root.style('backgroundColor', '#123')
+    ui.update()
+
+    expect([...update_plans[0].layout_nodes]).toEqual([ui.root])
+    expect([...update_plans[1].layout_nodes]).toEqual([])
 })
 
 test('ResourcesWebGPU image api delegates to the image manager', () => {

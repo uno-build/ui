@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
+import { OPERATIONS } from '../src/core/operations.ts'
 import { createCommands } from '../src/renderer/utils/render-records.ts'
 import Segmenter from '../src/renderer/pretext/segmenter.ts'
 import { resolveStyle, validateStyle } from '../src/style/index.ts'
@@ -110,8 +111,6 @@ test('RendererWebGPU destroy releases UI buffers without disposing shared resour
             destroyed_layouter_nodes = next_nodes
         },
     }
-    ;(renderer as any).pending_styles.push({})
-
     renderer.destroy(nodes)
 
     expect(destroyed_layouter_nodes).toBe(nodes)
@@ -120,7 +119,6 @@ test('RendererWebGPU destroy releases UI buffers without disposing shared resour
     expect(font_manager_dispose_count).toBe(0)
     expect(image_manager.getTextureView()).toEqual({ id: 'atlas-view' })
     expect(font_manager.getTextureView()).toEqual({ id: 'font-view' })
-    expect((renderer as any).pending_styles).toEqual([])
     expect((renderer as any).resources).toBe(null)
 })
 
@@ -1624,10 +1622,26 @@ test('RendererWebGPU writes the explicit viewport and device pixel ratio into th
     ;(renderer as any).viewport_buffer = { id: 'viewport' }
     renderer.setDevicePixelRatio(2)
     renderer.setViewport(320, 180)
-    ;(renderer as any).updateBuffers()
+    ;(renderer as any).updateBuffers(true)
 
     expect(writes).toHaveLength(1)
     expect(Array.from(writes[0].data)).toEqual([320, 180, 2, 0])
+})
+
+test('RendererWebGPU skips the viewport uniform for unrelated updates', () => {
+    const writes = []
+    const renderer = createRenderer()
+    ;(renderer as any).resources.device = {
+        queue: {
+            writeBuffer(buffer, offset, data) {
+                writes.push({ buffer, offset, data })
+            },
+        },
+    }
+    ;(renderer as any).viewport_buffer = { id: 'viewport' }
+    ;(renderer as any).updateBuffers(false)
+
+    expect(writes).toEqual([])
 })
 
 test('text shader shares RGBA sampling and MSDF fill coverage with text effects', () => {
@@ -2123,7 +2137,7 @@ const TEXT_MEASURE_STYLES = [
 ]
 
 for (const [style_name, style_value] of TEXT_MEASURE_STYLES) {
-    test(`RendererWebGPU invalidates ${style_name} text measurement during update`, () => {
+    test(`RendererWebGPU invalidates ${style_name} text measurement when applying its operation`, () => {
         const renderer = createRenderer()
         const dirty_nodes = []
         const node = createNode({ text_content: 'Text' })
@@ -2133,14 +2147,13 @@ for (const [style_name, style_value] of TEXT_MEASURE_STYLES) {
                 dirty_nodes.push(target)
             },
             calculate() {},
+            isDirty() {
+                return dirty_nodes.length > 0
+            },
         }
 
         const normalized_name = validateStyle(style_name, style_value)
-        renderer.addPendingStyle(node, resolveStyle(normalized_name, style_value))
-
-        expect(dirty_nodes).toEqual([])
-
-        renderer.beforeUpdate([node])
+        renderer.updateStyle(node, resolveStyle(normalized_name, style_value))
 
         expect(dirty_nodes).toEqual([node])
     })
@@ -2157,13 +2170,162 @@ test('RendererWebGPU ignores text invalidation for unrelated styles and nodes wi
             dirty_nodes.push(target)
         },
         calculate() {},
+        isDirty() {
+            return dirty_nodes.length > 0
+        },
     }
 
-    renderer.addPendingStyle(text_node, resolveStyle('backgroundColor', '#123'))
-    renderer.addPendingStyle(empty_node, resolveStyle('fontSize', '20px'))
-    renderer.beforeUpdate([text_node, empty_node])
+    renderer.updateStyle(text_node, resolveStyle('backgroundColor', '#123'))
+    renderer.updateStyle(empty_node, resolveStyle('fontSize', '20px'))
 
     expect(dirty_nodes).toEqual([])
+})
+
+test('RendererWebGPU skips Yoga for render-only style operations', () => {
+    const renderer = createRenderer()
+    const node = createNode()
+    const calculations = []
+    ;(renderer as any).layouter = {
+        applyStyle() {},
+        isDirty() {
+            return false
+        },
+        calculate(width, height) {
+            calculations.push([width, height])
+        },
+    }
+
+    const operation = {
+        op: OPERATIONS.STYLE,
+        node,
+        style: resolveStyle('backgroundColor', '#123'),
+    }
+    renderer.updateStyle(node, operation.style)
+    const update_plan = { layout: renderer.prepareLayout([operation], new Set([node])) }
+    renderer.beforeUpdate([node], update_plan)
+
+    expect(update_plan.layout).toBe(false)
+    expect(calculations).toEqual([])
+})
+
+test('RendererWebGPU targets one record for a render-only style operation', () => {
+    const renderer = createRenderer()
+    const root = createNode()
+    const node = createNode({ parent: root })
+    root.children.push(node)
+    ;(renderer as any).root_node = root
+    const operation = {
+        op: OPERATIONS.STYLE,
+        node,
+        style: resolveStyle('backgroundColor', '#123'),
+    }
+    const update_plan = {
+        operations: [operation],
+        layout_nodes: new Set(),
+        scroll_nodes: new Set(),
+        painting_order: false,
+    }
+    const render_plan = (renderer as any).createRenderPlan([node], update_plan)
+
+    expect([...render_plan.record_nodes]).toEqual([node])
+    expect(render_plan.rebuild_commands).toBe(false)
+    expect(render_plan.update_viewport).toBe(false)
+
+    const updated_nodes = []
+    const command_rebuilds = []
+    const viewport_updates = []
+    ;(renderer as any).updateRecord = (target) => {
+        updated_nodes.push(target)
+        return { structural: false }
+    }
+    ;(renderer as any).command_pool.fill = (...args) => command_rebuilds.push(args)
+    ;(renderer as any).updateBuffers = (update_viewport) => viewport_updates.push(update_viewport)
+
+    renderer.update([node], update_plan)
+
+    expect(updated_nodes).toEqual([node])
+    expect(command_rebuilds).toEqual([])
+    expect(viewport_updates).toEqual([false])
+})
+
+test('RendererWebGPU rebuilds only commands for zIndex operations', () => {
+    const renderer = createRenderer()
+    const root = createNode()
+    const node = createNode({ parent: root })
+    root.children.push(node)
+    ;(renderer as any).root_node = root
+    ;(renderer as any).records.set(root, {})
+    ;(renderer as any).records.set(node, {})
+
+    const render_plan = (renderer as any).createRenderPlan([node], {
+        operations: [
+            {
+                op: OPERATIONS.STYLE,
+                node,
+                style: resolveStyle('zIndex', '1'),
+            },
+        ],
+        layout_nodes: new Set(),
+        scroll_nodes: new Set(),
+        painting_order: true,
+    })
+
+    expect([...render_plan.record_nodes]).toEqual([])
+    expect(render_plan.rebuild_commands).toBe(true)
+    expect(render_plan.update_viewport).toBe(false)
+})
+
+test('RendererWebGPU expands inherited style and scroll damage through subtrees', () => {
+    const renderer = createRenderer()
+    const root = createNode()
+    const parent = createNode({ parent: root })
+    const child = createNode({ parent })
+    root.children.push(parent)
+    parent.children.push(child)
+    ;(renderer as any).root_node = root
+    const update_plan = {
+        layout_nodes: new Set(),
+        scroll_nodes: new Set(),
+        painting_order: false,
+    }
+
+    const opacity_plan = (renderer as any).createRenderPlan([parent, child], {
+        ...update_plan,
+        operations: [
+            {
+                op: OPERATIONS.STYLE,
+                node: parent,
+                style: resolveStyle('opacity', '0.5'),
+            },
+        ],
+    })
+    const scroll_plan = (renderer as any).createRenderPlan([parent, child], {
+        ...update_plan,
+        operations: [{ op: OPERATIONS.SCROLL, node: parent }],
+    })
+
+    expect([...opacity_plan.record_nodes]).toEqual([parent, child])
+    expect([...scroll_plan.record_nodes]).toEqual([child])
+})
+
+test('RendererWebGPU creates missing records before rebuilding commands', () => {
+    const renderer = createRenderer()
+    const root = createNode()
+    const node = createNode({ parent: root })
+    root.children.push(node)
+    ;(renderer as any).root_node = root
+    ;(renderer as any).updateBuffers = () => {}
+
+    renderer.update([node], {
+        operations: [{ op: OPERATIONS.ADD, parent: root, node, child_index: 0 }],
+        layout_nodes: new Set(),
+        scroll_nodes: new Set(),
+        painting_order: true,
+    })
+
+    expect((renderer as any).records.has(root)).toBe(true)
+    expect((renderer as any).records.has(node)).toBe(true)
+    expect((renderer as any).command_count).toBe(2)
 })
 
 test('RendererWebGPU recalculates rem text after the root size changes', () => {
@@ -3709,10 +3871,34 @@ function createNode({
         },
         parent,
         children: [],
-        scrollTop: 0,
-        scrollLeft: 0,
-        scrollHeight: 0,
-        scrollWidth: 0,
+        scroll_top: 0,
+        scroll_left: 0,
+        scroll_height: 0,
+        scroll_width: 0,
+        get scrollTop() {
+            return this.scroll_top
+        },
+        set scrollTop(value) {
+            this.scroll_top = value
+        },
+        get scrollLeft() {
+            return this.scroll_left
+        },
+        set scrollLeft(value) {
+            this.scroll_left = value
+        },
+        get scrollHeight() {
+            return this.scroll_height
+        },
+        set scrollHeight(value) {
+            this.scroll_height = value
+        },
+        get scrollWidth() {
+            return this.scroll_width
+        },
+        set scrollWidth(value) {
+            this.scroll_width = value
+        },
         clientHeight: 0,
         clientWidth: 0,
         text_content,

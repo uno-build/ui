@@ -2,7 +2,16 @@ import { expect, test } from '@playwright/test'
 import Resources from '../src/core/Resources.ts'
 import RendererDom from '../src/renderer/RendererDom.ts'
 import ResourcesDom from '../src/renderer/dom/ResourcesDom.ts'
+import { isSameLayout } from '../src/layouter/utils.ts'
 import Style from '../src/style'
+
+test('layout comparison supports DOM layouts without padding', () => {
+    const border = { top: 0, right: 0, bottom: 0, left: 0 }
+    const layout = { x: 0, y: 0, width: 100, height: 50, border }
+
+    expect(isSameLayout(layout, { ...layout, border: { ...border } })).toBe(true)
+    expect(isSameLayout(layout, { ...layout, border: { ...border, left: 1 } })).toBe(false)
+})
 
 test('RendererDom sets the document root font size', () => {
     const document_element = { style: {} }
@@ -320,10 +329,28 @@ test('RendererDom layout remains in content coordinates while the parent is scro
 function createNode(id) {
     return {
         id,
-        scrollLeft: 0,
-        scrollTop: 0,
-        scrollWidth: 0,
-        scrollHeight: 0,
+        scroll_left: 0,
+        scroll_top: 0,
+        scroll_width: 0,
+        scroll_height: 0,
+        get scrollLeft() {
+            return this.scroll_left
+        },
+        set scrollLeft(value) {
+            this.scroll_left = value
+        },
+        get scrollTop() {
+            return this.scroll_top
+        },
+        set scrollTop(value) {
+            this.scroll_top = value
+        },
+        get scrollWidth() {
+            return this.scroll_width
+        },
+        get scrollHeight() {
+            return this.scroll_height
+        },
         clientWidth: 0,
         clientHeight: 0,
         hasTextContent() {

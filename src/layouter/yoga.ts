@@ -113,6 +113,10 @@ export default async function createYogaLayouter({ loadYoga } = {}) {
             getElement(node).markDirty()
         },
 
+        isDirty() {
+            return root_element.isDirty()
+        },
+
         calculate,
 
         update(width?, height?) {

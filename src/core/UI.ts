@@ -1,17 +1,10 @@
 import Node from './Node'
 import EventEmitter from './EventEmitter'
 import { isNodeAtPoint, sortPaintingOrder } from '../utils/nodes'
+import { isSameLayout } from '../layouter/utils'
+import { OPERATIONS } from './operations'
 
-export const OPERATIONS = {
-    ADD: 'add',
-    REMOVE: 'remove',
-    STYLE: 'style',
-    TEXT: 'text',
-    SCROLL: 'scroll',
-    VIEWPORT: 'viewport',
-    ROOT_SIZE: 'root_size',
-    PIXEL_RATIO: 'pixel_ratio',
-}
+export { OPERATIONS } from './operations'
 
 export default class UI {
     public root = null
@@ -20,11 +13,15 @@ export default class UI {
     public defined_events = []
     public events
     public events_source
-    protected operations = new Set()
+    protected operations = []
     private nodes = []
     private nodes_created = new Set()
     private next_node_id = 0
     private destroyed = false
+    private device_pixel_ratio
+    private viewport_width
+    private viewport_height
+    private root_size
 
     protected constructor({ renderer, resources = null, defined_events = [] }) {
         this.renderer = renderer
@@ -55,33 +52,47 @@ export default class UI {
     }
 
     public update() {
-        // console.log(
-        //     '------update',
-        //     Array.from(this.operations).map((op) => op.op),
-        // )
+        if (!this.destroyed) {
+            const operations = this.operations.slice()
+            const operation_count = operations.length
+            operations.push(...this.renderer.getPendingOperations())
+            if (operations.length === 0) {
+                return
+            }
 
-        if (!this.destroyed && this.operations.size > 0) {
-            this.nodes.sort(sortPaintingOrder)
+            const update_plan = this.createUpdatePlan(operations)
+            if (update_plan.painting_order) {
+                this.nodes.sort(sortPaintingOrder)
+            }
 
-            for (const { op, node, style } of this.operations) {
-                if (op === OPERATIONS.STYLE && this.nodes.includes(node)) {
-                    this.renderer.updateStyle(node, style)
+            this.renderer.beforeUpdate(this.nodes, update_plan)
+            if (update_plan.layout) {
+                const root_layout = this.renderer.getLayout(this.root)
+                if (!isSameLayout(this.root.layout, root_layout)) {
+                    update_plan.layout_nodes.add(this.root)
+                }
+                this.root.layout = root_layout
+
+                for (let i = 0; i < this.nodes.length; i++) {
+                    const node = this.nodes[i]
+                    const layout = this.renderer.getLayout(node)
+                    if (!isSameLayout(node.layout, layout)) {
+                        update_plan.layout_nodes.add(node)
+                    }
+                    node.layout = layout
+                    node.order = i
+                }
+            } else if (update_plan.painting_order) {
+                for (let i = 0; i < this.nodes.length; i++) {
+                    this.nodes[i].order = i
                 }
             }
 
-            this.renderer.beforeUpdate(this.nodes)
-            this.root.layout = this.renderer.getLayout(this.root)
+            this.renderer.afterUpdate(this.nodes, update_plan)
+            const output = this.renderer.update(this.nodes, update_plan)
+            this.operations.splice(0, operation_count)
 
-            for (let i = 0; i < this.nodes.length; i++) {
-                const node = this.nodes[i]
-                node.layout = this.renderer.getLayout(node)
-                node.order = i
-            }
-
-            this.renderer.afterUpdate(this.nodes)
-            this.operations.clear()
-
-            return this.renderer.update(this.nodes)
+            return output
         }
     }
 
@@ -92,23 +103,54 @@ export default class UI {
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
-        if (!this.destroyed) {
-            this.operations.add({ op: OPERATIONS.PIXEL_RATIO })
-            this.renderer.setDevicePixelRatio(device_pixel_ratio)
+        if (!this.destroyed && this.device_pixel_ratio !== device_pixel_ratio) {
+            const changed = this.renderer.setDevicePixelRatio(device_pixel_ratio)
+            this.device_pixel_ratio = device_pixel_ratio
+            if (changed !== false) {
+                this.operations.push({ op: OPERATIONS.PIXEL_RATIO, value: device_pixel_ratio })
+            }
         }
     }
 
     public setViewport(width, height) {
-        if (!this.destroyed) {
-            this.operations.add({ op: OPERATIONS.VIEWPORT })
-            this.renderer.setViewport(width, height)
+        if (!this.destroyed && (this.viewport_width !== width || this.viewport_height !== height)) {
+            const changed = this.renderer.setViewport(width, height)
+            this.viewport_width = width
+            this.viewport_height = height
+            if (changed !== false) {
+                this.operations.push({ op: OPERATIONS.VIEWPORT, width, height })
+            }
         }
     }
 
     public setRootSize(root_size) {
-        if (!this.destroyed) {
-            this.operations.add({ op: OPERATIONS.ROOT_SIZE })
-            this.renderer.setRootSize(root_size)
+        if (!this.destroyed && this.root_size !== root_size) {
+            const changed = this.renderer.setRootSize(root_size)
+            this.root_size = root_size
+            if (changed !== false) {
+                this.operations.push({ op: OPERATIONS.ROOT_SIZE, value: root_size })
+            }
+        }
+    }
+
+    private createUpdatePlan(operations) {
+        for (const { op, node, style } of operations) {
+            if (op === OPERATIONS.STYLE && node.ui !== null) {
+                this.renderer.updateStyle(node, style)
+            }
+        }
+
+        return {
+            operations,
+            layout: this.renderer.prepareLayout(operations, this.nodes_created),
+            layout_nodes: new Set(),
+            scroll_nodes: new Set(),
+            painting_order: operations.some(
+                ({ op, style }) =>
+                    op === OPERATIONS.ADD ||
+                    op === OPERATIONS.REMOVE ||
+                    (op === OPERATIONS.STYLE && style.expanded.some(({ name }) => name === 'zIndex')),
+            ),
         }
     }
 
@@ -128,7 +170,7 @@ export default class UI {
                 this.releaseNode(node)
             }
 
-            this.operations.clear()
+            this.operations.length = 0
             this.nodes_created.clear()
             this.nodes.length = 0
             this.root = null
@@ -180,8 +222,6 @@ export default class UI {
             ancestor = ancestor.parent
         }
 
-        this.operations.add({ op: OPERATIONS.ADD })
-
         const parent_is_active = parent === this.root || this.nodes.includes(parent)
         child.parent = parent
         parent.children.splice(child_index, 0, child)
@@ -192,6 +232,7 @@ export default class UI {
             }
         }
         this.renderer.addChild(parent, child, child_index)
+        this.operations.push({ op: OPERATIONS.ADD, parent, node: child, child_index })
     }
 
     private updateNodePath(node, path, activate = false) {
@@ -212,8 +253,6 @@ export default class UI {
             return
         }
 
-        this.operations.add({ op: OPERATIONS.REMOVE })
-
         const detached_nodes = []
         const collectNodes = (current) => {
             detached_nodes.push(current)
@@ -231,6 +270,7 @@ export default class UI {
         }
         this.renderer.detachChild(parent, node)
         node.parent = null
+        this.operations.push({ op: OPERATIONS.REMOVE, parent, node })
     }
 
     private destroyNode(node) {
@@ -248,6 +288,17 @@ export default class UI {
             this.renderer.detachChild(node, child)
             child.parent = null
             this.destroySubtree(child)
+        }
+
+        for (let i = this.operations.length - 1; i >= 0; i--) {
+            const operation = this.operations[i]
+            if (
+                operation.node === node &&
+                operation.op !== OPERATIONS.ADD &&
+                operation.op !== OPERATIONS.REMOVE
+            ) {
+                this.operations.splice(i, 1)
+            }
         }
 
         this.defined_events.forEach((defined_event) => defined_event.destroyNode?.(node))

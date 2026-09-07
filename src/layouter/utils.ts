@@ -34,3 +34,26 @@ export function calculateLayoutRect(node_rect, parent_rect) {
         centerY,
     }
 }
+
+export function isSameLayout(a, b) {
+    return (
+        a.x === b.x &&
+        a.y === b.y &&
+        a.width === b.width &&
+        a.height === b.height &&
+        isSameEdges(a.padding, b.padding) &&
+        isSameEdges(a.border, b.border)
+    )
+}
+
+function isSameEdges(a, b) {
+    return (
+        a === b ||
+        (a !== undefined &&
+            b !== undefined &&
+            a.top === b.top &&
+            a.right === b.right &&
+            a.bottom === b.bottom &&
+            a.left === b.left)
+    )
+}

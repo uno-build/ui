@@ -13,6 +13,14 @@ export default abstract class Renderer {
         this.insertChild(parent, node, child_index)
     }
 
+    public getPendingOperations() {
+        return []
+    }
+
+    public prepareLayout() {
+        return true
+    }
+
     public beforeUpdate() {}
 
     public afterUpdate() {}
@@ -30,6 +38,6 @@ export default abstract class Renderer {
     public abstract detachChild(parent, node)
     public abstract destroyNode(node)
 
-    protected abstract updateStyle(node, style)
+    public abstract updateStyle(node, style)
     protected abstract insertChild(parent, node, child_index)
 }
