@@ -1,11 +1,7 @@
 export default abstract class Renderer {
-    protected pending_styles = []
-
     public async init() {}
 
-    public destroy(nodes) {
-        this.pending_styles.length = 0
-    }
+    public destroy() {}
 
     public setDevicePixelRatio(device_pixel_ratio) {}
 
@@ -13,31 +9,13 @@ export default abstract class Renderer {
 
     public setRootSize(root_size) {}
 
-    public addPendingStyle(node, style) {
-        this.pending_styles.push({ node, style })
-    }
-
-    public discardPendingStyles(node, names?) {
-        this.pending_styles = this.pending_styles.filter(
-            (pending_style) =>
-                pending_style.node !== node ||
-                (names !== undefined && names.includes(pending_style.style.name) === false),
-        )
-    }
-
     public addChild(parent, node, child_index = this.getChildIndex(parent)) {
         this.insertChild(parent, node, child_index)
     }
 
-    public beforeUpdate(nodes) {
-        for (const { node, style } of this.pending_styles) {
-            this.updateStyle(node, style)
-        }
-    }
+    public beforeUpdate() {}
 
-    public afterUpdate(nodes) {
-        this.pending_styles.length = 0
-    }
+    public afterUpdate() {}
 
     public update(nodes) {}
 

@@ -2,6 +2,17 @@ import Node from './Node'
 import EventEmitter from './EventEmitter'
 import { isNodeAtPoint, sortPaintingOrder } from '../utils/nodes'
 
+export const OPERATIONS = {
+    ADD: 'add',
+    REMOVE: 'remove',
+    STYLE: 'style',
+    TEXT: 'text',
+    SCROLL: 'scroll',
+    VIEWPORT: 'viewport',
+    ROOT_SIZE: 'root_size',
+    PIXEL_RATIO: 'pixel_ratio',
+}
+
 export default class UI {
     public root = null
     public renderer = null
@@ -9,8 +20,9 @@ export default class UI {
     public defined_events = []
     public events
     public events_source
+    protected operations = new Set()
     private nodes = []
-    private created_nodes = new Set()
+    private nodes_created = new Set()
     private next_node_id = 0
     private destroyed = false
 
@@ -36,15 +48,27 @@ export default class UI {
             })
 
             node.element = this.renderer.createElement(node)
-            this.created_nodes.add(node)
+            this.nodes_created.add(node)
 
             return node
         }
     }
 
     public update() {
-        if (!this.destroyed) {
+        // console.log(
+        //     '------update',
+        //     Array.from(this.operations).map((op) => op.op),
+        // )
+
+        if (!this.destroyed && this.operations.size > 0) {
             this.nodes.sort(sortPaintingOrder)
+
+            for (const { op, node, style } of this.operations) {
+                if (op === OPERATIONS.STYLE && this.nodes.includes(node)) {
+                    this.renderer.updateStyle(node, style)
+                }
+            }
+
             this.renderer.beforeUpdate(this.nodes)
             this.root.layout = this.renderer.getLayout(this.root)
 
@@ -55,6 +79,8 @@ export default class UI {
             }
 
             this.renderer.afterUpdate(this.nodes)
+            this.operations.clear()
+
             return this.renderer.update(this.nodes)
         }
     }
@@ -67,18 +93,21 @@ export default class UI {
 
     public setDevicePixelRatio(device_pixel_ratio) {
         if (!this.destroyed) {
+            this.operations.add({ op: OPERATIONS.PIXEL_RATIO })
             this.renderer.setDevicePixelRatio(device_pixel_ratio)
         }
     }
 
     public setViewport(width, height) {
         if (!this.destroyed) {
+            this.operations.add({ op: OPERATIONS.VIEWPORT })
             this.renderer.setViewport(width, height)
         }
     }
 
     public setRootSize(root_size) {
         if (!this.destroyed) {
+            this.operations.add({ op: OPERATIONS.ROOT_SIZE })
             this.renderer.setRootSize(root_size)
         }
     }
@@ -86,7 +115,7 @@ export default class UI {
     public destroy() {
         if (!this.destroyed) {
             this.destroyed = true
-            const nodes = [...this.created_nodes]
+            const nodes = [...this.nodes_created]
 
             this.renderer.destroy(nodes)
             this.defined_events.forEach((defined_event) => defined_event.destroy())
@@ -99,7 +128,8 @@ export default class UI {
                 this.releaseNode(node)
             }
 
-            this.created_nodes.clear()
+            this.operations.clear()
+            this.nodes_created.clear()
             this.nodes.length = 0
             this.root = null
             this.renderer = null
@@ -150,11 +180,13 @@ export default class UI {
             ancestor = ancestor.parent
         }
 
+        this.operations.add({ op: OPERATIONS.ADD })
+
         const parent_is_active = parent === this.root || this.nodes.includes(parent)
         child.parent = parent
         parent.children.splice(child_index, 0, child)
         if (parent_is_active) {
-            this.activateNode(child, [...parent.path, child_index])
+            this.updateNodePath(child, [...parent.path, child_index], true)
             for (let i = child_index + 1; i < parent.children.length; i++) {
                 this.updateNodePath(parent.children[i], [...parent.path, i])
             }
@@ -162,20 +194,15 @@ export default class UI {
         this.renderer.addChild(parent, child, child_index)
     }
 
-    private activateNode(node, path) {
+    private updateNodePath(node, path, activate = false) {
         node.path = path
-        this.nodes.push(node)
 
-        for (let i = 0; i < node.children.length; i++) {
-            this.activateNode(node.children[i], [...path, i])
+        if (activate) {
+            this.nodes.push(node)
         }
-    }
-
-    private updateNodePath(node, path) {
-        node.path = path
 
         for (let i = 0; i < node.children.length; i++) {
-            this.updateNodePath(node.children[i], [...path, i])
+            this.updateNodePath(node.children[i], [...path, i], activate)
         }
     }
 
@@ -184,6 +211,8 @@ export default class UI {
         if (parent === null) {
             return
         }
+
+        this.operations.add({ op: OPERATIONS.REMOVE })
 
         const detached_nodes = []
         const collectNodes = (current) => {
@@ -223,9 +252,8 @@ export default class UI {
 
         this.defined_events.forEach((defined_event) => defined_event.destroyNode?.(node))
         node.destroyEvents()
-        this.renderer.discardPendingStyles(node)
         this.renderer.destroyNode(node)
-        this.created_nodes.delete(node)
+        this.nodes_created.delete(node)
         this.releaseNode(node)
     }
 
