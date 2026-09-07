@@ -53,14 +53,14 @@ export default class UI {
 
     public update() {
         if (!this.destroyed) {
-            const operations = this.operations.slice()
-            const operation_count = operations.length
-            operations.push(...this.renderer.getPendingOperations())
+            const operation_count = this.operations.length
+            const operations = [...this.operations, ...this.renderer.getPendingOperations()]
             if (operations.length === 0) {
                 return
             }
+            const compacted_operations = this.compactOperations(operations)
 
-            const update_plan = this.createUpdatePlan(operations)
+            const update_plan = this.createUpdatePlan(compacted_operations)
             if (update_plan.painting_order) {
                 this.nodes.sort(sortPaintingOrder)
             }
@@ -152,6 +152,70 @@ export default class UI {
                     (op === OPERATIONS.STYLE && style.expanded.some(({ name }) => name === 'zIndex')),
             ),
         }
+    }
+
+    private compactOperations(operations) {
+        const compacted_operations = []
+        const style_names_by_node = new Map()
+        const text_nodes = new Set()
+        const scroll_directions_by_node = new Map()
+        const global_operations = new Set()
+        let resources_operation
+
+        for (let i = operations.length - 1; i >= 0; i--) {
+            const operation = operations[i]
+
+            if (operation.op === OPERATIONS.STYLE) {
+                let style_names = style_names_by_node.get(operation.node)
+                if (style_names === undefined) {
+                    style_names = new Set()
+                    style_names_by_node.set(operation.node, style_names)
+                }
+                if (operation.style.expanded.every(({ name }) => style_names.has(name))) {
+                    continue
+                }
+                for (const { name } of operation.style.expanded) {
+                    style_names.add(name)
+                }
+            } else if (operation.op === OPERATIONS.TEXT) {
+                if (text_nodes.has(operation.node)) {
+                    continue
+                }
+                text_nodes.add(operation.node)
+            } else if (operation.op === OPERATIONS.SCROLL) {
+                let directions = scroll_directions_by_node.get(operation.node)
+                if (directions === undefined) {
+                    directions = new Set()
+                    scroll_directions_by_node.set(operation.node, directions)
+                }
+                if (directions.has(operation.direction)) {
+                    continue
+                }
+                directions.add(operation.direction)
+            } else if (operation.op === OPERATIONS.RESOURCES) {
+                if (resources_operation === undefined) {
+                    resources_operation = { ...operation }
+                    compacted_operations.push(resources_operation)
+                } else {
+                    resources_operation.image ||= operation.image
+                    resources_operation.font ||= operation.font
+                }
+                continue
+            } else if (
+                operation.op === OPERATIONS.VIEWPORT ||
+                operation.op === OPERATIONS.PIXEL_RATIO ||
+                operation.op === OPERATIONS.ROOT_SIZE
+            ) {
+                if (global_operations.has(operation.op)) {
+                    continue
+                }
+                global_operations.add(operation.op)
+            }
+
+            compacted_operations.push(operation)
+        }
+
+        return compacted_operations.reverse()
     }
 
     public destroy() {

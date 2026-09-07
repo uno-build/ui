@@ -198,14 +198,11 @@ export default class RendererWebGPU extends Renderer {
     public getPendingOperations() {
         const image = this.image_registry_version !== this.image_manager.registry_version
         const font = this.font_registry_version !== this.resources.font_manager.registry_version
-
         return image || font ? [{ op: OPERATIONS.RESOURCES, image, font }] : []
     }
 
     public prepareLayout(operations, nodes_created) {
-        const font_registry_changed = operations.some(
-            ({ op, font }) => op === OPERATIONS.RESOURCES && font,
-        )
+        const font_registry_changed = operations.some(({ op, font }) => op === OPERATIONS.RESOURCES && font)
 
         if (font_registry_changed) {
             for (const node of nodes_created) {

@@ -833,6 +833,74 @@ test('UI includes only changed layouts in the update plan', async () => {
     expect([...update_plans[1].layout_nodes]).toEqual([])
 })
 
+test('UI compacts operations before preparing the update', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const node = ui.create()
+    const applied_styles = []
+    let update_plan
+    const updateStyle = renderer.updateStyle.bind(renderer)
+    renderer.updateStyle = (style_node, style) => {
+        applied_styles.push([style_node, style.name, style.value])
+        updateStyle(style_node, style)
+    }
+    renderer.getPendingOperations = () => [
+        { op: 'resources', image: true, font: false },
+        { op: 'resources', image: false, font: true },
+    ]
+    renderer.update = (_nodes, plan) => {
+        update_plan = plan
+    }
+
+    ui.root.add(node)
+    node.style('width', '10px')
+    node.style('width', '20px')
+    node.style('padding', '10px')
+    node.style('paddingLeft', '20px')
+    node.style('marginLeft', '10px')
+    node.style('margin', '30px')
+    node.text('first')
+    node.text('second')
+    node.scrollTop = 10
+    node.scrollTop = 20
+    node.scrollLeft = 30
+    node.scrollLeft = 40
+    ui.setDevicePixelRatio(1)
+    ui.setDevicePixelRatio(2)
+    ui.setViewport(100, 50)
+    ui.setViewport(200, 100)
+    ui.setRootSize(10)
+    ui.setRootSize(20)
+
+    ui.update()
+
+    expect(applied_styles).toEqual([
+        [node, 'width', '20px'],
+        [node, 'padding', '10px'],
+        [node, 'paddingLeft', '20px'],
+        [node, 'margin', '30px'],
+    ])
+    expect(update_plan.operations.filter(({ op }) => op === 'text')).toEqual([
+        { op: 'text', node, value: 'second' },
+    ])
+    expect(update_plan.operations.filter(({ op }) => op === 'scroll')).toEqual([
+        { op: 'scroll', node, direction: 'top', value: 20 },
+        { op: 'scroll', node, direction: 'left', value: 40 },
+    ])
+    expect(update_plan.operations.filter(({ op }) => op === 'pixel_ratio')).toEqual([
+        { op: 'pixel_ratio', value: 2 },
+    ])
+    expect(update_plan.operations.filter(({ op }) => op === 'viewport')).toEqual([
+        { op: 'viewport', width: 200, height: 100 },
+    ])
+    expect(update_plan.operations.filter(({ op }) => op === 'root_size')).toEqual([
+        { op: 'root_size', value: 20 },
+    ])
+    expect(update_plan.operations.filter(({ op }) => op === 'resources')).toEqual([
+        { op: 'resources', image: true, font: true },
+    ])
+})
+
 test('ResourcesWebGPU image api delegates to the image manager', () => {
     const image = createImage('/assets/first.png', 32, 32)
     const calls = []
