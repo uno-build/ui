@@ -69,11 +69,11 @@ export default class ResourcesWebGPU extends Resources {
         this.has_present = typeof this.context.present === 'function'
     }
 
-    public registerImage(src: string, image: any) {
+    protected imageRegister(src: string, image: any) {
         return this.image_manager.imageUpload(src, image)
     }
 
-    public disposeImage(src: string): void {
+    protected imageDispose(src: string): void {
         this.image_manager.imageDispose(src)
     }
 
@@ -82,11 +82,11 @@ export default class ResourcesWebGPU extends Resources {
         return image === undefined ? undefined : { width: image.image_size[0], height: image.image_size[1] }
     }
 
-    public registerFont(name: string, image: any, json: any) {
+    protected fontRegister(name: string, image: any, json: any) {
         return this.font_manager.fontRegister(name, image, json)
     }
 
-    public disposeFont(name: string): void {
+    protected fontDispose(name: string): void {
         this.font_manager.fontDispose(name)
     }
 

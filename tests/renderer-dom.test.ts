@@ -4,11 +4,17 @@ import RendererDom from '../src/renderer/RendererDom.ts'
 import ResourcesDom from '../src/renderer/dom/ResourcesDom.ts'
 import Style from '../src/style'
 
+const UPDATE_EFFECTS = { order: true, layout: true, scroll: true }
+const DOCUMENT_FONTS = { addEventListener() {} }
+
+;(globalThis as any).document ??= { fonts: DOCUMENT_FONTS }
+
 test('RendererDom sets the document root font size', () => {
     const document_element = { style: {} }
     const original_document = (globalThis as any).document
 
     ;(globalThis as any).document = {
+        fonts: DOCUMENT_FONTS,
         body: {
             parentElement: document_element,
         },
@@ -182,8 +188,8 @@ test('RendererDom synchronizes node scroll state after update', () => {
     renderer.createElement(root)
     ;(renderer as any).elements.set(node, element)
 
-    renderer.beforeUpdate([node])
-    renderer.afterUpdate([node])
+    renderer.beforeUpdate([node], UPDATE_EFFECTS)
+    renderer.afterUpdate([node], UPDATE_EFFECTS)
 
     expect(canvas.scrollLeft).toBe(40)
     expect(canvas.scrollTop).toBe(30)
@@ -204,6 +210,7 @@ test('RendererDom destroy removes UI elements and preserves its external root', 
     const canvas = createDomElement()
 
     ;(globalThis as any).document = {
+        fonts: DOCUMENT_FONTS,
         createElement: () => createDomElement(),
     }
 
@@ -233,6 +240,7 @@ test('RendererDom keeps detached elements alive until destroyNode', () => {
     const canvas = createDomElement()
 
     ;(globalThis as any).document = {
+        fonts: DOCUMENT_FONTS,
         createElement: () => createDomElement(),
     }
 

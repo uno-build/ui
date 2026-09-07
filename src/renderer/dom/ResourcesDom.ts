@@ -6,13 +6,17 @@ export default class ResourcesDom extends Resources {
 
     protected constructor(options) {
         super(options)
+        // Web fonts change the text metrics the DOM layout is read from.
+        document.fonts.addEventListener('loadingdone', () => {
+            this.registry_version++
+        })
     }
 
     public static create(options) {
         return new ResourcesDom(options)
     }
 
-    public registerImage(src: string, image: any) {
+    protected imageRegister(src: string, image: any) {
         if (this.images.has(src)) {
             throw new Error(`Image "${src}" is already registered.`)
         }
@@ -20,7 +24,7 @@ export default class ResourcesDom extends Resources {
         this.images.set(src, image)
     }
 
-    public disposeImage(src: string) {
+    protected imageDispose(src: string) {
         this.images.delete(src)
     }
 
@@ -33,7 +37,7 @@ export default class ResourcesDom extends Resources {
         return image === undefined ? undefined : { width: image.width, height: image.height }
     }
 
-    public registerFont(name: string, image: any, json: any) {
+    protected fontRegister(name: string, image: any, json: any) {
         if (this.fonts.has(name)) {
             throw new Error(`Font "${name}" is already registered.`)
         }
@@ -41,7 +45,7 @@ export default class ResourcesDom extends Resources {
         this.fonts.set(name, json.metrics)
     }
 
-    public disposeFont(name: string) {
+    protected fontDispose(name: string) {
         this.fonts.delete(name)
     }
 

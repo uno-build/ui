@@ -282,8 +282,12 @@ export default class RendererWebGPU extends Renderer {
         return this.layouter.getLayout(node)
     }
 
-    public beforeUpdate(nodes) {
+    public beforeUpdate(nodes, effects) {
         super.beforeUpdate(nodes)
+
+        if (!effects.layout) {
+            return
+        }
 
         if (this.style_context_dirty) {
             for (const node of [this.root_node, ...nodes]) {
@@ -374,9 +378,12 @@ export default class RendererWebGPU extends Renderer {
         // }
     }
 
-    public afterUpdate(nodes) {
+    public afterUpdate(nodes, effects) {
         super.afterUpdate(nodes)
-        updateScrollMetrics(this.root_node, (node) => this.getNodeContentSize(node))
+
+        if (effects.layout || effects.scroll) {
+            updateScrollMetrics(this.root_node, (node) => this.getNodeContentSize(node))
+        }
     }
 
     public draw({ submit = true, command_encoder, texture_view, load_op = 'load' } = {}) {

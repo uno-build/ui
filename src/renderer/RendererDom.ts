@@ -141,25 +141,32 @@ export default class RendererDom extends Renderer {
         element.style.lineHeight = font === undefined ? '' : `${font.lineHeight}`
     }
 
-    public beforeUpdate(nodes) {
+    public beforeUpdate(nodes, effects) {
         super.beforeUpdate(nodes)
 
-        for (const node of nodes) {
-            this.updateText(node)
+        if (effects.layout) {
+            for (const node of nodes) {
+                this.updateText(node)
+            }
         }
 
-        this.applyNodeScroll(this.root_node)
-        for (const node of nodes) {
-            this.applyNodeScroll(node)
+        if (effects.layout || effects.scroll) {
+            this.applyNodeScroll(this.root_node)
+            for (const node of nodes) {
+                this.applyNodeScroll(node)
+            }
         }
     }
 
-    public afterUpdate(nodes) {
+    public afterUpdate(nodes, effects) {
         super.afterUpdate(nodes)
-        this.readNodeScroll(this.root_node)
 
-        for (const node of nodes) {
-            this.readNodeScroll(node)
+        if (effects.layout || effects.scroll) {
+            this.readNodeScroll(this.root_node)
+
+            for (const node of nodes) {
+                this.readNodeScroll(node)
+            }
         }
     }
 

@@ -38,6 +38,8 @@ import { createUIWGSL } from '../src/renderer/webgpu/shaders/'
 import { TEXT_EFFECT_WGSL as MTSDF_TEXT_EFFECT_WGSL } from '../src/renderer/webgpu/shaders/text-mtsdf.ts'
 import { TEXT_WGSL } from '../src/renderer/webgpu/shaders/text.ts'
 import { writeCommandData, writeGlyphData, writePanelData, writeTextRunData } from '../src/renderer/webgpu/writers.ts'
+
+const UPDATE_EFFECTS = { order: true, layout: true, scroll: true }
 ;(globalThis as any).GPUTextureUsage = {
     TEXTURE_BINDING: 1,
     COPY_SRC: 2,
@@ -110,7 +112,6 @@ test('RendererWebGPU destroy releases UI buffers without disposing shared resour
             destroyed_layouter_nodes = next_nodes
         },
     }
-    ;(renderer as any).pending_styles.push({})
 
     renderer.destroy(nodes)
 
@@ -120,7 +121,6 @@ test('RendererWebGPU destroy releases UI buffers without disposing shared resour
     expect(font_manager_dispose_count).toBe(0)
     expect(image_manager.getTextureView()).toEqual({ id: 'atlas-view' })
     expect(font_manager.getTextureView()).toEqual({ id: 'font-view' })
-    expect((renderer as any).pending_styles).toEqual([])
     expect((renderer as any).resources).toBe(null)
 })
 
@@ -287,7 +287,7 @@ test('RendererWebGPU calculates scroll metrics from descendant layout overflow',
     const renderer = createRenderer()
     ;(renderer as any).root_node = root
 
-    renderer.afterUpdate([])
+    renderer.afterUpdate([], UPDATE_EFFECTS)
 
     expect(root.clientWidth).toBe(110)
     expect(root.clientHeight).toBe(90)
@@ -313,7 +313,7 @@ test('RendererWebGPU includes trailing padding after direct child overflow', () 
     const renderer = createRenderer()
     ;(renderer as any).root_node = root
 
-    renderer.afterUpdate([])
+    renderer.afterUpdate([], UPDATE_EFFECTS)
 
     expect(root.scrollWidth).toBe(145)
     expect(root.scrollHeight).toBe(143)
@@ -352,7 +352,7 @@ test('RendererWebGPU includes overflowing text content in scroll metrics', () =>
     )
     ;(renderer as any).root_node = root
 
-    renderer.afterUpdate([])
+    renderer.afterUpdate([], UPDATE_EFFECTS)
 
     expect(text.scrollHeight).toBe(72)
     expect(root.scrollHeight).toBe(72)
@@ -374,7 +374,7 @@ test('RendererWebGPU does not propagate overflow through a clipping descendant',
     const renderer = createRenderer()
     ;(renderer as any).root_node = root
 
-    renderer.afterUpdate([])
+    renderer.afterUpdate([], UPDATE_EFFECTS)
 
     expect(child.scrollWidth).toBe(140)
     expect(child.scrollHeight).toBe(140)
@@ -417,9 +417,9 @@ test('RendererWebGPU propagates descendant overflow independently by axis', () =
 
     const renderer = createRenderer()
     ;(renderer as any).root_node = horizontal_root
-    renderer.afterUpdate([])
+    renderer.afterUpdate([], UPDATE_EFFECTS)
     ;(renderer as any).root_node = vertical_root
-    renderer.afterUpdate([])
+    renderer.afterUpdate([], UPDATE_EFFECTS)
 
     expect(horizontal_root.scrollWidth).toBe(100)
     expect(horizontal_root.scrollHeight).toBe(150)
@@ -2136,11 +2136,10 @@ for (const [style_name, style_value] of TEXT_MEASURE_STYLES) {
         }
 
         const normalized_name = validateStyle(style_name, style_value)
-        renderer.addPendingStyle(node, resolveStyle(normalized_name, style_value))
 
         expect(dirty_nodes).toEqual([])
 
-        renderer.beforeUpdate([node])
+        ;(renderer as any).updateStyle(node, resolveStyle(normalized_name, style_value))
 
         expect(dirty_nodes).toEqual([node])
     })
@@ -2159,9 +2158,8 @@ test('RendererWebGPU ignores text invalidation for unrelated styles and nodes wi
         calculate() {},
     }
 
-    renderer.addPendingStyle(text_node, resolveStyle('backgroundColor', '#123'))
-    renderer.addPendingStyle(empty_node, resolveStyle('fontSize', '20px'))
-    renderer.beforeUpdate([text_node, empty_node])
+    ;(renderer as any).updateStyle(text_node, resolveStyle('backgroundColor', '#123'))
+    ;(renderer as any).updateStyle(empty_node, resolveStyle('fontSize', '20px'))
 
     expect(dirty_nodes).toEqual([])
 })
@@ -2199,19 +2197,19 @@ test('RendererWebGPU recalculates rem text after the root size changes', () => {
         },
     }
     renderer.setViewport(320, 180)
-    renderer.beforeUpdate([])
+    renderer.beforeUpdate([], UPDATE_EFFECTS)
     calculations.length = 0
 
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(11.6)
 
     renderer.setRootSize(16)
-    renderer.beforeUpdate([node])
+    renderer.beforeUpdate([node], UPDATE_EFFECTS)
 
     expect(applied_styles).toEqual([])
     expect(dirty_nodes).toEqual([])
 
     renderer.setRootSize(20)
-    renderer.beforeUpdate([node])
+    renderer.beforeUpdate([node], UPDATE_EFFECTS)
 
     expect(applied_styles).toEqual([
         {
@@ -2226,7 +2224,7 @@ test('RendererWebGPU recalculates rem text after the root size changes', () => {
     expect(dirty_nodes).toEqual([node])
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(12.1)
 
-    renderer.beforeUpdate([node])
+    renderer.beforeUpdate([node], UPDATE_EFFECTS)
 
     expect(applied_styles).toHaveLength(1)
     expect(dirty_nodes).toHaveLength(1)
@@ -2273,7 +2271,7 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     }
 
     renderer.setViewport(320, 180)
-    renderer.beforeUpdate([node])
+    renderer.beforeUpdate([node], UPDATE_EFFECTS)
 
     expect(read_applied_styles()).toEqual([
         {
@@ -2294,13 +2292,13 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     applied_styles.length = 0
     dirty_nodes.length = 0
     renderer.setViewport(320, 180)
-    renderer.beforeUpdate([node])
+    renderer.beforeUpdate([node], UPDATE_EFFECTS)
 
     expect(applied_styles).toEqual([])
     expect(dirty_nodes).toEqual([])
 
     renderer.setViewport(400, 180)
-    renderer.beforeUpdate([node])
+    renderer.beforeUpdate([node], UPDATE_EFFECTS)
 
     expect(read_applied_styles()).toEqual([
         {
@@ -2319,7 +2317,7 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     applied_styles.length = 0
     dirty_nodes.length = 0
     renderer.setViewport(400, 200)
-    renderer.beforeUpdate([node])
+    renderer.beforeUpdate([node], UPDATE_EFFECTS)
 
     expect(read_applied_styles()).toEqual([
         {
@@ -2338,7 +2336,7 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     applied_styles.length = 0
     dirty_nodes.length = 0
     renderer.setRootSize(20)
-    renderer.beforeUpdate([node])
+    renderer.beforeUpdate([node], UPDATE_EFFECTS)
 
     expect(read_applied_styles()).toEqual([
         {

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import Resources from '../src/core/Resources'
+import { OPERATIONS } from '../src/core/UI'
 import ResourcesWebGPU from '../src/renderer/webgpu/ResourcesWebGPU'
 import UIWorldSpace from '../src/ui/UIWorldSpace.ts'
 import TestRenderer from './utils/TestRenderer.ts'
@@ -117,21 +118,21 @@ test('Node compares shorthand styles by their expanded values', async () => {
         paddingBottom: { value: '20px', parsed: { value: 20, kind: 'px' } },
         paddingLeft: { value: '20px', parsed: { value: 20, kind: 'px' } },
     })
-    expect((renderer as any).pending_styles).toHaveLength(1)
+    expect(readPendingStyles(ui)).toHaveLength(1)
 
     node.style('padding', '20px')
 
-    expect((renderer as any).pending_styles).toHaveLength(1)
+    expect(readPendingStyles(ui)).toHaveLength(1)
 
     node.style('paddingTop', '10px')
     node.style('padding', '20px')
 
     expect(node.styles.paddingTop.value).toBe('20px')
-    expect((renderer as any).pending_styles).toHaveLength(3)
+    expect(readPendingStyles(ui)).toHaveLength(3)
 
     node.style('padding', ' 20PX ')
 
-    expect((renderer as any).pending_styles).toHaveLength(3)
+    expect(readPendingStyles(ui)).toHaveLength(3)
 })
 
 test('Node stores pointerEvents and adds it to the pending renderer styles', async () => {
@@ -145,7 +146,7 @@ test('Node stores pointerEvents and adds it to the pending renderer styles', asy
         value: 'none',
         parsed: { enum: 1 },
     })
-    expect((renderer as any).pending_styles).toHaveLength(1)
+    expect(readPendingStyles(ui)).toHaveLength(1)
 
     node.style('pointerEvents', 'unset')
 
@@ -153,7 +154,61 @@ test('Node stores pointerEvents and adds it to the pending renderer styles', asy
         value: 'unset',
         parsed: { kind: 'unset' },
     })
-    expect((renderer as any).pending_styles).toHaveLength(2)
+    expect(readPendingStyles(ui)).toHaveLength(2)
+})
+
+test('UI update reads layouts only for operations that can change them', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const node = ui.create()
+
+    ui.root.add(node)
+    ui.update()
+
+    const layout_reads = countLayoutReads(renderer)
+
+    node.style('backgroundColor', '#ff0000')
+    node.style('opacity', '0.5')
+    ui.update()
+
+    expect(layout_reads()).toBe(0)
+
+    node.scrollTop = 5
+    ui.setDevicePixelRatio(2)
+    ui.update()
+
+    expect(layout_reads()).toBe(0)
+
+    node.style('width', '20px')
+    ui.update()
+
+    expect(layout_reads()).toBe(2)
+
+    node.text('hello')
+    ui.update()
+
+    expect(layout_reads()).toBe(4)
+})
+
+test('UI update repaints in z-index order without reading layouts', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const first = ui.create()
+    const second = ui.create()
+
+    ui.root.add(first)
+    ui.root.add(second)
+    ui.update()
+
+    const layout_reads = countLayoutReads(renderer)
+
+    expect([first.order, second.order]).toEqual([0, 1])
+
+    first.style('zIndex', '2')
+    ui.update()
+
+    expect([first.order, second.order]).toEqual([1, 0])
+    expect(layout_reads()).toBe(0)
 })
 
 test('UI destroy releases attached and detached nodes once', async () => {
@@ -189,7 +244,7 @@ test('UI destroy releases attached and detached nodes once', async () => {
     expect(ui.resources).toBe(null)
     expect((ui as any).nodes).toEqual([])
     expect((ui as any).nodes_created.size).toBe(0)
-    expect((renderer as any).pending_styles).toEqual([])
+    expect(readPendingStyles(ui)).toEqual([])
 
     for (const node of [root, parent, child, detached]) {
         expect(node.ui).toBe(null)
@@ -230,6 +285,7 @@ test('UIWorldSpace destroy releases only its GPU texture once', () => {
         },
         nodes: [],
         nodes_created: new Set(),
+        operations: new Set(),
         destroyed: false,
         defined_events: [],
         gpu_texture: {
@@ -381,7 +437,7 @@ test('Node detach preserves and reinserts a subtree', async () => {
     expect(child.parent).toBe(parent)
     expect(child.children).toEqual([grandchild])
     expect(grandchild.parent).toBe(child)
-    expect((renderer as any).pending_styles).toHaveLength(1)
+    expect(readPendingStyles(ui)).toHaveLength(1)
 
     ui.root.add(parent)
 
@@ -857,4 +913,20 @@ function createImage(src, width, height) {
         bitmap: { src },
         preventBleeding: false,
     }
+}
+
+function readPendingStyles(ui) {
+    return [...(ui as any).operations].filter(({ op }) => op === OPERATIONS.STYLE)
+}
+
+function countLayoutReads(renderer) {
+    const getLayout = renderer.getLayout.bind(renderer)
+    let reads = 0
+
+    renderer.getLayout = (node) => {
+        reads++
+        return getLayout(node)
+    }
+
+    return () => reads
 }

@@ -1,6 +1,7 @@
 import Node from './Node'
 import EventEmitter from './EventEmitter'
 import { isNodeAtPoint, sortPaintingOrder } from '../utils/nodes'
+import { isPaintStyle, STYLE } from '../style'
 
 export const OPERATIONS = {
     ADD: 'add',
@@ -11,6 +12,7 @@ export const OPERATIONS = {
     VIEWPORT: 'viewport',
     ROOT_SIZE: 'root_size',
     PIXEL_RATIO: 'pixel_ratio',
+    RESOURCE: 'resource',
 }
 
 export default class UI {
@@ -24,6 +26,7 @@ export default class UI {
     private nodes = []
     private nodes_created = new Set()
     private next_node_id = 0
+    private resources_version = 0
     private destroyed = false
 
     protected constructor({ renderer, resources = null, defined_events = [] }) {
@@ -37,6 +40,7 @@ export default class UI {
     protected async initialize() {
         const output = await this.renderer.init()
         this.root = this.create()
+        this.operations.add({ op: OPERATIONS.ADD })
         return output
     }
 
@@ -60,25 +64,39 @@ export default class UI {
         //     Array.from(this.operations).map((op) => op.op),
         // )
 
+        if (this.resources !== null && this.resources_version !== this.resources.registry_version) {
+            this.resources_version = this.resources.registry_version
+            this.operations.add({ op: OPERATIONS.RESOURCE })
+        }
+
         if (!this.destroyed && this.operations.size > 0) {
-            this.nodes.sort(sortPaintingOrder)
+            const effects = readOperationEffects(this.operations)
+
+            if (effects.order) {
+                this.nodes.sort(sortPaintingOrder)
+
+                for (let i = 0; i < this.nodes.length; i++) {
+                    this.nodes[i].order = i
+                }
+            }
 
             for (const { op, node, style } of this.operations) {
-                if (op === OPERATIONS.STYLE && this.nodes.includes(node)) {
+                if (op === OPERATIONS.STYLE && node.ui !== null) {
                     this.renderer.updateStyle(node, style)
                 }
             }
 
-            this.renderer.beforeUpdate(this.nodes)
-            this.root.layout = this.renderer.getLayout(this.root)
+            this.renderer.beforeUpdate(this.nodes, effects)
 
-            for (let i = 0; i < this.nodes.length; i++) {
-                const node = this.nodes[i]
-                node.layout = this.renderer.getLayout(node)
-                node.order = i
+            if (effects.layout) {
+                this.root.layout = this.renderer.getLayout(this.root)
+
+                for (const node of this.nodes) {
+                    node.layout = this.renderer.getLayout(node)
+                }
             }
 
-            this.renderer.afterUpdate(this.nodes)
+            this.renderer.afterUpdate(this.nodes, effects)
             this.operations.clear()
 
             return this.renderer.update(this.nodes)
@@ -263,4 +281,24 @@ export default class UI {
         node.children.length = 0
         node.element = null
     }
+}
+
+function readOperationEffects(operations) {
+    const effects = { order: false, layout: false, scroll: false }
+
+    for (const { op, style } of operations) {
+        if (op === OPERATIONS.STYLE) {
+            for (const { name } of style.expanded) {
+                effects.order ||= name === STYLE.ZINDEX.name
+                effects.layout ||= !isPaintStyle(name)
+            }
+        } else if (op === OPERATIONS.SCROLL) {
+            effects.scroll = true
+        } else if (op !== OPERATIONS.PIXEL_RATIO) {
+            effects.order ||= op === OPERATIONS.ADD || op === OPERATIONS.REMOVE
+            effects.layout = true
+        }
+    }
+
+    return effects
 }
