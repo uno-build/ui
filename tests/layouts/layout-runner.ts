@@ -41,6 +41,7 @@ export async function runLayout({
     const createLayout = getLayout(layout)
     const results = []
     const rendered_layouts = []
+    await Promise.all([...document.fonts].map((font_face) => font_face.load()))
 
     for (const rendererName of renderers) {
         const setup = getSetup(rendererName)
@@ -68,8 +69,6 @@ export async function runLayout({
             syncViewport({ ui, root, canvas, viewport })
         }
 
-        render({ ui })
-        await document.fonts.ready
         render({ ui })
         observeRootSize({ ui, root, canvas, viewport })
 
