@@ -1,4 +1,5 @@
 import Renderer from '../core/Renderer'
+import { OPERATIONS } from '../core/UI'
 import { computeStyleValue, STYLE } from '../style'
 import { ROOT_SIZE, DISPLAY, EDGE, TEXT_ALIGN, WHITE_SPACE, MEASURE_MODE } from '../style/consts'
 import createYogaLayouter from '../layouter/yoga'
@@ -41,6 +42,8 @@ import { writeCommandData, writeGlyphData, writePanelData, writeTextRunData } fr
 import { GpuPool } from './webgpu/GpuPool'
 import Segmenter from './pretext/segmenter'
 
+const INHERITED_STYLE_NAMES = [STYLE.OPACITY.name, STYLE.OVERFLOWX.name, STYLE.OVERFLOWY.name]
+
 export default class RendererWebGPU extends Renderer {
     private resources
     private image_min_filter
@@ -49,7 +52,6 @@ export default class RendererWebGPU extends Renderer {
     private viewport_width
     private viewport_height
     private root_size = ROOT_SIZE
-    private style_context_dirty = false
     private layouter!: any
     private device
     private context
@@ -69,10 +71,8 @@ export default class RendererWebGPU extends Renderer {
     private glyph_data_pool
     private text_run_pool
     private records = new Map()
+    private dirty_records = new Set()
     private structural = false
-    private full_rebuild = null
-    private image_registry_version = 0
-    private font_registry_version = 0
     private prepared_texts = new WeakMap()
     private root_node
     private grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
@@ -153,6 +153,7 @@ export default class RendererWebGPU extends Renderer {
         this.glyph_data_pool = null
         this.text_run_pool = null
         this.records = null
+        this.dirty_records = null
         this.prepared_texts = null
         this.pipeline = null
         this.bind_group = null
@@ -165,27 +166,16 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
-        if (this.device_pixel_ratio !== device_pixel_ratio) {
-            this.device_pixel_ratio = device_pixel_ratio
-            this.full_rebuild = 'device_pixel_ratio'
-        }
+        this.device_pixel_ratio = device_pixel_ratio
     }
 
     public setViewport(width, height) {
-        if (this.viewport_width !== width || this.viewport_height !== height) {
-            this.viewport_width = width
-            this.viewport_height = height
-            this.style_context_dirty = true
-            this.full_rebuild = 'viewport'
-        }
+        this.viewport_width = width
+        this.viewport_height = height
     }
 
     public setRootSize(root_size) {
-        if (this.root_size !== root_size) {
-            this.root_size = root_size
-            this.style_context_dirty = true
-            this.full_rebuild = 'root_size'
-        }
+        this.root_size = root_size
     }
 
     public createElement(node) {
@@ -204,13 +194,11 @@ export default class RendererWebGPU extends Renderer {
         this.layouter.setMeasureFunction(node, (width, width_mode, height, height_mode) =>
             this.getTextMeasure(node, width, width_mode, height, height_mode),
         )
-        this.markRecord(node, 'text')
     }
 
     public invalidateTextNode(node) {
         this.prepared_texts.delete(node)
         this.layouter.markDirty(node)
-        this.markRecord(node, 'text')
     }
 
     public getTextMeasure(
@@ -260,17 +248,8 @@ export default class RendererWebGPU extends Renderer {
     }
 
     protected updateStyle(node, resolved_style) {
-        let inherited = false
-
         for (const style of resolved_style.expanded) {
             this.updateResolvedStyle(node, style)
-            inherited ||= [STYLE.OPACITY.name, STYLE.OVERFLOWX.name, STYLE.OVERFLOWY.name].includes(style.name)
-        }
-
-        if (inherited) {
-            this.markSubtree(node, 'style')
-        } else {
-            this.markRecord(node, 'style')
         }
 
         if (node.isTextNode() && TEXT_MEASURE_STYLE_NAMES.includes(resolved_style.name)) {
@@ -289,7 +268,7 @@ export default class RendererWebGPU extends Renderer {
             return
         }
 
-        if (this.style_context_dirty) {
+        if (effects.context) {
             for (const node of [this.root_node, ...nodes]) {
                 let invalidate_text = false
 
@@ -306,56 +285,37 @@ export default class RendererWebGPU extends Renderer {
                     this.invalidateTextNode(node)
                 }
             }
-
-            this.style_context_dirty = false
         }
 
         this.layouter.calculate(this.viewport_width, this.viewport_height)
     }
 
-    public update(nodes) {
-        const ordered_nodes = [this.root_node, ...nodes]
+    public update(nodes, effects, operations) {
+        this.markOperations(operations)
 
-        if (
-            this.image_registry_version !== this.image_manager.registry_version ||
-            this.font_registry_version !== this.resources.font_manager.registry_version
-        ) {
-            this.image_registry_version = this.image_manager.registry_version
-            this.font_registry_version = this.resources.font_manager.registry_version
-            this.full_rebuild = 'registry'
-        }
+        if (effects.layout) {
+            this.diffLayout(this.root_node)
 
-        const full_rebuild = this.full_rebuild
-        if (full_rebuild !== null) {
-            this.full_rebuild = null
-            this.markSubtree(this.root_node, full_rebuild)
-        }
-
-        for (const node of ordered_nodes) {
-            this.diffRecord(node)
-        }
-
-        const updated_nodes = []
-        for (const node of ordered_nodes) {
-            const record = this.records.get(node)
-            if (record.dirty !== null) {
-                updated_nodes.push(`${node.id}:${record.dirty}`)
-                record.dirty = null
-                this.updateRecord(node, record)
+            for (const node of nodes) {
+                this.diffLayout(node)
             }
+        }
+
+        this.structural ||= effects.order
+
+        for (const node of this.dirty_records) {
+            this.updateRecord(node, this.records.get(node))
         }
 
         const structural = this.structural
         if (structural) {
             this.structural = false
-            const commands = createCommands(ordered_nodes, this.records)
+            const commands = createCommands([this.root_node, ...nodes], this.records)
             this.command_count = commands.length
             this.command_pool.fill(commands, writeCommandData)
         }
 
-        this.updateBuffers()
-
-        // if (full_rebuild !== null || structural || updated_nodes.length > 0) {
+        // if (structural || this.dirty_records.size > 0) {
         //     const bytes =
         //         this.panel_data_pool.uploaded +
         //         this.glyph_data_pool.uploaded +
@@ -363,10 +323,10 @@ export default class RendererWebGPU extends Renderer {
         //         this.command_pool.uploaded
         //     console.log('[RendererWebGPU] update', {
         //         structural,
-        //         mode: full_rebuild === null ? 'partial' : `full (${full_rebuild})`,
+        //         effects,
         //         kb: `${(bytes / 1024).toFixed(1)}kb`,
-        //         nodes: ordered_nodes.length,
-        //         updated: updated_nodes,
+        //         nodes: nodes.length + 1,
+        //         updated: [...this.dirty_records].map((node) => node.id),
         //         commands: this.command_count,
         //         bytes: {
         //             panel: this.panel_data_pool.uploaded,
@@ -376,6 +336,9 @@ export default class RendererWebGPU extends Renderer {
         //         },
         //     })
         // }
+
+        this.dirty_records.clear()
+        this.updateBuffers()
     }
 
     public afterUpdate(nodes, effects) {
@@ -502,24 +465,37 @@ export default class RendererWebGPU extends Renderer {
         return this.getTextMeasure(node, content_width)
     }
 
-    private diffRecord(node) {
-        const record = this.getRecord(node)
-        if (record.order !== node.order) {
-            record.order = node.order
-            this.structural = true
+    private markOperations(operations) {
+        for (const { op, node, style } of operations) {
+            if (op === OPERATIONS.STYLE) {
+                if (style.expanded.some(({ name }) => INHERITED_STYLE_NAMES.includes(name))) {
+                    this.markSubtree(node)
+                } else {
+                    this.markRecord(node)
+                }
+            } else if (op === OPERATIONS.TEXT) {
+                this.markRecord(node)
+            } else if (op === OPERATIONS.SCROLL) {
+                for (const child of node.children) {
+                    this.markSubtree(child)
+                }
+            } else if (op !== OPERATIONS.ADD && op !== OPERATIONS.REMOVE) {
+                this.markSubtree(this.root_node)
+            }
         }
+    }
 
-        if (!isSameLayout(record.layout, node.layout)) {
-            this.markSubtree(node, 'layout')
-        }
+    // Nodes are visited parent first, so an ancestor layout change propagates down in a single pass.
+    private diffLayout(node) {
+        const record = this.getRecord(node)
+        const parent_record = node.parent === null ? undefined : this.records.get(node.parent)
+        const changed = parent_record?.subtree === true || !isSameLayout(record.layout, node.layout)
+
+        record.subtree = changed
         record.layout = node.layout
 
-        if (record.scroll_left !== node.scrollLeft || record.scroll_top !== node.scrollTop) {
-            record.scroll_left = node.scrollLeft
-            record.scroll_top = node.scrollTop
-            for (const child of node.children) {
-                this.markSubtree(child, 'scroll')
-            }
+        if (changed) {
+            this.dirty_records.add(node)
         }
     }
 
@@ -585,18 +561,17 @@ export default class RendererWebGPU extends Renderer {
         return { panel_data, text_data }
     }
 
-    private markRecord(node, reason) {
-        const record = this.records.get(node)
-        if (record !== undefined) {
-            record.dirty = reason
+    private markRecord(node) {
+        if (this.records.has(node)) {
+            this.dirty_records.add(node)
         }
     }
 
-    private markSubtree(node, reason) {
-        this.markRecord(node, reason)
+    private markSubtree(node) {
+        this.markRecord(node)
 
         for (const child of node.children) {
-            this.markSubtree(child, reason)
+            this.markSubtree(child)
         }
     }
 
@@ -605,6 +580,7 @@ export default class RendererWebGPU extends Renderer {
         if (record === undefined) {
             record = createRecord(node)
             this.records.set(node, record)
+            this.dirty_records.add(node)
             this.structural = true
         }
 
@@ -617,6 +593,7 @@ export default class RendererWebGPU extends Renderer {
             this.releasePanel(record)
             this.releaseText(record)
             this.records.delete(node)
+            this.dirty_records.delete(node)
             this.structural = true
         }
 

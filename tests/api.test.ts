@@ -784,6 +784,7 @@ test('UI forwards root size changes to the renderer', async () => {
 
     const ui = await TestUI.create({ renderer })
     ui.setRootSize(20)
+    ui.setRootSize(20)
 
     expect(root_sizes).toEqual([20])
 })
@@ -796,6 +797,7 @@ test('UI forwards viewport changes to the renderer', async () => {
     }
 
     const ui = await TestUI.create({ renderer })
+    ui.setViewport(320, 180)
     ui.setViewport(320, 180)
 
     expect(viewports).toEqual([[320, 180]])

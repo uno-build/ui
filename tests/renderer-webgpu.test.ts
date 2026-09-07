@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
+import { OPERATIONS } from '../src/core/UI.ts'
 import { createCommands } from '../src/renderer/utils/render-records.ts'
 import Segmenter from '../src/renderer/pretext/segmenter.ts'
 import { resolveStyle, validateStyle } from '../src/style/index.ts'
@@ -39,7 +40,9 @@ import { TEXT_EFFECT_WGSL as MTSDF_TEXT_EFFECT_WGSL } from '../src/renderer/webg
 import { TEXT_WGSL } from '../src/renderer/webgpu/shaders/text.ts'
 import { writeCommandData, writeGlyphData, writePanelData, writeTextRunData } from '../src/renderer/webgpu/writers.ts'
 
-const UPDATE_EFFECTS = { order: true, layout: true, scroll: true }
+const UPDATE_EFFECTS = { order: true, layout: true, scroll: true, context: true }
+const KEEP_STYLE_CONTEXT = { ...UPDATE_EFFECTS, context: false }
+const PAINT_EFFECTS = { order: false, layout: false, scroll: false, context: false }
 ;(globalThis as any).GPUTextureUsage = {
     TEXTURE_BINDING: 1,
     COPY_SRC: 2,
@@ -2203,7 +2206,7 @@ test('RendererWebGPU recalculates rem text after the root size changes', () => {
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(11.6)
 
     renderer.setRootSize(16)
-    renderer.beforeUpdate([node], UPDATE_EFFECTS)
+    renderer.beforeUpdate([node], KEEP_STYLE_CONTEXT)
 
     expect(applied_styles).toEqual([])
     expect(dirty_nodes).toEqual([])
@@ -2224,7 +2227,7 @@ test('RendererWebGPU recalculates rem text after the root size changes', () => {
     expect(dirty_nodes).toEqual([node])
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(12.1)
 
-    renderer.beforeUpdate([node], UPDATE_EFFECTS)
+    renderer.beforeUpdate([node], KEEP_STYLE_CONTEXT)
 
     expect(applied_styles).toHaveLength(1)
     expect(dirty_nodes).toHaveLength(1)
@@ -2292,7 +2295,7 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     applied_styles.length = 0
     dirty_nodes.length = 0
     renderer.setViewport(320, 180)
-    renderer.beforeUpdate([node], UPDATE_EFFECTS)
+    renderer.beforeUpdate([node], KEEP_STYLE_CONTEXT)
 
     expect(applied_styles).toEqual([])
     expect(dirty_nodes).toEqual([])
@@ -3408,6 +3411,37 @@ function createPoolBufferData(pool, items, writeItem) {
 
     return { bytes: pool.bytes, bytes_offset: pool.length }
 }
+
+test('RendererWebGPU only re-evaluates the records named by the operations', () => {
+    const renderer = createRenderer()
+    const root = createNode()
+    const first = createNode({ parent: root })
+    const second = createNode({ parent: root })
+    root.children.push(first, second)
+    ;(renderer as any).root_node = root
+    ;(renderer as any).updateBuffers = () => {}
+
+    const nodes = [first, second]
+    renderer.update(nodes, UPDATE_EFFECTS, [])
+
+    const updated_nodes = []
+    const updateRecord = (renderer as any).updateRecord.bind(renderer)
+    ;(renderer as any).updateRecord = (node, record) => {
+        updated_nodes.push(node)
+        return updateRecord(node, record)
+    }
+
+    renderer.update(nodes, PAINT_EFFECTS, [
+        { op: OPERATIONS.STYLE, node: first, style: resolveStyle('backgroundColor', '#123456') },
+    ])
+
+    expect(updated_nodes).toEqual([first])
+
+    updated_nodes.length = 0
+    renderer.update(nodes, PAINT_EFFECTS, [{ op: OPERATIONS.STYLE, node: root, style: resolveStyle('opacity', '0.5') }])
+
+    expect(updated_nodes).toEqual([root, first, second])
+})
 
 function collectRenderData(renderer, nodes) {
     const panels = []

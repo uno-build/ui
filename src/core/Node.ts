@@ -13,8 +13,8 @@ export default class Node {
     public order = 0
     public scroll_top = 0
     public scroll_left = 0
-    public scroll_height = 0
-    public scroll_width = 0
+    public scrollHeight = 0
+    public scrollWidth = 0
     public clientHeight = 0
     public clientWidth = 0
     public scrolling = false
@@ -245,8 +245,10 @@ export default class Node {
     }
 
     public set scrollTop(value) {
-        this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'top', value })
-        this.scroll_top = value
+        if (this.scroll_top !== value) {
+            this.scroll_top = value
+            this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'top', value })
+        }
     }
 
     public get scrollLeft() {
@@ -254,25 +256,9 @@ export default class Node {
     }
 
     public set scrollLeft(value) {
-        this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'left', value })
-        this.scroll_left = value
-    }
-
-    public get scrollHeight() {
-        return this.scroll_height
-    }
-
-    public set scrollHeight(value) {
-        this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'height', value })
-        this.scroll_height = value
-    }
-
-    public get scrollWidth() {
-        return this.scroll_width
-    }
-
-    public set scrollWidth(value) {
-        this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'width', value })
-        this.scroll_width = value
+        if (this.scroll_left !== value) {
+            this.scroll_left = value
+            this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'left', value })
+        }
     }
 }

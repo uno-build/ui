@@ -7,11 +7,8 @@ import {
 
 export function createRecord(node) {
     return {
-        dirty: 'new',
-        order: node.order,
         layout: node.layout,
-        scroll_left: node.scrollLeft,
-        scroll_top: node.scrollTop,
+        subtree: false,
         panel_slot: -1,
         run_slot: -1,
         glyph_start: 0,

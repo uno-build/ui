@@ -27,6 +27,10 @@ export default class UI {
     private nodes_created = new Set()
     private next_node_id = 0
     private resources_version = 0
+    private device_pixel_ratio = 1
+    private viewport_width
+    private viewport_height
+    private root_size
     private destroyed = false
 
     protected constructor({ renderer, resources = null, defined_events = [] }) {
@@ -97,9 +101,11 @@ export default class UI {
             }
 
             this.renderer.afterUpdate(this.nodes, effects)
+
+            const output = this.renderer.update(this.nodes, effects, this.operations)
             this.operations.clear()
 
-            return this.renderer.update(this.nodes)
+            return output
         }
     }
 
@@ -110,21 +116,25 @@ export default class UI {
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
-        if (!this.destroyed) {
+        if (!this.destroyed && this.device_pixel_ratio !== device_pixel_ratio) {
+            this.device_pixel_ratio = device_pixel_ratio
             this.operations.add({ op: OPERATIONS.PIXEL_RATIO })
             this.renderer.setDevicePixelRatio(device_pixel_ratio)
         }
     }
 
     public setViewport(width, height) {
-        if (!this.destroyed) {
+        if (!this.destroyed && (this.viewport_width !== width || this.viewport_height !== height)) {
+            this.viewport_width = width
+            this.viewport_height = height
             this.operations.add({ op: OPERATIONS.VIEWPORT })
             this.renderer.setViewport(width, height)
         }
     }
 
     public setRootSize(root_size) {
-        if (!this.destroyed) {
+        if (!this.destroyed && this.root_size !== root_size) {
+            this.root_size = root_size
             this.operations.add({ op: OPERATIONS.ROOT_SIZE })
             this.renderer.setRootSize(root_size)
         }
@@ -284,7 +294,7 @@ export default class UI {
 }
 
 function readOperationEffects(operations) {
-    const effects = { order: false, layout: false, scroll: false }
+    const effects = { order: false, layout: false, scroll: false, context: false }
 
     for (const { op, style } of operations) {
         if (op === OPERATIONS.STYLE) {
@@ -296,6 +306,7 @@ function readOperationEffects(operations) {
             effects.scroll = true
         } else if (op !== OPERATIONS.PIXEL_RATIO) {
             effects.order ||= op === OPERATIONS.ADD || op === OPERATIONS.REMOVE
+            effects.context ||= op === OPERATIONS.VIEWPORT || op === OPERATIONS.ROOT_SIZE
             effects.layout = true
         }
     }
