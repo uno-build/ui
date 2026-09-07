@@ -6,6 +6,7 @@ import {
     getCameraPosition,
     mat4Invert,
     pickAsync,
+    setStandardOpacityTexture,
     type MaterialPlugin,
     type Texture2D,
 } from '@babylonjs/lite'
@@ -104,7 +105,7 @@ export default class UIBabylonLite extends UIWorldSpace {
 
     protected configureMaterial({ texture: babylon_texture, material }) {
         material.diffuseTexture = babylon_texture
-        material.opacityTexture = babylon_texture
+        setStandardOpacityTexture(material, babylon_texture)
         material.plugins = [UI_TEXTURE_PLUGIN]
     }
 

@@ -226,14 +226,14 @@ test('Octane create and insert build the Uno node tree and apply initial styles'
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
     const root = registerRootComponent(STATIC_TREE_COMPONENT, { ui })
-    const created_nodes = []
+    const nodes_created = []
     const create_node = ui.create.bind(ui)
     let update_count = 0
     const update_ui = ui.update.bind(ui)
 
     ui.create = () => {
         const node = create_node()
-        created_nodes.push(node)
+        nodes_created.push(node)
         return node
     }
     ui.update = () => {
@@ -247,7 +247,7 @@ test('Octane create and insert build the Uno node tree and apply initial styles'
     const first_child = parent.children[0]
     const second_child = parent.children[1]
 
-    expect(created_nodes).toEqual([parent, first_child, second_child])
+    expect(nodes_created).toEqual([parent, first_child, second_child])
     expect([...ui.nodes]).toEqual([parent, first_child, second_child])
     expect(parent.parent).toBe(ui.root)
     expect(parent.children).toEqual([first_child, second_child])

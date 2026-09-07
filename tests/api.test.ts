@@ -188,7 +188,7 @@ test('UI destroy releases attached and detached nodes once', async () => {
     expect(ui.renderer).toBe(null)
     expect(ui.resources).toBe(null)
     expect((ui as any).nodes).toEqual([])
-    expect((ui as any).created_nodes.size).toBe(0)
+    expect((ui as any).nodes_created.size).toBe(0)
     expect((renderer as any).pending_styles).toEqual([])
 
     for (const node of [root, parent, child, detached]) {
@@ -229,7 +229,7 @@ test('UIWorldSpace destroy releases only its GPU texture once', () => {
             destroy() {},
         },
         nodes: [],
-        created_nodes: new Set(),
+        nodes_created: new Set(),
         destroyed: false,
         defined_events: [],
         gpu_texture: {
