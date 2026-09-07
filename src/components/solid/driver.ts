@@ -174,7 +174,9 @@ function applyStyles(node, styles_prev, styles_next) {
     }
 
     for (const name in styles_next) {
-        node.style(name, styles_next[name])
+        if (styles_next[name] !== styles_prev[name]) {
+            node.style(name, styles_next[name])
+        }
     }
 }
 

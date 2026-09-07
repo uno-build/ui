@@ -188,6 +188,8 @@ function applyStyles(node, styles_prev, styles_next) {
     }
 
     for (let key in styles_next) {
-        node.style(key, styles_next[key])
+        if (styles_next[key] !== styles_prev[key]) {
+            node.style(key, styles_next[key])
+        }
     }
 }
