@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { OPERATIONS } from '../src/core/constants.ts'
+import Operations from '../src/core/Operations.ts'
 import { createCommands } from '../src/renderer/utils/render-records.ts'
 import Segmenter from '../src/renderer/pretext/segmenter.ts'
 import { resolveStyle, validateStyle } from '../src/style/index.ts'
@@ -285,7 +286,7 @@ test('RendererWebGPU calculates scroll metrics from descendant layout overflow',
     const renderer = createRenderer()
     ;(renderer as any).root_node = root
 
-    renderer.afterUpdate([], createUpdatePlan({ layout: true }))
+    renderer.afterUpdate([], createOperations([], true))
 
     expect(root.clientWidth).toBe(110)
     expect(root.clientHeight).toBe(90)
@@ -311,7 +312,7 @@ test('RendererWebGPU includes trailing padding after direct child overflow', () 
     const renderer = createRenderer()
     ;(renderer as any).root_node = root
 
-    renderer.afterUpdate([], createUpdatePlan({ layout: true }))
+    renderer.afterUpdate([], createOperations([], true))
 
     expect(root.scrollWidth).toBe(145)
     expect(root.scrollHeight).toBe(143)
@@ -350,7 +351,7 @@ test('RendererWebGPU includes overflowing text content in scroll metrics', () =>
     )
     ;(renderer as any).root_node = root
 
-    renderer.afterUpdate([], createUpdatePlan({ layout: true }))
+    renderer.afterUpdate([], createOperations([], true))
 
     expect(text.scrollHeight).toBe(72)
     expect(root.scrollHeight).toBe(72)
@@ -372,7 +373,7 @@ test('RendererWebGPU does not propagate overflow through a clipping descendant',
     const renderer = createRenderer()
     ;(renderer as any).root_node = root
 
-    renderer.afterUpdate([], createUpdatePlan({ layout: true }))
+    renderer.afterUpdate([], createOperations([], true))
 
     expect(child.scrollWidth).toBe(140)
     expect(child.scrollHeight).toBe(140)
@@ -415,9 +416,9 @@ test('RendererWebGPU propagates descendant overflow independently by axis', () =
 
     const renderer = createRenderer()
     ;(renderer as any).root_node = horizontal_root
-    renderer.afterUpdate([], createUpdatePlan({ layout: true }))
+    renderer.afterUpdate([], createOperations([], true))
     ;(renderer as any).root_node = vertical_root
-    renderer.afterUpdate([], createUpdatePlan({ layout: true }))
+    renderer.afterUpdate([], createOperations([], true))
 
     expect(horizontal_root.scrollWidth).toBe(100)
     expect(horizontal_root.scrollHeight).toBe(150)
@@ -1623,7 +1624,7 @@ test('RendererWebGPU writes the explicit viewport and device pixel ratio into th
     ;(renderer as any).root_node = createNode({ opacity: 0 })
     renderer.setDevicePixelRatio(2)
     renderer.setViewport(320, 180)
-    renderer.update([], createUpdatePlan({ operations: [{ op: OPERATIONS.VIEWPORT }, { op: OPERATIONS.PIXEL_RATIO }] }))
+    renderer.update([], createOperations([{ op: OPERATIONS.VIEWPORT }, { op: OPERATIONS.PIXEL_RATIO }]))
 
     expect(writes).toHaveLength(1)
     expect(Array.from(writes[0].data)).toEqual([320, 180, 2, 0])
@@ -2194,23 +2195,23 @@ test('RendererWebGPU recalculates rem text after the root size changes', () => {
         },
     }
     renderer.setViewport(320, 180)
-    const initial_plan = createUpdatePlan({ operations: [{ op: OPERATIONS.VIEWPORT }], context: true })
-    initial_plan.layout = renderer.prepareLayout(initial_plan, [root])
-    renderer.beforeUpdate([], initial_plan)
+    const initial_operations = createOperations([{ op: OPERATIONS.VIEWPORT }])
+    renderer.prepareLayout(initial_operations, [root])
+    renderer.beforeUpdate([], initial_operations)
     calculations.length = 0
 
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(11.6)
 
     renderer.setRootSize(16)
-    renderer.beforeUpdate([node], createUpdatePlan())
+    renderer.beforeUpdate([node], createOperations())
 
     expect(applied_styles).toEqual([])
     expect(dirty_nodes).toEqual([])
 
     renderer.setRootSize(20)
-    const root_size_plan = createUpdatePlan({ operations: [{ op: OPERATIONS.ROOT_SIZE }], context: true })
-    root_size_plan.layout = renderer.prepareLayout(root_size_plan, [root, node])
-    renderer.beforeUpdate([node], root_size_plan)
+    const root_size_operations = createOperations([{ op: OPERATIONS.ROOT_SIZE }])
+    renderer.prepareLayout(root_size_operations, [root, node])
+    renderer.beforeUpdate([node], root_size_operations)
 
     expect(applied_styles).toEqual([
         {
@@ -2225,7 +2226,7 @@ test('RendererWebGPU recalculates rem text after the root size changes', () => {
     expect(dirty_nodes).toEqual([node])
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(12.1)
 
-    renderer.beforeUpdate([node], createUpdatePlan())
+    renderer.beforeUpdate([node], createOperations())
 
     expect(applied_styles).toHaveLength(1)
     expect(dirty_nodes).toHaveLength(1)
@@ -2269,9 +2270,9 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     }
 
     renderer.setViewport(320, 180)
-    const viewport_plan = createUpdatePlan({ operations: [{ op: OPERATIONS.VIEWPORT }], context: true })
-    viewport_plan.layout = renderer.prepareLayout(viewport_plan, [root, node])
-    renderer.beforeUpdate([node], viewport_plan)
+    const viewport_operations = createOperations([{ op: OPERATIONS.VIEWPORT }])
+    renderer.prepareLayout(viewport_operations, [root, node])
+    renderer.beforeUpdate([node], viewport_operations)
 
     expect(readAppliedStyles()).toEqual([
         {
@@ -2292,15 +2293,15 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     applied_styles.length = 0
     dirty_nodes.length = 0
     renderer.setViewport(320, 180)
-    renderer.beforeUpdate([node], createUpdatePlan())
+    renderer.beforeUpdate([node], createOperations())
 
     expect(applied_styles).toEqual([])
     expect(dirty_nodes).toEqual([])
 
     renderer.setViewport(400, 180)
-    const width_plan = createUpdatePlan({ operations: [{ op: OPERATIONS.VIEWPORT }], context: true })
-    width_plan.layout = renderer.prepareLayout(width_plan, [root, node])
-    renderer.beforeUpdate([node], width_plan)
+    const width_operations = createOperations([{ op: OPERATIONS.VIEWPORT }])
+    renderer.prepareLayout(width_operations, [root, node])
+    renderer.beforeUpdate([node], width_operations)
 
     expect(readAppliedStyles()).toEqual([
         {
@@ -2319,9 +2320,9 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     applied_styles.length = 0
     dirty_nodes.length = 0
     renderer.setViewport(400, 200)
-    const height_plan = createUpdatePlan({ operations: [{ op: OPERATIONS.VIEWPORT }], context: true })
-    height_plan.layout = renderer.prepareLayout(height_plan, [root, node])
-    renderer.beforeUpdate([node], height_plan)
+    const height_operations = createOperations([{ op: OPERATIONS.VIEWPORT }])
+    renderer.prepareLayout(height_operations, [root, node])
+    renderer.beforeUpdate([node], height_operations)
 
     expect(readAppliedStyles()).toEqual([
         {
@@ -2340,9 +2341,9 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     applied_styles.length = 0
     dirty_nodes.length = 0
     renderer.setRootSize(20)
-    const root_size_plan = createUpdatePlan({ operations: [{ op: OPERATIONS.ROOT_SIZE }], context: true })
-    root_size_plan.layout = renderer.prepareLayout(root_size_plan, [root, node])
-    renderer.beforeUpdate([node], root_size_plan)
+    const root_size_operations = createOperations([{ op: OPERATIONS.ROOT_SIZE }])
+    renderer.prepareLayout(root_size_operations, [root, node])
+    renderer.beforeUpdate([node], root_size_operations)
 
     expect(readAppliedStyles()).toEqual([
         {
@@ -3413,7 +3414,7 @@ test('RendererWebGPU acknowledges captured resource versions independently after
         updateBuffers(update_viewport)
         image_manager.registry_version++
     }
-    first.update([], createUpdatePlan({ operations }))
+    first.update([], createOperations(operations))
 
     expect(first.getPendingOperations()).toEqual([
         { op: OPERATIONS.RESOURCES, image: true, font: false, image_version: 2, font_version: 1 },
@@ -3421,7 +3422,7 @@ test('RendererWebGPU acknowledges captured resource versions independently after
     expect(second.getPendingOperations()).toEqual([
         { op: OPERATIONS.RESOURCES, image: true, font: true, image_version: 2, font_version: 1 },
     ])
-    second.update([], createUpdatePlan({ operations: second.getPendingOperations() }))
+    second.update([], createOperations(second.getPendingOperations()))
     expect(second.getPendingOperations()).toEqual([])
 })
 
@@ -3435,7 +3436,7 @@ test('RendererWebGPU detects image and font registration and disposal from their
     font_manager.fontRegister('Poppins', createImage('Poppins.png', 64, 64), createFontJson())
     const registered = renderer.getPendingOperations()
     expect(registered[0]).toMatchObject({ image: true, font: true })
-    renderer.update([], createUpdatePlan({ operations: registered }))
+    renderer.update([], createOperations(registered))
     expect(renderer.getPendingOperations()).toEqual([])
 
     image_manager.imageDispose('avatar')
@@ -3454,7 +3455,7 @@ test('RendererWebGPU keeps resource versions pending when uploading fails', () =
     const operations = renderer.getPendingOperations()
     ;(renderer as any).updateBuffers = () => { throw new Error('upload failed') }
 
-    expect(() => renderer.update([], createUpdatePlan({ operations }))).toThrow('upload failed')
+    expect(() => renderer.update([], createOperations(operations))).toThrow('upload failed')
     expect(renderer.getPendingOperations()).toEqual(operations)
 })
 
@@ -3477,9 +3478,9 @@ test('RendererWebGPU invalidates attached and detached text before querying Yoga
     expect(renderer.getTextMeasure(detached).width).toBeCloseTo(9.6)
     font.glyphs_by_unicode.get(65).advance = 1.2
     font_manager.registry_version++
-    const update_plan = createUpdatePlan({ operations: renderer.getPendingOperations() })
-    update_plan.layout = renderer.prepareLayout(update_plan, [root, attached, detached])
-    renderer.beforeUpdate([attached], update_plan)
+    const captured_operations = createOperations(renderer.getPendingOperations())
+    renderer.prepareLayout(captured_operations, [root, attached, detached])
+    renderer.beforeUpdate([attached], captured_operations)
 
     expect(events).toEqual([attached, detached, 'isDirty', 'calculate'])
     expect(renderer.getTextMeasure(attached).width).toBeCloseTo(19.2)
@@ -3501,8 +3502,9 @@ test('RendererWebGPU measures a late font after an initially empty measurement',
 
     font_manager.getDefaultFont = () => createManagedFont()
     font_manager.registry_version++
-    const update_plan = createUpdatePlan({ operations: renderer.getPendingOperations() })
-    expect(renderer.prepareLayout(update_plan, [root, node])).toBe(true)
+    const captured_operations = createOperations(renderer.getPendingOperations())
+    renderer.prepareLayout(captured_operations, [root, node])
+    expect(captured_operations.needUpdateLayout()).toBe(true)
     expect(dirty_nodes).toEqual([node])
     expect(renderer.getTextMeasure(node)).toEqual({ width: expect.closeTo(9.6), height: 20 })
 })
@@ -3520,10 +3522,13 @@ test('RendererWebGPU resolves detached relative styles before querying Yoga', ()
         isDirty() { events.push('isDirty'); return false },
     }
     renderer.setRootSize(20)
-    const update_plan = createUpdatePlan({ context: true, operations: [{ op: OPERATIONS.ROOT_SIZE }] })
+    const captured_operations = createOperations([{ op: OPERATIONS.ROOT_SIZE }])
 
-    expect(renderer.prepareLayout(update_plan, [root, detached])).toBe(true)
-    expect(renderer.prepareLayout(createUpdatePlan(), [root, detached])).toBe(false)
+    renderer.prepareLayout(captured_operations, [root, detached])
+    expect(captured_operations.needUpdateLayout()).toBe(true)
+    const next_operations = createOperations()
+    renderer.prepareLayout(next_operations, [root, detached])
+    expect(next_operations.needUpdateLayout()).toBe(false)
     expect(events).toEqual([
         { node: detached, style: { name: 'width', value: '2rem', parsed: { value: 40, kind: UNIT.PX } } },
         'isDirty',
@@ -3547,10 +3552,10 @@ test('RendererWebGPU calculates only dirty Yoga or explicit layout context chang
         { op: OPERATIONS.PIXEL_RATIO },
         { op: OPERATIONS.RESOURCES, image: true, font: false },
     ]) {
-        const update_plan = createUpdatePlan({ operations: [operation] })
-        update_plan.layout = renderer.prepareLayout(update_plan, [root])
-        expect(update_plan.layout).toBe(false)
-        renderer.beforeUpdate([], update_plan)
+        const captured_operations = createOperations([operation])
+        renderer.prepareLayout(captured_operations, [root])
+        expect(captured_operations.needUpdateLayout()).toBe(false)
+        renderer.beforeUpdate([], captured_operations)
     }
     expect(calculations).toBe(0)
 
@@ -3559,18 +3564,17 @@ test('RendererWebGPU calculates only dirty Yoga or explicit layout context chang
         { op: OPERATIONS.ROOT_SIZE },
         { op: OPERATIONS.ADD, node: root },
     ]) {
-        const update_plan = createUpdatePlan({
-            operations: [operation],
-            context: operation.op === OPERATIONS.VIEWPORT || operation.op === OPERATIONS.ROOT_SIZE,
-        })
-        update_plan.layout = renderer.prepareLayout(update_plan, [root])
-        expect(update_plan.layout).toBe(true)
-        renderer.beforeUpdate([], update_plan)
+        const captured_operations = createOperations([operation])
+        renderer.prepareLayout(captured_operations, [root])
+        expect(captured_operations.needUpdateLayout()).toBe(true)
+        renderer.beforeUpdate([], captured_operations)
     }
     dirty = true
-    const dirty_plan = createUpdatePlan()
-    dirty_plan.layout = renderer.prepareLayout(dirty_plan, [root])
-    renderer.beforeUpdate([], dirty_plan)
+    const dirty_operations = createOperations()
+    renderer.prepareLayout(dirty_operations, [root])
+    expect(dirty_operations.needCheckLayout()).toBe(false)
+    expect(dirty_operations.needUpdateLayout()).toBe(true)
+    renderer.beforeUpdate([], dirty_operations)
     expect(calculations).toBe(4)
 })
 
@@ -3590,17 +3594,20 @@ test('RendererWebGPU clamps only targeted scroll nodes without recalculating met
     sibling.scrollTop = 100
     ;(renderer as any).getNodeContentSize = () => { throw new Error('metrics read') }
     ;(renderer as any).layouter = { calculate() { throw new Error('layout calculation') } }
-    const update_plan = createUpdatePlan({ scroll_nodes: new Set([target]) })
+    const captured_operations = createOperations([
+        { op: OPERATIONS.SCROLL, node: target, direction: 'left', value: -10 },
+        { op: OPERATIONS.SCROLL, node: target, direction: 'top', value: 100 },
+    ])
 
-    renderer.beforeUpdate([target, sibling], update_plan)
-    renderer.afterUpdate([target, sibling], update_plan)
+    renderer.beforeUpdate([target, sibling], captured_operations)
+    renderer.afterUpdate([target, sibling], captured_operations)
 
     expect(target.scrollLeft).toBe(0)
     expect(target.scrollTop).toBe(30)
     expect(target.scrollWidth).toBe(70)
     expect(target.scrollHeight).toBe(40)
     expect(sibling.scrollTop).toBe(100)
-    expect([...update_plan.scroll_nodes]).toEqual([target])
+    expect([...captured_operations.scroll_nodes]).toEqual([target])
 })
 
 test('RendererWebGPU propagates cross-axis overflow changes and records internal clamps with clean Yoga', () => {
@@ -3612,19 +3619,23 @@ test('RendererWebGPU propagates cross-axis overflow changes and records internal
     parent.children.push(child)
     ;(renderer as any).root_node = root
     ;(renderer as any).layouter = { isDirty() { return false }, calculate() { throw new Error('layout calculation') } }
-    renderer.afterUpdate([parent, child], createUpdatePlan({ layout: true }))
+    renderer.afterUpdate([parent, child], createOperations([], true))
     root.scrollTop = 50
     parent.styles.overflowY = { parsed: { enum: OVERFLOW.hidden } }
-    const update_plan = createUpdatePlan({ scroll_metrics: true })
-    update_plan.layout = renderer.prepareLayout(update_plan, [root, parent, child])
-    renderer.beforeUpdate([parent, child], update_plan)
-    renderer.afterUpdate([parent, child], update_plan)
+    const captured_operations = createOperations([
+        { op: OPERATIONS.STYLE, node: parent, style: resolveStyle('overflowY', 'hidden') },
+    ])
+    renderer.prepareLayout(captured_operations, [root, parent, child])
+    renderer.beforeUpdate([parent, child], captured_operations)
+    renderer.afterUpdate([parent, child], captured_operations)
 
-    expect(update_plan.layout).toBe(false)
+    expect(captured_operations.needUpdateLayout()).toBe(false)
+    expect(captured_operations.needCheckLayout()).toBe(true)
+    expect(captured_operations.needUpdateScrollMetrics()).toBe(true)
     expect(root.scrollWidth).toBe(150)
     expect(root.scrollHeight).toBe(100)
     expect(root.scrollTop).toBe(0)
-    expect(update_plan.scroll_nodes.has(root)).toBe(true)
+    expect(captured_operations.scroll_nodes.has(root)).toBe(true)
 })
 
 test('RendererWebGPU selects local damage and deduplicates overlapping inherited subtrees', () => {
@@ -3639,7 +3650,7 @@ test('RendererWebGPU selects local damage and deduplicates overlapping inherited
     child.children.push(grandchild)
     const nodes = [parent, child, grandchild, sibling]
     ;(renderer as any).root_node = root
-    renderer.update(nodes, createUpdatePlan({ painting_order: true }))
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
     const updated_nodes = []
     const updateRecord = (renderer as any).updateRecord.bind(renderer)
     ;(renderer as any).updateRecord = (node, record) => {
@@ -3647,35 +3658,38 @@ test('RendererWebGPU selects local damage and deduplicates overlapping inherited
         return updateRecord(node, record)
     }
 
-    renderer.update(nodes, createUpdatePlan({
-        operations: [{ op: OPERATIONS.STYLE, node: child, style: resolveStyle('backgroundColor', '#123') }],
-    }))
+    renderer.update(nodes, createOperations([
+        { op: OPERATIONS.STYLE, node: child, style: resolveStyle('backgroundColor', '#123') },
+    ]))
     expect(updated_nodes).toEqual([child])
 
     updated_nodes.length = 0
-    renderer.update(nodes, createUpdatePlan({
-        operations: [{ op: OPERATIONS.STYLE, node: parent, style: resolveStyle('opacity', '0.5') }],
-    }))
+    renderer.update(nodes, createOperations([
+        { op: OPERATIONS.STYLE, node: parent, style: resolveStyle('opacity', '0.5') },
+    ]))
     expect(updated_nodes).toEqual([parent, child, grandchild])
 
     updated_nodes.length = 0
-    renderer.update(nodes, createUpdatePlan({ scroll_nodes: new Set([parent]) }))
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.SCROLL, node: parent, direction: 'top', value: 10 }]))
     expect(updated_nodes).toEqual([child, grandchild])
 
     updated_nodes.length = 0
     let child_traversals = 0
     const descendants = child.children
     Object.defineProperty(child, 'children', { get() { child_traversals++; return descendants } })
-    renderer.update(nodes, createUpdatePlan({
-        operations: [{ op: OPERATIONS.STYLE, node: parent, style: resolveStyle('overflowY', 'hidden') }],
-        layout_nodes: new Set([child, parent, grandchild]),
-        scroll_nodes: new Set([parent]),
-    }))
+    const operations = createOperations([
+        { op: OPERATIONS.STYLE, node: parent, style: resolveStyle('overflowY', 'hidden') },
+    ])
+    operations.layout_nodes.add(child)
+    operations.layout_nodes.add(parent)
+    operations.layout_nodes.add(grandchild)
+    operations.scroll_nodes.add(parent)
+    renderer.update(nodes, operations)
     expect(updated_nodes).toEqual([parent, child, grandchild])
     expect(child_traversals).toBeLessThanOrEqual(1)
 
     updated_nodes.length = 0
-    renderer.update(nodes, createUpdatePlan({ operations: [{ op: OPERATIONS.PIXEL_RATIO }] }))
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.PIXEL_RATIO }]))
     expect(updated_nodes).toEqual([root, ...nodes])
 })
 
@@ -3687,7 +3701,9 @@ test('RendererWebGPU creates missing root and subtree records before rebuilding 
     root.children.push(parent)
     parent.children.push(child)
     ;(renderer as any).root_node = root
-    renderer.update([parent, child], createUpdatePlan({ painting_order: true }))
+    renderer.update([parent, child], createOperations([
+        { op: OPERATIONS.STYLE, node: root, style: resolveStyle('zIndex', '1') },
+    ]))
 
     expect((renderer as any).records.size).toBe(3)
     expect((renderer as any).command_count).toBe(3)
@@ -3695,13 +3711,13 @@ test('RendererWebGPU creates missing root and subtree records before rebuilding 
     ;(renderer as any).layouter = { detachChild() {}, insertChild() {} }
     renderer.detachChild(root, parent)
     root.children.length = 0
-    renderer.update([], createUpdatePlan({ painting_order: true, operations: [{ op: OPERATIONS.REMOVE, node: parent }] }))
+    renderer.update([], createOperations([{ op: OPERATIONS.REMOVE, node: parent }]))
     expect((renderer as any).records.size).toBe(1)
     expect((renderer as any).command_count).toBe(1)
 
     root.children.push(parent)
     renderer.addChild(root, parent, 0)
-    renderer.update([parent, child], createUpdatePlan({ painting_order: true, operations: [{ op: OPERATIONS.ADD, node: parent }] }))
+    renderer.update([parent, child], createOperations([{ op: OPERATIONS.ADD, node: parent }]))
     expect((renderer as any).records.size).toBe(3)
     expect((renderer as any).command_count).toBe(3)
 })
@@ -3712,7 +3728,7 @@ test('RendererWebGPU rebuilds commands only for order or structural panel and te
     const node = createNode({ parent: root, text_content: 'A' })
     root.children.push(node)
     ;(renderer as any).root_node = root
-    renderer.update([node], createUpdatePlan({ painting_order: true }))
+    renderer.update([node], createOperations([{ op: OPERATIONS.ADD, node: root }]))
     const command_counts = []
     const fill = (renderer as any).command_pool.fill.bind((renderer as any).command_pool)
     ;(renderer as any).command_pool.fill = (commands, writeCommand) => {
@@ -3720,25 +3736,23 @@ test('RendererWebGPU rebuilds commands only for order or structural panel and te
         fill(commands, writeCommand)
     }
     node.styles.backgroundColor = { parsed: { rgba: [0, 0, 0, 255] } }
-    renderer.update([node], createUpdatePlan({
-        operations: [{ op: OPERATIONS.STYLE, node, style: resolveStyle('backgroundColor', '#000') }],
-    }))
+    renderer.update([node], createOperations([
+        { op: OPERATIONS.STYLE, node, style: resolveStyle('backgroundColor', '#000') },
+    ]))
     expect(command_counts).toEqual([])
     expect((renderer as any).command_pool.uploaded).toBe(0)
 
-    renderer.update([node], createUpdatePlan({ painting_order: true }))
+    renderer.update([node], createOperations([{ op: OPERATIONS.STYLE, node, style: resolveStyle('zIndex', '1') }]))
     expect(command_counts).toEqual([3])
 
     node.text_content = 'AB'
     ;(renderer as any).layouter = { markDirty() {} }
     renderer.invalidateTextNode(node)
-    renderer.update([node], createUpdatePlan({ operations: [{ op: OPERATIONS.TEXT, node, value: 'AB' }] }))
+    renderer.update([node], createOperations([{ op: OPERATIONS.TEXT, node, value: 'AB' }]))
     expect(command_counts).toEqual([3, 4])
 
     node.styles.opacity = { parsed: { value: 0 } }
-    renderer.update([node], createUpdatePlan({
-        operations: [{ op: OPERATIONS.STYLE, node, style: resolveStyle('opacity', '0') }],
-    }))
+    renderer.update([node], createOperations([{ op: OPERATIONS.STYLE, node, style: resolveStyle('opacity', '0') }]))
     expect(command_counts).toEqual([3, 4, 1])
 })
 
@@ -3751,18 +3765,18 @@ test('RendererWebGPU reuses the viewport uniform and ignores unchanged fractiona
     }
     renderer.setViewport(320, 180)
     renderer.setDevicePixelRatio(1.1)
-    renderer.update([], createUpdatePlan({ operations: [{ op: OPERATIONS.VIEWPORT }, { op: OPERATIONS.PIXEL_RATIO }] }))
+    renderer.update([], createOperations([{ op: OPERATIONS.VIEWPORT }, { op: OPERATIONS.PIXEL_RATIO }]))
     expect(writes).toHaveLength(1)
     expect(writes[0].values).toEqual([320, 180, Math.fround(1.1), 0])
 
     for (let index = 0; index < 5; index++) {
-        renderer.update([], createUpdatePlan())
+        renderer.update([], createOperations())
     }
-    renderer.update([], createUpdatePlan({ operations: [{ op: OPERATIONS.ROOT_SIZE }] }))
+    renderer.update([], createOperations([{ op: OPERATIONS.ROOT_SIZE }]))
     expect(writes).toHaveLength(1)
 
     renderer.setDevicePixelRatio(2)
-    renderer.update([], createUpdatePlan({ operations: [{ op: OPERATIONS.PIXEL_RATIO }] }))
+    renderer.update([], createOperations([{ op: OPERATIONS.PIXEL_RATIO }]))
     expect(writes).toHaveLength(2)
     expect(writes[1].data).toBe(writes[0].data)
     expect(writes[1].values).toEqual([320, 180, 2, 0])
@@ -4165,15 +4179,12 @@ function createNode({
     }
 }
 
-function createUpdatePlan(overrides = {}) {
-    return {
-        operations: [],
-        layout: false,
-        painting_order: false,
-        context: false,
-        scroll_metrics: false,
-        layout_nodes: new Set(),
-        scroll_nodes: new Set(),
-        ...overrides,
+function createOperations(items = [], update_layout = false) {
+    const operations = new Operations()
+    for (const operation of items) {
+        operations.add(operation)
     }
+    operations.capture(() => [])
+    operations.setUpdateLayout(update_layout)
+    return operations
 }

@@ -52,9 +52,9 @@ export default class TestRenderer extends Renderer {
         }
     }
 
-    public beforeUpdate(nodes, update_plan) {
-        super.beforeUpdate(nodes, update_plan)
-        if (update_plan.layout) {
+    public beforeUpdate(nodes, operations) {
+        super.beforeUpdate(nodes, operations)
+        if (operations.needUpdateLayout()) {
             this.layouter.calculate()
         }
     }

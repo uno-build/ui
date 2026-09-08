@@ -17,15 +17,15 @@ export default abstract class Renderer {
         return []
     }
 
-    public prepareLayout(update_plan, _nodes_created) {
-        return update_plan.layout
+    public prepareLayout(operations, _nodes_created) {
+        operations.setUpdateLayout(operations.needCheckLayout())
     }
 
-    public beforeUpdate(_nodes, _update_plan) {}
+    public beforeUpdate(_nodes, _operations) {}
 
-    public afterUpdate(_nodes, _update_plan) {}
+    public afterUpdate(_nodes, _operations) {}
 
-    public update(_nodes, _update_plan) {}
+    public update(_nodes, _operations) {}
 
     public draw(options?) {}
 

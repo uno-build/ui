@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { OPERATIONS } from '../src/core/constants.ts'
+import Operations from '../src/core/Operations.ts'
 import Resources from '../src/core/Resources.ts'
 import RendererDom from '../src/renderer/RendererDom.ts'
 import ResourcesDom from '../src/renderer/dom/ResourcesDom.ts'
@@ -185,15 +186,16 @@ test('RendererDom observes loaded web fonts without UI operations and acknowledg
         expect(operations).toHaveLength(1)
         expect(operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: false, font: true })
 
-        const update_plan = { operations, layout: true }
-        expect(renderer.prepareLayout(update_plan, new Set())).toBe(true)
+        const captured_operations = createOperations(operations)
+        renderer.prepareLayout(captured_operations, new Set())
+        expect(captured_operations.needUpdateLayout()).toBe(true)
         fonts.dispatchEvent({ type: 'loadingdone' })
-        renderer.update([], update_plan)
+        renderer.update([], captured_operations)
 
         const next_operations = renderer.getPendingOperations()
         expect(next_operations).toHaveLength(1)
         expect(next_operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: false, font: true })
-        renderer.update([], { operations: next_operations })
+        renderer.update([], createOperations(next_operations))
         expect(renderer.getPendingOperations()).toEqual([])
     } finally {
         renderer.destroy([])
@@ -220,20 +222,20 @@ test('RendererDom refreshes detached background images after registration and di
     resources.registerImage('avatar', { src: '/assets/avatar.png' })
     const operations = renderer.getPendingOperations()
     expect(operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: true, font: false })
-    const update_plan = { operations, layout: false }
-    renderer.prepareLayout(update_plan, new Set([node]))
+    const captured_operations = createOperations(operations)
+    renderer.prepareLayout(captured_operations, new Set([node]))
 
     expect(element.style.backgroundImage).toBe('url("/assets/avatar.png")')
     expect(element.style.backgroundRepeat).toBe('repeat-x')
     expect(renderer.getPendingOperations()).toHaveLength(1)
-    renderer.update([], update_plan)
+    renderer.update([], captured_operations)
     expect(renderer.getPendingOperations()).toEqual([])
 
     resources.disposeImage('avatar')
-    const disposal_plan = { operations: renderer.getPendingOperations(), layout: false }
-    renderer.prepareLayout(disposal_plan, new Set([node]))
+    const disposal_operations = createOperations(renderer.getPendingOperations())
+    renderer.prepareLayout(disposal_operations, new Set([node]))
     expect(element.style.backgroundImage).toBe('none')
-    renderer.update([], disposal_plan)
+    renderer.update([], disposal_operations)
     expect(renderer.getPendingOperations()).toEqual([])
 })
 
@@ -259,17 +261,17 @@ test('RendererDom refreshes detached font metrics while preserving explicit line
     expect(elements.map((element) => element.style.lineHeight)).toEqual(['', '20px', ''])
 
     resources.registerFont('Poppins', {}, { metrics: { lineHeight: 1.5 } })
-    const update_plan = { operations: renderer.getPendingOperations(), layout: true }
-    expect(update_plan.operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: false, font: true })
-    renderer.prepareLayout(update_plan, new Set(nodes))
+    const captured_operations = createOperations(renderer.getPendingOperations())
+    expect(captured_operations.items[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: false, font: true })
+    renderer.prepareLayout(captured_operations, new Set(nodes))
     expect(elements.map((element) => element.style.lineHeight)).toEqual(['1.5', '20px', '1.5'])
-    renderer.update([], update_plan)
+    renderer.update([], captured_operations)
 
     resources.disposeFont('Poppins')
-    const disposal_plan = { operations: renderer.getPendingOperations(), layout: true }
-    renderer.prepareLayout(disposal_plan, new Set(nodes))
+    const disposal_operations = createOperations(renderer.getPendingOperations())
+    renderer.prepareLayout(disposal_operations, new Set(nodes))
     expect(elements.map((element) => element.style.lineHeight)).toEqual(['', '20px', ''])
-    renderer.update([], disposal_plan)
+    renderer.update([], disposal_operations)
     expect(renderer.getPendingOperations()).toEqual([])
 })
 
@@ -281,18 +283,18 @@ test('RendererDom observes shared resource versions independently and retains re
 
     const first_operations = first_renderer.getPendingOperations()
     const second_operations = second_renderer.getPendingOperations()
-    first_renderer.update([], { operations: first_operations })
+    first_renderer.update([], createOperations(first_operations))
 
     expect(first_renderer.getPendingOperations()).toEqual([])
     expect(second_renderer.getPendingOperations()).toEqual(second_operations)
 
     resources.registerFont('Poppins', {}, { metrics: { lineHeight: 1.5 } })
-    second_renderer.update([], { operations: second_operations })
+    second_renderer.update([], createOperations(second_operations))
 
     expect(first_renderer.getPendingOperations()[0]).toMatchObject({ image: false, font: true })
     expect(second_renderer.getPendingOperations()[0]).toMatchObject({ image: false, font: true })
-    first_renderer.update([], { operations: first_renderer.getPendingOperations() })
-    second_renderer.update([], { operations: second_renderer.getPendingOperations() })
+    first_renderer.update([], createOperations(first_renderer.getPendingOperations()))
+    second_renderer.update([], createOperations(second_renderer.getPendingOperations()))
     expect(first_renderer.getPendingOperations()).toEqual([])
     expect(second_renderer.getPendingOperations()).toEqual([])
 })
@@ -309,8 +311,8 @@ test('RendererDom removes its font listener while preserving shared resources an
     try {
         await first_renderer.init()
         await second_renderer.init()
-        first_renderer.update([], { operations: first_renderer.getPendingOperations() })
-        second_renderer.update([], { operations: second_renderer.getPendingOperations() })
+        first_renderer.update([], createOperations(first_renderer.getPendingOperations()))
+        second_renderer.update([], createOperations(second_renderer.getPendingOperations()))
         expect(fonts.getListenerCount('loadingdone')).toBe(2)
 
         first_renderer.destroy([])
@@ -349,9 +351,9 @@ test('RendererDom synchronizes node scroll state after update', () => {
     renderer.createElement(root)
     ;(renderer as any).elements.set(node, element)
 
-    const update_plan = { operations: [], layout: true, scroll_metrics: false, scroll_nodes: new Set() }
-    renderer.beforeUpdate([node], update_plan)
-    renderer.afterUpdate([node], update_plan)
+    const operations = createOperations([], true)
+    renderer.beforeUpdate([node], operations)
+    renderer.afterUpdate([node], operations)
 
     expect(canvas.scrollLeft).toBe(40)
     expect(canvas.scrollTop).toBe(30)
@@ -388,19 +390,15 @@ test('RendererDom updates only text operation targets, including root and detach
         },
     })
 
-    renderer.beforeUpdate([], { operations: [], layout: true, scroll_metrics: false, scroll_nodes: new Set() })
+    renderer.beforeUpdate([], createOperations([], true))
     expect(writes).toEqual([])
 
-    renderer.beforeUpdate([], {
-        operations: [
-            { op: OPERATIONS.TEXT, node: root, value: 'captured root text' },
-            { op: OPERATIONS.TEXT, node: detached, value: '' },
-            { op: OPERATIONS.TEXT, node: destroyed, value: 'destroyed text' },
-        ],
-        layout: true,
-        scroll_metrics: false,
-        scroll_nodes: new Set(),
-    })
+    const operations = createOperations([
+        { op: OPERATIONS.TEXT, node: root, value: 'captured root text' },
+        { op: OPERATIONS.TEXT, node: detached, value: '' },
+        { op: OPERATIONS.TEXT, node: destroyed, value: 'destroyed text' },
+    ], true)
+    renderer.beforeUpdate([], operations)
 
     expect(writes).toEqual([
         { node: root, value: 'captured root text' },
@@ -450,20 +448,15 @@ test('RendererDom targets scroll operations without touching the root or sibling
     }
 
     node.scrollTop = 200
-    const update_plan = {
-        operations: [{ op: OPERATIONS.SCROLL, node, direction: 'top', value: 200 }],
-        layout: false,
-        scroll_metrics: false,
-        scroll_nodes: new Set([node]),
-    }
-    renderer.beforeUpdate([node, sibling], update_plan)
-    renderer.afterUpdate([node, sibling], update_plan)
+    const operations = createOperations([{ op: OPERATIONS.SCROLL, node, direction: 'top', value: 200 }])
+    renderer.beforeUpdate([node, sibling], operations)
+    renderer.afterUpdate([node, sibling], operations)
 
     expect(touched_nodes.length).toBeGreaterThan(0)
     expect(new Set(touched_nodes)).toEqual(new Set([node]))
     expect(metric_reads).toEqual([])
     expect(node.scrollTop).toBe(100)
-    expect(update_plan.scroll_nodes).toEqual(new Set([node]))
+    expect(operations.scroll_nodes).toEqual(new Set([node]))
 })
 
 test('UI with RendererDom skips geometry for paint, order, DPR and scroll and wakes for a loaded font', async () => {
@@ -501,7 +494,7 @@ test('UI with RendererDom skips geometry for paint, order, DPR and scroll and wa
         node.scrollTop = 20
         ui.update()
         expect(layout_reads).toEqual([ui.root, node])
-        expect((ui as any).operations).toEqual([])
+        expect((ui as any).operations.capture(() => [])).toBe(false)
 
         fonts.dispatchEvent({ type: 'loadingdone' })
         ui.update()
@@ -731,4 +724,14 @@ function createDomElement() {
     }
 
     return element
+}
+
+function createOperations(items = [], update_layout = false) {
+    const operations = new Operations()
+    for (const operation of items) {
+        operations.add(operation)
+    }
+    operations.capture(() => [])
+    operations.setUpdateLayout(update_layout)
+    return operations
 }

@@ -35,9 +35,9 @@ export default class RendererDom extends Renderer {
         return image || font ? [{ op: OPERATIONS.RESOURCES, image, font, image_version, font_version, web_font_version }] : []
     }
 
-    public prepareLayout(update_plan, nodes_created) {
-        const image = update_plan.operations.some((operation) => operation.op === OPERATIONS.RESOURCES && operation.image)
-        const font = update_plan.operations.some((operation) => operation.op === OPERATIONS.RESOURCES && operation.font)
+    public prepareLayout(operations, nodes_created) {
+        const image = operations.items.some((operation) => operation.op === OPERATIONS.RESOURCES && operation.image)
+        const font = operations.items.some((operation) => operation.op === OPERATIONS.RESOURCES && operation.font)
 
         if (image || font) {
             for (const node of nodes_created) {
@@ -50,11 +50,11 @@ export default class RendererDom extends Renderer {
             }
         }
 
-        return update_plan.layout
+        operations.setUpdateLayout(operations.needCheckLayout())
     }
 
-    public update(nodes, update_plan) {
-        for (const operation of update_plan.operations) {
+    public update(nodes, operations) {
+        for (const operation of operations.items) {
             if (operation.op === OPERATIONS.RESOURCES) {
                 this.image_registry_version = operation.image_version
                 this.font_registry_version = operation.font_version
@@ -194,26 +194,28 @@ export default class RendererDom extends Renderer {
         element.style.lineHeight = font === undefined ? '' : `${font.lineHeight}`
     }
 
-    public beforeUpdate(nodes, update_plan) {
-        for (const operation of update_plan.operations) {
+    public beforeUpdate(nodes, operations) {
+        for (const operation of operations.items) {
             if (operation.op === OPERATIONS.TEXT && operation.node.ui !== null) {
                 this.elements.get(operation.node).innerHTML = operation.value
             }
         }
 
         const scroll_nodes =
-            update_plan.layout || update_plan.scroll_metrics ? [this.root_node, ...nodes] : update_plan.scroll_nodes
+            operations.needUpdateLayout() || operations.needUpdateScrollMetrics()
+                ? [this.root_node, ...nodes]
+                : operations.scroll_nodes
         for (const node of scroll_nodes) {
             this.applyNodeScroll(node)
         }
     }
 
-    public afterUpdate(nodes, update_plan) {
-        const read_metrics = update_plan.layout || update_plan.scroll_metrics
-        const scroll_nodes = read_metrics ? [this.root_node, ...nodes] : update_plan.scroll_nodes
+    public afterUpdate(nodes, operations) {
+        const read_metrics = operations.needUpdateLayout() || operations.needUpdateScrollMetrics()
+        const scroll_nodes = read_metrics ? [this.root_node, ...nodes] : operations.scroll_nodes
         for (const node of scroll_nodes) {
             if (this.readNodeScroll(node, read_metrics)) {
-                update_plan.scroll_nodes.add(node)
+                operations.scroll_nodes.add(node)
             }
         }
     }

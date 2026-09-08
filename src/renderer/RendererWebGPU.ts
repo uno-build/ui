@@ -200,14 +200,14 @@ export default class RendererWebGPU extends Renderer {
         return image || font ? [{ op: OPERATIONS.RESOURCES, image, font, image_version, font_version }] : []
     }
 
-    public prepareLayout(update_plan, nodes_created) {
-        const fonts_changed = update_plan.operations.some(({ op, font }) => op === OPERATIONS.RESOURCES && font)
+    public prepareLayout(operations, nodes_created) {
+        const fonts_changed = operations.items.some(({ op, font }) => op === OPERATIONS.RESOURCES && font)
 
-        if (update_plan.context || fonts_changed) {
+        if (operations.hasContextChanges() || fonts_changed) {
             for (const node of nodes_created) {
                 let invalidate_text = fonts_changed
 
-                if (update_plan.context) {
+                if (operations.hasContextChanges()) {
                     for (const [name, style] of Object.entries(node.styles)) {
                         if (this.computeStyle(style) !== style) {
                             this.updateResolvedStyle(node, { name, ...style })
@@ -222,10 +222,10 @@ export default class RendererWebGPU extends Renderer {
             }
         }
 
-        return (
-            update_plan.context ||
-            update_plan.operations.some(({ op, node }) => op === OPERATIONS.ADD && node === this.root_node) ||
-            this.layouter.isDirty()
+        operations.setUpdateLayout(
+            operations.hasContextChanges() ||
+                operations.items.some(({ op, node }) => op === OPERATIONS.ADD && node === this.root_node) ||
+                this.layouter.isDirty(),
         )
     }
 
@@ -300,14 +300,14 @@ export default class RendererWebGPU extends Renderer {
         return this.layouter.getLayout(node)
     }
 
-    public beforeUpdate(nodes, update_plan) {
-        if (update_plan.layout) {
+    public beforeUpdate(nodes, operations) {
+        if (operations.needUpdateLayout()) {
             this.layouter.calculate(this.viewport_width, this.viewport_height)
         }
     }
 
-    public update(nodes, update_plan) {
-        const render_plan = this.createRenderPlan(nodes, update_plan)
+    public update(nodes, operations) {
+        const render_plan = this.createRenderPlan(nodes, operations)
         let rebuild_commands = render_plan.rebuild_commands
 
         for (const node of render_plan.record_nodes) {
@@ -323,7 +323,7 @@ export default class RendererWebGPU extends Renderer {
 
         this.updateBuffers(render_plan.update_viewport)
 
-        for (const operation of update_plan.operations) {
+        for (const operation of operations.items) {
             if (operation.op === OPERATIONS.RESOURCES) {
                 this.image_registry_version = operation.image_version
                 this.font_registry_version = operation.font_version
@@ -331,12 +331,12 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
-    public afterUpdate(nodes, update_plan) {
-        if (update_plan.layout || update_plan.scroll_metrics) {
-            updateScrollMetrics(this.root_node, (node) => this.getNodeContentSize(node), update_plan.scroll_nodes)
+    public afterUpdate(nodes, operations) {
+        if (operations.needUpdateLayout() || operations.needUpdateScrollMetrics()) {
+            updateScrollMetrics(this.root_node, (node) => this.getNodeContentSize(node), operations.scroll_nodes)
         } else {
-            for (const node of update_plan.scroll_nodes) {
-                clampScroll(node, update_plan.scroll_nodes)
+            for (const node of operations.scroll_nodes) {
+                clampScroll(node, operations.scroll_nodes)
             }
         }
     }
@@ -457,13 +457,13 @@ export default class RendererWebGPU extends Renderer {
         return this.getTextMeasure(node, content_width)
     }
 
-    private createRenderPlan(nodes, update_plan) {
+    private createRenderPlan(nodes, operations) {
         const record_nodes = new Set()
         const expanded_subtrees = new Set()
-        const full_rebuild = update_plan.operations.some(({ op }) =>
+        const full_rebuild = operations.items.some(({ op }) =>
             [OPERATIONS.VIEWPORT, OPERATIONS.PIXEL_RATIO, OPERATIONS.ROOT_SIZE, OPERATIONS.RESOURCES].includes(op),
         )
-        const update_viewport = update_plan.operations.some(
+        const update_viewport = operations.items.some(
             ({ op }) => op === OPERATIONS.VIEWPORT || op === OPERATIONS.PIXEL_RATIO,
         )
         const isActive = (node) => {
@@ -488,9 +488,9 @@ export default class RendererWebGPU extends Renderer {
             record_nodes.add(this.root_node)
             nodes.forEach((node) => record_nodes.add(node))
         } else {
-            if (update_plan.layout_nodes.size > 0) {
+            if (operations.layout_nodes.size > 0) {
                 const addLayoutNode = (node) => {
-                    if (update_plan.layout_nodes.has(node) || expanded_subtrees.has(node.parent)) {
+                    if (operations.layout_nodes.has(node) || expanded_subtrees.has(node.parent)) {
                         expanded_subtrees.add(node)
                         record_nodes.add(node)
                     }
@@ -499,7 +499,7 @@ export default class RendererWebGPU extends Renderer {
                 nodes.forEach(addLayoutNode)
             }
 
-            for (const operation of update_plan.operations) {
+            for (const operation of operations.items) {
                 if (operation.op === OPERATIONS.STYLE) {
                     if (operation.style.expanded.every(({ name }) => name === STYLE.ZINDEX.name)) {
                         continue
@@ -520,7 +520,7 @@ export default class RendererWebGPU extends Renderer {
                 }
             }
 
-            for (const node of update_plan.scroll_nodes) {
+            for (const node of operations.scroll_nodes) {
                 if (isActive(node)) {
                     for (const child of node.children) {
                         addSubtree(child)
@@ -529,7 +529,7 @@ export default class RendererWebGPU extends Renderer {
             }
         }
 
-        if (update_plan.painting_order) {
+        if (operations.needUpdateOrder()) {
             if (!this.records.has(this.root_node)) {
                 record_nodes.add(this.root_node)
             }
@@ -540,7 +540,7 @@ export default class RendererWebGPU extends Renderer {
             }
         }
 
-        return { record_nodes, rebuild_commands: update_plan.painting_order, update_viewport }
+        return { record_nodes, rebuild_commands: operations.needUpdateOrder(), update_viewport }
     }
 
     private updateRecord(node, record) {
