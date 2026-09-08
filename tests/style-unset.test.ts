@@ -192,11 +192,15 @@ test('WebGPU unset restores the undefined state for all 81 styles', async ({ pag
                 { default: ResourcesWebGPU },
                 { loadYoga },
                 { loadImage, loadJson },
+                { createNodeMetricsResolver },
+                { RECORD_ALL },
             ] = await Promise.all([
                 import(module_urls.ui),
                 import(module_urls.resources),
                 import('/@id/yoga-layout/load'),
                 import(module_urls.assets),
+                import(module_urls.metrics),
+                import(module_urls.constants),
             ])
             const [coin, poppins_image, poppins_json, changa_image, changa_json] = await Promise.all([
                 loadImage('/assets/images/coin.png'),
@@ -250,10 +254,11 @@ test('WebGPU unset restores the undefined state for all 81 styles', async ({ pag
                 const glyphs = []
                 const text_runs = []
                 const records = []
+                const getNodeMetrics = createNodeMetricsResolver()
 
                 for (const node of nodes) {
                     const record = renderer.getRecord(node)
-                    const { panel_data, text_data } = renderer.updateRecord(node, record)
+                    const { panel_data, text_data } = renderer.updateRecord(node, record, RECORD_ALL, getNodeMetrics)
                     if (panel_data !== null) {
                         panels.push(panel_data)
                     }
@@ -395,6 +400,8 @@ test('WebGPU unset restores the undefined state for all 81 styles', async ({ pag
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIWebGPU.ts`,
                 resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
+                metrics: `/@fs${WORKSPACE_PATH}src/renderer/utils/render-metrics.ts`,
+                constants: `/@fs${WORKSPACE_PATH}src/style/constants.ts`,
                 assets: `/@fs${WORKSPACE_PATH}tests/utils/load-assets.ts`,
             },
             style_cases: STYLE_CASES,

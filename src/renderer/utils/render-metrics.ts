@@ -5,6 +5,8 @@ import {
     FLEX_DIRECTION,
     KEYWORD,
     OVERFLOW,
+    RECORD_PANEL,
+    RECORD_TEXT,
     UNIT,
 } from '../../style/constants'
 import { TRANSPARENT_COLOR } from '../webgpu/buffers'
@@ -15,6 +17,7 @@ const EMPTY_BORDER_RADIUS = [
     [0, 0, 0, 0],
     [0, 0, 0, 0],
 ]
+const ROOT_METRICS = { x: 0, y: 0, opacity: 1, scroll_left: 0, scroll_top: 0, clip: null, children_clip: null }
 
 export const FEATURES = {
     panel: true,
@@ -27,9 +30,151 @@ export const FEATURES = {
     text_stroke: true,
 }
 
+export function createNodeMetricsResolver(single_record_parts = 0) {
+    if (single_record_parts !== 0) {
+        if (!(single_record_parts & RECORD_PANEL) || !(single_record_parts & RECORD_TEXT)) {
+            return getSingleNodeMetrics
+        }
+        let node_metrics
+        return function getNodeMetrics(node) {
+            return node_metrics ??= getSingleNodeMetrics(node)
+        }
+    }
+
+    const metrics = new Map()
+    const pending_nodes = []
+    let last_leaf_node
+    let last_leaf_metrics
+
+    return function getNodeMetrics(node) {
+        if (node === last_leaf_node) {
+            return last_leaf_metrics
+        }
+        const is_leaf = node.children.length === 0
+        if (!is_leaf) {
+            const cached_metrics = metrics.get(node)
+            if (cached_metrics !== undefined) {
+                return cached_metrics
+            }
+        }
+
+        let ancestor = node.parent
+        let current_metrics = ancestor === null ? ROOT_METRICS : metrics.get(ancestor)
+        let pending_count = 0
+        while (current_metrics === undefined) {
+            pending_nodes[pending_count++] = ancestor
+            ancestor = ancestor.parent
+            current_metrics = ancestor === null ? ROOT_METRICS : metrics.get(ancestor)
+        }
+
+        for (let index = pending_count; index >= 0; index--) {
+            const current_node = index === 0 ? node : pending_nodes[index - 1]
+            const { layout, styles } = current_node
+            const scroll_left = current_metrics.scroll_left
+            const scroll_top = current_metrics.scroll_top
+            const x = layout.x - scroll_left
+            const y = layout.y - scroll_top
+            const clip = current_metrics.children_clip
+            const opacity = current_metrics.opacity * (styles.opacity?.parsed.value ?? 1)
+            // Each record is visited once; its panel and text consume leaf metrics consecutively.
+            if (index === 0 && is_leaf) {
+                last_leaf_node = node
+                last_leaf_metrics = { x, y, opacity, clip }
+                return last_leaf_metrics
+            }
+            const overflow_x = styles.overflowX?.parsed.enum ?? OVERFLOW.visible
+            const overflow_y = styles.overflowY?.parsed.enum ?? OVERFLOW.visible
+            const clip_x = overflow_x === OVERFLOW.hidden || overflow_x === OVERFLOW.scroll
+            const clip_y = overflow_y === OVERFLOW.hidden || overflow_y === OVERFLOW.scroll
+            let children_clip = clip
+
+            if (clip_x || clip_y) {
+                const top = clip_y ? Math.max(clip?.top ?? -Infinity, y + layout.border.top) : (clip?.top ?? -Infinity)
+                const right = clip_x
+                    ? Math.min(clip?.right ?? Infinity, x + layout.width - layout.border.right)
+                    : (clip?.right ?? Infinity)
+                const bottom = clip_y
+                    ? Math.min(clip?.bottom ?? Infinity, y + layout.height - layout.border.bottom)
+                    : (clip?.bottom ?? Infinity)
+                const left = clip_x ? Math.max(clip?.left ?? -Infinity, x + layout.border.left) : (clip?.left ?? -Infinity)
+                children_clip =
+                    clip !== null && top === clip.top && right === clip.right && bottom === clip.bottom && left === clip.left
+                        ? clip
+                        : { top, right, bottom, left }
+            }
+
+            current_metrics = {
+                x,
+                y,
+                opacity,
+                scroll_left: scroll_left + current_node.scrollLeft,
+                scroll_top: scroll_top + current_node.scrollTop,
+                clip,
+                children_clip,
+            }
+            metrics.set(current_node, current_metrics)
+        }
+
+        return current_metrics
+    }
+}
+
+function getSingleNodeMetrics(node) {
+    let opacity = node.styles.opacity?.parsed.value ?? 1
+    let scroll_left = 0
+    let scroll_top = 0
+    let top = -Infinity
+    let right = Infinity
+    let bottom = Infinity
+    let left = -Infinity
+    let has_clip = false
+    let ancestor = node.parent
+
+    while (ancestor !== null) {
+        scroll_left += ancestor.scrollLeft
+        scroll_top += ancestor.scrollTop
+        opacity *= ancestor.styles.opacity?.parsed.value ?? 1
+        const overflow_x = ancestor.styles.overflowX?.parsed.enum ?? OVERFLOW.visible
+        const overflow_y = ancestor.styles.overflowY?.parsed.enum ?? OVERFLOW.visible
+        const clip_x = overflow_x === OVERFLOW.hidden || overflow_x === OVERFLOW.scroll
+        const clip_y = overflow_y === OVERFLOW.hidden || overflow_y === OVERFLOW.scroll
+        if (clip_x) {
+            left = Math.max(left, ancestor.layout.x + scroll_left + ancestor.layout.border.left)
+            right = Math.min(right, ancestor.layout.x + scroll_left + ancestor.layout.width - ancestor.layout.border.right)
+        }
+        if (clip_y) {
+            top = Math.max(top, ancestor.layout.y + scroll_top + ancestor.layout.border.top)
+            bottom = Math.min(bottom, ancestor.layout.y + scroll_top + ancestor.layout.height - ancestor.layout.border.bottom)
+        }
+        has_clip ||= clip_x || clip_y
+        ancestor = ancestor.parent
+    }
+
+    return {
+        x: node.layout.x - scroll_left,
+        y: node.layout.y - scroll_top,
+        opacity,
+        clip: has_clip ? {
+            top: top - scroll_top,
+            right: right - scroll_left,
+            bottom: bottom - scroll_top,
+            left: left - scroll_left,
+        } : null,
+    }
+}
+
+export function isNodeClipped({ x, y, clip }, width, height) {
+    return (
+        clip !== null && (
+            clip.right <= clip.left || clip.bottom <= clip.top ||
+            clip.right <= x || clip.bottom <= y || clip.left >= x + width || clip.top >= y + height
+        )
+    )
+}
+
 // If null is returned, the node should not be drawn
-export function getNodeDrawingData(node, computeStyleValue) {
-    const { x, y, width, height } = getNodeRenderLayout(node)
+export function getNodeDrawingData(node, computeStyleValue, getNodeMetrics) {
+    const { width, height } = node.layout
     const display = node.styles.display?.parsed.enum || DISPLAY.flex
     if (width === 0 || height === 0 || display !== DISPLAY.flex) {
         return null
@@ -52,16 +197,13 @@ export function getNodeDrawingData(node, computeStyleValue) {
         return null
     }
 
-    const opacity = getNodeOpacity(node)
-    if (opacity <= 0) {
+    const node_metrics = getNodeMetrics(node)
+    const { x, y, opacity, clip } = node_metrics
+    if (opacity <= 0 || isNodeClipped(node_metrics, width, height)) {
         return null
     }
 
-    const clip = getAncestorClipping(node)
-    const normalized_clipping = clip === null ? [0, 0, 0, 0] : [clip.top, clip.right, clip.bottom, clip.left]
-    if (clip !== null && (clip.right <= 0 || clip.bottom <= 0 || clip.left >= width || clip.top >= height)) {
-        return null
-    }
+    const normalized_clipping = clip === null ? [0, 0, 0, 0] : [clip.top - y, clip.right - x, clip.bottom - y, clip.left - x]
 
     const [border_radius_x, border_radius_y] = FEATURES.border_radius
         ? getNodeBorderRadius(node, computeStyleValue, width, height)
@@ -422,8 +564,8 @@ export function getMainAxisOverflow(node) {
         : (node.styles.overflowX?.parsed.enum ?? OVERFLOW.visible)
 }
 
-export function collectPanelData(node, image_manager, computeStyle) {
-    const drawing_data = getNodeDrawingData(node, computeStyle)
+export function collectPanelData(node, image_manager, computeStyle, getNodeMetrics) {
+    const drawing_data = getNodeDrawingData(node, computeStyle, getNodeMetrics)
     if (drawing_data === null) {
         return null
     }

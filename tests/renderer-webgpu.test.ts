@@ -3,6 +3,12 @@ import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { OPERATIONS, RESOURCE_EVENT } from '../src/core/constants.ts'
 import Operations from '../src/core/Operations.ts'
 import { createCommands } from '../src/renderer/utils/render-records.ts'
+import {
+    createNodeMetricsResolver,
+    getAncestorClipping,
+    getNodeOpacity,
+    getNodeRenderLayout,
+} from '../src/renderer/utils/render-metrics.ts'
 import Segmenter from '../src/renderer/pretext/segmenter.ts'
 import { resolveStyle, validateStyle } from '../src/style/index.ts'
 import {
@@ -16,6 +22,9 @@ import {
     WHITE_SPACE,
     UNIT,
     MEASURE_MODE,
+    RECORD_ALL,
+    RECORD_PANEL,
+    RECORD_TEXT_RUN,
 } from '../src/style/constants.ts'
 import {
     COMMAND,
@@ -3671,9 +3680,9 @@ test('RendererWebGPU selects local damage and deduplicates overlapping inherited
     renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
     const updated_nodes = []
     const updateRecord = (renderer as any).updateRecord.bind(renderer)
-    ;(renderer as any).updateRecord = (node, record, parts) => {
+    ;(renderer as any).updateRecord = (node, record, parts, getNodeMetrics) => {
         updated_nodes.push(node)
-        return updateRecord(node, record, parts)
+        return updateRecord(node, record, parts, getNodeMetrics)
     }
 
     renderer.update(nodes, createOperations([
@@ -3694,7 +3703,10 @@ test('RendererWebGPU selects local damage and deduplicates overlapping inherited
     updated_nodes.length = 0
     let child_traversals = 0
     const descendants = child.children
-    Object.defineProperty(child, 'children', { get() { child_traversals++; return descendants } })
+    descendants[Symbol.iterator] = () => {
+        child_traversals++
+        return Array.prototype[Symbol.iterator].call(descendants)
+    }
     const operations = createOperations([
         { op: OPERATIONS.STYLE, node: parent, style: resolveStyle('overflowY', 'hidden') },
     ])
@@ -3825,9 +3837,9 @@ test('RendererWebGPU creates one record and command for a root-only active list'
     const command_counts = []
     ;(renderer as any).root_node = root
     const updateRecord = (renderer as any).updateRecord.bind(renderer)
-    ;(renderer as any).updateRecord = (node, record, parts) => {
+    ;(renderer as any).updateRecord = (node, record, parts, getNodeMetrics) => {
         updated_nodes.push(node)
-        return updateRecord(node, record, parts)
+        return updateRecord(node, record, parts, getNodeMetrics)
     }
     const fill = (renderer as any).command_pool.fill.bind((renderer as any).command_pool)
     ;(renderer as any).command_pool.fill = (commands, writeCommand) => {
@@ -4471,6 +4483,320 @@ for (const child_x of [20, 80]) {
     })
 }
 
+for (const [overflow_x, overflow_y] of [
+    [OVERFLOW.hidden, OVERFLOW.visible],
+    [OVERFLOW.visible, OVERFLOW.scroll],
+    [OVERFLOW.scroll, OVERFLOW.hidden],
+]) {
+    test(`ancestor metrics match independent helpers with overflow axes ${overflow_x}/${overflow_y}`, () => {
+        const root = createNode({
+            opacity: 0.5,
+            layout: { x: 20, y: 30, width: 120, height: 100 },
+            computed_border: { [EDGE.top]: 3, [EDGE.right]: 5, [EDGE.bottom]: 7, [EDGE.left]: 11 },
+            styles: {
+                overflowX: { parsed: { enum: overflow_x } },
+                overflowY: { parsed: { enum: overflow_y } },
+            },
+        })
+        const parent = createNode({
+            parent: root,
+            opacity: 0.25,
+            layout: { x: 40, y: 50, width: 80, height: 70 },
+            computed_border: { [EDGE.top]: 2, [EDGE.right]: 4, [EDGE.bottom]: 6, [EDGE.left]: 8 },
+            styles: {
+                overflowX: root.styles.overflowX,
+                overflowY: root.styles.overflowY,
+            },
+        })
+        const child = createNode({ parent, opacity: 0.5, layout: { x: 50, y: 60, width: 80, height: 70 } })
+        const sibling = createNode({ parent, layout: { x: 60, y: 70, width: 20, height: 20 } })
+        root.children.push(parent)
+        parent.children.push(child, sibling)
+        child.children.push(createNode({ parent: child }))
+        root.scrollLeft = 4
+        root.scrollTop = 6
+        parent.scrollLeft = 2
+        parent.scrollTop = 3
+        child.scrollLeft = 1
+        child.scrollTop = 2
+        const getNodeMetrics = createNodeMetricsResolver()
+
+        for (const node of [child, root, sibling, parent]) {
+            const metrics = getNodeMetrics(node)
+            const layout = getNodeRenderLayout(node)
+            const relative_clip = getAncestorClipping(node)
+            expect([metrics.x, metrics.y, metrics.opacity]).toEqual([layout.x, layout.y, getNodeOpacity(node)])
+            expect(metrics.clip === null ? null : {
+                top: metrics.clip.top - metrics.y,
+                right: metrics.clip.right - metrics.x,
+                bottom: metrics.clip.bottom - metrics.y,
+                left: metrics.clip.left - metrics.x,
+            }).toEqual(relative_clip)
+            expect(getNodeMetrics(node)).toBe(metrics)
+            for (const single_record_parts of [RECORD_PANEL, RECORD_TEXT_RUN, RECORD_ALL]) {
+                const getSingleNodeMetrics = createNodeMetricsResolver(single_record_parts)
+                const single_metrics = getSingleNodeMetrics(node)
+                expect(single_metrics).toMatchObject({ x: metrics.x, y: metrics.y, opacity: metrics.opacity, clip: metrics.clip })
+                if (single_record_parts === RECORD_ALL) {
+                    expect(getSingleNodeMetrics(node)).toBe(single_metrics)
+                }
+            }
+        }
+        expect([getNodeMetrics(child).scroll_left, getNodeMetrics(child).scroll_top]).toEqual([7, 11])
+        const inherited_clip = getNodeMetrics(parent).children_clip
+        expect(getNodeMetrics(child).clip).toBe(inherited_clip)
+        expect(getNodeMetrics(child).children_clip).toBe(inherited_clip)
+        expect(getNodeMetrics(sibling).clip).toBe(inherited_clip)
+        const wider = createNode({
+            parent,
+            overflow: OVERFLOW.hidden,
+            layout: { x: -100, y: -100, width: 1000, height: 1000 },
+        })
+        parent.children.push(wider)
+        wider.children.push(createNode({ parent: wider }))
+        if (overflow_x !== OVERFLOW.visible && overflow_y !== OVERFLOW.visible) {
+            Object.freeze(inherited_clip)
+            expect(getNodeMetrics(wider).children_clip).toBe(inherited_clip)
+        }
+    })
+}
+
+test('ancestor metrics resolve a deep chain iteratively and read each context once', () => {
+    const nodes = []
+    let parent = null
+    let opacity_reads = 0
+    for (let index = 0; index < 20000; index++) {
+        const node = {
+            parent,
+            children: [],
+            layout: { x: index, y: index * 2 },
+            scrollLeft: 1,
+            scrollTop: 2,
+            styles: {
+                get opacity() {
+                    opacity_reads++
+                    return { parsed: { value: 1 } }
+                },
+            },
+        }
+        if (parent !== null) {
+            parent.children.push(node)
+        }
+        nodes.push(node)
+        parent = node
+    }
+    const getNodeMetrics = createNodeMetricsResolver()
+    const last_metrics = getNodeMetrics(nodes.at(-1))
+
+    expect([last_metrics.x, last_metrics.y, last_metrics.opacity]).toEqual([0, 0, 1])
+    expect(opacity_reads).toBe(nodes.length)
+    for (const node of nodes) {
+        getNodeMetrics(node)
+    }
+    expect(opacity_reads).toBe(nodes.length)
+})
+
+test('RendererWebGPU shares context resolution across panel and text and skips unrelated partial records', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode()
+    const parent = createNode({ parent: root, text_content: 'A' })
+    const first = createNode({ parent, text_content: 'A' })
+    const second = createNode({ parent, text_content: 'A' })
+    const unrelated = createNode({ parent: root, text_content: 'A' })
+    root.children.push(parent, unrelated)
+    parent.children.push(first, second)
+    const nodes = [root, parent, first, second, unrelated]
+    const reads = new Map(nodes.map((node) => [node, 0]))
+    for (const node of nodes) {
+        Object.defineProperty(node.styles.opacity.parsed, 'value', {
+            get() {
+                reads.set(node, reads.get(node) + 1)
+                return 1
+            },
+        })
+    }
+    ;(renderer as any).root_node = root
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+    expect(nodes.map((node) => reads.get(node))).toEqual([1, 1, 1, 1, 1])
+
+    reads.clear()
+    for (const node of nodes) reads.set(node, 0)
+    renderer.update(nodes, createOperations([
+        { op: OPERATIONS.STYLE, node: second, style: resolveStyle('color', '#123') },
+        { op: OPERATIONS.STYLE, node: first, style: resolveStyle('backgroundColor', '#123') },
+    ]))
+    expect(nodes.map((node) => reads.get(node))).toEqual([1, 1, 1, 1, 0])
+
+    for (const node of nodes) reads.set(node, 0)
+    renderer.update(nodes, createOperations([
+        { op: OPERATIONS.STYLE, node: first, style: resolveStyle('backgroundColor', '#456') },
+        { op: OPERATIONS.STYLE, node: first, style: resolveStyle('color', '#456') },
+    ]))
+    expect(nodes.map((node) => reads.get(node))).toEqual([1, 1, 1, 0, 0])
+
+    for (const style_name of ['backgroundColor', 'color']) {
+        for (const node of nodes) reads.set(node, 0)
+        renderer.update(nodes, createOperations([
+            { op: OPERATIONS.STYLE, node: first, style: resolveStyle(style_name, '#789') },
+        ]))
+        expect(nodes.map((node) => reads.get(node))).toEqual([1, 1, 1, 0, 0])
+    }
+
+    for (const node of nodes) reads.set(node, 0)
+    renderer.update(nodes, createOperations([
+        { op: OPERATIONS.STYLE, node: first, style: resolveStyle('pointerEvents', 'none') },
+    ]))
+    expect(nodes.map((node) => reads.get(node))).toEqual([0, 0, 0, 0, 0])
+})
+
+test('RendererWebGPU skips ancestor metrics for non-drawable panels and text', () => {
+    const root = createNode()
+    Object.defineProperty(root.styles.opacity.parsed, 'value', {
+        get() {
+            throw new Error('Ancestor metrics should not be resolved')
+        },
+    })
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const nodes = [
+        createNode({ parent: root, text_content: 'A', styles: { display: resolveStyle('display', 'none').expanded[0] } }),
+        createNode({ parent: root, text_content: 'A', layout: { x: 0, y: 0, width: 0, height: 10 } }),
+        createNode({ parent: root, text_content: 'A', layout: { x: 0, y: 0, width: 10, height: 0 } }),
+        createNode({ parent: root, styles: { backgroundColor: undefined } }),
+        createNode({ parent: root, text_content: '', styles: { backgroundColor: undefined } }),
+    ]
+    const render_data = collectRenderData(renderer, nodes)
+    expect(render_data.panels).toEqual([])
+    expect(render_data.glyphs).toEqual([])
+
+    const missing_font_node = createNode({ parent: root, text_content: 'A', styles: { backgroundColor: undefined } })
+    const missing_font_data = collectRenderData(createRenderer(), [missing_font_node])
+    expect(missing_font_data.panels).toEqual([])
+    expect(missing_font_data.glyphs).toEqual([])
+})
+
+test('RendererWebGPU keeps its own text and panel unchanged by node scroll and overflow', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode({
+        layout: { x: 10, y: 20, width: 100, height: 100 },
+        styles: { overflowX: { parsed: { enum: OVERFLOW.hidden } } },
+    })
+    const node = createNode({
+        parent: root,
+        text_content: 'AAAA',
+        layout: { x: 25, y: 35, width: 20, height: 20 },
+        styles: { whiteSpace: { parsed: { enum: WHITE_SPACE.nowrap } } },
+    })
+    root.scrollLeft = 3
+    root.scrollTop = 4
+    const before = collectRenderData(renderer, [node])
+    node.scrollLeft = 5
+    node.scrollTop = 2
+    node.styles.overflowX = { parsed: { enum: OVERFLOW.scroll } }
+    node.styles.overflowY = { parsed: { enum: OVERFLOW.hidden } }
+    const after = collectRenderData(renderer, [node])
+
+    expect(after).toEqual(before)
+    expect(after.panels[0].layout).toEqual([22, 31, 20, 20])
+    expect(after.panels[0].clipping).toEqual([-Infinity, 88, Infinity, -12])
+    expect(after.text_runs[0].clipping).toEqual([-Infinity, 110, Infinity, 10])
+    expect(after.glyphs).toHaveLength(4)
+})
+
+test('RendererWebGPU uploads absolute text clips and relative panel clips for nested scroll', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode({ layout: { x: 20, y: 30, width: 120, height: 100 }, overflow: OVERFLOW.scroll })
+    const parent = createNode({
+        parent: root,
+        opacity: 0.5,
+        layout: { x: 40, y: 50, width: 80, height: 70 },
+        computed_border: { [EDGE.top]: 2, [EDGE.right]: 4, [EDGE.bottom]: 6, [EDGE.left]: 8 },
+        overflow: OVERFLOW.hidden,
+    })
+    const child = createNode({ parent, opacity: 0.5, text_content: 'A', layout: { x: 50, y: 60, width: 80, height: 70 } })
+    root.children.push(parent)
+    parent.children.push(child)
+    root.scrollLeft = 4
+    root.scrollTop = 6
+    parent.scrollLeft = 2
+    parent.scrollTop = 3
+    ;(renderer as any).root_node = root
+    renderer.update([root, parent, child], createOperations([{ op: OPERATIONS.ADD, node: root }]))
+    const { records, panel_data_pool, text_run_pool } = renderer as any
+    const record = records.get(child)
+    const panel_floats = new Float32Array(panel_data_pool.buffer.bytes.buffer)
+    const run_floats = new Float32Array(text_run_pool.buffer.bytes.buffer)
+    const panel_offset = record.panel_slot * PANEL_DATA_SIZE / FLOAT32_SIZE
+    const run_offset = record.run_slot * TEXT_RUN_SIZE / FLOAT32_SIZE
+    const panel_clip_offset = panel_offset + PANEL_DATA.CLIPPING.OFFSET / FLOAT32_SIZE
+    const run_clip_offset = run_offset + TEXT_RUN.CLIPPING.OFFSET / FLOAT32_SIZE
+
+    expect(Array.from(panel_floats.slice(panel_offset, panel_offset + 4))).toEqual([44, 51, 80, 70])
+    expect(Array.from(panel_floats.slice(panel_clip_offset, panel_clip_offset + 4))).toEqual([-5, 68, 57, 0])
+    expect(Array.from(run_floats.slice(run_clip_offset, run_clip_offset + 4))).toEqual([46, 112, 108, 44])
+    expect(panel_floats[panel_offset + PANEL_DATA.IMAGE_DATA.OFFSET / FLOAT32_SIZE]).toBe(0.25)
+    expect(run_floats[run_offset + TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE + 1]).toBe(0.25)
+})
+
+for (const [axis, inner_position] of [['x', 20], ['x', 21], ['y', 20], ['y', 21]] as const) {
+    test(`RendererWebGPU discards an empty ancestor intersection inside the node at ${axis}=${inner_position}`, () => {
+        const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+        const root = createNode({ layout: { x: 10, y: 10, width: 10, height: 10 }, overflow: OVERFLOW.hidden })
+        const parent = createNode({
+            parent: root,
+            layout: { x: 10, y: 10, [axis]: inner_position, width: 10, height: 10 },
+            overflow: OVERFLOW.hidden,
+        })
+        const child = createNode({ parent, text_content: 'A', layout: { x: 0, y: 0, width: 100, height: 100 } })
+        for (const single_record_parts of [0, RECORD_PANEL, RECORD_TEXT_RUN, RECORD_ALL]) {
+            const getNodeMetrics = createNodeMetricsResolver(single_record_parts)
+            const clip = getNodeMetrics(child).clip
+            const clip_start = axis === 'x' ? clip.left : clip.top
+            const clip_end = axis === 'x' ? clip.right : clip.bottom
+            expect(clip_start).toBeGreaterThan(0)
+            expect(clip_end).toBeLessThan(100)
+            expect(clip_end).toBeLessThanOrEqual(clip_start)
+            const render_data = collectRenderData(renderer, [child], single_record_parts)
+            expect(render_data.panels).toEqual([])
+            expect(render_data.text_runs).toEqual([])
+            expect(render_data.glyphs).toEqual([])
+        }
+    })
+}
+
+for (const distance of [-1e-12, 0, 1e-12]) {
+    test(`ancestor metrics preserve fractional clipping at distance ${distance}`, () => {
+        const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+        const root = createNode({ opacity: 0.1, layout: { x: 0.1, y: 0, width: 1, height: 100 }, overflow: OVERFLOW.hidden })
+        const parent = createNode({ parent: root, opacity: 0.2 })
+        const child = createNode({ parent, opacity: 0.3, text_content: 'A', layout: { x: 1.6 + distance, y: 0, width: 10, height: 20 } })
+        root.scrollLeft = 0.2
+        parent.scrollLeft = 0.3
+        const previous_layout = getNodeRenderLayout(child)
+        const previous_clip = getAncestorClipping(child)
+        for (const single_record_parts of [0, RECORD_PANEL, RECORD_TEXT_RUN, RECORD_ALL]) {
+            const getNodeMetrics = createNodeMetricsResolver(single_record_parts)
+            const metrics = getNodeMetrics(child)
+            expect(metrics.x).toBeCloseTo(previous_layout.x, 14)
+            expect(metrics.opacity).toBeCloseTo(getNodeOpacity(child), 14)
+            expect(metrics.clip.right - metrics.x).toBeCloseTo(previous_clip.right, 14)
+            const render_data = collectRenderData(renderer, [child], single_record_parts)
+            expect(render_data.panels.length).toBe(distance < 0 ? 1 : 0)
+            expect(render_data.glyphs.length).toBe(distance < 0 ? 1 : 0)
+        }
+    })
+}
+
+test('fake GPU copies writeBuffer element ranges and byte ranges independently of later source changes', () => {
+    const device = createFakeDevice()
+    const buffer = device.createBuffer({ size: 24 })
+    const source = new Uint32Array([10, 20, 30, 40, 50])
+    device.queue.writeBuffer(buffer, 0, source.subarray(1), 1, 2)
+    device.queue.writeBuffer(buffer, 8, source.buffer, 4, 8)
+    device.queue.writeBuffer(buffer, 16, new DataView(source.buffer, 8, 8), 4)
+    source.fill(0)
+    expect(Array.from(new Uint32Array(buffer.bytes.buffer))).toEqual([30, 40, 20, 30, 40, 0])
+})
+
 function createNodesBufferData(renderer, nodes) {
     const render_data = collectRenderData(renderer, nodes)
 
@@ -4495,13 +4821,16 @@ function createPoolBufferData(pool, items, writeItem) {
     return { bytes: pool.bytes, bytes_offset: pool.length }
 }
 
-function collectRenderData(renderer, nodes) {
+function collectRenderData(renderer, nodes, single_record_parts = 0) {
     const panels = []
     const glyphs = []
     const text_runs = []
+    const getNodeMetrics = createNodeMetricsResolver(single_record_parts)
 
     for (const node of nodes) {
-        const { panel_data, text_data } = (renderer as any).updateRecord(node, (renderer as any).getRecord(node))
+        const { panel_data, text_data } = (renderer as any).updateRecord(
+            node, (renderer as any).getRecord(node), RECORD_ALL, getNodeMetrics,
+        )
         if (panel_data !== null) {
             panels.push(panel_data)
         }
@@ -4525,7 +4854,7 @@ function createRenderer(image_manager = createImageManager(), font_manager = cre
         },
     })
     ;(renderer as any).pipeline = { getBindGroupLayout: () => ({}) }
-    ;(renderer as any).viewport_buffer = { id: 'viewport' }
+    ;(renderer as any).viewport_buffer = device.createBuffer({ size: 16 })
     ;(renderer as any).layouter = { applyStyle() {} }
     ;(renderer as any).grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
     ;(renderer as any).command_pool = new GpuPool({ device, usage: 0, stride: COMMAND_SIZE })
@@ -4712,6 +5041,7 @@ function createFakeDevice({ max_texture_array_layers = 8 } = {}) {
         createBuffer(descriptor) {
             return {
                 descriptor,
+                bytes: new Uint8Array(descriptor.size),
                 destroy() {},
             }
         },
@@ -4737,6 +5067,13 @@ function createFakeDevice({ max_texture_array_layers = 8 } = {}) {
         queue: {
             writeBuffer(buffer, offset, data, data_offset, size) {
                 writes.push({ buffer, offset, data, data_offset, size })
+                const is_view = ArrayBuffer.isView(data)
+                const element_size = is_view ? data.BYTES_PER_ELEMENT ?? 1 : 1
+                const source_offset = (is_view ? data.byteOffset : 0) + (data_offset ?? 0) * element_size
+                const byte_length = size === undefined
+                    ? data.byteLength - (data_offset ?? 0) * element_size
+                    : size * element_size
+                buffer.bytes.set(new Uint8Array(is_view ? data.buffer : data, source_offset, byte_length), offset)
             },
             copyExternalImageToTexture(source, destination, size) {
                 copies.push({ source, destination, size })

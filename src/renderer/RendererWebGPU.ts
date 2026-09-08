@@ -18,11 +18,10 @@ import {
     FEATURES,
     collectPanelData,
     clampScroll,
-    getAncestorClipping,
+    createNodeMetricsResolver,
     getMainAxisOverflow,
     getNodeBorderWidth,
-    getNodeOpacity,
-    getNodeRenderLayout,
+    isNodeClipped,
     updateScrollMetrics,
 } from './utils/render-metrics'
 import { placeGlyphs } from './utils/text-placement'
@@ -309,13 +308,17 @@ export default class RendererWebGPU extends Renderer {
     public update(nodes, operations) {
         const render_plan = this.createRenderPlan(nodes, operations)
         const record_parts = render_plan.record_parts
+        let getNodeMetrics
         let rebuild_commands = render_plan.rebuild_commands
 
         for (const node of record_parts === null ? nodes : record_parts.keys()) {
+            const parts = record_parts === null ? RECORD_ALL : record_parts.get(node)
+            getNodeMetrics ??= createNodeMetricsResolver(record_parts?.size === 1 ? parts : 0)
             const { structural } = this.updateRecord(
                 node,
                 this.getRecord(node),
-                record_parts === null ? RECORD_ALL : record_parts.get(node),
+                parts,
+                getNodeMetrics,
             )
             rebuild_commands ||= structural
         }
@@ -557,7 +560,7 @@ export default class RendererWebGPU extends Renderer {
         return { record_parts, rebuild_commands, update_viewport }
     }
 
-    private updateRecord(node, record, parts = RECORD_ALL) {
+    private updateRecord(node, record, parts, getNodeMetrics) {
         const previous_panel_slot = record.panel_slot
         const previous_glyph_start = record.glyph_start
         const previous_glyph_count = record.glyph_count
@@ -566,7 +569,7 @@ export default class RendererWebGPU extends Renderer {
 
         let panel_data = null
         if (parts & RECORD_PANEL) {
-            panel_data = collectPanelData(node, this.image_manager, this.computeStyle)
+            panel_data = collectPanelData(node, this.image_manager, this.computeStyle, getNodeMetrics)
             if (panel_data === null) {
                 this.releasePanel(record)
             } else {
@@ -590,7 +593,7 @@ export default class RendererWebGPU extends Renderer {
             if (record.glyph_count === 0) {
                 parts |= RECORD_TEXT
             }
-            text_data = record.run_slot === -1 ? null : this.collectTextInstanceData(node, record, parts)
+            text_data = record.run_slot === -1 ? null : this.collectTextInstanceData(node, record, parts, getNodeMetrics)
             if (text_data === null) {
                 record.glyph_count = 0
             } else {
@@ -671,7 +674,7 @@ export default class RendererWebGPU extends Renderer {
         record.glyph_count = 0
     }
 
-    private collectTextInstanceData(node, record, parts) {
+    private collectTextInstanceData(node, record, parts, getNodeMetrics) {
         const display = node.styles.display?.parsed.enum || DISPLAY.flex
 
         if (!node.hasTextContent() || display !== DISPLAY.flex) {
@@ -685,18 +688,14 @@ export default class RendererWebGPU extends Renderer {
             return null
         }
 
-        const { x, y, width, height } = getNodeRenderLayout(node)
+        const { width, height } = node.layout
         if (width === 0 || height === 0) {
             return null
         }
 
-        const opacity = getNodeOpacity(node)
-        if (opacity <= 0) {
-            return null
-        }
-
-        const clip = getAncestorClipping(node)
-        if (clip !== null && (clip.right <= 0 || clip.bottom <= 0 || clip.left >= width || clip.top >= height)) {
+        const node_metrics = getNodeMetrics(node)
+        const { x, y, opacity, clip } = node_metrics
+        if (opacity <= 0 || isNodeClipped(node_metrics, width, height)) {
             return null
         }
 
@@ -757,7 +756,7 @@ export default class RendererWebGPU extends Renderer {
 
         let run = null
         if (parts & RECORD_TEXT_RUN) {
-            const clipping = clip === null ? [0, 0, 0, 0] : [y + clip.top, x + clip.right, y + clip.bottom, x + clip.left]
+            const clipping = clip === null ? [0, 0, 0, 0] : [clip.top, clip.right, clip.bottom, clip.left]
             const text_stroke = FEATURES.text_stroke
                 ? this.computeStyle(node.styles.textStroke)?.parsed.text_stroke
                 : undefined
