@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
 import { OPERATIONS } from '../src/core/UI.ts'
-import { createCommands } from '../src/renderer/utils/render-records.ts'
+import { createNodeCommands } from '../src/renderer/utils/render-records.ts'
 import Segmenter from '../src/renderer/pretext/segmenter.ts'
 import { resolveStyle, validateStyle } from '../src/style/index.ts'
 import {
     BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
+    DISPLAY,
     EDGE,
     FLEX_DIRECTION,
     KEYWORD,
@@ -259,6 +260,27 @@ test('RendererWebGPU accumulates nested scroll and moves nested clipping with it
 
     expect(Array.from(floats.slice(layout_float_offset, layout_float_offset + 4))).toEqual([30, 40, 20, 20])
     expect(Array.from(floats.slice(clipping_float_offset, clipping_float_offset + 4))).toEqual([-10, 50, 50, -10])
+})
+
+test('RendererWebGPU keeps the scroll metrics without a layout pass', () => {
+    const root = createNode({ layout: { x: 0, y: 0, width: 100, height: 100 } })
+    const child = createNode({ parent: root, layout: { x: 0, y: 0, width: 100, height: 300 } })
+    root.children.push(child)
+    const renderer = createRenderer()
+    ;(renderer as any).root_node = root
+
+    renderer.afterUpdate([], UPDATE_EFFECTS)
+
+    expect(root.scrollHeight).toBe(300)
+
+    child.layout = { ...child.layout, height: 900 }
+    renderer.afterUpdate([], { ...UPDATE_EFFECTS, layout: false })
+
+    expect(root.scrollHeight).toBe(300)
+
+    renderer.afterUpdate([], UPDATE_EFFECTS)
+
+    expect(root.scrollHeight).toBe(900)
 })
 
 test('RendererWebGPU calculates scroll metrics from descendant layout overflow', () => {
@@ -2118,6 +2140,36 @@ test('RendererWebGPU invalidates prepared text', () => {
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(20.8)
 })
 
+test('RendererWebGPU reuses measured line stats until the prepared text or the width changes', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({
+            default_font: createManagedFont(),
+        }),
+    )
+    const node: any = createNode({ text_content: 'AB' })
+    const readStats = () => (renderer as any).text_measures.get(node).stats
+    ;(renderer as any).layouter = { markDirty() {} }
+
+    renderer.getTextMeasure(node, 100)
+    const stats = readStats()
+
+    renderer.getTextMeasure(node, 100)
+
+    expect(readStats()).toBe(stats)
+
+    renderer.getTextMeasure(node, 40)
+
+    expect(readStats()).not.toBe(stats)
+
+    const narrow_stats = readStats()
+    node.text_content = 'ABC'
+    renderer.invalidateTextNode(node)
+    renderer.getTextMeasure(node, 40)
+
+    expect(readStats()).not.toBe(narrow_stats)
+})
+
 const TEXT_MEASURE_STYLES = [
     ['fontFamily', 'Poppins'],
     ['fontSize', '20px'],
@@ -3407,10 +3459,43 @@ function createTextRunBufferData(renderer, text_runs) {
 }
 
 function createPoolBufferData(pool, items, writeItem) {
-    pool.fill(items, writeItem)
+    pool.resize(items.length)
+    items.forEach((item, slot) => pool.write(slot, item, writeItem))
 
     return { bytes: pool.bytes, bytes_offset: pool.length }
 }
+
+test('RendererWebGPU rewrites only the commands that moved or changed', () => {
+    const renderer = createRenderer()
+    const root = createNode()
+    const first = createNode({ parent: root })
+    const second = createNode({ parent: root })
+    const third = createNode({ parent: root })
+    root.children.push(first, second, third)
+    ;(renderer as any).root_node = root
+    ;(renderer as any).updateBuffers = () => {}
+
+    const nodes = [first, second, third]
+    renderer.update(nodes, UPDATE_EFFECTS, [])
+
+    expect((renderer as any).command_count).toBe(4)
+
+    const command_pool = (renderer as any).command_pool
+    const write = command_pool.write.bind(command_pool)
+    const written_slots = []
+    command_pool.write = (slot, item, writeItem) => {
+        written_slots.push(slot)
+        return write(slot, item, writeItem)
+    }
+
+    second.styles.display = { parsed: { enum: DISPLAY.none } }
+    renderer.update(nodes, PAINT_EFFECTS, [
+        { op: OPERATIONS.STYLE, node: second, style: resolveStyle('display', 'none') },
+    ])
+
+    expect((renderer as any).command_count).toBe(3)
+    expect(written_slots).toEqual([2])
+})
 
 test('RendererWebGPU only re-evaluates the records named by the operations', () => {
     const renderer = createRenderer()
@@ -3459,7 +3544,12 @@ function collectRenderData(renderer, nodes) {
         }
     }
 
-    return { commands: createCommands(nodes, (renderer as any).records), panels, glyphs, text_runs }
+    const commands = []
+    for (const node of nodes) {
+        commands.push(...createNodeCommands((renderer as any).records.get(node)))
+    }
+
+    return { commands, panels, glyphs, text_runs }
 }
 
 function createRenderer(image_manager = createImageManager(), font_manager = createFontManager()) {

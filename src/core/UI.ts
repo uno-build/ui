@@ -2,6 +2,7 @@ import Node from './Node'
 import EventEmitter from './EventEmitter'
 import { isNodeAtPoint, sortPaintingOrder } from '../utils/nodes'
 import { isPaintStyle, STYLE } from '../style'
+import { clampScroll } from '../renderer/utils/render-metrics'
 
 export const OPERATIONS = {
     ADD: 'add',
@@ -101,6 +102,14 @@ export default class UI {
             }
 
             this.renderer.afterUpdate(this.nodes, effects)
+
+            if (effects.scroll) {
+                for (const { op, node } of this.operations) {
+                    if (op === OPERATIONS.SCROLL) {
+                        clampScroll(node)
+                    }
+                }
+            }
 
             const output = this.renderer.update(this.nodes, effects, this.operations)
             this.operations.clear()

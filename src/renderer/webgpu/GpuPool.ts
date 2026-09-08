@@ -69,17 +69,9 @@ export class GpuPool {
         this.dirty_end = Math.max(this.dirty_end, (slot + slot_count) * this.stride)
     }
 
-    public fill(items, writeItem) {
-        this.count = items.length
-        this.free_slots.clear()
+    public resize(count) {
+        this.count = count
         this.reserve(this.length)
-
-        let bytes_offset = 0
-        for (const item of items) {
-            writeItem(this, bytes_offset, item)
-            bytes_offset += this.stride
-        }
-        this.markDirty(0, this.count)
     }
 
     public flush() {

@@ -26,7 +26,7 @@ import {
     getTextWhiteSpace,
     measureGlyphAdvances,
 } from './utils/text-metrics'
-import { createCommands, createRecord, isSameLayout } from './utils/render-records'
+import { countNodeCommands, createNodeCommands, createRecord, isSameLayout } from './utils/render-records'
 import { measureLineStats, prepareWithSegments } from './pretext/layout'
 import { createPipeline } from './webgpu/pipeline'
 import {
@@ -65,6 +65,7 @@ export default class RendererWebGPU extends Renderer {
     private font_texture_version
     private position_buffer
     private viewport_buffer
+    private viewport_data = new Float32Array(4)
     private command_pool
     private command_count = 0
     private panel_data_pool
@@ -74,6 +75,7 @@ export default class RendererWebGPU extends Renderer {
     private dirty_records = new Set()
     private structural = false
     private prepared_texts = new WeakMap()
+    private text_measures = new WeakMap()
     private root_node
     private grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
     private computeStyle = (style) => computeStyleValue(style, this)
@@ -155,6 +157,7 @@ export default class RendererWebGPU extends Renderer {
         this.records = null
         this.dirty_records = null
         this.prepared_texts = null
+        this.text_measures = null
         this.pipeline = null
         this.bind_group = null
         this.image_sampler = null
@@ -221,7 +224,7 @@ export default class RendererWebGPU extends Renderer {
                     getTextWhiteSpace(node) === WHITE_SPACE.nowrap || width_mode === MEASURE_MODE.UNDEFINED
                         ? Infinity
                         : available_width
-                const text_layout = measureLineStats(this.getPreparedText(node, font, font_size), max_width)
+                const text_layout = this.getTextLineStats(node, this.getPreparedText(node, font, font_size), max_width)
                 measured_width = text_layout.maxLineWidth
                 measured_height = text_layout.lineCount * line_height
             }
@@ -310,9 +313,7 @@ export default class RendererWebGPU extends Renderer {
         const structural = this.structural
         if (structural) {
             this.structural = false
-            const commands = createCommands([this.root_node, ...nodes], this.records)
-            this.command_count = commands.length
-            this.command_pool.fill(commands, writeCommandData)
+            this.updateCommands(nodes)
         }
 
         // if (structural || this.dirty_records.size > 0) {
@@ -344,7 +345,8 @@ export default class RendererWebGPU extends Renderer {
     public afterUpdate(nodes, effects) {
         super.afterUpdate(nodes)
 
-        if (effects.layout || effects.scroll) {
+        // Without a layout pass the scroll metrics cannot change, only the clamping UI applies.
+        if (effects.layout) {
             updateScrollMetrics(this.root_node, (node) => this.getNodeContentSize(node))
         }
     }
@@ -465,6 +467,39 @@ export default class RendererWebGPU extends Renderer {
         return this.getTextMeasure(node, content_width)
     }
 
+    private updateCommands(nodes) {
+        let command_count = countNodeCommands(this.records.get(this.root_node))
+
+        for (const node of nodes) {
+            command_count += countNodeCommands(this.records.get(node))
+        }
+
+        this.command_pool.resize(command_count)
+        this.command_count = command_count
+
+        let slot = this.writeNodeCommands(this.root_node, 0)
+        for (const node of nodes) {
+            slot = this.writeNodeCommands(node, slot)
+        }
+    }
+
+    // Commands are stored in painting order, so only nodes that moved or changed need rewriting.
+    private writeNodeCommands(node, slot) {
+        const record = this.records.get(node)
+
+        if (record.command_slot !== slot || record.command_dirty) {
+            record.command_slot = slot
+            record.command_dirty = false
+
+            let command_slot = slot
+            for (const command of createNodeCommands(record)) {
+                this.command_pool.write(command_slot++, command, writeCommandData)
+            }
+        }
+
+        return slot + countNodeCommands(record)
+    }
+
     private markOperations(operations) {
         for (const { op, node, style } of operations) {
             if (op === OPERATIONS.STYLE) {
@@ -555,6 +590,7 @@ export default class RendererWebGPU extends Renderer {
             record.has_text_shadow !== previous_has_text_shadow ||
             record.text_stroke_width !== previous_text_stroke_width
         ) {
+            record.command_dirty = true
             this.structural = true
         }
 
@@ -722,6 +758,18 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
+    // Scroll metrics re-measure every text node on each update, so the line walk is worth caching.
+    private getTextLineStats(node, prepared_text, max_width) {
+        let measure = this.text_measures.get(node)
+
+        if (measure === undefined || measure.prepared_text !== prepared_text || measure.max_width !== max_width) {
+            measure = { prepared_text, max_width, stats: measureLineStats(prepared_text, max_width) }
+            this.text_measures.set(node, measure)
+        }
+
+        return measure.stats
+    }
+
     private getPreparedText(node, font, font_size) {
         let prepared_text = this.prepared_texts.get(node)
 
@@ -747,10 +795,16 @@ export default class RendererWebGPU extends Renderer {
             this.bind_group = this.createBindGroup()
         }
 
-        this.resources.device.queue.writeBuffer(
-            this.viewport_buffer,
-            0,
-            new Float32Array([this.viewport_width, this.viewport_height, this.device_pixel_ratio, 0]),
-        )
+        const viewport_data = this.viewport_data
+        if (
+            viewport_data[0] !== this.viewport_width ||
+            viewport_data[1] !== this.viewport_height ||
+            viewport_data[2] !== this.device_pixel_ratio
+        ) {
+            viewport_data[0] = this.viewport_width
+            viewport_data[1] = this.viewport_height
+            viewport_data[2] = this.device_pixel_ratio
+            this.resources.device.queue.writeBuffer(this.viewport_buffer, 0, viewport_data)
+        }
     }
 }

@@ -190,6 +190,27 @@ test('UI update reads layouts only for operations that can change them', async (
     expect(layout_reads()).toBe(4)
 })
 
+test('UI update clamps the scroll of the nodes it was set on', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const node = ui.create()
+
+    ui.root.add(node)
+    ui.update()
+
+    node.clientHeight = 40
+    node.scrollHeight = 100
+    node.scrollTop = 9999
+    ui.update()
+
+    expect(node.scrollTop).toBe(60)
+
+    node.scrollTop = -20
+    ui.update()
+
+    expect(node.scrollTop).toBe(0)
+})
+
 test('UI update repaints in z-index order without reading layouts', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
