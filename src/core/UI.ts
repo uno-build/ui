@@ -58,16 +58,38 @@ export default class UI {
                 return
             }
 
+            // Update Order
             if (operations.needUpdateOrder()) {
-                this.updateOrder()
+                this.nodes.sort(sortPaintingOrder)
+                for (let i = 0; i < this.nodes.length; i++) {
+                    this.nodes[i].order = i
+                }
             }
-            this.updateStyles(operations)
 
-            this.renderer.prepareLayout(operations, this.nodes_created)
-            this.renderer.beforeUpdate(this.nodes, operations)
-            if (operations.needUpdateLayout()) {
-                this.updateLayout(operations)
+            // Update styles
+            for (const { op, node, style } of operations.items) {
+                if (op === OPERATIONS.STYLE && node.ui !== null) {
+                    this.renderer.updateStyle(node, style)
+                }
             }
+
+            this.renderer.prepareLayout(this.nodes_created, operations)
+            this.renderer.beforeUpdate(this.nodes, operations)
+
+            // Update Layout
+            if (operations.needUpdateLayout()) {
+                const updateLayout = (node) => {
+                    const layout = this.renderer.getLayout(node)
+                    if (!isSameLayout(node.layout, layout)) {
+                        operations.layout_nodes.add(node)
+                    }
+                    node.layout = layout
+                }
+                updateLayout(this.root)
+                this.nodes.forEach(updateLayout)
+            }
+
+            // Update
             this.renderer.afterUpdate(this.nodes, operations)
             const output = this.renderer.update(this.nodes, operations)
             operations.consume()
@@ -80,33 +102,6 @@ export default class UI {
         if (!this.destroyed) {
             return this.renderer.draw(options)
         }
-    }
-
-    private updateOrder() {
-        this.nodes.sort(sortPaintingOrder)
-        for (let i = 0; i < this.nodes.length; i++) {
-            this.nodes[i].order = i
-        }
-    }
-
-    private updateStyles(operations) {
-        for (const { op, node, style } of operations.items) {
-            if (op === OPERATIONS.STYLE && node.ui !== null) {
-                this.renderer.updateStyle(node, style)
-            }
-        }
-    }
-
-    private updateLayout(operations) {
-        const updateLayout = (node) => {
-            const layout = this.renderer.getLayout(node)
-            if (!isSameLayout(node.layout, layout)) {
-                operations.layout_nodes.add(node)
-            }
-            node.layout = layout
-        }
-        updateLayout(this.root)
-        this.nodes.forEach(updateLayout)
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {

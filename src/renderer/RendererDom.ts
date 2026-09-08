@@ -32,10 +32,12 @@ export default class RendererDom extends Renderer {
         const image = image_version !== this.image_registry_version
         const font = font_version !== this.font_registry_version || web_font_version !== this.observed_web_font_version
 
-        return image || font ? [{ op: OPERATIONS.RESOURCES, image, font, image_version, font_version, web_font_version }] : []
+        return image || font
+            ? [{ op: OPERATIONS.RESOURCES, image, font, image_version, font_version, web_font_version }]
+            : []
     }
 
-    public prepareLayout(operations, nodes_created) {
+    public prepareLayout(nodes_created, operations) {
         const image = operations.items.some((operation) => operation.op === OPERATIONS.RESOURCES && operation.image)
         const font = operations.items.some((operation) => operation.op === OPERATIONS.RESOURCES && operation.font)
 

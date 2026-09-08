@@ -200,7 +200,7 @@ export default class RendererWebGPU extends Renderer {
         return image || font ? [{ op: OPERATIONS.RESOURCES, image, font, image_version, font_version }] : []
     }
 
-    public prepareLayout(operations, nodes_created) {
+    public prepareLayout(nodes_created, operations) {
         const fonts_changed = operations.items.some(({ op, font }) => op === OPERATIONS.RESOURCES && font)
 
         if (operations.hasContextChanges() || fonts_changed) {
