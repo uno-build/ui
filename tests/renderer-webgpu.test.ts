@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
+import { OPERATIONS } from '../src/core/constants.ts'
 import { createCommands } from '../src/renderer/utils/render-records.ts'
 import Segmenter from '../src/renderer/pretext/segmenter.ts'
 import { resolveStyle, validateStyle } from '../src/style/index.ts'
@@ -14,7 +15,7 @@ import {
     WHITE_SPACE,
     UNIT,
     MEASURE_MODE,
-} from '../src/style/consts.ts'
+} from '../src/style/constants.ts'
 import {
     COMMAND,
     COMMAND_KIND_GLYPH,
@@ -110,8 +111,6 @@ test('RendererWebGPU destroy releases UI buffers without disposing shared resour
             destroyed_layouter_nodes = next_nodes
         },
     }
-    ;(renderer as any).pending_styles.push({})
-
     renderer.destroy(nodes)
 
     expect(destroyed_layouter_nodes).toBe(nodes)
@@ -120,7 +119,6 @@ test('RendererWebGPU destroy releases UI buffers without disposing shared resour
     expect(font_manager_dispose_count).toBe(0)
     expect(image_manager.getTextureView()).toEqual({ id: 'atlas-view' })
     expect(font_manager.getTextureView()).toEqual({ id: 'font-view' })
-    expect((renderer as any).pending_styles).toEqual([])
     expect((renderer as any).resources).toBe(null)
 })
 
@@ -287,7 +285,7 @@ test('RendererWebGPU calculates scroll metrics from descendant layout overflow',
     const renderer = createRenderer()
     ;(renderer as any).root_node = root
 
-    renderer.afterUpdate([])
+    renderer.afterUpdate([], createUpdatePlan({ layout: true }))
 
     expect(root.clientWidth).toBe(110)
     expect(root.clientHeight).toBe(90)
@@ -313,7 +311,7 @@ test('RendererWebGPU includes trailing padding after direct child overflow', () 
     const renderer = createRenderer()
     ;(renderer as any).root_node = root
 
-    renderer.afterUpdate([])
+    renderer.afterUpdate([], createUpdatePlan({ layout: true }))
 
     expect(root.scrollWidth).toBe(145)
     expect(root.scrollHeight).toBe(143)
@@ -352,7 +350,7 @@ test('RendererWebGPU includes overflowing text content in scroll metrics', () =>
     )
     ;(renderer as any).root_node = root
 
-    renderer.afterUpdate([])
+    renderer.afterUpdate([], createUpdatePlan({ layout: true }))
 
     expect(text.scrollHeight).toBe(72)
     expect(root.scrollHeight).toBe(72)
@@ -374,7 +372,7 @@ test('RendererWebGPU does not propagate overflow through a clipping descendant',
     const renderer = createRenderer()
     ;(renderer as any).root_node = root
 
-    renderer.afterUpdate([])
+    renderer.afterUpdate([], createUpdatePlan({ layout: true }))
 
     expect(child.scrollWidth).toBe(140)
     expect(child.scrollHeight).toBe(140)
@@ -417,9 +415,9 @@ test('RendererWebGPU propagates descendant overflow independently by axis', () =
 
     const renderer = createRenderer()
     ;(renderer as any).root_node = horizontal_root
-    renderer.afterUpdate([])
+    renderer.afterUpdate([], createUpdatePlan({ layout: true }))
     ;(renderer as any).root_node = vertical_root
-    renderer.afterUpdate([])
+    renderer.afterUpdate([], createUpdatePlan({ layout: true }))
 
     expect(horizontal_root.scrollWidth).toBe(100)
     expect(horizontal_root.scrollHeight).toBe(150)
@@ -1622,9 +1620,10 @@ test('RendererWebGPU writes the explicit viewport and device pixel ratio into th
         },
     }
     ;(renderer as any).viewport_buffer = { id: 'viewport' }
+    ;(renderer as any).root_node = createNode({ opacity: 0 })
     renderer.setDevicePixelRatio(2)
     renderer.setViewport(320, 180)
-    ;(renderer as any).updateBuffers()
+    renderer.update([], createUpdatePlan({ operations: [{ op: OPERATIONS.VIEWPORT }, { op: OPERATIONS.PIXEL_RATIO }] }))
 
     expect(writes).toHaveLength(1)
     expect(Array.from(writes[0].data)).toEqual([320, 180, 2, 0])
@@ -2123,7 +2122,7 @@ const TEXT_MEASURE_STYLES = [
 ]
 
 for (const [style_name, style_value] of TEXT_MEASURE_STYLES) {
-    test(`RendererWebGPU invalidates ${style_name} text measurement during update`, () => {
+    test(`RendererWebGPU invalidates ${style_name} text measurement when applying its operation`, () => {
         const renderer = createRenderer()
         const dirty_nodes = []
         const node = createNode({ text_content: 'Text' })
@@ -2136,11 +2135,7 @@ for (const [style_name, style_value] of TEXT_MEASURE_STYLES) {
         }
 
         const normalized_name = validateStyle(style_name, style_value)
-        renderer.addPendingStyle(node, resolveStyle(normalized_name, style_value))
-
-        expect(dirty_nodes).toEqual([])
-
-        renderer.beforeUpdate([node])
+        renderer.updateStyle(node, resolveStyle(normalized_name, style_value))
 
         expect(dirty_nodes).toEqual([node])
     })
@@ -2159,9 +2154,8 @@ test('RendererWebGPU ignores text invalidation for unrelated styles and nodes wi
         calculate() {},
     }
 
-    renderer.addPendingStyle(text_node, resolveStyle('backgroundColor', '#123'))
-    renderer.addPendingStyle(empty_node, resolveStyle('fontSize', '20px'))
-    renderer.beforeUpdate([text_node, empty_node])
+    renderer.updateStyle(text_node, resolveStyle('backgroundColor', '#123'))
+    renderer.updateStyle(empty_node, resolveStyle('fontSize', '20px'))
 
     expect(dirty_nodes).toEqual([])
 })
@@ -2194,24 +2188,29 @@ test('RendererWebGPU recalculates rem text after the root size changes', () => {
         markDirty(target) {
             dirty_nodes.push(target)
         },
+        isDirty() { return false },
         calculate(width, height) {
             calculations.push([width, height])
         },
     }
     renderer.setViewport(320, 180)
-    renderer.beforeUpdate([])
+    const initial_plan = createUpdatePlan({ operations: [{ op: OPERATIONS.VIEWPORT }], context: true })
+    initial_plan.layout = renderer.prepareLayout(initial_plan, [root])
+    renderer.beforeUpdate([], initial_plan)
     calculations.length = 0
 
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(11.6)
 
     renderer.setRootSize(16)
-    renderer.beforeUpdate([node])
+    renderer.beforeUpdate([node], createUpdatePlan())
 
     expect(applied_styles).toEqual([])
     expect(dirty_nodes).toEqual([])
 
     renderer.setRootSize(20)
-    renderer.beforeUpdate([node])
+    const root_size_plan = createUpdatePlan({ operations: [{ op: OPERATIONS.ROOT_SIZE }], context: true })
+    root_size_plan.layout = renderer.prepareLayout(root_size_plan, [root, node])
+    renderer.beforeUpdate([node], root_size_plan)
 
     expect(applied_styles).toEqual([
         {
@@ -2226,15 +2225,11 @@ test('RendererWebGPU recalculates rem text after the root size changes', () => {
     expect(dirty_nodes).toEqual([node])
     expect(renderer.getTextMeasure(node).width).toBeCloseTo(12.1)
 
-    renderer.beforeUpdate([node])
+    renderer.beforeUpdate([node], createUpdatePlan())
 
     expect(applied_styles).toHaveLength(1)
     expect(dirty_nodes).toHaveLength(1)
-    expect(calculations).toEqual([
-        [320, 180],
-        [320, 180],
-        [320, 180],
-    ])
+    expect(calculations).toEqual([[320, 180]])
 })
 
 test('RendererWebGPU recalculates viewport text after style context changes', () => {
@@ -2260,7 +2255,7 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     })
     const applied_styles = []
     const dirty_nodes = []
-    const read_applied_styles = () => applied_styles.map(({ style }) => style)
+    const readAppliedStyles = () => applied_styles.map(({ style }) => style)
     ;(renderer as any).root_node = root
     ;(renderer as any).layouter = {
         applyStyle(target, style) {
@@ -2269,13 +2264,16 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
         markDirty(target) {
             dirty_nodes.push(target)
         },
+        isDirty() { return false },
         calculate() {},
     }
 
     renderer.setViewport(320, 180)
-    renderer.beforeUpdate([node])
+    const viewport_plan = createUpdatePlan({ operations: [{ op: OPERATIONS.VIEWPORT }], context: true })
+    viewport_plan.layout = renderer.prepareLayout(viewport_plan, [root, node])
+    renderer.beforeUpdate([node], viewport_plan)
 
-    expect(read_applied_styles()).toEqual([
+    expect(readAppliedStyles()).toEqual([
         {
             name: 'letterSpacing',
             value: '1vw',
@@ -2294,15 +2292,17 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     applied_styles.length = 0
     dirty_nodes.length = 0
     renderer.setViewport(320, 180)
-    renderer.beforeUpdate([node])
+    renderer.beforeUpdate([node], createUpdatePlan())
 
     expect(applied_styles).toEqual([])
     expect(dirty_nodes).toEqual([])
 
     renderer.setViewport(400, 180)
-    renderer.beforeUpdate([node])
+    const width_plan = createUpdatePlan({ operations: [{ op: OPERATIONS.VIEWPORT }], context: true })
+    width_plan.layout = renderer.prepareLayout(width_plan, [root, node])
+    renderer.beforeUpdate([node], width_plan)
 
-    expect(read_applied_styles()).toEqual([
+    expect(readAppliedStyles()).toEqual([
         {
             name: 'letterSpacing',
             value: '1vw',
@@ -2319,9 +2319,11 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     applied_styles.length = 0
     dirty_nodes.length = 0
     renderer.setViewport(400, 200)
-    renderer.beforeUpdate([node])
+    const height_plan = createUpdatePlan({ operations: [{ op: OPERATIONS.VIEWPORT }], context: true })
+    height_plan.layout = renderer.prepareLayout(height_plan, [root, node])
+    renderer.beforeUpdate([node], height_plan)
 
-    expect(read_applied_styles()).toEqual([
+    expect(readAppliedStyles()).toEqual([
         {
             name: 'letterSpacing',
             value: '1vw',
@@ -2338,9 +2340,11 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     applied_styles.length = 0
     dirty_nodes.length = 0
     renderer.setRootSize(20)
-    renderer.beforeUpdate([node])
+    const root_size_plan = createUpdatePlan({ operations: [{ op: OPERATIONS.ROOT_SIZE }], context: true })
+    root_size_plan.layout = renderer.prepareLayout(root_size_plan, [root, node])
+    renderer.beforeUpdate([node], root_size_plan)
 
-    expect(read_applied_styles()).toEqual([
+    expect(readAppliedStyles()).toEqual([
         {
             name: 'letterSpacing',
             value: '1vw',
@@ -3387,6 +3391,383 @@ test('FontManager throws when font texture growth exceeds the device layer limit
     )
 })
 
+test('RendererWebGPU acknowledges captured resource versions independently after a successful update', () => {
+    const image_manager = createImageManager()
+    const font_manager = createFontManager()
+    const first = createRenderer(image_manager, font_manager)
+    const second = createRenderer(image_manager, font_manager)
+    ;(first as any).root_node = createNode()
+    ;(second as any).root_node = createNode()
+
+    expect(first.getPendingOperations()).toEqual([])
+    image_manager.registry_version++
+    font_manager.registry_version++
+    const operations = first.getPendingOperations()
+    expect(operations).toEqual([
+        { op: OPERATIONS.RESOURCES, image: true, font: true, image_version: 1, font_version: 1 },
+    ])
+    expect(first.getPendingOperations()).toEqual(operations)
+
+    const updateBuffers = (first as any).updateBuffers.bind(first)
+    ;(first as any).updateBuffers = (update_viewport) => {
+        updateBuffers(update_viewport)
+        image_manager.registry_version++
+    }
+    first.update([], createUpdatePlan({ operations }))
+
+    expect(first.getPendingOperations()).toEqual([
+        { op: OPERATIONS.RESOURCES, image: true, font: false, image_version: 2, font_version: 1 },
+    ])
+    expect(second.getPendingOperations()).toEqual([
+        { op: OPERATIONS.RESOURCES, image: true, font: true, image_version: 2, font_version: 1 },
+    ])
+    second.update([], createUpdatePlan({ operations: second.getPendingOperations() }))
+    expect(second.getPendingOperations()).toEqual([])
+})
+
+test('RendererWebGPU detects image and font registration and disposal from their managers', () => {
+    const device = createFakeDevice()
+    const image_manager = createRealImageManager(device)
+    const font_manager = createRealFontManager(device)
+    const renderer = createRenderer(image_manager, font_manager)
+    ;(renderer as any).root_node = createNode({ opacity: 0 })
+    image_manager.imageUpload('avatar', createImage('avatar.png', 16, 16))
+    font_manager.fontRegister('Poppins', createImage('Poppins.png', 64, 64), createFontJson())
+    const registered = renderer.getPendingOperations()
+    expect(registered[0]).toMatchObject({ image: true, font: true })
+    renderer.update([], createUpdatePlan({ operations: registered }))
+    expect(renderer.getPendingOperations()).toEqual([])
+
+    image_manager.imageDispose('avatar')
+    font_manager.fontDispose('Poppins')
+    const disposed = renderer.getPendingOperations()
+    expect(disposed[0]).toMatchObject({ image: true, font: true })
+    expect(disposed[0].image_version).toBeGreaterThan(registered[0].image_version)
+    expect(disposed[0].font_version).toBeGreaterThan(registered[0].font_version)
+})
+
+test('RendererWebGPU keeps resource versions pending when uploading fails', () => {
+    const image_manager = createImageManager()
+    const renderer = createRenderer(image_manager)
+    ;(renderer as any).root_node = createNode()
+    image_manager.registry_version++
+    const operations = renderer.getPendingOperations()
+    ;(renderer as any).updateBuffers = () => { throw new Error('upload failed') }
+
+    expect(() => renderer.update([], createUpdatePlan({ operations }))).toThrow('upload failed')
+    expect(renderer.getPendingOperations()).toEqual(operations)
+})
+
+test('RendererWebGPU invalidates attached and detached text before querying Yoga after font changes', () => {
+    const font = createManagedFont()
+    const font_manager = createFontManager({ default_font: font })
+    const renderer = createRenderer(createImageManager(), font_manager)
+    const root = createNode()
+    const attached = createNode({ parent: root, text_content: 'A' })
+    const detached = createNode({ text_content: 'A' })
+    root.children.push(attached)
+    const events = []
+    ;(renderer as any).root_node = root
+    ;(renderer as any).layouter = {
+        markDirty(node) { events.push(node) },
+        isDirty() { events.push('isDirty'); return true },
+        calculate() { events.push('calculate') },
+    }
+    expect(renderer.getTextMeasure(attached).width).toBeCloseTo(9.6)
+    expect(renderer.getTextMeasure(detached).width).toBeCloseTo(9.6)
+    font.glyphs_by_unicode.get(65).advance = 1.2
+    font_manager.registry_version++
+    const update_plan = createUpdatePlan({ operations: renderer.getPendingOperations() })
+    update_plan.layout = renderer.prepareLayout(update_plan, [root, attached, detached])
+    renderer.beforeUpdate([attached], update_plan)
+
+    expect(events).toEqual([attached, detached, 'isDirty', 'calculate'])
+    expect(renderer.getTextMeasure(attached).width).toBeCloseTo(19.2)
+    expect(renderer.getTextMeasure(detached).width).toBeCloseTo(19.2)
+})
+
+test('RendererWebGPU measures a late font after an initially empty measurement', () => {
+    const font_manager = createFontManager()
+    const renderer = createRenderer(createImageManager(), font_manager)
+    const root = createNode()
+    const node = createNode({ parent: root, text_content: 'A' })
+    ;(renderer as any).root_node = root
+    const dirty_nodes = []
+    ;(renderer as any).layouter = {
+        markDirty(target) { dirty_nodes.push(target) },
+        isDirty() { return dirty_nodes.length > 0 },
+    }
+    expect(renderer.getTextMeasure(node)).toEqual({ width: 0, height: 0 })
+
+    font_manager.getDefaultFont = () => createManagedFont()
+    font_manager.registry_version++
+    const update_plan = createUpdatePlan({ operations: renderer.getPendingOperations() })
+    expect(renderer.prepareLayout(update_plan, [root, node])).toBe(true)
+    expect(dirty_nodes).toEqual([node])
+    expect(renderer.getTextMeasure(node)).toEqual({ width: expect.closeTo(9.6), height: 20 })
+})
+
+test('RendererWebGPU resolves detached relative styles before querying Yoga', () => {
+    const renderer = createRenderer()
+    const root = createNode()
+    const detached = createNode({
+        styles: { width: { value: '2rem', parsed: { value: 2, kind: UNIT.REM } } },
+    })
+    const events = []
+    ;(renderer as any).root_node = root
+    ;(renderer as any).layouter = {
+        applyStyle(node, style) { events.push({ node, style }) },
+        isDirty() { events.push('isDirty'); return false },
+    }
+    renderer.setRootSize(20)
+    const update_plan = createUpdatePlan({ context: true, operations: [{ op: OPERATIONS.ROOT_SIZE }] })
+
+    expect(renderer.prepareLayout(update_plan, [root, detached])).toBe(true)
+    expect(renderer.prepareLayout(createUpdatePlan(), [root, detached])).toBe(false)
+    expect(events).toEqual([
+        { node: detached, style: { name: 'width', value: '2rem', parsed: { value: 40, kind: UNIT.PX } } },
+        'isDirty',
+    ])
+})
+
+test('RendererWebGPU calculates only dirty Yoga or explicit layout context changes', () => {
+    const renderer = createRenderer()
+    const root = createNode()
+    ;(renderer as any).root_node = root
+    let dirty = false
+    let calculations = 0
+    ;(renderer as any).layouter = {
+        isDirty() { return dirty },
+        calculate() { calculations++ },
+    }
+    for (const operation of [
+        { op: OPERATIONS.STYLE, node: root, style: resolveStyle('backgroundColor', '#123') },
+        { op: OPERATIONS.STYLE, node: root, style: resolveStyle('zIndex', '2') },
+        { op: OPERATIONS.SCROLL, node: root, direction: 'top', value: 10 },
+        { op: OPERATIONS.PIXEL_RATIO },
+        { op: OPERATIONS.RESOURCES, image: true, font: false },
+    ]) {
+        const update_plan = createUpdatePlan({ operations: [operation] })
+        update_plan.layout = renderer.prepareLayout(update_plan, [root])
+        expect(update_plan.layout).toBe(false)
+        renderer.beforeUpdate([], update_plan)
+    }
+    expect(calculations).toBe(0)
+
+    for (const operation of [
+        { op: OPERATIONS.VIEWPORT },
+        { op: OPERATIONS.ROOT_SIZE },
+        { op: OPERATIONS.ADD, node: root },
+    ]) {
+        const update_plan = createUpdatePlan({
+            operations: [operation],
+            context: operation.op === OPERATIONS.VIEWPORT || operation.op === OPERATIONS.ROOT_SIZE,
+        })
+        update_plan.layout = renderer.prepareLayout(update_plan, [root])
+        expect(update_plan.layout).toBe(true)
+        renderer.beforeUpdate([], update_plan)
+    }
+    dirty = true
+    const dirty_plan = createUpdatePlan()
+    dirty_plan.layout = renderer.prepareLayout(dirty_plan, [root])
+    renderer.beforeUpdate([], dirty_plan)
+    expect(calculations).toBe(4)
+})
+
+test('RendererWebGPU clamps only targeted scroll nodes without recalculating metrics or layout', () => {
+    const renderer = createRenderer()
+    const root = createNode()
+    const target = createNode({ parent: root })
+    const sibling = createNode({ parent: root })
+    root.children.push(target, sibling)
+    ;(renderer as any).root_node = root
+    target.clientWidth = 20
+    target.clientHeight = 10
+    target.scrollWidth = 70
+    target.scrollHeight = 40
+    target.scrollLeft = -10
+    target.scrollTop = 100
+    sibling.scrollTop = 100
+    ;(renderer as any).getNodeContentSize = () => { throw new Error('metrics read') }
+    ;(renderer as any).layouter = { calculate() { throw new Error('layout calculation') } }
+    const update_plan = createUpdatePlan({ scroll_nodes: new Set([target]) })
+
+    renderer.beforeUpdate([target, sibling], update_plan)
+    renderer.afterUpdate([target, sibling], update_plan)
+
+    expect(target.scrollLeft).toBe(0)
+    expect(target.scrollTop).toBe(30)
+    expect(target.scrollWidth).toBe(70)
+    expect(target.scrollHeight).toBe(40)
+    expect(sibling.scrollTop).toBe(100)
+    expect([...update_plan.scroll_nodes]).toEqual([target])
+})
+
+test('RendererWebGPU propagates cross-axis overflow changes and records internal clamps with clean Yoga', () => {
+    const renderer = createRenderer()
+    const root = createNode({ layout: { x: 0, y: 0, width: 100, height: 100 } })
+    const parent = createNode({ parent: root, layout: { x: 0, y: 0, width: 60, height: 60 } })
+    const child = createNode({ parent, layout: { x: 0, y: 0, width: 150, height: 150 } })
+    root.children.push(parent)
+    parent.children.push(child)
+    ;(renderer as any).root_node = root
+    ;(renderer as any).layouter = { isDirty() { return false }, calculate() { throw new Error('layout calculation') } }
+    renderer.afterUpdate([parent, child], createUpdatePlan({ layout: true }))
+    root.scrollTop = 50
+    parent.styles.overflowY = { parsed: { enum: OVERFLOW.hidden } }
+    const update_plan = createUpdatePlan({ scroll_metrics: true })
+    update_plan.layout = renderer.prepareLayout(update_plan, [root, parent, child])
+    renderer.beforeUpdate([parent, child], update_plan)
+    renderer.afterUpdate([parent, child], update_plan)
+
+    expect(update_plan.layout).toBe(false)
+    expect(root.scrollWidth).toBe(150)
+    expect(root.scrollHeight).toBe(100)
+    expect(root.scrollTop).toBe(0)
+    expect(update_plan.scroll_nodes.has(root)).toBe(true)
+})
+
+test('RendererWebGPU selects local damage and deduplicates overlapping inherited subtrees', () => {
+    const renderer = createRenderer()
+    const root = createNode()
+    const parent = createNode({ parent: root })
+    const child = createNode({ parent })
+    const grandchild = createNode({ parent: child })
+    const sibling = createNode({ parent: root })
+    root.children.push(parent, sibling)
+    parent.children.push(child)
+    child.children.push(grandchild)
+    const nodes = [parent, child, grandchild, sibling]
+    ;(renderer as any).root_node = root
+    renderer.update(nodes, createUpdatePlan({ painting_order: true }))
+    const updated_nodes = []
+    const updateRecord = (renderer as any).updateRecord.bind(renderer)
+    ;(renderer as any).updateRecord = (node, record) => {
+        updated_nodes.push(node)
+        return updateRecord(node, record)
+    }
+
+    renderer.update(nodes, createUpdatePlan({
+        operations: [{ op: OPERATIONS.STYLE, node: child, style: resolveStyle('backgroundColor', '#123') }],
+    }))
+    expect(updated_nodes).toEqual([child])
+
+    updated_nodes.length = 0
+    renderer.update(nodes, createUpdatePlan({
+        operations: [{ op: OPERATIONS.STYLE, node: parent, style: resolveStyle('opacity', '0.5') }],
+    }))
+    expect(updated_nodes).toEqual([parent, child, grandchild])
+
+    updated_nodes.length = 0
+    renderer.update(nodes, createUpdatePlan({ scroll_nodes: new Set([parent]) }))
+    expect(updated_nodes).toEqual([child, grandchild])
+
+    updated_nodes.length = 0
+    let child_traversals = 0
+    const descendants = child.children
+    Object.defineProperty(child, 'children', { get() { child_traversals++; return descendants } })
+    renderer.update(nodes, createUpdatePlan({
+        operations: [{ op: OPERATIONS.STYLE, node: parent, style: resolveStyle('overflowY', 'hidden') }],
+        layout_nodes: new Set([child, parent, grandchild]),
+        scroll_nodes: new Set([parent]),
+    }))
+    expect(updated_nodes).toEqual([parent, child, grandchild])
+    expect(child_traversals).toBeLessThanOrEqual(1)
+
+    updated_nodes.length = 0
+    renderer.update(nodes, createUpdatePlan({ operations: [{ op: OPERATIONS.PIXEL_RATIO }] }))
+    expect(updated_nodes).toEqual([root, ...nodes])
+})
+
+test('RendererWebGPU creates missing root and subtree records before rebuilding commands', () => {
+    const renderer = createRenderer()
+    const root = createNode()
+    const parent = createNode({ parent: root })
+    const child = createNode({ parent })
+    root.children.push(parent)
+    parent.children.push(child)
+    ;(renderer as any).root_node = root
+    renderer.update([parent, child], createUpdatePlan({ painting_order: true }))
+
+    expect((renderer as any).records.size).toBe(3)
+    expect((renderer as any).command_count).toBe(3)
+
+    ;(renderer as any).layouter = { detachChild() {}, insertChild() {} }
+    renderer.detachChild(root, parent)
+    root.children.length = 0
+    renderer.update([], createUpdatePlan({ painting_order: true, operations: [{ op: OPERATIONS.REMOVE, node: parent }] }))
+    expect((renderer as any).records.size).toBe(1)
+    expect((renderer as any).command_count).toBe(1)
+
+    root.children.push(parent)
+    renderer.addChild(root, parent, 0)
+    renderer.update([parent, child], createUpdatePlan({ painting_order: true, operations: [{ op: OPERATIONS.ADD, node: parent }] }))
+    expect((renderer as any).records.size).toBe(3)
+    expect((renderer as any).command_count).toBe(3)
+})
+
+test('RendererWebGPU rebuilds commands only for order or structural panel and text changes', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode()
+    const node = createNode({ parent: root, text_content: 'A' })
+    root.children.push(node)
+    ;(renderer as any).root_node = root
+    renderer.update([node], createUpdatePlan({ painting_order: true }))
+    const command_counts = []
+    const fill = (renderer as any).command_pool.fill.bind((renderer as any).command_pool)
+    ;(renderer as any).command_pool.fill = (commands, writeCommand) => {
+        command_counts.push(commands.length)
+        fill(commands, writeCommand)
+    }
+    node.styles.backgroundColor = { parsed: { rgba: [0, 0, 0, 255] } }
+    renderer.update([node], createUpdatePlan({
+        operations: [{ op: OPERATIONS.STYLE, node, style: resolveStyle('backgroundColor', '#000') }],
+    }))
+    expect(command_counts).toEqual([])
+    expect((renderer as any).command_pool.uploaded).toBe(0)
+
+    renderer.update([node], createUpdatePlan({ painting_order: true }))
+    expect(command_counts).toEqual([3])
+
+    node.text_content = 'AB'
+    ;(renderer as any).layouter = { markDirty() {} }
+    renderer.invalidateTextNode(node)
+    renderer.update([node], createUpdatePlan({ operations: [{ op: OPERATIONS.TEXT, node, value: 'AB' }] }))
+    expect(command_counts).toEqual([3, 4])
+
+    node.styles.opacity = { parsed: { value: 0 } }
+    renderer.update([node], createUpdatePlan({
+        operations: [{ op: OPERATIONS.STYLE, node, style: resolveStyle('opacity', '0') }],
+    }))
+    expect(command_counts).toEqual([3, 4, 1])
+})
+
+test('RendererWebGPU reuses the viewport uniform and ignores unchanged fractional DPR', () => {
+    const renderer = createRenderer()
+    const writes = []
+    ;(renderer as any).root_node = createNode({ opacity: 0 })
+    ;(renderer as any).resources.device.queue.writeBuffer = (buffer, offset, data) => {
+        writes.push({ buffer, data, values: Array.from(data) })
+    }
+    renderer.setViewport(320, 180)
+    renderer.setDevicePixelRatio(1.1)
+    renderer.update([], createUpdatePlan({ operations: [{ op: OPERATIONS.VIEWPORT }, { op: OPERATIONS.PIXEL_RATIO }] }))
+    expect(writes).toHaveLength(1)
+    expect(writes[0].values).toEqual([320, 180, Math.fround(1.1), 0])
+
+    for (let index = 0; index < 5; index++) {
+        renderer.update([], createUpdatePlan())
+    }
+    renderer.update([], createUpdatePlan({ operations: [{ op: OPERATIONS.ROOT_SIZE }] }))
+    expect(writes).toHaveLength(1)
+
+    renderer.setDevicePixelRatio(2)
+    renderer.update([], createUpdatePlan({ operations: [{ op: OPERATIONS.PIXEL_RATIO }] }))
+    expect(writes).toHaveLength(2)
+    expect(writes[1].data).toBe(writes[0].data)
+    expect(writes[1].values).toEqual([320, 180, 2, 0])
+})
+
 function createNodesBufferData(renderer, nodes) {
     const render_data = collectRenderData(renderer, nodes)
 
@@ -3431,14 +3812,17 @@ function collectRenderData(renderer, nodes) {
 }
 
 function createRenderer(image_manager = createImageManager(), font_manager = createFontManager()) {
+    const device = createFakeDevice()
     const renderer = new RendererWebGPU({
         resources: {
             image_manager,
             font_manager,
             font_atlas_size: FONT_ATLAS_SIZE,
+            device,
         },
     })
-    const device = createFakeDevice()
+    ;(renderer as any).pipeline = { getBindGroupLayout: () => ({}) }
+    ;(renderer as any).viewport_buffer = { id: 'viewport' }
     ;(renderer as any).layouter = { applyStyle() {} }
     ;(renderer as any).grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
     ;(renderer as any).command_pool = new GpuPool({ device, usage: 0, stride: COMMAND_SIZE })
@@ -3455,6 +3839,7 @@ function getAppliedStyle(applied_styles, name) {
 
 function createImageManager({ resources = {} } = {}) {
     return {
+        registry_version: 0,
         getImage(src) {
             return resources[src]
         },
@@ -3480,6 +3865,7 @@ function createRealFontManager(device, atlas_size = ATLAS_SIZE) {
 
 function createFontManager({ default_font = undefined, fonts = {} } = {}) {
     return {
+        registry_version: 0,
         getDefaultFont() {
             return default_font
         },
@@ -3648,6 +4034,9 @@ function createFakeDevice({ max_texture_array_layers = 8 } = {}) {
             }
         },
         queue: {
+            writeBuffer(buffer, offset, data, data_offset, size) {
+                writes.push({ buffer, offset, data, data_offset, size })
+            },
             copyExternalImageToTexture(source, destination, size) {
                 copies.push({ source, destination, size })
             },
@@ -3709,18 +4098,42 @@ function createNode({
         },
         parent,
         children: [],
-        scrollTop: 0,
-        scrollLeft: 0,
-        scrollHeight: 0,
-        scrollWidth: 0,
+        scroll_top: 0,
+        scroll_left: 0,
+        scroll_height: 0,
+        scroll_width: 0,
+        get scrollTop() {
+            return this.scroll_top
+        },
+        set scrollTop(value) {
+            this.scroll_top = value
+        },
+        get scrollLeft() {
+            return this.scroll_left
+        },
+        set scrollLeft(value) {
+            this.scroll_left = value
+        },
+        get scrollHeight() {
+            return this.scroll_height
+        },
+        set scrollHeight(value) {
+            this.scroll_height = value
+        },
+        get scrollWidth() {
+            return this.scroll_width
+        },
+        set scrollWidth(value) {
+            this.scroll_width = value
+        },
         clientHeight: 0,
         clientWidth: 0,
         text_content,
         isTextNode() {
-            return text_content !== undefined
+            return this.text_content !== undefined
         },
         hasTextContent() {
-            return this.isTextNode() && text_content.length > 0
+            return this.isTextNode() && this.text_content.length > 0
         },
         styles: {
             backgroundColor: {
@@ -3749,5 +4162,18 @@ function createNode({
                   }),
             ...styles,
         },
+    }
+}
+
+function createUpdatePlan(overrides = {}) {
+    return {
+        operations: [],
+        layout: false,
+        painting_order: false,
+        context: false,
+        scroll_metrics: false,
+        layout_nodes: new Set(),
+        scroll_nodes: new Set(),
+        ...overrides,
     }
 }

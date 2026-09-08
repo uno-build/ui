@@ -1,4 +1,4 @@
-import { KEYWORD, UNIT } from './consts'
+import { KEYWORD, UNIT } from './constants'
 import { readInteger, readNumber, readUnit } from './utils'
 
 export function parseString(value: string) {

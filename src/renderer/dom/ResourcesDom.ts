@@ -1,6 +1,8 @@
 import Resources from '../../core/Resources'
 
 export default class ResourcesDom extends Resources {
+    public image_registry_version = 0
+    public font_registry_version = 0
     private images = new Map()
     private fonts = new Map()
 
@@ -18,10 +20,13 @@ export default class ResourcesDom extends Resources {
         }
 
         this.images.set(src, image)
+        this.image_registry_version++
     }
 
     public disposeImage(src: string) {
-        this.images.delete(src)
+        if (this.images.delete(src)) {
+            this.image_registry_version++
+        }
     }
 
     public getImage(src: string) {
@@ -39,10 +44,13 @@ export default class ResourcesDom extends Resources {
         }
 
         this.fonts.set(name, json.metrics)
+        this.font_registry_version++
     }
 
     public disposeFont(name: string) {
-        this.fonts.delete(name)
+        if (this.fonts.delete(name)) {
+            this.font_registry_version++
+        }
     }
 
     public getFont(name: string) {

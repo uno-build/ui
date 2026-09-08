@@ -1,4 +1,4 @@
-import { UNIT } from './consts'
+import { UNIT } from './constants'
 import { parseEnum } from './parsers'
 import { validateEnum } from './validators'
 

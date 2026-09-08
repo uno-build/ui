@@ -1,17 +1,66 @@
 import Renderer from '../core/Renderer'
+import { OPERATIONS } from '../core/constants'
 import { calculateLayoutRect, getParentLayout } from '../layouter/utils'
-import { KEYWORD } from '../style/consts'
+import { KEYWORD } from '../style/constants'
 
 export default class RendererDom extends Renderer {
     private resources
     private elements = new WeakMap()
     private element_nodes = new WeakMap()
-    private text_elements = new WeakMap()
     private root_node
+    private image_registry_version = 0
+    private font_registry_version = 0
+    private web_font_version = 0
+    private observed_web_font_version = 0
+    private onFontsLoaded = () => {
+        this.web_font_version++
+    }
 
     constructor({ resources }) {
         super()
         this.resources = resources
+    }
+
+    public async init() {
+        document.fonts.addEventListener('loadingdone', this.onFontsLoaded)
+    }
+
+    public getPendingOperations() {
+        const image_version = this.resources.image_registry_version
+        const font_version = this.resources.font_registry_version
+        const web_font_version = this.web_font_version
+        const image = image_version !== this.image_registry_version
+        const font = font_version !== this.font_registry_version || web_font_version !== this.observed_web_font_version
+
+        return image || font ? [{ op: OPERATIONS.RESOURCES, image, font, image_version, font_version, web_font_version }] : []
+    }
+
+    public prepareLayout(update_plan, nodes_created) {
+        const image = update_plan.operations.some((operation) => operation.op === OPERATIONS.RESOURCES && operation.image)
+        const font = update_plan.operations.some((operation) => operation.op === OPERATIONS.RESOURCES && operation.font)
+
+        if (image || font) {
+            for (const node of nodes_created) {
+                if (image && node.styles.backgroundImage !== undefined) {
+                    this.updateBackgroundImage(node, node.styles.backgroundImage)
+                }
+                if (font) {
+                    this.updateTextLineHeight(node)
+                }
+            }
+        }
+
+        return update_plan.layout
+    }
+
+    public update(nodes, update_plan) {
+        for (const operation of update_plan.operations) {
+            if (operation.op === OPERATIONS.RESOURCES) {
+                this.image_registry_version = operation.image_version
+                this.font_registry_version = operation.font_version
+                this.observed_web_font_version = operation.web_font_version
+            }
+        }
     }
 
     public setRootSize(root_size) {
@@ -35,6 +84,8 @@ export default class RendererDom extends Renderer {
     }
 
     public destroy(nodes) {
+        document.fonts.removeEventListener('loadingdone', this.onFontsLoaded)
+
         for (const node of nodes) {
             const element = this.elements.get(node)
 
@@ -48,7 +99,6 @@ export default class RendererDom extends Renderer {
 
             this.elements.delete(node)
             this.element_nodes.delete(element)
-            this.text_elements.delete(node)
         }
 
         super.destroy(nodes)
@@ -70,7 +120,6 @@ export default class RendererDom extends Renderer {
         element.remove()
         this.elements.delete(node)
         this.element_nodes.delete(element)
-        this.text_elements.delete(node)
     }
 
     public getChildIndex(node) {
@@ -83,7 +132,7 @@ export default class RendererDom extends Renderer {
         element.style.overflowWrap = 'anywhere'
     }
 
-    protected updateStyle(node, resolved_style) {
+    public updateStyle(node, resolved_style) {
         const element = this.elements.get(node)
 
         if (resolved_style.name === 'textStroke') {
@@ -103,15 +152,7 @@ export default class RendererDom extends Renderer {
         }
 
         if (resolved_style.name === 'backgroundImage') {
-            const style = resolved_style.expanded[0]
-            if (style.parsed.kind === KEYWORD.UNSET) {
-                element.style.backgroundImage = 'none'
-                return
-            }
-
-            const image = this.resources.getImage(style.value)
-            element.style.backgroundImage = image === undefined ? 'none' : toCssBackgroundImage(image.src)
-            element.style.backgroundRepeat = node.styles.backgroundRepeat?.value ?? 'no-repeat'
+            this.updateBackgroundImage(node, resolved_style.expanded[0])
             return
         }
 
@@ -128,6 +169,18 @@ export default class RendererDom extends Renderer {
         element.style[resolved_style.name] = value
     }
 
+    private updateBackgroundImage(node, style) {
+        const element = this.elements.get(node)
+        if (style.parsed.kind === KEYWORD.UNSET) {
+            element.style.backgroundImage = 'none'
+            return
+        }
+
+        const image = this.resources.getImage(style.value)
+        element.style.backgroundImage = image === undefined ? 'none' : toCssBackgroundImage(image.src)
+        element.style.backgroundRepeat = node.styles.backgroundRepeat?.value ?? 'no-repeat'
+    }
+
     private updateTextLineHeight(node) {
         const element = this.elements.get(node)
         const line_height = node.styles.lineHeight
@@ -141,25 +194,27 @@ export default class RendererDom extends Renderer {
         element.style.lineHeight = font === undefined ? '' : `${font.lineHeight}`
     }
 
-    public beforeUpdate(nodes) {
-        super.beforeUpdate(nodes)
-
-        for (const node of nodes) {
-            this.updateText(node)
+    public beforeUpdate(nodes, update_plan) {
+        for (const operation of update_plan.operations) {
+            if (operation.op === OPERATIONS.TEXT && operation.node.ui !== null) {
+                this.elements.get(operation.node).innerHTML = operation.value
+            }
         }
 
-        this.applyNodeScroll(this.root_node)
-        for (const node of nodes) {
+        const scroll_nodes =
+            update_plan.layout || update_plan.scroll_metrics ? [this.root_node, ...nodes] : update_plan.scroll_nodes
+        for (const node of scroll_nodes) {
             this.applyNodeScroll(node)
         }
     }
 
-    public afterUpdate(nodes) {
-        super.afterUpdate(nodes)
-        this.readNodeScroll(this.root_node)
-
-        for (const node of nodes) {
-            this.readNodeScroll(node)
+    public afterUpdate(nodes, update_plan) {
+        const read_metrics = update_plan.layout || update_plan.scroll_metrics
+        const scroll_nodes = read_metrics ? [this.root_node, ...nodes] : update_plan.scroll_nodes
+        for (const node of scroll_nodes) {
+            if (this.readNodeScroll(node, read_metrics)) {
+                update_plan.scroll_nodes.add(node)
+            }
         }
     }
 
@@ -169,21 +224,25 @@ export default class RendererDom extends Renderer {
         element.scrollTop = node.scrollTop
     }
 
-    private readNodeScroll(node) {
+    private readNodeScroll(node, read_metrics) {
         const element = this.elements.get(node)
-        node.scrollLeft = element.scrollLeft
-        node.scrollTop = element.scrollTop
-        node.scrollWidth = element.scrollWidth
-        node.scrollHeight = element.scrollHeight
-        node.clientWidth = element.clientWidth
-        node.clientHeight = element.clientHeight
+        const scroll_changed = node.scrollLeft !== element.scrollLeft || node.scrollTop !== element.scrollTop
+        node.scroll_left = element.scrollLeft
+        node.scroll_top = element.scrollTop
+        if (read_metrics) {
+            node.scrollWidth = element.scrollWidth
+            node.scrollHeight = element.scrollHeight
+            node.clientWidth = element.clientWidth
+            node.clientHeight = element.clientHeight
+        }
+        return scroll_changed
     }
 
     public syncScroll(element) {
         const node = this.element_nodes.get(element)
 
         if (node !== undefined) {
-            this.readNodeScroll(node)
+            this.readNodeScroll(node, true)
         }
 
         return node
@@ -201,24 +260,6 @@ export default class RendererDom extends Renderer {
         }
 
         return null
-    }
-
-    private updateText(node) {
-        let text_element = this.text_elements.get(node)
-
-        if (!node.hasTextContent()) {
-            text_element?.remove()
-            this.text_elements.delete(node)
-            return
-        }
-
-        // if (text_element === undefined) {
-        //     text_element = document.createElement('span')
-        //     this.text_elements.set(node, text_element)
-        //     this.elements.get(node).insertBefore(text_element, this.elements.get(node).firstChild)
-        // }
-
-        this.elements.get(node).innerHTML = node.text_content
     }
 
     // prettier-ignore

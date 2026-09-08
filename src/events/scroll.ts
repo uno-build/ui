@@ -1,9 +1,9 @@
-import { OVERFLOW } from '../style/consts'
-import { EVENT } from './const'
+import { OVERFLOW } from '../style/constants'
+import { EVENT } from './constants'
 import { normalizeDelta } from './wheel'
 
 const SCROLL_SLOP = 10 // The minimum drag distance in pixels to mark the node as scrolling
-const WHEEL_FACTOR = 0.25 // The factor to scale the wheel scroll delta
+const WHEEL_FACTOR = 1 // The factor to scale the wheel scroll delta
 
 export function defineScroll({ ui }) {
     const pointers = new Map()

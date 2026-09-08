@@ -1,7 +1,7 @@
 import { normalizeStyleName, normalizeStyleKey } from './normalizers'
 import { readUnit, runPipeline, runValidators } from './utils'
 import { expandProperty } from './expand'
-import { UNIT } from './consts'
+import { UNIT } from './constants'
 import {
     ALIGN_CONTENT_DEFINITION,
     ALIGN_ITEMS_DEFINITION,
@@ -84,6 +84,10 @@ export function resolveStyle(name: string, value: any) {
     }
 }
 
+export function isPaintStyle(name) {
+    return STYLE[normalizeStyleKey(name)].painter === true
+}
+
 export function computeStyleValue(style, context) {
     if (style?.parsed === undefined) {
         return style
@@ -136,9 +140,10 @@ function computeUnitValue(parsed, context) {
     }
 }
 
-function createStyle(name, shorthandCallback) {
+function createStyle(name, shorthandCallback, options = {}) {
     return {
         name,
+        ...options,
         resolve(value) {
             const style_shorthand = shorthandCallback(name, value)
             const styles = []
@@ -187,7 +192,7 @@ function expandHelper(name, value, definitions) {
 export const STYLE = {
     ZINDEX: createStyle('zIndex', (name, value) => [
         { name, value, definition: INTEGER_DEFINITION },
-    ]),
+    ], { painter: true }),
     OVERFLOW: createStyle('overflow', (name, value) => [
         { name: 'overflowX', value, definition: OVERFLOW_DEFINITION },
         { name: 'overflowY', value, definition: OVERFLOW_DEFINITION },
@@ -200,16 +205,16 @@ export const STYLE = {
     ]),
     OPACITY: createStyle('opacity', (name, value) => [
         { name, value, definition: OPACITY_DEFINITION },
-    ]),
+    ], { painter: true }),
     BOXSHADOW: createStyle('boxShadow', (name, value) => [
         { name, value, definition: BOX_SHADOW_DEFINITION },
-    ]),
+    ], { painter: true }),
     TEXTSHADOW: createStyle('textShadow', (name, value) => [
         { name, value, definition: TEXT_SHADOW_DEFINITION },
-    ]),
+    ], { painter: true }),
     TEXTSTROKE: createStyle('textStroke', (name, value) => [
         { name, value, definition: TEXT_STROKE_DEFINITION },
-    ]),
+    ], { painter: true }),
     BORDER: createStyle('border', (name, value) => 
         expandHelper(name, value, {
             borderTopWidth: BORDER_WIDTH_DEFINITION,
@@ -236,16 +241,16 @@ export const STYLE = {
     ),
     BORDERTOPLEFTRADIUS: createStyle('borderTopLeftRadius', (name, value) => [
         { name, value, definition: PX_PERCENT_DEFINITION },
-    ]),
+    ], { painter: true }),
     BORDERTOPRIGHTRADIUS: createStyle('borderTopRightRadius', (name, value) => [
         { name, value, definition: PX_PERCENT_DEFINITION },
-    ]),
+    ], { painter: true }),
     BORDERBOTTOMLEFTRADIUS: createStyle('borderBottomLeftRadius', (name, value) => [
         { name, value, definition: PX_PERCENT_DEFINITION },
-    ]),
+    ], { painter: true }),
     BORDERBOTTOMRIGHTRADIUS: createStyle('borderBottomRightRadius', (name, value) => [
         { name, value, definition: PX_PERCENT_DEFINITION },
-    ]),
+    ], { painter: true }),
     BORDERTOPSTYLE: createStyle('borderTopStyle', (name, value) => [
         { name, value, definition: BORDER_DEFINITION },
     ]),
@@ -260,22 +265,22 @@ export const STYLE = {
     ]),
     BORDERTOPCOLOR: createStyle('borderTopColor', (name, value) => [
         { name, value, definition: COLOR_DEFINITION },
-    ]),
+    ], { painter: true }),
     BORDERLEFTCOLOR: createStyle('borderLeftColor', (name, value) => [
         { name, value, definition: COLOR_DEFINITION },
-    ]),
+    ], { painter: true }),
     BORDERRIGHTCOLOR: createStyle('borderRightColor', (name, value) => [
         { name, value, definition: COLOR_DEFINITION },
-    ]),
+    ], { painter: true }),
     BORDERBOTTOMCOLOR: createStyle('borderBottomColor', (name, value) => [
         { name, value, definition: COLOR_DEFINITION },
-    ]),
+    ], { painter: true }),
     BACKGROUNDCOLOR: createStyle('backgroundColor', (name, value) => [
         { name, value, definition: COLOR_DEFINITION },
-    ]),
+    ], { painter: true }),
     BACKGROUNDIMAGE: createStyle('backgroundImage', (name, value) => [
         { name, value, definition: BACKGROUNDIMAGE_DEFINITION },
-    ]),
+    ], { painter: true }),
     BACKGROUNDSIZE: createStyle('backgroundSize', (name, value) =>
         expandHelper(name, value, {
             backgroundSizeWidth: BACKGROUND_SIZE_DEFINITION,
@@ -284,10 +289,10 @@ export const STYLE = {
     ),
     BACKGROUNDSIZEWIDTH: createStyle('backgroundSizeWidth', (name, value) => [
         { name, value, definition: BACKGROUND_SIZE_DEFINITION },
-    ]),
+    ], { painter: true }),
     BACKGROUNDSIZEHEIGHT: createStyle('backgroundSizeHeight', (name, value) => [
         { name, value, definition: BACKGROUND_SIZE_DEFINITION },
-    ]),
+    ], { painter: true }),
     BACKGROUNDPOSITION: createStyle('backgroundPosition', (name, value) =>
         expandHelper(name, value, {
             backgroundPositionX: BACKGROUND_POSITION_DEFINITION,
@@ -296,16 +301,16 @@ export const STYLE = {
     ),
     BACKGROUNDPOSITIONX: createStyle('backgroundPositionX', (name, value) => [
         { name, value, definition: BACKGROUND_POSITION_DEFINITION },
-    ]),
+    ], { painter: true }),
     BACKGROUNDPOSITIONY: createStyle('backgroundPositionY', (name, value) => [
         { name, value, definition: BACKGROUND_POSITION_DEFINITION },
-    ]),
+    ], { painter: true }),
     BACKGROUNDREPEAT: createStyle('backgroundRepeat', (name, value) => [
         { name, value, definition: BACKGROUND_REPEAT_DEFINITION },
-    ]),
+    ], { painter: true }),
     COLOR: createStyle('color', (name, value) => [
         { name, value, definition: COLOR_DEFINITION },
-    ]),
+    ], { painter: true }),
     FONTFAMILY: createStyle('fontFamily', (name, value) => [
         { name, value, definition: FONT_FAMILY_DEFINITION },
     ]),
@@ -320,7 +325,7 @@ export const STYLE = {
     ]),
     TEXTALIGN: createStyle('textAlign', (name, value) => [
         { name, value, definition: TEXT_ALIGN_DEFINITION },
-    ]),
+    ], { painter: true }),
     WHITESPACE: createStyle('whiteSpace', (name, value) => [
         { name, value, definition: WHITE_SPACE_DEFINITION },
     ]),
@@ -436,7 +441,7 @@ export const STYLE = {
     ]),
     POINTEREVENTS: createStyle('pointerEvents', (name, value) => [
         { name, value, definition: POINTER_EVENTS_DEFINITION },
-    ]),
+    ], { painter: true }),
     DIRECTION: createStyle('direction', (name, value) => [
         { name, value, definition: DIRECTION_DEFINITION },
     ]),

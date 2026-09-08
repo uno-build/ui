@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { loadYoga } from 'yoga-layout/load'
 import createYogaLayouter from '../src/layouter/yoga.ts'
 import Style, { computeStyleValue } from '../src/style'
-import { MEASURE_MODE } from '../src/style/consts'
+import { MEASURE_MODE } from '../src/style/constants'
 
 test('Yoga layouter keeps handles private and returns computed box metrics', async () => {
     const layouter = await createYogaLayouter({ loadYoga })
@@ -129,6 +129,77 @@ test('Yoga layouter resolves root percentages against the available size', async
 
     expect(layouter.getLayout(root).width).toBe(800)
     expect(layouter.getLayout(root).height).toBe(600)
+})
+
+test('Yoga layouter reports dirty layout without calculating or reading geometry', async () => {
+    const layouter = await createYogaLayouter({ loadYoga })
+    const root = createNode(0)
+    const child = createNode(1, root)
+    layouter.createNode(root)
+    layouter.createNode(child)
+    layouter.insertChild(root, child, 0)
+    expect(layouter.isDirty()).toBe(true)
+
+    layouter.calculate()
+    expect(layouter.isDirty()).toBe(false)
+    applyStyle(layouter, child, 'backgroundColor', '#123')
+    applyStyle(layouter, child, 'zIndex', '2')
+    expect(layouter.isDirty()).toBe(false)
+
+    applyStyle(layouter, child, 'width', '40px')
+    expect(layouter.isDirty()).toBe(true)
+    layouter.calculate()
+    expect(layouter.isDirty()).toBe(false)
+
+    layouter.detachChild(root, child)
+    expect(layouter.isDirty()).toBe(true)
+    child.parent = null
+    layouter.destroy([root, child])
+})
+
+test('Yoga layouter invalidates cached text measurements and measures detached text after attachment', async () => {
+    const layouter = await createYogaLayouter({ loadYoga })
+    const root = createNode(0)
+    const text = createNode(1, root)
+    const detached = createNode(2)
+    let text_width = 10
+    const measured_nodes = []
+    for (const node of [root, text, detached]) {
+        layouter.createNode(node)
+    }
+    for (const node of [text, detached]) {
+        layouter.setMeasureFunction(node, () => {
+            measured_nodes.push(node)
+            return { width: text_width, height: 20 }
+        })
+    }
+    layouter.insertChild(root, text, 0)
+    layouter.calculate()
+    expect(layouter.getLayout(text).width).toBe(10)
+    expect(measured_nodes.length).toBeGreaterThan(0)
+    expect(measured_nodes).not.toContain(detached)
+    expect(layouter.isDirty()).toBe(false)
+    const measurement_count = measured_nodes.length
+    layouter.calculate()
+    expect(measured_nodes).toHaveLength(measurement_count)
+
+    text_width = 30
+    layouter.markDirty(detached)
+    expect(layouter.isDirty()).toBe(false)
+    layouter.markDirty(text)
+    expect(layouter.isDirty()).toBe(true)
+    layouter.calculate()
+    expect(layouter.getLayout(text).width).toBe(30)
+    expect(measured_nodes.length).toBeGreaterThan(measurement_count)
+    expect(measured_nodes).not.toContain(detached)
+
+    detached.parent = root
+    layouter.insertChild(root, detached, 1)
+    expect(layouter.isDirty()).toBe(true)
+    layouter.calculate()
+    expect(layouter.getLayout(detached).width).toBe(30)
+    expect(measured_nodes).toContain(detached)
+    layouter.destroy([root, text, detached])
 })
 
 function createNode(id, parent = null) {

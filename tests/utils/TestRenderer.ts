@@ -46,15 +46,17 @@ export default class TestRenderer extends Renderer {
         this.layouter.destroyNode(node)
     }
 
-    protected updateStyle(node, resolved_style) {
+    public updateStyle(node, resolved_style) {
         for (const style of resolved_style.expanded) {
             this.layouter.applyStyle(node, style)
         }
     }
 
-    public beforeUpdate(nodes) {
-        super.beforeUpdate(nodes)
-        this.layouter.update()
+    public beforeUpdate(nodes, update_plan) {
+        super.beforeUpdate(nodes, update_plan)
+        if (update_plan.layout) {
+            this.layouter.calculate()
+        }
     }
 
     public getLayout(node) {

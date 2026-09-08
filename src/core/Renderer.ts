@@ -13,11 +13,19 @@ export default abstract class Renderer {
         this.insertChild(parent, node, child_index)
     }
 
-    public beforeUpdate() {}
+    public getPendingOperations() {
+        return []
+    }
 
-    public afterUpdate() {}
+    public prepareLayout(update_plan, _nodes_created) {
+        return update_plan.layout
+    }
 
-    public update(nodes) {}
+    public beforeUpdate(_nodes, _update_plan) {}
+
+    public afterUpdate(_nodes, _update_plan) {}
+
+    public update(_nodes, _update_plan) {}
 
     public draw(options?) {}
 
@@ -30,6 +38,6 @@ export default abstract class Renderer {
     public abstract detachChild(parent, node)
     public abstract destroyNode(node)
 
-    protected abstract updateStyle(node, style)
+    public abstract updateStyle(node, style)
     protected abstract insertChild(parent, node, child_index)
 }

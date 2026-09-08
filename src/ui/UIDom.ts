@@ -1,5 +1,5 @@
 import UI from '../core/UI'
-import { EVENT } from '../events/const'
+import { EVENT } from '../events/constants'
 import { defineFocus } from '../events/focus'
 import { normalizeDelta } from '../events/wheel'
 import RendererDom from '../renderer/RendererDom'

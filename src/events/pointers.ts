@@ -1,4 +1,4 @@
-import { EVENT } from './const'
+import { EVENT } from './constants'
 
 const POINTER_TYPES = [EVENT.POINTERDOWN.name, EVENT.POINTERMOVE.name, EVENT.POINTERUP.name, EVENT.POINTERCANCEL.name]
 

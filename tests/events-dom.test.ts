@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
-import { PLATFORM_EVENT_NAMES } from '../src/events/const'
+import { PLATFORM_EVENT_NAMES } from '../src/events/constants'
 
 const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
 

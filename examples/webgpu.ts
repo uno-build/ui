@@ -1,5 +1,5 @@
 import { mat4 } from 'wgpu-matrix'
-import { PLATFORM_EVENT_NAMES } from '../src/events/const'
+import { PLATFORM_EVENT_NAMES } from '../src/events/constants'
 import { loadAssets, registerAssets } from './uis/assets'
 import { createBackgroundUI } from './uis/background-ui'
 import { createForegroundUI } from './uis/foreground-ui'

@@ -1,5 +1,5 @@
 import { getAncestorClipping, getNodeRenderLayout } from '../renderer/utils/render-metrics'
-import { DISPLAY, POINTER_EVENTS } from '../style/consts'
+import { DISPLAY, POINTER_EVENTS } from '../style/constants'
 
 export function isNodeAtPoint(node, x, y) {
     const display = node.styles.display?.parsed.enum ?? DISPLAY.flex

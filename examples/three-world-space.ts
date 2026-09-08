@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { loadAssets, registerAssets } from './uis/assets'
 import { createBackgroundUI } from './uis/background-ui'
 import { createForegroundUI } from './uis/foreground-ui'
-import { PLATFORM_EVENT_NAMES } from '../src/events/const'
+import { PLATFORM_EVENT_NAMES } from '../src/events/constants'
 
 const WORLD_HEIGHT = 2
 const TEXTURE_SCALAR = window.devicePixelRatio

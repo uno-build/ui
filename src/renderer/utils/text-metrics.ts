@@ -1,5 +1,5 @@
 import { STYLE } from '../../style'
-import { KEYWORD, MEASURE_MODE, ROOT_SIZE, UNIT, WHITE_SPACE } from '../../style/consts'
+import { KEYWORD, MEASURE_MODE, ROOT_SIZE, UNIT, WHITE_SPACE } from '../../style/constants'
 import { layoutWithLines } from '../pretext/layout'
 
 export const TEXT_MEASURE_STYLE_NAMES = [

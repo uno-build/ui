@@ -15,7 +15,7 @@ import {
     DIRECTION,
     BOX_SIZING,
     MEASURE_MODE,
-} from '../style/consts'
+} from '../style/constants'
 import { calculateLayoutRect, getParentLayout } from './utils'
 
 export default async function createYogaLayouter({ loadYoga } = {}) {
@@ -111,6 +111,10 @@ export default async function createYogaLayouter({ loadYoga } = {}) {
 
         markDirty(node) {
             getElement(node).markDirty()
+        },
+
+        isDirty() {
+            return root_element.isDirty()
         },
 
         calculate,

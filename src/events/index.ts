@@ -6,6 +6,6 @@ import { defineFocus } from './focus'
 
 export { default as EventEmitter } from '../core/EventEmitter'
 
-export * from './const'
+export * from './constants'
 
 export const DEFINED_EVENTS = [definePointers, defineWheel, defineScroll, defineClick, defineFocus]

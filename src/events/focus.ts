@@ -1,4 +1,4 @@
-import { EVENT } from './const'
+import { EVENT } from './constants'
 
 export function defineFocus({ ui }) {
     let focused_node = null

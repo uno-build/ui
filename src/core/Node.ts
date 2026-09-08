@@ -1,6 +1,6 @@
 import { resolveStyle, validateStyle } from '../style'
-import { EVENT } from '../events/const'
-import { OPERATIONS } from './UI'
+import { EVENT } from '../events/constants'
+import { OPERATIONS } from './constants'
 
 export default class Node {
     public ui
@@ -13,8 +13,8 @@ export default class Node {
     public order = 0
     public scroll_top = 0
     public scroll_left = 0
-    public scroll_height = 0
-    public scroll_width = 0
+    public scrollHeight = 0
+    public scrollWidth = 0
     public clientHeight = 0
     public clientWidth = 0
     public scrolling = false
@@ -202,7 +202,7 @@ export default class Node {
                         parsed: style.parsed,
                     }
                 }
-                this.ui.operations.add({ op: OPERATIONS.STYLE, node: this, style: resolved_style })
+                this.ui.operations.push({ op: OPERATIONS.STYLE, node: this, style: resolved_style })
             }
         }
     }
@@ -223,13 +223,13 @@ export default class Node {
 
             this.text_content = value
             this.ui.renderer.invalidateTextNode(this)
-            this.ui.operations.add({ op: OPERATIONS.TEXT, node: this, value })
+            this.ui.operations.push({ op: OPERATIONS.TEXT, node: this, value })
             return
         }
 
         this.text_content = value
         this.ui.renderer.initializeTextNode(this)
-        this.ui.operations.add({ op: OPERATIONS.TEXT, node: this, value })
+        this.ui.operations.push({ op: OPERATIONS.TEXT, node: this, value })
     }
 
     public isTextNode() {
@@ -245,8 +245,10 @@ export default class Node {
     }
 
     public set scrollTop(value) {
-        this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'top', value })
-        this.scroll_top = value
+        if (this.ui !== null && this.scroll_top !== value) {
+            this.scroll_top = value
+            this.ui.operations.push({ op: OPERATIONS.SCROLL, node: this, direction: 'top', value })
+        }
     }
 
     public get scrollLeft() {
@@ -254,25 +256,9 @@ export default class Node {
     }
 
     public set scrollLeft(value) {
-        this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'left', value })
-        this.scroll_left = value
-    }
-
-    public get scrollHeight() {
-        return this.scroll_height
-    }
-
-    public set scrollHeight(value) {
-        this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'height', value })
-        this.scroll_height = value
-    }
-
-    public get scrollWidth() {
-        return this.scroll_width
-    }
-
-    public set scrollWidth(value) {
-        this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'width', value })
-        this.scroll_width = value
+        if (this.ui !== null && this.scroll_left !== value) {
+            this.scroll_left = value
+            this.ui.operations.push({ op: OPERATIONS.SCROLL, node: this, direction: 'left', value })
+        }
     }
 }

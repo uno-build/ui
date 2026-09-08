@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
 import EventEmitter from '../src/core/EventEmitter'
 import { DEFINED_EVENTS } from '../src/events'
-import { EVENT } from '../src/events/const'
-import { OVERFLOW } from '../src/style/consts'
+import { EVENT } from '../src/events/constants'
+import { OVERFLOW } from '../src/style/constants'
 import UIDom from '../src/ui/UIDom'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'
@@ -358,38 +358,51 @@ test('UIDom adapts native source events and removes its listeners on destroy', a
             listeners.get(source_event.type)?.forEach((listener) => listener(source_event))
         },
     }
-    const { ui } = await UIDom.create({ resources: { canvas } })
-    const received_events = []
+    const fonts = new EventTarget()
+    const original_document = (globalThis as any).document
+    ;(globalThis as any).document = { fonts }
 
-    ui.root.layout = { x: 0, y: 0, width: 200, height: 100 }
-    ui.root.on('pointerdown', (event) => received_events.push(event))
+    try {
+        const { ui } = await UIDom.create({ resources: { canvas } })
+        const renderer = ui.renderer
+        const received_events = []
 
-    const source_event = {
-        type: 'pointerdown',
-        target: canvas,
-        pointerId: 1,
-        pointerType: 'mouse',
-        clientX: 120,
-        clientY: 80,
+        ui.root.layout = { x: 0, y: 0, width: 200, height: 100 }
+        ui.root.on('pointerdown', (event) => received_events.push(event))
+
+        const source_event = {
+            type: 'pointerdown',
+            target: canvas,
+            pointerId: 1,
+            pointerType: 'mouse',
+            clientX: 120,
+            clientY: 80,
+        }
+        canvas.dispatchEvent(source_event)
+        fonts.dispatchEvent(new Event('loadingdone'))
+
+        expect(received_events).toHaveLength(1)
+        expect(received_events[0]).toMatchObject({
+            type: 'pointerdown',
+            x: 50,
+            y: 25,
+            target: ui.root,
+            current_target: ui.root,
+            source_event,
+        })
+        expect([...listeners.values()].every((event_listeners) => event_listeners.size === 1)).toBe(true)
+        expect((renderer as any).web_font_version).toBe(1)
+
+        ui.destroy()
+        canvas.dispatchEvent(source_event)
+        fonts.dispatchEvent(new Event('loadingdone'))
+
+        expect(received_events).toHaveLength(1)
+        expect([...listeners.values()].every((event_listeners) => event_listeners.size === 0)).toBe(true)
+        expect((renderer as any).web_font_version).toBe(1)
+    } finally {
+        ;(globalThis as any).document = original_document
     }
-    canvas.dispatchEvent(source_event)
-
-    expect(received_events).toHaveLength(1)
-    expect(received_events[0]).toMatchObject({
-        type: 'pointerdown',
-        x: 50,
-        y: 25,
-        target: ui.root,
-        current_target: ui.root,
-        source_event,
-    })
-    expect([...listeners.values()].every((event_listeners) => event_listeners.size === 1)).toBe(true)
-
-    ui.destroy()
-    canvas.dispatchEvent(source_event)
-
-    expect(received_events).toHaveLength(1)
-    expect([...listeners.values()].every((event_listeners) => event_listeners.size === 0)).toBe(true)
 })
 
 test('pointer events use capture while hover follows the hit node', async () => {
@@ -665,10 +678,10 @@ test('wheel is normalized before scrolling the nearest available node', async ()
             type: 'scroll',
             target: scroller,
             scroll_left: 0,
-            scroll_top: 48,
+            scroll_top: 192,
         },
     ])
-    expect(scroller.scrollTop).toBe(48)
+    expect(scroller.scrollTop).toBe(192)
     expect(update_count).toBe(1)
 
     ui.destroy()

@@ -5,13 +5,8 @@ import {
     COMMAND_KIND_TEXT_STROKE,
 } from '../webgpu/buffers'
 
-export function createRecord(node) {
+export function createRecord() {
     return {
-        dirty: 'new',
-        order: node.order,
-        layout: node.layout,
-        scroll_left: node.scrollLeft,
-        scroll_top: node.scrollTop,
         panel_slot: -1,
         run_slot: -1,
         glyph_start: 0,
@@ -24,21 +19,6 @@ export function createRecord(node) {
         line_height: 0,
         text_layout: undefined,
     }
-}
-
-export function isSameLayout(a, b) {
-    return (
-        a.x === b.x &&
-        a.y === b.y &&
-        a.width === b.width &&
-        a.height === b.height &&
-        isSameEdges(a.padding, b.padding) &&
-        isSameEdges(a.border, b.border)
-    )
-}
-
-function isSameEdges(a, b) {
-    return a.top === b.top && a.right === b.right && a.bottom === b.bottom && a.left === b.left
 }
 
 export function createCommands(nodes, records) {

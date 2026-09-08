@@ -1,5 +1,5 @@
-import { EVENT } from './const'
-import { ROOT_SIZE } from '../style/consts'
+import { EVENT } from './constants'
+import { ROOT_SIZE } from '../style/constants'
 
 const DELTA_MODE_LINE = 1
 

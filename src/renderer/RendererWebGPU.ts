@@ -1,10 +1,12 @@
 import Renderer from '../core/Renderer'
+import { OPERATIONS } from '../core/constants'
 import { computeStyleValue, STYLE } from '../style'
-import { ROOT_SIZE, DISPLAY, EDGE, TEXT_ALIGN, WHITE_SPACE, MEASURE_MODE } from '../style/consts'
+import { ROOT_SIZE, DISPLAY, TEXT_ALIGN, WHITE_SPACE, MEASURE_MODE } from '../style/constants'
 import createYogaLayouter from '../layouter/yoga'
 import {
     FEATURES,
     collectPanelData,
+    clampScroll,
     getAncestorClipping,
     getMainAxisOverflow,
     getNodeBorderWidth,
@@ -25,7 +27,7 @@ import {
     getTextWhiteSpace,
     measureGlyphAdvances,
 } from './utils/text-metrics'
-import { createCommands, createRecord, isSameLayout } from './utils/render-records'
+import { createCommands, createRecord } from './utils/render-records'
 import { measureLineStats, prepareWithSegments } from './pretext/layout'
 import { createPipeline } from './webgpu/pipeline'
 import {
@@ -41,6 +43,8 @@ import { writeCommandData, writeGlyphData, writePanelData, writeTextRunData } fr
 import { GpuPool } from './webgpu/GpuPool'
 import Segmenter from './pretext/segmenter'
 
+const SUBTREE_STYLE_NAMES = new Set([STYLE.OPACITY.name, STYLE.OVERFLOWX.name, STYLE.OVERFLOWY.name])
+
 export default class RendererWebGPU extends Renderer {
     private resources
     private image_min_filter
@@ -49,7 +53,6 @@ export default class RendererWebGPU extends Renderer {
     private viewport_width
     private viewport_height
     private root_size = ROOT_SIZE
-    private style_context_dirty = false
     private layouter!: any
     private device
     private context
@@ -63,14 +66,13 @@ export default class RendererWebGPU extends Renderer {
     private font_texture_version
     private position_buffer
     private viewport_buffer
+    private viewport_data = new Float32Array(4)
     private command_pool
     private command_count = 0
     private panel_data_pool
     private glyph_data_pool
     private text_run_pool
     private records = new Map()
-    private structural = false
-    private full_rebuild = null
     private image_registry_version = 0
     private font_registry_version = 0
     private prepared_texts = new WeakMap()
@@ -165,27 +167,16 @@ export default class RendererWebGPU extends Renderer {
     }
 
     public setDevicePixelRatio(device_pixel_ratio) {
-        if (this.device_pixel_ratio !== device_pixel_ratio) {
-            this.device_pixel_ratio = device_pixel_ratio
-            this.full_rebuild = 'device_pixel_ratio'
-        }
+        this.device_pixel_ratio = device_pixel_ratio
     }
 
     public setViewport(width, height) {
-        if (this.viewport_width !== width || this.viewport_height !== height) {
-            this.viewport_width = width
-            this.viewport_height = height
-            this.style_context_dirty = true
-            this.full_rebuild = 'viewport'
-        }
+        this.viewport_width = width
+        this.viewport_height = height
     }
 
     public setRootSize(root_size) {
-        if (this.root_size !== root_size) {
-            this.root_size = root_size
-            this.style_context_dirty = true
-            this.full_rebuild = 'root_size'
-        }
+        this.root_size = root_size
     }
 
     public createElement(node) {
@@ -200,17 +191,53 @@ export default class RendererWebGPU extends Renderer {
         return this.layouter.getChildIndex(node)
     }
 
+    public getPendingOperations() {
+        const image_version = this.image_manager.registry_version
+        const font_version = this.resources.font_manager.registry_version
+        const image = this.image_registry_version !== image_version
+        const font = this.font_registry_version !== font_version
+
+        return image || font ? [{ op: OPERATIONS.RESOURCES, image, font, image_version, font_version }] : []
+    }
+
+    public prepareLayout(update_plan, nodes_created) {
+        const fonts_changed = update_plan.operations.some(({ op, font }) => op === OPERATIONS.RESOURCES && font)
+
+        if (update_plan.context || fonts_changed) {
+            for (const node of nodes_created) {
+                let invalidate_text = fonts_changed
+
+                if (update_plan.context) {
+                    for (const [name, style] of Object.entries(node.styles)) {
+                        if (this.computeStyle(style) !== style) {
+                            this.updateResolvedStyle(node, { name, ...style })
+                            invalidate_text ||= TEXT_MEASURE_STYLE_NAMES.includes(name)
+                        }
+                    }
+                }
+
+                if (invalidate_text && node.isTextNode()) {
+                    this.invalidateTextNode(node)
+                }
+            }
+        }
+
+        return (
+            update_plan.context ||
+            update_plan.operations.some(({ op, node }) => op === OPERATIONS.ADD && node === this.root_node) ||
+            this.layouter.isDirty()
+        )
+    }
+
     public initializeTextNode(node) {
         this.layouter.setMeasureFunction(node, (width, width_mode, height, height_mode) =>
             this.getTextMeasure(node, width, width_mode, height, height_mode),
         )
-        this.markRecord(node, 'text')
     }
 
     public invalidateTextNode(node) {
         this.prepared_texts.delete(node)
         this.layouter.markDirty(node)
-        this.markRecord(node, 'text')
     }
 
     public getTextMeasure(
@@ -259,21 +286,12 @@ export default class RendererWebGPU extends Renderer {
         this.releaseRecord(node)
     }
 
-    protected updateStyle(node, resolved_style) {
-        let inherited = false
-
+    public updateStyle(node, resolved_style) {
         for (const style of resolved_style.expanded) {
             this.updateResolvedStyle(node, style)
-            inherited ||= [STYLE.OPACITY.name, STYLE.OVERFLOWX.name, STYLE.OVERFLOWY.name].includes(style.name)
         }
 
-        if (inherited) {
-            this.markSubtree(node, 'style')
-        } else {
-            this.markRecord(node, 'style')
-        }
-
-        if (node.isTextNode() && TEXT_MEASURE_STYLE_NAMES.includes(resolved_style.name)) {
+        if (node.isTextNode() && resolved_style.expanded.some(({ name }) => TEXT_MEASURE_STYLE_NAMES.includes(name))) {
             this.invalidateTextNode(node)
         }
     }
@@ -282,101 +300,45 @@ export default class RendererWebGPU extends Renderer {
         return this.layouter.getLayout(node)
     }
 
-    public beforeUpdate(nodes) {
-        super.beforeUpdate(nodes)
-
-        if (this.style_context_dirty) {
-            for (const node of [this.root_node, ...nodes]) {
-                let invalidate_text = false
-
-                for (const [name, style] of Object.entries(node.styles)) {
-                    if (this.computeStyle(style) === style) {
-                        continue
-                    }
-
-                    this.updateResolvedStyle(node, { name, ...style })
-                    invalidate_text ||= TEXT_MEASURE_STYLE_NAMES.includes(name)
-                }
-
-                if (invalidate_text && node.isTextNode()) {
-                    this.invalidateTextNode(node)
-                }
-            }
-
-            this.style_context_dirty = false
+    public beforeUpdate(nodes, update_plan) {
+        if (update_plan.layout) {
+            this.layouter.calculate(this.viewport_width, this.viewport_height)
         }
-
-        this.layouter.calculate(this.viewport_width, this.viewport_height)
     }
 
-    public update(nodes) {
-        const ordered_nodes = [this.root_node, ...nodes]
+    public update(nodes, update_plan) {
+        const render_plan = this.createRenderPlan(nodes, update_plan)
+        let rebuild_commands = render_plan.rebuild_commands
 
-        if (
-            this.image_registry_version !== this.image_manager.registry_version ||
-            this.font_registry_version !== this.resources.font_manager.registry_version
-        ) {
-            this.image_registry_version = this.image_manager.registry_version
-            this.font_registry_version = this.resources.font_manager.registry_version
-            this.full_rebuild = 'registry'
+        for (const node of render_plan.record_nodes) {
+            const { structural } = this.updateRecord(node, this.getRecord(node))
+            rebuild_commands ||= structural
         }
 
-        const full_rebuild = this.full_rebuild
-        if (full_rebuild !== null) {
-            this.full_rebuild = null
-            this.markSubtree(this.root_node, full_rebuild)
-        }
-
-        for (const node of ordered_nodes) {
-            this.diffRecord(node)
-        }
-
-        const updated_nodes = []
-        for (const node of ordered_nodes) {
-            const record = this.records.get(node)
-            if (record.dirty !== null) {
-                updated_nodes.push(`${node.id}:${record.dirty}`)
-                record.dirty = null
-                this.updateRecord(node, record)
-            }
-        }
-
-        const structural = this.structural
-        if (structural) {
-            this.structural = false
-            const commands = createCommands(ordered_nodes, this.records)
+        if (rebuild_commands) {
+            const commands = createCommands([this.root_node, ...nodes], this.records)
             this.command_count = commands.length
             this.command_pool.fill(commands, writeCommandData)
         }
 
-        this.updateBuffers()
+        this.updateBuffers(render_plan.update_viewport)
 
-        // if (full_rebuild !== null || structural || updated_nodes.length > 0) {
-        //     const bytes =
-        //         this.panel_data_pool.uploaded +
-        //         this.glyph_data_pool.uploaded +
-        //         this.text_run_pool.uploaded +
-        //         this.command_pool.uploaded
-        //     console.log('[RendererWebGPU] update', {
-        //         structural,
-        //         mode: full_rebuild === null ? 'partial' : `full (${full_rebuild})`,
-        //         kb: `${(bytes / 1024).toFixed(1)}kb`,
-        //         nodes: ordered_nodes.length,
-        //         updated: updated_nodes,
-        //         commands: this.command_count,
-        //         bytes: {
-        //             panel: this.panel_data_pool.uploaded,
-        //             glyph: this.glyph_data_pool.uploaded,
-        //             run: this.text_run_pool.uploaded,
-        //             command: this.command_pool.uploaded,
-        //         },
-        //     })
-        // }
+        for (const operation of update_plan.operations) {
+            if (operation.op === OPERATIONS.RESOURCES) {
+                this.image_registry_version = operation.image_version
+                this.font_registry_version = operation.font_version
+            }
+        }
     }
 
-    public afterUpdate(nodes) {
-        super.afterUpdate(nodes)
-        updateScrollMetrics(this.root_node, (node) => this.getNodeContentSize(node))
+    public afterUpdate(nodes, update_plan) {
+        if (update_plan.layout || update_plan.scroll_metrics) {
+            updateScrollMetrics(this.root_node, (node) => this.getNodeContentSize(node), update_plan.scroll_nodes)
+        } else {
+            for (const node of update_plan.scroll_nodes) {
+                clampScroll(node, update_plan.scroll_nodes)
+            }
+        }
     }
 
     public draw({ submit = true, command_encoder, texture_view, load_op = 'load' } = {}) {
@@ -495,25 +457,90 @@ export default class RendererWebGPU extends Renderer {
         return this.getTextMeasure(node, content_width)
     }
 
-    private diffRecord(node) {
-        const record = this.getRecord(node)
-        if (record.order !== node.order) {
-            record.order = node.order
-            this.structural = true
+    private createRenderPlan(nodes, update_plan) {
+        const record_nodes = new Set()
+        const expanded_subtrees = new Set()
+        const full_rebuild = update_plan.operations.some(({ op }) =>
+            [OPERATIONS.VIEWPORT, OPERATIONS.PIXEL_RATIO, OPERATIONS.ROOT_SIZE, OPERATIONS.RESOURCES].includes(op),
+        )
+        const update_viewport = update_plan.operations.some(
+            ({ op }) => op === OPERATIONS.VIEWPORT || op === OPERATIONS.PIXEL_RATIO,
+        )
+        const isActive = (node) => {
+            let ancestor = node
+            while (ancestor.parent !== null) {
+                ancestor = ancestor.parent
+            }
+            return ancestor === this.root_node
         }
-
-        if (!isSameLayout(record.layout, node.layout)) {
-            this.markSubtree(node, 'layout')
-        }
-        record.layout = node.layout
-
-        if (record.scroll_left !== node.scrollLeft || record.scroll_top !== node.scrollTop) {
-            record.scroll_left = node.scrollLeft
-            record.scroll_top = node.scrollTop
+        const addSubtree = (node) => {
+            if (expanded_subtrees.has(node)) {
+                return
+            }
+            expanded_subtrees.add(node)
+            record_nodes.add(node)
             for (const child of node.children) {
-                this.markSubtree(child, 'scroll')
+                addSubtree(child)
             }
         }
+
+        if (full_rebuild) {
+            record_nodes.add(this.root_node)
+            nodes.forEach((node) => record_nodes.add(node))
+        } else {
+            if (update_plan.layout_nodes.size > 0) {
+                const addLayoutNode = (node) => {
+                    if (update_plan.layout_nodes.has(node) || expanded_subtrees.has(node.parent)) {
+                        expanded_subtrees.add(node)
+                        record_nodes.add(node)
+                    }
+                }
+                addLayoutNode(this.root_node)
+                nodes.forEach(addLayoutNode)
+            }
+
+            for (const operation of update_plan.operations) {
+                if (operation.op === OPERATIONS.STYLE) {
+                    if (operation.style.expanded.every(({ name }) => name === STYLE.ZINDEX.name)) {
+                        continue
+                    }
+                    if (isActive(operation.node)) {
+                        if (operation.style.expanded.some(({ name }) => SUBTREE_STYLE_NAMES.has(name))) {
+                            addSubtree(operation.node)
+                        } else {
+                            record_nodes.add(operation.node)
+                        }
+                    }
+                } else if (operation.op === OPERATIONS.TEXT) {
+                    if (isActive(operation.node)) {
+                        record_nodes.add(operation.node)
+                    }
+                } else if (operation.op === OPERATIONS.ADD && isActive(operation.node)) {
+                    addSubtree(operation.node)
+                }
+            }
+
+            for (const node of update_plan.scroll_nodes) {
+                if (isActive(node)) {
+                    for (const child of node.children) {
+                        addSubtree(child)
+                    }
+                }
+            }
+        }
+
+        if (update_plan.painting_order) {
+            if (!this.records.has(this.root_node)) {
+                record_nodes.add(this.root_node)
+            }
+            for (const node of nodes) {
+                if (!this.records.has(node)) {
+                    record_nodes.add(node)
+                }
+            }
+        }
+
+        return { record_nodes, rebuild_commands: update_plan.painting_order, update_viewport }
     }
 
     private updateRecord(node, record) {
@@ -565,40 +592,21 @@ export default class RendererWebGPU extends Renderer {
             }
         }
 
-        if (
+        const structural =
             record.panel_slot !== previous_panel_slot ||
             record.glyph_start !== previous_glyph_start ||
             record.glyph_count !== previous_glyph_count ||
             record.has_text_shadow !== previous_has_text_shadow ||
             record.text_stroke_width !== previous_text_stroke_width
-        ) {
-            this.structural = true
-        }
 
-        return { panel_data, text_data }
-    }
-
-    private markRecord(node, reason) {
-        const record = this.records.get(node)
-        if (record !== undefined) {
-            record.dirty = reason
-        }
-    }
-
-    private markSubtree(node, reason) {
-        this.markRecord(node, reason)
-
-        for (const child of node.children) {
-            this.markSubtree(child, reason)
-        }
+        return { panel_data, text_data, structural }
     }
 
     private getRecord(node) {
         let record = this.records.get(node)
         if (record === undefined) {
-            record = createRecord(node)
+            record = createRecord()
             this.records.set(node, record)
-            this.structural = true
         }
 
         return record
@@ -610,7 +618,6 @@ export default class RendererWebGPU extends Renderer {
             this.releasePanel(record)
             this.releaseText(record)
             this.records.delete(node)
-            this.structural = true
         }
 
         for (const child of node.children) {
@@ -753,7 +760,7 @@ export default class RendererWebGPU extends Renderer {
         return prepared_text
     }
 
-    private updateBuffers() {
+    private updateBuffers(update_viewport) {
         this.command_pool.flush()
         const panel_data_recreated = this.panel_data_pool.flush()
         const glyph_data_recreated = this.glyph_data_pool.flush()
@@ -763,10 +770,11 @@ export default class RendererWebGPU extends Renderer {
             this.bind_group = this.createBindGroup()
         }
 
-        this.resources.device.queue.writeBuffer(
-            this.viewport_buffer,
-            0,
-            new Float32Array([this.viewport_width, this.viewport_height, this.device_pixel_ratio, 0]),
-        )
+        if (update_viewport) {
+            this.viewport_data[0] = this.viewport_width
+            this.viewport_data[1] = this.viewport_height
+            this.viewport_data[2] = this.device_pixel_ratio
+            this.resources.device.queue.writeBuffer(this.viewport_buffer, 0, this.viewport_data)
+        }
     }
 }

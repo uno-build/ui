@@ -16,7 +16,7 @@ import {
     TEXT_ALIGN,
     WHITE_SPACE,
     WRAP,
-} from './consts'
+} from './constants'
 import { normalizeTrim, normalizeToLowercase } from './normalizers'
 import {
     validateColor,

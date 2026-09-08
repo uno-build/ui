@@ -6,7 +6,7 @@ import {
     KEYWORD,
     OVERFLOW,
     UNIT,
-} from '../../style/consts'
+} from '../../style/constants'
 import { TRANSPARENT_COLOR } from '../webgpu/buffers'
 
 const EMPTY_BOX_SHADOW = [0, 0, 0, 0]
@@ -128,10 +128,10 @@ export function getNodeRenderLayout(node) {
     }
 }
 
-export function updateScrollMetrics(node, get_content_size) {
+export function updateScrollMetrics(node, getContentSize, scroll_nodes) {
     const display = node.styles.display?.parsed.enum ?? DISPLAY.flex
     if (display === DISPLAY.none) {
-        resetScrollMetrics(node)
+        resetScrollMetrics(node, scroll_nodes)
         return {
             left: node.layout.x,
             top: node.layout.y,
@@ -158,7 +158,7 @@ export function updateScrollMetrics(node, get_content_size) {
         right: node.layout.x + border_left + node.clientWidth,
         bottom: node.layout.y + border_top + node.clientHeight,
     }
-    const content_size = get_content_size(node)
+    const content_size = getContentSize(node)
     if (content_size !== null) {
         overflow_rect.right = Math.max(
             overflow_rect.right,
@@ -171,7 +171,7 @@ export function updateScrollMetrics(node, get_content_size) {
     }
 
     for (const child of node.children) {
-        const child_overflow = updateScrollMetrics(child, get_content_size)
+        const child_overflow = updateScrollMetrics(child, getContentSize, scroll_nodes)
         const child_display = child.styles.display?.parsed.enum ?? DISPLAY.flex
         if (child_display === DISPLAY.none) {
             continue
@@ -196,22 +196,34 @@ export function updateScrollMetrics(node, get_content_size) {
 
     node.scrollWidth = Math.round(Math.max(node.clientWidth, overflow_rect.right - node.layout.x - border_left))
     node.scrollHeight = Math.round(Math.max(node.clientHeight, overflow_rect.bottom - node.layout.y - border_top))
-    node.scrollLeft = Math.max(0, Math.min(node.scrollLeft, node.scrollWidth - node.clientWidth))
-    node.scrollTop = Math.max(0, Math.min(node.scrollTop, node.scrollHeight - node.clientHeight))
+    clampScroll(node, scroll_nodes)
 
     return overflow_rect
 }
 
-function resetScrollMetrics(node) {
+export function clampScroll(node, scroll_nodes) {
+    const scroll_left = Math.max(0, Math.min(node.scrollLeft, node.scrollWidth - node.clientWidth))
+    const scroll_top = Math.max(0, Math.min(node.scrollTop, node.scrollHeight - node.clientHeight))
+    if (node.scrollLeft !== scroll_left || node.scrollTop !== scroll_top) {
+        node.scroll_left = scroll_left
+        node.scroll_top = scroll_top
+        scroll_nodes.add(node)
+    }
+}
+
+function resetScrollMetrics(node, scroll_nodes) {
     node.clientWidth = 0
     node.clientHeight = 0
     node.scrollWidth = 0
     node.scrollHeight = 0
-    node.scrollLeft = 0
-    node.scrollTop = 0
+    if (node.scrollLeft !== 0 || node.scrollTop !== 0) {
+        node.scroll_left = 0
+        node.scroll_top = 0
+        scroll_nodes.add(node)
+    }
 
     for (const child of node.children) {
-        resetScrollMetrics(child)
+        resetScrollMetrics(child, scroll_nodes)
     }
 }
 

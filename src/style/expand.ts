@@ -1,5 +1,5 @@
 // https://github.com/robinweser/inline-style-expand-shorthand/blob/master/src/expand.js
-import { BACKGROUND_SIZE, BORDER_STYLE, KEYWORD } from './consts'
+import { BACKGROUND_SIZE, BORDER_STYLE, KEYWORD } from './constants'
 import { normalizeTrim, normalizeToLowercase } from './normalizers'
 import { validateNumber, validatePx, validateRem, validateVw, validateVh } from './validators'
 

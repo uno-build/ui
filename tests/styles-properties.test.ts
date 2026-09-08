@@ -1,5 +1,38 @@
 import { test, expect } from '@playwright/test'
-import Style, { computeStyleValue } from '../src/style'
+import Style, { computeStyleValue, isPaintStyle } from '../src/style'
+
+test('expanded paint shorthands are classified without requesting layout', () => {
+    const declarations = [
+        ['borderRadius', '4px 8px'],
+        ['backgroundSize', '20px 30px'],
+        ['backgroundPosition', '25% 50%'],
+        ['backgroundColor', '#123'],
+        ['opacity', '0.5'],
+        ['zIndex', '2'],
+        ['textShadow', '1px 2px 3px #123'],
+        ['textStroke', '1px #123'],
+    ]
+
+    for (const [name, value] of declarations) {
+        const expanded = Style.resolveStyle(name, value).expanded
+        expect(expanded.every((style) => isPaintStyle(style.name))).toBe(true)
+    }
+})
+
+test('layout candidates remain distinct from paint after shorthand expansion', () => {
+    for (const name of ['width', 'fontFamily', 'fontSize', 'lineHeight', 'whiteSpace', 'overflowX', 'overflowY']) {
+        expect(isPaintStyle(name)).toBe(false)
+    }
+
+    const border = Style.resolveStyle('border', '2px solid #123').expanded
+    expect(border.filter((style) => isPaintStyle(style.name)).map(({ name }) => name)).toEqual([
+        'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
+    ])
+    expect(border.filter((style) => !isPaintStyle(style.name)).map(({ name }) => name)).toEqual([
+        'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+        'borderTopStyle', 'borderRightStyle', 'borderBottomStyle', 'borderLeftStyle',
+    ])
+})
 
 test('colors', () => {
     const styles = ['backgroundColor', 'color']

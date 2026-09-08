@@ -1,8 +1,19 @@
 import { expect, test } from '@playwright/test'
+import { OPERATIONS } from '../src/core/constants.ts'
 import Resources from '../src/core/Resources.ts'
 import RendererDom from '../src/renderer/RendererDom.ts'
 import ResourcesDom from '../src/renderer/dom/ResourcesDom.ts'
+import { isSameLayout } from '../src/layouter/utils.ts'
 import Style from '../src/style'
+import TestUI from './utils/TestUI.ts'
+
+test('layout comparison supports DOM layouts without padding', () => {
+    const border = { top: 0, right: 0, bottom: 0, left: 0 }
+    const layout = { x: 0, y: 0, width: 100, height: 50, border }
+
+    expect(isSameLayout(layout, { ...layout, border: { ...border } })).toBe(true)
+    expect(isSameLayout(layout, { ...layout, border: { ...border, left: 1 } })).toBe(false)
+})
 
 test('RendererDom sets the document root font size', () => {
     const document_element = { style: {} }
@@ -159,6 +170,162 @@ test('RendererDom resolves backgroundImage from registered images', () => {
     })
 })
 
+test('RendererDom observes loaded web fonts without UI operations and acknowledges only the captured event', async () => {
+    const original_document = (globalThis as any).document
+    const fonts = createFontSet()
+    ;(globalThis as any).document = { fonts }
+    const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas: {} }) })
+
+    try {
+        await renderer.init()
+        expect(renderer.getPendingOperations()).toEqual([])
+
+        fonts.dispatchEvent({ type: 'loadingdone' })
+        const operations = renderer.getPendingOperations()
+        expect(operations).toHaveLength(1)
+        expect(operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: false, font: true })
+
+        const update_plan = { operations, layout: true }
+        expect(renderer.prepareLayout(update_plan, new Set())).toBe(true)
+        fonts.dispatchEvent({ type: 'loadingdone' })
+        renderer.update([], update_plan)
+
+        const next_operations = renderer.getPendingOperations()
+        expect(next_operations).toHaveLength(1)
+        expect(next_operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: false, font: true })
+        renderer.update([], { operations: next_operations })
+        expect(renderer.getPendingOperations()).toEqual([])
+    } finally {
+        renderer.destroy([])
+        ;(globalThis as any).document = original_document
+    }
+})
+
+test('RendererDom refreshes detached background images after registration and disposal', () => {
+    const resources = ResourcesDom.create({ canvas: {} })
+    const renderer = new RendererDom({ resources })
+    const background_image = Style.resolveStyle('backgroundImage', 'avatar')
+    const node = {
+        parent: null,
+        styles: {
+            backgroundImage: background_image.expanded[0],
+            backgroundRepeat: { value: 'repeat-x' },
+        },
+    }
+    const element = { style: {} }
+    ;(renderer as any).elements.set(node, element)
+    renderer.updateStyle(node, background_image)
+    expect(element.style.backgroundImage).toBe('none')
+
+    resources.registerImage('avatar', { src: '/assets/avatar.png' })
+    const operations = renderer.getPendingOperations()
+    expect(operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: true, font: false })
+    const update_plan = { operations, layout: false }
+    renderer.prepareLayout(update_plan, new Set([node]))
+
+    expect(element.style.backgroundImage).toBe('url("/assets/avatar.png")')
+    expect(element.style.backgroundRepeat).toBe('repeat-x')
+    expect(renderer.getPendingOperations()).toHaveLength(1)
+    renderer.update([], update_plan)
+    expect(renderer.getPendingOperations()).toEqual([])
+
+    resources.disposeImage('avatar')
+    const disposal_plan = { operations: renderer.getPendingOperations(), layout: false }
+    renderer.prepareLayout(disposal_plan, new Set([node]))
+    expect(element.style.backgroundImage).toBe('none')
+    renderer.update([], disposal_plan)
+    expect(renderer.getPendingOperations()).toEqual([])
+})
+
+test('RendererDom refreshes detached font metrics while preserving explicit line height', () => {
+    const resources = ResourcesDom.create({ canvas: {} })
+    const renderer = new RendererDom({ resources })
+    const font_family = Style.resolveStyle('fontFamily', 'Poppins')
+    const line_heights = [undefined, Style.resolveStyle('lineHeight', '20px'), Style.resolveStyle('lineHeight', 'unset')]
+    const nodes = line_heights.map((line_height) => ({
+        parent: null,
+        styles: {
+            fontFamily: font_family.expanded[0],
+            ...(line_height === undefined ? {} : { lineHeight: line_height.expanded[0] }),
+        },
+    }))
+    const elements = nodes.map((node) => {
+        const element = { style: {} }
+        ;(renderer as any).elements.set(node, element)
+        renderer.updateStyle(node, font_family)
+        return element
+    })
+
+    expect(elements.map((element) => element.style.lineHeight)).toEqual(['', '20px', ''])
+
+    resources.registerFont('Poppins', {}, { metrics: { lineHeight: 1.5 } })
+    const update_plan = { operations: renderer.getPendingOperations(), layout: true }
+    expect(update_plan.operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: false, font: true })
+    renderer.prepareLayout(update_plan, new Set(nodes))
+    expect(elements.map((element) => element.style.lineHeight)).toEqual(['1.5', '20px', '1.5'])
+    renderer.update([], update_plan)
+
+    resources.disposeFont('Poppins')
+    const disposal_plan = { operations: renderer.getPendingOperations(), layout: true }
+    renderer.prepareLayout(disposal_plan, new Set(nodes))
+    expect(elements.map((element) => element.style.lineHeight)).toEqual(['', '20px', ''])
+    renderer.update([], disposal_plan)
+    expect(renderer.getPendingOperations()).toEqual([])
+})
+
+test('RendererDom observes shared resource versions independently and retains registrations made during an update', () => {
+    const resources = ResourcesDom.create({ canvas: {} })
+    const first_renderer = new RendererDom({ resources })
+    const second_renderer = new RendererDom({ resources })
+    resources.registerImage('avatar', { src: '/assets/avatar.png' })
+
+    const first_operations = first_renderer.getPendingOperations()
+    const second_operations = second_renderer.getPendingOperations()
+    first_renderer.update([], { operations: first_operations })
+
+    expect(first_renderer.getPendingOperations()).toEqual([])
+    expect(second_renderer.getPendingOperations()).toEqual(second_operations)
+
+    resources.registerFont('Poppins', {}, { metrics: { lineHeight: 1.5 } })
+    second_renderer.update([], { operations: second_operations })
+
+    expect(first_renderer.getPendingOperations()[0]).toMatchObject({ image: false, font: true })
+    expect(second_renderer.getPendingOperations()[0]).toMatchObject({ image: false, font: true })
+    first_renderer.update([], { operations: first_renderer.getPendingOperations() })
+    second_renderer.update([], { operations: second_renderer.getPendingOperations() })
+    expect(first_renderer.getPendingOperations()).toEqual([])
+    expect(second_renderer.getPendingOperations()).toEqual([])
+})
+
+test('RendererDom removes its font listener while preserving shared resources and other renderers', async () => {
+    const original_document = (globalThis as any).document
+    const fonts = createFontSet()
+    ;(globalThis as any).document = { fonts }
+    const resources = ResourcesDom.create({ canvas: {} })
+    resources.registerFont('Poppins', {}, { metrics: { lineHeight: 1.5 } })
+    const first_renderer = new RendererDom({ resources })
+    const second_renderer = new RendererDom({ resources })
+
+    try {
+        await first_renderer.init()
+        await second_renderer.init()
+        first_renderer.update([], { operations: first_renderer.getPendingOperations() })
+        second_renderer.update([], { operations: second_renderer.getPendingOperations() })
+        expect(fonts.getListenerCount('loadingdone')).toBe(2)
+
+        first_renderer.destroy([])
+        expect(fonts.getListenerCount('loadingdone')).toBe(1)
+        expect(resources.getFont('Poppins')).toEqual({ lineHeight: 1.5 })
+
+        fonts.dispatchEvent({ type: 'loadingdone' })
+        expect(second_renderer.getPendingOperations()[0]).toMatchObject({ image: false, font: true })
+    } finally {
+        second_renderer.destroy([])
+        expect(fonts.getListenerCount('loadingdone')).toBe(0)
+        ;(globalThis as any).document = original_document
+    }
+})
+
 test('RendererDom synchronizes node scroll state after update', () => {
     const canvas = createScrollableElement({
         scrollWidth: 600,
@@ -182,8 +349,9 @@ test('RendererDom synchronizes node scroll state after update', () => {
     renderer.createElement(root)
     ;(renderer as any).elements.set(node, element)
 
-    renderer.beforeUpdate([node])
-    renderer.afterUpdate([node])
+    const update_plan = { operations: [], layout: true, scroll_metrics: false, scroll_nodes: new Set() }
+    renderer.beforeUpdate([node], update_plan)
+    renderer.afterUpdate([node], update_plan)
 
     expect(canvas.scrollLeft).toBe(40)
     expect(canvas.scrollTop).toBe(30)
@@ -199,16 +367,166 @@ test('RendererDom synchronizes node scroll state after update', () => {
     expect(node.clientHeight).toBe(100)
 })
 
-test('RendererDom destroy removes UI elements and preserves its external root', () => {
+test('RendererDom updates only text operation targets, including root and detached nodes', () => {
+    const canvas = createDomElement()
+    const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas }) })
+    const root = { ...createNode(0), ui: {}, text_content: 'newer root text' }
+    const detached = { ...createNode(1), ui: {}, text_content: 'newer detached text' }
+    const destroyed = { ...createNode(2), ui: null }
+    const detached_element = createDomElement()
+    const writes = []
+    renderer.createElement(root)
+    ;(renderer as any).elements.set(detached, detached_element)
+    Object.defineProperty(canvas, 'innerHTML', {
+        set(value) {
+            writes.push({ node: root, value })
+        },
+    })
+    Object.defineProperty(detached_element, 'innerHTML', {
+        set(value) {
+            writes.push({ node: detached, value })
+        },
+    })
+
+    renderer.beforeUpdate([], { operations: [], layout: true, scroll_metrics: false, scroll_nodes: new Set() })
+    expect(writes).toEqual([])
+
+    renderer.beforeUpdate([], {
+        operations: [
+            { op: OPERATIONS.TEXT, node: root, value: 'captured root text' },
+            { op: OPERATIONS.TEXT, node: detached, value: '' },
+            { op: OPERATIONS.TEXT, node: destroyed, value: 'destroyed text' },
+        ],
+        layout: true,
+        scroll_metrics: false,
+        scroll_nodes: new Set(),
+    })
+
+    expect(writes).toEqual([
+        { node: root, value: 'captured root text' },
+        { node: detached, value: '' },
+    ])
+})
+
+test('RendererDom targets scroll operations without touching the root or siblings', () => {
+    const root = createNode(0)
+    const node = createNode(1)
+    const sibling = createNode(2)
+    const canvas = createDomElement()
+    const element = createDomElement()
+    const sibling_element = createDomElement()
+    const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas }) })
+    const touched_nodes = []
+    const metric_reads = []
+    renderer.createElement(root)
+    ;(renderer as any).elements.set(node, element)
+    ;(renderer as any).elements.set(sibling, sibling_element)
+
+    for (const property of ['scrollWidth', 'scrollHeight', 'clientWidth', 'clientHeight']) {
+        Object.defineProperty(element, property, {
+            get() {
+                metric_reads.push(property)
+                return 100
+            },
+        })
+    }
+
+    for (const [target, target_element] of [
+        [root, canvas],
+        [node, element],
+        [sibling, sibling_element],
+    ]) {
+        let scroll_top = 0
+        Object.defineProperty(target_element, 'scrollTop', {
+            get() {
+                touched_nodes.push(target)
+                return scroll_top
+            },
+            set(value) {
+                touched_nodes.push(target)
+                scroll_top = Math.max(0, Math.min(value, 100))
+            },
+        })
+    }
+
+    node.scrollTop = 200
+    const update_plan = {
+        operations: [{ op: OPERATIONS.SCROLL, node, direction: 'top', value: 200 }],
+        layout: false,
+        scroll_metrics: false,
+        scroll_nodes: new Set([node]),
+    }
+    renderer.beforeUpdate([node, sibling], update_plan)
+    renderer.afterUpdate([node, sibling], update_plan)
+
+    expect(touched_nodes.length).toBeGreaterThan(0)
+    expect(new Set(touched_nodes)).toEqual(new Set([node]))
+    expect(metric_reads).toEqual([])
+    expect(node.scrollTop).toBe(100)
+    expect(update_plan.scroll_nodes).toEqual(new Set([node]))
+})
+
+test('UI with RendererDom skips geometry for paint, order, DPR and scroll and wakes for a loaded font', async () => {
+    const original_document = (globalThis as any).document
+    const fonts = createFontSet()
+    ;(globalThis as any).document = { fonts, createElement: () => createDomElement() }
+    const resources = ResourcesDom.create({ canvas: createDomElement() })
+    const renderer = new RendererDom({ resources })
+    const layout_reads = []
+    renderer.getLayout = (node) => {
+        layout_reads.push(node)
+        return {
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            border: { top: 0, right: 0, bottom: 0, left: 0 },
+        }
+    }
+    const ui = await TestUI.create({ renderer, resources })
+
+    try {
+        const node = ui.create()
+        ui.root.add(node)
+        ui.update()
+        ui.update()
+        expect(layout_reads).toEqual([ui.root, node])
+
+        node.style('backgroundColor', '#123')
+        ui.update()
+        node.style('zIndex', '1')
+        ui.update()
+        ui.setDevicePixelRatio(1.1)
+        ui.update()
+        node.scrollTop = 20
+        ui.update()
+        expect(layout_reads).toEqual([ui.root, node])
+        expect((ui as any).operations).toEqual([])
+
+        fonts.dispatchEvent({ type: 'loadingdone' })
+        ui.update()
+        expect(layout_reads).toEqual([ui.root, node, ui.root, node])
+        expect(renderer.getPendingOperations()).toEqual([])
+        ui.update()
+        expect(layout_reads).toHaveLength(4)
+    } finally {
+        ui.destroy()
+        ;(globalThis as any).document = original_document
+    }
+})
+
+test('RendererDom destroy removes UI elements and preserves its external root', async () => {
     const original_document = (globalThis as any).document
     const canvas = createDomElement()
 
     ;(globalThis as any).document = {
         createElement: () => createDomElement(),
+        fonts: createFontSet(),
     }
 
     try {
         const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas }) })
+        await renderer.init()
         const root = createNode(0)
         const child = createNode(1)
         const detached = createNode(2)
@@ -228,16 +546,18 @@ test('RendererDom destroy removes UI elements and preserves its external root', 
     }
 })
 
-test('RendererDom keeps detached elements alive until destroyNode', () => {
+test('RendererDom keeps detached elements alive until destroyNode', async () => {
     const original_document = (globalThis as any).document
     const canvas = createDomElement()
 
     ;(globalThis as any).document = {
         createElement: () => createDomElement(),
+        fonts: createFontSet(),
     }
 
     try {
         const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas }) })
+        await renderer.init()
         const root = createNode(0)
         const child = createNode(1)
         const child_element = renderer.createElement(child)
@@ -320,14 +640,50 @@ test('RendererDom layout remains in content coordinates while the parent is scro
 function createNode(id) {
     return {
         id,
-        scrollLeft: 0,
-        scrollTop: 0,
+        scroll_left: 0,
+        scroll_top: 0,
         scrollWidth: 0,
         scrollHeight: 0,
+        get scrollLeft() {
+            return this.scroll_left
+        },
+        set scrollLeft(value) {
+            this.scroll_left = value
+        },
+        get scrollTop() {
+            return this.scroll_top
+        },
+        set scrollTop(value) {
+            this.scroll_top = value
+        },
         clientWidth: 0,
         clientHeight: 0,
         hasTextContent() {
             return false
+        },
+    }
+}
+
+function createFontSet() {
+    const listeners = new Map()
+
+    return {
+        addEventListener(type, onEvent) {
+            if (!listeners.has(type)) {
+                listeners.set(type, new Set())
+            }
+            listeners.get(type).add(onEvent)
+        },
+        removeEventListener(type, onEvent) {
+            listeners.get(type)?.delete(onEvent)
+        },
+        dispatchEvent(event) {
+            for (const onEvent of listeners.get(event.type) ?? []) {
+                onEvent(event)
+            }
+        },
+        getListenerCount(type) {
+            return listeners.get(type)?.size ?? 0
         },
     }
 }
@@ -346,6 +702,12 @@ function createScrollableElement({ scrollWidth, scrollHeight, clientWidth, clien
 function createDomElement() {
     const element = {
         style: {},
+        scrollLeft: 0,
+        scrollTop: 0,
+        scrollWidth: 0,
+        scrollHeight: 0,
+        clientWidth: 0,
+        clientHeight: 0,
         children: [],
         parent: null,
         removed: false,

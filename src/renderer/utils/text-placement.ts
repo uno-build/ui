@@ -1,4 +1,4 @@
-import { TEXT_ALIGN } from '../../style/consts'
+import { TEXT_ALIGN } from '../../style/constants'
 
 export function placeGlyphs({
     prepared_text,

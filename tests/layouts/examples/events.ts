@@ -1,4 +1,4 @@
-import { PLATFORM_EVENT_NAMES } from '../../../src/events/const'
+import { PLATFORM_EVENT_NAMES } from '../../../src/events/constants'
 import { loadImage, loadJson } from '../../utils/load-assets'
 
 const EVENT_TYPES = [

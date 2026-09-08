@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { registerRootComponent } from 'uno-ui/octane'
 import { loadAssets, registerAssets } from './uis/assets'
 import { OctaneTodo } from './octane/todo'
-import { PLATFORM_EVENT_NAMES } from '../src/events/const'
+import { PLATFORM_EVENT_NAMES } from '../src/events/constants'
 
 // The todo card is 620x640 and PAGE_STYLE pads it by PAGE_PADDING on every side.
 const PAGE_PADDING = 32

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import Resources from '../src/core/Resources'
+import { OPERATIONS } from '../src/core/constants'
 import ResourcesWebGPU from '../src/renderer/webgpu/ResourcesWebGPU'
 import UIWorldSpace from '../src/ui/UIWorldSpace.ts'
 import TestRenderer from './utils/TestRenderer.ts'
@@ -104,6 +105,417 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     expect(sibling.layout).toMatchObject({ x: 20, y: 0, width: 0, height: 200 })
 })
 
+test('UI initializes the root layout once without consumer mutations', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const beforeUpdate = renderer.beforeUpdate.bind(renderer)
+    let update_count = 0
+
+    renderer.beforeUpdate = (nodes, update_plan) => {
+        update_count++
+        beforeUpdate(nodes, update_plan)
+    }
+
+    expect(Array.isArray((ui as any).operations)).toBe(true)
+    expect((ui as any).operations).toContainEqual({ op: OPERATIONS.ADD, node: ui.root, parent: null })
+
+    ui.update()
+
+    expect(update_count).toBe(1)
+    expect(ui.root.layout).toMatchObject({ x: 0, y: 0, width: 0, height: 0 })
+    expect((ui as any).operations).toEqual([])
+
+    ui.update()
+
+    expect(update_count).toBe(1)
+})
+
+test('UI applies pending styles to the root and live detached nodes', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const detached = ui.create()
+    const destroyed = ui.create()
+    const styled_nodes = []
+    const updateStyle = (renderer as any).updateStyle.bind(renderer)
+
+    ;(renderer as any).updateStyle = (node, style) => {
+        styled_nodes.push(node)
+        updateStyle(node, style)
+    }
+
+    ui.root.style('width', '200px')
+    ui.root.style('height', '100px')
+    detached.style('width', '40px')
+    destroyed.style('width', '60px')
+    destroyed.destroy()
+    ui.update()
+
+    expect(styled_nodes).toEqual([ui.root, ui.root, detached])
+    expect(ui.root.layout).toMatchObject({ width: 200, height: 100 })
+    expect((ui as any).operations).toEqual([])
+
+    ui.root.add(detached)
+    ui.update()
+
+    expect(detached.layout).toMatchObject({ width: 40, height: 100 })
+})
+
+test('UI consumes the captured journal by identity when rendering destroys nodes and queues work', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const removed = ui.create()
+    const survivor = ui.create()
+    ui.root.add(removed)
+    ui.root.add(survivor)
+    ui.update()
+
+    removed.style('width', '10px')
+    survivor.style('width', '20px')
+    const captured_operations = [...(ui as any).operations]
+    const update = renderer.update.bind(renderer)
+    renderer.update = (nodes, update_plan) => {
+        renderer.update = update
+        removed.destroy()
+        survivor.style('width', '30px')
+        update(nodes, update_plan)
+    }
+
+    ui.update()
+
+    const pending_operations = (ui as any).operations
+    expect(pending_operations).toHaveLength(2)
+    expect(pending_operations.map(({ op }) => op)).toEqual([OPERATIONS.REMOVE, OPERATIONS.STYLE])
+    expect(pending_operations.some((operation) => captured_operations.includes(operation))).toBe(false)
+    expect(pending_operations[1]).toMatchObject({ node: survivor, style: { value: '30px' } })
+
+    ui.update()
+
+    expect(survivor.layout.width).toBe(30)
+    expect((ui as any).operations).toEqual([])
+})
+
+test('UI retains the captured journal when rendering throws', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    ui.root.style('width', '100px')
+    const captured_operations = [...(ui as any).operations]
+    const update = renderer.update.bind(renderer)
+    renderer.update = () => {
+        throw new Error('render failed')
+    }
+
+    expect(() => ui.update()).toThrow('render failed')
+    expect((ui as any).operations).toEqual(captured_operations)
+    expect((ui as any).operations.every((operation, index) => operation === captured_operations[index])).toBe(true)
+
+    renderer.update = update
+    ui.update()
+
+    expect(ui.root.layout.width).toBe(100)
+    expect((ui as any).operations).toEqual([])
+})
+
+test('Node records only changed scroll positions and treats dimensions as results', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const node = ui.create()
+    ui.update()
+
+    node.scrollTop = 0
+    node.scrollLeft = 0
+    expect((ui as any).operations).toEqual([])
+
+    node.scrollTop = 20
+    node.scrollTop = 20
+    node.scrollLeft = 10
+    node.scrollLeft = 10
+    node.scrollHeight = 200
+    node.scrollWidth = 300
+
+    expect((ui as any).operations).toEqual([
+        { op: OPERATIONS.SCROLL, node, direction: 'top', value: 20 },
+        { op: OPERATIONS.SCROLL, node, direction: 'left', value: 10 },
+    ])
+    expect(node.scrollHeight).toBe(200)
+    expect(node.scrollWidth).toBe(300)
+
+    node.destroy()
+    const operation_count = (ui as any).operations.length
+    expect(() => {
+        node.scrollTop = 30
+        node.scrollLeft = 40
+    }).not.toThrow()
+    expect((ui as any).operations).toHaveLength(operation_count)
+})
+
+test('UI skips layout reads for paint, DPR, scroll, and painting order changes', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const first = ui.create()
+    const second = ui.create()
+    ui.root.style('width', '200px')
+    ui.root.style('height', '100px')
+    ui.root.add(first)
+    ui.root.add(second)
+    ui.update()
+
+    const getLayout = renderer.getLayout.bind(renderer)
+    let layout_reads = 0
+    let last_plan
+    renderer.getLayout = (node) => {
+        layout_reads++
+        return getLayout(node)
+    }
+    renderer.update = (nodes, update_plan) => {
+        last_plan = update_plan
+    }
+
+    first.style('backgroundColor', '#123')
+    first.style('borderRadius', '4px')
+    ui.update()
+    expect(layout_reads).toBe(0)
+    expect(last_plan).toMatchObject({ layout: false, painting_order: false })
+
+    ui.setDevicePixelRatio(1.1)
+    ui.update()
+    expect(layout_reads).toBe(0)
+    expect(last_plan.context).toBe(false)
+
+    first.scrollTop = 20
+    ui.update()
+    expect(layout_reads).toBe(0)
+    expect(last_plan.scroll_nodes).toEqual(new Set([first]))
+
+    first.style('zIndex', '1')
+    ui.update()
+    expect(layout_reads).toBe(0)
+    expect(last_plan.painting_order).toBe(true)
+    expect((ui as any).nodes).toEqual([second, first])
+    expect([second.order, first.order]).toEqual([0, 1])
+
+    first.style('width', '50px')
+    ui.update()
+    expect(layout_reads).toBe(3)
+    expect(first.layout.width).toBe(50)
+    expect(last_plan.layout_nodes.has(first)).toBe(true)
+})
+
+test('UI keeps overflow metrics work when the renderer declines layout', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const node = ui.create()
+    ui.root.add(node)
+    ui.update()
+
+    let layout_reads = 0
+    let prepared_plan
+    let completed_plan
+    renderer.getLayout = () => {
+        layout_reads++
+        return {}
+    }
+    renderer.prepareLayout = (update_plan) => {
+        prepared_plan = { ...update_plan }
+        return false
+    }
+    renderer.afterUpdate = (nodes, update_plan) => {
+        completed_plan = update_plan
+    }
+
+    node.style('overflow', 'hidden')
+    ui.update()
+
+    expect(prepared_plan).toMatchObject({ layout: true, scroll_metrics: true })
+    expect(completed_plan).toMatchObject({ layout: false, scroll_metrics: true })
+    expect(layout_reads).toBe(0)
+})
+
+test('UI checks renderer resources before deciding an update has no work', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    ui.update()
+
+    let pending_operations = []
+    let pending_checks = 0
+    const completed_plans = []
+    renderer.getPendingOperations = () => {
+        pending_checks++
+        return pending_operations
+    }
+    renderer.update = (nodes, update_plan) => {
+        completed_plans.push(update_plan)
+        pending_operations = []
+    }
+
+    ui.update()
+    expect(pending_checks).toBe(1)
+    expect(completed_plans).toEqual([])
+
+    const resource_operation = {
+        op: OPERATIONS.RESOURCES,
+        image: false,
+        font: true,
+        image_version: 0,
+        font_version: 1,
+    }
+    pending_operations = [resource_operation]
+    ui.update()
+    ui.update()
+
+    expect(pending_checks).toBe(3)
+    expect(completed_plans).toHaveLength(1)
+    expect(completed_plans[0]).toMatchObject({ operations: [resource_operation], layout: true })
+    expect((ui as any).operations).toEqual([])
+})
+
+test('UI compares layouts with optional edges and records only changed geometry', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    let root_layout = { x: 0, y: 0, width: 100, height: 50 }
+    let last_plan
+    renderer.getLayout = () => root_layout
+    renderer.update = (nodes, update_plan) => {
+        last_plan = update_plan
+    }
+
+    ui.update()
+    expect(last_plan.layout_nodes).toEqual(new Set([ui.root]))
+
+    root_layout = { ...root_layout }
+    ui.setViewport(100, 50)
+    ui.update()
+    expect(last_plan.context).toBe(true)
+    expect(last_plan.layout_nodes.size).toBe(0)
+
+    root_layout = { ...root_layout, width: 120 }
+    ui.setViewport(120, 50)
+    ui.update()
+    expect(last_plan.layout_nodes).toEqual(new Set([ui.root]))
+})
+
+test('UI compacts styles only when all expanded properties are overwritten', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const node = ui.create()
+    ui.root.style('width', '200px')
+    ui.root.style('height', '200px')
+    ui.root.add(node)
+    ui.update()
+
+    const updateStyle = renderer.updateStyle.bind(renderer)
+    const applied_styles = []
+    renderer.updateStyle = (node, style) => {
+        applied_styles.push(style.name)
+        updateStyle(node, style)
+    }
+
+    node.style('padding', '20px')
+    node.style('paddingTop', '30px')
+    ui.update()
+    expect(applied_styles).toEqual(['padding', 'paddingTop'])
+    expect(node.layout.padding).toEqual({ top: 30, right: 20, bottom: 20, left: 20 })
+
+    applied_styles.length = 0
+    node.style('padding', '10px')
+    node.style('paddingTop', '12px')
+    node.style('paddingRight', '13px')
+    node.style('paddingBottom', '14px')
+    node.style('paddingLeft', '15px')
+    ui.update()
+    expect(applied_styles).toEqual(['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'])
+    expect(node.layout.padding).toEqual({ top: 12, right: 13, bottom: 14, left: 15 })
+
+    applied_styles.length = 0
+    node.style('paddingLeft', '16px')
+    node.style('padding', '18px')
+    ui.update()
+    expect(applied_styles).toEqual(['padding'])
+    expect(node.layout.padding).toEqual({ top: 18, right: 18, bottom: 18, left: 18 })
+    expect((ui as any).operations).toEqual([])
+})
+
+test('UI keeps the last text, scroll axis, and global values while preserving structural order', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    ui.update()
+    const node = ui.create()
+    const sibling = ui.create()
+    ui.root.add(node)
+    node.detach()
+    ui.root.add(node)
+    ui.root.add(sibling)
+    node.text('first')
+    node.text('last')
+    sibling.text('sibling')
+    node.scrollTop = 10
+    node.scrollLeft = 20
+    node.scrollTop = 30
+    node.scrollLeft = 40
+    sibling.scrollTop = 50
+    ui.setViewport(100, 80)
+    ui.setRootSize(16)
+    ui.setDevicePixelRatio(2)
+    ui.setViewport(200, 160)
+    ui.setRootSize(20)
+    ui.setDevicePixelRatio(1.1)
+    const journal = [...(ui as any).operations]
+    let rendered_operations
+    renderer.update = (nodes, update_plan) => {
+        rendered_operations = update_plan.operations
+    }
+
+    ui.update()
+
+    expect(rendered_operations).toEqual(
+        journal.filter(
+            (operation) =>
+                operation.op === OPERATIONS.ADD ||
+                operation.op === OPERATIONS.REMOVE ||
+                (operation.op === OPERATIONS.TEXT && operation.value !== 'first') ||
+                (operation.op === OPERATIONS.SCROLL && operation.value >= 30) ||
+                (operation.op === OPERATIONS.VIEWPORT && operation.width === 200) ||
+                (operation.op === OPERATIONS.ROOT_SIZE && operation.value === 20) ||
+                (operation.op === OPERATIONS.PIXEL_RATIO && operation.value === 1.1),
+        ),
+    )
+    expect(
+        rendered_operations.filter(({ op }) => op === OPERATIONS.ADD || op === OPERATIONS.REMOVE).map(({ op }) => op),
+    ).toEqual([OPERATIONS.ADD, OPERATIONS.REMOVE, OPERATIONS.ADD, OPERATIONS.ADD])
+    expect((ui as any).operations).toEqual([])
+})
+
+test('UI merges resource flags while retaining the latest captured versions', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    ui.update()
+    const image_operation = {
+        op: OPERATIONS.RESOURCES,
+        image: true,
+        font: false,
+        image_version: 1,
+        font_version: 0,
+        web_font_version: 0,
+    }
+    const font_operation = {
+        op: OPERATIONS.RESOURCES,
+        image: false,
+        font: true,
+        image_version: 1,
+        font_version: 2,
+        web_font_version: 3,
+    }
+    renderer.getPendingOperations = () => [image_operation, font_operation]
+    let rendered_operations
+    renderer.update = (nodes, update_plan) => {
+        rendered_operations = update_plan.operations
+    }
+
+    ui.update()
+
+    expect(rendered_operations).toEqual([{ ...font_operation, image: true }])
+    expect(image_operation.font).toBe(false)
+    expect(font_operation.image).toBe(false)
+})
+
 test('Node compares shorthand styles by their expanded values', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
@@ -117,24 +529,24 @@ test('Node compares shorthand styles by their expanded values', async () => {
         paddingBottom: { value: '20px', parsed: { value: 20, kind: 'px' } },
         paddingLeft: { value: '20px', parsed: { value: 20, kind: 'px' } },
     })
-    expect((renderer as any).pending_styles).toHaveLength(1)
+    expect((ui as any).operations.filter(({ op }) => op === OPERATIONS.STYLE)).toHaveLength(1)
 
     node.style('padding', '20px')
 
-    expect((renderer as any).pending_styles).toHaveLength(1)
+    expect((ui as any).operations.filter(({ op }) => op === OPERATIONS.STYLE)).toHaveLength(1)
 
     node.style('paddingTop', '10px')
     node.style('padding', '20px')
 
     expect(node.styles.paddingTop.value).toBe('20px')
-    expect((renderer as any).pending_styles).toHaveLength(3)
+    expect((ui as any).operations.filter(({ op }) => op === OPERATIONS.STYLE)).toHaveLength(3)
 
     node.style('padding', ' 20PX ')
 
-    expect((renderer as any).pending_styles).toHaveLength(3)
+    expect((ui as any).operations.filter(({ op }) => op === OPERATIONS.STYLE)).toHaveLength(3)
 })
 
-test('Node stores pointerEvents and adds it to the pending renderer styles', async () => {
+test('Node stores pointerEvents and adds it to the operation journal', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
     const node = ui.create()
@@ -145,7 +557,7 @@ test('Node stores pointerEvents and adds it to the pending renderer styles', asy
         value: 'none',
         parsed: { enum: 1 },
     })
-    expect((renderer as any).pending_styles).toHaveLength(1)
+    expect((ui as any).operations.filter(({ op }) => op === OPERATIONS.STYLE)).toHaveLength(1)
 
     node.style('pointerEvents', 'unset')
 
@@ -153,7 +565,7 @@ test('Node stores pointerEvents and adds it to the pending renderer styles', asy
         value: 'unset',
         parsed: { kind: 'unset' },
     })
-    expect((renderer as any).pending_styles).toHaveLength(2)
+    expect((ui as any).operations.filter(({ op }) => op === OPERATIONS.STYLE)).toHaveLength(2)
 })
 
 test('UI destroy releases attached and detached nodes once', async () => {
@@ -189,7 +601,7 @@ test('UI destroy releases attached and detached nodes once', async () => {
     expect(ui.resources).toBe(null)
     expect((ui as any).nodes).toEqual([])
     expect((ui as any).nodes_created.size).toBe(0)
-    expect((renderer as any).pending_styles).toEqual([])
+    expect((ui as any).operations).toEqual([])
 
     for (const node of [root, parent, child, detached]) {
         expect(node.ui).toBe(null)
@@ -229,6 +641,7 @@ test('UIWorldSpace destroy releases only its GPU texture once', () => {
             destroy() {},
         },
         nodes: [],
+        operations: [],
         nodes_created: new Set(),
         destroyed: false,
         defined_events: [],
@@ -381,7 +794,7 @@ test('Node detach preserves and reinserts a subtree', async () => {
     expect(child.parent).toBe(parent)
     expect(child.children).toEqual([grandchild])
     expect(grandchild.parent).toBe(child)
-    expect((renderer as any).pending_styles).toHaveLength(1)
+    expect((ui as any).operations.filter(({ op }) => op === OPERATIONS.STYLE)).toHaveLength(1)
 
     ui.root.add(parent)
 
@@ -715,8 +1128,12 @@ test('UI forwards device pixel ratio changes to the renderer', async () => {
 
     const ui = await TestUI.create({ renderer })
     ui.setDevicePixelRatio(2)
+    ui.setDevicePixelRatio(2)
+    ui.setDevicePixelRatio(1.1)
+    ui.setDevicePixelRatio(1.1)
 
-    expect(device_pixel_ratios).toEqual([2])
+    expect(device_pixel_ratios).toEqual([2, 1.1])
+    expect((ui as any).operations.filter(({ op }) => op === OPERATIONS.PIXEL_RATIO)).toHaveLength(2)
 })
 
 test('UI forwards root size changes to the renderer', async () => {
@@ -728,8 +1145,12 @@ test('UI forwards root size changes to the renderer', async () => {
 
     const ui = await TestUI.create({ renderer })
     ui.setRootSize(20)
+    ui.setRootSize(20)
+    ui.setRootSize(22)
+    ui.setRootSize(22)
 
-    expect(root_sizes).toEqual([20])
+    expect(root_sizes).toEqual([20, 22])
+    expect((ui as any).operations.filter(({ op }) => op === OPERATIONS.ROOT_SIZE)).toHaveLength(2)
 })
 
 test('UI forwards viewport changes to the renderer', async () => {
@@ -741,8 +1162,15 @@ test('UI forwards viewport changes to the renderer', async () => {
 
     const ui = await TestUI.create({ renderer })
     ui.setViewport(320, 180)
+    ui.setViewport(320, 180)
+    ui.setViewport(320, 200)
+    ui.setViewport(320, 200)
 
-    expect(viewports).toEqual([[320, 180]])
+    expect(viewports).toEqual([
+        [320, 180],
+        [320, 200],
+    ])
+    expect((ui as any).operations.filter(({ op }) => op === OPERATIONS.VIEWPORT)).toHaveLength(2)
 })
 
 test('ResourcesWebGPU image api delegates to the image manager', () => {

@@ -1,17 +1,9 @@
 import Node from './Node'
 import EventEmitter from './EventEmitter'
 import { isNodeAtPoint, sortPaintingOrder } from '../utils/nodes'
-
-export const OPERATIONS = {
-    ADD: 'add',
-    REMOVE: 'remove',
-    STYLE: 'style',
-    TEXT: 'text',
-    SCROLL: 'scroll',
-    VIEWPORT: 'viewport',
-    ROOT_SIZE: 'root_size',
-    PIXEL_RATIO: 'pixel_ratio',
-}
+import { OPERATIONS } from './constants'
+import { isPaintStyle, STYLE } from '../style'
+import { isSameLayout } from '../layouter/utils'
 
 export default class UI {
     public root = null
@@ -20,11 +12,15 @@ export default class UI {
     public defined_events = []
     public events
     public events_source
-    protected operations = new Set()
+    protected operations = []
     private nodes = []
     private nodes_created = new Set()
     private next_node_id = 0
     private destroyed = false
+    private device_pixel_ratio
+    private viewport_width
+    private viewport_height
+    private root_size
 
     protected constructor({ renderer, resources = null, defined_events = [] }) {
         this.renderer = renderer
@@ -37,6 +33,7 @@ export default class UI {
     protected async initialize() {
         const output = await this.renderer.init()
         this.root = this.create()
+        this.operations.push({ op: OPERATIONS.ADD, node: this.root, parent: null })
         return output
     }
 
@@ -55,33 +52,46 @@ export default class UI {
     }
 
     public update() {
-        // console.log(
-        //     '------update',
-        //     Array.from(this.operations).map((op) => op.op),
-        // )
+        if (!this.destroyed) {
+            const pending_operations = new Set(this.operations)
+            const operations = [...pending_operations, ...this.renderer.getPendingOperations()]
+            if (operations.length === 0) {
+                return
+            }
+            const compacted_operations = this.compactOperations(operations)
+            const update_plan = this.createUpdatePlan(compacted_operations)
+            if (update_plan.painting_order) {
+                this.nodes.sort(sortPaintingOrder)
+                for (let i = 0; i < this.nodes.length; i++) {
+                    this.nodes[i].order = i
+                }
+            }
 
-        if (!this.destroyed && this.operations.size > 0) {
-            this.nodes.sort(sortPaintingOrder)
-
-            for (const { op, node, style } of this.operations) {
-                if (op === OPERATIONS.STYLE && this.nodes.includes(node)) {
+            for (const { op, node, style } of compacted_operations) {
+                if (op === OPERATIONS.STYLE && node.ui !== null) {
                     this.renderer.updateStyle(node, style)
                 }
             }
 
-            this.renderer.beforeUpdate(this.nodes)
-            this.root.layout = this.renderer.getLayout(this.root)
-
-            for (let i = 0; i < this.nodes.length; i++) {
-                const node = this.nodes[i]
-                node.layout = this.renderer.getLayout(node)
-                node.order = i
+            update_plan.layout = this.renderer.prepareLayout(update_plan, this.nodes_created)
+            this.renderer.beforeUpdate(this.nodes, update_plan)
+            if (update_plan.layout) {
+                const updateLayout = (node) => {
+                    const layout = this.renderer.getLayout(node)
+                    if (!isSameLayout(node.layout, layout)) {
+                        update_plan.layout_nodes.add(node)
+                    }
+                    node.layout = layout
+                }
+                updateLayout(this.root)
+                this.nodes.forEach(updateLayout)
             }
 
-            this.renderer.afterUpdate(this.nodes)
-            this.operations.clear()
+            this.renderer.afterUpdate(this.nodes, update_plan)
+            const output = this.renderer.update(this.nodes, update_plan)
+            this.operations = this.operations.filter((operation) => !pending_operations.has(operation))
 
-            return this.renderer.update(this.nodes)
+            return output
         }
     }
 
@@ -91,24 +101,128 @@ export default class UI {
         }
     }
 
+    private createUpdatePlan(operations) {
+        const update_plan = {
+            operations,
+            layout: false,
+            painting_order: false,
+            context: false,
+            scroll_metrics: false,
+            layout_nodes: new Set(),
+            scroll_nodes: new Set(),
+        }
+
+        for (const operation of operations) {
+            if (operation.op === OPERATIONS.ADD || operation.op === OPERATIONS.REMOVE) {
+                update_plan.painting_order = true
+                update_plan.layout = true
+            } else if (operation.op === OPERATIONS.STYLE) {
+                for (const { name } of operation.style.expanded) {
+                    update_plan.layout ||= !isPaintStyle(name)
+                    update_plan.painting_order ||= name === STYLE.ZINDEX.name
+                    update_plan.scroll_metrics ||= name === STYLE.OVERFLOWX.name || name === STYLE.OVERFLOWY.name
+                }
+            } else if (operation.op === OPERATIONS.TEXT) {
+                update_plan.layout = true
+            } else if (operation.op === OPERATIONS.SCROLL) {
+                update_plan.scroll_nodes.add(operation.node)
+            } else if (operation.op === OPERATIONS.VIEWPORT || operation.op === OPERATIONS.ROOT_SIZE) {
+                update_plan.context = true
+                update_plan.layout = true
+            } else if (operation.op === OPERATIONS.RESOURCES && operation.font) {
+                update_plan.layout = true
+            }
+        }
+
+        return update_plan
+    }
+
+    private compactOperations(operations) {
+        const compacted_operations = []
+        const style_names_by_node = new Map()
+        const text_nodes = new Set()
+        const scroll_directions_by_node = new Map()
+        const global_operations = new Set()
+        let resources_operation
+
+        for (let i = operations.length - 1; i >= 0; i--) {
+            const operation = operations[i]
+
+            if (operation.op === OPERATIONS.STYLE) {
+                let style_names = style_names_by_node.get(operation.node)
+                if (style_names === undefined) {
+                    style_names = new Set()
+                    style_names_by_node.set(operation.node, style_names)
+                }
+                if (operation.style.expanded.every(({ name }) => style_names.has(name))) {
+                    continue
+                }
+                for (const { name } of operation.style.expanded) {
+                    style_names.add(name)
+                }
+            } else if (operation.op === OPERATIONS.TEXT) {
+                if (text_nodes.has(operation.node)) {
+                    continue
+                }
+                text_nodes.add(operation.node)
+            } else if (operation.op === OPERATIONS.SCROLL) {
+                let directions = scroll_directions_by_node.get(operation.node)
+                if (directions === undefined) {
+                    directions = new Set()
+                    scroll_directions_by_node.set(operation.node, directions)
+                }
+                if (directions.has(operation.direction)) {
+                    continue
+                }
+                directions.add(operation.direction)
+            } else if (operation.op === OPERATIONS.RESOURCES) {
+                if (resources_operation === undefined) {
+                    resources_operation = { ...operation }
+                    compacted_operations.push(resources_operation)
+                } else {
+                    resources_operation.image ||= operation.image
+                    resources_operation.font ||= operation.font
+                }
+                continue
+            } else if (
+                operation.op === OPERATIONS.VIEWPORT ||
+                operation.op === OPERATIONS.ROOT_SIZE ||
+                operation.op === OPERATIONS.PIXEL_RATIO
+            ) {
+                if (global_operations.has(operation.op)) {
+                    continue
+                }
+                global_operations.add(operation.op)
+            }
+
+            compacted_operations.push(operation)
+        }
+
+        return compacted_operations.reverse()
+    }
+
     public setDevicePixelRatio(device_pixel_ratio) {
-        if (!this.destroyed) {
-            this.operations.add({ op: OPERATIONS.PIXEL_RATIO })
+        if (!this.destroyed && this.device_pixel_ratio !== device_pixel_ratio) {
             this.renderer.setDevicePixelRatio(device_pixel_ratio)
+            this.device_pixel_ratio = device_pixel_ratio
+            this.operations.push({ op: OPERATIONS.PIXEL_RATIO, value: device_pixel_ratio })
         }
     }
 
     public setViewport(width, height) {
-        if (!this.destroyed) {
-            this.operations.add({ op: OPERATIONS.VIEWPORT })
+        if (!this.destroyed && (this.viewport_width !== width || this.viewport_height !== height)) {
             this.renderer.setViewport(width, height)
+            this.viewport_width = width
+            this.viewport_height = height
+            this.operations.push({ op: OPERATIONS.VIEWPORT, width, height })
         }
     }
 
     public setRootSize(root_size) {
-        if (!this.destroyed) {
-            this.operations.add({ op: OPERATIONS.ROOT_SIZE })
+        if (!this.destroyed && this.root_size !== root_size) {
             this.renderer.setRootSize(root_size)
+            this.root_size = root_size
+            this.operations.push({ op: OPERATIONS.ROOT_SIZE, value: root_size })
         }
     }
 
@@ -128,7 +242,7 @@ export default class UI {
                 this.releaseNode(node)
             }
 
-            this.operations.clear()
+            this.operations.length = 0
             this.nodes_created.clear()
             this.nodes.length = 0
             this.root = null
@@ -180,8 +294,6 @@ export default class UI {
             ancestor = ancestor.parent
         }
 
-        this.operations.add({ op: OPERATIONS.ADD })
-
         const parent_is_active = parent === this.root || this.nodes.includes(parent)
         child.parent = parent
         parent.children.splice(child_index, 0, child)
@@ -192,6 +304,7 @@ export default class UI {
             }
         }
         this.renderer.addChild(parent, child, child_index)
+        this.operations.push({ op: OPERATIONS.ADD, parent, node: child, child_index })
     }
 
     private updateNodePath(node, path, activate = false) {
@@ -212,8 +325,6 @@ export default class UI {
             return
         }
 
-        this.operations.add({ op: OPERATIONS.REMOVE })
-
         const detached_nodes = []
         const collectNodes = (current) => {
             detached_nodes.push(current)
@@ -231,6 +342,7 @@ export default class UI {
         }
         this.renderer.detachChild(parent, node)
         node.parent = null
+        this.operations.push({ op: OPERATIONS.REMOVE, parent, node })
     }
 
     private destroyNode(node) {
@@ -250,6 +362,10 @@ export default class UI {
             this.destroySubtree(child)
         }
 
+        this.operations = this.operations.filter(
+            (operation) =>
+                operation.node !== node || operation.op === OPERATIONS.ADD || operation.op === OPERATIONS.REMOVE,
+        )
         this.defined_events.forEach((defined_event) => defined_event.destroyNode?.(node))
         node.destroyEvents()
         this.renderer.destroyNode(node)
