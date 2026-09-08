@@ -3566,7 +3566,7 @@ test('RendererWebGPU calculates only dirty Yoga or explicit layout context chang
     for (const operation of [
         { op: OPERATIONS.STYLE, node: root, style: resolveStyle('backgroundColor', '#123') },
         { op: OPERATIONS.STYLE, node: root, style: resolveStyle('zIndex', '2') },
-        { op: OPERATIONS.SCROLL, node: root, direction: 'top', value: 10 },
+        { op: OPERATIONS.SCROLL, node: root },
         { op: OPERATIONS.PIXEL_RATIO },
         { op: OPERATIONS.RESOURCE_IMAGE },
     ]) {
@@ -3614,10 +3614,7 @@ test('RendererWebGPU clamps only targeted scroll nodes without recalculating met
     sibling.scrollTop = 100
     ;(renderer as any).getNodeContentSize = () => { throw new Error('metrics read') }
     ;(renderer as any).layouter = { calculate() { throw new Error('layout calculation') } }
-    const captured_operations = createOperations([
-        { op: OPERATIONS.SCROLL, node: target, direction: 'left', value: -10 },
-        { op: OPERATIONS.SCROLL, node: target, direction: 'top', value: 100 },
-    ])
+    const captured_operations = createOperations([{ op: OPERATIONS.SCROLL, node: target }])
 
     renderer.beforeUpdate([target, sibling], captured_operations)
     renderer.afterUpdate([target, sibling], captured_operations)
@@ -3690,7 +3687,7 @@ test('RendererWebGPU selects local damage and deduplicates overlapping inherited
     expect(updated_nodes).toEqual([parent, child, grandchild])
 
     updated_nodes.length = 0
-    renderer.update(nodes, createOperations([{ op: OPERATIONS.SCROLL, node: parent, direction: 'top', value: 10 }]))
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.SCROLL, node: parent }]))
     expect(updated_nodes).toEqual([child, grandchild])
 
     updated_nodes.length = 0

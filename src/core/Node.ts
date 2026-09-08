@@ -247,7 +247,7 @@ export default class Node {
     public set scrollTop(value) {
         if (this.ui !== null && this.scroll_top !== value) {
             this.scroll_top = value
-            this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'top', value })
+            this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this })
         }
     }
 
@@ -258,7 +258,7 @@ export default class Node {
     public set scrollLeft(value) {
         if (this.ui !== null && this.scroll_left !== value) {
             this.scroll_left = value
-            this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this, direction: 'left', value })
+            this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this })
         }
     }
 }

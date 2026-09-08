@@ -20,8 +20,7 @@ export default class Operations {
     public capture() {
         this.reset()
         this.captured = new Set(this.pending)
-        const operations = [...this.captured]
-        this.items = this.compact(operations)
+        this.items = this.compact(this.pending)
 
         for (const operation of this.items) {
             if (operation.op === OPERATIONS.ADD || operation.op === OPERATIONS.REMOVE) {
@@ -45,7 +44,7 @@ export default class Operations {
             }
         }
 
-        return operations.length > 0
+        return this.captured.size > 0
     }
 
     public consume() {
@@ -63,6 +62,7 @@ export default class Operations {
     public clear() {
         this.pending.length = 0
         this.captured.clear()
+        this.items = []
         this.reset()
     }
 
@@ -91,7 +91,6 @@ export default class Operations {
     }
 
     private reset() {
-        this.items = []
         this.layout_nodes.clear()
         this.scroll_nodes.clear()
         this.update_order = false
@@ -105,7 +104,7 @@ export default class Operations {
         const compacted_operations = []
         const style_names_by_node = new Map()
         const text_nodes = new Set()
-        const scroll_directions_by_node = new Map()
+        const scroll_nodes = new Set()
         const global_operations = new Set()
 
         for (let i = operations.length - 1; i >= 0; i--) {
@@ -138,15 +137,10 @@ export default class Operations {
                 }
                 text_nodes.add(operation.node)
             } else if (operation.op === OPERATIONS.SCROLL) {
-                let directions = scroll_directions_by_node.get(operation.node)
-                if (directions === undefined) {
-                    directions = new Set()
-                    scroll_directions_by_node.set(operation.node, directions)
-                }
-                if (directions.has(operation.direction)) {
+                if (scroll_nodes.has(operation.node)) {
                     continue
                 }
-                directions.add(operation.direction)
+                scroll_nodes.add(operation.node)
             } else if (
                 operation.op === OPERATIONS.VIEWPORT ||
                 operation.op === OPERATIONS.ROOT_SIZE ||

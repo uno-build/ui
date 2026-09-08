@@ -235,9 +235,11 @@ test('Node records only changed scroll positions and treats dimensions as result
     node.scrollWidth = 300
 
     expect((ui as any).operations.pending).toEqual([
-        { op: OPERATIONS.SCROLL, node, direction: 'top', value: 20 },
-        { op: OPERATIONS.SCROLL, node, direction: 'left', value: 10 },
+        { op: OPERATIONS.SCROLL, node },
+        { op: OPERATIONS.SCROLL, node },
     ])
+    expect(node.scrollTop).toBe(20)
+    expect(node.scrollLeft).toBe(10)
     expect(node.scrollHeight).toBe(200)
     expect(node.scrollWidth).toBe(300)
 
@@ -505,7 +507,7 @@ test('UI compacts styles only when all expanded properties are overwritten', asy
     expect((ui as any).operations.pending).toEqual([])
 })
 
-test('UI keeps the last text, scroll axis, and global values while preserving structural order', async () => {
+test('UI keeps the last text, scroll per node, and global values while preserving structural order', async () => {
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
     ui.update()
@@ -530,6 +532,8 @@ test('UI keeps the last text, scroll axis, and global values while preserving st
     ui.setRootSize(20)
     ui.setDevicePixelRatio(1.1)
     const journal = [...(ui as any).operations.pending]
+    const scroll_operations = journal.filter(({ op }) => op === OPERATIONS.SCROLL)
+    const last_scroll_operations = scroll_operations.slice(-2)
     let rendered_operations
     renderer.update = (nodes, operations) => {
         rendered_operations = operations.items
@@ -543,7 +547,7 @@ test('UI keeps the last text, scroll axis, and global values while preserving st
                 operation.op === OPERATIONS.ADD ||
                 operation.op === OPERATIONS.REMOVE ||
                 (operation.op === OPERATIONS.TEXT && operation.value !== 'first') ||
-                (operation.op === OPERATIONS.SCROLL && operation.value >= 30) ||
+                last_scroll_operations.includes(operation) ||
                 (operation.op === OPERATIONS.VIEWPORT && operation.width === 200) ||
                 (operation.op === OPERATIONS.ROOT_SIZE && operation.value === 20) ||
                 (operation.op === OPERATIONS.PIXEL_RATIO && operation.value === 1.1),
@@ -552,6 +556,13 @@ test('UI keeps the last text, scroll axis, and global values while preserving st
     expect(
         rendered_operations.filter(({ op }) => op === OPERATIONS.ADD || op === OPERATIONS.REMOVE).map(({ op }) => op),
     ).toEqual([OPERATIONS.ADD, OPERATIONS.REMOVE, OPERATIONS.ADD, OPERATIONS.ADD])
+    expect(rendered_operations.filter(({ op }) => op === OPERATIONS.SCROLL)).toEqual([
+        { op: OPERATIONS.SCROLL, node },
+        { op: OPERATIONS.SCROLL, node: sibling },
+    ])
+    expect(node.scrollTop).toBe(30)
+    expect(node.scrollLeft).toBe(40)
+    expect(sibling.scrollTop).toBe(50)
     expect((ui as any).operations.pending).toEqual([])
 })
 

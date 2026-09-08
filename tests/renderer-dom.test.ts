@@ -550,7 +550,8 @@ test('RendererDom targets scroll operations without touching the root or sibling
     }
 
     node.scrollTop = 200
-    const operations = createOperations([{ op: OPERATIONS.SCROLL, node, direction: 'top', value: 200 }])
+    node.scrollLeft = 25
+    const operations = createOperations([{ op: OPERATIONS.SCROLL, node }])
     renderer.beforeUpdate([node, sibling], operations)
     renderer.afterUpdate([node, sibling], operations)
 
@@ -558,6 +559,8 @@ test('RendererDom targets scroll operations without touching the root or sibling
     expect(new Set(touched_nodes)).toEqual(new Set([node]))
     expect(metric_reads).toEqual([])
     expect(node.scrollTop).toBe(100)
+    expect(node.scrollLeft).toBe(25)
+    expect(element.scrollLeft).toBe(25)
     expect(operations.scroll_nodes).toEqual(new Set([node]))
 })
 
