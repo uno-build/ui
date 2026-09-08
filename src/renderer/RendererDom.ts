@@ -8,13 +8,7 @@ export default class RendererDom extends Renderer {
     private elements = new WeakMap()
     private element_nodes = new WeakMap()
     private root_node
-    private image_registry_version = 0
-    private font_registry_version = 0
-    private web_font_version = 0
-    private observed_web_font_version = 0
-    private onFontsLoaded = () => {
-        this.web_font_version++
-    }
+    private stopObservingFonts
 
     constructor({ resources }) {
         super()
@@ -22,24 +16,12 @@ export default class RendererDom extends Renderer {
     }
 
     public async init() {
-        document.fonts.addEventListener('loadingdone', this.onFontsLoaded)
-    }
-
-    public getPendingOperations() {
-        const image_version = this.resources.image_registry_version
-        const font_version = this.resources.font_registry_version
-        const web_font_version = this.web_font_version
-        const image = image_version !== this.image_registry_version
-        const font = font_version !== this.font_registry_version || web_font_version !== this.observed_web_font_version
-
-        return image || font
-            ? [{ op: OPERATIONS.RESOURCES, image, font, image_version, font_version, web_font_version }]
-            : []
+        this.stopObservingFonts = this.resources.observeFonts()
     }
 
     public prepareLayout(nodes_created, operations) {
-        const image = operations.items.some((operation) => operation.op === OPERATIONS.RESOURCES && operation.image)
-        const font = operations.items.some((operation) => operation.op === OPERATIONS.RESOURCES && operation.font)
+        const image = operations.items.some((operation) => operation.op === OPERATIONS.RESOURCE_IMAGE)
+        const font = operations.items.some((operation) => operation.op === OPERATIONS.RESOURCE_FONT)
 
         if (image || font) {
             for (const node of nodes_created) {
@@ -53,16 +35,6 @@ export default class RendererDom extends Renderer {
         }
 
         return operations.needCheckLayout()
-    }
-
-    public update(nodes, operations) {
-        for (const operation of operations.items) {
-            if (operation.op === OPERATIONS.RESOURCES) {
-                this.image_registry_version = operation.image_version
-                this.font_registry_version = operation.font_version
-                this.observed_web_font_version = operation.web_font_version
-            }
-        }
     }
 
     public setRootSize(root_size) {
@@ -86,7 +58,7 @@ export default class RendererDom extends Renderer {
     }
 
     public destroy(nodes) {
-        document.fonts.removeEventListener('loadingdone', this.onFontsLoaded)
+        this.stopObservingFonts()
 
         for (const node of nodes) {
             const element = this.elements.get(node)

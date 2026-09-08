@@ -1,3 +1,8 @@
+export const RESOURCE_EVENT = {
+    IMAGE: 'image',
+    FONT: 'font',
+}
+
 export const OPERATIONS = {
     ADD: 'add',
     REMOVE: 'remove',
@@ -7,5 +12,6 @@ export const OPERATIONS = {
     VIEWPORT: 'viewport',
     ROOT_SIZE: 'root_size',
     PIXEL_RATIO: 'pixel_ratio',
-    RESOURCES: 'resources',
+    RESOURCE_IMAGE: 'resource_image',
+    RESOURCE_FONT: 'resource_font',
 }

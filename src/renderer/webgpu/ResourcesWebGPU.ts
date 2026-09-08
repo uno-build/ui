@@ -1,4 +1,5 @@
 import Resources from '../../core/Resources'
+import { RESOURCE_EVENT } from '../../core/constants'
 import { FontManager } from './FontManager'
 import { ImageManager } from './ImageManager'
 
@@ -70,11 +71,15 @@ export default class ResourcesWebGPU extends Resources {
     }
 
     public registerImage(src: string, image: any) {
-        return this.image_manager.imageUpload(src, image)
+        const registered_image = this.image_manager.imageUpload(src, image)
+        this.events.emit(RESOURCE_EVENT.IMAGE)
+        return registered_image
     }
 
     public disposeImage(src: string): void {
-        this.image_manager.imageDispose(src)
+        if (this.image_manager.imageDispose(src)) {
+            this.events.emit(RESOURCE_EVENT.IMAGE)
+        }
     }
 
     public getImageSize(src: string) {
@@ -83,16 +88,22 @@ export default class ResourcesWebGPU extends Resources {
     }
 
     public registerFont(name: string, image: any, json: any) {
-        return this.font_manager.fontRegister(name, image, json)
+        const font = this.font_manager.fontRegister(name, image, json)
+        this.events.emit(RESOURCE_EVENT.FONT)
+        return font
     }
 
     public disposeFont(name: string): void {
-        this.font_manager.fontDispose(name)
+        if (this.font_manager.fontDispose(name)) {
+            this.events.emit(RESOURCE_EVENT.FONT)
+        }
     }
 
     public dispose(): void {
         this.image_manager.dispose()
         this.font_manager.dispose()
+        this.events.emit(RESOURCE_EVENT.IMAGE)
+        this.events.emit(RESOURCE_EVENT.FONT)
     }
 
     public present() {

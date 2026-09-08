@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test'
 import EventEmitter from '../src/core/EventEmitter'
+import { RESOURCE_EVENT } from '../src/core/constants'
 import { DEFINED_EVENTS } from '../src/events'
 import { EVENT } from '../src/events/constants'
+import ResourcesDom from '../src/renderer/dom/ResourcesDom'
 import { OVERFLOW } from '../src/style/constants'
 import UIDom from '../src/ui/UIDom'
 import TestRenderer from './utils/TestRenderer.ts'
@@ -363,9 +365,12 @@ test('UIDom adapts native source events and removes its listeners on destroy', a
     ;(globalThis as any).document = { fonts }
 
     try {
-        const { ui } = await UIDom.create({ resources: { canvas } })
-        const renderer = ui.renderer
+        const resources = ResourcesDom.create({ canvas })
+        const { ui } = await UIDom.create({ resources })
         const received_events = []
+        let font_event_count = 0
+
+        resources.events.on(RESOURCE_EVENT.FONT, () => font_event_count++)
 
         ui.root.layout = { x: 0, y: 0, width: 200, height: 100 }
         ui.root.on('pointerdown', (event) => received_events.push(event))
@@ -391,7 +396,7 @@ test('UIDom adapts native source events and removes its listeners on destroy', a
             source_event,
         })
         expect([...listeners.values()].every((event_listeners) => event_listeners.size === 1)).toBe(true)
-        expect((renderer as any).web_font_version).toBe(1)
+        expect(font_event_count).toBe(1)
 
         ui.destroy()
         canvas.dispatchEvent(source_event)
@@ -399,7 +404,7 @@ test('UIDom adapts native source events and removes its listeners on destroy', a
 
         expect(received_events).toHaveLength(1)
         expect([...listeners.values()].every((event_listeners) => event_listeners.size === 0)).toBe(true)
-        expect((renderer as any).web_font_version).toBe(1)
+        expect(font_event_count).toBe(1)
     } finally {
         ;(globalThis as any).document = original_document
     }

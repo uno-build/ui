@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
-import { OPERATIONS } from '../src/core/constants.ts'
+import { OPERATIONS, RESOURCE_EVENT } from '../src/core/constants.ts'
 import Operations from '../src/core/Operations.ts'
 import { createCommands } from '../src/renderer/utils/render-records.ts'
 import Segmenter from '../src/renderer/pretext/segmenter.ts'
@@ -36,6 +36,7 @@ import {
 import { FontManager } from '../src/renderer/webgpu/FontManager.ts'
 import { GpuPool } from '../src/renderer/webgpu/GpuPool.ts'
 import { ATLAS_PADDING, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
+import ResourcesWebGPU from '../src/renderer/webgpu/ResourcesWebGPU.ts'
 import { createUIWGSL } from '../src/renderer/webgpu/shaders/'
 import { TEXT_EFFECT_WGSL as MTSDF_TEXT_EFFECT_WGSL } from '../src/renderer/webgpu/shaders/text-mtsdf.ts'
 import { TEXT_WGSL } from '../src/renderer/webgpu/shaders/text.ts'
@@ -3392,71 +3393,94 @@ test('FontManager throws when font texture growth exceeds the device layer limit
     )
 })
 
-test('RendererWebGPU acknowledges captured resource versions independently after a successful update', () => {
-    const image_manager = createImageManager()
-    const font_manager = createFontManager()
-    const first = createRenderer(image_manager, font_manager)
-    const second = createRenderer(image_manager, font_manager)
-    ;(first as any).root_node = createNode()
-    ;(second as any).root_node = createNode()
-
-    expect(first.getPendingOperations()).toEqual([])
-    image_manager.registry_version++
-    font_manager.registry_version++
-    const operations = first.getPendingOperations()
-    expect(operations).toEqual([
-        { op: OPERATIONS.RESOURCES, image: true, font: true, image_version: 1, font_version: 1 },
-    ])
-    expect(first.getPendingOperations()).toEqual(operations)
-
-    const updateBuffers = (first as any).updateBuffers.bind(first)
-    ;(first as any).updateBuffers = (update_viewport) => {
-        updateBuffers(update_viewport)
-        image_manager.registry_version++
+test('ResourcesWebGPU emits separate image and font events after changes and disposal', async () => {
+    const resources = await ResourcesWebGPU.create({
+        canvas: {},
+        device: createFakeDevice(),
+        context: {},
+        format: 'rgba8unorm',
+    })
+    const changes = []
+    for (const type of [RESOURCE_EVENT.IMAGE, RESOURCE_EVENT.FONT]) {
+        resources.events.on(type, (event_data) => {
+            expect(event_data).toBeUndefined()
+            changes.push({
+                type,
+                images: resources.image_manager.images.size,
+                fonts: resources.font_manager.fonts.size,
+            })
+        })
     }
-    first.update([], createOperations(operations))
 
-    expect(first.getPendingOperations()).toEqual([
-        { op: OPERATIONS.RESOURCES, image: true, font: false, image_version: 2, font_version: 1 },
+    const image = resources.registerImage('avatar', createImage('avatar.png', 16, 16))
+    const font = resources.registerFont('Poppins', createImage('Poppins.png', 64, 64), createFontJson())
+    expect(image).toBe(resources.image_manager.getImage('avatar'))
+    expect(font).toBe(resources.font_manager.getFont('Poppins'))
+    expect(resources.disposeImage('avatar')).toBeUndefined()
+    expect(resources.disposeFont('Poppins')).toBeUndefined()
+    resources.registerImage('avatar', createImage('avatar.png', 16, 16))
+    resources.registerFont('Poppins', createImage('Poppins.png', 64, 64), createFontJson())
+    resources.dispose()
+
+    expect(changes).toEqual([
+        { type: RESOURCE_EVENT.IMAGE, images: 1, fonts: 0 },
+        { type: RESOURCE_EVENT.FONT, images: 1, fonts: 1 },
+        { type: RESOURCE_EVENT.IMAGE, images: 0, fonts: 1 },
+        { type: RESOURCE_EVENT.FONT, images: 0, fonts: 0 },
+        { type: RESOURCE_EVENT.IMAGE, images: 1, fonts: 0 },
+        { type: RESOURCE_EVENT.FONT, images: 1, fonts: 1 },
+        { type: RESOURCE_EVENT.IMAGE, images: 0, fonts: 0 },
+        { type: RESOURCE_EVENT.FONT, images: 0, fonts: 0 },
     ])
-    expect(second.getPendingOperations()).toEqual([
-        { op: OPERATIONS.RESOURCES, image: true, font: true, image_version: 2, font_version: 1 },
-    ])
-    second.update([], createOperations(second.getPendingOperations()))
-    expect(second.getPendingOperations()).toEqual([])
 })
 
-test('RendererWebGPU detects image and font registration and disposal from their managers', () => {
-    const device = createFakeDevice()
-    const image_manager = createRealImageManager(device)
-    const font_manager = createRealFontManager(device)
-    const renderer = createRenderer(image_manager, font_manager)
-    ;(renderer as any).root_node = createNode({ opacity: 0 })
-    image_manager.imageUpload('avatar', createImage('avatar.png', 16, 16))
-    font_manager.fontRegister('Poppins', createImage('Poppins.png', 64, 64), createFontJson())
-    const registered = renderer.getPendingOperations()
-    expect(registered[0]).toMatchObject({ image: true, font: true })
-    renderer.update([], createOperations(registered))
-    expect(renderer.getPendingOperations()).toEqual([])
+test('ResourcesWebGPU skips notifications for rejected or missing images', async () => {
+    const resources = await ResourcesWebGPU.create({
+        canvas: {},
+        device: createFakeDevice(),
+        context: {},
+        format: 'rgba8unorm',
+    })
+    const changes = []
+    resources.events.on(RESOURCE_EVENT.IMAGE, () => changes.push(RESOURCE_EVENT.IMAGE))
+    resources.events.on(RESOURCE_EVENT.FONT, () => changes.push(RESOURCE_EVENT.FONT))
 
-    image_manager.imageDispose('avatar')
-    font_manager.fontDispose('Poppins')
-    const disposed = renderer.getPendingOperations()
-    expect(disposed[0]).toMatchObject({ image: true, font: true })
-    expect(disposed[0].image_version).toBeGreaterThan(registered[0].image_version)
-    expect(disposed[0].font_version).toBeGreaterThan(registered[0].font_version)
+    resources.registerImage('avatar', createImage('avatar.png', 16, 16))
+    expect(() => resources.registerImage('avatar', createImage('avatar.png', 16, 16))).toThrow(
+        'Image "avatar" is already registered.',
+    )
+    expect(() => resources.registerImage('too-large', createImage('too-large.png', ATLAS_SIZE + 1, 1))).toThrow(
+        /exceeds/,
+    )
+    expect(resources.disposeImage('missing')).toBeUndefined()
+    expect(changes).toEqual([RESOURCE_EVENT.IMAGE])
+    expect(resources.getImageSize('avatar')).toEqual({ width: 16, height: 16 })
 })
 
-test('RendererWebGPU keeps resource versions pending when uploading fails', () => {
-    const image_manager = createImageManager()
-    const renderer = createRenderer(image_manager)
-    ;(renderer as any).root_node = createNode()
-    image_manager.registry_version++
-    const operations = renderer.getPendingOperations()
-    ;(renderer as any).updateBuffers = () => { throw new Error('upload failed') }
+test('ResourcesWebGPU notifies after updating its default font and skips rejected or missing fonts', async () => {
+    const resources = await ResourcesWebGPU.create({
+        canvas: {},
+        device: createFakeDevice(),
+        context: {},
+        format: 'rgba8unorm',
+    })
+    const changes = []
+    resources.events.on(RESOURCE_EVENT.FONT, () => changes.push(resources.font_manager.getDefaultFont()))
+    const first = resources.registerFont('Poppins', createImage('Poppins.png', 64, 64), createFontJson())
+    const second = resources.registerFont('Inter', createImage('Inter.png', 64, 64), createFontJson())
 
-    expect(() => renderer.update([], createOperations(operations))).toThrow('upload failed')
-    expect(renderer.getPendingOperations()).toEqual(operations)
+    expect(() => resources.registerFont('Poppins', createImage('Poppins.png', 64, 64), createFontJson())).toThrow(
+        'Font "Poppins" is already registered.',
+    )
+    expect(() =>
+        resources.registerFont('too-large', createImage('too-large.png', ATLAS_SIZE + 1, 1), createFontJson()),
+    ).toThrow(/exceeds/)
+    expect(resources.disposeFont('missing')).toBeUndefined()
+    expect(changes).toEqual([first, first])
+
+    resources.disposeFont('Poppins')
+    resources.disposeFont('Inter')
+    expect(changes.slice(2)).toEqual([second, undefined])
 })
 
 test('RendererWebGPU invalidates attached and detached text before querying Yoga after font changes', () => {
@@ -3477,8 +3501,7 @@ test('RendererWebGPU invalidates attached and detached text before querying Yoga
     expect(renderer.getTextMeasure(attached).width).toBeCloseTo(9.6)
     expect(renderer.getTextMeasure(detached).width).toBeCloseTo(9.6)
     font.glyphs_by_unicode.get(65).advance = 1.2
-    font_manager.registry_version++
-    const captured_operations = createOperations(renderer.getPendingOperations())
+    const captured_operations = createOperations([{ op: OPERATIONS.RESOURCE_FONT }])
     captured_operations.setUpdateLayout(renderer.prepareLayout([root, attached, detached], captured_operations))
     renderer.beforeUpdate([attached], captured_operations)
 
@@ -3501,8 +3524,7 @@ test('RendererWebGPU measures a late font after an initially empty measurement',
     expect(renderer.getTextMeasure(node)).toEqual({ width: 0, height: 0 })
 
     font_manager.getDefaultFont = () => createManagedFont()
-    font_manager.registry_version++
-    const captured_operations = createOperations(renderer.getPendingOperations())
+    const captured_operations = createOperations([{ op: OPERATIONS.RESOURCE_FONT }])
     expect(renderer.prepareLayout([root, node], captured_operations)).toBe(true)
     expect(dirty_nodes).toEqual([node])
     expect(renderer.getTextMeasure(node)).toEqual({ width: expect.closeTo(9.6), height: 20 })
@@ -3546,7 +3568,7 @@ test('RendererWebGPU calculates only dirty Yoga or explicit layout context chang
         { op: OPERATIONS.STYLE, node: root, style: resolveStyle('zIndex', '2') },
         { op: OPERATIONS.SCROLL, node: root, direction: 'top', value: 10 },
         { op: OPERATIONS.PIXEL_RATIO },
-        { op: OPERATIONS.RESOURCES, image: true, font: false },
+        { op: OPERATIONS.RESOURCE_IMAGE },
     ]) {
         const captured_operations = createOperations([operation])
         captured_operations.setUpdateLayout(renderer.prepareLayout([root], captured_operations))
@@ -3686,9 +3708,11 @@ test('RendererWebGPU selects local damage and deduplicates overlapping inherited
     expect(updated_nodes).toEqual([parent, child, grandchild])
     expect(child_traversals).toBeLessThanOrEqual(1)
 
-    updated_nodes.length = 0
-    renderer.update(nodes, createOperations([{ op: OPERATIONS.PIXEL_RATIO }]))
-    expect(updated_nodes).toEqual([root, ...nodes])
+    for (const op of [OPERATIONS.PIXEL_RATIO, OPERATIONS.RESOURCE_IMAGE, OPERATIONS.RESOURCE_FONT]) {
+        updated_nodes.length = 0
+        renderer.update(nodes, createOperations([{ op }]))
+        expect(updated_nodes).toEqual([root, ...nodes])
+    }
 })
 
 test('RendererWebGPU creates missing root and subtree records before rebuilding commands', () => {
@@ -3851,7 +3875,6 @@ function getAppliedStyle(applied_styles, name) {
 
 function createImageManager({ resources = {} } = {}) {
     return {
-        registry_version: 0,
         getImage(src) {
             return resources[src]
         },
@@ -3877,7 +3900,6 @@ function createRealFontManager(device, atlas_size = ATLAS_SIZE) {
 
 function createFontManager({ default_font = undefined, fonts = {} } = {}) {
     return {
-        registry_version: 0,
         getDefaultFont() {
             return default_font
         },
@@ -4182,7 +4204,7 @@ function createOperations(items = [], update_layout = false) {
     for (const operation of items) {
         operations.add(operation)
     }
-    operations.capture(() => [])
+    operations.capture()
     operations.setUpdateLayout(update_layout)
     return operations
 }

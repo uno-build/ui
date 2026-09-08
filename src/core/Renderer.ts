@@ -13,10 +13,6 @@ export default abstract class Renderer {
         this.insertChild(parent, node, child_index)
     }
 
-    public getPendingOperations() {
-        return []
-    }
-
     public prepareLayout(_nodes_created, operations) {
         return operations.needCheckLayout()
     }

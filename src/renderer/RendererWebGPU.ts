@@ -73,8 +73,6 @@ export default class RendererWebGPU extends Renderer {
     private glyph_data_pool
     private text_run_pool
     private records = new Map()
-    private image_registry_version = 0
-    private font_registry_version = 0
     private prepared_texts = new WeakMap()
     private root_node
     private grapheme_segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
@@ -191,17 +189,8 @@ export default class RendererWebGPU extends Renderer {
         return this.layouter.getChildIndex(node)
     }
 
-    public getPendingOperations() {
-        const image_version = this.image_manager.registry_version
-        const font_version = this.resources.font_manager.registry_version
-        const image = this.image_registry_version !== image_version
-        const font = this.font_registry_version !== font_version
-
-        return image || font ? [{ op: OPERATIONS.RESOURCES, image, font, image_version, font_version }] : []
-    }
-
     public prepareLayout(nodes_created, operations) {
-        const fonts_changed = operations.items.some(({ op, font }) => op === OPERATIONS.RESOURCES && font)
+        const fonts_changed = operations.items.some(({ op }) => op === OPERATIONS.RESOURCE_FONT)
 
         if (operations.hasContextChanges() || fonts_changed) {
             for (const node of nodes_created) {
@@ -322,13 +311,6 @@ export default class RendererWebGPU extends Renderer {
         }
 
         this.updateBuffers(render_plan.update_viewport)
-
-        for (const operation of operations.items) {
-            if (operation.op === OPERATIONS.RESOURCES) {
-                this.image_registry_version = operation.image_version
-                this.font_registry_version = operation.font_version
-            }
-        }
     }
 
     public afterUpdate(nodes, operations) {
@@ -461,7 +443,13 @@ export default class RendererWebGPU extends Renderer {
         const record_nodes = new Set()
         const expanded_subtrees = new Set()
         const full_rebuild = operations.items.some(({ op }) =>
-            [OPERATIONS.VIEWPORT, OPERATIONS.PIXEL_RATIO, OPERATIONS.ROOT_SIZE, OPERATIONS.RESOURCES].includes(op),
+            [
+                OPERATIONS.VIEWPORT,
+                OPERATIONS.PIXEL_RATIO,
+                OPERATIONS.ROOT_SIZE,
+                OPERATIONS.RESOURCE_IMAGE,
+                OPERATIONS.RESOURCE_FONT,
+            ].includes(op),
         )
         const update_viewport = operations.items.some(
             ({ op }) => op === OPERATIONS.VIEWPORT || op === OPERATIONS.PIXEL_RATIO,

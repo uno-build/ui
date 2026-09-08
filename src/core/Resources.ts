@@ -1,5 +1,8 @@
+import EventEmitter from './EventEmitter'
+
 export default abstract class Resources {
     public canvas
+    public events = new EventEmitter()
 
     protected constructor({ canvas }) {
         this.canvas = canvas

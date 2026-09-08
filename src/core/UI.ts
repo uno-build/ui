@@ -2,7 +2,7 @@ import Node from './Node'
 import EventEmitter from './EventEmitter'
 import Operations from './Operations'
 import { isNodeAtPoint, sortPaintingOrder } from '../utils/nodes'
-import { OPERATIONS } from './constants'
+import { OPERATIONS, RESOURCE_EVENT } from './constants'
 import { isSameLayout } from '../layouter/utils'
 
 export default class UI {
@@ -21,12 +21,20 @@ export default class UI {
     private viewport_width
     private viewport_height
     private root_size
+    private offImageResources
+    private offFontResources
 
     protected constructor({ renderer, resources = null, defined_events = [] }) {
         this.renderer = renderer
         this.resources = resources
         this.events = new EventEmitter()
         this.events_source = new EventEmitter()
+        this.offImageResources = resources?.events.on(RESOURCE_EVENT.IMAGE, () => {
+            this.operations.add({ op: OPERATIONS.RESOURCE_IMAGE })
+        })
+        this.offFontResources = resources?.events.on(RESOURCE_EVENT.FONT, () => {
+            this.operations.add({ op: OPERATIONS.RESOURCE_FONT })
+        })
         this.defined_events = defined_events.map((definedEvent) => definedEvent({ ui: this }))
     }
 
@@ -54,7 +62,7 @@ export default class UI {
     public update() {
         if (!this.destroyed) {
             const operations = this.operations
-            if (!operations.capture(() => this.renderer.getPendingOperations())) {
+            if (!operations.capture()) {
                 return
             }
 
@@ -134,6 +142,10 @@ export default class UI {
             this.destroyed = true
             const nodes = [...this.nodes_created]
 
+            this.offImageResources?.()
+            this.offFontResources?.()
+            this.offImageResources = null
+            this.offFontResources = null
             this.renderer.destroy(nodes)
             this.defined_events.forEach((defined_event) => defined_event.destroy())
             this.defined_events.length = 0

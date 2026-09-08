@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { OPERATIONS } from '../src/core/constants.ts'
+import { OPERATIONS, RESOURCE_EVENT } from '../src/core/constants.ts'
 import Operations from '../src/core/Operations.ts'
 import Resources from '../src/core/Resources.ts'
 import RendererDom from '../src/renderer/RendererDom.ts'
@@ -119,6 +119,11 @@ test('ResourcesDom rejects duplicate fonts and allows registration after disposa
     const resources = ResourcesDom.create({ canvas: {} })
     const first_metrics = { lineHeight: 1.5 }
     const second_metrics = { lineHeight: 2 }
+    const changes = []
+    resources.events.on(RESOURCE_EVENT.FONT, (event_data) => {
+        expect(event_data).toBeUndefined()
+        changes.push(resources.getFont('Poppins'))
+    })
 
     resources.registerFont('Poppins', {}, { metrics: first_metrics })
 
@@ -126,30 +131,41 @@ test('ResourcesDom rejects duplicate fonts and allows registration after disposa
         'Font "Poppins" is already registered.',
     )
     expect(resources.getFont('Poppins')).toBe(first_metrics)
+    expect(changes).toEqual([first_metrics])
 
+    resources.disposeFont('missing')
     resources.disposeFont('Poppins')
     resources.registerFont('Poppins', {}, { metrics: second_metrics })
 
     expect(resources.getFont('Poppins')).toBe(second_metrics)
+    expect(changes).toEqual([first_metrics, undefined, second_metrics])
 })
 
 test('ResourcesDom rejects duplicate images and allows registration after disposal', () => {
     const resources = ResourcesDom.create({ canvas: {} })
     const first_image = { src: '/assets/first.png', width: 32, height: 16 }
     const second_image = { src: '/assets/second.png', width: 64, height: 48 }
+    const changes = []
+    resources.events.on(RESOURCE_EVENT.IMAGE, (event_data) => {
+        expect(event_data).toBeUndefined()
+        changes.push(resources.getImage('avatar'))
+    })
 
     resources.registerImage('avatar', first_image)
 
     expect(() => resources.registerImage('avatar', second_image)).toThrow('Image "avatar" is already registered.')
     expect(resources.getImage('avatar')).toBe(first_image)
     expect(resources.getImageSize('avatar')).toEqual({ width: 32, height: 16 })
+    expect(changes).toEqual([first_image])
 
+    resources.disposeImage('missing')
     resources.disposeImage('avatar')
     expect(resources.getImageSize('avatar')).toBeUndefined()
     resources.registerImage('avatar', second_image)
 
     expect(resources.getImage('avatar')).toBe(second_image)
     expect(resources.getImageSize('avatar')).toEqual({ width: 64, height: 48 })
+    expect(changes).toEqual([first_image, undefined, second_image])
 })
 
 test('RendererDom resolves backgroundImage from registered images', () => {
@@ -171,34 +187,34 @@ test('RendererDom resolves backgroundImage from registered images', () => {
     })
 })
 
-test('RendererDom observes loaded web fonts without UI operations and acknowledges only the captured event', async () => {
+test('ResourcesDom queues loaded web fonts and retains events emitted after capture', async () => {
     const original_document = (globalThis as any).document
     const fonts = createFontSet()
     ;(globalThis as any).document = { fonts }
-    const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas: {} }) })
+    const resources = ResourcesDom.create({ canvas: createDomElement() })
+    const renderer = new RendererDom({ resources })
+    const ui = await TestUI.create({ renderer, resources })
+    const operations = (ui as any).operations
 
     try {
-        await renderer.init()
-        expect(renderer.getPendingOperations()).toEqual([])
+        operations.capture()
+        operations.consume()
+        expect(operations.capture()).toBe(false)
 
         fonts.dispatchEvent({ type: 'loadingdone' })
-        const operations = renderer.getPendingOperations()
-        expect(operations).toHaveLength(1)
-        expect(operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: false, font: true })
+        expect(operations.capture()).toBe(true)
+        expect(operations.items).toEqual([{ op: OPERATIONS.RESOURCE_FONT }])
+        expect(renderer.prepareLayout(new Set(), operations)).toBe(true)
+        expect(operations.needUpdateLayout()).toBe(false)
 
-        const captured_operations = createOperations(operations)
-        expect(renderer.prepareLayout(new Set(), captured_operations)).toBe(true)
-        expect(captured_operations.needUpdateLayout()).toBe(false)
         fonts.dispatchEvent({ type: 'loadingdone' })
-        renderer.update([], captured_operations)
-
-        const next_operations = renderer.getPendingOperations()
-        expect(next_operations).toHaveLength(1)
-        expect(next_operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: false, font: true })
-        renderer.update([], createOperations(next_operations))
-        expect(renderer.getPendingOperations()).toEqual([])
+        operations.consume()
+        expect(operations.capture()).toBe(true)
+        expect(operations.items).toEqual([{ op: OPERATIONS.RESOURCE_FONT }])
+        operations.consume()
+        expect(operations.capture()).toBe(false)
     } finally {
-        renderer.destroy([])
+        ui.destroy()
         ;(globalThis as any).document = original_document
     }
 })
@@ -206,6 +222,8 @@ test('RendererDom observes loaded web fonts without UI operations and acknowledg
 test('RendererDom refreshes detached background images after registration and disposal', () => {
     const resources = ResourcesDom.create({ canvas: {} })
     const renderer = new RendererDom({ resources })
+    const operations = new Operations()
+    resources.events.on(RESOURCE_EVENT.IMAGE, () => operations.add({ op: OPERATIONS.RESOURCE_IMAGE }))
     const background_image = Style.resolveStyle('backgroundImage', 'avatar')
     const node = {
         parent: null,
@@ -220,28 +238,28 @@ test('RendererDom refreshes detached background images after registration and di
     expect(element.style.backgroundImage).toBe('none')
 
     resources.registerImage('avatar', { src: '/assets/avatar.png' })
-    const operations = renderer.getPendingOperations()
-    expect(operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: true, font: false })
-    const captured_operations = createOperations(operations)
-    captured_operations.setUpdateLayout(renderer.prepareLayout(new Set([node]), captured_operations))
+    expect(operations.capture()).toBe(true)
+    expect(operations.items).toEqual([{ op: OPERATIONS.RESOURCE_IMAGE }])
+    operations.setUpdateLayout(renderer.prepareLayout(new Set([node]), operations))
 
     expect(element.style.backgroundImage).toBe('url("/assets/avatar.png")')
     expect(element.style.backgroundRepeat).toBe('repeat-x')
-    expect(renderer.getPendingOperations()).toHaveLength(1)
-    renderer.update([], captured_operations)
-    expect(renderer.getPendingOperations()).toEqual([])
+    operations.consume()
+    expect(operations.capture()).toBe(false)
 
     resources.disposeImage('avatar')
-    const disposal_operations = createOperations(renderer.getPendingOperations())
-    disposal_operations.setUpdateLayout(renderer.prepareLayout(new Set([node]), disposal_operations))
+    expect(operations.capture()).toBe(true)
+    operations.setUpdateLayout(renderer.prepareLayout(new Set([node]), operations))
     expect(element.style.backgroundImage).toBe('none')
-    renderer.update([], disposal_operations)
-    expect(renderer.getPendingOperations()).toEqual([])
+    operations.consume()
+    expect(operations.capture()).toBe(false)
 })
 
 test('RendererDom refreshes detached font metrics while preserving explicit line height', () => {
     const resources = ResourcesDom.create({ canvas: {} })
     const renderer = new RendererDom({ resources })
+    const operations = new Operations()
+    resources.events.on(RESOURCE_EVENT.FONT, () => operations.add({ op: OPERATIONS.RESOURCE_FONT }))
     const font_family = Style.resolveStyle('fontFamily', 'Poppins')
     const line_heights = [undefined, Style.resolveStyle('lineHeight', '20px'), Style.resolveStyle('lineHeight', 'unset')]
     const nodes = line_heights.map((line_height) => ({
@@ -261,69 +279,153 @@ test('RendererDom refreshes detached font metrics while preserving explicit line
     expect(elements.map((element) => element.style.lineHeight)).toEqual(['', '20px', ''])
 
     resources.registerFont('Poppins', {}, { metrics: { lineHeight: 1.5 } })
-    const captured_operations = createOperations(renderer.getPendingOperations())
-    expect(captured_operations.items[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: false, font: true })
-    captured_operations.setUpdateLayout(renderer.prepareLayout(new Set(nodes), captured_operations))
+    operations.capture()
+    expect(operations.items).toEqual([{ op: OPERATIONS.RESOURCE_FONT }])
+    operations.setUpdateLayout(renderer.prepareLayout(new Set(nodes), operations))
     expect(elements.map((element) => element.style.lineHeight)).toEqual(['1.5', '20px', '1.5'])
-    renderer.update([], captured_operations)
+    operations.consume()
 
     resources.disposeFont('Poppins')
-    const disposal_operations = createOperations(renderer.getPendingOperations())
-    disposal_operations.setUpdateLayout(renderer.prepareLayout(new Set(nodes), disposal_operations))
+    operations.capture()
+    operations.setUpdateLayout(renderer.prepareLayout(new Set(nodes), operations))
     expect(elements.map((element) => element.style.lineHeight)).toEqual(['', '20px', ''])
-    renderer.update([], disposal_operations)
-    expect(renderer.getPendingOperations()).toEqual([])
+    operations.consume()
+    expect(operations.capture()).toBe(false)
 })
 
-test('RendererDom observes shared resource versions independently and retains registrations made during an update', () => {
-    const resources = ResourcesDom.create({ canvas: {} })
-    const first_renderer = new RendererDom({ resources })
-    const second_renderer = new RendererDom({ resources })
-    resources.registerImage('avatar', { src: '/assets/avatar.png' })
+test('UIs observe shared resource changes independently and retain registrations made during an update', async () => {
+    const original_document = (globalThis as any).document
+    ;(globalThis as any).document = { fonts: createFontSet() }
+    const resources = ResourcesDom.create({ canvas: createDomElement() })
+    const first_ui = await TestUI.create({ renderer: new RendererDom({ resources }), resources })
+    const second_ui = await TestUI.create({ renderer: new RendererDom({ resources }), resources })
+    const first_operations = (first_ui as any).operations
+    const second_operations = (second_ui as any).operations
 
-    const first_operations = first_renderer.getPendingOperations()
-    const second_operations = second_renderer.getPendingOperations()
-    first_renderer.update([], createOperations(first_operations))
+    try {
+        first_operations.capture()
+        first_operations.consume()
+        second_operations.capture()
+        second_operations.consume()
+        resources.registerImage('avatar', { src: '/assets/avatar.png' })
 
-    expect(first_renderer.getPendingOperations()).toEqual([])
-    expect(second_renderer.getPendingOperations()).toEqual(second_operations)
+        first_operations.capture()
+        second_operations.capture()
+        first_operations.consume()
+        expect(first_operations.capture()).toBe(false)
+        expect(second_operations.items).toEqual([{ op: OPERATIONS.RESOURCE_IMAGE }])
 
-    resources.registerFont('Poppins', {}, { metrics: { lineHeight: 1.5 } })
-    second_renderer.update([], createOperations(second_operations))
+        resources.registerFont('Poppins', {}, { metrics: { lineHeight: 1.5 } })
+        second_operations.consume()
 
-    expect(first_renderer.getPendingOperations()[0]).toMatchObject({ image: false, font: true })
-    expect(second_renderer.getPendingOperations()[0]).toMatchObject({ image: false, font: true })
-    first_renderer.update([], createOperations(first_renderer.getPendingOperations()))
-    second_renderer.update([], createOperations(second_renderer.getPendingOperations()))
-    expect(first_renderer.getPendingOperations()).toEqual([])
-    expect(second_renderer.getPendingOperations()).toEqual([])
+        first_operations.capture()
+        second_operations.capture()
+        expect(first_operations.items).toEqual([{ op: OPERATIONS.RESOURCE_FONT }])
+        expect(second_operations.items).toEqual(first_operations.items)
+        first_operations.consume()
+        second_operations.consume()
+        expect(first_operations.capture()).toBe(false)
+        expect(second_operations.capture()).toBe(false)
+    } finally {
+        first_ui.destroy()
+        second_ui.destroy()
+        ;(globalThis as any).document = original_document
+    }
 })
 
-test('RendererDom removes its font listener while preserving shared resources and other renderers', async () => {
+test('ResourcesDom shares its font listener until the last UI is destroyed', async () => {
     const original_document = (globalThis as any).document
     const fonts = createFontSet()
     ;(globalThis as any).document = { fonts }
-    const resources = ResourcesDom.create({ canvas: {} })
+    const resources = ResourcesDom.create({ canvas: createDomElement() })
     resources.registerFont('Poppins', {}, { metrics: { lineHeight: 1.5 } })
-    const first_renderer = new RendererDom({ resources })
-    const second_renderer = new RendererDom({ resources })
+    const first_ui = await TestUI.create({ renderer: new RendererDom({ resources }), resources })
+    const second_ui = await TestUI.create({ renderer: new RendererDom({ resources }), resources })
+    const first_operations = (first_ui as any).operations
+    const second_operations = (second_ui as any).operations
 
     try {
-        await first_renderer.init()
-        await second_renderer.init()
-        first_renderer.update([], createOperations(first_renderer.getPendingOperations()))
-        second_renderer.update([], createOperations(second_renderer.getPendingOperations()))
-        expect(fonts.getListenerCount('loadingdone')).toBe(2)
+        second_operations.capture()
+        second_operations.consume()
+        expect(fonts.getListenerCount('loadingdone')).toBe(1)
 
-        first_renderer.destroy([])
+        first_ui.destroy()
+        first_ui.destroy()
         expect(fonts.getListenerCount('loadingdone')).toBe(1)
         expect(resources.getFont('Poppins')).toEqual({ lineHeight: 1.5 })
 
         fonts.dispatchEvent({ type: 'loadingdone' })
-        expect(second_renderer.getPendingOperations()[0]).toMatchObject({ image: false, font: true })
+        resources.registerImage('avatar', { src: '/assets/avatar.png' })
+        expect(first_operations.capture()).toBe(false)
+        expect(second_operations.capture()).toBe(true)
+        expect(second_operations.items).toEqual([
+            { op: OPERATIONS.RESOURCE_FONT },
+            { op: OPERATIONS.RESOURCE_IMAGE },
+        ])
     } finally {
-        second_renderer.destroy([])
+        second_ui.destroy()
         expect(fonts.getListenerCount('loadingdone')).toBe(0)
+        ;(globalThis as any).document = original_document
+    }
+})
+
+test('ResourcesDom font observation cleanup remains safe when called more than once', () => {
+    const original_document = (globalThis as any).document
+    const fonts = createFontSet()
+    ;(globalThis as any).document = { fonts }
+    const resources = ResourcesDom.create({ canvas: {} })
+    const changes = []
+    const unsubscribe = resources.events.on(RESOURCE_EVENT.FONT, (event_data) => changes.push(event_data))
+    const stopObservingFirst = resources.observeFonts()
+    const stopObservingSecond = resources.observeFonts()
+
+    try {
+        stopObservingFirst()
+        stopObservingFirst()
+        expect(fonts.getListenerCount('loadingdone')).toBe(1)
+        fonts.dispatchEvent({ type: 'loadingdone' })
+        expect(changes).toEqual([undefined])
+        stopObservingSecond()
+        stopObservingSecond()
+        expect(fonts.getListenerCount('loadingdone')).toBe(0)
+        fonts.dispatchEvent({ type: 'loadingdone' })
+        expect(changes).toEqual([undefined])
+    } finally {
+        stopObservingFirst()
+        stopObservingSecond()
+        unsubscribe()
+        ;(globalThis as any).document = original_document
+    }
+})
+
+test('UI with RendererDom resolves resources registered before its creation', async () => {
+    const original_document = (globalThis as any).document
+    ;(globalThis as any).document = { fonts: createFontSet(), createElement: () => createDomElement() }
+    const resources = ResourcesDom.create({ canvas: createDomElement() })
+    resources.registerImage('avatar', { src: '/assets/avatar.png' })
+    resources.registerFont('Poppins', {}, { metrics: { lineHeight: 1.5 } })
+    const renderer = new RendererDom({ resources })
+    renderer.getLayout = () => ({
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        border: { top: 0, right: 0, bottom: 0, left: 0 },
+    })
+    const ui = await TestUI.create({ renderer, resources })
+
+    try {
+        const node = ui.create()
+        node.style('backgroundImage', 'avatar')
+        node.style('fontFamily', 'Poppins')
+        ui.root.add(node)
+        ui.update()
+
+        expect(node.element.style.backgroundImage).toBe('url("/assets/avatar.png")')
+        expect(node.element.style.lineHeight).toBe('1.5')
+        expect((ui as any).operations.capture()).toBe(false)
+    } finally {
+        ui.destroy()
         ;(globalThis as any).document = original_document
     }
 })
@@ -494,12 +596,12 @@ test('UI with RendererDom skips geometry for paint, order, DPR and scroll and wa
         node.scrollTop = 20
         ui.update()
         expect(layout_reads).toEqual([ui.root, node])
-        expect((ui as any).operations.capture(() => [])).toBe(false)
+        expect((ui as any).operations.capture()).toBe(false)
 
         fonts.dispatchEvent({ type: 'loadingdone' })
         ui.update()
         expect(layout_reads).toEqual([ui.root, node, ui.root, node])
-        expect(renderer.getPendingOperations()).toEqual([])
+        expect((ui as any).operations.capture()).toBe(false)
         ui.update()
         expect(layout_reads).toHaveLength(4)
     } finally {
@@ -731,7 +833,7 @@ function createOperations(items = [], update_layout = false) {
     for (const operation of items) {
         operations.add(operation)
     }
-    operations.capture(() => [])
+    operations.capture()
     operations.setUpdateLayout(update_layout)
     return operations
 }

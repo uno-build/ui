@@ -17,10 +17,10 @@ export default class Operations {
         this.pending.push(operation)
     }
 
-    public capture(getPendingOperations) {
+    public capture() {
         this.reset()
         this.captured = new Set(this.pending)
-        const operations = [...this.captured, ...getPendingOperations()]
+        const operations = [...this.captured]
         this.items = this.compact(operations)
 
         for (const operation of this.items) {
@@ -40,7 +40,7 @@ export default class Operations {
             } else if (operation.op === OPERATIONS.VIEWPORT || operation.op === OPERATIONS.ROOT_SIZE) {
                 this.context_changed = true
                 this.check_layout = true
-            } else if (operation.op === OPERATIONS.RESOURCES && operation.font) {
+            } else if (operation.op === OPERATIONS.RESOURCE_FONT) {
                 this.check_layout = true
             }
         }
@@ -107,7 +107,6 @@ export default class Operations {
         const text_nodes = new Set()
         const scroll_directions_by_node = new Map()
         const global_operations = new Set()
-        let resources_operation
 
         for (let i = operations.length - 1; i >= 0; i--) {
             const operation = operations[i]
@@ -148,19 +147,12 @@ export default class Operations {
                     continue
                 }
                 directions.add(operation.direction)
-            } else if (operation.op === OPERATIONS.RESOURCES) {
-                if (resources_operation === undefined) {
-                    resources_operation = { ...operation }
-                    compacted_operations.push(resources_operation)
-                } else {
-                    resources_operation.image ||= operation.image
-                    resources_operation.font ||= operation.font
-                }
-                continue
             } else if (
                 operation.op === OPERATIONS.VIEWPORT ||
                 operation.op === OPERATIONS.ROOT_SIZE ||
-                operation.op === OPERATIONS.PIXEL_RATIO
+                operation.op === OPERATIONS.PIXEL_RATIO ||
+                operation.op === OPERATIONS.RESOURCE_IMAGE ||
+                operation.op === OPERATIONS.RESOURCE_FONT
             ) {
                 if (global_operations.has(operation.op)) {
                     continue

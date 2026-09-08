@@ -33,7 +33,6 @@ export type ManagedAtlasImage = AtlasImage & {
 export class ImageManager {
     public images = new Map<string, ManagedAtlasImage>()
     public texture_version = 0
-    public registry_version = 0
     private device
     private atlas_size
     private atlas_texture
@@ -63,7 +62,6 @@ export class ImageManager {
         this.atlas_layers.push(this.createAtlasLayer(0))
         this.atlas_texture = null
         this.texture_version++
-        this.registry_version++
     }
 
     public getImage(src: string): AtlasImage | undefined {
@@ -119,26 +117,25 @@ export class ImageManager {
         }
 
         this.images.set(src, new_atlas_image)
-        this.registry_version++
 
         return new_atlas_image
     }
 
-    public imageDispose(src: string): void {
+    public imageDispose(src: string): boolean {
         const atlas_image = this.images.get(src)
 
         if (atlas_image === undefined) {
-            return
+            return false
         }
 
         this.images.delete(src)
-        this.registry_version++
         atlas_image.atlas_layer.free_rects = releaseAtlasRect(atlas_image.atlas_layer.free_rects, {
             x: atlas_image.x,
             y: atlas_image.y,
             width: atlas_image.width,
             height: atlas_image.height,
         })
+        return true
     }
 
     private allocateAtlasRect(width, height) {

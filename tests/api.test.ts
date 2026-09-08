@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import Resources from '../src/core/Resources'
 import Operations from '../src/core/Operations'
-import { OPERATIONS } from '../src/core/constants'
+import { OPERATIONS, RESOURCE_EVENT } from '../src/core/constants'
 import ResourcesWebGPU from '../src/renderer/webgpu/ResourcesWebGPU'
 import UIWorldSpace from '../src/ui/UIWorldSpace.ts'
 import TestRenderer from './utils/TestRenderer.ts'
@@ -348,105 +348,95 @@ test('UI keeps overflow metrics work when the renderer declines layout', async (
     expect(layout_reads).toBe(0)
 })
 
-test('UI checks renderer resources before deciding an update has no work', async () => {
+test('UI queues resource events without other mutations and consumes them after updating', async () => {
     const renderer = new TestRenderer()
-    const ui = await TestUI.create({ renderer })
+    const resources = new (Resources as any)({ canvas: {} })
+    const ui = await TestUI.create({ renderer, resources })
     ui.update()
 
-    let pending_operations = []
-    let pending_checks = 0
     const completed_updates = []
-    renderer.getPendingOperations = () => {
-        pending_checks++
-        return pending_operations
-    }
     renderer.update = (nodes, operations) => {
         completed_updates.push({
             items: [...operations.items],
             check_layout: operations.needCheckLayout(),
             update_layout: operations.needUpdateLayout(),
         })
-        pending_operations = []
     }
 
     ui.update()
-    expect(pending_checks).toBe(1)
     expect(completed_updates).toEqual([])
 
     const resource_operation = {
-        op: OPERATIONS.RESOURCES,
-        image: false,
-        font: true,
-        image_version: 0,
-        font_version: 1,
+        op: OPERATIONS.RESOURCE_FONT,
     }
-    pending_operations = [resource_operation]
+    resources.events.emit(RESOURCE_EVENT.FONT)
+    expect(completed_updates).toEqual([])
+    expect((ui as any).operations.pending).toEqual([resource_operation])
     ui.update()
     ui.update()
 
-    expect(pending_checks).toBe(3)
     expect(completed_updates).toEqual([{ items: [resource_operation], check_layout: true, update_layout: true }])
     expect((ui as any).operations.pending).toEqual([])
+    ui.destroy()
 })
 
-test('UI captures local operations before checking external resources', async () => {
+test('UI retains resource events received during an update for the next update', async () => {
     const renderer = new TestRenderer()
-    const ui = await TestUI.create({ renderer })
+    const resources = new (Resources as any)({ canvas: {} })
+    const ui = await TestUI.create({ renderer, resources })
     ui.update()
-    ui.root.style('width', '100px')
+    resources.events.emit(RESOURCE_EVENT.IMAGE)
     const operations = (ui as any).operations
     const captured_operation = operations.pending[0]
     const rendered_batches = []
-    renderer.getPendingOperations = () => {
-        renderer.getPendingOperations = () => []
-        ui.root.style('width', '200px')
-        return []
-    }
     renderer.update = (nodes, current_operations) => {
         expect(current_operations).toBe(operations)
         rendered_batches.push([...current_operations.items])
+        if (rendered_batches.length === 1) {
+            resources.events.emit(RESOURCE_EVENT.IMAGE)
+        }
     }
 
     ui.update()
 
     expect(rendered_batches).toEqual([[captured_operation]])
-    expect(ui.root.layout.width).toBe(100)
     expect(operations.pending).toHaveLength(1)
-    expect(operations.pending[0]).toMatchObject({ op: OPERATIONS.STYLE, node: ui.root, style: { value: '200px' } })
+    expect(operations.pending[0]).toEqual(captured_operation)
+    expect(operations.pending[0]).not.toBe(captured_operation)
 
     ui.update()
 
-    expect(rendered_batches).toHaveLength(2)
-    expect(rendered_batches[1][0]).toMatchObject({ op: OPERATIONS.STYLE, node: ui.root, style: { value: '200px' } })
-    expect(ui.root.layout.width).toBe(200)
+    expect(rendered_batches).toEqual([[captured_operation], [captured_operation]])
     expect(operations.pending).toEqual([])
+    ui.destroy()
 })
 
-test('UI consumes captured work discarded after a node is destroyed during the resource check', async () => {
+test('UI retains resource events when rendering fails and retries them', async () => {
     const renderer = new TestRenderer()
-    const ui = await TestUI.create({ renderer })
-    const detached = ui.create()
+    const resources = new (Resources as any)({ canvas: {} })
+    const ui = await TestUI.create({ renderer, resources })
     ui.update()
-    detached.style('width', '100px')
+    resources.events.emit(RESOURCE_EVENT.IMAGE)
     const operations = (ui as any).operations
-    let update_count = 0
-    renderer.getPendingOperations = () => {
-        renderer.getPendingOperations = () => []
-        detached.destroy()
-        return []
+    const captured_operation = operations.pending[0]
+    renderer.update = () => {
+        throw new Error('upload failed')
     }
-    renderer.update = (nodes, current_operations) => {
-        update_count++
-        expect(current_operations.items).toEqual([])
-        expect(current_operations.needCheckLayout()).toBe(false)
-        expect(current_operations.needUpdateLayout()).toBe(false)
+
+    expect(() => ui.update()).toThrow('upload failed')
+    expect(operations.pending).toEqual([captured_operation])
+    resources.events.emit(RESOURCE_EVENT.FONT)
+    const completed_updates = []
+    renderer.update = (nodes, operations) => {
+        completed_updates.push([...operations.items])
     }
 
     ui.update()
     ui.update()
 
-    expect(update_count).toBe(1)
+    expect(completed_updates).toEqual([[{ op: OPERATIONS.RESOURCE_IMAGE }, { op: OPERATIONS.RESOURCE_FONT }]])
     expect(operations.pending).toEqual([])
+    ui.destroy()
 })
 
 test('UI compares layouts with optional edges and records only changed geometry', async () => {
@@ -565,37 +555,37 @@ test('UI keeps the last text, scroll axis, and global values while preserving st
     expect((ui as any).operations.pending).toEqual([])
 })
 
-test('UI merges resource flags while retaining the latest captured versions', async () => {
+test('UI deduplicates resource operations independently and checks layout only for fonts', async () => {
     const renderer = new TestRenderer()
-    const ui = await TestUI.create({ renderer })
+    const resources = new (Resources as any)({ canvas: {} })
+    const ui = await TestUI.create({ renderer, resources })
     ui.update()
-    const image_operation = {
-        op: OPERATIONS.RESOURCES,
-        image: true,
-        font: false,
-        image_version: 1,
-        font_version: 0,
-        web_font_version: 0,
-    }
-    const font_operation = {
-        op: OPERATIONS.RESOURCES,
-        image: false,
-        font: true,
-        image_version: 1,
-        font_version: 2,
-        web_font_version: 3,
-    }
-    renderer.getPendingOperations = () => [image_operation, font_operation]
+    resources.events.emit(RESOURCE_EVENT.IMAGE)
+    resources.events.emit(RESOURCE_EVENT.FONT)
+    resources.events.emit(RESOURCE_EVENT.IMAGE)
+    resources.events.emit(RESOURCE_EVENT.FONT)
+    const journal = [...(ui as any).operations.pending]
     let rendered_operations
+    let check_layout
     renderer.update = (nodes, operations) => {
         rendered_operations = operations.items
+        check_layout = operations.needCheckLayout()
     }
 
     ui.update()
 
-    expect(rendered_operations).toEqual([{ ...font_operation, image: true }])
-    expect(image_operation.font).toBe(false)
-    expect(font_operation.image).toBe(false)
+    expect(rendered_operations).toEqual([{ op: OPERATIONS.RESOURCE_IMAGE }, { op: OPERATIONS.RESOURCE_FONT }])
+    expect(rendered_operations[0]).toBe(journal[2])
+    expect(rendered_operations[1]).toBe(journal[3])
+    expect(check_layout).toBe(true)
+
+    resources.events.emit(RESOURCE_EVENT.IMAGE)
+    resources.events.emit(RESOURCE_EVENT.IMAGE)
+    ui.update()
+
+    expect(rendered_operations).toEqual([{ op: OPERATIONS.RESOURCE_IMAGE }])
+    expect(check_layout).toBe(false)
+    ui.destroy()
 })
 
 test('Node compares shorthand styles by their expanded values', async () => {
@@ -652,7 +642,7 @@ test('Node stores pointerEvents and adds it to the operation journal', async () 
 
 test('UI destroy releases attached and detached nodes once', async () => {
     const renderer = new TestRenderer()
-    const resources = {}
+    const resources = new (Resources as any)({ canvas: {} })
     const ui = await TestUI.create({ renderer, resources })
     const root = ui.root
     const parent = ui.create()
@@ -699,7 +689,7 @@ test('UI destroy releases attached and detached nodes once', async () => {
 })
 
 test('UI exposes its resources before destruction', async () => {
-    const resources = {}
+    const resources = new (Resources as any)({ canvas: {} })
     const ui = await TestUI.create({ renderer: new TestRenderer(), resources })
 
     expect(ui.resources).toBe(resources)
@@ -1265,6 +1255,7 @@ test('ResourcesWebGPU image api delegates to the image manager', () => {
         },
         imageDispose(src) {
             calls.push({ kind: 'dispose', src })
+            return true
         },
     }
 
@@ -1297,6 +1288,7 @@ test('ResourcesWebGPU font api delegates to the font manager', () => {
         },
         fontDispose(name) {
             calls.push({ kind: 'dispose', name })
+            return true
         },
     }
     const image = createImage('/assets/fonts/Poppins.png', 484, 484)

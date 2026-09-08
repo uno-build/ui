@@ -16,7 +16,7 @@ export default class EventEmitter {
         }
     }
 
-    public emit(type, event_data) {
+    public emit(type, event_data?) {
         const listeners = this.listeners.get(type)
         if (listeners) {
             listeners.forEach((listener) => listener(event_data))

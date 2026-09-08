@@ -12,6 +12,7 @@ import {
 import { useUI } from '../src/components/octane/context.js'
 import { createUniversalDriver, registerRootComponent } from '../src/components/octane/driver.js'
 import { getImageStyle } from '../src/components/shared.js'
+import EventEmitter from '../src/core/EventEmitter'
 import { DEFINED_EVENTS } from '../src/events'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'
@@ -307,7 +308,10 @@ for (const [name, Component, props] of [
     ['Image', Image, { src: 'image' }],
 ]) {
     test(`${name} refs expose the main Uno node`, async () => {
-        const resources = { getImageSize: () => ({ width: 10, height: 10 }) }
+        const resources = {
+            getImageSize: () => ({ width: 10, height: 10 }),
+            events: new EventEmitter(),
+        }
         const ui = await TestUI.create({ renderer: new TestRenderer(), resources })
         const root = registerRootComponent(Component, { ui })
         const ref = { current: null }
