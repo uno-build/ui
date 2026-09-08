@@ -3671,9 +3671,9 @@ test('RendererWebGPU selects local damage and deduplicates overlapping inherited
     renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
     const updated_nodes = []
     const updateRecord = (renderer as any).updateRecord.bind(renderer)
-    ;(renderer as any).updateRecord = (node, record) => {
+    ;(renderer as any).updateRecord = (node, record, parts) => {
         updated_nodes.push(node)
-        return updateRecord(node, record)
+        return updateRecord(node, record, parts)
     }
 
     renderer.update(nodes, createOperations([
@@ -3720,9 +3720,9 @@ test('RendererWebGPU creates one record and command for a root-only active list'
     const command_counts = []
     ;(renderer as any).root_node = root
     const updateRecord = (renderer as any).updateRecord.bind(renderer)
-    ;(renderer as any).updateRecord = (node, record) => {
+    ;(renderer as any).updateRecord = (node, record, parts) => {
         updated_nodes.push(node)
-        return updateRecord(node, record)
+        return updateRecord(node, record, parts)
     }
     const fill = (renderer as any).command_pool.fill.bind((renderer as any).command_pool)
     ;(renderer as any).command_pool.fill = (commands, writeCommand) => {
@@ -3835,6 +3835,536 @@ test('RendererWebGPU reuses the viewport uniform and ignores unchanged fractiona
     expect(writes[1].data).toBe(writes[0].data)
     expect(writes[1].values).toEqual([320, 180, 2, 0])
 })
+
+test('RendererWebGPU uploads only the shared run when recoloring 1000 glyphs', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode()
+    const node = createNode({
+        parent: root,
+        text_content: 'A'.repeat(1000),
+        layout: { x: 0, y: 0, width: 10000, height: 20 },
+    })
+    root.children.push(node)
+    const nodes = [root, node]
+    ;(renderer as any).root_node = root
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+    const { panel_data_pool, text_run_pool, glyph_data_pool, command_pool, records } = renderer as any
+    const record = records.get(node)
+    const prepared_text = record.prepared_text
+    const text_layout = record.text_layout
+    const panel_bytes = panel_data_pool.bytes.slice()
+    const glyph_bytes = glyph_data_pool.bytes.slice()
+    const command_bytes = command_pool.bytes.slice()
+    const style = resolveStyle('color', '#123456')
+    node.styles.color = style.expanded[0]
+
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.STYLE, node, style }]))
+
+    expect(record.glyph_count).toBe(1000)
+    expect(record.prepared_text).toBe(prepared_text)
+    expect(record.text_layout).toBe(text_layout)
+    expect(panel_data_pool.uploaded).toBe(0)
+    expect(text_run_pool.uploaded).toBe(TEXT_RUN_SIZE)
+    expect(glyph_data_pool.uploaded).toBe(0)
+    expect(command_pool.uploaded).toBe(0)
+    expect(panel_data_pool.bytes).toEqual(panel_bytes)
+    expect(glyph_data_pool.bytes).toEqual(glyph_bytes)
+    expect(command_pool.bytes).toEqual(command_bytes)
+    const color_offset = (record.run_slot * TEXT_RUN_SIZE + TEXT_RUN.COLOR.OFFSET) / FLOAT32_SIZE
+    expect(Array.from(text_run_pool.floats.slice(color_offset, color_offset + 4))).toEqual([
+        expect.closeTo(18 / 255),
+        expect.closeTo(52 / 255),
+        expect.closeTo(86 / 255),
+        1,
+    ])
+})
+
+for (const { description, styles, panel_upload, run_upload } of [
+    {
+        description: 'updates only the panel for a text background change',
+        styles: [['backgroundColor', '#123456']],
+        panel_upload: PANEL_DATA_SIZE,
+        run_upload: 0,
+    },
+    {
+        description: 'skips every GPU pool for pointerEvents changes',
+        styles: [['pointerEvents', 'none']],
+        panel_upload: 0,
+        run_upload: 0,
+    },
+    {
+        description: 'unions background and color damage on the same text node',
+        styles: [['backgroundColor', '#123456'], ['color', '#00ff00']],
+        panel_upload: PANEL_DATA_SIZE,
+        run_upload: TEXT_RUN_SIZE,
+    },
+]) {
+    test(`RendererWebGPU ${description}`, () => {
+        const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+        const root = createNode()
+        const node = createNode({
+            parent: root,
+            text_content: 'AB',
+            layout: { x: 0, y: 0, width: 100, height: 20 },
+        })
+        root.children.push(node)
+        const nodes = [root, node]
+        ;(renderer as any).root_node = root
+        renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+        const { panel_data_pool, text_run_pool, glyph_data_pool, command_pool, records } = renderer as any
+        const record = records.get(node)
+        const glyph_bytes = glyph_data_pool.bytes.slice()
+        const command_bytes = command_pool.bytes.slice()
+        const text_layout = record.text_layout
+        const operations = styles.map(([name, value]) => {
+            const style = resolveStyle(name, value)
+            node.styles[name] = style.expanded[0]
+            return { op: OPERATIONS.STYLE, node, style }
+        })
+
+        renderer.update(nodes, createOperations(operations))
+
+        expect(panel_data_pool.uploaded).toBe(panel_upload)
+        expect(text_run_pool.uploaded).toBe(run_upload)
+        expect(glyph_data_pool.uploaded).toBe(0)
+        expect(command_pool.uploaded).toBe(0)
+        expect(glyph_data_pool.bytes).toEqual(glyph_bytes)
+        expect(command_pool.bytes).toEqual(command_bytes)
+        expect(record.text_layout).toBe(text_layout)
+        const background_offset =
+            (record.panel_slot * PANEL_DATA_SIZE + PANEL_DATA.BACKGROUND_COLOR.OFFSET) / UINT32_SIZE
+        expect(panel_data_pool.u32[background_offset]).toBe(panel_upload === 0 ? 0xff0000ff : 0xff563412)
+        const color_offset = (record.run_slot * TEXT_RUN_SIZE + TEXT_RUN.COLOR.OFFSET) / FLOAT32_SIZE
+        expect(Array.from(text_run_pool.floats.slice(color_offset, color_offset + 4))).toEqual(
+            run_upload === 0 ? [0, 0, 0, 1] : [0, 1, 0, 1],
+        )
+    })
+}
+
+test('RendererWebGPU changes glyph positions without uploading the run when textAlign changes', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode()
+    const node = createNode({
+        parent: root,
+        text_content: 'AA',
+        layout: { x: 10, y: 20, width: 100, height: 20 },
+    })
+    root.children.push(node)
+    const nodes = [root, node]
+    ;(renderer as any).root_node = root
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+    const { panel_data_pool, text_run_pool, glyph_data_pool, command_pool, records } = renderer as any
+    const record = records.get(node)
+    const panel_bytes = panel_data_pool.bytes.slice()
+    const run_bytes = text_run_pool.bytes.slice()
+    const command_bytes = command_pool.bytes.slice()
+    const style = resolveStyle('textAlign', 'right')
+    node.styles.textAlign = style.expanded[0]
+
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.STYLE, node, style }]))
+
+    expect(panel_data_pool.uploaded).toBe(0)
+    expect(text_run_pool.uploaded).toBe(0)
+    expect(glyph_data_pool.uploaded).toBe(2 * GLYPH_DATA_SIZE)
+    expect(command_pool.uploaded).toBe(0)
+    expect(panel_data_pool.bytes).toEqual(panel_bytes)
+    expect(text_run_pool.bytes).toEqual(run_bytes)
+    expect(command_pool.bytes).toEqual(command_bytes)
+    const first_glyph_offset = record.glyph_start * GLYPH_DATA_SIZE / FLOAT32_SIZE
+    const second_glyph_offset = first_glyph_offset + GLYPH_DATA_SIZE / FLOAT32_SIZE
+    expect(Array.from(glyph_data_pool.floats.slice(first_glyph_offset, first_glyph_offset + 4))).toEqual([
+        expect.closeTo(90.8), 20, 8, 16,
+    ])
+    expect(Array.from(glyph_data_pool.floats.slice(second_glyph_offset, second_glyph_offset + 4))).toEqual([
+        expect.closeTo(100.4), 20, 8, 16,
+    ])
+})
+
+test('RendererWebGPU updates stroke width in the run and commands without uploading glyphs', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode()
+    const node = createNode({
+        parent: root,
+        text_content: 'AB',
+        layout: { x: 0, y: 0, width: 100, height: 20 },
+        styles: { textStroke: resolveStyle('textStroke', '1px #123456').expanded[0] },
+    })
+    root.children.push(node)
+    const nodes = [root, node]
+    ;(renderer as any).root_node = root
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+    const { panel_data_pool, text_run_pool, glyph_data_pool, command_pool, records } = renderer as any
+    const record = records.get(node)
+    const glyph_bytes = glyph_data_pool.bytes.slice()
+    const style = resolveStyle('textStroke', '3px #123456')
+    node.styles.textStroke = style.expanded[0]
+
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.STYLE, node, style }]))
+
+    expect(panel_data_pool.uploaded).toBe(0)
+    expect(text_run_pool.uploaded).toBe(TEXT_RUN_SIZE)
+    expect(glyph_data_pool.uploaded).toBe(0)
+    expect(glyph_data_pool.bytes).toEqual(glyph_bytes)
+    expect(command_pool.uploaded).toBe(6 * COMMAND_SIZE)
+    const commands = createCommands(nodes, records)
+    expect(commands.map(({ kind }) => kind)).toEqual([
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_TEXT_STROKE,
+        COMMAND_KIND_TEXT_STROKE,
+        COMMAND_KIND_GLYPH,
+        COMMAND_KIND_GLYPH,
+    ])
+    const run_width_offset = (record.run_slot * TEXT_RUN_SIZE + TEXT_RUN.TEXT_STROKE_WIDTH.OFFSET) / FLOAT32_SIZE
+    expect(text_run_pool.floats[run_width_offset]).toBe(3)
+    expect(command_pool.floats[2 * COMMAND_SIZE / FLOAT32_SIZE + 3]).toBe(3)
+    expect(command_pool.floats[3 * COMMAND_SIZE / FLOAT32_SIZE + 3]).toBe(3)
+    expect(command_pool.floats[4 * COMMAND_SIZE / FLOAT32_SIZE + 3]).toBe(0)
+})
+
+test('RendererWebGPU updates inherited opacity without rewriting glyphs and restores a hidden subtree', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode()
+    const parent = createNode({ parent: root })
+    const child = createNode({
+        parent,
+        text_content: 'AB',
+        layout: { x: 0, y: 0, width: 100, height: 20 },
+    })
+    const sibling = createNode({ parent: root, text_content: 'A' })
+    root.children.push(parent, sibling)
+    parent.children.push(child)
+    const nodes = [root, parent, child, sibling]
+    ;(renderer as any).root_node = root
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+    const { panel_data_pool, text_run_pool, glyph_data_pool, command_pool, records } = renderer as any
+    const parent_record = records.get(parent)
+    const child_record = records.get(child)
+    const sibling_record = records.get(sibling)
+    const glyph_bytes = glyph_data_pool.bytes.slice()
+    const sibling_panel_bytes = panel_data_pool.bytes.slice(
+        sibling_record.panel_slot * PANEL_DATA_SIZE,
+        (sibling_record.panel_slot + 1) * PANEL_DATA_SIZE,
+    )
+    const sibling_run_bytes = text_run_pool.bytes.slice(
+        sibling_record.run_slot * TEXT_RUN_SIZE,
+        (sibling_record.run_slot + 1) * TEXT_RUN_SIZE,
+    )
+    const opacity_style = resolveStyle('opacity', '0.5')
+    parent.styles.opacity = opacity_style.expanded[0]
+
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.STYLE, node: parent, style: opacity_style }]))
+
+    expect(panel_data_pool.uploaded).toBe(2 * PANEL_DATA_SIZE)
+    expect(text_run_pool.uploaded).toBe(TEXT_RUN_SIZE)
+    expect(glyph_data_pool.uploaded).toBe(0)
+    expect(command_pool.uploaded).toBe(0)
+    expect(glyph_data_pool.bytes).toEqual(glyph_bytes)
+    for (const record of [parent_record, child_record]) {
+        const opacity_offset = (record.panel_slot * PANEL_DATA_SIZE + PANEL_DATA.IMAGE_DATA.OFFSET) / FLOAT32_SIZE
+        expect(panel_data_pool.floats[opacity_offset]).toBe(0.5)
+    }
+    const child_opacity_offset = (child_record.run_slot * TEXT_RUN_SIZE + TEXT_RUN.FONT_DATA.OFFSET) / FLOAT32_SIZE + 1
+    expect(text_run_pool.floats[child_opacity_offset]).toBe(0.5)
+
+    const hidden_style = resolveStyle('opacity', '0')
+    parent.styles.opacity = hidden_style.expanded[0]
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.STYLE, node: parent, style: hidden_style }]))
+
+    expect(parent_record.panel_slot).toBe(-1)
+    expect(child_record.panel_slot).toBe(-1)
+    expect(child_record.glyph_count).toBe(0)
+    expect(command_pool.uploaded).toBe(3 * COMMAND_SIZE)
+    expect(createCommands(nodes, records)).toEqual([
+        { kind: COMMAND_KIND_PANEL, panel_index: records.get(root).panel_slot, glyph_index: 0 },
+        { kind: COMMAND_KIND_PANEL, panel_index: sibling_record.panel_slot, glyph_index: 0 },
+        { kind: COMMAND_KIND_GLYPH, panel_index: 0, glyph_index: sibling_record.glyph_start },
+    ])
+
+    const restored_style = resolveStyle('opacity', '0.25')
+    parent.styles.opacity = restored_style.expanded[0]
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.STYLE, node: parent, style: restored_style }]))
+
+    expect(parent_record.panel_slot).not.toBe(-1)
+    expect(child_record.panel_slot).not.toBe(-1)
+    expect(child_record.glyph_count).toBe(2)
+    expect((renderer as any).command_count).toBe(7)
+    expect(command_pool.uploaded).toBe(7 * COMMAND_SIZE)
+    expect(createCommands(nodes, records).map(({ kind }) => kind)).toEqual([
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_GLYPH,
+        COMMAND_KIND_GLYPH,
+        COMMAND_KIND_PANEL,
+        COMMAND_KIND_GLYPH,
+    ])
+    const restored_opacity_offset =
+        (child_record.run_slot * TEXT_RUN_SIZE + TEXT_RUN.FONT_DATA.OFFSET) / FLOAT32_SIZE + 1
+    expect(text_run_pool.floats[restored_opacity_offset]).toBe(0.25)
+    const glyph_offset = child_record.glyph_start * GLYPH_DATA_SIZE / FLOAT32_SIZE
+    expect(Array.from(glyph_data_pool.floats.slice(glyph_offset, glyph_offset + 4))).toEqual([0, 0, 8, 16])
+    expect(glyph_data_pool.u32[glyph_offset + GLYPH_DATA.RUN_DATA.OFFSET / UINT32_SIZE]).toBe(child_record.run_slot)
+    expect(panel_data_pool.bytes.slice(
+        sibling_record.panel_slot * PANEL_DATA_SIZE,
+        (sibling_record.panel_slot + 1) * PANEL_DATA_SIZE,
+    )).toEqual(sibling_panel_bytes)
+    expect(text_run_pool.bytes.slice(
+        sibling_record.run_slot * TEXT_RUN_SIZE,
+        (sibling_record.run_slot + 1) * TEXT_RUN_SIZE,
+    )).toEqual(sibling_run_bytes)
+})
+
+test('RendererWebGPU rebuilds text geometry after display none is restored to flex', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode()
+    const node = createNode({
+        parent: root,
+        text_content: 'AA',
+        layout: { x: 10, y: 20, width: 100, height: 20 },
+    })
+    root.children.push(node)
+    const nodes = [root, node]
+    ;(renderer as any).root_node = root
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+    const { glyph_data_pool, command_pool, records } = renderer as any
+    const record = records.get(node)
+    const hidden_style = resolveStyle('display', 'none')
+    node.styles.display = hidden_style.expanded[0]
+
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.STYLE, node, style: hidden_style }]))
+
+    expect(record.panel_slot).toBe(-1)
+    expect(record.glyph_count).toBe(0)
+    expect(command_pool.uploaded).toBe(COMMAND_SIZE)
+    expect((renderer as any).command_count).toBe(1)
+
+    const alignment_style = resolveStyle('textAlign', 'right')
+    node.styles.textAlign = alignment_style.expanded[0]
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.STYLE, node, style: alignment_style }]))
+    expect(record.glyph_count).toBe(0)
+    expect(command_pool.uploaded).toBe(0)
+
+    const restored_style = resolveStyle('display', 'flex')
+    node.styles.display = restored_style.expanded[0]
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.STYLE, node, style: restored_style }]))
+
+    expect(record.panel_slot).not.toBe(-1)
+    expect(record.glyph_count).toBe(2)
+    expect(command_pool.uploaded).toBe(4 * COMMAND_SIZE)
+    expect((renderer as any).command_count).toBe(4)
+    const glyph_offset = record.glyph_start * GLYPH_DATA_SIZE / FLOAT32_SIZE
+    expect(glyph_data_pool.floats[glyph_offset]).toBeCloseTo(90.8)
+    expect(glyph_data_pool.u32[glyph_offset + GLYPH_DATA.RUN_DATA.OFFSET / UINT32_SIZE]).toBe(record.run_slot)
+})
+
+test('RendererWebGPU separates text shadow color, visibility, and duplicated glyph offsets', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode()
+    const node = createNode({
+        parent: root,
+        text_content: 'AA',
+        layout: { x: 0, y: 0, width: 100, height: 20 },
+        styles: { textShadow: resolveStyle('textShadow', '1px 2px 3px #000000').expanded[0] },
+    })
+    root.children.push(node)
+    const nodes = [root, node]
+    ;(renderer as any).root_node = root
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+    const { panel_data_pool, text_run_pool, glyph_data_pool, command_pool, records } = renderer as any
+    const record = records.get(node)
+    const panel_bytes = panel_data_pool.bytes.slice()
+    const glyph_geometry = [0, 1].map((index) => {
+        const offset = (record.glyph_start + index) * GLYPH_DATA_SIZE
+        return glyph_data_pool.bytes.slice(offset, offset + GLYPH_DATA.RUN_DATA.OFFSET)
+    })
+
+    for (const { value, rgba, shadow, glyph_upload, command_upload, command_count } of [
+        { value: '1px 2px 3px #00ff00', rgba: [0, 1, 0, 1], shadow: [1, 2, 3], glyph_upload: 0, command_upload: 0, command_count: 6 },
+        { value: '1px 2px 3px #00ff0000', rgba: [0, 1, 0, 0], shadow: [1, 2, 3], glyph_upload: 0, command_upload: 4 * COMMAND_SIZE, command_count: 4 },
+        { value: '1px 2px 3px #00ff00', rgba: [0, 1, 0, 1], shadow: [1, 2, 3], glyph_upload: 0, command_upload: 6 * COMMAND_SIZE, command_count: 6 },
+        { value: '2px 4px 5px #00ff00', rgba: [0, 1, 0, 1], shadow: [2, 4, 5], glyph_upload: 2 * GLYPH_DATA_SIZE, command_upload: 0, command_count: 6 },
+    ]) {
+        const style = resolveStyle('textShadow', value)
+        node.styles.textShadow = style.expanded[0]
+        renderer.update(nodes, createOperations([{ op: OPERATIONS.STYLE, node, style }]))
+
+        expect(panel_data_pool.uploaded).toBe(0)
+        expect(panel_data_pool.bytes).toEqual(panel_bytes)
+        expect(text_run_pool.uploaded).toBe(TEXT_RUN_SIZE)
+        expect(glyph_data_pool.uploaded).toBe(glyph_upload)
+        expect(command_pool.uploaded).toBe(command_upload)
+        expect((renderer as any).command_count).toBe(command_count)
+        expect(createCommands(nodes, records).filter(({ kind }) => kind === COMMAND_KIND_TEXT_SHADOW)).toHaveLength(
+            rgba[3] === 0 ? 0 : 2,
+        )
+        const run_offset = record.run_slot * TEXT_RUN_SIZE / FLOAT32_SIZE
+        const color_offset = run_offset + TEXT_RUN.TEXT_SHADOW_COLOR.OFFSET / FLOAT32_SIZE
+        const shadow_offset = run_offset + TEXT_RUN.TEXT_SHADOW.OFFSET / FLOAT32_SIZE
+        expect(Array.from(text_run_pool.floats.slice(color_offset, color_offset + 4))).toEqual(rgba)
+        expect(Array.from(text_run_pool.floats.slice(shadow_offset, shadow_offset + 4))).toEqual([...shadow, 0])
+        for (let index = 0; index < 2; index++) {
+            const offset = (record.glyph_start + index) * GLYPH_DATA_SIZE
+            const glyph_shadow_offset = (offset + GLYPH_DATA.RUN_DATA.OFFSET) / FLOAT32_SIZE + 1
+            expect(glyph_data_pool.bytes.slice(offset, offset + GLYPH_DATA.RUN_DATA.OFFSET)).toEqual(glyph_geometry[index])
+            expect(Array.from(glyph_data_pool.floats.slice(glyph_shadow_offset, glyph_shadow_offset + 3))).toEqual(shadow)
+        }
+    }
+})
+
+test('RendererWebGPU updates text insets when border color is unset and restored without layout damage', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode()
+    const node = createNode({
+        parent: root,
+        text_content: 'AA',
+        layout: { x: 10, y: 20, width: 100, height: 20 },
+        computed_border: { [EDGE.left]: 10 },
+        styles: {
+            borderLeftStyle: resolveStyle('borderLeftStyle', 'solid').expanded[0],
+            borderLeftWidth: resolveStyle('borderLeftWidth', '10px').expanded[0],
+            borderLeftColor: resolveStyle('borderLeftColor', '#123456').expanded[0],
+        },
+    })
+    root.children.push(node)
+    const nodes = [root, node]
+    ;(renderer as any).root_node = root
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+    const { panel_data_pool, text_run_pool, glyph_data_pool, command_pool, records } = renderer as any
+    const record = records.get(node)
+    expect(glyph_data_pool.floats[record.glyph_start * GLYPH_DATA_SIZE / FLOAT32_SIZE]).toBe(20)
+
+    for (const [value, expected_x] of [['unset', 10], ['#123456', 20]] as const) {
+        const style = resolveStyle('borderLeftColor', value)
+        node.styles.borderLeftColor = style.expanded[0]
+        const operations = createOperations([{ op: OPERATIONS.STYLE, node, style }])
+        expect(operations.layout_nodes.size).toBe(0)
+        renderer.update(nodes, operations)
+
+        expect(panel_data_pool.uploaded).toBe(PANEL_DATA_SIZE)
+        expect(text_run_pool.uploaded).toBe(0)
+        expect(glyph_data_pool.uploaded).toBe(2 * GLYPH_DATA_SIZE)
+        expect(command_pool.uploaded).toBe(0)
+        expect(node.layout.border.left).toBe(10)
+        expect(glyph_data_pool.floats[record.glyph_start * GLYPH_DATA_SIZE / FLOAT32_SIZE]).toBe(expected_x)
+    }
+})
+
+for (const { description, op, style_name, style_value, panel_upload, glyph_upload } of [
+    {
+        description: 'unions image resource damage with a local text color change',
+        op: OPERATIONS.RESOURCE_IMAGE,
+        style_name: 'color',
+        style_value: '#00ff00',
+        panel_upload: 2 * PANEL_DATA_SIZE,
+        glyph_upload: 0,
+    },
+    {
+        description: 'unions font resource damage with a local background change',
+        op: OPERATIONS.RESOURCE_FONT,
+        style_name: 'backgroundColor',
+        style_value: '#123456',
+        panel_upload: PANEL_DATA_SIZE,
+        glyph_upload: 2 * GLYPH_DATA_SIZE,
+    },
+]) {
+    test(`RendererWebGPU ${description}`, () => {
+        const font = createManagedFont()
+        const image = { layer: 0, image_size: [8, 8], uv_rect: [0, 0, 1, 1] }
+        const renderer = createRenderer(createImageManager({ resources: { icon: image } }), createFontManager({ default_font: font }))
+        const root = createNode()
+        const node = createNode({
+            parent: root,
+            text_content: 'AA',
+            layout: { x: 0, y: 0, width: 100, height: 20 },
+            styles: { backgroundImage: { value: 'icon' } },
+        })
+        root.children.push(node)
+        const nodes = [root, node]
+        ;(renderer as any).root_node = root
+        renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+        const { panel_data_pool, text_run_pool, glyph_data_pool, command_pool, records } = renderer as any
+        const record = records.get(node)
+        if (op === OPERATIONS.RESOURCE_IMAGE) {
+            image.layer = 3
+        } else {
+            font.layer = 4
+        }
+        const style = resolveStyle(style_name, style_value)
+        node.styles[style_name] = style.expanded[0]
+
+        renderer.update(nodes, createOperations([{ op }, { op: OPERATIONS.STYLE, node, style }]))
+
+        expect(panel_data_pool.uploaded).toBe(panel_upload)
+        expect(text_run_pool.uploaded).toBe(TEXT_RUN_SIZE)
+        expect(glyph_data_pool.uploaded).toBe(glyph_upload)
+        expect(command_pool.uploaded).toBe(0)
+        const panel_offset = record.panel_slot * PANEL_DATA_SIZE / FLOAT32_SIZE
+        const run_offset = record.run_slot * TEXT_RUN_SIZE / FLOAT32_SIZE
+        expect(panel_data_pool.floats[panel_offset + PANEL_DATA.IMAGE_DATA.OFFSET / FLOAT32_SIZE + 2]).toBe(image.layer)
+        expect(panel_data_pool.u32[panel_offset + PANEL_DATA.BACKGROUND_COLOR.OFFSET / UINT32_SIZE]).toBe(
+            op === OPERATIONS.RESOURCE_FONT ? 0xff563412 : 0xff0000ff,
+        )
+        expect(text_run_pool.floats[run_offset + TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE]).toBe(font.layer)
+        expect(Array.from(text_run_pool.floats.slice(run_offset, run_offset + 4))).toEqual(
+            op === OPERATIONS.RESOURCE_IMAGE ? [0, 1, 0, 1] : [0, 0, 0, 1],
+        )
+    })
+}
+
+for (const child_x of [20, 80]) {
+    test(`RendererWebGPU ${child_x === 20 ? 'updates visible text clipping without glyph uploads' : 'restores culled text when overflow becomes visible'}`, () => {
+        const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+        const root = createNode()
+        const parent = createNode({
+            parent: root,
+            layout: { x: 10, y: 20, width: 60, height: 40 },
+            styles: { overflowX: resolveStyle('overflowX', 'hidden').expanded[0] },
+        })
+        const child = createNode({
+            parent,
+            text_content: 'AA',
+            layout: { x: child_x, y: 20, width: 20, height: 20 },
+        })
+        root.children.push(parent)
+        parent.children.push(child)
+        const nodes = [root, parent, child]
+        ;(renderer as any).root_node = root
+        renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+        const { text_run_pool, glyph_data_pool, command_pool, records } = renderer as any
+        const record = records.get(child)
+        const glyph_bytes = glyph_data_pool.bytes.slice()
+        const clipping_offset = (record.run_slot * TEXT_RUN_SIZE + TEXT_RUN.CLIPPING.OFFSET) / FLOAT32_SIZE
+        expect(record.glyph_count).toBe(child_x === 20 ? 2 : 0)
+        if (child_x === 20) {
+            expect(Array.from(text_run_pool.floats.slice(clipping_offset, clipping_offset + 4))).toEqual([
+                -Infinity, 70, Infinity, 10,
+            ])
+        }
+        const style = resolveStyle('overflowX', 'visible')
+        parent.styles.overflowX = style.expanded[0]
+        const operations = createOperations([{ op: OPERATIONS.STYLE, node: parent, style }])
+        expect(operations.layout_nodes.size).toBe(0)
+
+        renderer.update(nodes, operations)
+
+        expect(text_run_pool.uploaded).toBe(TEXT_RUN_SIZE)
+        expect(record.glyph_count).toBe(2)
+        expect((renderer as any).command_count).toBe(5)
+        expect(Array.from(text_run_pool.floats.slice(clipping_offset, clipping_offset + 4))).toEqual([0, 0, 0, 0])
+        if (child_x === 20) {
+            expect(glyph_data_pool.uploaded).toBe(0)
+            expect(glyph_data_pool.bytes).toEqual(glyph_bytes)
+            expect(command_pool.uploaded).toBe(0)
+        } else {
+            expect(glyph_data_pool.uploaded).toBeGreaterThanOrEqual(2 * GLYPH_DATA_SIZE)
+            expect(command_pool.uploaded).toBe(5 * COMMAND_SIZE)
+            expect(record.panel_slot).not.toBe(-1)
+            const glyph_offset = record.glyph_start * GLYPH_DATA_SIZE / FLOAT32_SIZE
+            expect(Array.from(glyph_data_pool.floats.slice(glyph_offset, glyph_offset + 4))).toEqual([80, 20, 8, 16])
+        }
+    })
+}
 
 function createNodesBufferData(renderer, nodes) {
     const render_data = collectRenderData(renderer, nodes)

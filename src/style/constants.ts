@@ -1,5 +1,11 @@
 export const ROOT_SIZE = 16 // 16px is the default font size in browsers
 
+export const RECORD_PANEL = 1
+export const RECORD_TEXT_RUN = 2
+export const RECORD_GLYPHS = 4
+export const RECORD_TEXT = RECORD_TEXT_RUN | RECORD_GLYPHS
+export const RECORD_ALL = RECORD_PANEL | RECORD_TEXT
+
 export const KEYWORD = {
     AUTO: 'auto',
     UNSET: 'unset',

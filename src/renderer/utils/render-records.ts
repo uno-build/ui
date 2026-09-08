@@ -13,6 +13,7 @@ export function createRecord() {
         glyph_count: 0,
         glyph_capacity: 0,
         has_text_shadow: false,
+        text_shadow: [0, 0, 0],
         text_stroke_width: 0,
         prepared_text: undefined,
         layout_width: 0,
