@@ -477,6 +477,8 @@ export const STYLE = {
     ]),
 }
 
+export const STYLE_BY_NAME = Object.fromEntries(Object.values(STYLE).map((style) => [style.name, style]))
+
 export default {
     validateStyle,
     resolveStyle,

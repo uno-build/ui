@@ -3713,6 +3713,111 @@ test('RendererWebGPU selects local damage and deduplicates overlapping inherited
     }
 })
 
+test('RendererWebGPU applies full viewport damage without reclassifying local changes', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode()
+    const node = createNode({ parent: root, text_content: 'A', layout: { x: 20, y: 0, width: 100, height: 20 } })
+    root.children.push(node)
+    ;(renderer as any).root_node = root
+    renderer.setViewport(320, 180)
+    renderer.update([root, node], createOperations([{ op: OPERATIONS.ADD, node: root }, { op: OPERATIONS.VIEWPORT }]))
+    const { records, glyph_data_pool, text_run_pool, command_pool, resources, viewport_buffer } = renderer as any
+    resources.device.writes.length = 0
+    const added = createNode({ parent: root })
+    root.children.push(added)
+    root.scrollLeft = 5
+    node.text_content = 'AA'
+    ;(renderer as any).layouter = { markDirty() {} }
+    renderer.invalidateTextNode(node)
+    const styles = [resolveStyle('backgroundColor', '#00000000'), resolveStyle('color', '#00ff00'), resolveStyle('zIndex', '1')]
+    for (const style of styles) {
+        node.styles[style.name] = style.expanded[0]
+    }
+    const operations = createOperations([
+        { op: OPERATIONS.VIEWPORT },
+        { op: OPERATIONS.PIXEL_RATIO },
+        { op: OPERATIONS.ADD, node: added },
+        { op: OPERATIONS.TEXT, node, value: 'AA' },
+        { op: OPERATIONS.SCROLL, node: root },
+        ...styles.map((style) => ({ op: OPERATIONS.STYLE, node, style })),
+    ])
+    operations.layout_nodes.add(root)
+    for (const style of styles) {
+        Object.defineProperty(style, 'expanded', { get() { throw new Error('full damage reclassified a local style') } })
+    }
+    renderer.setViewport(640, 480)
+    renderer.setDevicePixelRatio(2)
+
+    renderer.update([root, added, node], operations)
+
+    const record = records.get(node)
+    expect(records.size).toBe(3)
+    expect(record.panel_slot).toBe(-1)
+    expect(record.glyph_count).toBe(2)
+    expect((renderer as any).command_count).toBe(4)
+    expect(command_pool.uploaded).toBe(4 * COMMAND_SIZE)
+    expect(command_pool.u32[COMMAND_SIZE / UINT32_SIZE]).toBe(COMMAND_KIND_PANEL)
+    expect(command_pool.u32[COMMAND_SIZE / UINT32_SIZE + 1]).toBe(records.get(added).panel_slot)
+    expect(command_pool.u32[2 * COMMAND_SIZE / UINT32_SIZE]).toBe(COMMAND_KIND_GLYPH)
+    expect(command_pool.u32[2 * COMMAND_SIZE / UINT32_SIZE + 2]).toBe(record.glyph_start)
+    expect(glyph_data_pool.floats[record.glyph_start * GLYPH_DATA_SIZE / FLOAT32_SIZE]).toBe(15)
+    const run_offset = record.run_slot * TEXT_RUN_SIZE / FLOAT32_SIZE
+    expect(Array.from(text_run_pool.floats.slice(run_offset, run_offset + 4))).toEqual([0, 1, 0, 1])
+    const viewport_writes = resources.device.writes.filter(({ buffer }) => buffer === viewport_buffer)
+    expect(viewport_writes).toHaveLength(1)
+    expect(Array.from(viewport_writes[0].data)).toEqual([640, 480, 2, 0])
+})
+
+test('RendererWebGPU combines image and font resource damage into a full update without viewport writes', () => {
+    const font = createManagedFont()
+    const image = { layer: 0, image_size: [8, 8], uv_rect: [0, 0, 1, 1] }
+    const renderer = createRenderer(createImageManager({ resources: { icon: image } }), createFontManager({ default_font: font }))
+    const root = createNode()
+    const node = createNode({
+        parent: root,
+        text_content: 'AA',
+        layout: { x: 0, y: 0, width: 100, height: 20 },
+        styles: { backgroundImage: { value: 'icon' } },
+    })
+    root.children.push(node)
+    const nodes = [root, node]
+    ;(renderer as any).root_node = root
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+    const { records, panel_data_pool, glyph_data_pool, text_run_pool, command_pool, resources, viewport_buffer } = renderer as any
+    const record = records.get(node)
+    const command_bytes = command_pool.bytes.slice()
+    resources.device.writes.length = 0
+    image.layer = 3
+    font.layer = 4
+    font.glyphs_by_unicode.get(65).uv_rect = [0.2, 0.3, 0.4, 0.5]
+    const style = resolveStyle('color', '#00ff00')
+    node.styles.color = style.expanded[0]
+    const operations = createOperations([
+        { op: OPERATIONS.RESOURCE_IMAGE },
+        { op: OPERATIONS.RESOURCE_FONT },
+        { op: OPERATIONS.STYLE, node, style },
+    ])
+    Object.defineProperty(style, 'expanded', { get() { throw new Error('full resource damage reclassified a local style') } })
+
+    renderer.update(nodes, operations)
+
+    expect(panel_data_pool.uploaded).toBe(2 * PANEL_DATA_SIZE)
+    expect(text_run_pool.uploaded).toBe(TEXT_RUN_SIZE)
+    expect(glyph_data_pool.uploaded).toBe(2 * GLYPH_DATA_SIZE)
+    expect(command_pool.uploaded).toBe(0)
+    expect(command_pool.bytes).toEqual(command_bytes)
+    const image_offset = (record.panel_slot * PANEL_DATA_SIZE + PANEL_DATA.IMAGE_DATA.OFFSET) / FLOAT32_SIZE + 2
+    const run_offset = record.run_slot * TEXT_RUN_SIZE / FLOAT32_SIZE
+    const uv_offset = (record.glyph_start * GLYPH_DATA_SIZE + GLYPH_DATA.UV_RECT.OFFSET) / FLOAT32_SIZE
+    expect(panel_data_pool.floats[image_offset]).toBe(3)
+    expect(text_run_pool.floats[run_offset + TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE]).toBe(4)
+    expect(Array.from(text_run_pool.floats.slice(run_offset, run_offset + 4))).toEqual([0, 1, 0, 1])
+    expect(Array.from(glyph_data_pool.floats.slice(uv_offset, uv_offset + 4))).toEqual([
+        expect.closeTo(0.2), expect.closeTo(0.3), expect.closeTo(0.4), 0.5,
+    ])
+    expect(resources.device.writes.filter(({ buffer }) => buffer === viewport_buffer)).toEqual([])
+})
+
 test('RendererWebGPU creates one record and command for a root-only active list', () => {
     const renderer = createRenderer()
     const root = createNode()

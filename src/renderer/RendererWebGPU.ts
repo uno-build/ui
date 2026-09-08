@@ -1,6 +1,6 @@
 import Renderer from '../core/Renderer'
 import { OPERATIONS } from '../core/constants'
-import { computeStyleValue, STYLE } from '../style'
+import { computeStyleValue, STYLE, STYLE_BY_NAME } from '../style'
 import {
     ROOT_SIZE,
     DISPLAY,
@@ -13,7 +13,6 @@ import {
     RECORD_TEXT,
     RECORD_ALL,
 } from '../style/constants'
-import { normalizeStyleKey } from '../style/normalizers'
 import createYogaLayouter from '../layouter/yoga'
 import {
     FEATURES,
@@ -309,10 +308,15 @@ export default class RendererWebGPU extends Renderer {
 
     public update(nodes, operations) {
         const render_plan = this.createRenderPlan(nodes, operations)
+        const record_parts = render_plan.record_parts
         let rebuild_commands = render_plan.rebuild_commands
 
-        for (const [node, parts] of render_plan.record_nodes) {
-            const { structural } = this.updateRecord(node, this.getRecord(node), parts)
+        for (const node of record_parts === null ? nodes : record_parts.keys()) {
+            const { structural } = this.updateRecord(
+                node,
+                this.getRecord(node),
+                record_parts === null ? RECORD_ALL : record_parts.get(node),
+            )
             rebuild_commands ||= structural
         }
 
@@ -452,9 +456,8 @@ export default class RendererWebGPU extends Renderer {
     }
 
     private createRenderPlan(nodes, operations) {
-        const record_nodes = new Map()
-        const expanded_subtrees = new Map()
         let global_parts = 0
+        let update_viewport = false
         for (const { op } of operations.items) {
             if (op === OPERATIONS.VIEWPORT || op === OPERATIONS.ROOT_SIZE) {
                 global_parts |= RECORD_ALL
@@ -463,10 +466,15 @@ export default class RendererWebGPU extends Renderer {
             } else if (op === OPERATIONS.RESOURCE_IMAGE) {
                 global_parts |= RECORD_PANEL
             }
+            update_viewport ||= op === OPERATIONS.VIEWPORT || op === OPERATIONS.PIXEL_RATIO
         }
-        const update_viewport = operations.items.some(
-            ({ op }) => op === OPERATIONS.VIEWPORT || op === OPERATIONS.PIXEL_RATIO,
-        )
+        const rebuild_commands = operations.needUpdateOrder()
+        if (global_parts === RECORD_ALL) {
+            return { record_parts: null, rebuild_commands, update_viewport }
+        }
+
+        const record_parts = new Map()
+        const expanded_subtrees = new Map()
         const isActive = (node) => {
             let ancestor = node
             while (ancestor.parent !== null) {
@@ -476,7 +484,7 @@ export default class RendererWebGPU extends Renderer {
         }
         const addRecord = (node, parts) => {
             if (parts !== 0) {
-                record_nodes.set(node, (record_nodes.get(node) ?? 0) | parts)
+                record_parts.set(node, (record_parts.get(node) ?? 0) | parts)
             }
         }
         const addSubtree = (node, parts) => {
@@ -509,14 +517,20 @@ export default class RendererWebGPU extends Renderer {
 
         for (const operation of operations.items) {
             if (operation.op === OPERATIONS.STYLE && isActive(operation.node)) {
+                let local_parts = 0
+                let subtree_parts = 0
                 for (const { name } of operation.style.expanded) {
-                    const parts = STYLE[normalizeStyleKey(name)].record_parts
+                    const parts = STYLE_BY_NAME[name].record_parts
                     if (SUBTREE_STYLE_NAMES.has(name)) {
-                        addSubtree(operation.node, parts)
+                        subtree_parts |= parts
                     } else {
-                        addRecord(operation.node, parts)
+                        local_parts |= parts
                     }
                 }
+                if (subtree_parts !== 0) {
+                    addSubtree(operation.node, subtree_parts)
+                }
+                addRecord(operation.node, local_parts)
             } else if (operation.op === OPERATIONS.TEXT && isActive(operation.node)) {
                 addRecord(operation.node, RECORD_TEXT)
             } else if (operation.op === OPERATIONS.ADD && isActive(operation.node)) {
@@ -532,7 +546,7 @@ export default class RendererWebGPU extends Renderer {
             }
         }
 
-        if (operations.needUpdateOrder()) {
+        if (rebuild_commands) {
             for (const node of nodes) {
                 if (!this.records.has(node)) {
                     addRecord(node, RECORD_ALL)
@@ -540,7 +554,7 @@ export default class RendererWebGPU extends Renderer {
             }
         }
 
-        return { record_nodes, rebuild_commands: operations.needUpdateOrder(), update_viewport }
+        return { record_parts, rebuild_commands, update_viewport }
     }
 
     private updateRecord(node, record, parts = RECORD_ALL) {
