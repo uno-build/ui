@@ -2196,7 +2196,7 @@ test('RendererWebGPU recalculates rem text after the root size changes', () => {
     }
     renderer.setViewport(320, 180)
     const initial_operations = createOperations([{ op: OPERATIONS.VIEWPORT }])
-    renderer.prepareLayout(initial_operations, [root])
+    initial_operations.setUpdateLayout(renderer.prepareLayout([root], initial_operations))
     renderer.beforeUpdate([], initial_operations)
     calculations.length = 0
 
@@ -2210,7 +2210,7 @@ test('RendererWebGPU recalculates rem text after the root size changes', () => {
 
     renderer.setRootSize(20)
     const root_size_operations = createOperations([{ op: OPERATIONS.ROOT_SIZE }])
-    renderer.prepareLayout(root_size_operations, [root, node])
+    root_size_operations.setUpdateLayout(renderer.prepareLayout([root, node], root_size_operations))
     renderer.beforeUpdate([node], root_size_operations)
 
     expect(applied_styles).toEqual([
@@ -2271,7 +2271,7 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
 
     renderer.setViewport(320, 180)
     const viewport_operations = createOperations([{ op: OPERATIONS.VIEWPORT }])
-    renderer.prepareLayout(viewport_operations, [root, node])
+    viewport_operations.setUpdateLayout(renderer.prepareLayout([root, node], viewport_operations))
     renderer.beforeUpdate([node], viewport_operations)
 
     expect(readAppliedStyles()).toEqual([
@@ -2300,7 +2300,7 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
 
     renderer.setViewport(400, 180)
     const width_operations = createOperations([{ op: OPERATIONS.VIEWPORT }])
-    renderer.prepareLayout(width_operations, [root, node])
+    width_operations.setUpdateLayout(renderer.prepareLayout([root, node], width_operations))
     renderer.beforeUpdate([node], width_operations)
 
     expect(readAppliedStyles()).toEqual([
@@ -2321,7 +2321,7 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     dirty_nodes.length = 0
     renderer.setViewport(400, 200)
     const height_operations = createOperations([{ op: OPERATIONS.VIEWPORT }])
-    renderer.prepareLayout(height_operations, [root, node])
+    height_operations.setUpdateLayout(renderer.prepareLayout([root, node], height_operations))
     renderer.beforeUpdate([node], height_operations)
 
     expect(readAppliedStyles()).toEqual([
@@ -2342,7 +2342,7 @@ test('RendererWebGPU recalculates viewport text after style context changes', ()
     dirty_nodes.length = 0
     renderer.setRootSize(20)
     const root_size_operations = createOperations([{ op: OPERATIONS.ROOT_SIZE }])
-    renderer.prepareLayout(root_size_operations, [root, node])
+    root_size_operations.setUpdateLayout(renderer.prepareLayout([root, node], root_size_operations))
     renderer.beforeUpdate([node], root_size_operations)
 
     expect(readAppliedStyles()).toEqual([
@@ -3479,7 +3479,7 @@ test('RendererWebGPU invalidates attached and detached text before querying Yoga
     font.glyphs_by_unicode.get(65).advance = 1.2
     font_manager.registry_version++
     const captured_operations = createOperations(renderer.getPendingOperations())
-    renderer.prepareLayout(captured_operations, [root, attached, detached])
+    captured_operations.setUpdateLayout(renderer.prepareLayout([root, attached, detached], captured_operations))
     renderer.beforeUpdate([attached], captured_operations)
 
     expect(events).toEqual([attached, detached, 'isDirty', 'calculate'])
@@ -3503,8 +3503,7 @@ test('RendererWebGPU measures a late font after an initially empty measurement',
     font_manager.getDefaultFont = () => createManagedFont()
     font_manager.registry_version++
     const captured_operations = createOperations(renderer.getPendingOperations())
-    renderer.prepareLayout(captured_operations, [root, node])
-    expect(captured_operations.needUpdateLayout()).toBe(true)
+    expect(renderer.prepareLayout([root, node], captured_operations)).toBe(true)
     expect(dirty_nodes).toEqual([node])
     expect(renderer.getTextMeasure(node)).toEqual({ width: expect.closeTo(9.6), height: 20 })
 })
@@ -3524,11 +3523,8 @@ test('RendererWebGPU resolves detached relative styles before querying Yoga', ()
     renderer.setRootSize(20)
     const captured_operations = createOperations([{ op: OPERATIONS.ROOT_SIZE }])
 
-    renderer.prepareLayout(captured_operations, [root, detached])
-    expect(captured_operations.needUpdateLayout()).toBe(true)
-    const next_operations = createOperations()
-    renderer.prepareLayout(next_operations, [root, detached])
-    expect(next_operations.needUpdateLayout()).toBe(false)
+    expect(renderer.prepareLayout([root, detached], captured_operations)).toBe(true)
+    expect(renderer.prepareLayout([root, detached], createOperations())).toBe(false)
     expect(events).toEqual([
         { node: detached, style: { name: 'width', value: '2rem', parsed: { value: 40, kind: UNIT.PX } } },
         'isDirty',
@@ -3553,7 +3549,7 @@ test('RendererWebGPU calculates only dirty Yoga or explicit layout context chang
         { op: OPERATIONS.RESOURCES, image: true, font: false },
     ]) {
         const captured_operations = createOperations([operation])
-        renderer.prepareLayout(captured_operations, [root])
+        captured_operations.setUpdateLayout(renderer.prepareLayout([root], captured_operations))
         expect(captured_operations.needUpdateLayout()).toBe(false)
         renderer.beforeUpdate([], captured_operations)
     }
@@ -3565,13 +3561,15 @@ test('RendererWebGPU calculates only dirty Yoga or explicit layout context chang
         { op: OPERATIONS.ADD, node: root },
     ]) {
         const captured_operations = createOperations([operation])
-        renderer.prepareLayout(captured_operations, [root])
+        captured_operations.setUpdateLayout(renderer.prepareLayout([root], captured_operations))
         expect(captured_operations.needUpdateLayout()).toBe(true)
         renderer.beforeUpdate([], captured_operations)
     }
     dirty = true
     const dirty_operations = createOperations()
-    renderer.prepareLayout(dirty_operations, [root])
+    const update_layout = renderer.prepareLayout([root], dirty_operations)
+    expect(dirty_operations.needUpdateLayout()).toBe(false)
+    dirty_operations.setUpdateLayout(update_layout)
     expect(dirty_operations.needCheckLayout()).toBe(false)
     expect(dirty_operations.needUpdateLayout()).toBe(true)
     renderer.beforeUpdate([], dirty_operations)
@@ -3625,7 +3623,7 @@ test('RendererWebGPU propagates cross-axis overflow changes and records internal
     const captured_operations = createOperations([
         { op: OPERATIONS.STYLE, node: parent, style: resolveStyle('overflowY', 'hidden') },
     ])
-    renderer.prepareLayout(captured_operations, [root, parent, child])
+    captured_operations.setUpdateLayout(renderer.prepareLayout([root, parent, child], captured_operations))
     renderer.beforeUpdate([parent, child], captured_operations)
     renderer.afterUpdate([parent, child], captured_operations)
 

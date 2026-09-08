@@ -52,7 +52,7 @@ export default class RendererDom extends Renderer {
             }
         }
 
-        operations.setUpdateLayout(operations.needCheckLayout())
+        return operations.needCheckLayout()
     }
 
     public update(nodes, operations) {

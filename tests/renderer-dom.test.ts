@@ -187,8 +187,8 @@ test('RendererDom observes loaded web fonts without UI operations and acknowledg
         expect(operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: false, font: true })
 
         const captured_operations = createOperations(operations)
-        renderer.prepareLayout(captured_operations, new Set())
-        expect(captured_operations.needUpdateLayout()).toBe(true)
+        expect(renderer.prepareLayout(new Set(), captured_operations)).toBe(true)
+        expect(captured_operations.needUpdateLayout()).toBe(false)
         fonts.dispatchEvent({ type: 'loadingdone' })
         renderer.update([], captured_operations)
 
@@ -223,7 +223,7 @@ test('RendererDom refreshes detached background images after registration and di
     const operations = renderer.getPendingOperations()
     expect(operations[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: true, font: false })
     const captured_operations = createOperations(operations)
-    renderer.prepareLayout(captured_operations, new Set([node]))
+    captured_operations.setUpdateLayout(renderer.prepareLayout(new Set([node]), captured_operations))
 
     expect(element.style.backgroundImage).toBe('url("/assets/avatar.png")')
     expect(element.style.backgroundRepeat).toBe('repeat-x')
@@ -233,7 +233,7 @@ test('RendererDom refreshes detached background images after registration and di
 
     resources.disposeImage('avatar')
     const disposal_operations = createOperations(renderer.getPendingOperations())
-    renderer.prepareLayout(disposal_operations, new Set([node]))
+    disposal_operations.setUpdateLayout(renderer.prepareLayout(new Set([node]), disposal_operations))
     expect(element.style.backgroundImage).toBe('none')
     renderer.update([], disposal_operations)
     expect(renderer.getPendingOperations()).toEqual([])
@@ -263,13 +263,13 @@ test('RendererDom refreshes detached font metrics while preserving explicit line
     resources.registerFont('Poppins', {}, { metrics: { lineHeight: 1.5 } })
     const captured_operations = createOperations(renderer.getPendingOperations())
     expect(captured_operations.items[0]).toMatchObject({ op: OPERATIONS.RESOURCES, image: false, font: true })
-    renderer.prepareLayout(captured_operations, new Set(nodes))
+    captured_operations.setUpdateLayout(renderer.prepareLayout(new Set(nodes), captured_operations))
     expect(elements.map((element) => element.style.lineHeight)).toEqual(['1.5', '20px', '1.5'])
     renderer.update([], captured_operations)
 
     resources.disposeFont('Poppins')
     const disposal_operations = createOperations(renderer.getPendingOperations())
-    renderer.prepareLayout(disposal_operations, new Set(nodes))
+    disposal_operations.setUpdateLayout(renderer.prepareLayout(new Set(nodes), disposal_operations))
     expect(elements.map((element) => element.style.lineHeight)).toEqual(['', '20px', ''])
     renderer.update([], disposal_operations)
     expect(renderer.getPendingOperations()).toEqual([])

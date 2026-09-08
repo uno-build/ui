@@ -73,7 +73,7 @@ export default class UI {
                 }
             }
 
-            this.renderer.prepareLayout(this.nodes_created, operations)
+            operations.setUpdateLayout(this.renderer.prepareLayout(this.nodes_created, operations))
             this.renderer.beforeUpdate(this.nodes, operations)
 
             // Update Layout

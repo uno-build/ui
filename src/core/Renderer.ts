@@ -18,7 +18,7 @@ export default abstract class Renderer {
     }
 
     public prepareLayout(_nodes_created, operations) {
-        operations.setUpdateLayout(operations.needCheckLayout())
+        return operations.needCheckLayout()
     }
 
     public beforeUpdate(_nodes, _operations) {}

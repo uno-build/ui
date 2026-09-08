@@ -322,14 +322,14 @@ test('UI keeps overflow metrics work when the renderer declines layout', async (
         layout_reads++
         return {}
     }
-    renderer.prepareLayout = (operations) => {
+    renderer.prepareLayout = (nodes_created, operations) => {
         prepared_operations = operations
         prepared_work = {
             check_layout: operations.needCheckLayout(),
             update_layout: operations.needUpdateLayout(),
             scroll_metrics: operations.needUpdateScrollMetrics(),
         }
-        operations.setUpdateLayout(false)
+        return false
     }
     renderer.afterUpdate = (nodes, operations) => {
         expect(operations).toBe(prepared_operations)

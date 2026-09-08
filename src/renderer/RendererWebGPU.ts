@@ -222,10 +222,10 @@ export default class RendererWebGPU extends Renderer {
             }
         }
 
-        operations.setUpdateLayout(
+        return (
             operations.hasContextChanges() ||
-                operations.items.some(({ op, node }) => op === OPERATIONS.ADD && node === this.root_node) ||
-                this.layouter.isDirty(),
+            operations.items.some(({ op, node }) => op === OPERATIONS.ADD && node === this.root_node) ||
+            this.layouter.isDirty()
         )
     }
 
