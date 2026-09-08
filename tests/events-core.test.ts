@@ -38,6 +38,47 @@ test('EventEmitter registers, removes, emits, and destroys listeners', () => {
     expect(received_events).toEqual([first_event, second_event])
 })
 
+test('UI hit-tests negative z-index children before root', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const first = ui.create()
+    const second = ui.create()
+    const hit_nodes = []
+
+    ui.root.style('width', '100px')
+    ui.root.style('height', '100px')
+    first.style('zIndex', '-2')
+    second.style('zIndex', '-1')
+    for (const node of [first, second]) {
+        node.style('position', 'absolute')
+        node.style('width', '40px')
+        node.style('height', '40px')
+        ui.root.add(node)
+    }
+    ui.update()
+    ui.events_source.on('hit', ({ node }) => hit_nodes.push(node))
+
+    expect([...ui.nodes]).toEqual([ui.root, first, second])
+    ui.dispatchPlatformEvent({ type: 'hit' }, { x: 10, y: 10 })
+    ui.dispatchPlatformEvent({ type: 'hit' }, { x: 70, y: 70 })
+    ui.dispatchPlatformEvent({ type: 'hit' }, { x: 110, y: 110 })
+
+    second.style('pointerEvents', 'none')
+    ui.update()
+    ui.dispatchPlatformEvent({ type: 'hit' }, { x: 10, y: 10 })
+
+    first.detach()
+    second.detach()
+    ui.update()
+    ui.dispatchPlatformEvent({ type: 'hit' }, { x: 10, y: 10 })
+
+    ui.root.style('pointerEvents', 'none')
+    ui.update()
+    ui.dispatchPlatformEvent({ type: 'hit' }, { x: 10, y: 10 })
+
+    expect(hit_nodes).toEqual([second, ui.root, null, first, ui.root, null])
+    ui.destroy()
+})
+
 test('default event definitions expose their public types through UI', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),

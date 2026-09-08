@@ -73,17 +73,18 @@ export async function runLayout({
         render({ ui })
         observeRootSize({ ui, root, canvas, viewport })
 
-        const result = readPaintLayout(ui)
+        const nodes = ui.nodes.slice(1)
+        const result = readPaintLayout(nodes)
         const paintedRects =
             setup.inspectDomPaint === false
-                ? readLayoutRects({ nodes: ui.nodes })
-                : readPaintedRects({ canvas, nodes: ui.nodes })
+                ? readLayoutRects({ nodes })
+                : readPaintedRects({ canvas, nodes })
         const paintSamples =
             setup.inspectDomPaint === false
                 ? []
                 : readPaintSamples({
                       canvas,
-                      nodes: ui.nodes,
+                      nodes,
                       samples: layoutResult?.paintSamples ?? [],
                   })
 
@@ -250,8 +251,8 @@ function createCanvasElement(root, rendererName, setup) {
     return canvas
 }
 
-function readPaintLayout(ui) {
-    return [...ui.nodes].map((node) => ({
+function readPaintLayout(nodes) {
+    return nodes.map((node) => ({
         id: node.id,
         order: node.order,
         ...node.layout,
@@ -386,14 +387,14 @@ function createRemoveRandomNode(rendered_layouts) {
 }
 
 function pickRandomNode(ui) {
-    const nodes = [ui.root, ...ui.nodes]
+    const nodes = ui.nodes
 
     return nodes[Math.floor(Math.random() * nodes.length)]
 }
 
 function pickRandomDeepNode(ui) {
     const max_path_length = Math.max(...ui.nodes.map((node) => node.path.length))
-    const nodes = ui.nodes.filter((node) => node.path.length >= max_path_length - 1)
+    const nodes = ui.nodes.filter((node) => node !== ui.root && node.path.length >= max_path_length - 1)
 
     return nodes[Math.floor(Math.random() * nodes.length)]
 }

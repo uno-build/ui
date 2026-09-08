@@ -52,7 +52,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
         parsed: { value: 10, kind: '%' },
     })
 
-    expect([...ui.nodes]).toEqual([child, sibling, grandchild])
+    expect([...ui.nodes]).toEqual([ui.root, child, sibling, grandchild])
     expect(child.parent).toBe(ui.root)
     expect(sibling.parent).toBe(ui.root)
     expect(grandchild.parent).toBe(child)
@@ -67,8 +67,8 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
     ui.update()
     ui.draw()
 
-    expect([...ui.nodes].toSorted(byId)).toEqual([child, sibling, grandchild])
-    expect([...ui.nodes]).toEqual([child, grandchild, sibling])
+    expect([...ui.nodes].toSorted(byId)).toEqual([ui.root, child, sibling, grandchild])
+    expect([...ui.nodes]).toEqual([ui.root, child, grandchild, sibling])
     expect(ui.root.layout).toMatchObject({
         x: 0,
         y: 0,
@@ -91,7 +91,7 @@ test('UI and Node api creates, styles, updates, and removes nodes', async () => 
 
     ui.root.remove(child)
 
-    expect([...ui.nodes]).toEqual([sibling])
+    expect([...ui.nodes]).toEqual([ui.root, sibling])
     expect(child.element).toBe(null)
     expect(grandchild.element).toBe(null)
     expect(ui.root.children).toEqual([sibling])
@@ -110,13 +110,21 @@ test('UI initializes the root layout once without consumer mutations', async () 
     const renderer = new TestRenderer()
     const ui = await TestUI.create({ renderer })
     const beforeUpdate = renderer.beforeUpdate.bind(renderer)
+    const getLayout = renderer.getLayout.bind(renderer)
+    const layout_reads = []
     let update_count = 0
 
     renderer.beforeUpdate = (nodes, operations) => {
+        expect(nodes).toEqual([ui.root])
         update_count++
         beforeUpdate(nodes, operations)
     }
+    renderer.getLayout = (node) => {
+        layout_reads.push(node)
+        return getLayout(node)
+    }
 
+    expect([...ui.nodes]).toEqual([ui.root])
     expect((ui as any).operations).toBeInstanceOf(Operations)
     expect((ui as any).operations.pending).toContainEqual({ op: OPERATIONS.ADD, node: ui.root, parent: null })
 
@@ -129,6 +137,30 @@ test('UI initializes the root layout once without consumer mutations', async () 
     ui.update()
 
     expect(update_count).toBe(1)
+    expect(layout_reads).toEqual([ui.root])
+    expect([...ui.nodes]).toEqual([ui.root])
+})
+
+test('UI keeps root active until root destruction', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const root = ui.root
+    const detached = ui.create()
+
+    root.detach()
+    ui.update()
+
+    expect([...ui.nodes]).toEqual([root])
+    expect([...(ui as any).nodes_created]).toEqual([root, detached])
+    expect(root.parent).toBe(null)
+    expect(root.path).toEqual([])
+
+    root.destroy()
+
+    expect([...ui.nodes]).toEqual([])
+    expect((ui as any).nodes_created.size).toBe(0)
+    expect(ui.root).toBe(null)
+    expect(root.ui).toBe(null)
+    expect(detached.ui).toBe(null)
 })
 
 test('UI applies pending styles to the root and live detached nodes', async () => {
@@ -298,8 +330,8 @@ test('UI skips layout reads for paint, DPR, scroll, and painting order changes',
     expect(layout_reads).toBe(0)
     expect(last_operations.needUpdateOrder()).toBe(true)
     expect(last_operations.scroll_nodes.size).toBe(0)
-    expect((ui as any).nodes).toEqual([second, first])
-    expect([second.order, first.order]).toEqual([0, 1])
+    expect((ui as any).nodes).toEqual([ui.root, second, first])
+    expect([ui.root.order, second.order, first.order]).toEqual([0, 1, 2])
 
     first.style('width', '50px')
     ui.update()
@@ -823,15 +855,15 @@ test('Node remove removes descendants', async () => {
     parent.add(child)
     child.add(grandchild)
 
-    expect(ui.nodes.length).toBe(4)
+    expect(ui.nodes.length).toBe(5)
     expect(ui.root.children).toEqual([parent, sibling])
     expect(parent.children).toEqual([child])
     expect(child.children).toEqual([grandchild])
 
     ui.root.remove(parent)
 
-    expect(ui.nodes.length).toBe(1)
-    expect([...ui.nodes]).toEqual([sibling])
+    expect(ui.nodes.length).toBe(2)
+    expect([...ui.nodes]).toEqual([ui.root, sibling])
     expect(ui.root.children).toEqual([sibling])
     expect(parent.children).toEqual([])
     expect(child.children).toEqual([])
@@ -868,7 +900,7 @@ test('Node detach preserves and reinserts a subtree', async () => {
     parent.detach()
 
     expect(destroyed_nodes).toEqual([])
-    expect([...ui.nodes]).toEqual([sibling])
+    expect([...ui.nodes]).toEqual([ui.root, sibling])
     expect(ui.root.children).toEqual([sibling])
     expect(sibling.path).toEqual([0])
     expect(parent.ui).toBe(ui)
@@ -881,7 +913,7 @@ test('Node detach preserves and reinserts a subtree', async () => {
 
     ui.root.add(parent)
 
-    expect([...ui.nodes]).toEqual([sibling, parent, child, grandchild])
+    expect([...ui.nodes]).toEqual([ui.root, sibling, parent, child, grandchild])
     expect(ui.root.children).toEqual([sibling, parent])
     expect(parent.path).toEqual([1])
     expect(child.path).toEqual([1, 0])
@@ -918,19 +950,19 @@ test('Node add builds a detached subtree and activates it when attached', async 
     child.add(grandchild)
     parent.add(child)
 
-    expect([...ui.nodes]).toEqual([])
+    expect([...ui.nodes]).toEqual([ui.root])
     expect(parent.parent).toBe(null)
     expect(parent.children).toEqual([child])
     expect(child.parent).toBe(parent)
     expect(child.children).toEqual([grandchild])
     expect(grandchild.parent).toBe(child)
     expect(() => ui.update()).not.toThrow()
-    expect([...ui.nodes]).toEqual([])
+    expect([...ui.nodes]).toEqual([ui.root])
 
     ui.root.add(parent)
 
-    expect([...ui.nodes]).toEqual([parent, child, grandchild])
-    expect(new Set(ui.nodes).size).toBe(3)
+    expect([...ui.nodes]).toEqual([ui.root, parent, child, grandchild])
+    expect(new Set(ui.nodes).size).toBe(4)
     expect(parent.path).toEqual([0])
     expect(child.path).toEqual([0, 0])
     expect(grandchild.path).toEqual([0, 0, 0])
@@ -948,14 +980,14 @@ test('Node add extends a detached subtree without activating it', async () => {
     parent.detach()
     child.add(grandchild)
 
-    expect([...ui.nodes]).toEqual([])
+    expect([...ui.nodes]).toEqual([ui.root])
     expect(child.children).toEqual([grandchild])
     expect(grandchild.parent).toBe(child)
 
     ui.root.add(parent)
 
-    expect([...ui.nodes]).toEqual([parent, child, grandchild])
-    expect(new Set(ui.nodes).size).toBe(3)
+    expect([...ui.nodes]).toEqual([ui.root, parent, child, grandchild])
+    expect(new Set(ui.nodes).size).toBe(4)
     expect(parent.path).toEqual([0])
     expect(child.path).toEqual([0, 0])
     expect(grandchild.path).toEqual([0, 0, 0])
@@ -987,7 +1019,7 @@ test('Node destroy releases attached and detached subtrees in postorder once', a
     parent.destroy()
 
     expect(destroyed_nodes).toEqual([attached, grandchild, child, parent])
-    expect([...ui.nodes]).toEqual([])
+    expect([...ui.nodes]).toEqual([ui.root])
     expect(ui.root.children).toEqual([])
     for (const node of [attached, grandchild, child, parent]) {
         expect(node.ui).toBe(null)
@@ -1048,7 +1080,7 @@ test('Node remove discards pending styles', async () => {
         ui.update()
         ui.draw()
     }).not.toThrow()
-    expect([...ui.nodes]).toEqual([])
+    expect([...ui.nodes]).toEqual([ui.root])
     expect(child.element).toBe(null)
 })
 

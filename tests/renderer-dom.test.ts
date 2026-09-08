@@ -430,7 +430,7 @@ test('UI with RendererDom resolves resources registered before its creation', as
     }
 })
 
-test('RendererDom synchronizes node scroll state after update', () => {
+test('RendererDom synchronizes root and child scroll state once after update', () => {
     const canvas = createScrollableElement({
         scrollWidth: 600,
         scrollHeight: 500,
@@ -446,6 +446,18 @@ test('RendererDom synchronizes node scroll state after update', () => {
     const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas }) })
     const root = createNode(0)
     const node = createNode(1)
+    const applied_nodes = []
+    const read_nodes = []
+    const applyNodeScroll = (renderer as any).applyNodeScroll.bind(renderer)
+    ;(renderer as any).applyNodeScroll = (target) => {
+        applied_nodes.push(target)
+        applyNodeScroll(target)
+    }
+    const readNodeScroll = (renderer as any).readNodeScroll.bind(renderer)
+    ;(renderer as any).readNodeScroll = (target, read_metrics) => {
+        read_nodes.push(target)
+        return readNodeScroll(target, read_metrics)
+    }
     root.scrollLeft = 40
     root.scrollTop = 30
     node.scrollLeft = 25
@@ -454,9 +466,11 @@ test('RendererDom synchronizes node scroll state after update', () => {
     ;(renderer as any).elements.set(node, element)
 
     const operations = createOperations([], true)
-    renderer.beforeUpdate([node], operations)
-    renderer.afterUpdate([node], operations)
+    renderer.beforeUpdate([root, node], operations)
+    renderer.afterUpdate([root, node], operations)
 
+    expect(applied_nodes).toEqual([root, node])
+    expect(read_nodes).toEqual([root, node])
     expect(canvas.scrollLeft).toBe(40)
     expect(canvas.scrollTop).toBe(30)
     expect(root.scrollWidth).toBe(600)
@@ -492,7 +506,7 @@ test('RendererDom updates only text operation targets, including root and detach
         },
     })
 
-    renderer.beforeUpdate([], createOperations([], true))
+    renderer.beforeUpdate([root], createOperations([], true))
     expect(writes).toEqual([])
 
     const operations = createOperations([
@@ -500,7 +514,7 @@ test('RendererDom updates only text operation targets, including root and detach
         { op: OPERATIONS.TEXT, node: detached, value: '' },
         { op: OPERATIONS.TEXT, node: destroyed, value: 'destroyed text' },
     ], true)
-    renderer.beforeUpdate([], operations)
+    renderer.beforeUpdate([root], operations)
 
     expect(writes).toEqual([
         { node: root, value: 'captured root text' },
@@ -552,8 +566,8 @@ test('RendererDom targets scroll operations without touching the root or sibling
     node.scrollTop = 200
     node.scrollLeft = 25
     const operations = createOperations([{ op: OPERATIONS.SCROLL, node }])
-    renderer.beforeUpdate([node, sibling], operations)
-    renderer.afterUpdate([node, sibling], operations)
+    renderer.beforeUpdate([root, node, sibling], operations)
+    renderer.afterUpdate([root, node, sibling], operations)
 
     expect(touched_nodes.length).toBeGreaterThan(0)
     expect(new Set(touched_nodes)).toEqual(new Set([node]))

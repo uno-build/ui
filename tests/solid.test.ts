@@ -227,7 +227,11 @@ test('Solid create and insert build the Uno node tree and apply initial styles',
         return {
             nodes_created_match:
                 nodes_created[0] === parent && nodes_created[1] === first_child && nodes_created[2] === second_child,
-            active_nodes_match: ui.nodes[0] === parent && ui.nodes[1] === first_child && ui.nodes[2] === second_child,
+            active_nodes_match:
+                ui.nodes[0] === ui.root &&
+                ui.nodes[1] === parent &&
+                ui.nodes[2] === first_child &&
+                ui.nodes[3] === second_child,
             parents_match: parent.parent === ui.root && first_child.parent === parent && second_child.parent === parent,
             paths: [parent.path, first_child.path, second_child.path],
             styles: {
@@ -278,7 +282,7 @@ test('Solid updates styles without replacing node identity and unsets removed st
         flush(() => setStyle({ width: '200px', backgroundColor: '#00f' }))
 
         return {
-            same_node: ui.root.children[0] === node && ui.nodes[0] === node,
+            same_node: ui.root.children[0] === node && ui.nodes[1] === node,
             width: node.styles.width.value,
             height: node.styles.height.value,
             background_color: node.styles.backgroundColor.value,
@@ -320,7 +324,7 @@ for (const component_name of ['HostRef', 'ViewRef', 'TextRef']) {
 
                 return {
                     exposes_node,
-                    detached: ui.root.children.length === 0 && ui.nodes.length === 0,
+                    detached: ui.root.children.length === 0 && ui.nodes.length === 1 && ui.nodes[0] === ui.root,
                     released: node.ui === null && node.element === null,
                 }
             },
@@ -441,7 +445,7 @@ test('Solid removes and destroys a conditional Uno subtree in order', async ({ p
     expect(result).toEqual({
         operations_match: true,
         update_count: 2,
-        active_count: 0,
+        active_count: 1,
         root_count: 0,
         released: true,
     })
@@ -466,7 +470,10 @@ test('Solid roots isolate their node state and expose their own UI context', asy
 
         return {
             contexts_match: fixture.received_uis[0] === first_ui && fixture.received_uis[1] === second_ui,
-            first_empty: first_ui.root.children.length === 0 && first_ui.nodes.length === 0,
+            first_empty:
+                first_ui.root.children.length === 0 &&
+                first_ui.nodes.length === 1 &&
+                first_ui.nodes[0] === first_ui.root,
             second_unchanged:
                 second_ui.root.children.length === 1 &&
                 second_ui.root.children[0] === second_node &&
@@ -556,7 +563,8 @@ test('Solid updates, joins, clears, and unmounts text without retaining Uno node
             joined_updated,
             unmounted:
                 dynamic_ui.root.children.length === 0 &&
-                dynamic_ui.nodes.length === 0 &&
+                dynamic_ui.nodes.length === 1 &&
+                dynamic_ui.nodes[0] === dynamic_ui.root &&
                 dynamic_node.ui === null &&
                 dynamic_node.element === null,
         }

@@ -249,7 +249,7 @@ test('Octane create and insert build the Uno node tree and apply initial styles'
     const second_child = parent.children[1]
 
     expect(nodes_created).toEqual([parent, first_child, second_child])
-    expect([...ui.nodes]).toEqual([parent, first_child, second_child])
+    expect([...ui.nodes]).toEqual([ui.root, parent, first_child, second_child])
     expect(parent.parent).toBe(ui.root)
     expect(parent.children).toEqual([first_child, second_child])
     expect(first_child.parent).toBe(parent)
@@ -280,7 +280,7 @@ test('Octane update changes Uno styles without replacing node identity', async (
     })
 
     expect(ui.root.children).toEqual([node])
-    expect([...ui.nodes]).toEqual([node])
+    expect([...ui.nodes]).toEqual([ui.root, node])
     expect(node.styles.width.value).toBe('200px')
     expect(node.styles.height.value).toBe('60px')
     expect(node.styles.backgroundColor.value).toBe('#00f')
@@ -453,7 +453,7 @@ test('Octane remove and destroy detach and release the Uno subtree in order', as
         { op: 'destroy', node: parent },
     ])
     expect(update_count).toBe(2)
-    expect([...ui.nodes]).toEqual([])
+    expect([...ui.nodes]).toEqual([ui.root])
     expect(ui.root.children).toEqual([])
     expect(parent.ui).toBe(null)
     expect(child.ui).toBe(null)
@@ -476,7 +476,7 @@ test('Octane roots keep create, insert, remove, and destroy state isolated', asy
     first_root.unmount()
 
     expect(first_ui.root.children).toEqual([])
-    expect([...first_ui.nodes]).toEqual([])
+    expect([...first_ui.nodes]).toEqual([first_ui.root])
     expect(second_ui.root.children).toEqual([second_parent])
     expect(second_parent.children).toEqual(second_children)
     expect(second_parent.ui).toBe(second_ui)
@@ -484,7 +484,7 @@ test('Octane roots keep create, insert, remove, and destroy state isolated', asy
     second_root.unmount()
 
     expect(second_ui.root.children).toEqual([])
-    expect([...second_ui.nodes]).toEqual([])
+    expect([...second_ui.nodes]).toEqual([second_ui.root])
 })
 
 test('Octane roots expose their own UI through useUI', async () => {
@@ -687,7 +687,7 @@ test('Octane unmounts Text with text content without retaining nodes', async () 
 
     expect(() => root.unmount()).not.toThrow()
     expect(ui.root.children).toEqual([])
-    expect([...ui.nodes]).toEqual([])
+    expect([...ui.nodes]).toEqual([ui.root])
     expect(text_node.ui).toBe(null)
     expect(text_node.element).toBe(null)
 })

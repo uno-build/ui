@@ -305,7 +305,7 @@ export default class RendererWebGPU extends Renderer {
         }
 
         if (rebuild_commands) {
-            const commands = createCommands([this.root_node, ...nodes], this.records)
+            const commands = createCommands(nodes, this.records)
             this.command_count = commands.length
             this.command_pool.fill(commands, writeCommandData)
         }
@@ -473,7 +473,6 @@ export default class RendererWebGPU extends Renderer {
         }
 
         if (full_rebuild) {
-            record_nodes.add(this.root_node)
             nodes.forEach((node) => record_nodes.add(node))
         } else {
             if (operations.layout_nodes.size > 0) {
@@ -483,7 +482,6 @@ export default class RendererWebGPU extends Renderer {
                         record_nodes.add(node)
                     }
                 }
-                addLayoutNode(this.root_node)
                 nodes.forEach(addLayoutNode)
             }
 
@@ -518,9 +516,6 @@ export default class RendererWebGPU extends Renderer {
         }
 
         if (operations.needUpdateOrder()) {
-            if (!this.records.has(this.root_node)) {
-                record_nodes.add(this.root_node)
-            }
             for (const node of nodes) {
                 if (!this.records.has(node)) {
                     record_nodes.add(node)

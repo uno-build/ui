@@ -177,7 +177,7 @@ export default class RendererDom extends Renderer {
 
         const scroll_nodes =
             operations.needUpdateLayout() || operations.needUpdateScrollMetrics()
-                ? [this.root_node, ...nodes]
+                ? nodes
                 : operations.scroll_nodes
         for (const node of scroll_nodes) {
             this.applyNodeScroll(node)
@@ -186,7 +186,7 @@ export default class RendererDom extends Renderer {
 
     public afterUpdate(nodes, operations) {
         const read_metrics = operations.needUpdateLayout() || operations.needUpdateScrollMetrics()
-        const scroll_nodes = read_metrics ? [this.root_node, ...nodes] : operations.scroll_nodes
+        const scroll_nodes = read_metrics ? nodes : operations.scroll_nodes
         for (const node of scroll_nodes) {
             if (this.readNodeScroll(node, read_metrics)) {
                 operations.scroll_nodes.add(node)

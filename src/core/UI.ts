@@ -41,6 +41,7 @@ export default class UI {
     protected async initialize() {
         const output = await this.renderer.init()
         this.root = this.create()
+        this.nodes.push(this.root)
         this.operations.add({ op: OPERATIONS.ADD, node: this.root, parent: null })
         return output
     }
@@ -93,7 +94,6 @@ export default class UI {
                     }
                     node.layout = layout
                 }
-                updateLayout(this.root)
                 this.nodes.forEach(updateLayout)
             }
 
@@ -183,7 +183,7 @@ export default class UI {
                 return this.nodes[i]
             }
         }
-        return isNodeAtPoint(this.root, x, y) ? this.root : null
+        return null
     }
 
     private addChild(parent, child, before_node) {
@@ -209,7 +209,7 @@ export default class UI {
             ancestor = ancestor.parent
         }
 
-        const parent_is_active = parent === this.root || this.nodes.includes(parent)
+        const parent_is_active = this.nodes.includes(parent)
         child.parent = parent
         parent.children.splice(child_index, 0, child)
         if (parent_is_active) {
