@@ -23,7 +23,7 @@ export default defineConfig({
     }],
     build: {
         target: 'esnext',
-        outDir: fileURLToPath(new URL('../../dist/benchmarks/webgpu', import.meta.url)),
+        outDir: fileURLToPath(new URL('../dist/benchmarks/webgpu', import.meta.url)),
         emptyOutDir: true,
         assetsInlineLimit: 0,
         rolldownOptions: {
