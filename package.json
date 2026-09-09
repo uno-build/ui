@@ -111,12 +111,11 @@
         "wgpu-matrix": "^3.4.2"
     },
     "scripts": {
-        "dev:layouts": "vite ./dev/layouts",
-        "examples": "vite ./examples --config ./examples/vite/typegpu.config.ts",
-        "examples:octane": "vite ./examples --config ./examples/vite/octane.config.ts",
-        "examples:solid": "vite ./examples --config ./examples/vite/solid.config.ts",
         "test": "playwright test tests",
         "test:layouts": "playwright test dev/layouts",
+        "examples": "vite ./examples --config ./examples/vite/typegpu.config.ts",
+        "examples:solid": "vite ./examples --config ./examples/vite/solid.config.ts",
+        "examples:octane": "vite ./examples --config ./examples/vite/octane.config.ts",
         "benchmark": "node ./scripts/benchmark-webgpu.mjs --browser",
         "benchmark:general": "node ./scripts/benchmark-webgpu.mjs --workload general",
         "benchmark:general:headed": "node ./scripts/benchmark-webgpu.mjs --workload general --headed",
