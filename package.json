@@ -134,7 +134,7 @@
         "check:js": "tsc -p tsconfig.check.json",
         "check:types": "node scripts/types.mjs --check",
         "build:types": "node scripts/types.mjs",
-        "prepack": "npm run check:types",
+        "typescript": "npm run check:js && npm run check:types && npm run test:types",
         "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"
     },
     "files": [

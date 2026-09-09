@@ -55,6 +55,14 @@ import Segmenter from './pretext/segmenter'
 
 const SUBTREE_STYLE_NAMES = new Set([STYLE.OPACITY.name, STYLE.OVERFLOWX.name, STYLE.OVERFLOWY.name])
 
+/**
+ * @typedef {object} RendererWebGPUOptions
+ * @property {import('./webgpu/ResourcesWebGPU').default} resources
+ * @property {typeof import('yoga-layout/load').loadYoga} loadYoga
+ * @property {'linear' | 'nearest'} [image_min_filter]
+ * @property {'linear' | 'nearest'} [image_mag_filter]
+ */
+
 export default class RendererWebGPU extends Renderer {
     /** @private */
     resources
@@ -114,6 +122,7 @@ export default class RendererWebGPU extends Renderer {
     /** @private */
     computeStyle = (style) => computeStyleValue(style, this)
 
+    /** @param {RendererWebGPUOptions} options */
     constructor({ resources, image_min_filter = 'linear', image_mag_filter = 'linear', loadYoga }) {
         super()
         this.resources = resources

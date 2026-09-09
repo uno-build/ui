@@ -1,10 +1,13 @@
+/**
+ * @typedef {object} RendererWebGPUOptions
+ * @property {import('./webgpu/ResourcesWebGPU').default} resources
+ * @property {typeof import('yoga-layout/load').loadYoga} loadYoga
+ * @property {'linear' | 'nearest'} [image_min_filter]
+ * @property {'linear' | 'nearest'} [image_mag_filter]
+ */
 export default class RendererWebGPU extends Renderer {
-    constructor({ resources, image_min_filter, image_mag_filter, loadYoga }: {
-        resources: any;
-        image_min_filter?: string | undefined;
-        image_mag_filter?: string | undefined;
-        loadYoga: any;
-    });
+    /** @param {RendererWebGPUOptions} options */
+    constructor({ resources, image_min_filter, image_mag_filter, loadYoga }: RendererWebGPUOptions);
     /** @private */
     private resources;
     /** @private */
@@ -62,7 +65,7 @@ export default class RendererWebGPU extends Renderer {
     private grapheme_segmenter;
     /** @private */
     private computeStyle;
-    loadYoga: any;
+    loadYoga: typeof import("yoga-layout/load").loadYoga;
     init(): Promise<{
         adapter: any;
         device: any;
@@ -132,4 +135,10 @@ export default class RendererWebGPU extends Renderer {
     /** @private */
     private updateBuffers;
 }
+export type RendererWebGPUOptions = {
+    resources: import("./webgpu/ResourcesWebGPU").default;
+    loadYoga: typeof import("yoga-layout/load").loadYoga;
+    image_min_filter?: "linear" | "nearest" | undefined;
+    image_mag_filter?: "linear" | "nearest" | undefined;
+};
 import Renderer from '../core/Renderer';

@@ -7,6 +7,7 @@ import UIThree from 'uno-ui/UIThree'
 import UIBabylon from 'uno-ui/UIBabylon'
 import UIBabylonLite from 'uno-ui/UIBabylonLite'
 import UIPlayCanvas from 'uno-ui/UIPlayCanvas'
+import { loadYoga } from 'yoga-layout/load'
 import { compilerConfig as octane_config } from 'uno-ui/octane/config'
 import { compilerConfig as solid_config } from 'uno-ui/solid/config'
 
@@ -40,7 +41,21 @@ gpu_resources.registerImage('icon', {})
 gpu_resources.disposeImage('icon')
 gpu_resources.registerFont('font', {}, {})
 gpu_resources.disposeFont('font')
-const gpu = await UIWebGPU.create({ resources: gpu_resources, defined_events: DEFINED_EVENTS })
+const gpu = await UIWebGPU.create({ resources: gpu_resources, loadYoga, defined_events: DEFINED_EVENTS })
+await UIWebGPU.create({
+    resources: gpu_resources,
+    loadYoga,
+    image_min_filter: 'nearest',
+    image_mag_filter: 'linear',
+    defined_events: [({ ui }) => {
+        const gpu_ui: UIWebGPU = ui
+        return {
+            types: [EVENT.CLICK],
+            destroy() { gpu_ui.events.emit('cleanup') },
+            destroyNode(node) { node.blur() },
+        }
+    }, ({ ui }) => ({ types: [], destroy() { ui.events.emit('cleanup') } })],
+})
 gpu.ui.draw({ submit: false })
 await UIThree.create({ resources: gpu_resources })
 await UIBabylon.create({ resources: gpu_resources })
@@ -77,3 +92,22 @@ resources.registerImage(42, {})
 gpu_resources.disposeImage(42)
 // @ts-expect-error Existing text values are strings.
 node.text(42)
+
+// @ts-expect-error WebGPU resources are required.
+UIWebGPU.create({ loadYoga })
+// @ts-expect-error Yoga must be supplied by the consumer.
+UIWebGPU.create({ resources: gpu_resources })
+// @ts-expect-error DOM resources cannot supply WebGPU managers.
+UIWebGPU.create({ resources, loadYoga })
+// @ts-expect-error Yoga loaders must return the Yoga API.
+UIWebGPU.create({ resources: gpu_resources, loadYoga: async () => ({}) })
+// @ts-expect-error Image filters accept only supported values.
+UIWebGPU.create({ resources: gpu_resources, loadYoga, image_min_filter: 'invalid' })
+// @ts-expect-error Magnification filters accept only supported values.
+UIWebGPU.create({ resources: gpu_resources, loadYoga, image_mag_filter: 'invalid' })
+// @ts-expect-error Event controllers require cleanup.
+UIWebGPU.create({ resources: gpu_resources, loadYoga, defined_events: [() => ({ types: [] })] })
+// @ts-expect-error Unknown options should not be silently accepted.
+UIWebGPU.create({ resources: gpu_resources, loadYoga, image_filter: 'linear' })
+// @ts-expect-error WebGPU constructors remain protected.
+new UIWebGPU({ resources: gpu_resources, loadYoga })
