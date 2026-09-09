@@ -74,6 +74,10 @@ if (params.get('automation') === '1') {
         const mode = (form.elements.namedItem('mode') as HTMLSelectElement).value
         ;(form.elements.namedItem('duration') as HTMLInputElement).value = String(normalizeOptions({ mode }).duration)
     })
+    form.elements.namedItem('workload')!.addEventListener('change', () => {
+        const workload = (form.elements.namedItem('workload') as HTMLSelectElement).value
+        ;(form.elements.namedItem('nodes') as HTMLInputElement).value = String(normalizeOptions({ workload }).nodes)
+    })
     form.addEventListener('submit', async (event) => {
         event.preventDefault()
         const input = Object.fromEntries(new FormData(form))

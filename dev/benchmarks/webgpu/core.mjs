@@ -1,13 +1,17 @@
 export const BENCHMARK_VERSION = 1
 export const SAMPLE_LIMIT = 7200
 export const CAPACITY_STEPS = [1000, 2500, 5000, 10000, 20000, 50000]
+export const WORKLOAD_NAMES = ['general', 'box-shadow']
 
 export function normalizeOptions(input = {}) {
     const mode = input.mode ?? 'performance'
+    const workload = input.workload ?? 'general'
     if (!['performance', 'capacity', 'stability'].includes(mode)) throw new Error(`Unknown mode: ${mode}`)
+    if (!WORKLOAD_NAMES.includes(workload)) throw new Error(`Unknown workload: ${workload}`)
     const options = {
         mode,
-        nodes: 5000,
+        workload,
+        nodes: workload === 'box-shadow' ? 400 : 5000,
         duration: mode === 'stability' ? 900 : mode === 'capacity' ? 30 : 60,
         warmup: 10,
         seed: 42,

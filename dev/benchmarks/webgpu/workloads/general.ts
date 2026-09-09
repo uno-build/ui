@@ -1,5 +1,5 @@
-import { createRandom } from './core.mjs'
-import { FONT_NAMES, TEXT_CORPUS, verifyGlyphs } from './coverage'
+import { createRandom } from '../core.mjs'
+import { FONT_NAMES, TEXT_CORPUS, verifyGlyphs } from '../coverage'
 
 const CARD_NODES = 8
 const COLORS = ['#367e9d', '#6277b9', '#337f75', '#986b82', '#967744']
@@ -273,6 +273,7 @@ export function createScene({ ui, resources, image_sources, nodes: target_nodes,
     setPopulation(target)
 
     return {
+        enterPhase() {},
         tick(tick_index, phase) {
             last_tick = tick_index
             if (phase === 'paint' || phase === 'mixed') updatePaint(tick_index)

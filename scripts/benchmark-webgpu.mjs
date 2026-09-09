@@ -10,7 +10,7 @@ const SAMPLE_LIMIT = 7200
 const MEMORY_KEYS = ['jsHeap', 'jsUsed', 'jsExternal', 'jsEmbedder', 'memory']
 const NUMBER_OPTIONS = new Set(['nodes', 'duration', 'warmup', 'seed', 'repeats', 'target-fps', 'width', 'height', 'dpr'])
 const BOOLEAN_OPTIONS = new Set(['browser', 'headed', 'gpu-timing', 'check', 'build-only', 'help'])
-const STRING_OPTIONS = new Set(['mode', 'output', 'compare'])
+const STRING_OPTIONS = new Set(['mode', 'workload', 'output', 'compare'])
 const execFileAsync = promisify(execFile)
 
 export function parseArgs(arguments_list) {
@@ -207,10 +207,8 @@ async function runBrowser(url, options, flags, repeat, cancellation) {
 function printHelp() {
     console.log(`Raw RendererWebGPU benchmark
 
-  npm run benchmark:webgpu -- [options]
-  npm run benchmark:webgpu:browser -- [options]
-
   --mode performance|capacity|stability
+  --workload general|box-shadow
   --nodes N --duration SECONDS --warmup SECONDS --seed N --repeats N
   --target-fps N --width N --height N --dpr N
   --headed       Show automated Chromium with native screen DPR unless --dpr is set

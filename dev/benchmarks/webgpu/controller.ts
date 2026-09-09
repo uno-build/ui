@@ -2,7 +2,7 @@ import UIWebGPU from '../../../src/ui/UIWebGPU'
 import ResourcesWebGPU from '../../../src/renderer/webgpu/ResourcesWebGPU'
 import { loadYoga } from 'yoga-layout/load'
 import { loadBenchmarkAssets } from './assets'
-import { createScene } from './scene'
+import { WORKLOADS } from './workloads'
 import { createCoverage } from './coverage'
 import { createRendererMetrics, readBrowserMemory } from './metrics'
 import { createGpuTiming } from './gpu'
@@ -33,6 +33,7 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
     async function execute(input, check_only = false) {
         if (active) throw new Error('A benchmark is already running')
         const options = normalizeOptions(input)
+        const workload = WORKLOADS[options.workload as keyof typeof WORKLOADS]
         active = true
         stopping = false
         status = { status: 'initializing', phase: 'assets', measured: false, elapsed_ms: 0, cycle: null }
@@ -79,7 +80,7 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
         }
         function newScene(nodes) {
             setViewport(options.width, options.height)
-            return createScene({ ui, resources, nodes, seed: options.seed, width: options.width, height: options.height, setViewport, image_sources: assets.image_sources })
+            return workload.createScene({ ui, resources, nodes, seed: options.seed, width: options.width, height: options.height, setViewport, image_sources: assets.image_sources })
         }
         function assertFixedResources() {
             const snapshot = metrics.snapshot()
@@ -123,6 +124,7 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
             status = { ...status, status: 'running', phase: name, measured, elapsed_ms: measured_ms }
             run.status = 'running'
             onVisibility()
+            scene.enterPhase(phase)
             const phase_result: any = { name, nodes: options.nodes }
             if (measured) run.phases.push(phase_result)
             try {
@@ -192,12 +194,12 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
             scene = newScene(256)
             ui.update()
             scene.verify()
-            scene.tick(10, 'structure')
-            ui.update()
-            scene.verify()
-            scene.tick(50, 'mixed')
-            ui.update()
-            scene.verify()
+            for (const [tick_index, phase] of workload.preflight_phases) {
+                scene.enterPhase(phase)
+                scene.tick(tick_index, phase)
+                ui.update()
+                scene.verify()
+            }
             scene.clearContent()
             ui.update()
             const base = scene.verify()
@@ -272,7 +274,7 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
 
             if (options.mode === 'performance') {
                 await prepare(options.nodes)
-                for (const [name, fraction] of [['paint', 1 / 6], ['text', 1 / 6], ['structure', 1 / 6], ['mixed', 1 / 2]] as const) {
+                for (const [name, fraction] of workload.performance_phases) {
                     if (stopping) break
                     await exercise(name, options.duration * 1000 * fraction, name, true)
                 }

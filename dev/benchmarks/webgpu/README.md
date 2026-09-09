@@ -1,46 +1,50 @@
-# Raw WebGPU benchmark
+# WebGPU benchmarks
 
-A shared scene for manual browser use and Playwright, using only `UIWebGPU` and `ResourcesWebGPU`.
+A shared runner for manual and automated workloads using only `UIWebGPU` and `ResourcesWebGPU`.
 
 ## Running
 
 ```sh
 # Build and serve the manual page; open the printed URL
-node ./scripts/benchmark-webgpu.mjs --browser
+npm run benchmark:webgpu:browser
 
 # Show the browser window while retaining CDP and RSS metrics
-node ./scripts/benchmark-webgpu.mjs --headed
+npm run benchmark:webgpu -- --headed
 
 # Run headless and export results
-node ./scripts/benchmark-webgpu.mjs --mode performance --nodes 5000 --seed 42 --repeats 5
+npm run benchmark:webgpu -- --mode performance --nodes 5000 --seed 42 --repeats 5
 
 # Find the highest load step that meets the performance budget
-node ./scripts/benchmark-webgpu.mjs --mode capacity
+npm run benchmark:webgpu -- --mode capacity
 
 # Run mount/update/destroy cycles for 15 minutes
-node ./scripts/benchmark-webgpu.mjs --mode stability --duration 900
+npm run benchmark:webgpu -- --mode stability --duration 900
 
 # Optional GPU diagnostics; never block each frame waiting for results
-node ./scripts/benchmark-webgpu.mjs --gpu-timing
+npm run benchmark:webgpu -- --gpu-timing
 
 # Run coverage and lifecycle checks in Chromium
-node ./scripts/benchmark-webgpu.mjs --check
+npm run benchmark:webgpu -- --check
 
 # Compare with an earlier report from the same scenario and environment
-node ./scripts/benchmark-webgpu.mjs --compare tests/.results/webgpu/DATE/results.json
+npm run benchmark:webgpu -- --compare tests/.results/webgpu/DATE/results.json
+
+# Run the box-shadow workload with the same runner
+npm run benchmark:box-shadow -- --repeats 5
+npm run benchmark:box-shadow:browser
 ```
 
-## Workload
+## Workloads
 
-Defaults: 5,000 live nodes (including the root and shell), seed 42, a 1280×720 canvas, a 60 FPS target, and one repetition. Headless runs default to DPR 1; `--headed` uses the screen's native DPR unless `--dpr` is explicitly set. The manual page defaults to `window.devicePixelRatio` and is configured through its controls, without URL options. Automated run options: `--nodes`, `--seed`, `--width`, `--height`, `--dpr`, `--target-fps`, `--duration`, `--warmup`, and `--repeats`.
+Select a workload with `--workload general|box-shadow` or from the manual page. `general` is the default with 5,000 live nodes; `box-shadow` defaults to 400. Both use a 1280×720 canvas, a 60 FPS target, and one repetition; the general workload is seeded. Headless runs default to DPR 1; `--headed` uses the screen's native DPR unless `--dpr` is explicitly set. The manual page defaults to `window.devicePixelRatio`. Automated run options: `--nodes`, `--seed`, `--width`, `--height`, `--dpr`, `--target-fps`, `--duration`, `--warmup`, and `--repeats`.
 
 Fonts and Images are loaded before measurement. Resources are not replaced, registered, or removed during the test. Each node retains its image/font until it is destroyed.
 
-- **performance:** 10 s of warmup and 60 s of measurement. Paint, text, and structure each occupy 1/6 of the duration; the mixed workload occupies the remaining half. Initial creation and warmup do not alter the measured scene's seed.
+- **performance:** 10 s of warmup and 60 s of measurement. The general workload measures paint, text, structure, and mixed phases. Box shadow measures unset, small, large, and mixed shadow phases for equal portions of the duration.
 - **capacity:** steps of 1,000, 2,500, 5,000, 10,000, 20,000, and 50,000 nodes. Each step has 10 s of warmup and 30 s of measured mixed workload. A step passes with average FPS ≥95% of the target, p95 frame interval ≤1.5 times the frame budget, and pending-work delay <200 ms during the final 10 s. Execution stops at the first failure. `--duration` and `--warmup` apply to each step; `--nodes` does not change the steps.
 - **stability:** 900 s in 30 s cycles: mount/update for 29 s, then return to the shell for 1 s of recovery. Resources remain fixed between cycles. Destruction is timed separately, and checkpoints show memory/occupancy at the same point in each cycle without forcing GC. Synchronous work may increase the total wall-clock duration.
 
-Actions are scheduled every 100 ms. Each frame processes at most one pending interval, without reducing the offered workload when FPS drops. `scheduled`, `completed`, and `pending` count these intervals; `actions` counts scene operations. The rates of 5% of texts/styles per interval and 20% of subtrees per second are approximate; selection may pick the same node more than once. Half of a list is replaced every five seconds. The scene exercises reparenting, nested scrolling, overlays, and a fixed sequence of viewport changes.
+The general workload schedules actions every 100 ms. Each frame processes at most one pending interval, without reducing the offered workload when FPS drops. `scheduled`, `completed`, and `pending` count these intervals; `actions` counts scene operations. The rates of 5% of texts/styles per interval and 20% of subtrees per second are approximate; selection may pick the same node more than once. Half of a list is replaced every five seconds. The scene exercises reparenting, nested scrolling, overlays, and a fixed sequence of viewport changes. The box-shadow workload keeps each phase static after applying its shadow configuration.
 
 The manifest contains 25 cases and is checked against `FEATURES` and `STYLE`. Preflight checks verify glyphs, applied styles, records, and commands for all eight features. Cases include shadow/stroke, border, background, sizing, flex, and clipping variants. They are verified before measurement, and a new property without a case causes an explicit failure. These checks do not replace visual review.
 
@@ -63,11 +67,9 @@ A tab becoming hidden during measurement invalidates and stops the run. JS/WebGP
 ## Verification without a browser
 
 ```sh
-# Node 24: pure tests, including core/Yoga with a simulated GPU
-npm run test:benchmark:webgpu
-
 # Build and check the dependency graph; does not start a server
 npm run benchmark:webgpu -- --build-only
+npm run benchmark:box-shadow -- --build-only
 ```
 
-Tests cover scheduling, statistics, telemetry limits, CLI/RSS, fixed resources, node invariants, renderer commands, simulated GPU readbacks, cancellation, restarting, and cleanup after errors. Tests with Chromium and a real GPU can be run using the commands above when requested; visual validation is manual.
+Browser and GPU validation remains manual.
