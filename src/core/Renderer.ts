@@ -31,7 +31,7 @@ export default abstract class Renderer {
     public abstract createElement(node)
     public abstract getChildIndex(node)
     public abstract getLayout(node)
-    public abstract detachChild(parent, node)
+    public abstract detachChild(parent, node, release_subtree?: boolean)
     public abstract destroyNode(node)
 
     public abstract updateStyle(node, style)

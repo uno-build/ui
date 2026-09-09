@@ -272,7 +272,7 @@ export default class UI {
 
     private destroySubtree(node) {
         for (const child of [...node.children]) {
-            this.renderer.detachChild(node, child)
+            this.renderer.detachChild(node, child, false)
             child.parent = null
             this.destroySubtree(child)
         }

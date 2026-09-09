@@ -275,9 +275,11 @@ export default class RendererWebGPU extends Renderer {
         this.layouter.insertChild(parent, node, child_index)
     }
 
-    public detachChild(parent, node) {
+    public detachChild(parent, node, release_subtree = true) {
         this.layouter.detachChild(parent, node)
-        this.releaseRecord(node)
+        if (release_subtree) {
+            this.releaseSubtreeRecords(node)
+        }
     }
 
     public destroyNode(node) {
@@ -649,9 +651,12 @@ export default class RendererWebGPU extends Renderer {
             this.releaseText(record)
             this.records.delete(node)
         }
+    }
 
+    private releaseSubtreeRecords(node) {
+        this.releaseRecord(node)
         for (const child of node.children) {
-            this.releaseRecord(child)
+            this.releaseSubtreeRecords(child)
         }
     }
 

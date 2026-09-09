@@ -694,6 +694,66 @@ test('RendererDom keeps detached elements alive until destroyNode', async () => 
     }
 })
 
+test('UI with RendererDom destroys a subtree and preserves its parent, sibling and external root', async () => {
+    const original_document = (globalThis as any).document
+    const canvas = createDomElement()
+    const external_element = createDomElement()
+    canvas.appendChild(external_element)
+    ;(globalThis as any).document = {
+        createElement: () => createDomElement(),
+        fonts: createFontSet(),
+    }
+    const resources = ResourcesDom.create({ canvas })
+    const renderer = new RendererDom({ resources })
+    const ui = await TestUI.create({ renderer, resources })
+
+    try {
+        const parent = ui.create()
+        const subtree = ui.create()
+        const child = ui.create()
+        const grandchild = ui.create()
+        const sibling = ui.create()
+        ui.root.add(parent)
+        parent.add(subtree)
+        subtree.add(child)
+        child.add(grandchild)
+        parent.add(sibling)
+        grandchild.text('pending text')
+        const destroyed_elements = [subtree, child, grandchild].map((node) => [node, node.element])
+
+        subtree.destroy()
+
+        expect([...ui.nodes]).toEqual([ui.root, parent, sibling])
+        expect([...(ui as any).nodes_created]).toEqual([ui.root, parent, sibling])
+        expect(canvas.children).toEqual([parent.element, external_element])
+        expect(parent.children).toEqual([sibling])
+        expect(parent.element.children).toEqual([sibling.element])
+        expect(sibling.parent).toBe(parent)
+        expect(sibling.path).toEqual([0, 0])
+        expect(external_element.removed).toBe(false)
+        expect((ui as any).operations.pending.some(({ op }) => op === OPERATIONS.TEXT)).toBe(false)
+
+        for (const node of [ui.root, parent, sibling]) {
+            expect((renderer as any).elements.get(node)).toBe(node.element)
+            expect((renderer as any).element_nodes.get(node.element)).toBe(node)
+            expect(node.element.removed).toBe(false)
+        }
+        for (const [node, element] of destroyed_elements) {
+            expect(element.removed).toBe(true)
+            expect(element.children).toEqual([])
+            expect((renderer as any).elements.has(node)).toBe(false)
+            expect((renderer as any).element_nodes.has(element)).toBe(false)
+            expect(node.ui).toBe(null)
+            expect(node.parent).toBe(null)
+            expect(node.children).toEqual([])
+            expect(node.element).toBe(null)
+        }
+    } finally {
+        ui.destroy()
+        ;(globalThis as any).document = original_document
+    }
+})
+
 test('RendererDom layout remains in content coordinates while the parent is scrolled', () => {
     const original_get_computed_style = globalThis.getComputedStyle
     const canvas = {
