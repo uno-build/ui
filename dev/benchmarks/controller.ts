@@ -1,12 +1,21 @@
-import UIWebGPU from '../../../src/ui/UIWebGPU'
-import ResourcesWebGPU from '../../../src/renderer/webgpu/ResourcesWebGPU'
+import UIWebGPU from '../../src/ui/UIWebGPU'
+import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
 import { loadYoga } from 'yoga-layout/load'
 import { loadBenchmarkAssets } from './assets'
 import { WORKLOADS } from './workloads'
 import { createCoverage } from './coverage'
 import { createRendererMetrics, readBrowserMemory } from './metrics'
 import { createGpuTiming } from './gpu'
-import { BENCHMARK_VERSION, CAPACITY_STEPS, createPhaseStats, createRange, createSampleBuffer, createScheduler, evaluateCapacity, normalizeOptions } from './core.mjs'
+import {
+    BENCHMARK_VERSION,
+    CAPACITY_STEPS,
+    createPhaseStats,
+    createRange,
+    createSampleBuffer,
+    createScheduler,
+    evaluateCapacity,
+    normalizeOptions,
+} from './core.mjs'
 
 const MEMORY_NAMES = ['jsHeap', 'jsUsed', 'jsExternal', 'jsEmbedder', 'memory']
 
@@ -25,8 +34,15 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
     function nextFrame(): Promise<number | null> {
         if (stopping) return Promise.resolve(null)
         return new Promise((resolve) => {
-            const frame_id = requestAnimationFrame((time) => { wake = null; resolve(time) })
-            wake = () => { cancelAnimationFrame(frame_id); wake = null; resolve(null) }
+            const frame_id = requestAnimationFrame((time) => {
+                wake = null
+                resolve(time)
+            })
+            wake = () => {
+                cancelAnimationFrame(frame_id)
+                wake = null
+                resolve(null)
+            }
         })
     }
 
@@ -38,9 +54,18 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
         stopping = false
         status = { status: 'initializing', phase: 'assets', measured: false, elapsed_ms: 0, cycle: null }
         run = {
-            version: BENCHMARK_VERSION, options, status: 'initializing', valid: true,
-            started_at: new Date().toISOString(), environment: {}, phases: [], samples: [], checkpoints: [], errors: [],
-            checks: {}, invalid_reasons: [],
+            version: BENCHMARK_VERSION,
+            options,
+            status: 'initializing',
+            valid: true,
+            started_at: new Date().toISOString(),
+            environment: {},
+            phases: [],
+            samples: [],
+            checkpoints: [],
+            errors: [],
+            checks: {},
+            invalid_reasons: [],
         }
         const samples = createSampleBuffer()
         const memory_ranges = Object.fromEntries(MEMORY_NAMES.map((name) => [name, createRange()]))
@@ -57,13 +82,23 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
         let atlas_signature
 
         function fail(error) {
-            if (run.errors.length < 100) run.errors.push({ message: error instanceof Error ? error.message : String(error), phase: status.phase })
+            if (run.errors.length < 100)
+                run.errors.push({
+                    message: error instanceof Error ? error.message : String(error),
+                    phase: status.phase,
+                })
             run.valid = false
             stop()
         }
-        function onPageError(event) { fail(event.error ?? event.message) }
-        function onRejection(event) { fail(event.reason) }
-        function onGpuError(event) { fail(event.error) }
+        function onPageError(event) {
+            fail(event.error ?? event.message)
+        }
+        function onRejection(event) {
+            fail(event.reason)
+        }
+        function onGpuError(event) {
+            fail(event.error)
+        }
         function onVisibility() {
             if (status.measured && document.visibilityState !== 'visible') {
                 run.valid = false
@@ -80,11 +115,21 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
         }
         function newScene(nodes) {
             setViewport(options.width, options.height)
-            return workload.createScene({ ui, resources, nodes, seed: options.seed, width: options.width, height: options.height, setViewport, image_sources: assets.image_sources })
+            return workload.createScene({
+                ui,
+                resources,
+                nodes,
+                seed: options.seed,
+                width: options.width,
+                height: options.height,
+                setViewport,
+                image_sources: assets.image_sources,
+            })
         }
         function assertFixedResources() {
             const snapshot = metrics.snapshot()
-            if (JSON.stringify(snapshot.atlas) !== atlas_signature) throw new Error('Registered resources or atlas allocation changed during the benchmark')
+            if (JSON.stringify(snapshot.atlas) !== atlas_signature)
+                throw new Error('Registered resources or atlas allocation changed during the benchmark')
             return snapshot
         }
         function collectSample(phase, elapsed_ms, workload, summary, checkpoint = false) {
@@ -93,16 +138,29 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
             if (!checkpoint) for (const name of MEMORY_NAMES) memory_ranges[name].add(memory[name])
             const state = scene.getState()
             const sample = {
-                time_ms: measured_ms + elapsed_ms, phase, cycle: status.cycle, checkpoint,
-                live_nodes: state.live_nodes, created: state.created, destroyed: state.destroyed, actions: state.actions,
-                viewport_width: state.viewport.width, viewport_height: state.viewport.height,
-                fps: summary?.fps.average ?? null, frame_p95_ms: summary?.frame_ms.p95 ?? null,
+                time_ms: measured_ms + elapsed_ms,
+                phase,
+                cycle: status.cycle,
+                checkpoint,
+                live_nodes: state.live_nodes,
+                created: state.created,
+                destroyed: state.destroyed,
+                actions: state.actions,
+                viewport_width: state.viewport.width,
+                viewport_height: state.viewport.height,
+                fps: summary?.fps.average ?? null,
+                frame_p95_ms: summary?.frame_ms.p95 ?? null,
                 uploaded_bytes_average: summary?.uploads.average ?? null,
                 pool_growth_frames: summary?.pool_growth_frames ?? 0,
                 ...workload,
-                records: renderer.records, panels: renderer.panels, glyphs: renderer.glyphs, commands: renderer.commands,
-                gpu_allocated_bytes: renderer.gpu_allocated_bytes, cpu_pool_bytes: renderer.cpu_pool_bytes,
-                memory_source: memory.source, ...Object.fromEntries(MEMORY_NAMES.map((name) => [name, memory[name]])),
+                records: renderer.records,
+                panels: renderer.panels,
+                glyphs: renderer.glyphs,
+                commands: renderer.commands,
+                gpu_allocated_bytes: renderer.gpu_allocated_bytes,
+                cpu_pool_bytes: renderer.cpu_pool_bytes,
+                memory_source: memory.source,
+                ...Object.fromEntries(MEMORY_NAMES.map((name) => [name, memory[name]])),
             }
             samples.add(sample)
             status.last_sample = sample
@@ -138,7 +196,10 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
                     const tick_index = scheduler.take(due_time)
                     metrics.beginFrame()
                     const mutation_start = performance.now()
-                    if (first_frame) { onStart(); first_frame = false }
+                    if (first_frame) {
+                        onStart()
+                        first_frame = false
+                    }
                     if (tick_index !== null) scene.tick(tick_index, phase)
                     const update_start = performance.now()
                     ui.update()
@@ -148,8 +209,16 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
                     const draw_end = performance.now()
                     const counters = metrics.endFrame()
                     const workload = scheduler.snapshot(due_time)
-                    if (elapsed_ms >= duration_ms - 10000) tail_max_delay_ms = Math.max(tail_max_delay_ms, workload.delay_ms)
-                    stats.record({ elapsed_ms, frame_ms, mutations_ms: update_start - mutation_start, update_ms: draw_start - update_start, draw_ms: draw_end - draw_start, ...counters })
+                    if (elapsed_ms >= duration_ms - 10000)
+                        tail_max_delay_ms = Math.max(tail_max_delay_ms, workload.delay_ms)
+                    stats.record({
+                        elapsed_ms,
+                        frame_ms,
+                        mutations_ms: update_start - mutation_start,
+                        update_ms: draw_start - update_start,
+                        draw_ms: draw_end - draw_start,
+                        ...counters,
+                    })
                     status.elapsed_ms = measured_ms + (measured ? elapsed_ms : 0)
                     if (measured && elapsed_ms >= next_sample_ms) {
                         const sampling_start = performance.now()
@@ -164,8 +233,15 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
                 if (measured) {
                     const after = scene.getState()
                     Object.assign(phase_result, stats.summary(), {
-                        nodes: after.live_nodes, target_nodes: options.nodes, tail_max_delay_ms,
-                        workload: { ...scheduler.snapshot(Math.min(elapsed_ms, duration_ms)), created: after.created - before.created, destroyed: after.destroyed - before.destroyed, actions: after.actions - before.actions },
+                        nodes: after.live_nodes,
+                        target_nodes: options.nodes,
+                        tail_max_delay_ms,
+                        workload: {
+                            ...scheduler.snapshot(Math.min(elapsed_ms, duration_ms)),
+                            created: after.created - before.created,
+                            destroyed: after.destroyed - before.destroyed,
+                            actions: after.actions - before.actions,
+                        },
                         memory: Object.fromEntries(MEMORY_NAMES.map((name) => [name, memory[name].summary()])),
                         renderer: metrics.snapshot(),
                     })
@@ -183,7 +259,13 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
             await device.queue.onSubmittedWorkDone()
             const coverage = fixtures.verify()
             const commands = metrics.verifyCoverage(fixtures.cases)
-            if (!commands.passed) throw new Error(`Renderer coverage failed: ${commands.cases.filter((item) => !item.passed).map((item) => `${item.id}: ${item.failures.join(', ')}`).join('; ')}`)
+            if (!commands.passed)
+                throw new Error(
+                    `Renderer coverage failed: ${commands.cases
+                        .filter((item) => !item.passed)
+                        .map((item) => `${item.id}: ${item.failures.join(', ')}`)
+                        .join('; ')}`,
+                )
             ui.setDevicePixelRatio(Math.min(3, options.dpr * 2))
             ui.update()
             ui.setDevicePixelRatio(options.dpr)
@@ -204,16 +286,25 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
             ui.update()
             const base = scene.verify()
             const occupancy = metrics.snapshot()
-            if (occupancy.records !== scene.getState().live_nodes) throw new Error('Destroyed nodes remain in renderer records')
+            if (occupancy.records !== scene.getState().live_nodes)
+                throw new Error('Destroyed nodes remain in renderer records')
             ui.update()
             metrics.beginFrame()
             ui.update()
             const idle = metrics.endFrame()
-            if (idle.uploaded_bytes !== 0 || idle.renderer_updates !== 0) throw new Error('An unchanged frame performed renderer work')
+            if (idle.uploaded_bytes !== 0 || idle.renderer_updates !== 0)
+                throw new Error('An unchanged frame performed renderer work')
             scene.destroy()
             scene = null
             ui.update()
-            return { coverage, commands, lifecycle: base, idle, dpr: 'passed', fixed_resources: assertFixedResources().atlas }
+            return {
+                coverage,
+                commands,
+                lifecycle: base,
+                idle,
+                dpr: 'passed',
+                fixed_resources: assertFixedResources().atlas,
+            }
         }
 
         async function prepare(nodes) {
@@ -234,17 +325,31 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
         window.addEventListener('unhandledrejection', onRejection)
         document.addEventListener('visibilitychange', onVisibility)
         try {
-            if (!navigator.gpu) throw new Error('WebGPU is unavailable; use a WebGPU-capable browser on localhost or HTTPS')
+            if (!navigator.gpu)
+                throw new Error('WebGPU is unavailable; use a WebGPU-capable browser on localhost or HTTPS')
             const adapter = await navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
             if (!adapter) throw new Error('No WebGPU adapter is available')
             const info = adapter.info
-            const software = info.isFallbackAdapter || /swiftshader|llvmpipe|software|lavapipe/i.test(`${info.vendor} ${info.device} ${info.description}`)
+            const software =
+                info.isFallbackAdapter ||
+                /swiftshader|llvmpipe|software|lavapipe/i.test(`${info.vendor} ${info.device} ${info.description}`)
             run.environment = {
-                user_agent: navigator.userAgent, platform: navigator.platform, hardware_concurrency: navigator.hardwareConcurrency,
-                gpu: { vendor: info.vendor, architecture: info.architecture, device: info.device, description: info.description, fallback: info.isFallbackAdapter ?? null },
+                user_agent: navigator.userAgent,
+                platform: navigator.platform,
+                hardware_concurrency: navigator.hardwareConcurrency,
+                gpu: {
+                    vendor: info.vendor,
+                    architecture: info.architecture,
+                    device: info.device,
+                    description: info.description,
+                    fallback: info.isFallbackAdapter ?? null,
+                },
                 hardware_status: software ? 'software' : 'not_reported_as_software',
-                width: options.width, height: options.height, dpr: options.dpr,
-                gpu_timing_requested: options.gpu_timing, memory_source: 'performance.memory (when exposed)',
+                width: options.width,
+                height: options.height,
+                dpr: options.dpr,
+                gpu_timing_requested: options.gpu_timing,
+                memory_source: 'performance.memory (when exposed)',
                 execution: { mode: 'manual', memory_source: 'browser' },
             }
             if (software) {
@@ -252,11 +357,14 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
                 run.invalid_reasons.push('Software GPU adapter; unsuitable for hardware GPU comparisons')
             }
             device = await adapter.requestDevice({
-                requiredFeatures: options.gpu_timing && adapter.features.has('timestamp-query') ? ['timestamp-query'] : [],
+                requiredFeatures:
+                    options.gpu_timing && adapter.features.has('timestamp-query') ? ['timestamp-query'] : [],
                 requiredLimits: { maxStorageBuffersInVertexStage: 2 },
             })
             device.addEventListener('uncapturederror', onGpuError)
-            device.lost.then((lost) => { if (!intentional_device_close) fail(new Error(`WebGPU device lost: ${lost.message}`)) })
+            device.lost.then((lost) => {
+                if (!intentional_device_close) fail(new Error(`WebGPU device lost: ${lost.message}`))
+            })
             resources = await ResourcesWebGPU.create({ canvas, adapter, device })
             assets = await loadBenchmarkAssets()
             assets.register(resources)
@@ -293,7 +401,10 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
                     const outcome = evaluateCapacity(phase, options.target_fps)
                     phase.capacity_pass = outcome.pass
                     run.capacity.steps.push({ nodes, actual_nodes: phase.nodes, ...outcome })
-                    if (!outcome.pass) { run.capacity.limit_found = true; break }
+                    if (!outcome.pass) {
+                        run.capacity.limit_found = true
+                        break
+                    }
                     run.capacity.last_passing_nodes = nodes
                 }
             } else {
@@ -308,7 +419,9 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
                     status.cycle = ++cycle
                     const cycle_ms = Math.min(30000, remaining_ms)
                     const recovery_ms = Math.min(1000, cycle_ms / 10)
-                    await exercise(`cycle-${cycle}`, cycle_ms - recovery_ms, 'mixed', true, () => scene.setPopulation(options.nodes))
+                    await exercise(`cycle-${cycle}`, cycle_ms - recovery_ms, 'mixed', true, () =>
+                        scene.setPopulation(options.nodes),
+                    )
                     if (stopping) break
                     const destroy_start = performance.now()
                     scene.clearContent()
@@ -325,7 +438,8 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
                     }
                     if (stopping) break
                     scene.verify()
-                    if (scene.getState().live_nodes !== baseline_nodes) throw new Error('Cycle did not return to the same base node count')
+                    if (scene.getState().live_nodes !== baseline_nodes)
+                        throw new Error('Cycle did not return to the same base node count')
                     const checkpoint = collectSample('recovery', 0, {}, null, true)
                     run.checkpoints.push({ cycle, time_ms: measured_ms, destroy_ms, ...checkpoint })
                     remaining_ms -= cycle_ms
@@ -333,7 +447,16 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
                 const checkpoints = run.checkpoints
                 const first = checkpoints[0]
                 const last = checkpoints.at(-1)
-                run.stability = { cycles: checkpoints.length, baseline_nodes, js_used_change: first && last && first.memory.jsUsed !== null && last.memory.jsUsed !== null ? last.memory.jsUsed - first.memory.jsUsed : null, interpretation: 'Compare equivalent recovery checkpoints; retained pool capacity alone is not a leak.' }
+                run.stability = {
+                    cycles: checkpoints.length,
+                    baseline_nodes,
+                    js_used_change:
+                        first && last && first.memory.jsUsed !== null && last.memory.jsUsed !== null
+                            ? last.memory.jsUsed - first.memory.jsUsed
+                            : null,
+                    interpretation:
+                        'Compare equivalent recovery checkpoints; retained pool capacity alone is not a leak.',
+                }
             }
         } catch (error) {
             fail(error)
@@ -343,8 +466,12 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
             const cleanup = [
                 () => device?.queue.onSubmittedWorkDone(),
                 () => gpu?.finish(),
-                () => { if (gpu) run.gpu = gpu.snapshot() },
-                () => { if (metrics) run.before_teardown_renderer = metrics.snapshot() },
+                () => {
+                    if (gpu) run.gpu = gpu.snapshot()
+                },
+                () => {
+                    if (metrics) run.before_teardown_renderer = metrics.snapshot()
+                },
                 () => gpu?.dispose(),
                 () => fixtures?.destroy(),
                 () => scene?.destroy(),
@@ -353,10 +480,18 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
                 () => resources?.dispose(),
                 () => resources?.context.unconfigure(),
                 () => assets?.dispose(),
-                () => { intentional_device_close = true; device?.removeEventListener('uncapturederror', onGpuError); device?.destroy() },
+                () => {
+                    intentional_device_close = true
+                    device?.removeEventListener('uncapturederror', onGpuError)
+                    device?.destroy()
+                },
             ]
             for (const dispose of cleanup) {
-                try { await dispose() } catch (error) { fail(error) }
+                try {
+                    await dispose()
+                } catch (error) {
+                    fail(error)
+                }
             }
             fixtures = scene = metrics = assets = resources = device = ui = gpu = null
             window.removeEventListener('error', onPageError)
@@ -375,5 +510,11 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
         return run
     }
 
-    return { start: (options = {}) => execute(options), check: (options = {}) => execute(options, true), stop, getResults: () => run, getStatus: () => status }
+    return {
+        start: (options = {}) => execute(options),
+        check: (options = {}) => execute(options, true),
+        stop,
+        getResults: () => run,
+        getStatus: () => status,
+    }
 }

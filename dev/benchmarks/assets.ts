@@ -1,12 +1,12 @@
-import card_url from '../../../examples/assets/images/card.png?url'
-import coin_url from '../../../examples/assets/images/coin.png?url'
-import texture_url from '../../../examples/assets/images/texture.jpg?url'
-import poppins_image_url from '../../../examples/assets/fonts/Poppins-Regular.mtsdf.png?url'
-import poppins_json_url from '../../../examples/assets/fonts/Poppins-Regular.mtsdf.json?url'
-import changa_image_url from '../../../examples/assets/fonts/ChangaOne-Regular.mtsdf.png?url'
-import changa_json_url from '../../../examples/assets/fonts/ChangaOne-Regular.mtsdf.json?url'
-import bangers_image_url from '../../../examples/assets/fonts/Bangers-Regular.mtsdf.png?url'
-import bangers_json_url from '../../../examples/assets/fonts/Bangers-Regular.mtsdf.json?url'
+import card_url from '../../examples/assets/images/card.png?url'
+import coin_url from '../../examples/assets/images/coin.png?url'
+import texture_url from '../../examples/assets/images/texture.jpg?url'
+import poppins_image_url from '../../examples/assets/fonts/Poppins-Regular.mtsdf.png?url'
+import poppins_json_url from '../../examples/assets/fonts/Poppins-Regular.mtsdf.json?url'
+import changa_image_url from '../../examples/assets/fonts/ChangaOne-Regular.mtsdf.png?url'
+import changa_json_url from '../../examples/assets/fonts/ChangaOne-Regular.mtsdf.json?url'
+import bangers_image_url from '../../examples/assets/fonts/Bangers-Regular.mtsdf.png?url'
+import bangers_json_url from '../../examples/assets/fonts/Bangers-Regular.mtsdf.json?url'
 
 const IMAGES = [card_url, coin_url, texture_url]
 const FONTS = [
@@ -22,7 +22,13 @@ export async function loadBenchmarkAssets() {
         if (!response.ok) throw new Error(`Asset ${src}: HTTP ${response.status}`)
         const bitmap = await createImageBitmap(await response.blob())
         bitmaps.push(bitmap)
-        return { src, bitmap, width: bitmap.width, height: bitmap.height, preventBleeding: bitmap.width < 32 || bitmap.height < 32 }
+        return {
+            src,
+            bitmap,
+            width: bitmap.width,
+            height: bitmap.height,
+            preventBleeding: bitmap.width < 32 || bitmap.height < 32,
+        }
     }
     async function loadFont([name, image_url, json_url]) {
         const image = await loadImage(image_url)
@@ -43,6 +49,8 @@ export async function loadBenchmarkAssets() {
             for (const image of values.slice(0, IMAGES.length)) resources.registerImage(image.src, image)
             for (const font of values.slice(IMAGES.length)) resources.registerFont(font.name, font.image, font.json)
         },
-        dispose() { bitmaps.forEach((bitmap) => bitmap.close()) },
+        dispose() {
+            bitmaps.forEach((bitmap) => bitmap.close())
+        },
     }
 }

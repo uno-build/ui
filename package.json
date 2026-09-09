@@ -112,17 +112,16 @@
     },
     "scripts": {
         "test": "playwright test",
-        "dev": "vite . --config ./examples/vite/typegpu.config.ts",
+        "dev:typegpu": "vite ./examples --config ./examples/vite/typegpu.config.ts",
         "dev:octane": "vite ./examples --config ./examples/vite/octane.config.ts",
         "dev:solid": "vite ./examples --config ./examples/vite/solid.config.ts",
         "build:octane": "vite build ./examples/octane --config ./examples/vite/octane.config.ts",
         "build:solid": "vite build ./examples/solid --config ./examples/vite/solid.config.ts",
-        "benchmark:webgpu": "node ./scripts/benchmark-webgpu.mjs",
-        "benchmark:webgpu:headed": "node ./scripts/benchmark-webgpu.mjs --headed",
-        "benchmark:webgpu:browser": "node ./scripts/benchmark-webgpu.mjs --browser",
+        "benchmark": "node ./scripts/benchmark-webgpu.mjs --browser",
+        "benchmark:general": "node ./scripts/benchmark-webgpu.mjs --workload general",
+        "benchmark:general:headed": "node ./scripts/benchmark-webgpu.mjs --workload general --headed",
         "benchmark:box-shadow": "node ./scripts/benchmark-webgpu.mjs --workload box-shadow",
         "benchmark:box-shadow:headed": "node ./scripts/benchmark-webgpu.mjs --workload box-shadow --headed",
-        "benchmark:box-shadow:browser": "node ./scripts/benchmark-webgpu.mjs --workload box-shadow --browser",
         "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"
     }
 }
