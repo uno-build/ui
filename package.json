@@ -4,56 +4,56 @@
     "type": "module",
     "exports": {
         "./events": {
-            "types": "./src/events/index.ts",
-            "import": "./src/events/index.ts"
+            "types": "./types/events/index.d.ts",
+            "import": "./src/events/index.js"
         },
         "./ResourcesWebGPU": {
-            "types": "./src/renderer/webgpu/ResourcesWebGPU.ts",
-            "import": "./src/renderer/webgpu/ResourcesWebGPU.ts"
+            "types": "./types/renderer/webgpu/ResourcesWebGPU.d.ts",
+            "import": "./src/renderer/webgpu/ResourcesWebGPU.js"
         },
         "./ResourcesDom": {
-            "types": "./src/renderer/dom/ResourcesDom.ts",
-            "import": "./src/renderer/dom/ResourcesDom.ts"
+            "types": "./types/renderer/dom/ResourcesDom.d.ts",
+            "import": "./src/renderer/dom/ResourcesDom.js"
         },
         "./UIWebGPU": {
-            "types": "./src/ui/UIWebGPU.ts",
-            "import": "./src/ui/UIWebGPU.ts"
+            "types": "./types/ui/UIWebGPU.d.ts",
+            "import": "./src/ui/UIWebGPU.js"
         },
         "./UIThree": {
-            "types": "./src/ui/UIThree.ts",
-            "import": "./src/ui/UIThree.ts"
+            "types": "./types/ui/UIThree.d.ts",
+            "import": "./src/ui/UIThree.js"
         },
         "./UIBabylon": {
-            "types": "./src/ui/UIBabylon.ts",
-            "import": "./src/ui/UIBabylon.ts"
+            "types": "./types/ui/UIBabylon.d.ts",
+            "import": "./src/ui/UIBabylon.js"
         },
         "./UIBabylonLite": {
-            "types": "./src/ui/UIBabylonLite.ts",
-            "import": "./src/ui/UIBabylonLite.ts"
+            "types": "./types/ui/UIBabylonLite.d.ts",
+            "import": "./src/ui/UIBabylonLite.js"
         },
         "./UIPlayCanvas": {
-            "types": "./src/ui/UIPlayCanvas.ts",
-            "import": "./src/ui/UIPlayCanvas.ts"
+            "types": "./types/ui/UIPlayCanvas.d.ts",
+            "import": "./src/ui/UIPlayCanvas.js"
         },
         "./UIDom": {
-            "types": "./src/ui/UIDom.ts",
-            "import": "./src/ui/UIDom.ts"
+            "types": "./types/ui/UIDom.d.ts",
+            "import": "./src/ui/UIDom.js"
         },
         "./octane": {
-            "types": "./src/components/octane/index.ts",
-            "import": "./src/components/octane/index.ts"
+            "types": "./types/components/octane/index.d.ts",
+            "import": "./src/components/octane/index.js"
         },
         "./octane/config": {
-            "types": "./src/components/octane/config.ts",
-            "import": "./src/components/octane/config.ts"
+            "types": "./types/components/octane/config.d.ts",
+            "import": "./src/components/octane/config.js"
         },
         "./solid": {
-            "types": "./src/components/solid/index.ts",
-            "import": "./src/components/solid/index.ts"
+            "types": "./types/components/solid/index.d.ts",
+            "import": "./src/components/solid/index.js"
         },
         "./solid/config": {
-            "types": "./src/components/solid/config.ts",
-            "import": "./src/components/solid/config.ts"
+            "types": "./types/components/solid/config.d.ts",
+            "import": "./src/components/solid/config.js"
         }
     },
     "dependencies": {
@@ -63,6 +63,7 @@
         "@babylonjs/core": "^9.22.2",
         "@babylonjs/lite": "^1.24.0",
         "@solidjs/universal": "^2.0.0-rc.0",
+        "@types/three": "^0.185.0",
         "octane": "^0.2.6",
         "pixi.js": "^8.20.1",
         "playcanvas": "^2.22.0",
@@ -90,6 +91,9 @@
         },
         "three": {
             "optional": true
+        },
+        "@types/three": {
+            "optional": true
         }
     },
     "devDependencies": {
@@ -100,19 +104,20 @@
         "@playwright/test": "^1.52.0",
         "@solidjs/universal": "2.0.0-rc.0",
         "@solidjs/vite-plugin": "3.0.0-next.28",
+        "@types/three": "0.185.0",
+        "esbuild": "0.28.2",
         "octane": "^0.2.6",
         "playcanvas": "^2.22.0",
         "pngjs": "^7.0.0",
         "solid-js": "^2.0.0-rc.0",
         "three": "^0.185.1",
         "typegpu": "^0.12.3",
+        "typescript": "5.9.3",
         "unplugin-typegpu": "^0.12.2",
         "vite": "^8.2.1",
         "wgpu-matrix": "^3.4.2"
     },
     "scripts": {
-        "test": "playwright test tests",
-        "test:layouts": "playwright test dev/layouts",
         "examples": "vite ./examples --config ./examples/vite/typegpu.config.ts",
         "examples:solid": "vite ./examples --config ./examples/vite/solid.config.ts",
         "examples:octane": "vite ./examples --config ./examples/vite/octane.config.ts",
@@ -121,6 +126,19 @@
         "benchmark:general:headed": "node ./scripts/benchmark-webgpu.mjs --workload general --headed",
         "benchmark:box-shadow": "node ./scripts/benchmark-webgpu.mjs --workload box-shadow",
         "benchmark:box-shadow:headed": "node ./scripts/benchmark-webgpu.mjs --workload box-shadow --headed",
+        "test": "playwright test tests",
+        "test:layouts": "playwright test dev/layouts",
+        "test:types": "node scripts/test-types.mjs",
+        "test:package": "node scripts/test-package.mjs",
+        "test:logic": "node scripts/test-logic.mjs",
+        "check:js": "tsc -p tsconfig.check.json",
+        "check:types": "node scripts/types.mjs --check",
+        "build:types": "node scripts/types.mjs",
+        "prepack": "npm run check:types",
         "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"
-    }
+    },
+    "files": [
+        "src",
+        "types"
+    ]
 }

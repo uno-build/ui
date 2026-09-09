@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { loadYoga } from 'yoga-layout/load'
-import { OPERATIONS } from '../src/core/constants.ts'
-import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
+import { OPERATIONS } from '../src/core/constants.js'
+import RendererWebGPU from '../src/renderer/RendererWebGPU.js'
 import {
     COMMAND_KIND_GLYPH,
     COMMAND_KIND_PANEL,
@@ -9,7 +9,7 @@ import {
     GLYPH_DATA_SIZE,
     PANEL_DATA_SIZE,
     TEXT_RUN_SIZE,
-} from '../src/renderer/webgpu/buffers.ts'
+} from '../src/renderer/webgpu/buffers.js'
 import TestUI from './utils/TestUI.ts'
 
 ;(globalThis as any).GPUBufferUsage = { VERTEX: 1, UNIFORM: 2, STORAGE: 4, COPY_DST: 8 }

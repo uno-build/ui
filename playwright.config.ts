@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
     testDir: '.',
+    testIgnore: '**/tests/logic/**',
     outputDir: './tests/.results',
     webServer: {
         command: 'vite ./dev/layouts --host 127.0.0.1',

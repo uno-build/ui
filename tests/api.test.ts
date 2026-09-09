@@ -3,7 +3,7 @@ import Resources from '../src/core/Resources'
 import Operations from '../src/core/Operations'
 import { OPERATIONS, RESOURCE_EVENT } from '../src/core/constants'
 import ResourcesWebGPU from '../src/renderer/webgpu/ResourcesWebGPU'
-import UIWorldSpace from '../src/ui/UIWorldSpace.ts'
+import UIWorldSpace from '../src/ui/UIWorldSpace.js'
 import TestRenderer from './utils/TestRenderer.ts'
 import TestUI from './utils/TestUI.ts'
 

@@ -32,8 +32,8 @@ const compiled_components = compile(readFileSync(COMPONENTS_URL, 'utf8'), fileUR
     rendererRegistry: { uno: OCTANE_RENDERER },
 })
     .code.replaceAll("from 'octane/universal/native'", `from '${import.meta.resolve('octane/universal/native')}'`)
-    .replace("from './context'", `from '${new URL('../src/components/octane/context.ts', import.meta.url)}'`)
-    .replace("from '../shared'", `from '${new URL('../src/components/shared.ts', import.meta.url)}'`)
+    .replace("from './context'", `from '${new URL('../src/components/octane/context.js', import.meta.url)}'`)
+    .replace("from '../shared'", `from '${new URL('../src/components/shared.js', import.meta.url)}'`)
 
 const { Image, Input, ScrollView, Text, View } = await import(
     `data:text/javascript;base64,${Buffer.from(compiled_components).toString('base64')}`

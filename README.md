@@ -80,7 +80,7 @@ and visual comparisons should avoid overlapping descendants inside nodes with
 true distance stored in alpha renders `textShadow` and `textStroke`.
 
 The MTSDF and MSDF implementations live in separate shader modules. The active
-implementation is the one imported by `src/renderer/webgpu/shaders/index.ts`; their
+implementation is the one imported by `src/renderer/webgpu/shaders/index.js`; their
 sampling constants stay inside their respective modules.
 
 ## RendererWebGPU background image bleeding
