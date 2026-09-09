@@ -6,7 +6,6 @@ import {
     ALIGN_CONTENT_DEFINITION,
     ALIGN_ITEMS_DEFINITION,
     ALIGN_SELF_DEFINITION,
-    BACKGROUND_IMAGE_DEFINITION,
     BORDER_DEFINITION,
     BORDER_WIDTH_DEFINITION,
     BOX_SIZING_DEFINITION,
@@ -42,10 +41,6 @@ import {
     TEXT_SHADOW_DEFINITION,
     TEXT_STROKE_DEFINITION,
 } from './definitions'
-
-// if (typeof window !== 'undefined') {
-//     window.resolveStyle = resolveStyle
-// }
 
 export function validateStyle(name: string, value: any) {
     if (typeof name !== 'string') {

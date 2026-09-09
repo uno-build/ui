@@ -64,14 +64,10 @@ export default class RendererWebGPU extends Renderer {
     private viewport_height
     private root_size = ROOT_SIZE
     private layouter!: any
-    private device
-    private context
-    private format
     private pipeline
     private bind_group
     private image_sampler
     private image_manager
-    private font_manager
     private image_texture_version
     private font_texture_version
     private position_buffer
@@ -170,7 +166,6 @@ export default class RendererWebGPU extends Renderer {
         this.root_node = null
         this.layouter = null
         this.image_manager = null
-        this.font_manager = null
         this.resources = null
     }
 
