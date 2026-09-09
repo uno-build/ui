@@ -1,4 +1,4 @@
-import { loadImage } from '../../utils/load-assets'
+import { loadImage } from '../../../tests/utils/load-assets'
 
 export default async function createBackgroundImageBleedingLayout({ ui, resources }) {
     const TARGET_SIZE = 200

@@ -1,4 +1,4 @@
-import { loadImage } from '../../utils/load-assets'
+import { loadImage } from '../../../tests/utils/load-assets'
 
 export default async function createBackgroundPositionLayout({ ui, resources }) {
     const size = 100

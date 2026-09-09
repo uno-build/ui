@@ -1,4 +1,4 @@
-import { loadImage, loadJson } from '../../utils/load-assets'
+import { loadImage, loadJson } from '../../../tests/utils/load-assets'
 
 const MIN_ROOT_SIZE = 16
 const MAX_ROOT_SIZE = 24

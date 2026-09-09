@@ -1,5 +1,5 @@
 import { PLATFORM_EVENT_NAMES } from '../../../src/events/constants'
-import { loadImage, loadJson } from '../../utils/load-assets'
+import { loadImage, loadJson } from '../../../tests/utils/load-assets'
 
 const EVENT_TYPES = [
     'pointercancel',

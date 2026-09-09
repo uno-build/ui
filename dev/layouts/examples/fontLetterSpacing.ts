@@ -1,33 +1,33 @@
-import { loadImage, loadJson } from '../../utils/load-assets'
+import { loadImage, loadJson } from '../../../tests/utils/load-assets'
 
-const TEXT = 'The same text wraps across the same lines while vertical spacing changes.'
+const TEXT = 'The same text changes its horizontal spacing and wraps across different lines.'
 const VARIANTS = [
     {
         name: 'Natural',
     },
     {
-        name: 'Unset',
-        line_height: 'unset',
+        name: 'Tight -2px',
+        letter_spacing: '-2px',
     },
     {
-        name: 'Unitless 0.8',
-        line_height: '0.8',
+        name: 'Tight -0.0625rem',
+        letter_spacing: '-0.0625rem',
     },
     {
-        name: 'Unitless 1.5',
-        line_height: '1.5',
+        name: 'Loose 1px',
+        letter_spacing: '1px',
     },
     {
-        name: 'Exact 16px',
-        line_height: '16px',
+        name: 'Loose 2px',
+        letter_spacing: '2px',
     },
     {
-        name: 'Exact 32px',
-        line_height: '32px',
+        name: 'Loose 0.25rem',
+        letter_spacing: '0.25rem',
     },
 ]
 
-export default async function createFontLineHeightLayout({ ui, registerFont }) {
+export default async function createFontLetterSpacingLayout({ ui, registerFont }) {
     const poppins_image = await loadImage('/examples/assets/fonts/Poppins-Regular.mtsdf.png')
     const poppins_json = await loadJson('/examples/assets/fonts/Poppins-Regular.mtsdf.json')
 
@@ -46,7 +46,7 @@ export default async function createFontLineHeightLayout({ ui, registerFont }) {
 
     for (const variant of VARIANTS) {
         const card = ui.create()
-        card.style('width', '180px')
+        card.style('width', '200px')
         card.style('padding', '12px')
         card.style('gap', '8px')
         card.style('flexDirection', 'column')
@@ -66,8 +66,8 @@ export default async function createFontLineHeightLayout({ ui, registerFont }) {
         text.style('fontSize', '16px')
         text.style('backgroundColor', '#dbeafe')
 
-        if (variant.line_height !== undefined) {
-            text.style('lineHeight', variant.line_height)
+        if (variant.letter_spacing !== undefined) {
+            text.style('letterSpacing', variant.letter_spacing)
         }
 
         text.text(TEXT)

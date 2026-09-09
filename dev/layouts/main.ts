@@ -1,4 +1,4 @@
-import { layoutNames, readLayoutName, runLayoutFromSearchParams } from '../../tests/layouts/layout-runner'
+import { layoutNames, readLayoutName, runLayoutFromSearchParams } from './layout-runner'
 import { initSettingsPanel } from '../../examples/settings/settings-panel'
 
 const params = new URLSearchParams(window.location.search)

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
-    testDir: './tests',
+    testDir: '.',
     outputDir: './tests/.results',
     webServer: {
         command: 'npm run dev -- --host 127.0.0.1',
