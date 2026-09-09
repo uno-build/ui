@@ -17,7 +17,7 @@ const EVENT_FLOW = [
 ]
 
 test('UIThree dispatches pointer events from raycast intersections', async ({ page }) => {
-    await page.goto('/dev/?renderers=RendererDom')
+    await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const events = await page.evaluate(
         async ({ event_types, module_urls }) => {
@@ -133,7 +133,7 @@ test('UIThree dispatches pointer events from raycast intersections', async ({ pa
 })
 
 test('UIBabylon dispatches pointer events from raycast intersections', async ({ page }) => {
-    await page.goto('/dev/?renderers=RendererDom')
+    await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const events = await page.evaluate(
         async ({ event_types, module_urls }) => {
@@ -280,7 +280,7 @@ test('UIBabylon dispatches pointer events from raycast intersections', async ({ 
 })
 
 test('UIBabylonLite dispatches pointer events from raycast intersections', async ({ page }) => {
-    await page.goto('/dev/?renderers=RendererDom')
+    await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const events = await page.evaluate(
         async ({ event_types, module_urls }) => {
@@ -410,7 +410,7 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', async
 })
 
 test('UIPlayCanvas dispatches pointer events from raycast intersections', async ({ page }) => {
-    await page.goto('/dev/?renderers=RendererDom')
+    await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const events = await page.evaluate(
         async ({ event_types, module_urls }) => {

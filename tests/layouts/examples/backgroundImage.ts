@@ -2,10 +2,10 @@ import { loadImage } from '../../utils/load-assets'
 
 export default async function createBackgroundImageLayout({ ui, resources }) {
     const size = 150
-    const asset_logo = await loadImage('/assets/images/logo.jpg')
-    const asset_coin = await loadImage('/assets/images/coin.png')
-    const asset_texture = await loadImage('/assets/images/texture.jpg')
-    const asset_card = await loadImage('/assets/images/card.png')
+    const asset_logo = await loadImage('/examples/assets/images/logo.jpg')
+    const asset_coin = await loadImage('/examples/assets/images/coin.png')
+    const asset_texture = await loadImage('/examples/assets/images/texture.jpg')
+    const asset_card = await loadImage('/examples/assets/images/card.png')
     const CARD_SIZES = [
         [`${size}px`, `${size}px`],
         [`${size}px`, `${size / 2}px`],

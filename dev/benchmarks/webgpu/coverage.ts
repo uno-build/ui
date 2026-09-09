@@ -1,5 +1,5 @@
-import { STYLE, resolveStyle } from '../../src/style'
-import { FEATURES } from '../../src/renderer/utils/render-metrics'
+import { STYLE, resolveStyle } from '../../../src/style'
+import { FEATURES } from '../../../src/renderer/utils/render-metrics'
 
 export const FONT_NAMES = ['Poppins-Regular', 'ChangaOne-Regular', 'Bangers-Regular']
 export const TEXT_CORPUS = [

@@ -5,7 +5,7 @@ import typegpu from 'unplugin-typegpu/vite'
 export default defineConfig({
     plugins: [typegpu()],
     optimizeDeps: {
-        entries: ['*.html'],
+        entries: ['examples/*.html', 'dev/**/*.html'],
         include: ['@babylonjs/core/Cameras/freeCamera.js', '@solidjs/universal', 'solid-js'],
     },
     build: {

@@ -5,7 +5,7 @@ import { PLATFORM_EVENT_NAMES } from '../src/events/constants'
 const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
 
 test('UIDom adapts native events to the UI event contract', async ({ page }) => {
-    await page.goto('/dev/?renderers=RendererDom')
+    await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const result = await page.evaluate(
         async ({ module_urls }) => {
@@ -240,7 +240,7 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
 })
 
 test('UIDom uses native scrolling inside bordered scroll containers', async ({ page }) => {
-    await page.goto('/dev/?renderers=RendererDom')
+    await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const result = await page.evaluate(
         async ({ module_urls }) => {
@@ -367,7 +367,7 @@ test('UIDom uses native scrolling inside bordered scroll containers', async ({ p
 })
 
 test('UIDom preserves native event sources alongside UIWebGPU normalization', async ({ page }) => {
-    await page.goto('/dev/?renderers=RendererDom')
+    await page.goto('/dev/layouts/?renderers=RendererDom')
 
     await page.evaluate(
         async ({ module_urls, platform_event_names }) => {

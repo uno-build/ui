@@ -44,9 +44,9 @@
         <div id="root"></div>
         <pre id="results">Running...</pre>
         <script type="module">
-            import UIWebGPU from '../../src/ui/UIWebGPU'
-            import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
-            import { loadImage, loadJson } from '../../tests/utils/load-assets'
+            import UIWebGPU from '../../../src/ui/UIWebGPU'
+            import ResourcesWebGPU from '../../../src/renderer/webgpu/ResourcesWebGPU'
+            import { loadImage, loadJson } from '../../../tests/utils/load-assets'
             import { loadYoga } from 'yoga-layout/load'
 
             const DEFAULT_NODES = 400
@@ -88,8 +88,8 @@
                 const frames = readNumber(params, 'frames', DEFAULT_FRAMES)
                 const warmup = readNumber(params, 'warmup', DEFAULT_WARMUP)
                 const [font_image, font_json] = await Promise.all([
-                    loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png'),
-                    loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json'),
+                    loadImage('/examples/assets/fonts/ChangaOne-Regular.mtsdf.png'),
+                    loadJson('/examples/assets/fonts/ChangaOne-Regular.mtsdf.json'),
                 ])
                 const scenes = []
 

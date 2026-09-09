@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 
-const REPOSITORY = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
+const REPOSITORY = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 const SOURCE_FILES = ['src/core/Renderer.ts', 'src/core/UI.ts', 'src/renderer/RendererWebGPU.ts']
 const CASES = [
     { shape: 'chain', count: 1, action: 'destroy' },

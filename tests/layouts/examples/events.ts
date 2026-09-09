@@ -36,11 +36,11 @@ const EVENT_COLORS = {
 
 export default async function createEventsLayout({ ui, resources, registerFont, rendererName: renderer_name }) {
     const [font_image, font_json, pattern_image, logo_image, texture_image] = await Promise.all([
-        loadImage('/assets/fonts/Poppins-Regular.mtsdf.png'),
-        loadJson('/assets/fonts/Poppins-Regular.mtsdf.json'),
+        loadImage('/examples/assets/fonts/Poppins-Regular.mtsdf.png'),
+        loadJson('/examples/assets/fonts/Poppins-Regular.mtsdf.json'),
         loadImage(PATTERN_SRC),
-        loadImage('/assets/images/logo.jpg'),
-        loadImage('/assets/images/texture.jpg'),
+        loadImage('/examples/assets/images/logo.jpg'),
+        loadImage('/examples/assets/images/texture.jpg'),
     ])
     registerFont('Poppins-Regular', font_image, font_json)
     resources.registerImage(pattern_image.src, pattern_image)

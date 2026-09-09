@@ -2,7 +2,7 @@ import { loadImage } from '../../utils/load-assets'
 
 export default async function createBackgroundPositionLayout({ ui, resources }) {
     const size = 100
-    const asset_texture = await loadImage('/assets/images/coin.png')
+    const asset_texture = await loadImage('/examples/assets/images/coin.png')
     const BACKGROUND_COLOR = '#cdd3f8'
     const IMAGE_SIZE = `${size / 2}px ${size / 2}px`
     const BACKGROUND_POSITIONS = [

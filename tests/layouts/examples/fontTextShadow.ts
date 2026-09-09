@@ -7,10 +7,10 @@ const ORBIT_RADIUS = 3
 const ORBIT_STEP = Math.PI / 500
 
 export default async function createFontTextShadowLayout({ ui, registerFont }) {
-    const font_image = await loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png')
-    const font_json = await loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json')
-    const font_image2 = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
-    const font_json2 = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
+    const font_image = await loadImage('/examples/assets/fonts/ChangaOne-Regular.mtsdf.png')
+    const font_json = await loadJson('/examples/assets/fonts/ChangaOne-Regular.mtsdf.json')
+    const font_image2 = await loadImage('/examples/assets/fonts/Poppins-Regular.mtsdf.png')
+    const font_json2 = await loadJson('/examples/assets/fonts/Poppins-Regular.mtsdf.json')
 
     registerFont('ChangaOne-Regular', font_image, font_json)
     registerFont('Poppins-Regular', font_image2, font_json2)

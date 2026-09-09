@@ -161,7 +161,7 @@ const COMPONENTS_CODE = transform(readFileSync(COMPONENTS_PATH, 'utf8'), {
 }).code
 
 async function loadFixture(page) {
-    await page.goto('/dev/')
+    await page.goto('/dev/layouts/')
     await page.evaluate(
         async ({ components_code, fixture_code, module_paths }) => {
             const renderer_url = new URL(module_paths.renderer, window.location.origin).href

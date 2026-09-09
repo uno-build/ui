@@ -11,7 +11,7 @@ export function isForbiddenModule(module_id) {
 }
 
 export default defineConfig({
-    root: fileURLToPath(new URL('../benchmark', import.meta.url)),
+    root: fileURLToPath(new URL('.', import.meta.url)),
     base: './',
     publicDir: false,
     plugins: [{
@@ -23,11 +23,11 @@ export default defineConfig({
     }],
     build: {
         target: 'esnext',
-        outDir: fileURLToPath(new URL('../dist/benchmark', import.meta.url)),
+        outDir: fileURLToPath(new URL('../../dist/benchmarks/webgpu', import.meta.url)),
         emptyOutDir: true,
         assetsInlineLimit: 0,
         rolldownOptions: {
-            input: fileURLToPath(new URL('../benchmark/index.html', import.meta.url)),
+            input: fileURLToPath(new URL('./index.html', import.meta.url)),
         },
     },
     preview: { host: '127.0.0.1', port: 4173, strictPort: false },

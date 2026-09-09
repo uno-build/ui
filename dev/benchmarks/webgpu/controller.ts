@@ -1,5 +1,5 @@
-import UIWebGPU from '../../src/ui/UIWebGPU'
-import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
+import UIWebGPU from '../../../src/ui/UIWebGPU'
+import ResourcesWebGPU from '../../../src/renderer/webgpu/ResourcesWebGPU'
 import { loadYoga } from 'yoga-layout/load'
 import { loadBenchmarkAssets } from './assets'
 import { createScene } from './scene'

@@ -26,7 +26,7 @@ const STYLE_VALUES: Record<string, string> = {
     borderRightColor: '#123456',
     borderBottomColor: '#123456',
     backgroundColor: '#123456',
-    backgroundImage: '/assets/images/coin.png',
+    backgroundImage: '/examples/assets/images/coin.png',
     backgroundSize: '20px 30px',
     backgroundSizeWidth: '20px',
     backgroundSizeHeight: '30px',
@@ -98,7 +98,7 @@ test('Dom unset restores the undefined state for all 81 styles', async ({ page }
     expect(STYLE_NAMES).toHaveLength(81)
     expect(Object.keys(STYLE_VALUES)).toEqual(STYLE_NAMES)
 
-    await page.goto('/dev/?renderers=RendererDom')
+    await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const states = await page.evaluate(
         async ({ module_urls, style_cases }) => {
@@ -132,7 +132,7 @@ test('Dom unset restores the undefined state for all 81 styles', async ({ page }
                 document.body.appendChild(canvas)
 
                 const resources = ResourcesDom.create({ canvas })
-                resources.registerImage('/assets/images/coin.png', { src: '/assets/images/coin.png' })
+                resources.registerImage('/examples/assets/images/coin.png', { src: '/examples/assets/images/coin.png' })
 
                 const { ui } = await UIDom.create({ resources })
                 const node = ui.create()
@@ -183,7 +183,7 @@ test('WebGPU unset restores the undefined state for all 81 styles', async ({ pag
     expect(STYLE_NAMES).toHaveLength(81)
     expect(Object.keys(STYLE_VALUES)).toEqual(STYLE_NAMES)
 
-    await page.goto('/dev/?renderers=RendererDom')
+    await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const states = await page.evaluate(
         async ({ module_urls, style_cases }) => {
@@ -203,11 +203,11 @@ test('WebGPU unset restores the undefined state for all 81 styles', async ({ pag
                 import(module_urls.constants),
             ])
             const [coin, poppins_image, poppins_json, changa_image, changa_json] = await Promise.all([
-                loadImage('/assets/images/coin.png'),
-                loadImage('/assets/fonts/Poppins-Regular.mtsdf.png'),
-                loadJson('/assets/fonts/Poppins-Regular.mtsdf.json'),
-                loadImage('/assets/fonts/ChangaOne-Regular.mtsdf.png'),
-                loadJson('/assets/fonts/ChangaOne-Regular.mtsdf.json'),
+                loadImage('/examples/assets/images/coin.png'),
+                loadImage('/examples/assets/fonts/Poppins-Regular.mtsdf.png'),
+                loadJson('/examples/assets/fonts/Poppins-Regular.mtsdf.json'),
+                loadImage('/examples/assets/fonts/ChangaOne-Regular.mtsdf.png'),
+                loadJson('/examples/assets/fonts/ChangaOne-Regular.mtsdf.json'),
             ])
             const text_style_names = new Set([
                 'color',

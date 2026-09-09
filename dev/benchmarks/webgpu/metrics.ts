@@ -1,4 +1,4 @@
-import { OPERATIONS } from '../../src/core/constants.ts'
+import { OPERATIONS } from '../../../src/core/constants.ts'
 import {
     COMMAND_SIZE,
     COMMAND_KIND_PANEL,
@@ -11,7 +11,7 @@ import {
     TEXT_RUN,
     TEXT_RUN_SIZE,
     VIEWPORT_SIZE,
-} from '../../src/renderer/webgpu/buffers.ts'
+} from '../../../src/renderer/webgpu/buffers.ts'
 
 const POOL_NAMES = ['command_pool', 'panel_data_pool', 'glyph_data_pool', 'text_run_pool']
 const POOL_STRIDES = [COMMAND_SIZE, PANEL_DATA_SIZE, GLYPH_DATA_SIZE, TEXT_RUN_SIZE]

@@ -17,7 +17,7 @@ const EVENT_FLOW = [
 ]
 
 test('UIWebGPU dispatches pointer events in UI coordinates', async ({ page }) => {
-    await page.goto('/dev/?renderers=RendererDom')
+    await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const events = await page.evaluate(
         async ({ event_types, module_urls }) => {

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const benchmarkUrl = '/webgpuBoxShadowBenchmark.html'
+const benchmarkUrl = '/dev/benchmarks/box-shadow/'
 
 test.use({
     launchOptions: {

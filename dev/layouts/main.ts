@@ -1,5 +1,5 @@
 import { layoutNames, readLayoutName, runLayoutFromSearchParams } from '../../tests/layouts/layout-runner'
-import { initSettingsPanel } from '../settings/settings-panel'
+import { initSettingsPanel } from '../../examples/settings/settings-panel'
 
 const params = new URLSearchParams(window.location.search)
 const root = document.getElementById('root')

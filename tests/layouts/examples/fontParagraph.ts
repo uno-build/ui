@@ -50,8 +50,8 @@ const VARIANTS = [
 ]
 
 export default async function createFontParagraphLayout({ ui, registerFont }) {
-    const poppins_image = await loadImage('/assets/fonts/Poppins-Regular.mtsdf.png')
-    const poppins_json = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
+    const poppins_image = await loadImage('/examples/assets/fonts/Poppins-Regular.mtsdf.png')
+    const poppins_json = await loadJson('/examples/assets/fonts/Poppins-Regular.mtsdf.json')
 
     registerFont('Poppins-Regular', poppins_image, poppins_json)
 
