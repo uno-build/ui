@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import path from 'node:path'
+import { readdir } from 'node:fs/promises'
 import ts from 'typescript'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
@@ -29,4 +30,11 @@ for (const [fixture, jsx_options] of [
     assert.equal(errors.length, 0, ts.formatDiagnosticsWithColorAndContext(errors, ts.createCompilerHost(options)))
 }
 
-console.log('Consumer fixtures passed.')
+const output_directory = CONSUMER === ROOT ? path.join(ROOT, 'dist') : path.join(CONSUMER, 'node_modules/uno-ui/dist')
+const declarations = (await readdir(output_directory, { recursive: true }))
+    .filter((file) => file.endsWith('.d.ts')).map((file) => path.join(output_directory, file))
+const program = ts.createProgram(declarations, OPTIONS)
+const errors = ts.getPreEmitDiagnostics(program)
+    .filter((error) => !error.file || error.file.fileName.startsWith(output_directory + path.sep))
+assert.equal(errors.length, 0, ts.formatDiagnosticsWithColorAndContext(errors, ts.createCompilerHost(OPTIONS)))
+console.log('Consumer fixtures and published declarations passed.')

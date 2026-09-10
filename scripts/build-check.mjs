@@ -19,8 +19,6 @@ function run(command, args, cwd) {
 }
 
 try {
-    run('npm', ['run', 'build:config'], ROOT)
-
     // Parse every implementation, including modules unreachable from public exports.
     for (const file of await readdir(path.join(ROOT, 'src'), { recursive: true })) {
         assert.ok(!/\.(?:js|jsx|d\.ts)$/.test(file), `${file}: source modules must use a single TypeScript file`)
@@ -69,6 +67,16 @@ UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas }), loadYoga 
 `)
     run(process.execPath, [path.join(ROOT, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--module', 'esnext', '--moduleResolution', 'bundler', '--target', 'esnext', minimal_fixture], CONSUMER)
 
+    // Execute published JS with Node before installing any optional peers or TypeScript.
+    run(process.execPath, ['--input-type=module', '-e', `
+        import { EventEmitter } from 'uno-ui/events'
+        import 'uno-ui/UIDom'
+        import 'uno-ui/UIWebGPU'
+        import 'uno-ui/solid/config'
+        import 'uno-ui/octane/config'
+        new EventEmitter().emit('ready')
+    `], CONSUMER)
+
     const peers = Object.keys(PACKAGE.peerDependencies).filter((name) => name !== 'pixi.js')
     const versions = await Promise.all(peers.map(async (name) => {
         const installed = JSON.parse(await readFile(path.join(ROOT, 'node_modules', name, 'package.json'), 'utf8'))
@@ -76,7 +84,7 @@ UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas }), loadYoga 
     }))
     run('npm', ['install', ...versions, ...install_flags], CONSUMER)
     await cp(path.join(ROOT, 'tests/types'), path.join(CONSUMER, 'tests/types'), { recursive: true })
-    run(process.execPath, [path.join(ROOT, 'scripts/test-types.mjs'), CONSUMER], ROOT)
+    run(process.execPath, [path.join(ROOT, 'scripts/build-check-types.mjs'), CONSUMER], ROOT)
 
     const local_consumer = path.join(DIRECTORY, 'local-consumer')
     await mkdir(local_consumer)
@@ -93,6 +101,12 @@ UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas }), loadYoga 
     const installed_directory = path.join(CONSUMER, 'node_modules/uno-ui')
     const installed_package = JSON.parse(await readFile(path.join(installed_directory, 'package.json'), 'utf8'))
     assert.deepEqual(installed_package.exports, PACKAGE.exports)
+    const published_files = await readdir(installed_directory, { recursive: true })
+    assert.ok(!published_files.some((file) => file === 'src' || file.startsWith('src/')))
+    assert.ok(!published_files.some((file) => /\.tsx?$/.test(file) && !file.endsWith('.d.ts')))
+    run(process.execPath, ['--input-type=module', '-e',
+        Object.keys(PACKAGE.exports).map((subpath) => `await import('uno-ui/${subpath.slice(2)}')`).join('\n'),
+    ], CONSUMER)
     for (const framework of ['solid', 'octane']) {
         const config_file = path.join(CONSUMER, `${framework}.config.ts`)
         const plugin = framework === 'solid' ? '@solidjs/vite-plugin' : '@octanejs/vite-plugin'

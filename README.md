@@ -2,13 +2,17 @@
 
 ## TypeScript sources
 
-`src/` contains only `.ts` and `.tsx` sources. Types are checked with `npm run typescript`;
-there are no separate declaration files. The compiler enforces erasable TypeScript syntax.
+`src/` contains the only maintained `.ts` and `.tsx` sources. `npm run typescript` checks
+the source types without generating files; the compiler enforces erasable TypeScript syntax.
+`npm run build:check` validates the generated package, including its public types.
 
-The package exposes these sources for bundlers. `npm pack` generates only the two framework
-compiler configurations in `dist/`, since Node cannot load TypeScript from `node_modules`.
-For a local file dependency, run `npm run build:config` before importing `uno-ui/solid/config`
-or `uno-ui/octane/config`. These generated files are ignored by Git.
+`npm run build` uses `tsconfig.publish.json` to generate separate `.js` and `.d.ts` modules
+in `dist/`, preserving the source directory structure. Solid and Octane JSX is compiled
+with their respective compilers. No modules are bundled together.
+
+`npm pack` and `npm publish` run this build automatically. Only `dist/` is published;
+consumers do not need TypeScript to execute the package. For a local file dependency,
+run `npm run build` after changing the sources. Generated files are ignored by Git.
 
 ## WebGPU resources
 

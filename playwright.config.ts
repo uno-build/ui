@@ -1,8 +1,11 @@
 import { defineConfig, devices } from '@playwright/test'
+import { fileURLToPath } from 'node:url'
 
-export default defineConfig({
+const config = {
+    '@playwright/test': {
+        babelPlugins: [[fileURLToPath(import.meta.resolve('@babel/plugin-transform-typescript')), { allowDeclareFields: true }]],
+    },
     testDir: '.',
-    testIgnore: '**/tests/logic/**',
     outputDir: './tests/.results',
     webServer: {
         command: 'vite ./dev/layouts --host 127.0.0.1',
@@ -17,4 +20,6 @@ export default defineConfig({
             args: ['--enable-unsafe-webgpu'],
         },
     },
-})
+}
+
+export default defineConfig(config)

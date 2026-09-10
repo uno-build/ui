@@ -4,56 +4,56 @@
     "type": "module",
     "exports": {
         "./events": {
-            "types": "./src/events/index.ts",
-            "import": "./src/events/index.ts"
+            "types": "./dist/events/index.d.ts",
+            "import": "./dist/events/index.js"
         },
         "./ResourcesWebGPU": {
-            "types": "./src/renderer/webgpu/ResourcesWebGPU.ts",
-            "import": "./src/renderer/webgpu/ResourcesWebGPU.ts"
+            "types": "./dist/renderer/webgpu/ResourcesWebGPU.d.ts",
+            "import": "./dist/renderer/webgpu/ResourcesWebGPU.js"
         },
         "./ResourcesDom": {
-            "types": "./src/renderer/dom/ResourcesDom.ts",
-            "import": "./src/renderer/dom/ResourcesDom.ts"
+            "types": "./dist/renderer/dom/ResourcesDom.d.ts",
+            "import": "./dist/renderer/dom/ResourcesDom.js"
         },
         "./UIWebGPU": {
-            "types": "./src/ui/UIWebGPU.ts",
-            "import": "./src/ui/UIWebGPU.ts"
+            "types": "./dist/ui/UIWebGPU.d.ts",
+            "import": "./dist/ui/UIWebGPU.js"
         },
         "./UIThree": {
-            "types": "./src/ui/UIThree.ts",
-            "import": "./src/ui/UIThree.ts"
+            "types": "./dist/ui/UIThree.d.ts",
+            "import": "./dist/ui/UIThree.js"
         },
         "./UIBabylon": {
-            "types": "./src/ui/UIBabylon.ts",
-            "import": "./src/ui/UIBabylon.ts"
+            "types": "./dist/ui/UIBabylon.d.ts",
+            "import": "./dist/ui/UIBabylon.js"
         },
         "./UIBabylonLite": {
-            "types": "./src/ui/UIBabylonLite.ts",
-            "import": "./src/ui/UIBabylonLite.ts"
+            "types": "./dist/ui/UIBabylonLite.d.ts",
+            "import": "./dist/ui/UIBabylonLite.js"
         },
         "./UIPlayCanvas": {
-            "types": "./src/ui/UIPlayCanvas.ts",
-            "import": "./src/ui/UIPlayCanvas.ts"
+            "types": "./dist/ui/UIPlayCanvas.d.ts",
+            "import": "./dist/ui/UIPlayCanvas.js"
         },
         "./UIDom": {
-            "types": "./src/ui/UIDom.ts",
-            "import": "./src/ui/UIDom.ts"
+            "types": "./dist/ui/UIDom.d.ts",
+            "import": "./dist/ui/UIDom.js"
         },
         "./octane": {
-            "types": "./src/components/octane/index.ts",
-            "import": "./src/components/octane/index.ts"
+            "types": "./dist/components/octane/index.d.ts",
+            "import": "./dist/components/octane/index.js"
         },
         "./octane/config": {
-            "types": "./src/components/octane/config.ts",
-            "import": "./dist/octane/config.js"
+            "types": "./dist/components/octane/config.d.ts",
+            "import": "./dist/components/octane/config.js"
         },
         "./solid": {
-            "types": "./src/components/solid/index.ts",
-            "import": "./src/components/solid/index.ts"
+            "types": "./dist/components/solid/index.d.ts",
+            "import": "./dist/components/solid/index.js"
         },
         "./solid/config": {
-            "types": "./src/components/solid/config.ts",
-            "import": "./dist/solid/config.js"
+            "types": "./dist/components/solid/config.d.ts",
+            "import": "./dist/components/solid/config.js"
         }
     },
     "dependencies": {
@@ -98,6 +98,7 @@
         }
     },
     "devDependencies": {
+        "@babel/plugin-transform-typescript": "^7.29.7",
         "@babylonjs/core": "^9.22.2",
         "@babylonjs/lite": "^1.24.0",
         "@dom-expressions/compiler": "0.50.0-next.40",
@@ -129,17 +130,12 @@
         "benchmark:box-shadow:headed": "node ./scripts/benchmark-webgpu.mjs --workload box-shadow --headed",
         "test": "playwright test tests",
         "test:layouts": "playwright test dev/layouts",
-        "test:types": "node scripts/test-types.mjs",
-        "test:package": "node scripts/test-package.mjs",
-        "test:logic": "node scripts/test-logic.mjs",
-        "check:types": "tsc -p tsconfig.json",
-        "typescript": "npm run check:types && npm run test:types",
-        "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs",
-        "build:config": "esbuild src/components/solid/config.ts src/components/octane/config.ts --outbase=src/components --outdir=dist --format=esm --target=esnext",
-        "prepack": "npm run build:config"
+        "typescript": "tsc -p tsconfig.json",
+        "build": "node scripts/build.mjs",
+        "build:check": "node scripts/build-check.mjs",
+        "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"
     },
     "files": [
-        "src",
         "dist"
     ]
 }
