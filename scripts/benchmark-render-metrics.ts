@@ -48,10 +48,10 @@ if (values.worker) {
     const importSource = (path) => import(pathToFileURL(resolve(values['source-root'], path)).href)
     const [{ default: RendererWebGPU }, { default: Operations }, { GpuPool }, buffers, constants, styles, style_constants] =
         await Promise.all([
-            importSource('src/renderer/RendererWebGPU.js'),
+            importSource('src/renderer/RendererWebGPU.ts'),
             importSource('src/core/Operations.ts'),
-            importSource('src/renderer/webgpu/GpuPool.js'),
-            importSource('src/renderer/webgpu/buffers.js'),
+            importSource('src/renderer/webgpu/GpuPool.ts'),
+            importSource('src/renderer/webgpu/buffers.ts'),
             importSource('src/core/constants.ts'),
             importSource('src/style/index.ts'),
             importSource('src/style/constants.ts'),

@@ -1,0 +1,643 @@
+import type { EngineProfile } from './measurement'
+export type PreparedCore = {
+    widths: number[];
+    lineEndFitAdvances: number[];
+    lineEndPaintAdvances: number[];
+    kinds: SegmentBreakKind[];
+    simpleLineWalkFastPath: boolean;
+    breakableFitAdvances: (number[] | null)[];
+    breakablePreferredBreaks: (number[] | null)[];
+    letterSpacing: number;
+    spacingGraphemeCounts: number[];
+    discretionaryHyphenWidth: number;
+    tabStopAdvance: number;
+    chunks: PreparedLineChunk[];
+};
+
+export type PreparedTextWithSegments = PreparedCore & {
+    segments: string[];
+};
+
+export type LayoutCursor = {
+    segmentIndex: number;
+    graphemeIndex: number;
+};
+
+export type LayoutResult = {
+    lineCount: number;
+    height: number;
+};
+
+export type LineStats = {
+    lineCount: number;
+    maxLineWidth: number;
+};
+
+export type LayoutLine = {
+    text: string;
+    width: number;
+    start: LayoutCursor;
+    end: LayoutCursor;
+};
+
+export type LayoutLinesResult = LayoutResult & {
+    lines: LayoutLine[];
+};
+
+export type WordBreakMode = AnalysisWordBreakMode;
+
+export type PrepareOptions = {
+    measure: MeasureText;
+    whiteSpace?: WhiteSpaceMode;
+    wordBreak?: WordBreakMode;
+    letterSpacing?: number;
+};
+
+export type PreparedLineChunk = {
+    startSegmentIndex: number;
+    endSegmentIndex: number;
+    consumedEndSegmentIndex: number;
+};
+
+export type MeasuredTextUnit = {
+    text: string;
+    start: number;
+};
+
+export type SegmentBreakKind = import("./analysis").SegmentBreakKind;
+
+export type TextAnalysis = import("./analysis").TextAnalysis;
+
+export type WhiteSpaceMode = import("./analysis").WhiteSpaceMode;
+
+export type AnalysisWordBreakMode = import("./analysis").WordBreakMode;
+
+export type BreakableFitMode = import("./measurement").BreakableFitMode;
+
+export type MeasureText = import("./measurement").MeasureText;
+
+export type SegmentMetrics = import("./measurement").SegmentMetrics;
+
+// Text analysis and layout with caller-provided measurements.
+//
+//   prepareWithSegments(text, options) — segments text, measures each word
+//     with options.measure, and caches widths. Call once when text first appears.
+//   measureLineStats(prepared, maxWidth) — computes line count and maximum width.
+//   layoutWithLines(prepared, maxWidth, lineHeight) — materializes renderable lines.
+//
+// i18n: the segmenter handles CJK per-character breaking and Unicode graphemes.
+//   Punctuation merging: "better." measured as one unit (matches CSS behavior).
+//   Trailing whitespace: hangs past line edge without triggering breaks (CSS behavior).
+//   overflow-wrap: pre-measured grapheme widths enable character-level word breaking.
+
+import {
+  analyzeText,
+  canContinueKeepAllTextRun,
+  endsWithClosingQuote,
+  isCJK,
+  isNumericRunSegment,
+  kinsokuEnd,
+  kinsokuStart,
+  leftStickyPunctuation,
+} from './analysis'
+
+import {
+  getSegmentBreakableFitAdvances,
+  getEngineProfile,
+  getSegmentMetrics,
+} from './measurement'
+
+import {
+  measurePreparedLineGeometry,
+  walkPreparedLinesRaw,
+} from './line-break'
+import {
+  buildLineTextFromRange,
+  getLineTextCache,
+} from './line-text'
+import Segmenter from './segmenter'
+
+let sharedGraphemeSegmenter: Segmenter | null = null
+
+function getSharedGraphemeSegmenter(): Segmenter {
+  if (sharedGraphemeSegmenter === null) {
+    sharedGraphemeSegmenter = new Segmenter(undefined, { granularity: 'grapheme' })
+  }
+  return sharedGraphemeSegmenter
+}
+
+// Manual-layout handle that exposes the structural segment data used by
+// range/cursor APIs and custom rendering.
+
+// Internal hard-break chunk hint for the line walker. Not public because
+// callers should not depend on the current chunking representation.
+
+function createEmptyPrepared(): PreparedTextWithSegments {
+  return {
+    widths: [],
+    lineEndFitAdvances: [],
+    lineEndPaintAdvances: [],
+    kinds: [],
+    simpleLineWalkFastPath: true,
+    breakableFitAdvances: [],
+    breakablePreferredBreaks: [],
+    letterSpacing: 0,
+    spacingGraphemeCounts: [],
+    discretionaryHyphenWidth: 0,
+    tabStopAdvance: 0,
+    chunks: [],
+    segments: [],
+  }
+}
+
+function buildBaseCjkUnits(
+  segText: string,
+  engineProfile: EngineProfile,
+): MeasuredTextUnit[] {
+
+  const units: MeasuredTextUnit[] = []
+
+  let unitParts: string[] = []
+  let unitStart = 0
+  let unitContainsCJK = false
+  let unitEndsWithClosingQuote = false
+  let unitIsSingleKinsokuEnd = false
+
+  function pushUnit(): void {
+    if (unitParts.length === 0) return
+    units.push({
+      text: unitParts.length === 1 ? unitParts[0]! : unitParts.join(''),
+      start: unitStart,
+    })
+    unitParts = []
+    unitContainsCJK = false
+    unitEndsWithClosingQuote = false
+    unitIsSingleKinsokuEnd = false
+  }
+
+  function startUnit(grapheme: string, start: number, graphemeContainsCJK: boolean): void {
+    unitParts = [grapheme]
+    unitStart = start
+    unitContainsCJK = graphemeContainsCJK
+    unitEndsWithClosingQuote = endsWithClosingQuote(grapheme)
+    unitIsSingleKinsokuEnd = kinsokuEnd.has(grapheme)
+  }
+
+  function appendToUnit(grapheme: string, graphemeContainsCJK: boolean): void {
+    unitParts.push(grapheme)
+    unitContainsCJK = unitContainsCJK || graphemeContainsCJK
+    const graphemeEndsWithClosingQuote = endsWithClosingQuote(grapheme)
+    if (grapheme.length === 1 && leftStickyPunctuation.has(grapheme)) {
+      unitEndsWithClosingQuote = unitEndsWithClosingQuote || graphemeEndsWithClosingQuote
+    } else {
+      unitEndsWithClosingQuote = graphemeEndsWithClosingQuote
+    }
+    unitIsSingleKinsokuEnd = false
+  }
+
+  for (const gs of getSharedGraphemeSegmenter().segment(segText)) {
+    const grapheme = gs.segment
+    const graphemeContainsCJK = isCJK(grapheme)
+
+    if (unitParts.length === 0) {
+      startUnit(grapheme, gs.index, graphemeContainsCJK)
+      continue
+    }
+
+    if (
+      unitIsSingleKinsokuEnd ||
+      kinsokuStart.has(grapheme) ||
+      leftStickyPunctuation.has(grapheme) ||
+      (engineProfile.carryCJKAfterClosingQuote &&
+        graphemeContainsCJK &&
+        unitEndsWithClosingQuote)
+    ) {
+      appendToUnit(grapheme, graphemeContainsCJK)
+      continue
+    }
+
+    if (!unitContainsCJK && !graphemeContainsCJK) {
+      appendToUnit(grapheme, graphemeContainsCJK)
+      continue
+    }
+
+    pushUnit()
+    startUnit(grapheme, gs.index, graphemeContainsCJK)
+  }
+
+  pushUnit()
+  return units
+}
+
+function mergeKeepAllTextUnits(
+  segText: string,
+  units: MeasuredTextUnit[],
+  breakAfterPunctuation: boolean,
+): MeasuredTextUnit[] {
+  if (units.length <= 1) return units
+
+  const merged: MeasuredTextUnit[] = []
+  let groupStart = -1
+  let groupContainsCJK = false
+
+  function pushMergedUnit(start: number, end: number): void {
+    const sourceStart = units[start]!.start
+    const sourceEnd = end < units.length ? units[end]!.start : segText.length
+
+    merged.push({
+      text: segText.slice(sourceStart, sourceEnd),
+      start: sourceStart,
+    })
+  }
+
+  function flushGroup(end: number): void {
+    if (groupStart < 0) return
+
+    if (groupContainsCJK) {
+      if (groupStart + 1 === end) {
+        merged.push(units[groupStart]!)
+      } else {
+        pushMergedUnit(groupStart, end)
+      }
+    } else {
+      for (let i = groupStart; i < end; i++) merged.push(units[i]!)
+    }
+
+    groupStart = -1
+    groupContainsCJK = false
+  }
+
+  for (let i = 0; i < units.length; i++) {
+    const unit = units[i]!
+    if (
+      groupStart >= 0 &&
+      !canContinueKeepAllTextRun(units[i - 1]!.text, breakAfterPunctuation)
+    ) {
+      flushGroup(i)
+    }
+    if (groupStart < 0) groupStart = i
+    groupContainsCJK = groupContainsCJK || isCJK(unit.text)
+  }
+
+  flushGroup(units.length)
+  return merged
+}
+
+function countRenderedSpacingGraphemes(
+  text: string,
+  kind: SegmentBreakKind,
+): number {
+  if (
+    kind === 'zero-width-break' ||
+    kind === 'soft-hyphen' ||
+    kind === 'hard-break'
+  ) {
+    return 0
+  }
+
+  if (kind === 'tab') return 1
+
+  let count = 0
+  const graphemeSegmenter = getSharedGraphemeSegmenter()
+  for (const _ of graphemeSegmenter.segment(text)) count++
+  return count
+}
+
+function isPreferredBreakGrapheme(grapheme: string): boolean {
+  return (
+    grapheme === '-' ||
+    grapheme === '\u058A' ||
+    grapheme === '\u2010' ||
+    grapheme === '\u2012' ||
+    grapheme === '\u2013' ||
+    grapheme === '\u2014'
+  )
+}
+
+function getBreakablePreferredBreaks(text: string): number[] | null {
+  if (!/[-\u058A\u2010\u2012\u2013\u2014]/u.test(text)) return null
+
+  const breaks: number[] = []
+  let graphemeIndex = 0
+  for (const gs of getSharedGraphemeSegmenter().segment(text)) {
+    graphemeIndex++
+    if (isPreferredBreakGrapheme(gs.segment)) breaks.push(graphemeIndex)
+  }
+
+  return breaks.length === 0 ? null : breaks
+}
+
+function addInternalLetterSpacing(width: number, graphemeCount: number, letterSpacing: number): number {
+  return graphemeCount > 1 ? width + (graphemeCount - 1) * letterSpacing : width
+}
+
+function measureAnalysis(
+  analysis: TextAnalysis,
+  measure: MeasureText,
+  wordBreak: WordBreakMode,
+  letterSpacing: number,
+): PreparedTextWithSegments {
+  if (analysis.len === 0) return createEmptyPrepared()
+
+  const engineProfile = getEngineProfile()
+  const cache = new Map()
+  const discretionaryHyphenWidth =
+    getSegmentMetrics('-', cache, measure).width +
+    (letterSpacing === 0 ? 0 : letterSpacing * 2)
+  const spaceWidth = getSegmentMetrics(' ', cache, measure).width
+  const tabStopAdvance = spaceWidth * 8
+  const hasLetterSpacing = letterSpacing !== 0
+
+  const widths: number[] = []
+
+  const lineEndFitAdvances: number[] = []
+
+  const lineEndPaintAdvances: number[] = []
+
+  const kinds: SegmentBreakKind[] = []
+  let simpleLineWalkFastPath = !hasLetterSpacing
+
+  const breakableFitAdvances: (number[] | null)[] = []
+
+  const breakablePreferredBreaks: (number[] | null)[] = []
+
+  const spacingGraphemeCounts: number[] = []
+
+  const segments: string[] = []
+
+  const chunks: PreparedLineChunk[] = []
+  let chunkStartSegmentIndex = 0
+
+  function pushMeasuredSegment(
+    text: string,
+    width: number,
+    lineEndFitAdvance: number,
+    lineEndPaintAdvance: number,
+    kind: SegmentBreakKind,
+    breakableFitAdvance: number[] | null,
+    breakablePreferredBreak: number[] | null,
+    spacingGraphemeCount: number,
+  ): void {
+    if (kind !== 'text' && kind !== 'space' && kind !== 'zero-width-break') {
+      simpleLineWalkFastPath = false
+    }
+    widths.push(width)
+    lineEndFitAdvances.push(lineEndFitAdvance)
+    lineEndPaintAdvances.push(lineEndPaintAdvance)
+    kinds.push(kind)
+    breakableFitAdvances.push(breakableFitAdvance)
+    breakablePreferredBreaks.push(breakablePreferredBreak)
+    if (hasLetterSpacing) spacingGraphemeCounts.push(spacingGraphemeCount)
+    segments.push(text)
+  }
+
+  function pushMeasuredTextSegment(
+    text: string,
+    textMetrics: SegmentMetrics,
+    kind: SegmentBreakKind,
+    wordLike: boolean,
+    allowOverflowBreaks: boolean,
+  ): void {
+    const spacingGraphemeCount = hasLetterSpacing
+      ? countRenderedSpacingGraphemes(text, kind)
+      : 0
+    const width = addInternalLetterSpacing(
+      textMetrics.width,
+      spacingGraphemeCount,
+      letterSpacing,
+    )
+    const baseLineEndFitAdvance =
+      kind === 'space' || kind === 'preserved-space' || kind === 'zero-width-break'
+        ? 0
+        : width
+    const lineEndFitAdvance =
+      baseLineEndFitAdvance === 0
+        ? 0
+        : baseLineEndFitAdvance + (spacingGraphemeCount > 0 ? letterSpacing : 0)
+    const lineEndPaintAdvance =
+      kind === 'space' || kind === 'zero-width-break'
+        ? 0
+        : width
+
+    if (allowOverflowBreaks && wordLike && text.length > 1) {
+
+      let fitMode: BreakableFitMode = 'sum-graphemes'
+      if (letterSpacing !== 0) {
+        fitMode = 'segment-prefixes'
+      } else if (isNumericRunSegment(text)) {
+        fitMode = 'pair-context'
+      } else if (engineProfile.preferPrefixWidthsForBreakableRuns) {
+        fitMode = 'segment-prefixes'
+      }
+      const fitAdvances = getSegmentBreakableFitAdvances(
+        text,
+        textMetrics,
+        cache,
+        measure,
+        fitMode,
+      )
+      const preferredBreaks =
+        fitAdvances === null || wordBreak === 'keep-all'
+          ? null
+          : getBreakablePreferredBreaks(text)
+      pushMeasuredSegment(
+        text,
+        width,
+        lineEndFitAdvance,
+        lineEndPaintAdvance,
+        kind,
+        fitAdvances,
+        preferredBreaks,
+        spacingGraphemeCount,
+      )
+      return
+    }
+
+    pushMeasuredSegment(
+      text,
+      width,
+      lineEndFitAdvance,
+      lineEndPaintAdvance,
+      kind,
+      null,
+      null,
+      spacingGraphemeCount,
+    )
+  }
+
+  for (let mi = 0; mi < analysis.len; mi++) {
+    const segText = analysis.texts[mi]!
+    const segWordLike = analysis.isWordLike[mi]!
+    const segKind = analysis.kinds[mi]!
+    if (segKind === 'soft-hyphen') {
+      pushMeasuredSegment(
+        segText,
+        0,
+        discretionaryHyphenWidth,
+        discretionaryHyphenWidth,
+        segKind,
+        null,
+        null,
+        0,
+      )
+      continue
+    }
+
+    if (segKind === 'hard-break') {
+      const endSegmentIndex = widths.length
+      pushMeasuredSegment(segText, 0, 0, 0, segKind, null, null, 0)
+      chunks.push({
+        startSegmentIndex: chunkStartSegmentIndex,
+        endSegmentIndex,
+        consumedEndSegmentIndex: widths.length,
+      })
+      chunkStartSegmentIndex = widths.length
+      continue
+    }
+
+    if (segKind === 'tab') {
+      pushMeasuredSegment(
+        segText,
+        0,
+        0,
+        0,
+        segKind,
+        null,
+        null,
+        hasLetterSpacing ? countRenderedSpacingGraphemes(segText, segKind) : 0,
+      )
+      continue
+    }
+
+    const segMetrics = getSegmentMetrics(segText, cache, measure)
+
+    if (segKind === 'text' && segMetrics.containsCJK) {
+      const baseUnits = buildBaseCjkUnits(segText, engineProfile)
+      const measuredUnits = wordBreak === 'keep-all'
+        ? mergeKeepAllTextUnits(segText, baseUnits, engineProfile.breakKeepAllAfterPunctuation)
+        : baseUnits
+
+      for (let i = 0; i < measuredUnits.length; i++) {
+        const unit = measuredUnits[i]!
+        const unitMetrics = getSegmentMetrics(unit.text, cache, measure)
+        pushMeasuredTextSegment(
+          unit.text,
+          unitMetrics,
+          'text',
+          segWordLike,
+          wordBreak === 'keep-all' || !unitMetrics.containsCJK,
+        )
+      }
+      continue
+    }
+
+    pushMeasuredTextSegment(segText, segMetrics, segKind, segWordLike, true)
+  }
+
+  if (chunkStartSegmentIndex < widths.length) {
+    chunks.push({
+      startSegmentIndex: chunkStartSegmentIndex,
+      endSegmentIndex: widths.length,
+      consumedEndSegmentIndex: widths.length,
+    })
+  }
+  return {
+    widths,
+    lineEndFitAdvances,
+    lineEndPaintAdvances,
+    kinds,
+    simpleLineWalkFastPath,
+    breakableFitAdvances,
+    breakablePreferredBreaks,
+    letterSpacing,
+    spacingGraphemeCounts,
+    discretionaryHyphenWidth,
+    tabStopAdvance,
+    chunks,
+    segments,
+  }
+}
+
+export function prepareWithSegments(text: string, options: PrepareOptions): PreparedTextWithSegments {
+  const wordBreak = options.wordBreak ?? 'normal'
+  const letterSpacing = options.letterSpacing ?? 0
+  const analysis = analyzeText(text, getEngineProfile(), options.whiteSpace, wordBreak)
+  return measureAnalysis(analysis, options.measure, wordBreak, letterSpacing)
+}
+
+function createLayoutLine(
+  prepared: PreparedTextWithSegments,
+  cache: Map<number, string[]>,
+  width: number,
+  startSegmentIndex: number,
+  startGraphemeIndex: number,
+  endSegmentIndex: number,
+  endGraphemeIndex: number,
+): LayoutLine {
+  return {
+    text: buildLineTextFromRange(
+      prepared,
+      cache,
+      startSegmentIndex,
+      startGraphemeIndex,
+      endSegmentIndex,
+      endGraphemeIndex,
+    ),
+    width,
+    start: {
+      segmentIndex: startSegmentIndex,
+      graphemeIndex: startGraphemeIndex,
+    },
+    end: {
+      segmentIndex: endSegmentIndex,
+      graphemeIndex: endGraphemeIndex,
+    },
+  }
+}
+
+export function measureLineStats(
+  prepared: PreparedTextWithSegments,
+  maxWidth: number,
+): LineStats {
+  return measurePreparedLineGeometry(prepared, maxWidth)
+}
+
+// Intrinsic-width helper for rich/userland layout work. This asks "how wide is
+// the prepared text when container width is not the thing forcing wraps?".
+// Explicit hard breaks still count, so this returns the widest forced line.
+
+export function measureNaturalWidth(prepared: PreparedTextWithSegments): number {
+  let maxWidth = 0
+  walkPreparedLinesRaw(prepared, Number.POSITIVE_INFINITY, (width: number) => {
+    if (width > maxWidth) maxWidth = width
+  })
+  return maxWidth
+}
+
+// Rich layout API for callers that want the actual line contents and widths.
+// Caller still supplies lineHeight at layout time.
+
+export function layoutWithLines(prepared: PreparedTextWithSegments, maxWidth: number, lineHeight: number): LayoutLinesResult {
+
+  const lines: LayoutLine[] = []
+  if (prepared.widths.length === 0) return { lineCount: 0, height: 0, lines }
+
+  const graphemeCache = getLineTextCache(prepared)
+  const lineCount = walkPreparedLinesRaw(
+    prepared,
+    maxWidth,
+    (width: number, startSegmentIndex: number, startGraphemeIndex: number, endSegmentIndex: number, endGraphemeIndex: number) => {
+      lines.push(createLayoutLine(
+        prepared,
+        graphemeCache,
+        width,
+        startSegmentIndex,
+        startGraphemeIndex,
+        endSegmentIndex,
+        endGraphemeIndex,
+      ))
+    },
+  )
+
+  return { lineCount, height: lineCount * lineHeight, lines }
+}

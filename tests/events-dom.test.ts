@@ -189,7 +189,7 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
         {
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIDom.js`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.js`,
+                resources: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.ts`,
             },
         },
     )
@@ -334,7 +334,7 @@ test('UIDom uses native scrolling inside bordered scroll containers', async ({ p
         {
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIDom.js`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.js`,
+                resources: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.ts`,
             },
         },
     )
@@ -503,8 +503,8 @@ test('UIDom preserves native event sources alongside UIWebGPU normalization', as
             module_urls: {
                 ui_dom: `/@fs${WORKSPACE_PATH}src/ui/UIDom.js`,
                 ui_webgpu: `/@fs${WORKSPACE_PATH}src/ui/UIWebGPU.js`,
-                resources_dom: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.js`,
-                resources_webgpu: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.js`,
+                resources_dom: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.ts`,
+                resources_webgpu: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
             },
         },
     )

@@ -2,24 +2,18 @@
     "name": "uno-ui",
     "version": "0.1.0",
     "type": "module",
-    "imports": {
-        "#js/*": {
-            "types": "./types/*.d.ts",
-            "default": "./src/*.js"
-        }
-    },
     "exports": {
         "./events": {
             "types": "./src/events/index.ts",
             "import": "./src/events/index.ts"
         },
         "./ResourcesWebGPU": {
-            "types": "./types/renderer/webgpu/ResourcesWebGPU.d.ts",
-            "import": "./src/renderer/webgpu/ResourcesWebGPU.js"
+            "types": "./src/renderer/webgpu/ResourcesWebGPU.ts",
+            "import": "./src/renderer/webgpu/ResourcesWebGPU.ts"
         },
         "./ResourcesDom": {
-            "types": "./types/renderer/dom/ResourcesDom.d.ts",
-            "import": "./src/renderer/dom/ResourcesDom.js"
+            "types": "./src/renderer/dom/ResourcesDom.ts",
+            "import": "./src/renderer/dom/ResourcesDom.ts"
         },
         "./UIWebGPU": {
             "types": "./types/ui/UIWebGPU.d.ts",

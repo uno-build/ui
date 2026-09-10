@@ -1,8 +1,8 @@
 /// <reference types="@webgpu/types" />
 import UI, { EventOptions } from '../../src/core/UI'
-import RendererWebGPU, { RendererWebGPUOptions } from '../renderer/RendererWebGPU'
-import ResourcesWebGPU from '../renderer/webgpu/ResourcesWebGPU'
-import { WebGPUDrawOptions, WebGPUDrawResult } from '../renderer/webgpu/contracts'
+import RendererWebGPU, { RendererWebGPUOptions } from '../../src/renderer/RendererWebGPU'
+import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
+import { WebGPUDrawOptions, WebGPUDrawResult } from '../../src/renderer/webgpu/contracts'
 
 export type TextureOptions = {
     output: {

@@ -166,7 +166,7 @@ test('Dom unset restores the undefined state for all 81 styles', async ({ page }
         {
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIDom.js`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.js`,
+                resources: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.ts`,
             },
             style_cases: STYLE_CASES,
         },
@@ -399,8 +399,8 @@ test('WebGPU unset restores the undefined state for all 81 styles', async ({ pag
         {
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIWebGPU.js`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.js`,
-                metrics: `/@fs${WORKSPACE_PATH}src/renderer/utils/render-metrics.js`,
+                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
+                metrics: `/@fs${WORKSPACE_PATH}src/renderer/utils/render-metrics.ts`,
                 constants: `/@fs${WORKSPACE_PATH}src/style/constants.ts`,
                 assets: `/@fs${WORKSPACE_PATH}tests/utils/load-assets.ts`,
             },

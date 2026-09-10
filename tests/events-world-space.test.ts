@@ -115,7 +115,7 @@ test('UIThree dispatches pointer events from raycast intersections', async ({ pa
             event_types: PLATFORM_EVENT_NAMES,
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIThree.js`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.js`,
+                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
             },
         },
     )
@@ -262,7 +262,7 @@ test('UIBabylon dispatches pointer events from raycast intersections', async ({ 
             event_types: PLATFORM_EVENT_NAMES,
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIBabylon.js`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.js`,
+                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
             },
         },
     )
@@ -392,7 +392,7 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', async
             event_types: PLATFORM_EVENT_NAMES,
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIBabylonLite.js`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.js`,
+                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
             },
         },
     )
@@ -540,7 +540,7 @@ test('UIPlayCanvas dispatches pointer events from raycast intersections', async 
             event_types: PLATFORM_EVENT_NAMES,
             module_urls: {
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIPlayCanvas.js`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.js`,
+                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
             },
         },
     )

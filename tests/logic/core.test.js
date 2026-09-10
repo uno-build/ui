@@ -4,11 +4,11 @@ import EventEmitter from '../../src/core/EventEmitter.ts'
 import Renderer from '../../src/core/Renderer.ts'
 import Resources from '../../src/core/Resources.ts'
 import UI from '../../src/core/UI.ts'
-import ResourcesDom from '../../src/renderer/dom/ResourcesDom.js'
-import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU.js'
+import ResourcesDom from '../../src/renderer/dom/ResourcesDom.ts'
+import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU.ts'
 import { DEFINED_EVENTS, EVENT } from '../../src/events/index.ts'
 import { validateStyle, resolveStyle } from '../../src/style/index.ts'
-import { prepareWithSegments, layoutWithLines } from '../../src/renderer/pretext/layout.js'
+import { prepareWithSegments, layoutWithLines } from '../../src/renderer/pretext/layout.ts'
 
 test('events retain ordering, removal, optional payloads and cleanup', () => {
     const emitter = new EventEmitter()

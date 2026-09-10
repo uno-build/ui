@@ -1,6 +1,6 @@
 import type Node from '../core/Node'
 
-import { getAncestorClipping, getNodeRenderLayout } from '#js/renderer/utils/render-metrics'
+import { getAncestorClipping, getNodeRenderLayout } from '../renderer/utils/render-metrics'
 import { DISPLAY, POINTER_EVENTS } from '../style/constants'
 
 export function isNodeAtPoint(node: Node, x: number, y: number) {
