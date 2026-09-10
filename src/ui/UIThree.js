@@ -2,11 +2,27 @@ import * as THREE from 'three/webgpu'
 import { materialReference, sRGBTransferEOTF, texture, vec4 } from 'three/tsl'
 import UIWorldSpace from './UIWorldSpace'
 
+/**
+ * @typedef {THREE.NodeMaterial & Pick<THREE.MeshBasicNodeMaterial, 'map' | 'color'>} UIThreeMaterial
+ */
+
+/**
+ * @template {UIThreeMaterial} [TMaterial=THREE.MeshStandardNodeMaterial]
+ * @template {{ plane: THREE.Mesh }} [TPlane={ plane: THREE.Mesh<THREE.PlaneGeometry, TMaterial>, geometry: THREE.PlaneGeometry }]
+ * @typedef {import('./UIWorldSpace').UIWorldSpaceOptions<THREE.ExternalTexture, TMaterial, TPlane, UIThree>} UIThreeOptions
+ */
+
+/** @extends {UIWorldSpace<THREE.ExternalTexture, UIThreeMaterial, { plane: THREE.Mesh }, UIThree>} */
 export default class UIThree extends UIWorldSpace {
     /** @private */
     plane
 
-    /** @returns {Promise<{ ui: UIThree } & Record<string, any>>} */
+    /**
+     * @template {UIThreeMaterial} [TMaterial=THREE.MeshStandardNodeMaterial]
+     * @template {{ plane: THREE.Mesh }} [TPlane={ plane: THREE.Mesh<THREE.PlaneGeometry, TMaterial>, geometry: THREE.PlaneGeometry }]
+     * @param {UIThreeOptions<TMaterial, TPlane>} options
+     * @returns {Promise<{ ui: UIThree } & import('./UIWorldSpace').UIWorldSpaceOutput<THREE.ExternalTexture, TMaterial, TPlane>>}
+     */
     static async create(options) {
         const ui = new UIThree(options)
         const resources = await ui.initialize()
@@ -20,6 +36,10 @@ export default class UIThree extends UIWorldSpace {
         return output
     }
 
+    /**
+     * @param {any} source_event
+     * @param {{ camera: THREE.Camera }} options
+     */
     dispatchPlatformEvent(source_event, { camera }) {
         const rect = source_event.currentTarget.getBoundingClientRect()
         const pointer = new THREE.Vector2(
@@ -50,7 +70,8 @@ export default class UIThree extends UIWorldSpace {
 
     /**
      * @protected
-     * @param {any} options
+     * @override
+     * @param {import('./UIWorldSpace').TextureOptions} options
      */
     createTexture({ gpu_texture }) {
         const three_texture = new THREE.ExternalTexture(gpu_texture)
@@ -68,14 +89,18 @@ export default class UIThree extends UIWorldSpace {
         return three_texture
     }
 
-    /** @protected */
+    /**
+     * @protected
+     * @override
+     */
     createDefaultMaterial() {
         return new THREE.MeshStandardNodeMaterial()
     }
 
     /**
      * @protected
-     * @param {any} options
+     * @override
+     * @param {import('./UIWorldSpace').MaterialOptions<THREE.ExternalTexture> & { material: UIThreeMaterial }} options
      */
     configureMaterial({ texture: three_texture, material }) {
         material.map = three_texture
@@ -95,7 +120,8 @@ export default class UIThree extends UIWorldSpace {
 
     /**
      * @protected
-     * @param {any} options
+     * @override
+     * @param {import('./UIWorldSpace').PlaneOptions<THREE.ExternalTexture, UIThreeMaterial>} options
      */
     createDefaultPlane({ material, world_width, world_height }) {
         const geometry = new THREE.PlaneGeometry(world_width, world_height)

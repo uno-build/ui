@@ -67,13 +67,19 @@ async function buildTypes(output_directory) {
                     ? context.factory.updateConstructorDeclaration(member, [context.factory.createModifier(ts.SyntaxKind.ProtectedKeyword)], member.parameters, member.body)
                     : member, context)
                 const original = implementation.statements.find((statement) => ts.isClassDeclaration(statement) && statement.name.text === node.name.text)
-                const members = [...declaration.members]
+                // A class without its own constructor inherits the base parameters and visibility.
+                const has_constructor = original.members.some(ts.isConstructorDeclaration)
+                const members = declaration.members.filter((member) => has_constructor || !ts.isConstructorDeclaration(member))
                 // JS emit also elides overrides identical to an abstract base signature.
                 for (const member of original.members) {
                     if (!ts.isMethodDeclaration(member) || !ts.getJSDocTags(member).some((tag) => tag.tagName.text === 'override')) continue
                     if (members.some((existing) => existing.name?.text === member.name.text)) continue
-                    const signature = checker.signatureToSignatureDeclaration(checker.getSignatureFromDeclaration(member), ts.SyntaxKind.MethodSignature, member)
-                    members.push(context.factory.createMethodDeclaration(undefined, undefined, member.name, member.questionToken, signature.typeParameters, signature.parameters, signature.type, undefined))
+                    const signature = checker.signatureToSignatureDeclaration(checker.getSignatureFromDeclaration(member), ts.SyntaxKind.MethodSignature, member, ts.NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope)
+                    const modifiers = ts.getJSDocTags(member).some((tag) => tag.tagName.text === 'protected')
+                        ? [context.factory.createModifier(ts.SyntaxKind.ProtectedKeyword)]
+                        : undefined
+                    const name = modifiers ? context.factory.createIdentifier(member.name.text) : member.name
+                    members.push(context.factory.createMethodDeclaration(modifiers, undefined, name, member.questionToken, signature.typeParameters, signature.parameters, signature.type, undefined))
                 }
                 return context.factory.updateClassDeclaration(declaration, declaration.modifiers, declaration.name, declaration.typeParameters, declaration.heritageClauses, members)
             }, context)

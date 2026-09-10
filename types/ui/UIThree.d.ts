@@ -1,33 +1,61 @@
-export default class UIThree extends UIWorldSpace {
-    /** @returns {Promise<{ ui: UIThree } & Record<string, any>>} */
-    static create(options: any): Promise<{
+/**
+ * @typedef {THREE.NodeMaterial & Pick<THREE.MeshBasicNodeMaterial, 'map' | 'color'>} UIThreeMaterial
+ */
+/**
+ * @template {UIThreeMaterial} [TMaterial=THREE.MeshStandardNodeMaterial]
+ * @template {{ plane: THREE.Mesh }} [TPlane={ plane: THREE.Mesh<THREE.PlaneGeometry, TMaterial>, geometry: THREE.PlaneGeometry }]
+ * @typedef {import('./UIWorldSpace').UIWorldSpaceOptions<THREE.ExternalTexture, TMaterial, TPlane, UIThree>} UIThreeOptions
+ */
+/** @extends {UIWorldSpace<THREE.ExternalTexture, UIThreeMaterial, { plane: THREE.Mesh }, UIThree>} */
+export default class UIThree extends UIWorldSpace<THREE.ExternalTexture, UIThreeMaterial, {
+    plane: THREE.Mesh;
+}, UIThree> {
+    /**
+     * @template {UIThreeMaterial} [TMaterial=THREE.MeshStandardNodeMaterial]
+     * @template {{ plane: THREE.Mesh }} [TPlane={ plane: THREE.Mesh<THREE.PlaneGeometry, TMaterial>, geometry: THREE.PlaneGeometry }]
+     * @param {UIThreeOptions<TMaterial, TPlane>} options
+     * @returns {Promise<{ ui: UIThree } & import('./UIWorldSpace').UIWorldSpaceOutput<THREE.ExternalTexture, TMaterial, TPlane>>}
+     */
+    static create<TMaterial extends UIThreeMaterial = THREE.MeshStandardNodeMaterial, TPlane extends {
+        plane: THREE.Mesh;
+    } = {
+        plane: THREE.Mesh<THREE.PlaneGeometry, TMaterial>;
+        geometry: THREE.PlaneGeometry;
+    }>(options: UIThreeOptions<TMaterial, TPlane>): Promise<{
         ui: UIThree;
-    } & Record<string, any>>;
+    } & import("./UIWorldSpace").UIWorldSpaceOutput<THREE.ExternalTexture, TMaterial, TPlane>>;
     /** @private */
     private plane;
+    /**
+     * @param {any} source_event
+     * @param {{ camera: THREE.Camera }} options
+     */
     dispatchPlatformEvent(source_event: any, { camera }: {
-        camera: any;
+        camera: THREE.Camera;
     }): void;
     /**
      * @protected
-     * @param {any} options
+     * @override
      */
-    protected createTexture({ gpu_texture }: any): THREE.ExternalTexture;
-    /** @protected */
-    protected createDefaultMaterial(): THREE.MeshStandardNodeMaterial;
+    protected override createDefaultMaterial(): THREE.MeshStandardNodeMaterial;
     /**
      * @protected
-     * @param {any} options
+     * @override
+     * @param {import('./UIWorldSpace').PlaneOptions<THREE.ExternalTexture, UIThreeMaterial>} options
      */
-    protected configureMaterial({ texture: three_texture, material }: any): void;
-    /**
-     * @protected
-     * @param {any} options
-     */
-    protected createDefaultPlane({ material, world_width, world_height }: any): {
-        plane: THREE.Mesh<THREE.PlaneGeometry, any, THREE.Object3DEventMap>;
+    protected override createDefaultPlane({ material, world_width, world_height }: import("./UIWorldSpace").PlaneOptions<THREE.ExternalTexture, UIThreeMaterial>): {
+        plane: THREE.Mesh<THREE.PlaneGeometry, UIThreeMaterial, THREE.Object3DEventMap>;
         geometry: THREE.PlaneGeometry;
     };
+    protected createTexture({ gpu_texture }: import("./UIWorldSpace").TextureOptions): THREE.ExternalTexture;
+    protected configureMaterial({ texture: three_texture, material }: import("./UIWorldSpace").MaterialOptions<THREE.ExternalTexture> & { material: UIThreeMaterial; }): void;
 }
-import UIWorldSpace from './UIWorldSpace';
+export type UIThreeMaterial = THREE.NodeMaterial & Pick<THREE.MeshBasicNodeMaterial, "map" | "color">;
+export type UIThreeOptions<TMaterial extends UIThreeMaterial = THREE.MeshStandardNodeMaterial, TPlane extends {
+    plane: THREE.Mesh;
+} = {
+    plane: THREE.Mesh<THREE.PlaneGeometry, TMaterial>;
+    geometry: THREE.PlaneGeometry;
+}> = import("./UIWorldSpace").UIWorldSpaceOptions<THREE.ExternalTexture, TMaterial, TPlane, UIThree>;
 import * as THREE from 'three/webgpu';
+import UIWorldSpace from './UIWorldSpace';

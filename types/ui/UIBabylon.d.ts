@@ -1,42 +1,74 @@
-export default class UIBabylon extends UIWorldSpace {
-    /** @returns {Promise<{ ui: UIBabylon } & Record<string, any>>} */
-    static create(options: any): Promise<{
+/**
+ * @typedef {StandardMaterial} UIBabylonMaterial
+ */
+/**
+ * @template {UIBabylonMaterial} [TMaterial=StandardMaterial]
+ * @template {{ plane: import('@babylonjs/core/Meshes/mesh').Mesh }} [TPlane={ plane: import('@babylonjs/core/Meshes/mesh').Mesh, geometry: import('@babylonjs/core/Meshes/geometry').Geometry | null }]
+ * @typedef {import('./UIWorldSpace').UIWorldSpaceOptions<Texture, TMaterial, TPlane, UIBabylon> & { scene: import('@babylonjs/core/scene').Scene }} UIBabylonOptions
+ */
+/** @extends {UIWorldSpace<Texture, UIBabylonMaterial, { plane: import('@babylonjs/core/Meshes/mesh').Mesh }, UIBabylon>} */
+export default class UIBabylon extends UIWorldSpace<Texture, StandardMaterial, {
+    plane: import("@babylonjs/core/Meshes/mesh").Mesh;
+}, UIBabylon> {
+    /**
+     * @template {UIBabylonMaterial} [TMaterial=StandardMaterial]
+     * @template {{ plane: import('@babylonjs/core/Meshes/mesh').Mesh }} [TPlane={ plane: import('@babylonjs/core/Meshes/mesh').Mesh, geometry: import('@babylonjs/core/Meshes/geometry').Geometry | null }]
+     * @param {UIBabylonOptions<TMaterial, TPlane>} options
+     * @returns {Promise<{ ui: UIBabylon } & import('./UIWorldSpace').UIWorldSpaceOutput<Texture, TMaterial, TPlane>>}
+     */
+    static create<TMaterial extends UIBabylonMaterial = StandardMaterial, TPlane extends {
+        plane: import("@babylonjs/core/Meshes/mesh").Mesh;
+    } = {
+        plane: import("@babylonjs/core/Meshes/mesh").Mesh;
+        geometry: import("@babylonjs/core/Meshes/geometry").Geometry | null;
+    }>(options: UIBabylonOptions<TMaterial, TPlane>): Promise<{
         ui: UIBabylon;
-    } & Record<string, any>>;
+    } & import("./UIWorldSpace").UIWorldSpaceOutput<Texture, TMaterial, TPlane>>;
     /**
      *
-     * @param {any} options
+     * @param {UIBabylonOptions<UIBabylonMaterial, { plane: import('@babylonjs/core/Meshes/mesh').Mesh }>} options
      */
-    protected constructor({ scene, ...options }: any);
+    protected constructor({ scene, ...options }: UIBabylonOptions<UIBabylonMaterial, {
+        plane: import("@babylonjs/core/Meshes/mesh").Mesh;
+    }>);
     /** @private */
     private scene;
     /** @private */
     private plane;
+    /**
+     * @param {any} source_event
+     * @param {{ camera: import('@babylonjs/core/Cameras/camera').Camera }} options
+     */
     dispatchPlatformEvent(source_event: any, { camera }: {
-        camera: any;
+        camera: import("@babylonjs/core/Cameras/camera").Camera;
     }): void;
     /**
      * @protected
-     * @param {any} options
+     * @override
      */
-    protected createTexture({ output, gpu_texture }: any): Texture;
-    /** @protected */
-    protected createDefaultMaterial(): StandardMaterial;
+    protected override createDefaultMaterial(): StandardMaterial;
     /**
      * @protected
-     * @param {any} options
+     * @override
+     * @param {import('./UIWorldSpace').PlaneOptions<Texture, UIBabylonMaterial>} options
      */
-    protected configureMaterial({ texture: babylon_texture, material }: any): void;
-    /**
-     * @protected
-     * @param {any} options
-     */
-    protected createDefaultPlane({ material, world_width, world_height }: any): {
+    protected override createDefaultPlane({ material, world_width, world_height }: import("./UIWorldSpace").PlaneOptions<Texture, UIBabylonMaterial>): {
         plane: import("@babylonjs/core").Mesh;
         geometry: import("@babylonjs/core").Nullable<import("@babylonjs/core").Geometry>;
     };
+    protected createTexture({ output, gpu_texture }: import("./UIWorldSpace").TextureOptions): Texture;
+    protected configureMaterial({ texture: babylon_texture, material }: import("./UIWorldSpace").MaterialOptions<Texture> & { material: UIBabylonMaterial; }): void;
 }
 export type WebGPUHardwareTexture = import("@babylonjs/core/Engines/WebGPU/webgpuHardwareTexture.js").WebGPUHardwareTexture;
-import UIWorldSpace from './UIWorldSpace';
+export type UIBabylonMaterial = StandardMaterial;
+export type UIBabylonOptions<TMaterial extends UIBabylonMaterial = StandardMaterial, TPlane extends {
+    plane: import("@babylonjs/core/Meshes/mesh").Mesh;
+} = {
+    plane: import("@babylonjs/core/Meshes/mesh").Mesh;
+    geometry: import("@babylonjs/core/Meshes/geometry").Geometry | null;
+}> = import("./UIWorldSpace").UIWorldSpaceOptions<Texture, TMaterial, TPlane, UIBabylon> & {
+    scene: import("@babylonjs/core/scene").Scene;
+};
 import { Texture } from '@babylonjs/core/Materials/Textures/texture.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
+import UIWorldSpace from './UIWorldSpace';

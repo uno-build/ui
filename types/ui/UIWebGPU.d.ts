@@ -1,13 +1,8 @@
 /**
- * @typedef {object} DefinedEvent
- * @property {Array<typeof import('../events/constants').EVENT[keyof typeof import('../events/constants').EVENT]>} types
- * @property {() => void} destroy
- * @property {(node: import('../core/Node').default) => void} [destroyNode]
+ * @typedef {import('../core/UI').DefinedEvent} DefinedEvent
  */
 /**
- * @typedef {import('../renderer/RendererWebGPU').RendererWebGPUOptions & {
- *   defined_events?: Array<(options: { ui: UIWebGPU }) => DefinedEvent>
- * }} UIWebGPUOptions
+ * @typedef {import('../renderer/RendererWebGPU').RendererWebGPUOptions & import('../core/UI').EventOptions<UIWebGPU>} UIWebGPUOptions
  */
 export default class UIWebGPU extends UI {
     /** @param {UIWebGPUOptions} options */
@@ -21,14 +16,6 @@ export default class UIWebGPU extends UI {
     protected constructor({ resources, defined_events, ...renderer_options }: UIWebGPUOptions);
     dispatchPlatformEvent(source_event: any): void;
 }
-export type DefinedEvent = {
-    types: Array<typeof import("../events/constants").EVENT[keyof typeof import("../events/constants").EVENT]>;
-    destroy: () => void;
-    destroyNode?: ((node: import("../core/Node").default) => void) | undefined;
-};
-export type UIWebGPUOptions = import("../renderer/RendererWebGPU").RendererWebGPUOptions & {
-    defined_events?: Array<(options: {
-        ui: UIWebGPU;
-    }) => DefinedEvent>;
-};
+export type DefinedEvent = import("../core/UI").DefinedEvent;
+export type UIWebGPUOptions = import("../renderer/RendererWebGPU").RendererWebGPUOptions & import("../core/UI").EventOptions<UIWebGPU>;
 import UI from '../core/UI';

@@ -17,6 +17,17 @@ import {
 } from 'playcanvas'
 import UIWorldSpace from './UIWorldSpace'
 
+/**
+ * @typedef {StandardMaterial} UIPlayCanvasMaterial
+ */
+
+/**
+ * @template {UIPlayCanvasMaterial} [TMaterial=StandardMaterial]
+ * @template {{ plane: Entity }} [TPlane={ plane: Entity, geometry: Geometry, mesh: Mesh, mesh_instance: MeshInstance }]
+ * @typedef {import('./UIWorldSpace').UIWorldSpaceOptions<Texture, TMaterial, TPlane, UIPlayCanvas> & { app: import('playcanvas').AppBase }} UIPlayCanvasOptions
+ */
+
+/** @extends {UIWorldSpace<Texture, UIPlayCanvasMaterial, { plane: Entity }, UIPlayCanvas>} */
 export default class UIPlayCanvas extends UIWorldSpace {
     /** @private */
     app
@@ -25,14 +36,19 @@ export default class UIPlayCanvas extends UIWorldSpace {
 
     /**
      * @protected
-     * @param {any} options
+     * @param {UIPlayCanvasOptions<UIPlayCanvasMaterial, { plane: Entity }>} options
      */
     constructor({ app, ...options }) {
         super(options)
         this.app = app
     }
 
-    /** @returns {Promise<{ ui: UIPlayCanvas } & Record<string, any>>} */
+    /**
+     * @template {UIPlayCanvasMaterial} [TMaterial=StandardMaterial]
+     * @template {{ plane: Entity }} [TPlane={ plane: Entity, geometry: Geometry, mesh: Mesh, mesh_instance: MeshInstance }]
+     * @param {UIPlayCanvasOptions<TMaterial, TPlane>} options
+     * @returns {Promise<{ ui: UIPlayCanvas } & import('./UIWorldSpace').UIWorldSpaceOutput<Texture, TMaterial, TPlane>>}
+     */
     static async create(options) {
         const ui = new UIPlayCanvas(options)
         const resources = await ui.initialize()
@@ -46,6 +62,10 @@ export default class UIPlayCanvas extends UIWorldSpace {
         return output
     }
 
+    /**
+     * @param {any} source_event
+     * @param {{ camera: Entity }} options
+     */
     dispatchPlatformEvent(source_event, { camera }) {
         const rect = source_event.currentTarget.getBoundingClientRect()
         const { width, height } = this.app.graphicsDevice.clientRect
@@ -94,7 +114,8 @@ export default class UIPlayCanvas extends UIWorldSpace {
 
     /**
      * @protected
-     * @param {any} options
+     * @override
+     * @param {import('./UIWorldSpace').TextureOptions} options
      */
     createTexture({ output, gpu_texture, gpu_texture_view }) {
         const graphics_device = this.app.graphicsDevice
@@ -114,14 +135,18 @@ export default class UIPlayCanvas extends UIWorldSpace {
         return playcanvas_texture
     }
 
-    /** @protected */
+    /**
+     * @protected
+     * @override
+     */
     createDefaultMaterial() {
         return new StandardMaterial()
     }
 
     /**
      * @protected
-     * @param {any} options
+     * @override
+     * @param {import('./UIWorldSpace').MaterialOptions<Texture> & { material: UIPlayCanvasMaterial }} options
      */
     configureMaterial({ texture: playcanvas_texture, material }) {
         material.diffuseMap = playcanvas_texture
@@ -143,7 +168,8 @@ export default class UIPlayCanvas extends UIWorldSpace {
 
     /**
      * @protected
-     * @param {any} options
+     * @override
+     * @param {import('./UIWorldSpace').PlaneOptions<Texture, UIPlayCanvasMaterial>} options
      */
     createDefaultPlane({ material, world_width, world_height }) {
         const graphics_device = this.app.graphicsDevice

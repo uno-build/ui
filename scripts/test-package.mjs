@@ -56,7 +56,18 @@ try {
 
     // The basic API must not require optional renderers or framework types.
     const minimal_fixture = path.join(CONSUMER, 'minimal.ts')
-    await writeFile(minimal_fixture, "import { EventEmitter } from 'uno-ui/events'\nimport ResourcesDom from 'uno-ui/ResourcesDom'\nnew EventEmitter().emit('ready')\nResourcesDom.create({ canvas: {} }).registerImage('icon', {})\n")
+    await writeFile(minimal_fixture, `import { EventEmitter } from 'uno-ui/events'
+import ResourcesDom from 'uno-ui/ResourcesDom'
+import ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
+import UIDom from 'uno-ui/UIDom'
+import UIWebGPU from 'uno-ui/UIWebGPU'
+import { loadYoga } from 'yoga-layout/load'
+new EventEmitter().emit('ready')
+const resources = ResourcesDom.create({ canvas: {} })
+resources.registerImage('icon', {})
+UIDom.create({ resources })
+UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas: {} }), loadYoga })
+`)
     run(process.execPath, [path.join(ROOT, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--module', 'esnext', '--moduleResolution', 'bundler', '--target', 'esnext', minimal_fixture], CONSUMER)
 
     const peers = Object.keys(PACKAGE.peerDependencies).filter((name) => name !== 'pixi.js')

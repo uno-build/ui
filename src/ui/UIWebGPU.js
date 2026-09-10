@@ -3,16 +3,11 @@ import { DEFINED_EVENTS } from '../events'
 import RendererWebGPU from '../renderer/RendererWebGPU'
 
 /**
- * @typedef {object} DefinedEvent
- * @property {Array<typeof import('../events/constants').EVENT[keyof typeof import('../events/constants').EVENT]>} types
- * @property {() => void} destroy
- * @property {(node: import('../core/Node').default) => void} [destroyNode]
+ * @typedef {import('../core/UI').DefinedEvent} DefinedEvent
  */
 
 /**
- * @typedef {import('../renderer/RendererWebGPU').RendererWebGPUOptions & {
- *   defined_events?: Array<(options: { ui: UIWebGPU }) => DefinedEvent>
- * }} UIWebGPUOptions
+ * @typedef {import('../renderer/RendererWebGPU').RendererWebGPUOptions & import('../core/UI').EventOptions<UIWebGPU>} UIWebGPUOptions
  */
 
 export default class UIWebGPU extends UI {

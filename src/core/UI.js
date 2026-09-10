@@ -5,6 +5,19 @@ import { isNodeAtPoint, sortPaintingOrder } from '../utils/nodes'
 import { OPERATIONS, RESOURCE_EVENT } from './constants'
 import { isSameLayout } from '../layouter/utils'
 
+/**
+ * @typedef {object} DefinedEvent
+ * @property {Array<typeof import('../events/constants').EVENT[keyof typeof import('../events/constants').EVENT]>} types
+ * @property {() => void} destroy
+ * @property {(node: Node) => void} [destroyNode]
+ */
+
+/**
+ * @template {UI} TUI
+ * @typedef {object} EventOptions
+ * @property {Array<(options: { ui: TUI }) => DefinedEvent>} [defined_events]
+ */
+
 export default class UI {
     /** @type {Node | null} */
     root = null

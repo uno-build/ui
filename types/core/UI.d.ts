@@ -1,3 +1,14 @@
+/**
+ * @typedef {object} DefinedEvent
+ * @property {Array<typeof import('../events/constants').EVENT[keyof typeof import('../events/constants').EVENT]>} types
+ * @property {() => void} destroy
+ * @property {(node: Node) => void} [destroyNode]
+ */
+/**
+ * @template {UI} TUI
+ * @typedef {object} EventOptions
+ * @property {Array<(options: { ui: TUI }) => DefinedEvent>} [defined_events]
+ */
 export default class UI {
     /**
      *
@@ -69,6 +80,16 @@ export default class UI {
     /** @private */
     private releaseNode;
 }
+export type DefinedEvent = {
+    types: Array<typeof import("../events/constants").EVENT[keyof typeof import("../events/constants").EVENT]>;
+    destroy: () => void;
+    destroyNode?: ((node: Node) => void) | undefined;
+};
+export type EventOptions<TUI extends UI> = {
+    defined_events?: ((options: {
+        ui: TUI;
+    }) => DefinedEvent)[] | undefined;
+};
 import Node from './Node';
 import EventEmitter from './EventEmitter';
 import Operations from './Operations';

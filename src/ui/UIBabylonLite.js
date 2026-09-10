@@ -12,6 +12,17 @@ import {
 /** @typedef {import('@babylonjs/lite').Texture2D} Texture2D */
 import UIWorldSpace from './UIWorldSpace'
 
+/**
+ * @typedef {import('@babylonjs/lite').StandardMaterialProps} UIBabylonLiteMaterial
+ */
+
+/**
+ * @template {UIBabylonLiteMaterial} [TMaterial=import('@babylonjs/lite').StandardMaterialProps]
+ * @template {{ plane: import('@babylonjs/lite').Mesh }} [TPlane={ plane: import('@babylonjs/lite').Mesh }]
+ * @typedef {import('./UIWorldSpace').UIWorldSpaceOptions<Texture2D, TMaterial, TPlane, UIBabylonLite> & { engine: import('@babylonjs/lite').EngineContext, scene: import('@babylonjs/lite').SceneContext }} UIBabylonLiteOptions
+ */
+
+/** @extends {UIWorldSpace<Texture2D, UIBabylonLiteMaterial, { plane: import('@babylonjs/lite').Mesh }, UIBabylonLite>} */
 export default class UIBabylonLite extends UIWorldSpace {
     /** @private */
     engine
@@ -24,7 +35,7 @@ export default class UIBabylonLite extends UIWorldSpace {
 
     /**
      * @protected
-     * @param {any} options
+     * @param {UIBabylonLiteOptions<UIBabylonLiteMaterial, { plane: import('@babylonjs/lite').Mesh }>} options
      */
     constructor({ engine, scene, ...options }) {
         super(options)
@@ -33,7 +44,12 @@ export default class UIBabylonLite extends UIWorldSpace {
         this.picker = createGpuPicker(scene)
     }
 
-    /** @returns {Promise<{ ui: UIBabylonLite } & Record<string, any>>} */
+    /**
+     * @template {UIBabylonLiteMaterial} [TMaterial=import('@babylonjs/lite').StandardMaterialProps]
+     * @template {{ plane: import('@babylonjs/lite').Mesh }} [TPlane={ plane: import('@babylonjs/lite').Mesh }]
+     * @param {UIBabylonLiteOptions<TMaterial, TPlane>} options
+     * @returns {Promise<{ ui: UIBabylonLite } & import('./UIWorldSpace').UIWorldSpaceOutput<Texture2D, TMaterial, TPlane>>}
+     */
     static async create(options) {
         const ui = new UIBabylonLite(options)
         const resources = await ui.initialize()
@@ -47,6 +63,10 @@ export default class UIBabylonLite extends UIWorldSpace {
         return output
     }
 
+    /**
+     * @param {any} source_event
+     * @param {{ camera: import('@babylonjs/lite').Camera }} options
+     */
     dispatchPlatformEvent(source_event, { camera }) {
         const rect = source_event.currentTarget.getBoundingClientRect()
         const canvas = this.scene.surface.canvas
@@ -96,7 +116,8 @@ export default class UIBabylonLite extends UIWorldSpace {
 
     /**
      * @protected
-     * @param {any} options
+     * @override
+     * @param {import('./UIWorldSpace').TextureOptions} options
      */
     createTexture({ output, gpu_texture, gpu_texture_view }) {
         /**
@@ -116,14 +137,18 @@ export default class UIBabylonLite extends UIWorldSpace {
         return babylon_texture
     }
 
-    /** @protected */
+    /**
+     * @protected
+     * @override
+     */
     createDefaultMaterial() {
         return createStandardMaterial()
     }
 
     /**
      * @protected
-     * @param {any} options
+     * @override
+     * @param {import('./UIWorldSpace').MaterialOptions<Texture2D> & { material: UIBabylonLiteMaterial }} options
      */
     configureMaterial({ texture: babylon_texture, material }) {
         material.diffuseTexture = babylon_texture
@@ -133,7 +158,9 @@ export default class UIBabylonLite extends UIWorldSpace {
 
     /**
      * @protected
-     * @param {any} options
+     * @override
+     * @param {import('./UIWorldSpace').PlaneOptions<Texture2D, UIBabylonLiteMaterial>} options
+     * @returns {{ plane: import('@babylonjs/lite').Mesh }}
      */
     createDefaultPlane({ material, world_width, world_height }) {
         const plane = createPlane(this.engine, {

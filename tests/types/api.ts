@@ -3,10 +3,6 @@ import ResourcesDom from 'uno-ui/ResourcesDom'
 import ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
 import UIDom from 'uno-ui/UIDom'
 import UIWebGPU from 'uno-ui/UIWebGPU'
-import UIThree from 'uno-ui/UIThree'
-import UIBabylon from 'uno-ui/UIBabylon'
-import UIBabylonLite from 'uno-ui/UIBabylonLite'
-import UIPlayCanvas from 'uno-ui/UIPlayCanvas'
 import { loadYoga } from 'yoga-layout/load'
 import { compilerConfig as octane_config } from 'uno-ui/octane/config'
 import { compilerConfig as solid_config } from 'uno-ui/solid/config'
@@ -57,10 +53,6 @@ await UIWebGPU.create({
     }, ({ ui }) => ({ types: [], destroy() { ui.events.emit('cleanup') } })],
 })
 gpu.ui.draw({ submit: false })
-await UIThree.create({ resources: gpu_resources })
-await UIBabylon.create({ resources: gpu_resources })
-await UIBabylonLite.create({ resources: gpu_resources })
-await UIPlayCanvas.create({ resources: gpu_resources })
 octane_config.renderers.rules[0]?.include
 solid_config.solid.moduleName.toUpperCase()
 

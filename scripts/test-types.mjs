@@ -18,6 +18,7 @@ const OPTIONS = {
 assert.equal(ts.version, '5.9.3')
 for (const [fixture, jsx_options] of [
     ['api.ts', {}],
+    ['world-space.ts', {}],
     ...(CONSUMER === ROOT ? [['internals.ts', {}]] : []),
     ['solid.tsx', { jsx: ts.JsxEmit.Preserve, jsxImportSource: undefined }],
     ['octane.tsx', { jsx: ts.JsxEmit.Preserve, jsxImportSource: 'octane' }],

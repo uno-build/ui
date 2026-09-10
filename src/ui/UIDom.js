@@ -14,16 +14,23 @@ const DOM_POINTER_EVENTS = [
 ]
 const DOM_EVENTS = [defineDomPointer, defineDomWheel, defineDomScroll, defineDomClick, defineFocus]
 
+/**
+ * @typedef {import('../core/UI').EventOptions<UIDom> & {
+ *   resources: import('../renderer/dom/ResourcesDom').default
+ * }} UIDomOptions
+ */
+
 export default class UIDom extends UI {
     /**
      * @protected
-     * @param {any} options
+     * @param {UIDomOptions} options
      */
     constructor({ resources, defined_events = [] }) {
         const renderer = new RendererDom({ resources })
         super({ renderer, resources, defined_events: [...DOM_EVENTS, ...defined_events] })
     }
 
+    /** @param {UIDomOptions} options */
     static async create(options) {
         const ui = new UIDom(options)
         await ui.initialize()
