@@ -1,15 +1,13 @@
-// @ts-check
+import type UI from '../core/UI'
+import type Node from '../core/Node'
+import type { EventSource, UIEventMap } from './types'
 
 import { EVENT } from './constants'
 
-/**
- * @param {any} options
- */
-export function defineFocus({ ui }) {
-    /** @type {any} */
-    let focused_node = null
+export function defineFocus({ ui }: { ui: UI }) {
+    let focused_node: Node | null = null
 
-    const emit = /** @param {any} type @param {any} target @param {any} related_target @param {any} source_event */ (type, target, related_target, source_event) => {
+    const emit = (type: 'focus' | 'blur', target: Node, related_target: Node | null, source_event: EventSource | null) => {
         ui.events.emit(type, {
             source_event,
             event_data: {},
@@ -18,7 +16,7 @@ export function defineFocus({ ui }) {
         })
     }
 
-    const processFocus = /** @param {any} options */ ({ source_event, node }) => {
+    const processFocus = ({ source_event, node }: { source_event: EventSource | null, node: Node }) => {
         if (node === focused_node) {
             return
         }
@@ -33,7 +31,7 @@ export function defineFocus({ ui }) {
         emit(EVENT.FOCUS.name, node, previous_node, source_event)
     }
 
-    const processBlur = /** @param {any} options */ ({ source_event, node }) => {
+    const processBlur = ({ source_event, node }: { source_event: EventSource | null, node: Node }) => {
         if (node !== focused_node) {
             return
         }
@@ -42,7 +40,7 @@ export function defineFocus({ ui }) {
         emit(EVENT.BLUR.name, node, null, source_event)
     }
 
-    const processPointerDown = /** @param {any} options */ ({ source_event, target }) => {
+    const processPointerDown = ({ source_event, target }: UIEventMap['pointerdown']) => {
         processFocus({ source_event, node: target })
     }
 
@@ -55,17 +53,14 @@ export function defineFocus({ ui }) {
     return {
         types: [EVENT.FOCUS, EVENT.BLUR],
 
-        /**
-         * @param {any} node
-         */
-        destroyNode(node) {
+        destroyNode(node: Node) {
             if (focused_node === node) {
                 focused_node = null
             }
         },
 
         destroy() {
-            remove_listeners.forEach(/** @param {any} remove_listener */ (remove_listener) => remove_listener())
+            remove_listeners.forEach((removeListener) => removeListener())
             focused_node = null
         },
     }

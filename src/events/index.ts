@@ -1,9 +1,4 @@
-// @ts-check
-
-/**
- * @typedef {import('./types').NodeEventMap} NodeEventMap
- * @typedef {import('./types').UIEventMap} UIEventMap
- */
+export type { NodeEventMap, UIEventMap } from './types'
 
 import { definePointers } from './pointers'
 import { defineClick } from './click'

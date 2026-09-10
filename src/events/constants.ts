@@ -1,6 +1,4 @@
-// @ts-check
-
-export const EVENT = /** @type {const} */ ({
+export const EVENT = {
     POINTERDOWN: { platform: true, name: 'pointerdown', prop: 'onPointerDown', priority: 'discrete' },
     POINTERMOVE: { platform: true, name: 'pointermove', prop: 'onPointerMove', priority: 'continuous' },
     POINTERUP: { platform: true, name: 'pointerup', prop: 'onPointerUp', priority: 'discrete' },
@@ -12,8 +10,8 @@ export const EVENT = /** @type {const} */ ({
     SCROLL: { platform: false, name: 'scroll', prop: 'onScroll', priority: 'continuous' },
     FOCUS: { platform: false, name: 'focus', prop: 'onFocus', priority: 'discrete' },
     BLUR: { platform: false, name: 'blur', prop: 'onBlur', priority: 'discrete' },
-})
+} as const
 
 export const PLATFORM_EVENT_NAMES = Object.values(EVENT)
-    .filter(/** @param {any} event */ (event) => event.platform)
-    .map(/** @param {any} event */ (event) => event.name)
+    .filter((event) => event.platform)
+    .map((event) => event.name)

@@ -12,6 +12,7 @@ const stopListening: () => void = emitter.on(EVENT.CLICK.name, (event) => event)
 emitter.emit('ready')
 stopListening()
 PLATFORM_EVENT_NAMES.map((name) => name.toUpperCase())
+// @ts-expect-error Event definitions require a UI instance.
 DEFINED_EVENTS.map(defineEvent => defineEvent({ ui: {} }))
 
 const canvas = document.createElement('canvas')
@@ -22,6 +23,7 @@ resources.registerFont('font', {}, { metrics: { lineHeight: 1.2 } })
 resources.disposeFont('font')
 const image_size: { width: number; height: number } | undefined = resources.getImageSize('icon')
 const { ui } = await UIDom.create({ resources })
+DEFINED_EVENTS.map(defineEvent => defineEvent({ ui }))
 const node = ui.create()!
 const sibling = ui.create()!
 ui.root?.add(node)

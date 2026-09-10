@@ -16,7 +16,7 @@ export default class UIWebGPU extends UI<RendererWebGPU, import("../renderer/web
      */
     protected constructor({ resources, defined_events, ...renderer_options }: UIWebGPUOptions);
     /** @param {import('../events/types').PlatformEvent} source_event */
-    dispatchPlatformEvent(source_event: import("../events/types").PlatformEvent): void;
+    dispatchPlatformEvent(source_event: import("../../src/events/types").PlatformEvent): void;
 }
 export type DefinedEvent = import("../../src/core/UI").DefinedEvent;
 export type UIWebGPUOptions = import("../renderer/RendererWebGPU").RendererWebGPUOptions & import("../../src/core/UI").EventOptions<UIWebGPU>;

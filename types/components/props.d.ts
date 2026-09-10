@@ -1,5 +1,5 @@
 import type Node from '../../src/core/Node'
-import type { EventProps } from '../events/types'
+import type { EventProps } from '../../src/events/types'
 import type { StyleProps } from '../style/types'
 
 export type NodeHandle = { nodes: { main: Node } }

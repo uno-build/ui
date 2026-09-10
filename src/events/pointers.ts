@@ -1,17 +1,16 @@
-// @ts-check
+import type UI from '../core/UI'
+import type Node from '../core/Node'
+import type { SourceEvent, PointerSource, EventCoordinates } from './types'
 
 import { EVENT } from './constants'
 
 const POINTER_TYPES = [EVENT.POINTERDOWN.name, EVENT.POINTERMOVE.name, EVENT.POINTERUP.name, EVENT.POINTERCANCEL.name]
 
-/**
- * @param {any} options
- */
-export function definePointers({ ui }) {
-    const pointers = new Map()
-    const hovered_pointers = new Map()
+export function definePointers({ ui }: { ui: UI }) {
+    const pointers = new Map<number, { target: Node, event_data: EventCoordinates | null }>()
+    const hovered_pointers = new Map<number, { target: Node, event_data: EventCoordinates | null }>()
 
-    const normalizePointer = /** @param {any} options */ ({ source_event, event_data, node }) => {
+    const normalizePointer = ({ source_event, event_data, node }: SourceEvent<PointerSource>) => {
         const pointer_id = source_event.pointerId
         const pointer = pointers.get(pointer_id)
         let target = node
@@ -45,7 +44,7 @@ export function definePointers({ ui }) {
         }
     }
 
-    const updatePointerOver = /** @param {any} options */ ({ source_event, event_data, node }) => {
+    const updatePointerOver = ({ source_event, event_data, node }: SourceEvent<PointerSource>) => {
         const pointer_id = source_event.pointerId
         const pointer = hovered_pointers.get(pointer_id)
         const previous_target = pointer?.target ?? null
@@ -60,7 +59,7 @@ export function definePointers({ ui }) {
         if (previous_target !== null) {
             ui.events.emit(EVENT.POINTEROUT.name, {
                 source_event,
-                event_data: event_data ?? pointer.event_data,
+                event_data: (event_data ?? pointer!.event_data)!,
                 target: previous_target,
                 related_target: node,
             })
@@ -72,14 +71,14 @@ export function definePointers({ ui }) {
             hovered_pointers.set(pointer_id, { target: node, event_data })
             ui.events.emit(EVENT.POINTEROVER.name, {
                 source_event,
-                event_data,
+                event_data: event_data!,
                 target: node,
                 related_target: previous_target,
             })
         }
     }
 
-    const endPointerOver = /** @param {any} options */ ({ source_event, event_data }) => {
+    const endPointerOver = ({ source_event, event_data }: SourceEvent<PointerSource>) => {
         const pointer_id = source_event.pointerId
         const pointer = hovered_pointers.get(pointer_id)
 
@@ -87,14 +86,14 @@ export function definePointers({ ui }) {
             hovered_pointers.delete(pointer_id)
             ui.events.emit(EVENT.POINTEROUT.name, {
                 source_event,
-                event_data: event_data ?? pointer.event_data,
+                event_data: (event_data ?? pointer!.event_data)!,
                 target: pointer.target,
                 related_target: null,
             })
         }
     }
 
-    const processPointer = /** @param {any} event */ (event) => {
+    const processPointer = (event: SourceEvent<PointerSource>) => {
         const type = event.source_event.type
 
         if (type !== EVENT.POINTERCANCEL.name) {
@@ -111,7 +110,7 @@ export function definePointers({ ui }) {
         }
     }
 
-    const remove_listeners = POINTER_TYPES.map(/** @param {any} type */ (type) => ui.events_source.on(type, processPointer))
+    const remove_listeners = POINTER_TYPES.map((type) => ui.events_source.on(type, processPointer))
 
     return {
         types: [
@@ -122,10 +121,7 @@ export function definePointers({ ui }) {
             EVENT.POINTEROVER,
             EVENT.POINTEROUT,
         ],
-        /**
-         * @param {any} node
-         */
-        destroyNode(node) {
+        destroyNode(node: Node) {
             for (const [pointer_id, pointer] of pointers) {
                 if (pointer.target === node) {
                     pointers.delete(pointer_id)
@@ -140,7 +136,7 @@ export function definePointers({ ui }) {
         },
 
         destroy() {
-            remove_listeners.forEach(/** @param {any} removeListener */ (removeListener) => removeListener())
+            remove_listeners.forEach((removeListener) => removeListener())
             pointers.clear()
             hovered_pointers.clear()
         },

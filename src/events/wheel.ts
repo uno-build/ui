@@ -1,15 +1,13 @@
-// @ts-check
+import type UI from '../core/UI'
+import type { SourceEvent, WheelSource, EventCoordinates } from './types'
 
 import { EVENT } from './constants'
-import { ROOT_SIZE } from '../style/constants'
+import { ROOT_SIZE } from '#js/style/constants'
 
 const DELTA_MODE_LINE = 1
 
-/**
- * @param {any} options
- */
-export function defineWheel({ ui }) {
-    const removeListener = ui.events_source.on(EVENT.WHEEL.name, /** @param {any} options */ ({ source_event, event_data, node }) => {
+export function defineWheel({ ui }: { ui: UI }) {
+    const removeListener = ui.events_source.on(EVENT.WHEEL.name, ({ source_event, event_data, node }: SourceEvent<WheelSource, EventCoordinates>) => {
         if (node === null) {
             return
         }
@@ -33,10 +31,6 @@ export function defineWheel({ ui }) {
     }
 }
 
-/**
- * @param {any} delta
- * @param {any} delta_mode
- */
-export function normalizeDelta(delta, delta_mode) {
+export function normalizeDelta(delta: number, delta_mode: number) {
     return delta_mode === DELTA_MODE_LINE ? delta * ROOT_SIZE : delta
 }

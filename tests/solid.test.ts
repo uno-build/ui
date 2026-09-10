@@ -11,7 +11,7 @@ const MODULE_PATHS = {
     shared: `/@fs${WORKSPACE_PATH}src/components/shared.js`,
     test_renderer: `/@fs${WORKSPACE_PATH}tests/utils/TestRenderer.ts`,
     test_ui: `/@fs${WORKSPACE_PATH}tests/utils/TestUI.ts`,
-    events: `/@fs${WORKSPACE_PATH}src/events/index.js`,
+    events: `/@fs${WORKSPACE_PATH}src/events/index.ts`,
 }
 
 const FIXTURE_SOURCE = `

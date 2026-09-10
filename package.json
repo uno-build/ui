@@ -10,8 +10,8 @@
     },
     "exports": {
         "./events": {
-            "types": "./types/events/index.d.ts",
-            "import": "./src/events/index.js"
+            "types": "./src/events/index.ts",
+            "import": "./src/events/index.ts"
         },
         "./ResourcesWebGPU": {
             "types": "./types/renderer/webgpu/ResourcesWebGPU.d.ts",

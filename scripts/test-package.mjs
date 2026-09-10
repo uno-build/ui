@@ -87,7 +87,7 @@ UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas }), loadYoga 
             moduleResolution: ts.ModuleResolutionKind.Bundler,
             module: ts.ModuleKind.ESNext,
         }, ts.sys).resolvedModule
-        assert.ok(resolved?.resolvedFileName.endsWith('.d.ts'), `${subpath}: local file dependency must resolve ready-made declarations`)
+        assert.equal(resolved?.resolvedFileName, path.join(ROOT, PACKAGE.exports[subpath].types), `${subpath}: local file dependency must resolve the declared type entrypoint`)
     }
 
     const installed_directory = path.join(CONSUMER, 'node_modules/uno-ui')

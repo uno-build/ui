@@ -42,7 +42,7 @@ export default class UIBabylonLite extends UIWorldSpace<import("@babylonjs/lite"
      * @param {import('../events/types').PlatformEvent} source_event
      * @param {{ camera: import('@babylonjs/lite').Camera }} options
      */
-    dispatchPlatformEvent(source_event: import("../events/types").PlatformEvent, { camera }: {
+    dispatchPlatformEvent(source_event: import("../../src/events/types").PlatformEvent, { camera }: {
         camera: import("@babylonjs/lite").Camera;
     }): Promise<void>;
     /**

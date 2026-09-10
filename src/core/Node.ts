@@ -3,7 +3,7 @@ import type { EventSource, EventPayload, UIEventMap } from '../events/types'
 import type { NodeLayout, StyleName, ResolvedStyle, StyleUpdate } from '../style/types'
 
 import { resolveStyle, validateStyle } from '#js/style/index'
-import { EVENT } from '#js/events/constants'
+import { EVENT } from '../events/constants'
 import { OPERATIONS } from './constants'
 
 export default class Node<TElement = unknown> {

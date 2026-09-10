@@ -1,19 +1,18 @@
-// @ts-check
+import type UI from '../core/UI'
+import type Node from '../core/Node'
+import type { SourceEvent, PointerSource, WheelSource, EventSource } from './types'
 
-import { OVERFLOW } from '../style/constants'
+import { OVERFLOW } from '#js/style/constants'
 import { EVENT } from './constants'
 import { normalizeDelta } from './wheel'
 
 const SCROLL_SLOP = 10 // The minimum drag distance in pixels to mark the node as scrolling
 const WHEEL_FACTOR = 1 // The factor to scale the wheel scroll delta
 
-/**
- * @param {any} options
- */
-export function defineScroll({ ui }) {
-    const pointers = new Map()
+export function defineScroll({ ui }: { ui: UI }) {
+    const pointers = new Map<number, { node: Node, x: number, y: number, scroll_left: number, scroll_top: number }>()
 
-    const scrollTo = /** @param {any} node @param {any} scroll_left @param {any} scroll_top @param {any} source_event */ (node, scroll_left, scroll_top, source_event) => {
+    const scrollTo = (node: Node, scroll_left: number, scroll_top: number, source_event: EventSource) => {
         const previous_left = Math.round(node.scrollLeft)
         const previous_top = Math.round(node.scrollTop)
 
@@ -33,7 +32,7 @@ export function defineScroll({ ui }) {
         }
     }
 
-    const processPointerDown = /** @param {any} options */ ({ source_event, event_data, node: target }) => {
+    const processPointerDown = ({ source_event, event_data, node: target }: SourceEvent<PointerSource>) => {
         if (source_event.pointerType === 'mouse' || pointers.size > 0 || target === null || event_data === null) {
             return
         }
@@ -52,7 +51,7 @@ export function defineScroll({ ui }) {
         })
     }
 
-    const processPointerMove = /** @param {any} options */ ({ source_event, event_data }) => {
+    const processPointerMove = ({ source_event, event_data }: SourceEvent<PointerSource>) => {
         const pointer = pointers.get(source_event.pointerId)
         if (pointer === undefined || event_data === null) {
             return
@@ -74,11 +73,11 @@ export function defineScroll({ ui }) {
         )
     }
 
-    const processPointerEnd = /** @param {any} options */ ({ source_event }) => {
+    const processPointerEnd = ({ source_event }: SourceEvent<PointerSource>) => {
         pointers.delete(source_event.pointerId)
     }
 
-    const processWheel = /** @param {any} options */ ({ source_event, node: target }) => {
+    const processWheel = ({ source_event, node: target }: SourceEvent<WheelSource>) => {
         if (target === null) {
             return
         }
@@ -114,10 +113,7 @@ export function defineScroll({ ui }) {
 
     return {
         types: [EVENT.SCROLL],
-        /**
-         * @param {any} node
-         */
-        destroyNode(node) {
+        destroyNode(node: Node) {
             for (const [pointer_id, pointer] of pointers) {
                 if (pointer.node === node) {
                     pointers.delete(pointer_id)
@@ -126,17 +122,14 @@ export function defineScroll({ ui }) {
         },
 
         destroy() {
-            remove_listeners.forEach(/** @param {any} removeListener */ (removeListener) => removeListener())
+            remove_listeners.forEach((removeListener) => removeListener())
             pointers.clear()
         },
     }
 }
 
-/**
- * @param {any} node
- */
-function findDragNode(node) {
-    let current_node = node
+function findDragNode(node: Node) {
+    let current_node: Node | null = node
 
     while (current_node !== null) {
         if (canScrollX(current_node) || canScrollY(current_node)) {
@@ -148,13 +141,8 @@ function findDragNode(node) {
     return null
 }
 
-/**
- * @param {any} node
- * @param {any} delta_x
- * @param {any} delta_y
- */
-function findWheelScroll(node, delta_x, delta_y) {
-    let current_node = node
+function findWheelScroll(node: Node, delta_x: number, delta_y: number) {
+    let current_node: Node | null = node
 
     while (current_node !== null) {
         const scroll_max_y = current_node.scrollHeight - current_node.clientHeight
@@ -174,25 +162,14 @@ function findWheelScroll(node, delta_x, delta_y) {
     return null
 }
 
-/**
- * @param {any} offset
- * @param {any} delta
- * @param {any} scroll_max
- */
-function canMove(offset, delta, scroll_max) {
+function canMove(offset: number, delta: number, scroll_max: number) {
     return delta !== 0 && (delta < 0 ? offset > 0 : offset < scroll_max)
 }
 
-/**
- * @param {any} node
- */
-function canScrollX(node) {
-    return node.styles.overflowX?.parsed.enum === OVERFLOW.scroll && node.scrollWidth > node.clientWidth
+function canScrollX(node: Node) {
+    return (node.styles.overflowX as { parsed: { enum: number } } | undefined)?.parsed.enum === OVERFLOW.scroll && node.scrollWidth > node.clientWidth
 }
 
-/**
- * @param {any} node
- */
-function canScrollY(node) {
-    return node.styles.overflowY?.parsed.enum === OVERFLOW.scroll && node.scrollHeight > node.clientHeight
+function canScrollY(node: Node) {
+    return (node.styles.overflowY as { parsed: { enum: number } } | undefined)?.parsed.enum === OVERFLOW.scroll && node.scrollHeight > node.clientHeight
 }

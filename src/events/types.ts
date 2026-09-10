@@ -1,5 +1,5 @@
-import type Node from '../../src/core/Node'
-import type { EVENT } from '#js/events/constants'
+import type Node from '../core/Node'
+import type { EVENT } from './constants'
 
 export type PointerSource = Pick<PointerEvent, 'type' | 'pointerId' | 'pointerType' | 'preventDefault'> & Partial<PointerEvent>
 export type WheelSource = Pick<WheelEvent, 'type' | 'deltaX' | 'deltaY' | 'deltaMode' | 'preventDefault'> & Partial<WheelEvent>
@@ -44,3 +44,9 @@ export type UIEventMap = {
 export type EventProps = {
     [E in typeof EVENT[keyof typeof EVENT] as E['prop']]?: ((event: NodeEventMap[E['name']]) => void) | null
 } & { [name: `on${string}`]: ((event: any) => void) | null | undefined }
+
+export type SourceEvent<TSource = EventSource, TData = EventCoordinates | null> = {
+    source_event: TSource
+    event_data: TData
+    node: Node | null
+}

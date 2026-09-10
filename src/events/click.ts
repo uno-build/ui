@@ -1,14 +1,13 @@
-// @ts-check
+import type UI from '../core/UI'
+import type Node from '../core/Node'
+import type { SourceEvent, PointerSource, EventCoordinates } from './types'
 
 import { EVENT } from './constants'
 
-/**
- * @param {any} options
- */
-export function defineClick({ ui }) {
-    const pointers = new Map()
+export function defineClick({ ui }: { ui: UI }) {
+    const pointers = new Map<number, { target: Node, event_data: EventCoordinates | null }>()
 
-    const processPointerDown = /** @param {any} options */ ({ source_event, event_data, node }) => {
+    const processPointerDown = ({ source_event, event_data, node }: SourceEvent<PointerSource>) => {
         if (node === null) {
             return
         }
@@ -20,18 +19,18 @@ export function defineClick({ ui }) {
         })
     }
 
-    const processPointerCancel = /** @param {any} options */ ({ source_event }) => {
+    const processPointerCancel = ({ source_event }: SourceEvent<PointerSource>) => {
         pointers.delete(source_event.pointerId)
     }
 
-    const processPointerUp = /** @param {any} options */ ({ source_event, event_data, node }) => {
+    const processPointerUp = ({ source_event, event_data, node }: SourceEvent<PointerSource>) => {
         const pointer = pointers.get(source_event.pointerId)
         pointers.delete(source_event.pointerId)
 
         if (pointer?.target === node && !isScrollingNode(node)) {
             ui.events.emit(EVENT.CLICK.name, {
                 source_event,
-                event_data: event_data ?? pointer.event_data,
+                event_data: (event_data ?? pointer.event_data)!,
                 target: node,
             })
         }
@@ -45,10 +44,7 @@ export function defineClick({ ui }) {
 
     return {
         types: [EVENT.CLICK],
-        /**
-         * @param {any} node
-         */
-        destroyNode(node) {
+        destroyNode(node: Node) {
             for (const [pointer_id, pointer] of pointers) {
                 if (pointer.target === node) {
                     pointers.delete(pointer_id)
@@ -57,17 +53,14 @@ export function defineClick({ ui }) {
         },
 
         destroy() {
-            remove_listeners.forEach(/** @param {any} removeListener */ (removeListener) => removeListener())
+            remove_listeners.forEach((removeListener) => removeListener())
             pointers.clear()
         },
     }
 }
 
-/**
- * @param {any} node
- */
-function clearScrollingNodes(node) {
-    let current_node = node
+function clearScrollingNodes(node: Node) {
+    let current_node: Node | null = node
 
     while (current_node !== null) {
         current_node.scrolling = false
@@ -75,11 +68,8 @@ function clearScrollingNodes(node) {
     }
 }
 
-/**
- * @param {any} node
- */
-function isScrollingNode(node) {
-    let current_node = node
+function isScrollingNode(node: Node) {
+    let current_node: Node | null = node
 
     while (current_node !== null) {
         if (current_node.scrolling) {

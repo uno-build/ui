@@ -8,7 +8,7 @@
         "rootDir": "src",
         "outDir": "types"
     },
-    "include": ["src/**/*.js", "src/**/*.d.ts", "src/core/**/*.ts"],
+    "include": ["src/**/*.js", "src/**/*.d.ts", "src/core/**/*.ts", "src/events/**/*.ts"],
     "exclude": [
         "src/ui/UIWorldSpace.js",
         "src/components/solid/driver.js",
