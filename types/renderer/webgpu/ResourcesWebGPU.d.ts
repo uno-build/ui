@@ -1,5 +1,19 @@
-/** @extends {Resources<import('./contracts').WebGPUCanvas | undefined>} */
-export default class ResourcesWebGPU extends Resources<import("./contracts").WebGPUCanvas | undefined> {
+/**
+ * @extends {Resources<import('./contracts').WebGPUCanvas | undefined, {
+ *   image: import('./contracts').WebGPUImage,
+ *   font_image: import('./contracts').WebGPUImage,
+ *   font_data: import('./contracts').FontData,
+ *   registered_image: import('./ImageManager').ManagedAtlasImage,
+ *   registered_font: import('./FontManager').ManagedFont
+ * }>}
+ */
+export default class ResourcesWebGPU extends Resources<import("./contracts").WebGPUCanvas | undefined, {
+    image: import("./contracts").WebGPUImage;
+    font_image: import("./contracts").WebGPUImage;
+    font_data: import("./contracts").FontData;
+    registered_image: import("./ImageManager").ManagedAtlasImage;
+    registered_font: import("./FontManager").ManagedFont;
+}> {
     /** @param {import('./contracts').ResourcesWebGPUOptions} options */
     static create(options: import("./contracts").ResourcesWebGPUOptions): Promise<ResourcesWebGPU>;
     /**
@@ -28,23 +42,17 @@ export default class ResourcesWebGPU extends Resources<import("./contracts").Web
     /** @protected */
     protected initialize(): Promise<void>;
     /**
-     * @override
-     * @param {string} src
-     * @param {import('./contracts').WebGPUImage} image
-     */
-    override registerImage(src: string, image: import("./contracts").WebGPUImage): import("./ImageManager").ManagedAtlasImage;
-    /**
-     * @override
-     * @param {string} name
-     * @param {import('./contracts').WebGPUImage} image
-     * @param {import('./contracts').FontData} json
-     */
-    override registerFont(name: string, image: import("./contracts").WebGPUImage, json: import("./contracts").FontData): import("./FontManager").ManagedFont;
-    /**
      * @returns {void}
      */
     dispose(): void;
     present(): void;
+    /**
+     * @override
+     * @param {string} src
+     * @param {import('./contracts').WebGPUImage} image
+     * @returns {import('./ImageManager').ManagedAtlasImage}
+     */
+    registerImage(src: string, image: import("./contracts").WebGPUImage): import("./ImageManager").ManagedAtlasImage;
     /**
      * @override
      * @param {string} src
@@ -57,6 +65,14 @@ export default class ResourcesWebGPU extends Resources<import("./contracts").Web
      * @returns {{ width: number, height: number } | undefined}
      */
     getImageSize(src: string): { width: number; height: number; } | undefined;
+    /**
+     * @override
+     * @param {string} name
+     * @param {import('./contracts').WebGPUImage} image
+     * @param {import('./contracts').FontData} json
+     * @returns {import('./FontManager').ManagedFont}
+     */
+    registerFont(name: string, image: import("./contracts").WebGPUImage, json: import("./contracts").FontData): import("./FontManager").ManagedFont;
     /**
      * @override
      * @param {string} name

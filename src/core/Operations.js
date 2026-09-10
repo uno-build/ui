@@ -1,13 +1,36 @@
 import { OPERATIONS } from './constants'
 import { isPaintStyle, STYLE } from '../style'
 
+/**
+ * @template [TElement=unknown]
+ * @typedef {import('./Node').default<TElement>} OperationNode
+ */
+
+/**
+ * @template [TElement=unknown]
+ * @typedef {(
+ *   { op: 'add', parent: OperationNode<TElement> | null, node: OperationNode<TElement>, child_index?: number } |
+ *   { op: 'remove', parent: OperationNode<TElement>, node: OperationNode<TElement> } |
+ *   { op: 'style', node: OperationNode<TElement>, style: import('../style/types').StyleUpdate } |
+ *   { op: 'text', node: OperationNode<TElement>, value: string } |
+ *   { op: 'scroll', node: OperationNode<TElement> } |
+ *   { op: 'viewport', width: number, height: number } |
+ *   { op: 'root_size' | 'pixel_ratio', value: number } |
+ *   { op: 'resource_image' | 'resource_font' }
+ * )} Operation
+ */
+
+/** @template [TElement=unknown] */
 export default class Operations {
+    /** @type {Operation<TElement>[]} */
     items = []
+    /** @type {Set<OperationNode<TElement>>} */
     layout_nodes = new Set()
+    /** @type {Set<OperationNode<TElement>>} */
     scroll_nodes = new Set()
-    /** @private */
+    /** @private @type {Operation<TElement>[]} */
     pending = []
-    /** @private */
+    /** @private @type {Set<Operation<TElement>>} */
     captured = new Set()
     /** @private */
     update_order = false
@@ -20,6 +43,7 @@ export default class Operations {
     /** @private */
     context_changed = false
 
+    /** @param {Operation<TElement>} operation */
     add(operation) {
         this.pending.push(operation)
     }
@@ -59,6 +83,7 @@ export default class Operations {
         this.captured.clear()
     }
 
+    /** @param {OperationNode<TElement>} node */
     discardNode(node) {
         this.pending = this.pending.filter(
             (operation) =>
@@ -81,6 +106,7 @@ export default class Operations {
         return this.check_layout
     }
 
+    /** @param {boolean} update_layout */
     setUpdateLayout(update_layout) {
         this.update_layout = update_layout
     }

@@ -3,8 +3,24 @@
  * @typedef {{ width: number, height: number, src?: string }} DomImage
  * @typedef {Pick<import('../webgpu/contracts').FontMetrics, 'lineHeight'> & Partial<import('../webgpu/contracts').FontMetrics>} FontMetrics
  */
-/** @extends {Resources<HTMLElement>} */
-export default class ResourcesDom extends Resources<HTMLElement> {
+/**
+ * @extends {Resources<HTMLElement, {
+ *   image: DomImage,
+ *   font_image: unknown,
+ *   font_data: { metrics: FontMetrics },
+ *   registered_image: void,
+ *   registered_font: void
+ * }>}
+ */
+export default class ResourcesDom extends Resources<HTMLElement, {
+    image: DomImage;
+    font_image: unknown;
+    font_data: {
+        metrics: FontMetrics;
+    };
+    registered_image: void;
+    registered_font: void;
+}> {
     /** @param {ResourcesDomOptions} options */
     static create(options: ResourcesDomOptions): ResourcesDom;
     /**
@@ -22,28 +38,19 @@ export default class ResourcesDom extends Resources<HTMLElement> {
     private onFontsLoaded;
     observeFonts(): () => void;
     /**
-     * @override
-     * @param {string} src
-     * @param {DomImage} image
-     */
-    override registerImage(src: string, image: DomImage): void;
-    /**
      * @param {string} src
      */
     getImage(src: string): DomImage | undefined;
     /**
-     * @override
-     * @param {string} name
-     * @param {unknown} image
-     * @param {{ metrics: FontMetrics }} json
-     */
-    override registerFont(name: string, image: unknown, json: {
-        metrics: FontMetrics;
-    }): void;
-    /**
      * @param {string} name
      */
     getFont(name: string): FontMetrics | undefined;
+    /**
+     * @override
+     * @param {string} src
+     * @param {DomImage} image
+     */
+    registerImage(src: string, image: DomImage): void;
     /**
      * @override
      * @param {string} src
@@ -54,6 +61,13 @@ export default class ResourcesDom extends Resources<HTMLElement> {
      * @param {string} src
      */
     getImageSize(src: string): { width: number; height: number; } | undefined;
+    /**
+     * @override
+     * @param {string} name
+     * @param {unknown} image
+     * @param {{ metrics: FontMetrics }} json
+     */
+    registerFont(name: string, image: unknown, json: { metrics: FontMetrics; }): void;
     /**
      * @override
      * @param {string} name

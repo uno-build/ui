@@ -5,8 +5,13 @@
  * @property {'linear' | 'nearest'} [image_min_filter]
  * @property {'linear' | 'nearest'} [image_mag_filter]
  */
-/** @extends {Renderer<import('./webgpu/contracts').WebGPUDrawOptions, import('./webgpu/contracts').WebGPUDrawResult>} */
-export default class RendererWebGPU extends Renderer<import("./webgpu/contracts").WebGPUDrawOptions, import("./webgpu/contracts").WebGPUDrawResult> {
+/**
+ * @typedef {import('../core/Node').default<undefined>} WebGPUNode
+ * @typedef {import('../core/Operations').default<undefined>} WebGPUOperations
+ * @typedef {Pick<import('./webgpu/ResourcesWebGPU').default, 'adapter' | 'device' | 'context' | 'format'>} RendererWebGPUOutput
+ */
+/** @extends {Renderer<import('./webgpu/contracts').WebGPUDrawOptions, import('./webgpu/contracts').WebGPUDrawResult, undefined, RendererWebGPUOutput>} */
+export default class RendererWebGPU extends Renderer<import("./webgpu/contracts").WebGPUDrawOptions, import("./webgpu/contracts").WebGPUDrawResult, undefined, RendererWebGPUOutput> {
     /** @param {RendererWebGPUOptions} options */
     constructor({ resources, image_min_filter, image_mag_filter, loadYoga }: RendererWebGPUOptions);
     /** @private */
@@ -67,39 +72,20 @@ export default class RendererWebGPU extends Renderer<import("./webgpu/contracts"
     /** @private */
     private computeStyle;
     loadYoga: typeof import("yoga-layout/load").loadYoga;
-    init(): Promise<{
-        adapter: GPUAdapter | null | undefined;
-        device: GPUDevice;
-        context: import("./webgpu/contracts").WebGPUContext;
-        format: GPUTextureFormat;
-    }>;
-    setDevicePixelRatio(device_pixel_ratio: any): void;
-    setViewport(width: any, height: any): void;
-    setRootSize(root_size: any): void;
-    /** @returns {undefined} */
-    createElement(node: any): undefined;
-    getChildIndex(node: any): any;
-    prepareLayout(nodes_created: any, operations: any): any;
-    initializeTextNode(node: any): void;
-    invalidateTextNode(node: any): void;
-    getTextMeasure(node: any, available_width?: number, width_mode?: string, available_height?: number, height_mode?: string): {
-        width: any;
+    /** @param {WebGPUNode[]} nodes */
+    destroy(nodes: WebGPUNode[]): void;
+    /**
+     * @param {WebGPUNode} node
+     * @param {number} [available_width]
+     * @param {'undefined' | 'exactly' | 'at-most'} [width_mode]
+     * @param {number} [available_height]
+     * @param {'undefined' | 'exactly' | 'at-most'} [height_mode]
+     * @returns {{ width: number, height: number }}
+     */
+    getTextMeasure(node: WebGPUNode, available_width?: number, width_mode?: "undefined" | "exactly" | "at-most", available_height?: number, height_mode?: "undefined" | "exactly" | "at-most"): {
+        width: number;
         height: number;
     };
-    /**
-     * @protected
-     * @param {any} parent
-     * @param {any} node
-     * @param {any} child_index
-     */
-    protected insertChild(parent: any, node: any, child_index: any): void;
-    detachChild(parent: any, node: any, release_subtree?: boolean): void;
-    destroyNode(node: any): void;
-    updateStyle(node: any, resolved_style: any): void;
-    getLayout(node: any): any;
-    beforeUpdate(nodes: any, operations: any): void;
-    update(nodes: any, operations: any): void;
-    afterUpdate(nodes: any, operations: any): void;
     /** @private */
     private createBindGroup;
     /** @private */
@@ -126,6 +112,19 @@ export default class RendererWebGPU extends Renderer<import("./webgpu/contracts"
     private getPreparedText;
     /** @private */
     private updateBuffers;
+    /** @override @param {WebGPUNode} node @returns {undefined} */
+    createElement(node: WebGPUNode): undefined;
+    /** @override @param {WebGPUNode} node @returns {number} */
+    getChildIndex(node: WebGPUNode): number;
+    protected insertChild(parent: WebGPUNode, node: WebGPUNode, child_index: number): void;
+    /** @override @param {WebGPUNode} parent @param {WebGPUNode} node @param {boolean} [release_subtree] */
+    detachChild(parent: WebGPUNode, node: WebGPUNode, release_subtree?: boolean): void;
+    /** @override @param {WebGPUNode} node */
+    destroyNode(node: WebGPUNode): void;
+    /** @override @param {WebGPUNode} node @param {import('../style/types').StyleUpdate} resolved_style */
+    updateStyle(node: WebGPUNode, resolved_style: import("../style/types").StyleUpdate): void;
+    /** @override @param {WebGPUNode} node @returns {import('../style/types').ComputedLayout} */
+    getLayout(node: WebGPUNode): import("../style/types").ComputedLayout;
 }
 export type RendererWebGPUOptions = {
     resources: import("./webgpu/ResourcesWebGPU").default;
@@ -133,4 +132,7 @@ export type RendererWebGPUOptions = {
     image_min_filter?: "linear" | "nearest" | undefined;
     image_mag_filter?: "linear" | "nearest" | undefined;
 };
+export type WebGPUNode = import("../core/Node").default<undefined>;
+export type WebGPUOperations = import("../core/Operations").default<undefined>;
+export type RendererWebGPUOutput = Pick<import("./webgpu/ResourcesWebGPU").default, "adapter" | "device" | "context" | "format">;
 import Renderer from '../core/Renderer';

@@ -63,7 +63,13 @@ const SUBTREE_STYLE_NAMES = new Set([STYLE.OPACITY.name, STYLE.OVERFLOWX.name, S
  * @property {'linear' | 'nearest'} [image_mag_filter]
  */
 
-/** @extends {Renderer<import('./webgpu/contracts').WebGPUDrawOptions, import('./webgpu/contracts').WebGPUDrawResult>} */
+/**
+ * @typedef {import('../core/Node').default<undefined>} WebGPUNode
+ * @typedef {import('../core/Operations').default<undefined>} WebGPUOperations
+ * @typedef {Pick<import('./webgpu/ResourcesWebGPU').default, 'adapter' | 'device' | 'context' | 'format'>} RendererWebGPUOutput
+ */
+
+/** @extends {Renderer<import('./webgpu/contracts').WebGPUDrawOptions, import('./webgpu/contracts').WebGPUDrawResult, undefined, RendererWebGPUOutput>} */
 export default class RendererWebGPU extends Renderer {
     /** @private */
     resources
@@ -133,6 +139,7 @@ export default class RendererWebGPU extends Renderer {
         this.loadYoga = loadYoga
     }
 
+    /** @returns {Promise<RendererWebGPUOutput>} */
     async init() {
         this.layouter = await createYogaLayouter({ loadYoga: this.loadYoga })
         this.position_buffer = this.resources.device.createBuffer({
@@ -182,6 +189,7 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
+    /** @param {WebGPUNode[]} nodes */
     destroy(nodes) {
         this.layouter.destroy(nodes)
         this.position_buffer.destroy()
@@ -209,20 +217,23 @@ export default class RendererWebGPU extends Renderer {
         this.resources = null
     }
 
+    /** @param {number} device_pixel_ratio */
     setDevicePixelRatio(device_pixel_ratio) {
         this.device_pixel_ratio = device_pixel_ratio
     }
 
+    /** @param {number} width @param {number} height */
     setViewport(width, height) {
         this.viewport_width = width
         this.viewport_height = height
     }
 
+    /** @param {number} root_size */
     setRootSize(root_size) {
         this.root_size = root_size
     }
 
-    /** @returns {undefined} */
+    /** @override @param {WebGPUNode} node @returns {undefined} */
     createElement(node) {
         if (node.id === 0) {
             this.root_node = node
@@ -231,10 +242,12 @@ export default class RendererWebGPU extends Renderer {
         this.layouter.createNode(node)
     }
 
+    /** @override @param {WebGPUNode} node @returns {number} */
     getChildIndex(node) {
         return this.layouter.getChildIndex(node)
     }
 
+    /** @param {Set<WebGPUNode>} nodes_created @param {WebGPUOperations} operations @returns {boolean} */
     prepareLayout(nodes_created, operations) {
         const fonts_changed = operations.items.some(({ op }) => op === OPERATIONS.RESOURCE_FONT)
 
@@ -264,17 +277,27 @@ export default class RendererWebGPU extends Renderer {
         )
     }
 
+    /** @param {WebGPUNode} node */
     initializeTextNode(node) {
         this.layouter.setMeasureFunction(node, (width, width_mode, height, height_mode) =>
             this.getTextMeasure(node, width, width_mode, height, height_mode),
         )
     }
 
+    /** @param {WebGPUNode} node */
     invalidateTextNode(node) {
         this.prepared_texts.delete(node)
         this.layouter.markDirty(node)
     }
 
+    /**
+     * @param {WebGPUNode} node
+     * @param {number} [available_width]
+     * @param {'undefined' | 'exactly' | 'at-most'} [width_mode]
+     * @param {number} [available_height]
+     * @param {'undefined' | 'exactly' | 'at-most'} [height_mode]
+     * @returns {{ width: number, height: number }}
+     */
     getTextMeasure(
         node,
         available_width = NaN,
@@ -309,14 +332,16 @@ export default class RendererWebGPU extends Renderer {
 
     /**
      * @protected
-     * @param {any} parent
-     * @param {any} node
-     * @param {any} child_index
+     * @override
+     * @param {WebGPUNode} parent
+     * @param {WebGPUNode} node
+     * @param {number} child_index
      */
     insertChild(parent, node, child_index) {
         this.layouter.insertChild(parent, node, child_index)
     }
 
+    /** @override @param {WebGPUNode} parent @param {WebGPUNode} node @param {boolean} [release_subtree] */
     detachChild(parent, node, release_subtree = true) {
         this.layouter.detachChild(parent, node)
         if (release_subtree) {
@@ -324,11 +349,13 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
+    /** @override @param {WebGPUNode} node */
     destroyNode(node) {
         this.layouter.destroyNode(node)
         this.releaseRecord(node)
     }
 
+    /** @override @param {WebGPUNode} node @param {import('../style/types').StyleUpdate} resolved_style */
     updateStyle(node, resolved_style) {
         for (const style of resolved_style.expanded) {
             this.updateResolvedStyle(node, style)
@@ -339,16 +366,19 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
+    /** @override @param {WebGPUNode} node @returns {import('../style/types').ComputedLayout} */
     getLayout(node) {
         return this.layouter.getLayout(node)
     }
 
+    /** @param {WebGPUNode[]} nodes @param {WebGPUOperations} operations */
     beforeUpdate(nodes, operations) {
         if (operations.needUpdateLayout()) {
             this.layouter.calculate(this.viewport_width, this.viewport_height)
         }
     }
 
+    /** @param {WebGPUNode[]} nodes @param {WebGPUOperations} operations */
     update(nodes, operations) {
         const render_plan = this.createRenderPlan(nodes, operations)
         const record_parts = render_plan.record_parts
@@ -376,6 +406,7 @@ export default class RendererWebGPU extends Renderer {
         this.updateBuffers(render_plan.update_viewport)
     }
 
+    /** @param {WebGPUNode[]} nodes @param {WebGPUOperations} operations */
     afterUpdate(nodes, operations) {
         if (operations.needUpdateLayout() || operations.needUpdateScrollMetrics()) {
             updateScrollMetrics(this.root_node, (node) => this.getNodeContentSize(node), operations.scroll_nodes)

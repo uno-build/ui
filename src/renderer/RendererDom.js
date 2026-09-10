@@ -3,6 +3,12 @@ import { OPERATIONS } from '../core/constants'
 import { calculateLayoutRect, getParentLayout } from '../layouter/utils'
 import { KEYWORD } from '../style/constants'
 
+/**
+ * @typedef {import('../core/Node').default<HTMLElement>} DomNode
+ * @typedef {import('../core/Operations').default<HTMLElement>} DomOperations
+ */
+
+/** @extends {Renderer<unknown, void, HTMLElement, void>} */
 export default class RendererDom extends Renderer {
     /** @private */
     resources
@@ -15,6 +21,7 @@ export default class RendererDom extends Renderer {
     /** @private */
     stopObservingFonts
 
+    /** @param {{ resources: import('./dom/ResourcesDom').default }} options */
     constructor({ resources }) {
         super()
         this.resources = resources
@@ -24,6 +31,7 @@ export default class RendererDom extends Renderer {
         this.stopObservingFonts = this.resources.observeFonts()
     }
 
+    /** @param {Set<DomNode>} nodes_created @param {DomOperations} operations @returns {boolean} */
     prepareLayout(nodes_created, operations) {
         const image = operations.items.some((operation) => operation.op === OPERATIONS.RESOURCE_IMAGE)
         const font = operations.items.some((operation) => operation.op === OPERATIONS.RESOURCE_FONT)
@@ -42,11 +50,12 @@ export default class RendererDom extends Renderer {
         return operations.needCheckLayout()
     }
 
+    /** @param {number} root_size */
     setRootSize(root_size) {
         document.body.parentElement.style.fontSize = `${root_size}px`
     }
 
-    /** @returns {HTMLElement} */
+    /** @override @param {DomNode} node @returns {HTMLElement} */
     createElement(node) {
         let element
         if (node.id === 0) {
@@ -63,6 +72,7 @@ export default class RendererDom extends Renderer {
         return element
     }
 
+    /** @param {DomNode[]} nodes */
     destroy(nodes) {
         this.stopObservingFonts()
 
@@ -88,19 +98,22 @@ export default class RendererDom extends Renderer {
 
     /**
      * @protected
-     * @param {any} parent
-     * @param {any} node
-     * @param {any} child_index
+     * @override
+     * @param {DomNode} parent
+     * @param {DomNode} node
+     * @param {number} child_index
      */
     insertChild(parent, node, child_index) {
         const parent_element = this.elements.get(parent)
         parent_element.insertBefore(this.elements.get(node), parent_element.children[child_index] ?? null)
     }
 
+    /** @override @param {DomNode} parent @param {DomNode} node */
     detachChild(parent, node) {
         this.elements.get(parent).removeChild(this.elements.get(node))
     }
 
+    /** @override @param {DomNode} node */
     destroyNode(node) {
         const element = this.elements.get(node)
         element.remove()
@@ -108,16 +121,19 @@ export default class RendererDom extends Renderer {
         this.element_nodes.delete(element)
     }
 
+    /** @override @param {DomNode} node @returns {number} */
     getChildIndex(node) {
         return this.elements.get(node).children.length
     }
 
+    /** @param {DomNode} node */
     initializeTextNode(node) {
         const element = this.elements.get(node)
         element.style.whiteSpace = 'pre-wrap'
         element.style.overflowWrap = 'anywhere'
     }
 
+    /** @override @param {DomNode} node @param {import('../style/types').StyleUpdate} resolved_style */
     updateStyle(node, resolved_style) {
         const element = this.elements.get(node)
 
@@ -182,6 +198,7 @@ export default class RendererDom extends Renderer {
         element.style.lineHeight = font === undefined ? '' : `${font.lineHeight}`
     }
 
+    /** @param {DomNode[]} nodes @param {DomOperations} operations */
     beforeUpdate(nodes, operations) {
         for (const operation of operations.items) {
             if (operation.op === OPERATIONS.TEXT && operation.node.ui !== null) {
@@ -198,6 +215,7 @@ export default class RendererDom extends Renderer {
         }
     }
 
+    /** @param {DomNode[]} nodes @param {DomOperations} operations */
     afterUpdate(nodes, operations) {
         const read_metrics = operations.needUpdateLayout() || operations.needUpdateScrollMetrics()
         const scroll_nodes = read_metrics ? nodes : operations.scroll_nodes
@@ -230,6 +248,7 @@ export default class RendererDom extends Renderer {
         return scroll_changed
     }
 
+    /** @param {HTMLElement} element @returns {DomNode | undefined} */
     syncScroll(element) {
         const node = this.element_nodes.get(element)
 
@@ -240,6 +259,7 @@ export default class RendererDom extends Renderer {
         return node
     }
 
+    /** @param {globalThis.Node | null} element @returns {DomNode | null} */
     getEventNode(element) {
         let current_element = element
 
@@ -254,6 +274,7 @@ export default class RendererDom extends Renderer {
         return null
     }
 
+    /** @override @param {DomNode} node @returns {import('../style/types').ComputedLayout} */
     // prettier-ignore
     getLayout(node) {
         const parent = node.parent

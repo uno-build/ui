@@ -1,6 +1,12 @@
-export default class RendererDom extends Renderer<any, void> {
+/**
+ * @typedef {import('../core/Node').default<HTMLElement>} DomNode
+ * @typedef {import('../core/Operations').default<HTMLElement>} DomOperations
+ */
+/** @extends {Renderer<unknown, void, HTMLElement, void>} */
+export default class RendererDom extends Renderer<unknown, void, HTMLElement, void> {
+    /** @param {{ resources: import('./dom/ResourcesDom').default }} options */
     constructor({ resources }: {
-        resources: any;
+        resources: import("./dom/ResourcesDom").default;
     });
     /** @private */
     private resources;
@@ -12,50 +18,34 @@ export default class RendererDom extends Renderer<any, void> {
     private root_node;
     /** @private */
     private stopObservingFonts;
-    init(): Promise<void>;
-    prepareLayout(nodes_created: any, operations: any): any;
-    setRootSize(root_size: any): void;
-    /** @returns {HTMLElement} */
-    createElement(node: any): HTMLElement;
-    /**
-     * @protected
-     * @param {any} parent
-     * @param {any} node
-     * @param {any} child_index
-     */
-    protected insertChild(parent: any, node: any, child_index: any): void;
-    detachChild(parent: any, node: any): void;
-    destroyNode(node: any): void;
-    getChildIndex(node: any): any;
-    initializeTextNode(node: any): void;
-    updateStyle(node: any, resolved_style: any): void;
+    /** @param {DomNode[]} nodes */
+    destroy(nodes: DomNode[]): void;
+    /** @override @param {DomNode} parent @param {DomNode} node */
+    override detachChild(parent: DomNode, node: DomNode): void;
     /** @private */
     private updateBackgroundImage;
     /** @private */
     private updateTextLineHeight;
-    beforeUpdate(nodes: any, operations: any): void;
-    afterUpdate(nodes: any, operations: any): void;
     /** @private */
     private applyNodeScroll;
     /** @private */
     private readNodeScroll;
-    syncScroll(element: any): any;
-    getEventNode(element: any): any;
-    getLayout(node: any): {
-        border: {
-            top: number;
-            right: number;
-            bottom: number;
-            left: number;
-        };
-        width: any;
-        height: any;
-        left: any;
-        top: any;
-        x: any;
-        y: any;
-        centerX: number;
-        centerY: number;
-    };
+    /** @param {HTMLElement} element @returns {DomNode | undefined} */
+    syncScroll(element: HTMLElement): DomNode | undefined;
+    /** @param {globalThis.Node | null} element @returns {DomNode | null} */
+    getEventNode(element: globalThis.Node | null): DomNode | null;
+    /** @override @param {DomNode} node @returns {HTMLElement} */
+    createElement(node: DomNode): HTMLElement;
+    protected insertChild(parent: DomNode, node: DomNode, child_index: number): void;
+    /** @override @param {DomNode} node */
+    destroyNode(node: DomNode): void;
+    /** @override @param {DomNode} node @returns {number} */
+    getChildIndex(node: DomNode): number;
+    /** @override @param {DomNode} node @param {import('../style/types').StyleUpdate} resolved_style */
+    updateStyle(node: DomNode, resolved_style: import("../style/types").StyleUpdate): void;
+    /** @override @param {DomNode} node @returns {import('../style/types').ComputedLayout} */
+    getLayout(node: DomNode): import("../style/types").ComputedLayout;
 }
+export type DomNode = import("../core/Node").default<HTMLElement>;
+export type DomOperations = import("../core/Operations").default<HTMLElement>;
 import Renderer from '../core/Renderer';

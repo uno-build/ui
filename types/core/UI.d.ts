@@ -10,10 +10,10 @@
  * @property {Array<(options: { ui: TUI }) => DefinedEvent>} [defined_events]
  */
 /**
- * @template {import('./Renderer').default<any, any>} [TRenderer=import('./Renderer').default<any, unknown>]
- * @template {import('./Resources').default} [TResources=import('./Resources').default]
+ * @template {import('./Renderer').default<unknown, unknown, unknown, unknown>} [TRenderer=import('./Renderer').default<unknown, unknown, unknown, unknown>]
+ * @template {import('./Resources').default<unknown>} [TResources=import('./Resources').default<unknown>]
  */
-export default class UI<TRenderer extends import("./Renderer").default<any, any> = import("./Renderer").default<any, unknown>, TResources extends import("./Resources").default = import("./Resources").default<any>> {
+export default class UI<TRenderer extends import("./Renderer").default<unknown, unknown, unknown, unknown> = import("./Renderer").default<unknown, unknown, unknown, unknown>, TResources extends import("./Resources").default<unknown> = import("./Resources").default<unknown, import("./Resources").ResourceTypes>> {
     /**
      *
      * @param {any} options
@@ -29,8 +29,8 @@ export default class UI<TRenderer extends import("./Renderer").default<any, any>
     /** @type {EventEmitter<import('../events/types').UIEventMap>} */
     events: EventEmitter<import("../events/types").UIEventMap>;
     events_source: EventEmitter<Record<string, any>>;
-    /** @protected */
-    protected operations: Operations;
+    /** @protected @type {Operations<ReturnType<TRenderer['createElement']>>} */
+    protected operations: Operations<ReturnType<TRenderer["createElement"]>>;
     /** @private */
     private nodes;
     /** @private */
@@ -52,7 +52,7 @@ export default class UI<TRenderer extends import("./Renderer").default<any, any>
     /** @private */
     private offFontResources;
     /** @protected */
-    protected initialize(): Promise<any>;
+    protected initialize(): Promise<unknown>;
     /** @returns {Node<ReturnType<TRenderer['createElement']>> | undefined} */
     create(): Node<ReturnType<TRenderer["createElement"]>> | undefined;
     update(): void;

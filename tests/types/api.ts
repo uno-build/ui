@@ -222,3 +222,18 @@ gpu_node.element?.style
 gpu.ui.resources.device
 // @ts-expect-error Resources retain their concrete interface.
 gpu.ui.resources?.missing
+
+ui.renderer?.getLayout(node).width.toFixed()
+ui.renderer?.getChildIndex(node).toFixed()
+ui.renderer?.getEventNode(document.createTextNode('hello'))?.element?.focus()
+ui.renderer?.syncScroll(canvas)?.element?.focus()
+gpu.ui.renderer?.getLayout(gpu_node).height.toFixed()
+gpu.ui.renderer?.getTextMeasure(gpu_node, 100, 'at-most').width.toFixed()
+// @ts-expect-error Concrete renderers retain the typed node contract.
+ui.renderer?.getLayout({})
+// @ts-expect-error Concrete renderers retain numeric viewport dimensions.
+gpu.ui.renderer?.setViewport('100', 100)
+// @ts-expect-error Measurement modes are the supported layout modes.
+gpu.ui.renderer?.getTextMeasure(gpu_node, 100, 'invalid')
+// @ts-expect-error Expanded styles are required by concrete renderers too.
+gpu.ui.renderer?.updateStyle(gpu_node, { name: 'width', value: '100px' })

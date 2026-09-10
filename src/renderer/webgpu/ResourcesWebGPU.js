@@ -6,7 +6,15 @@ import { ImageManager } from './ImageManager'
 const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 2048
 
-/** @extends {Resources<import('./contracts').WebGPUCanvas | undefined>} */
+/**
+ * @extends {Resources<import('./contracts').WebGPUCanvas | undefined, {
+ *   image: import('./contracts').WebGPUImage,
+ *   font_image: import('./contracts').WebGPUImage,
+ *   font_data: import('./contracts').FontData,
+ *   registered_image: import('./ImageManager').ManagedAtlasImage,
+ *   registered_font: import('./FontManager').ManagedFont
+ * }>}
+ */
 export default class ResourcesWebGPU extends Resources {
     /** @type {GPUAdapter | null | undefined} */
     adapter
@@ -90,6 +98,7 @@ export default class ResourcesWebGPU extends Resources {
      * @override
      * @param {string} src
      * @param {import('./contracts').WebGPUImage} image
+     * @returns {import('./ImageManager').ManagedAtlasImage}
      */
     registerImage(src, image) {
         const registered_image = this.image_manager.imageUpload(src, image)
@@ -123,6 +132,7 @@ export default class ResourcesWebGPU extends Resources {
      * @param {string} name
      * @param {import('./contracts').WebGPUImage} image
      * @param {import('./contracts').FontData} json
+     * @returns {import('./FontManager').ManagedFont}
      */
     registerFont(name, image, json) {
         const font = this.font_manager.fontRegister(name, image, json)

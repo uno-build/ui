@@ -19,8 +19,8 @@ import { isSameLayout } from '../layouter/utils'
  */
 
 /**
- * @template {import('./Renderer').default<any, any>} [TRenderer=import('./Renderer').default<any, unknown>]
- * @template {import('./Resources').default} [TResources=import('./Resources').default]
+ * @template {import('./Renderer').default<unknown, unknown, unknown, unknown>} [TRenderer=import('./Renderer').default<unknown, unknown, unknown, unknown>]
+ * @template {import('./Resources').default<unknown>} [TResources=import('./Resources').default<unknown>]
  */
 export default class UI {
     /** @type {Node<ReturnType<TRenderer['createElement']>> | null} */
@@ -33,7 +33,7 @@ export default class UI {
     /** @type {EventEmitter<import('../events/types').UIEventMap>} */
     events
     events_source
-    /** @protected */
+    /** @protected @type {Operations<ReturnType<TRenderer['createElement']>>} */
     operations = new Operations()
     /** @private */
     nodes = []

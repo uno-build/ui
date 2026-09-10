@@ -7,7 +7,15 @@ import { RESOURCE_EVENT } from '../../core/constants'
  * @typedef {Pick<import('../webgpu/contracts').FontMetrics, 'lineHeight'> & Partial<import('../webgpu/contracts').FontMetrics>} FontMetrics
  */
 
-/** @extends {Resources<HTMLElement>} */
+/**
+ * @extends {Resources<HTMLElement, {
+ *   image: DomImage,
+ *   font_image: unknown,
+ *   font_data: { metrics: FontMetrics },
+ *   registered_image: void,
+ *   registered_font: void
+ * }>}
+ */
 export default class ResourcesDom extends Resources {
     /** @private @type {Map<string, DomImage>} */
     images = new Map()
