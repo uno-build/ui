@@ -1,3 +1,8 @@
+/** @jsxRuntime classic */
+import type { Element, Ref } from 'solid-js'
+import type Node from '../../core/Node'
+import type { StyleProps } from '../../style/types'
+import type { BaseProps, ImageOptions, InputOptions, NodeHandle, ScrollViewHandle, InputHandle } from '../props'
 import { createEffect, createSignal, flatten, omit } from 'solid-js'
 import { useUI } from './context'
 import {
@@ -12,20 +17,27 @@ import {
     showInputPlaceholder,
 } from '../shared'
 
-export function View(props) {
+export type { StyleProps, StyleName } from '../../style/types'
+export type { NodeHandle, ScrollViewHandle, InputHandle } from '../props'
+export type ComponentProps<TRef = Node> = BaseProps & { children?: Element; ref?: Ref<TRef> }
+export type ImageProps = Omit<ComponentProps, 'style'> & ImageOptions
+export type ScrollViewProps = ComponentProps<ScrollViewHandle> & { horizontal?: boolean }
+export type InputProps = Omit<ComponentProps<InputHandle>, 'style'> & InputOptions & { style?: StyleProps }
+
+export function View(props: ComponentProps) {
     return <view {...props}>{props.children}</view>
 }
 
-export function Text(props) {
+export function Text(props: ComponentProps) {
     return <text {...omit(props, 'children')} value={joinText(props.children)} />
 }
 
-export function Image({ src, width, height, style, ...props }) {
+export function Image({ src, width, height, style, ...props }: ImageProps) {
     const ui = useUI()
     return (
         <view
             {...props}
-            style={getImageStyle(ui.resources, src, {
+            style={getImageStyle(ui.resources!, src, {
                 ...(width !== undefined && { width }),
                 ...(height !== undefined && { height }),
                 ...style,
@@ -34,9 +46,9 @@ export function Image({ src, width, height, style, ...props }) {
     )
 }
 
-export function ScrollView(props) {
-    let main_node
-    let content_node
+export function ScrollView(props: ScrollViewProps) {
+    let main_node!: Node
+    let content_node!: Node
 
     const tree = (
         <view
@@ -50,30 +62,32 @@ export function ScrollView(props) {
         </view>
     )
 
-    props.ref?.({ nodes: { main: main_node, content: content_node } })
+    ;(props.ref as ((handle: ScrollViewHandle) => void) | undefined)?.({
+        nodes: { main: main_node, content: content_node },
+    })
 
     return tree
 }
 
-export function Input(props) {
-    let input_node
-    let content_node
-    let text_node
-    let caret_node
+export function Input(props: InputProps) {
+    let input_node!: Node
+    let content_node!: Node
+    let text_node!: Node
+    let caret_node!: Node
     const [isFocused, setIsFocused] = createSignal(false)
     const [caretVisible, setCaretVisible] = createSignal(true)
 
-    function onFocus(event) {
+    function onFocus(event: import('../../events/types').NodeEventMap['focus']) {
         setIsFocused(true)
         props.onFocus?.(event)
     }
 
-    function onBlur(event) {
+    function onBlur(event: import('../../events/types').NodeEventMap['blur']) {
         setIsFocused(false)
         props.onBlur?.(event)
     }
 
-    function onPointerDown(event) {
+    function onPointerDown(event: import('../../events/types').NodeEventMap['pointerdown']) {
         event.source_event.preventDefault()
         props.onPointerDown?.(event)
     }
@@ -134,7 +148,7 @@ export function Input(props) {
         </view>
     )
 
-    props.ref?.({
+    ;(props.ref as ((handle: InputHandle) => void) | undefined)?.({
         get nodes() {
             return {
                 main: input_node,
@@ -152,15 +166,29 @@ export function Input(props) {
 
 // HELPERS
 
-function joinText(children) {
+function joinText(children: Element) {
     const values = flatten(children, { skipNonRendered: true })
     return (Array.isArray(values) ? values : [values ?? '']).map(toTextValue).join('')
 }
 
-function toTextValue(value) {
+function toTextValue(value: unknown) {
     if (typeof value !== 'string' && typeof value !== 'number') {
         throw new Error('<Text> cannot have children.')
     }
 
     return value
+}
+
+// Local host JSX types; the framework compiler handles the JSX output.
+declare namespace React {
+    namespace JSX {
+        type Element = import('solid-js').Element
+        interface ElementChildrenAttribute {
+            children: {}
+        }
+        interface IntrinsicElements {
+            view: ComponentProps<Node>
+            text: ComponentProps<Node> & { value?: string | number | null }
+        }
+    }
 }

@@ -1,5 +1,10 @@
-// https://github.com/octanejs/octane/blob/main/docs/universal-renderer-architecture.md
-
+import type { ComponentType } from 'octane'
+import type { UniversalComponent, UniversalHostDriver, UniversalRoot } from 'octane/universal/native'
+import type Node from '../../core/Node'
+import type UI from '../../core/UI'
+import type { UniversalEventPriority } from 'octane/universal/native'
+import type { DefinedEvent } from '../../core/UI'
+import type { StyleProps } from '../../style/types'
 import {
     createUniversalRoot,
     defineUniversalComponent,
@@ -9,6 +14,17 @@ import {
 import { OCTANE_RENDERER_ID } from './config'
 import { UI_CONTEXT } from './context'
 
+type HostInstance = {
+    node: Node | null
+    public_instance: { nodes: { main: Node | null } }
+    type: string | null
+    props: Readonly<Record<string, unknown>>
+    parent?: HostInstance | null
+    listeners?: Map<string, { id: number; dispatch(event: unknown): void }>
+}
+
+// https://github.com/octanejs/octane/blob/main/docs/universal-renderer-architecture.md
+
 const TYPE = {
     VIEW: 'view',
     TEXT: 'text',
@@ -16,16 +32,24 @@ const TYPE = {
 }
 const TYPES = Object.values(TYPE)
 
-export function registerRootComponent(component, { ui }) {
+export function registerRootComponent<P>(component: UniversalComponent<P> | ComponentType<P>, { ui }: { ui: UI }) {
     const driver = createUniversalDriver({ ui })
     const host = createUniversalRoot({ renderer: OCTANE_RENDERER_ID }, driver)
-    const RootComponent = defineUniversalComponent(OCTANE_RENDERER_ID, (props) =>
-        universalContext(UI_CONTEXT, ui, universalComponent(OCTANE_RENDERER_ID, component, props)),
+    const RootComponent = defineUniversalComponent(OCTANE_RENDERER_ID, (props: P) =>
+        universalContext(
+            UI_CONTEXT,
+            ui,
+            universalComponent(
+                OCTANE_RENDERER_ID,
+                component as UniversalComponent<P>,
+                props as Record<string, unknown>,
+            ),
+        ),
     )
     driver.root = host
 
     return {
-        render(props) {
+        render(props: P) {
             host.render(RootComponent, props)
         },
         unmount() {
@@ -34,8 +58,12 @@ export function registerRootComponent(component, { ui }) {
     }
 }
 
-export function createUniversalDriver({ ui }) {
-    const instances = new Map()
+export function createUniversalDriver({
+    ui,
+}: {
+    ui: UI
+}): UniversalHostDriver<any, { nodes: { main: Node | null } }> & { root: UniversalRoot | null } {
+    const instances = new Map<number | null, HostInstance>()
     instances.set(null, {
         node: ui.root,
         public_instance: { nodes: { main: ui.root } },
@@ -43,21 +71,23 @@ export function createUniversalDriver({ ui }) {
         props: {},
     })
 
-    const event_types = new Map()
+    const event_types = new Map<string, DefinedEvent['types'][number]>()
     for (const defined_event of ui.defined_events) {
         for (const type of defined_event.types) {
             event_types.set(type.prop, type)
         }
     }
 
-    const driver = {
+    const driver: ReturnType<typeof createUniversalDriver> = {
         root: null,
         id: OCTANE_RENDERER_ID,
         capabilities: { text: 'host' },
         events: {
             classify(name) {
                 const type = event_types.get(name)
-                return type === undefined ? null : { type: type.name, priority: type.priority }
+                return type === undefined
+                    ? null
+                    : { type: type.name, priority: type.priority as UniversalEventPriority }
             },
         },
         prepareBatch({}, { commands }) {
@@ -69,8 +99,8 @@ export function createUniversalDriver({ ui }) {
                             if (!TYPES.includes(command.type)) {
                                 throw new Error(`Unsupported tag element '<${command.type}>'`)
                             }
-                            const node = command.type === TYPE.$TEXT ? null : ui.create()
-                            applyStyles(node, {}, command.props.style ?? {})
+                            const node = command.type === TYPE.$TEXT ? null : ui.create()!
+                            applyStyles(node!, {}, (command.props.style ?? {}) as StyleProps)
                             instances.set(command.id, {
                                 node,
                                 public_instance: { nodes: { main: node } },
@@ -81,8 +111,8 @@ export function createUniversalDriver({ ui }) {
 
                         // Insert / Move
                         else if (command.op === 'insert' || command.op === 'move') {
-                            const parent = instances.get(command.parent)
-                            const child = instances.get(command.id)
+                            const parent = instances.get(command.parent as number | null)!
+                            const child = instances.get(command.id)!
 
                             // If the parent is a <Text> component, it cannot have children that are not #text nodes.
                             if (parent.type === TYPE.TEXT && child.type !== TYPE.$TEXT) {
@@ -95,49 +125,53 @@ export function createUniversalDriver({ ui }) {
                                     throw new Error(`Texts must be inserted into a <Text> component.`)
                                 }
                                 if (command.op === 'move' && child.parent !== parent) {
-                                    child.parent.node.text('')
+                                    child.parent!.node!.text('')
                                 }
                                 child.parent = parent
-                                parent.node.text(child.props.value)
+                                parent.node!.text(child.props.value as string)
                             }
 
                             // If the child is a non-text node, it must be inserted into a <View> component.
                             else {
-                                const before_node = command.before === null ? null : instances.get(command.before).node
+                                const before_node = command.before === null ? null : instances.get(command.before)!.node
                                 if (command.op === 'move') {
-                                    child.node.detach()
+                                    child.node!.detach()
                                 }
-                                parent.node.add(child.node, before_node)
+                                parent.node!.add(child.node!, before_node)
                             }
                         }
 
                         // Update
                         else if (command.op === 'update') {
-                            const instance = instances.get(command.id)
+                            const instance = instances.get(command.id)!
                             if (instance.type === TYPE.$TEXT) {
-                                instance.parent.node.text(command.props.value)
+                                instance.parent!.node!.text(command.props.value as string)
                             } else {
-                                applyStyles(instance.node, instance.props.style ?? {}, command.props.style ?? {})
+                                applyStyles(
+                                    instance.node!,
+                                    (instance.props.style ?? {}) as StyleProps,
+                                    (command.props.style ?? {}) as StyleProps,
+                                )
                             }
                             instance.props = command.props
                         }
 
                         // Event
                         else if (command.op === 'event') {
-                            const instance = instances.get(command.id)
+                            const instance = instances.get(command.id)!
                             const listeners = (instance.listeners ??= new Map())
                             const listener = listeners.get(command.type)
 
                             if (command.listener === null) {
-                                instance.node.off(command.type, listener.dispatch)
+                                instance.node!.off(command.type, listener!.dispatch)
                                 listeners.delete(command.type)
                             } else if (listener === undefined) {
                                 const entry = {
                                     id: command.listener.id,
-                                    dispatch: (event) => driver.root.dispatchEvent(entry.id, event),
+                                    dispatch: (event: unknown) => driver.root!.dispatchEvent(entry.id, event),
                                 }
                                 listeners.set(command.type, entry)
-                                instance.node.on(command.type, entry.dispatch)
+                                instance.node!.on(command.type, entry.dispatch)
                             } else {
                                 listener.id = command.listener.id
                             }
@@ -145,20 +179,20 @@ export function createUniversalDriver({ ui }) {
 
                         // Remove / Detach
                         else if (command.op === 'remove') {
-                            const instance = instances.get(command.id)
+                            const instance = instances.get(command.id)!
                             if (instance.type === TYPE.$TEXT) {
-                                instance.parent.node.text('')
+                                instance.parent!.node!.text('')
                                 instance.parent = null
                             } else {
-                                instance.node.detach()
+                                instance.node!.detach()
                             }
                         }
 
                         // Destroy
                         else if (command.op === 'destroy') {
-                            const instance = instances.get(command.id)
+                            const instance = instances.get(command.id)!
                             if (instance.type !== TYPE.$TEXT) {
-                                instance.node.destroy()
+                                instance.node!.destroy()
                             }
                             instances.delete(command.id)
                         } else {
@@ -180,7 +214,7 @@ export function createUniversalDriver({ ui }) {
     return driver
 }
 
-function applyStyles(node, styles_prev, styles_next) {
+function applyStyles(node: Node, styles_prev: StyleProps, styles_next: StyleProps) {
     for (let key in styles_prev) {
         if (styles_next.hasOwnProperty(key) === false) {
             node.style(key, 'unset')
@@ -189,7 +223,7 @@ function applyStyles(node, styles_prev, styles_next) {
 
     for (let key in styles_next) {
         if (styles_next[key] !== styles_prev[key]) {
-            node.style(key, styles_next[key])
+            node.style(key, styles_next[key]!)
         }
     }
 }

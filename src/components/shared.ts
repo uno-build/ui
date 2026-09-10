@@ -1,3 +1,7 @@
+import type Resources from '../core/Resources'
+import type { StyleProps } from '../style/types'
+import type { ImageOptions, InputOptions } from './props'
+
 const OBJECT_FIT_BACKGROUND_SIZE = {
     fill: '100% 100%',
     contain: 'contain',
@@ -5,7 +9,11 @@ const OBJECT_FIT_BACKGROUND_SIZE = {
     none: 'unset',
 }
 
-export function getImageStyle(resources, src, style = {}) {
+export function getImageStyle(
+    resources: Resources,
+    src: string,
+    style: NonNullable<ImageOptions['style']> = {},
+): StyleProps {
     const image_size = resources.getImageSize(src)
 
     if (image_size === undefined) {
@@ -21,7 +29,7 @@ export function getImageStyle(resources, src, style = {}) {
 
     const has_width = view_style.width !== undefined
     const has_height = view_style.height !== undefined
-    let size_style = {}
+    let size_style: StyleProps | null = {}
 
     if (has_width === false && has_height === false) {
         size_style = {
@@ -41,7 +49,7 @@ export function getImageStyle(resources, src, style = {}) {
     }
 }
 
-export function getScrollViewStyle(horizontal, style = {}) {
+export function getScrollViewStyle(horizontal: boolean, style: StyleProps | null = {}) {
     return {
         flexDirection: horizontal ? 'row' : 'column',
         [horizontal ? 'overflowX' : 'overflowY']: 'scroll',
@@ -49,14 +57,14 @@ export function getScrollViewStyle(horizontal, style = {}) {
     }
 }
 
-export function getScrollContentStyle(horizontal, style = {}) {
+export function getScrollContentStyle(horizontal: boolean, style: StyleProps | null = {}) {
     return {
         flexDirection: horizontal ? 'row' : 'column',
         flexShrink: '0',
     }
 }
 
-export function getInputStyle(style = {}) {
+export function getInputStyle(style: StyleProps = {}) {
     return {
         backgroundColor: '#ffffff',
         border: '1px solid #777777',
@@ -65,7 +73,7 @@ export function getInputStyle(style = {}) {
     }
 }
 
-export function getInputContentStyle(style = {}) {
+export function getInputContentStyle(style: StyleProps = {}) {
     return {
         flex: '1',
         flexDirection: 'row',
@@ -77,7 +85,7 @@ export function getInputContentStyle(style = {}) {
     }
 }
 
-export function getInputTextStyle(style = {}, show_placeholder, placeholder_text_color) {
+export function getInputTextStyle(style: StyleProps = {}, show_placeholder: boolean, placeholder_text_color: string) {
     return {
         whiteSpace: 'nowrap',
         pointerEvents: 'none',
@@ -95,7 +103,7 @@ export function getInputTextStyle(style = {}, show_placeholder, placeholder_text
     }
 }
 
-export function getInputCaretStyle(style = {}, caret_visible) {
+export function getInputCaretStyle(style: StyleProps = {}, caret_visible: boolean) {
     return {
         backgroundColor: style.color ?? '#000000',
         width: '1px',
@@ -107,11 +115,19 @@ export function getInputCaretStyle(style = {}, caret_visible) {
     }
 }
 
-export function showInputPlaceholder(value, placeholder, is_focused) {
+export function showInputPlaceholder(
+    value: InputOptions['value'],
+    placeholder: InputOptions['placeholder'],
+    is_focused: boolean,
+) {
     return isEmptyValue(value) && is_focused === false && placeholder != null
 }
 
-export function getInputTextValue(value, placeholder, show_placeholder) {
+export function getInputTextValue(
+    value: InputOptions['value'],
+    placeholder: InputOptions['placeholder'],
+    show_placeholder: boolean,
+) {
     if (show_placeholder) {
         return placeholder
     }
@@ -119,6 +135,6 @@ export function getInputTextValue(value, placeholder, show_placeholder) {
     return isEmptyValue(value) ? '\u00A0' : value
 }
 
-function isEmptyValue(value) {
+function isEmptyValue(value: InputOptions['value']) {
     return value == null || value === ''
 }

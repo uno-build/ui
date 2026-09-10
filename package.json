@@ -40,20 +40,20 @@
             "import": "./src/ui/UIDom.ts"
         },
         "./octane": {
-            "types": "./types/components/octane/index.d.ts",
-            "import": "./src/components/octane/index.js"
+            "types": "./src/components/octane/index.ts",
+            "import": "./src/components/octane/index.ts"
         },
         "./octane/config": {
-            "types": "./types/components/octane/config.d.ts",
-            "import": "./src/components/octane/config.js"
+            "types": "./src/components/octane/config.ts",
+            "import": "./dist/octane/config.js"
         },
         "./solid": {
-            "types": "./types/components/solid/index.d.ts",
-            "import": "./src/components/solid/index.js"
+            "types": "./src/components/solid/index.ts",
+            "import": "./src/components/solid/index.ts"
         },
         "./solid/config": {
-            "types": "./types/components/solid/config.d.ts",
-            "import": "./src/components/solid/config.js"
+            "types": "./src/components/solid/config.ts",
+            "import": "./dist/solid/config.js"
         }
     },
     "dependencies": {
@@ -132,14 +132,14 @@
         "test:types": "node scripts/test-types.mjs",
         "test:package": "node scripts/test-package.mjs",
         "test:logic": "node scripts/test-logic.mjs",
-        "check:js": "tsc -p tsconfig.check.json",
-        "check:types": "node scripts/types.mjs --check",
-        "build:types": "node scripts/types.mjs",
-        "typescript": "npm run check:js && npm run check:types && npm run test:types",
-        "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"
+        "check:types": "tsc -p tsconfig.json",
+        "typescript": "npm run check:types && npm run test:types",
+        "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs",
+        "build:config": "esbuild src/components/solid/config.ts src/components/octane/config.ts --outbase=src/components --outdir=dist --format=esm --target=esnext",
+        "prepack": "npm run build:config"
     },
     "files": [
         "src",
-        "types"
+        "dist"
     ]
 }

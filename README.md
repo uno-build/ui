@@ -1,5 +1,15 @@
 # Uno UI
 
+## TypeScript sources
+
+`src/` contains only `.ts` and `.tsx` sources. Types are checked with `npm run typescript`;
+there are no separate declaration files. The compiler enforces erasable TypeScript syntax.
+
+The package exposes these sources for bundlers. `npm pack` generates only the two framework
+compiler configurations in `dist/`, since Node cannot load TypeScript from `node_modules`.
+For a local file dependency, run `npm run build:config` before importing `uno-ui/solid/config`
+or `uno-ui/octane/config`. These generated files are ignored by Git.
+
 ## WebGPU resources
 
 Create one `ResourcesWebGPU` and pass the same instance as `resources` to every UI that should share its adapter,

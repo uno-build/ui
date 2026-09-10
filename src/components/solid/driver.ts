@@ -1,18 +1,23 @@
-// https://github.com/solidjs/solid/tree/v2.0.0-rc.0/packages/solid-universal
-
+import type Node from '../../core/Node'
+import type UI from '../../core/UI'
+import type { DefinedEvent } from '../../core/UI'
+import type { Component } from 'solid-js'
+import type { StyleProps } from '../../style/types'
 import { createRenderer } from '@solidjs/universal'
 import { onSettled, runWithOwner, useContext } from 'solid-js'
 import { UI_CONTEXT } from './context'
+
+// https://github.com/solidjs/solid/tree/v2.0.0-rc.0/packages/solid-universal
 
 const TYPE = {
     VIEW: 'view',
     TEXT: 'text',
 }
 const TYPES = Object.values(TYPE)
-const TEXT_NODES = new WeakSet()
-const EVENT_TYPES = new WeakMap()
-const PENDING_UIS = new Set()
-const DETACHED_NODES = new Set()
+const TEXT_NODES = new WeakSet<Node>()
+const EVENT_TYPES = new WeakMap<UI, Map<string, DefinedEvent['types'][number]>>()
+const PENDING_UIS = new Set<UI>()
+const DETACHED_NODES = new Set<Node>()
 
 const {
     render,
@@ -28,13 +33,13 @@ const {
     mergeProps,
     applyRef,
     ref,
-} = createRenderer({
+} = createRenderer<Node>({
     createElement(type, static_props) {
         if (!TYPES.includes(type)) {
             throw new Error(`Unsupported tag element '<${type}>'`)
         }
 
-        const node = useContext(UI_CONTEXT).create()
+        const node = useContext(UI_CONTEXT)!.create()!
 
         if (type === TYPE.TEXT) {
             TEXT_NODES.add(node)
@@ -58,7 +63,7 @@ const {
     isTextNode: () => false,
     createSentinel,
     setProperty,
-    insertNode(parent, node, anchor = null) {
+    insertNode(parent, node, anchor: Node | null = null) {
         if (TEXT_NODES.has(parent)) {
             throw new Error('<Text> cannot have children.')
         }
@@ -68,23 +73,23 @@ const {
         }
 
         parent.add(node, anchor)
-        enqueueUpdate(parent.ui)
+        enqueueUpdate(parent.ui!)
     },
     // Moving a node is a removal followed by an insertion in the same pass, so the node is only
     // destroyed once the update settles and it is still out of the tree.
     removeNode(parent, node) {
         node.detach()
         DETACHED_NODES.add(node)
-        enqueueUpdate(parent.ui)
+        enqueueUpdate(parent.ui!)
     },
     getParentNode(node) {
-        return node.parent
+        return node.parent!
     },
     getFirstChild(node) {
         return node.children[0]
     },
     getNextSibling(node) {
-        const siblings = node.parent.children
+        const siblings = node.parent!.children
         return siblings[siblings.indexOf(node) + 1]
     },
 })
@@ -104,26 +109,26 @@ export {
     ref,
 }
 
-export function registerRootComponent(RootComponent, { ui }) {
-    let disposeRoot = null
+export function registerRootComponent<P extends Record<string, any>>(RootComponent: Component<P>, { ui }: { ui: UI }) {
+    let disposeRoot: (() => void) | null = null
 
     return {
-        render(props) {
+        render(props: P) {
             disposeRoot = render(
                 () =>
-                    createComponent(UI_CONTEXT, {
+                    createComponent(UI_CONTEXT as unknown as (props: { value: UI; children: Node }) => Node, {
                         value: ui,
                         get children() {
-                            return createComponent(RootComponent, props)
+                            return createComponent(RootComponent as (props: P) => Node, props)
                         },
                     }),
-                ui.root,
+                ui.root!,
             )
         },
         unmount() {
-            disposeRoot()
+            disposeRoot!()
 
-            for (const child of [...ui.root.children]) {
+            for (const child of [...ui.root!.children]) {
                 child.destroy()
             }
 
@@ -137,18 +142,18 @@ function rejectText() {
 }
 
 function createSentinel() {
-    const node = useContext(UI_CONTEXT).create()
+    const node = useContext(UI_CONTEXT)!.create()!
     node.style('display', 'none')
     return node
 }
 
-function setProperty(node, name, value, previous_value) {
+function setProperty(node: Node, name: string, value: any, previous_value?: any) {
     if (name === 'style') {
         applyStyles(node, previous_value ?? {}, value ?? {})
     } else if (name === 'value') {
         node.text(value)
     } else {
-        const type = getEventTypes(node.ui).get(name)
+        const type = getEventTypes(node.ui!).get(name)
 
         if (type === undefined) {
             return
@@ -163,10 +168,10 @@ function setProperty(node, name, value, previous_value) {
         }
     }
 
-    enqueueUpdate(node.ui)
+    enqueueUpdate(node.ui!)
 }
 
-function applyStyles(node, styles_prev, styles_next) {
+function applyStyles(node: Node, styles_prev: StyleProps, styles_next: StyleProps) {
     for (const name in styles_prev) {
         if (styles_next.hasOwnProperty(name) === false) {
             node.style(name, 'unset')
@@ -175,12 +180,12 @@ function applyStyles(node, styles_prev, styles_next) {
 
     for (const name in styles_next) {
         if (styles_next[name] !== styles_prev[name]) {
-            node.style(name, styles_next[name])
+            node.style(name, styles_next[name]!)
         }
     }
 }
 
-function getEventTypes(ui) {
+function getEventTypes(ui: UI) {
     let event_types = EVENT_TYPES.get(ui)
 
     if (event_types === undefined) {
@@ -198,7 +203,7 @@ function getEventTypes(ui) {
     return event_types
 }
 
-function enqueueUpdate(ui) {
+function enqueueUpdate(ui: UI) {
     if (PENDING_UIS.has(ui)) {
         return
     }

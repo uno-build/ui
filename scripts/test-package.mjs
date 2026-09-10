@@ -3,11 +3,8 @@ import { spawnSync } from 'node:child_process'
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { pathToFileURL } from 'node:url'
 import { build as bundle, transform } from 'esbuild'
 import { build as buildVite } from 'vite'
-import solid from '@solidjs/vite-plugin'
-import { octane } from '@octanejs/vite-plugin'
 import ts from 'typescript'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
@@ -22,14 +19,17 @@ function run(command, args, cwd) {
 }
 
 try {
+    run('npm', ['run', 'build:config'], ROOT)
+
     // Parse every implementation, including modules unreachable from public exports.
     for (const file of await readdir(path.join(ROOT, 'src'), { recursive: true })) {
-        if (!/\.[jt]sx?$/.test(file) || file.endsWith('.d.ts')) continue
+        assert.ok(!/\.(?:js|jsx|d\.ts)$/.test(file), `${file}: source modules must use a single TypeScript file`)
+        if (!/\.tsx?$/.test(file)) continue
         await transform(await readFile(path.join(ROOT, 'src', file), 'utf8'), { loader: path.extname(file).slice(1), jsx: 'preserve' })
     }
 
     const entrypoints = Object.values(PACKAGE.exports).map((entry) => path.join(ROOT, entry.types))
-    const program = ts.createProgram(entrypoints, { module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, target: ts.ScriptTarget.ESNext })
+    const program = ts.createProgram(entrypoints, { module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, target: ts.ScriptTarget.ESNext, jsx: ts.JsxEmit.Preserve })
     const checker = program.getTypeChecker()
     for (const [subpath, entry] of Object.entries(PACKAGE.exports)) {
         assert.equal(Object.keys(entry)[0], 'types')
@@ -94,15 +94,18 @@ UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas }), loadYoga 
     const installed_package = JSON.parse(await readFile(path.join(installed_directory, 'package.json'), 'utf8'))
     assert.deepEqual(installed_package.exports, PACKAGE.exports)
     for (const framework of ['solid', 'octane']) {
-        const config_file = path.join(installed_directory, PACKAGE.exports[`./${framework}/config`].import)
-        const { compilerConfig } = await import(pathToFileURL(config_file))
+        const config_file = path.join(CONSUMER, `${framework}.config.ts`)
+        const plugin = framework === 'solid' ? '@solidjs/vite-plugin' : '@octanejs/vite-plugin'
+        await writeFile(config_file, `import ${framework === 'solid' ? 'plugin' : '{ octane as plugin }'} from ${JSON.stringify(import.meta.resolve(plugin))}
+import { compilerConfig } from 'uno-ui/${framework}/config'
+export default { plugins: [plugin(compilerConfig)] }
+`)
         const entry = path.join(CONSUMER, `${framework}.${framework === 'octane' ? 'tsx' : 'jsx'}`)
         await writeFile(entry, `import { View, Text } from 'uno-ui/${framework}'\nexport function App() { return <View><Text>Hello</Text></View> }\n`)
         const output = await buildVite({
             root: CONSUMER,
-            configFile: false,
+            configFile: config_file,
             logLevel: 'error',
-            plugins: framework === 'solid' ? [solid(compilerConfig)] : [octane(compilerConfig)],
             build: {
                 write: false,
                 minify: false,

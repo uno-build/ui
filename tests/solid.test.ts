@@ -1,14 +1,15 @@
 import { expect, test } from '@playwright/test'
 import { transform } from '@dom-expressions/compiler'
+import { transformSync } from 'esbuild'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
-const COMPONENTS_PATH = fileURLToPath(new URL('../src/components/solid/components.jsx', import.meta.url))
+const COMPONENTS_PATH = fileURLToPath(new URL('../src/components/solid/components.tsx', import.meta.url))
 const MODULE_PATHS = {
-    renderer: `/@fs${WORKSPACE_PATH}src/components/solid/driver.js`,
-    context: `/@fs${WORKSPACE_PATH}src/components/solid/context.js`,
-    shared: `/@fs${WORKSPACE_PATH}src/components/shared.js`,
+    renderer: `/@fs${WORKSPACE_PATH}src/components/solid/driver.ts`,
+    context: `/@fs${WORKSPACE_PATH}src/components/solid/context.ts`,
+    shared: `/@fs${WORKSPACE_PATH}src/components/shared.ts`,
     test_renderer: `/@fs${WORKSPACE_PATH}tests/utils/TestRenderer.ts`,
     test_ui: `/@fs${WORKSPACE_PATH}tests/utils/TestUI.ts`,
     events: `/@fs${WORKSPACE_PATH}src/events/index.ts`,
@@ -152,13 +153,16 @@ const FIXTURE_CODE = transform(FIXTURE_SOURCE, {
     wrapConditionals: true,
 }).code
 
-const COMPONENTS_CODE = transform(readFileSync(COMPONENTS_PATH, 'utf8'), {
-    filename: COMPONENTS_PATH,
-    moduleName: '__SOLID_RENDERER__',
-    generate: 'universal',
-    builtIns: ['Errored', 'For', 'Loading', 'Match', 'Repeat', 'Reveal', 'Show', 'Switch'],
-    wrapConditionals: true,
-}).code
+const COMPONENTS_CODE = transformSync(
+    transform(readFileSync(COMPONENTS_PATH, 'utf8'), {
+        filename: COMPONENTS_PATH,
+        moduleName: '__SOLID_RENDERER__',
+        generate: 'universal',
+        builtIns: ['Errored', 'For', 'Loading', 'Match', 'Repeat', 'Reveal', 'Show', 'Switch'],
+        wrapConditionals: true,
+    }).code,
+    { loader: 'ts', target: 'esnext' },
+).code
 
 async function loadFixture(page) {
     await page.goto('/dev/layouts/')

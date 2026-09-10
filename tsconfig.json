@@ -1,15 +1,24 @@
 {
-  "compilerOptions": {
-    "strict": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "target": "ESNext",
-    "declaration": true,
-    "esModuleInterop": true,
-    "noUncheckedIndexedAccess": true
-  },
-  "ts-node": {
-    "transpileOnly": true,
-    "esm": true
-  }
+    "compilerOptions": {
+        "noEmit": true,
+        "erasableSyntaxOnly": true,
+        "verbatimModuleSyntax": true,
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "types": [],
+        "skipLibCheck": true,
+        "jsx": "preserve",
+        "esModuleInterop": true
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.tsx"
+    ],
+    "ts-node": {
+        "transpileOnly": true,
+        "esm": true
+    }
 }
