@@ -1,7 +1,7 @@
 import type Node from './Node'
 import type { StyleUpdate } from '../style/types'
 import { OPERATIONS } from './constants'
-import { isPaintStyle, STYLE } from '#js/style/index'
+import { isPaintStyle, STYLE } from '../style'
 
 export type OperationNode<TElement = unknown> = Node<TElement>
 

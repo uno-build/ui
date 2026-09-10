@@ -2,7 +2,7 @@ import type UI from '../core/UI'
 import type Node from '../core/Node'
 import type { SourceEvent, PointerSource, WheelSource, EventSource } from './types'
 
-import { OVERFLOW } from '#js/style/constants'
+import { OVERFLOW } from '../style/constants'
 import { EVENT } from './constants'
 import { normalizeDelta } from './wheel'
 

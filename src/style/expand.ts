@@ -3,21 +3,19 @@ import { BACKGROUND_SIZE, BORDER_STYLE, KEYWORD } from './constants'
 import { normalizeTrim, normalizeToLowercase } from './normalizers'
 import { validateNumber, validatePx, validateRem, validateVw, validateVh } from './validators'
 
-/**
- * @param {string} property
- * @param {string | string[]} value
- */
-export function expandProperty(property, value) {
+export function expandProperty(property: string, value: string): Record<string, string> | null | undefined
+export function expandProperty(property: string, value: string[]): Record<string, string[]> | null
+export function expandProperty(property: string, value: string | string[]) {
     if (Array.isArray(value)) {
-        const result = {}
+        const result: Record<string, string[]> = {}
 
         value.forEach((item) => {
-            const itemResult = expand(property, item)
+            const item_result = expand(property, item)
 
-            if (itemResult) {
-                Object.keys(itemResult).forEach((itemProperty) => {
-                    result[itemProperty] = result[itemProperty] || []
-                    result[itemProperty].push(itemResult[itemProperty])
+            if (item_result) {
+                Object.keys(item_result).forEach((item_property) => {
+                    result[item_property] = result[item_property] || []
+                    result[item_property]!.push(item_result[item_property]!)
                 })
             }
         })
@@ -32,11 +30,7 @@ export function expandProperty(property, value) {
     return expand(property, value)
 }
 
-/**
- * @param {string} property
- * @param {string} value
- */
-function expand(property, value) {
+function expand(property: string, value: string): Record<string, string> | undefined {
     if (property === 'flex') {
         return expandFlex(value)
     }
@@ -66,42 +60,35 @@ function expand(property, value) {
     }
 }
 
-/**
- * @param {string} value
- */
-function splitShorthand(value) {
+function splitShorthand(value: string) {
     let values = ['']
-    let openParensCount = 0
+    let open_parens_count = 0
 
-    const trimmedValue = normalizeTrim(value)
+    const trimmed_value = normalizeTrim(value)
 
-    for (let index = 0; index < trimmedValue.length; index += 1) {
-        if (trimmedValue.charAt(index) === ' ' && openParensCount === 0) {
+    for (let index = 0; index < trimmed_value.length; index += 1) {
+        if (trimmed_value.charAt(index) === ' ' && open_parens_count === 0) {
             // Add new value
             values.push('')
         } else {
             // Add the current character to the current value
-            values[values.length - 1] = values[values.length - 1] + trimmedValue.charAt(index)
+            values[values.length - 1] = values[values.length - 1] + trimmed_value.charAt(index)
         }
 
         // Keep track of the number of parentheses that are yet to be closed.
         // This is done to avoid splitting at whitespaces within CSS functions.
         // E.g.: `calc(1px + 1em)`
-        if (trimmedValue.charAt(index) === '(') {
-            openParensCount++
-        } else if (trimmedValue.charAt(index) === ')') {
-            openParensCount--
+        if (trimmed_value.charAt(index) === '(') {
+            open_parens_count++
+        } else if (trimmed_value.charAt(index) === ')') {
+            open_parens_count--
         }
     }
 
     return values
 }
 
-/**
- * @param {string} value
- * @param {(value: string) => void} validate
- */
-function isValid(value, validate) {
+function isValid(value: string, validate: (value: string) => void) {
     try {
         validate(value)
         return true
@@ -110,12 +97,9 @@ function isValid(value, validate) {
     }
 }
 
-/**
- * @param {string} value
- */
-function parseBorder(value, resolve) {
+function parseBorder(value: string, resolve: (key: string) => string) {
     const values = splitShorthand(value)
-    const longhands = {}
+    const longhands: Record<string, string> = {}
 
     values.forEach((val) => {
         if (BORDER_STYLE.hasOwnProperty(val)) {
@@ -136,12 +120,9 @@ function parseBorder(value, resolve) {
     return longhands
 }
 
-/**
- * @param {string} value
- */
-function expandBorder(value) {
+function expandBorder(value: string) {
     if (normalizeToLowercase(normalizeTrim(value)) === KEYWORD.UNSET) {
-        const result = {}
+        const result: Record<string, string> = {}
         for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
             for (const property of ['Width', 'Style', 'Color']) {
                 result[`border${side}${property}`] = KEYWORD.UNSET
@@ -151,69 +132,56 @@ function expandBorder(value) {
     }
 
     const values = parseBorder(value, (key) => key)
-    const result = {}
+    const result: Record<string, string> = {}
 
     for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
         for (const key of Object.keys(values)) {
-            result['border' + side + key] = values[key]
+            result['border' + side + key] = values[key]!
         }
     }
 
     return result
 }
 
-/**
- * @param {string} value
- */
-function expandEdges(value, resolve) {
-    const [Top, Right = Top, Bottom = Top, Left = Right] = splitShorthand(value)
+function expandEdges(value: string, resolve: (key: string) => string) {
+    const [top, right = top, bottom = top, left = right] = splitShorthand(value) as [string, ...string[]]
 
     return {
-        [resolve('Top')]: Top,
-        [resolve('Right')]: Right,
-        [resolve('Bottom')]: Bottom,
-        [resolve('Left')]: Left,
+        [resolve('Top')]: top,
+        [resolve('Right')]: right,
+        [resolve('Bottom')]: bottom,
+        [resolve('Left')]: left,
     }
 }
 
-/**
- * @param {string[]} values
- * @param {string} divider
- */
-function groupBy(values, divider) {
-    const groups = [[]]
+function groupBy(values: string[], divider: string) {
+    const groups: string[][] = [[]]
 
     values.forEach((val) => {
         if (val === divider) {
             groups.push([])
         } else {
-            groups[groups.length - 1].push(val)
+            groups[groups.length - 1]!.push(val)
         }
     })
 
     return groups
 }
 
-/**
- * @param {string} value
- */
-function expandBorderRadius(value) {
+function expandBorderRadius(value: string) {
     const [first = [], second = []] = groupBy(splitShorthand(value), '/')
-    const [Top, Right = Top, Bottom = Top, Left = Right] = first
-    const [Top2, Right2 = Top2, Bottom2 = Top2, Left2 = Right2] = second
+    const [top, right = top, bottom = top, left = right] = first
+    const [top2, right2 = top2, bottom2 = top2, left2 = right2] = second
 
     return {
-        borderTopLeftRadius: [Top, Top2].filter(Boolean).join(' '),
-        borderTopRightRadius: [Right, Right2].filter(Boolean).join(' '),
-        borderBottomRightRadius: [Bottom, Bottom2].filter(Boolean).join(' '),
-        borderBottomLeftRadius: [Left, Left2].filter(Boolean).join(' '),
+        borderTopLeftRadius: [top, top2].filter(Boolean).join(' '),
+        borderTopRightRadius: [right, right2].filter(Boolean).join(' '),
+        borderBottomRightRadius: [bottom, bottom2].filter(Boolean).join(' '),
+        borderBottomLeftRadius: [left, left2].filter(Boolean).join(' '),
     }
 }
 
-/**
- * @param {string} value
- */
-function expandBackgroundSize(value) {
+function expandBackgroundSize(value: string): Record<string, string> {
     const normalized_value = normalizeToLowercase(normalizeTrim(value))
 
     if (normalized_value === KEYWORD.UNSET) {
@@ -258,10 +226,7 @@ function expandBackgroundSize(value) {
     }
 }
 
-/**
- * @param {string} value
- */
-function expandBackgroundPosition(value) {
+function expandBackgroundPosition(value: string) {
     if (normalizeToLowercase(normalizeTrim(value)) === KEYWORD.UNSET) {
         return {
             backgroundPositionX: KEYWORD.UNSET,
@@ -281,10 +246,7 @@ function expandBackgroundPosition(value) {
     }
 }
 
-/**
- * @param {string} value
- */
-function expandFlex(value) {
+function expandFlex(value: string) {
     let values = ['']
 
     // https://developer.mozilla.org/en-US/docs/Web/CSS/flex#values
@@ -312,7 +274,7 @@ function expandFlex(value) {
     // Expand one-value syntax to three-value syntax
     if (values.length === 1) {
         // One-value syntax
-        const val = values[0]
+        const val = values[0]!
         if (isValid(val, validateNumber)) {
             // flex value
             values = splitShorthand(val + ' 1 0%')
@@ -322,24 +284,24 @@ function expandFlex(value) {
         }
     }
 
-    const longhands = {}
+    const longhands: Record<string, string> = {}
 
     if (values.length === 2) {
         // Two-value syntax
-        longhands.flexGrow = values[0]
+        longhands.flexGrow = values[0]!
 
-        if (isValid(values[1], validateNumber)) {
+        if (isValid(values[1]!, validateNumber)) {
             // The second value appears to be a shrink factor
-            longhands.flexShrink = values[1]
+            longhands.flexShrink = values[1]!
         } else {
             // The second value appears to be width
-            longhands.flexBasis = values[1]
+            longhands.flexBasis = values[1]!
         }
     } else {
         // Three-value syntax
-        longhands.flexGrow = values[0]
-        longhands.flexShrink = values[1]
-        longhands.flexBasis = values[2]
+        longhands.flexGrow = values[0]!
+        longhands.flexShrink = values[1]!
+        longhands.flexBasis = values[2]!
     }
 
     // According to the spec: Authors are encouraged to control flexibility using the flex shorthand rather than with its longhand

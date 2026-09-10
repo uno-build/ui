@@ -1,4 +1,4 @@
-import type { STYLE } from '#js/style/index'
+import type { STYLE } from './index'
 
 export type StyleName = typeof STYLE[keyof typeof STYLE]['name']
 // Values are parsed by Uno at runtime; unlike CSS-in-JS, numeric values are not accepted.
@@ -23,3 +23,11 @@ export type NodeLayout = Partial<{
     border: LayoutEdges
 }>
 export type ComputedLayout = Required<Omit<NodeLayout, 'padding' | 'border'>> & Pick<NodeLayout, 'padding' | 'border'>
+
+export type StyleRule = {
+    normalize: Array<(value: string) => string>
+    validate: Array<(value: string) => void>
+    parse: Array<(value: string) => ResolvedStyle>
+}
+
+export type StyleContext = { root_size: number, viewport_width: number, viewport_height: number }

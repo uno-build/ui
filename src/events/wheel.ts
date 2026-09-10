@@ -2,7 +2,7 @@ import type UI from '../core/UI'
 import type { SourceEvent, WheelSource, EventCoordinates } from './types'
 
 import { EVENT } from './constants'
-import { ROOT_SIZE } from '#js/style/constants'
+import { ROOT_SIZE } from '../style/constants'
 
 const DELTA_MODE_LINE = 1
 

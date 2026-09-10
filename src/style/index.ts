@@ -1,3 +1,5 @@
+import type { ResolvedStyle, StyleUpdate, StyleRule, StyleContext } from './types'
+
 import { normalizeStyleName, normalizeStyleKey } from './normalizers'
 import { readUnit, runPipeline, runValidators } from './utils'
 import { expandProperty } from './expand'
@@ -42,11 +44,7 @@ import {
     TEXT_STROKE_DEFINITION,
 } from './definitions'
 
-/**
- * @param {string} name
- * @param {any} value
- */
-export function validateStyle(name, value) {
+export function validateStyle(name: string, value: unknown) {
     if (typeof name !== 'string') {
         throw new Error(`style name must be a string, got '${typeof name}'`)
     }
@@ -54,7 +52,7 @@ export function validateStyle(name, value) {
     const normalized_name = normalizeStyleName(name, STYLE)
     const normalized_key = normalizeStyleKey(normalized_name)
 
-    if (!STYLE[normalized_key]) {
+    if (!STYLE[normalized_key as keyof typeof STYLE]) {
         throw new Error(`unsupported property '${name}'`)
     }
 
@@ -66,19 +64,15 @@ export function validateStyle(name, value) {
     return normalized_name
 }
 
-/**
- * @param {string} name
- * @param {any} value
- */
-export function resolveStyle(name, value) {
+export function resolveStyle(name: string, value: string): StyleUpdate {
     const normalized_key = normalizeStyleKey(name)
-    const StyleParser = STYLE[normalized_key]
+    const style_parser = STYLE[normalized_key as keyof typeof STYLE]
 
     try {
         return {
             name,
             value: value,
-            expanded: StyleParser.resolve(value),
+            expanded: style_parser.resolve(value),
         }
     } catch (err) {
         const message = err instanceof Error ? err.message : err
@@ -87,33 +81,33 @@ export function resolveStyle(name, value) {
     }
 }
 
-export function isPaintStyle(name) {
-    return STYLE[normalizeStyleKey(name)].painter === true
+export function isPaintStyle(name: string) {
+    return STYLE[normalizeStyleKey(name) as keyof typeof STYLE].painter === true
 }
 
-export function computeStyleValue(style, context) {
+export function computeStyleValue(style: ResolvedStyle | undefined, context: StyleContext) {
     if (style?.parsed === undefined) {
         return style
     }
 
-    const parsed = computeParsedValue(style.parsed, context)
+    const parsed = computeParsedValue(style.parsed as Record<string, unknown>, context)
 
     return parsed === style.parsed ? style : { ...style, parsed }
 }
 
-function computeParsedValue(parsed, context) {
+function computeParsedValue(parsed: Record<string, unknown>, context: StyleContext): Record<string, unknown> {
     if (parsed.kind !== undefined) {
-        return computeUnitValue(parsed, context)
+        return computeUnitValue(parsed as { kind: string, value: number }, context)
     }
 
-    let computed
+    let computed: Record<string, unknown> | undefined
 
     for (const key in parsed) {
         if (typeof parsed[key] !== 'object') {
             continue
         }
 
-        const value = computeParsedValue(parsed[key], context)
+        const value = computeParsedValue(parsed[key] as Record<string, unknown>, context)
 
         if (value !== parsed[key]) {
             computed ??= { ...parsed }
@@ -124,7 +118,7 @@ function computeParsedValue(parsed, context) {
     return computed ?? parsed
 }
 
-function computeUnitValue(parsed, context) {
+function computeUnitValue(parsed: { kind: string, value: number }, context: StyleContext) {
     let unit_size
 
     if (parsed.kind === UNIT.REM) {
@@ -143,36 +137,26 @@ function computeUnitValue(parsed, context) {
     }
 }
 
-/**
- * @template {string} TName
- * @typedef {object} StyleDefinition
- * @property {TName} name
- * @property {number} record_parts
- * @property {boolean} [painter]
- * @property {(value: string) => Array<{ name: string, value: string, parsed: unknown }>} resolve
- */
+export type StyleDefinition<TName extends string> = {
+    name: TName
+    record_parts: number
+    painter?: boolean
+    resolve(value: string): Array<ResolvedStyle & { name: string }>
+}
 
-/**
- * @template {string} TName
- * @param {TName} name
- * @param {Function} shorthandCallback
- * @param {{ record_parts?: number, painter?: boolean }} [options]
- * @returns {StyleDefinition<TName>}
- */
-function createStyle(name, shorthandCallback, options = {}) {
+type StyleShorthand = { name: string, value: string, definition: StyleRule[] }
+
+function createStyle<TName extends string>(name: TName, shorthandCallback: (name: TName, value: string) => StyleShorthand[], options: { record_parts?: number, painter?: boolean } = {}): StyleDefinition<TName> {
     return {
         name,
         record_parts: RECORD_ALL,
         ...options,
-        resolve(value) {
+        resolve(value: string) {
             const style_shorthand = shorthandCallback(name, value)
             const styles = []
 
             for (const { name, value, definition } of style_shorthand) {
-                /**
-                 * @type {unknown}
-                 */
-                let first_error
+                let first_error: unknown
                 let resolved = false
 
                 for (const definition_item of definition) {
@@ -200,14 +184,14 @@ function createStyle(name, shorthandCallback, options = {}) {
     }
 }
 
-function expandHelper(name, value, definitions) {
-    const values = expandProperty(name, value)
+function expandHelper(name: string, value: string, definitions: Record<string, StyleRule[]>): StyleShorthand[] {
+    const values = expandProperty(name, value)!
     return Object.keys(definitions)
         .filter((key) => Object.hasOwn(values, key))
         .map((key) => ({
             name: key,
-            value: values[key],
-            definition: definitions[key],
+            value: values[key]!,
+            definition: definitions[key]!,
         }))
 }
 

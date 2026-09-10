@@ -13,5 +13,5 @@
         "types": [],
         "skipLibCheck": true
     },
-    "include": ["src/events/**/*.ts", "src/core/**/*.ts"]
+    "include": ["src/events/**/*.ts", "src/core/**/*.ts", "src/style/**/*.ts"]
 }

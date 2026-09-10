@@ -1,6 +1,6 @@
 import type Node from '../../src/core/Node'
 import type { EventProps } from '../../src/events/types'
-import type { StyleProps } from '../style/types'
+import type { StyleProps } from '../../src/style/types'
 
 export type NodeHandle = { nodes: { main: Node } }
 export type ScrollViewHandle = { nodes: { main: Node, content: Node } }

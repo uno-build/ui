@@ -10,7 +10,7 @@ import {
     getNodeRenderLayout,
 } from '../src/renderer/utils/render-metrics.js'
 import Segmenter from '../src/renderer/pretext/segmenter.js'
-import { resolveStyle, validateStyle } from '../src/style/index.js'
+import { resolveStyle, validateStyle } from '../src/style/index.ts'
 import {
     BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
@@ -25,7 +25,7 @@ import {
     RECORD_ALL,
     RECORD_PANEL,
     RECORD_TEXT_RUN,
-} from '../src/style/constants.js'
+} from '../src/style/constants.ts'
 import {
     COMMAND,
     COMMAND_KIND_GLYPH,

@@ -2,7 +2,7 @@ import type UI from './UI'
 import type { EventSource, EventPayload, UIEventMap } from '../events/types'
 import type { NodeLayout, StyleName, ResolvedStyle, StyleUpdate } from '../style/types'
 
-import { resolveStyle, validateStyle } from '#js/style/index'
+import { resolveStyle, validateStyle } from '../style'
 import { EVENT } from '../events/constants'
 import { OPERATIONS } from './constants'
 

@@ -401,7 +401,7 @@ test('WebGPU unset restores the undefined state for all 81 styles', async ({ pag
                 ui: `/@fs${WORKSPACE_PATH}src/ui/UIWebGPU.js`,
                 resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.js`,
                 metrics: `/@fs${WORKSPACE_PATH}src/renderer/utils/render-metrics.js`,
-                constants: `/@fs${WORKSPACE_PATH}src/style/constants.js`,
+                constants: `/@fs${WORKSPACE_PATH}src/style/constants.ts`,
                 assets: `/@fs${WORKSPACE_PATH}tests/utils/load-assets.ts`,
             },
             style_cases: STYLE_CASES,

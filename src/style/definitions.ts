@@ -1,3 +1,5 @@
+import type { StyleRule } from './types'
+
 import {
     ALIGN_CONTENT,
     ALIGN_ITEMS,
@@ -55,7 +57,7 @@ import {
 } from './parsers'
 import { createEnumValidator, createEnumParser } from './utils'
 
-export const UNSET_DEFINITION = [
+export const UNSET_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateUnset],
@@ -63,7 +65,7 @@ export const UNSET_DEFINITION = [
     },
 ]
 
-export const INTEGER_DEFINITION = [
+export const INTEGER_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateInteger],
@@ -72,7 +74,7 @@ export const INTEGER_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const COLOR_DEFINITION = [
+export const COLOR_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateColor],
@@ -81,7 +83,7 @@ export const COLOR_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const OPACITY_DEFINITION = [
+export const OPACITY_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNumber, validateNonNegative, validateMaxOne],
@@ -90,7 +92,7 @@ export const OPACITY_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const BOX_SHADOW_DEFINITION = [
+export const BOX_SHADOW_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateBoxShadow],
@@ -99,7 +101,7 @@ export const BOX_SHADOW_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const TEXT_SHADOW_DEFINITION = [
+export const TEXT_SHADOW_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateTextShadow],
@@ -108,7 +110,7 @@ export const TEXT_SHADOW_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const TEXT_STROKE_DEFINITION = [
+export const TEXT_STROKE_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateTextStroke],
@@ -117,7 +119,7 @@ export const TEXT_STROKE_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const FONT_FAMILY_DEFINITION = [
+export const FONT_FAMILY_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim],
         validate: [validateNotUnset],
@@ -126,7 +128,7 @@ export const FONT_FAMILY_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const FONT_SIZE_DEFINITION = [
+export const FONT_SIZE_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNonNegative, validatePx],
@@ -150,7 +152,7 @@ export const FONT_SIZE_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const LINE_HEIGHT_DEFINITION = [
+export const LINE_HEIGHT_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNonNegative, validateNumber],
@@ -179,7 +181,7 @@ export const LINE_HEIGHT_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const LETTER_SPACING_DEFINITION = [
+export const LETTER_SPACING_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validatePx],
@@ -203,7 +205,7 @@ export const LETTER_SPACING_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const TEXT_ALIGN_DEFINITION = [
+export const TEXT_ALIGN_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(TEXT_ALIGN)],
@@ -212,7 +214,7 @@ export const TEXT_ALIGN_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const WHITE_SPACE_DEFINITION = [
+export const WHITE_SPACE_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(WHITE_SPACE)],
@@ -249,9 +251,9 @@ const PX_PERCENT_VALUE_DEFINITION = [
     },
 ]
 
-export const PX_PERCENT_DEFINITION = [...PX_PERCENT_VALUE_DEFINITION, ...UNSET_DEFINITION]
+export const PX_PERCENT_DEFINITION: StyleRule[] = [...PX_PERCENT_VALUE_DEFINITION, ...UNSET_DEFINITION]
 
-export const OFFSET_DEFINITION = [
+export const OFFSET_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validatePx],
@@ -285,7 +287,7 @@ export const OFFSET_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const OVERFLOW_DEFINITION = [
+export const OVERFLOW_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(OVERFLOW)],
@@ -294,7 +296,7 @@ export const OVERFLOW_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const POSITION_DEFINITION = [
+export const POSITION_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(POSITION)],
@@ -303,7 +305,7 @@ export const POSITION_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const ALIGN_CONTENT_DEFINITION = [
+export const ALIGN_CONTENT_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(ALIGN_CONTENT)],
@@ -312,7 +314,7 @@ export const ALIGN_CONTENT_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const ALIGN_ITEMS_DEFINITION = [
+export const ALIGN_ITEMS_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(ALIGN_ITEMS)],
@@ -321,7 +323,7 @@ export const ALIGN_ITEMS_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const ALIGN_SELF_DEFINITION = [
+export const ALIGN_SELF_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(ALIGN_SELF)],
@@ -330,7 +332,7 @@ export const ALIGN_SELF_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const FLEX_DIRECTION_DEFINITION = [
+export const FLEX_DIRECTION_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(FLEX_DIRECTION)],
@@ -339,7 +341,7 @@ export const FLEX_DIRECTION_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const FLEX_WRAP_DEFINITION = [
+export const FLEX_WRAP_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(WRAP)],
@@ -348,7 +350,7 @@ export const FLEX_WRAP_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const JUSTIFY_CONTENT_DEFINITION = [
+export const JUSTIFY_CONTENT_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(JUSTIFY)],
@@ -357,7 +359,7 @@ export const JUSTIFY_CONTENT_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const MARGIN_DEFINITION = [
+export const MARGIN_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validatePx],
@@ -391,7 +393,7 @@ export const MARGIN_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const NUMBER_DEFINITION = [
+export const NUMBER_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNumber, validateNonNegative],
@@ -400,7 +402,7 @@ export const NUMBER_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const FLEX_BASIS_DEFINITION = [
+export const FLEX_BASIS_DEFINITION: StyleRule[] = [
     ...PX_PERCENT_VALUE_DEFINITION,
     {
         normalize: [normalizeTrim, normalizeToLowercase],
@@ -410,7 +412,7 @@ export const FLEX_BASIS_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const SIZE_DEFINITION = [
+export const SIZE_DEFINITION: StyleRule[] = [
     ...PX_PERCENT_VALUE_DEFINITION,
     {
         normalize: [normalizeTrim, normalizeToLowercase],
@@ -420,9 +422,9 @@ export const SIZE_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const MIN_MAX_SIZE_DEFINITION = [...PX_PERCENT_VALUE_DEFINITION, ...UNSET_DEFINITION]
+export const MIN_MAX_SIZE_DEFINITION: StyleRule[] = [...PX_PERCENT_VALUE_DEFINITION, ...UNSET_DEFINITION]
 
-export const BORDER_WIDTH_DEFINITION = [
+export const BORDER_WIDTH_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNonNegative, validatePx],
@@ -446,7 +448,7 @@ export const BORDER_WIDTH_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const BORDER_DEFINITION = [
+export const BORDER_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(BORDER_STYLE)],
@@ -455,7 +457,7 @@ export const BORDER_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const BOX_SIZING_DEFINITION = [
+export const BOX_SIZING_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(BOX_SIZING)],
@@ -464,7 +466,7 @@ export const BOX_SIZING_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const DISPLAY_DEFINITION = [
+export const DISPLAY_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(DISPLAY)],
@@ -473,7 +475,7 @@ export const DISPLAY_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const POINTER_EVENTS_DEFINITION = [
+export const POINTER_EVENTS_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(POINTER_EVENTS)],
@@ -482,7 +484,7 @@ export const POINTER_EVENTS_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const DIRECTION_DEFINITION = [
+export const DIRECTION_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(DIRECTION)],
@@ -491,7 +493,7 @@ export const DIRECTION_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const BACKGROUNDIMAGE_DEFINITION = [
+export const BACKGROUNDIMAGE_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim],
         validate: [validateImageSrc],
@@ -500,7 +502,7 @@ export const BACKGROUNDIMAGE_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const BACKGROUND_SIZE_DEFINITION = [
+export const BACKGROUND_SIZE_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validateNonNegative, validatePx],
@@ -534,7 +536,7 @@ export const BACKGROUND_SIZE_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const BACKGROUND_REPEAT_DEFINITION = [
+export const BACKGROUND_REPEAT_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [createEnumValidator(BACKGROUND_REPEAT)],
@@ -543,7 +545,7 @@ export const BACKGROUND_REPEAT_DEFINITION = [
     ...UNSET_DEFINITION,
 ]
 
-export const BACKGROUND_POSITION_DEFINITION = [
+export const BACKGROUND_POSITION_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validatePx],

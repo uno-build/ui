@@ -1,61 +1,43 @@
 import { KEYWORD, UNIT } from './constants'
 import { readInteger, readNumber, readUnit } from './utils'
 
-/**
- * @param {string} value
- */
-export function parseString(value) {
+export function parseString(value: string) {
     return {
         value,
         parsed: {},
     }
 }
 
-/**
- * @param {string} value
- */
-export function parseAuto(value) {
+export function parseAuto(value: string) {
     return {
         value,
         parsed: { kind: KEYWORD.AUTO },
     }
 }
 
-/**
- * @param {string} value
- */
-export function parseUnset(value) {
+export function parseUnset(value: string) {
     return {
         value,
         parsed: { kind: KEYWORD.UNSET },
     }
 }
 
-/**
- * @param {string} value
- */
-export function parseNumber(value) {
+export function parseNumber(value: string) {
     const number = readNumber(value)
     return { value: String(number), parsed: { value: number } }
 }
 
-/**
- * @param {string} value
- */
-export function parseInteger(value) {
+export function parseInteger(value: string) {
     const integer = readInteger(value)
     return { value: String(integer), parsed: { value: integer } }
 }
 
-/**
- * @param {string} value
- */
-export function parseRgba(value) {
+export function parseRgba(value: string) {
     const hex = value.slice(1)
     const channels =
         hex.length <= 4
             ? hex.split('').map((channel) => parseInt(channel + channel, 16))
-            : hex.match(/../g).map((channel) => parseInt(channel, 16))
+            : hex.match(/../g)!.map((channel) => parseInt(channel, 16))
 
     if (channels[3] === undefined) {
         channels[3] = 255
@@ -64,80 +46,61 @@ export function parseRgba(value) {
     return channels
 }
 
-/**
- * @param {string} value
- */
-export function parseColor(value) {
+export function parseColor(value: string) {
     return { value, parsed: { rgba: parseRgba(value) } }
 }
 
-/**
- * @param {string} value
- */
-export function parseBoxShadow(value) {
+export function parseBoxShadow(value: string) {
     const values = value.split(/\s+/)
 
     return {
         value,
         parsed: {
             box_shadow: {
-                offset_x: readUnit(values[0]),
-                offset_y: readUnit(values[1]),
-                blur: readUnit(values[2]),
-                spread: readUnit(values[3]),
+                offset_x: readUnit(values[0]!),
+                offset_y: readUnit(values[1]!),
+                blur: readUnit(values[2]!),
+                spread: readUnit(values[3]!),
                 color: parseRgba(values[4] ?? '#000000FF'),
             },
         },
     }
 }
 
-/**
- * @param {string} value
- */
-export function parseTextShadow(value) {
+export function parseTextShadow(value: string) {
     const values = value.split(/\s+/)
 
     return {
         value,
         parsed: {
             text_shadow: {
-                offset_x: readUnit(values[0]),
-                offset_y: readUnit(values[1]),
-                blur: readUnit(values[2]),
+                offset_x: readUnit(values[0]!),
+                offset_y: readUnit(values[1]!),
+                blur: readUnit(values[2]!),
                 color: parseRgba(values[3] ?? '#000000FF'),
             },
         },
     }
 }
 
-/**
- * @param {string} value
- */
-export function parseTextStroke(value) {
+export function parseTextStroke(value: string) {
     const values = value.split(/\s+/)
 
     return {
         value,
         parsed: {
             text_stroke: {
-                width: readUnit(values[0]),
-                color: parseRgba(values[1]),
+                width: readUnit(values[0]!),
+                color: parseRgba(values[1]!),
             },
         },
     }
 }
-/**
- * @param {string} value
- * @param {Record<string, any>} values
- */
-export function parseEnum(value, values) {
+export function parseEnum(value: string, values: Record<string, number>) {
     return { value, parsed: { enum: values[value] } }
 }
 
-/**
- * @param {string} value
- */
-export function parsePx(value) {
+export function parsePx(value: string) {
     const unit = readUnit(value)
     return {
         value,
@@ -145,10 +108,7 @@ export function parsePx(value) {
     }
 }
 
-/**
- * @param {string} value
- */
-export function parsePercent(value) {
+export function parsePercent(value: string) {
     const unit = readUnit(value)
     return {
         value,
@@ -156,10 +116,7 @@ export function parsePercent(value) {
     }
 }
 
-/**
- * @param {string} value
- */
-export function parseRem(value) {
+export function parseRem(value: string) {
     const unit = readUnit(value)
     return {
         value,
@@ -167,10 +124,7 @@ export function parseRem(value) {
     }
 }
 
-/**
- * @param {string} value
- */
-export function parseVw(value) {
+export function parseVw(value: string) {
     const unit = readUnit(value)
     return {
         value,
@@ -178,10 +132,7 @@ export function parseVw(value) {
     }
 }
 
-/**
- * @param {string} value
- */
-export function parseVh(value) {
+export function parseVh(value: string) {
     const unit = readUnit(value)
     return {
         value,
@@ -189,9 +140,6 @@ export function parseVh(value) {
     }
 }
 
-/**
- * @param {any} value
- */
-export function parseImage(value) {
+export function parseImage<TImage extends { src: string }>(value: TImage) {
     return { value: value.src, parsed: value }
 }

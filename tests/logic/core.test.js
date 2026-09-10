@@ -7,7 +7,7 @@ import UI from '../../src/core/UI.ts'
 import ResourcesDom from '../../src/renderer/dom/ResourcesDom.js'
 import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU.js'
 import { DEFINED_EVENTS, EVENT } from '../../src/events/index.ts'
-import { validateStyle, resolveStyle } from '../../src/style/index.js'
+import { validateStyle, resolveStyle } from '../../src/style/index.ts'
 import { prepareWithSegments, layoutWithLines } from '../../src/renderer/pretext/layout.js'
 
 test('events retain ordering, removal, optional payloads and cleanup', () => {

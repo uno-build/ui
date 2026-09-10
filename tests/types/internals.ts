@@ -4,7 +4,7 @@ import UIWorldSpace from '../../types/ui/UIWorldSpace'
 import Node from '../../src/core/Node'
 import Operations from '../../src/core/Operations'
 import { OPERATIONS } from '../../src/core/constants'
-import type { ComputedLayout, StyleUpdate } from '../../types/style/types'
+import type { ComputedLayout, StyleUpdate } from '../../src/style/types'
 
 // @ts-expect-error Abstract renderer methods must be implemented.
 class IncompleteRenderer extends Renderer {}

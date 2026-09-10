@@ -53,8 +53,8 @@ if (values.worker) {
             importSource('src/renderer/webgpu/GpuPool.js'),
             importSource('src/renderer/webgpu/buffers.js'),
             importSource('src/core/constants.ts'),
-            importSource('src/style/index.js'),
-            importSource('src/style/constants.js'),
+            importSource('src/style/index.ts'),
+            importSource('src/style/constants.ts'),
         ])
     const modules = { RendererWebGPU, Operations, GpuPool, ...buffers, ...constants, ...styles, ...style_constants }
     const results = []

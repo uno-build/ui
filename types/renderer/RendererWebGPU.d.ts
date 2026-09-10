@@ -122,9 +122,9 @@ export default class RendererWebGPU extends Renderer<import("./webgpu/contracts"
     /** @override @param {WebGPUNode} node */
     destroyNode(node: WebGPUNode): void;
     /** @override @param {WebGPUNode} node @param {import('../style/types').StyleUpdate} resolved_style */
-    updateStyle(node: WebGPUNode, resolved_style: import("../style/types").StyleUpdate): void;
+    updateStyle(node: WebGPUNode, resolved_style: import("../../src/style/types").StyleUpdate): void;
     /** @override @param {WebGPUNode} node @returns {import('../style/types').ComputedLayout} */
-    getLayout(node: WebGPUNode): import("../style/types").ComputedLayout;
+    getLayout(node: WebGPUNode): import("../../src/style/types").ComputedLayout;
 }
 export type RendererWebGPUOptions = {
     resources: import("./webgpu/ResourcesWebGPU").default;

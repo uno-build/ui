@@ -42,9 +42,9 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
     /** @override @param {DomNode} node @returns {number} */
     getChildIndex(node: DomNode): number;
     /** @override @param {DomNode} node @param {import('../style/types').StyleUpdate} resolved_style */
-    updateStyle(node: DomNode, resolved_style: import("../style/types").StyleUpdate): void;
+    updateStyle(node: DomNode, resolved_style: import("../../src/style/types").StyleUpdate): void;
     /** @override @param {DomNode} node @returns {import('../style/types').ComputedLayout} */
-    getLayout(node: DomNode): import("../style/types").ComputedLayout;
+    getLayout(node: DomNode): import("../../src/style/types").ComputedLayout;
 }
 export type DomNode = import("../../src/core/Node").default<HTMLElement>;
 export type DomOperations = import("../../src/core/Operations").default<HTMLElement>;
