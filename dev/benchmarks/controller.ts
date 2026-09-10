@@ -124,6 +124,8 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
                 height: options.height,
                 setViewport,
                 image_sources: assets.image_sources,
+                shape: options.shape,
+                content: options.content,
             })
         }
         function assertFixedResources() {
@@ -151,6 +153,10 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
                 fps: summary?.fps.average ?? null,
                 frame_p95_ms: summary?.frame_ms.p95 ?? null,
                 uploaded_bytes_average: summary?.uploads.average ?? null,
+                update_active_ms_average: summary?.cpu_ms.update_active.average ?? null,
+                update_idle_ms_average: summary?.cpu_ms.update_idle.average ?? null,
+                update_active_frames: summary?.cpu_ms.update_active.count ?? 0,
+                uploaded_bytes_active_average: summary?.uploads_active.average ?? null,
                 pool_growth_frames: summary?.pool_growth_frames ?? 0,
                 ...workload,
                 records: renderer.records,
@@ -244,6 +250,7 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
                         },
                         memory: Object.fromEntries(MEMORY_NAMES.map((name) => [name, memory[name].summary()])),
                         renderer: metrics.snapshot(),
+                        scene: after,
                     })
                     measured_ms += elapsed_ms
                 }
@@ -382,7 +389,7 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
 
             if (options.mode === 'performance') {
                 await prepare(options.nodes)
-                for (const [name, fraction] of workload.performance_phases) {
+                for (const [name, fraction] of workload.getPerformancePhases(options)) {
                     if (stopping) break
                     await exercise(name, options.duration * 1000 * fraction, name, true)
                 }

@@ -1,15 +1,21 @@
 import { createScene as createGeneralScene } from './general'
 import { createScene as createBoxShadowScene } from './box-shadow'
+import { createScene as createRenderMetricsScene, getPerformancePhases } from './render-metrics'
 
 export const WORKLOADS = {
     general: {
         createScene: createGeneralScene,
-        performance_phases: [['paint', 1 / 6], ['text', 1 / 6], ['structure', 1 / 6], ['mixed', 1 / 2]],
+        getPerformancePhases() { return [['paint', 1 / 6], ['text', 1 / 6], ['structure', 1 / 6], ['mixed', 1 / 2]] as const },
         preflight_phases: [[10, 'structure'], [50, 'mixed']],
     },
     'box-shadow': {
         createScene: createBoxShadowScene,
-        performance_phases: [['unset', 1 / 4], ['small', 1 / 4], ['large', 1 / 4], ['mixed', 1 / 4]],
+        getPerformancePhases() { return [['unset', 1 / 4], ['small', 1 / 4], ['large', 1 / 4], ['mixed', 1 / 4]] as const },
         preflight_phases: [[10, 'mixed'], [50, 'mixed']],
+    },
+    'render-metrics': {
+        createScene: createRenderMetricsScene,
+        getPerformancePhases,
+        preflight_phases: Array.from({ length: 10 }, (_, index) => [index + 1, 'mixed'] as const),
     },
 } as const

@@ -1,7 +1,7 @@
-export const BENCHMARK_VERSION = 1
+export const BENCHMARK_VERSION = 2
 export const SAMPLE_LIMIT = 7200
 export const CAPACITY_STEPS = [1000, 2500, 5000, 10000, 20000, 50000]
-export const WORKLOAD_NAMES = ['general', 'box-shadow']
+export const WORKLOAD_NAMES = ['general', 'box-shadow', 'render-metrics']
 
 export function normalizeOptions(input = {}) {
     const mode = input.mode ?? 'performance'
@@ -11,7 +11,7 @@ export function normalizeOptions(input = {}) {
     const options = {
         mode,
         workload,
-        nodes: workload === 'box-shadow' ? 400 : 5000,
+        nodes: workload === 'render-metrics' ? 1026 : workload === 'box-shadow' ? 400 : 5000,
         duration: mode === 'stability' ? 900 : mode === 'capacity' ? 30 : 60,
         warmup: 10,
         seed: 42,
@@ -21,10 +21,17 @@ export function normalizeOptions(input = {}) {
         height: 720,
         dpr: 1,
         gpu_timing: false,
+        ...(workload === 'render-metrics' ? { shape: 'wide', content: 'panel-text' } : {}),
         ...input,
     }
+    if (workload === 'render-metrics') {
+        if (!['wide', 'chain'].includes(options.shape)) throw new Error(`Unknown shape: ${options.shape}`)
+        if (!['panel', 'panel-text'].includes(options.content)) throw new Error(`Unknown content: ${options.content}`)
+    } else if (input.shape !== undefined || input.content !== undefined) {
+        throw new Error('shape and content apply only to render-metrics')
+    }
     const limits = {
-        nodes: [256, 50000, true], duration: [1, 7200], warmup: [0, 120], seed: [0, 4294967295, true],
+        nodes: [workload === 'render-metrics' ? 4 : 256, 50000, true], duration: [1, 7200], warmup: [0, 120], seed: [0, 4294967295, true],
         repeats: [1, 20, true], target_fps: [1, 240], width: [640, 3840, true], height: [480, 2160, true], dpr: [0.5, 3],
     }
     for (const [name, [min, max, integer]] of Object.entries(limits)) {
@@ -138,9 +145,12 @@ export function createPhaseStats(target_fps) {
     const frame = createDistribution()
     const mutations = createDistribution()
     const update = createDistribution()
+    const update_active = createDistribution()
+    const update_idle = createDistribution()
     const draw = createDistribution()
     const sampling = createDistribution()
     const uploads = createRange()
+    const uploads_active = createRange()
     const fps = createRange()
     let frames = 0
     let window_frames = 0
@@ -162,6 +172,12 @@ export function createPhaseStats(target_fps) {
             frame.add(sample.frame_ms)
             mutations.add(sample.mutations_ms)
             update.add(sample.update_ms)
+            if (sample.renderer_updates > 0) {
+                update_active.add(sample.update_ms)
+                uploads_active.add(sample.uploaded_bytes)
+            } else {
+                update_idle.add(sample.update_ms)
+            }
             draw.add(sample.draw_ms)
             uploads.add(sample.uploaded_bytes)
             growth_frames += sample.pool_growth_frames
@@ -173,9 +189,13 @@ export function createPhaseStats(target_fps) {
             return {
                 duration_ms: elapsed_ms, frames,
                 fps: { average: elapsed_ms ? frames * 1000 / elapsed_ms : null, min: fps_range.min, max: fps_range.max, complete_windows: fps_range.count },
-                frame_ms: frame.summary(), cpu_ms: { mutations: mutations.summary(), update: update.summary(), draw: draw.summary(), sampling: sampling.summary() },
+                frame_ms: frame.summary(),
+                cpu_ms: {
+                    mutations: mutations.summary(), update: update.summary(), update_active: update_active.summary(),
+                    update_idle: update_idle.summary(), draw: draw.summary(), sampling: sampling.summary(),
+                },
                 over_budget_percent: frames ? over_budget / frames * 100 : 0,
-                uploads: uploads.summary(), pool_growth_frames: growth_frames,
+                uploads: uploads.summary(), uploads_active: uploads_active.summary(), pool_growth_frames: growth_frames,
             }
         },
     }
@@ -196,13 +216,21 @@ export function summarizeRuns(runs) {
         if (run.status !== 'completed' || !run.valid) continue
         for (const phase of run.phases) {
             const key = `${phase.name}:${phase.nodes}`
-            if (!groups.has(key)) groups.set(key, { name: phase.name, nodes: phase.nodes, fps: createRange(), frame_p95_ms: createRange() })
+            if (!groups.has(key)) groups.set(key, {
+                name: phase.name, nodes: phase.nodes, fps: createRange(), frame_p95_ms: createRange(),
+                update_active_ms: createRange(), uploaded_bytes_active: createRange(),
+            })
             const group = groups.get(key)
             group.fps.add(phase.fps.average)
             group.frame_p95_ms.add(phase.frame_ms.p95)
+            group.update_active_ms.add(phase.cpu_ms?.update_active?.average)
+            group.uploaded_bytes_active.add(phase.uploads_active?.average)
         }
     }
-    return [...groups.values()].map(({ name, nodes, fps, frame_p95_ms }) => ({ name, nodes, fps: fps.summary(), frame_p95_ms: frame_p95_ms.summary() }))
+    return [...groups.values()].map(({ name, nodes, fps, frame_p95_ms, update_active_ms, uploaded_bytes_active }) => ({
+        name, nodes, fps: fps.summary(), frame_p95_ms: frame_p95_ms.summary(),
+        update_active_ms: update_active_ms.summary(), uploaded_bytes_active: uploaded_bytes_active.summary(),
+    }))
 }
 
 function comparisonFields(report) {
@@ -231,6 +259,10 @@ export function compareReports(previous, current) {
                 name: phase.name, nodes: phase.nodes,
                 fps_change_percent: baseline?.fps.average ? (phase.fps.average / baseline.fps.average - 1) * 100 : null,
                 frame_p95_change_percent: baseline?.frame_p95_ms.average ? (phase.frame_p95_ms.average / baseline.frame_p95_ms.average - 1) * 100 : null,
+                update_active_change_percent: baseline?.update_active_ms.average && phase.update_active_ms.average !== null
+                    ? (phase.update_active_ms.average / baseline.update_active_ms.average - 1) * 100 : null,
+                uploaded_bytes_active_change_percent: baseline?.uploaded_bytes_active.average && phase.uploaded_bytes_active.average !== null
+                    ? (phase.uploaded_bytes_active.average / baseline.uploaded_bytes_active.average - 1) * 100 : null,
             }
         }),
     }

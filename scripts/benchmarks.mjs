@@ -10,7 +10,7 @@ const SAMPLE_LIMIT = 7200
 const MEMORY_KEYS = ['jsHeap', 'jsUsed', 'jsExternal', 'jsEmbedder', 'memory']
 const NUMBER_OPTIONS = new Set(['nodes', 'duration', 'warmup', 'seed', 'repeats', 'target-fps', 'width', 'height', 'dpr'])
 const BOOLEAN_OPTIONS = new Set(['browser', 'headed', 'gpu-timing', 'check', 'build-only', 'help'])
-const STRING_OPTIONS = new Set(['mode', 'workload', 'output', 'compare'])
+const STRING_OPTIONS = new Set(['mode', 'workload', 'shape', 'content', 'output', 'compare'])
 const execFileAsync = promisify(execFile)
 
 export function parseArgs(arguments_list) {
@@ -208,7 +208,8 @@ function printHelp() {
     console.log(`Raw RendererWebGPU benchmark
 
   --mode performance|capacity|stability
-  --workload general|box-shadow
+  --workload general|box-shadow|render-metrics
+  --shape wide|chain --content panel|panel-text  Render-metrics scene options
   --nodes N --duration SECONDS --warmup SECONDS --seed N --repeats N
   --target-fps N --width N --height N --dpr N
   --headed       Show automated Chromium with native screen DPR unless --dpr is set
@@ -228,6 +229,8 @@ function printResults(report) {
         run: index + 1, status: run.status, valid: run.valid, phase: phase.name, nodes: phase.nodes,
         fps_avg: phase.fps?.average?.toFixed(2), fps_min: phase.fps?.min?.toFixed(2), fps_max: phase.fps?.max?.toFixed(2),
         p95_ms: phase.frame_ms?.p95?.toFixed(2), p99_ms: phase.frame_ms?.p99?.toFixed(2),
+        update_active_ms: phase.cpu_ms?.update_active.average?.toFixed(4),
+        uploaded_bytes_active: phase.uploads_active?.average?.toFixed(0),
         rss_max_mib: run.external_memory?.summary.memory?.max === undefined ? 'n/a' : (run.external_memory.summary.memory.max / 1048576).toFixed(1),
         js_used_max_mib: run.external_memory?.summary.jsUsed?.max === undefined ? 'n/a' : (run.external_memory.summary.jsUsed.max / 1048576).toFixed(1),
     })))
@@ -254,10 +257,10 @@ function printResults(report) {
 export async function main(arguments_list = process.argv.slice(2)) {
     const flags = parseArgs(arguments_list)
     if (flags.help) { printHelp(); return }
-    const { normalizeOptions, resultsToCsv, summarizeRuns, compareReports } = await import('../dev/benchmarks/core.mjs')
+    const { BENCHMARK_VERSION, normalizeOptions, resultsToCsv, summarizeRuns, compareReports } = await import('../dev/benchmarks/core.mjs')
     const options = normalizeOptions(flags.options)
     const baseline = flags.compare ? JSON.parse(await readFile(resolve(flags.compare), 'utf8')) : null
-    if (baseline) compareReports(baseline, { version: 1, options, runs: [] })
+    if (baseline) compareReports(baseline, { version: BENCHMARK_VERSION, options, runs: [] })
     const { build, preview } = await import('vite')
     await build({ configFile: CONFIG_FILE })
     if (flags.build_only) return
@@ -275,7 +278,7 @@ export async function main(arguments_list = process.argv.slice(2)) {
     process.on('SIGINT', handleSignal)
     process.on('SIGTERM', handleSignal)
     const output_directory = resolve(REPOSITORY, flags.output ?? `tests/.results/webgpu/${new Date().toISOString().replaceAll(':', '-')}`)
-    const report = { version: 1, options, runs: [], summary: null }
+    const report = { version: BENCHMARK_VERSION, options, runs: [], summary: null }
     async function saveReport() {
         await mkdir(output_directory, { recursive: true })
         report.summary = summarizeRuns(report.runs)

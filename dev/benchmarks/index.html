@@ -11,6 +11,7 @@
             h1 { font-size: 18px; margin: 0 0 16px; }
             fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; }
             label { display: grid; gap: 4px; }
+            label[hidden] { display: none; }
             input, select, button { font: inherit; padding: 7px; border: 1px solid #475569; border-radius: 4px; }
             input, select { background: #1e293b; color: inherit; width: 100%; }
             input[type=checkbox] { width: auto; }
@@ -32,7 +33,9 @@
                 <h1>uno/ui · WebGPU</h1>
                 <form id="controls">
                     <fieldset id="configuration">
-                        <label>Workload<select name="workload"><option value="general">General</option><option value="box-shadow">Box shadow</option></select></label>
+                        <label>Workload<select name="workload"><option value="general">General</option><option value="box-shadow">Box shadow</option><option value="render-metrics">Render metrics</option></select></label>
+                        <label data-render-metrics hidden>Árbol<select name="shape" disabled><option value="wide">Ancho</option><option value="chain">Cadenas de hasta 256 paneles</option></select></label>
+                        <label data-render-metrics hidden>Contenido<select name="content" disabled><option value="panel-text">Paneles con texto</option><option value="panel">Paneles</option></select></label>
                         <label>Modo<select name="mode"><option value="performance">Rendimiento</option><option value="capacity">Capacidad</option><option value="stability">Estabilidad</option></select></label>
                         <label>Nodos objetivo<input name="nodes" type="number" min="256" max="50000" value="5000" /></label>
                         <label>Duración (segundos; por escalón en capacidad)<input name="duration" type="number" min="1" max="7200" value="60" /></label>

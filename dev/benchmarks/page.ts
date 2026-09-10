@@ -23,6 +23,15 @@ if (params.get('automation') === '1') {
     let baseline: any = null
     let stopping = false
 
+    function updateWorkloadControls() {
+        const render_metrics = (form.elements.namedItem('workload') as HTMLSelectElement).value === 'render-metrics'
+        for (const label of form.querySelectorAll<HTMLElement>('[data-render-metrics]')) {
+            label.hidden = !render_metrics
+            label.querySelector('select')!.disabled = !render_metrics
+        }
+        ;(form.elements.namedItem('nodes') as HTMLInputElement).min = render_metrics ? '4' : '256'
+    }
+
     function applyOptions(options) {
         for (const [name, value] of Object.entries(options)) {
             const input = form.elements.namedItem(name) as HTMLInputElement
@@ -48,8 +57,8 @@ if (params.get('automation') === '1') {
                 } else {
                     comparison_element.textContent = 'Comparación con la referencia (variación porcentual):\n' +
                         report.comparison.phases.map((phase) =>
-                            `${phase.name} · ${phase.nodes} nodos: FPS ${phase.fps_change_percent?.toFixed(2) ?? 'n/a'}%; p95 ${phase.frame_p95_change_percent?.toFixed(2) ?? 'n/a'}%`,
-                        ).join('\n') + '\nFPS: mayor es mejor. p95: menor es mejor.'
+                            `${phase.name} · ${phase.nodes} nodos: FPS ${phase.fps_change_percent?.toFixed(2) ?? 'n/a'}%; p95 ${phase.frame_p95_change_percent?.toFixed(2) ?? 'n/a'}%; CPU actualización ${phase.update_active_change_percent?.toFixed(2) ?? 'n/a'}%; bytes/actualización ${phase.uploaded_bytes_active_change_percent?.toFixed(2) ?? 'n/a'}%`,
+                        ).join('\n') + '\nFPS: mayor es mejor. Tiempos y bytes: menor es mejor.'
                 }
             }
         }
@@ -77,6 +86,7 @@ if (params.get('automation') === '1') {
     form.elements.namedItem('workload')!.addEventListener('change', () => {
         const workload = (form.elements.namedItem('workload') as HTMLSelectElement).value
         ;(form.elements.namedItem('nodes') as HTMLInputElement).value = String(normalizeOptions({ workload }).nodes)
+        updateWorkloadControls()
     })
     form.addEventListener('submit', async (event) => {
         event.preventDefault()
