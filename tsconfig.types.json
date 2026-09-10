@@ -8,9 +8,8 @@
         "rootDir": "src",
         "outDir": "types"
     },
-    "include": ["src/**/*.js", "src/**/*.d.ts", "src/core/**/*.ts", "src/renderer/**/*.ts", "src/utils/**/*.ts", "src/layouter/**/*.ts", "src/style/**/*.ts", "src/events/**/*.ts"],
+    "include": ["src/**/*.js", "src/**/*.d.ts", "src/core/**/*.ts", "src/renderer/**/*.ts", "src/utils/**/*.ts", "src/layouter/**/*.ts", "src/style/**/*.ts", "src/ui/**/*.ts", "src/events/**/*.ts"],
     "exclude": [
-        "src/ui/UIWorldSpace.js",
         "src/components/solid/driver.js",
         "src/components/octane/driver.js"
     ]

@@ -16,28 +16,28 @@
             "import": "./src/renderer/dom/ResourcesDom.ts"
         },
         "./UIWebGPU": {
-            "types": "./types/ui/UIWebGPU.d.ts",
-            "import": "./src/ui/UIWebGPU.js"
+            "types": "./src/ui/UIWebGPU.ts",
+            "import": "./src/ui/UIWebGPU.ts"
         },
         "./UIThree": {
-            "types": "./types/ui/UIThree.d.ts",
-            "import": "./src/ui/UIThree.js"
+            "types": "./src/ui/UIThree.ts",
+            "import": "./src/ui/UIThree.ts"
         },
         "./UIBabylon": {
-            "types": "./types/ui/UIBabylon.d.ts",
-            "import": "./src/ui/UIBabylon.js"
+            "types": "./src/ui/UIBabylon.ts",
+            "import": "./src/ui/UIBabylon.ts"
         },
         "./UIBabylonLite": {
-            "types": "./types/ui/UIBabylonLite.d.ts",
-            "import": "./src/ui/UIBabylonLite.js"
+            "types": "./src/ui/UIBabylonLite.ts",
+            "import": "./src/ui/UIBabylonLite.ts"
         },
         "./UIPlayCanvas": {
-            "types": "./types/ui/UIPlayCanvas.d.ts",
-            "import": "./src/ui/UIPlayCanvas.js"
+            "types": "./src/ui/UIPlayCanvas.ts",
+            "import": "./src/ui/UIPlayCanvas.ts"
         },
         "./UIDom": {
-            "types": "./types/ui/UIDom.d.ts",
-            "import": "./src/ui/UIDom.js"
+            "types": "./src/ui/UIDom.ts",
+            "import": "./src/ui/UIDom.ts"
         },
         "./octane": {
             "types": "./types/components/octane/index.d.ts",

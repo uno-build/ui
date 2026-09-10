@@ -1,6 +1,6 @@
 import Renderer from '../../src/core/Renderer'
 import Resources from '../../src/core/Resources'
-import UIWorldSpace from '../../types/ui/UIWorldSpace'
+import UIWorldSpace from '../../src/ui/UIWorldSpace'
 import Node from '../../src/core/Node'
 import Operations from '../../src/core/Operations'
 import { OPERATIONS } from '../../src/core/constants'

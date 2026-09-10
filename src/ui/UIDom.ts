@@ -4,6 +4,10 @@ import { defineFocus } from '../events/focus'
 import { normalizeDelta } from '../events/wheel'
 import RendererDom from '../renderer/RendererDom'
 
+export type UIDomOptions = import('../core/UI').EventOptions<UIDom> & {
+    resources: import('../renderer/dom/ResourcesDom').default
+}
+
 const DOM_POINTER_EVENTS = [
     EVENT.POINTERDOWN,
     EVENT.POINTERMOVE,
@@ -14,35 +18,23 @@ const DOM_POINTER_EVENTS = [
 ]
 const DOM_EVENTS = [defineDomPointer, defineDomWheel, defineDomScroll, defineDomClick, defineFocus]
 
-/**
- * @typedef {import('../core/UI').EventOptions<UIDom> & {
- *   resources: import('../renderer/dom/ResourcesDom').default
- * }} UIDomOptions
- */
-
-/** @extends {UI<RendererDom, import('../renderer/dom/ResourcesDom').default>} */
-export default class UIDom extends UI {
-    /**
-     * @protected
-     * @param {UIDomOptions} options
-     */
-    constructor({ resources, defined_events = [] }) {
+export default class UIDom extends UI<RendererDom, import('../renderer/dom/ResourcesDom').default> {
+    protected constructor({ resources, defined_events = [] }: UIDomOptions) {
         const renderer = new RendererDom({ resources })
         super({ renderer, resources, defined_events: [...DOM_EVENTS, ...defined_events] })
     }
 
-    /** @param {UIDomOptions} options */
-    static async create(options) {
+    static async create(options: UIDomOptions) {
         const ui = new UIDom(options)
         await ui.initialize()
         return { ui }
     }
 }
 
-function defineDomPointer({ ui }) {
-    const canvas = ui.resources.canvas
-    const listener = (source_event) => {
-        const target = ui.renderer.getEventNode(source_event.target)
+function defineDomPointer({ ui }: { ui: UIDom }) {
+    const canvas = ui.resources!.canvas
+    const listener = (source_event: PointerEvent) => {
+        const target = ui.renderer!.getEventNode(source_event.target as globalThis.Node | null)
 
         if (target !== null) {
             ui.events.emit(source_event.type, {
@@ -50,7 +42,11 @@ function defineDomPointer({ ui }) {
                 event_data: getDomEventData(ui, source_event),
                 target,
                 ...(source_event.type === EVENT.POINTEROVER.name || source_event.type === EVENT.POINTEROUT.name
-                    ? { related_target: ui.renderer.getEventNode(source_event.relatedTarget) }
+                    ? {
+                          related_target: ui.renderer!.getEventNode(
+                              source_event.relatedTarget as globalThis.Node | null,
+                          ),
+                      }
                     : {}),
             })
         }
@@ -70,10 +66,10 @@ function defineDomPointer({ ui }) {
     }
 }
 
-function defineDomWheel({ ui }) {
-    const canvas = ui.resources.canvas
-    const listener = (source_event) => {
-        const target = ui.renderer.getEventNode(source_event.target)
+function defineDomWheel({ ui }: { ui: UIDom }) {
+    const canvas = ui.resources!.canvas
+    const listener = (source_event: WheelEvent) => {
+        const target = ui.renderer!.getEventNode(source_event.target as globalThis.Node | null)
 
         if (target !== null) {
             ui.events.emit(EVENT.WHEEL.name, {
@@ -98,10 +94,10 @@ function defineDomWheel({ ui }) {
     }
 }
 
-function defineDomScroll({ ui }) {
-    const canvas = ui.resources.canvas
-    const listener = (source_event) => {
-        const node = ui.renderer.syncScroll(source_event.target)
+function defineDomScroll({ ui }: { ui: UIDom }) {
+    const canvas = ui.resources!.canvas
+    const listener = (source_event: Event) => {
+        const node = ui.renderer!.syncScroll(source_event.target as HTMLElement)
 
         if (node !== undefined) {
             ui.events.emit(EVENT.SCROLL.name, {
@@ -125,10 +121,10 @@ function defineDomScroll({ ui }) {
     }
 }
 
-function defineDomClick({ ui }) {
-    const canvas = ui.resources.canvas
-    const listener = (source_event) => {
-        const target = ui.renderer.getEventNode(source_event.target)
+function defineDomClick({ ui }: { ui: UIDom }) {
+    const canvas = ui.resources!.canvas
+    const listener = (source_event: MouseEvent) => {
+        const target = ui.renderer!.getEventNode(source_event.target as globalThis.Node | null)
 
         if (target !== null) {
             ui.events.emit(EVENT.CLICK.name, {
@@ -149,10 +145,10 @@ function defineDomClick({ ui }) {
     }
 }
 
-function getDomEventData(ui, source_event) {
-    const rect = ui.resources.canvas.getBoundingClientRect()
+function getDomEventData(ui: UIDom, source_event: Pick<MouseEvent, 'clientX' | 'clientY'>) {
+    const rect = ui.resources!.canvas.getBoundingClientRect()
     return {
-        x: ((source_event.clientX - rect.left) / rect.width) * ui.root.layout.width,
-        y: ((source_event.clientY - rect.top) / rect.height) * ui.root.layout.height,
+        x: ((source_event.clientX - rect.left) / rect.width) * ui.root!.layout!.width!,
+        y: ((source_event.clientY - rect.top) / rect.height) * ui.root!.layout!.height!,
     }
 }

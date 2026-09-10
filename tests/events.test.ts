@@ -101,7 +101,7 @@ test('UIWebGPU dispatches pointer events in UI coordinates', async ({ page }) =>
         {
             event_types: PLATFORM_EVENT_NAMES,
             module_urls: {
-                ui: `/@fs${WORKSPACE_PATH}src/ui/UIWebGPU.js`,
+                ui: `/@fs${WORKSPACE_PATH}src/ui/UIWebGPU.ts`,
                 resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
             },
         },
