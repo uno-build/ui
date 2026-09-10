@@ -1,5 +1,6 @@
 import { View, Text, Image, ScrollView, Input, registerRootComponent, useUI, createElement, insertNode } from 'uno-ui/solid'
 import type UIDom from 'uno-ui/UIDom'
+import type UIWebGPU from 'uno-ui/UIWebGPU'
 
 declare const ui: UIDom
 function App(props: { title: string }) {
@@ -56,3 +57,21 @@ const input_with_ref = <Input ref={input_ref} />
 const style_name: import('uno-ui/solid').StyleName = 'backgroundColor'
 // @ts-expect-error Known style names retain their literal union for completion.
 const invalid_style_name: import('uno-ui/solid').StyleName = 'misspelled'
+
+function TypedContext() {
+    const dom_ui = useUI<UIDom>()
+    dom_ui.resources?.observeFonts()()
+    dom_ui.create()?.element?.focus()
+    const gpu_ui = useUI<UIWebGPU>()
+    gpu_ui.resources?.device.createCommandEncoder()
+    const element: undefined | null = gpu_ui.root?.element
+    // @ts-expect-error A DOM context does not have GPU resources.
+    dom_ui.resources?.device
+    // @ts-expect-error A WebGPU context does not have DOM elements.
+    gpu_ui.create()?.element?.focus()
+    // @ts-expect-error The default context cannot assume a specific element type.
+    useUI().create()?.element?.focus()
+    // @ts-expect-error Context specialization must be a UI type.
+    useUI<string>()
+    return <View ref={(node) => dom_ui.root?.remove(node)} />
+}

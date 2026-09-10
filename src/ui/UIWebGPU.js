@@ -10,7 +10,7 @@ import RendererWebGPU from '../renderer/RendererWebGPU'
  * @typedef {import('../renderer/RendererWebGPU').RendererWebGPUOptions & import('../core/UI').EventOptions<UIWebGPU>} UIWebGPUOptions
  */
 
-/** @extends {UI<RendererWebGPU>} */
+/** @extends {UI<RendererWebGPU, import('../renderer/webgpu/ResourcesWebGPU').default>} */
 export default class UIWebGPU extends UI {
     /**
      * @protected

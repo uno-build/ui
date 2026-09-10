@@ -2,14 +2,15 @@ import { resolveStyle, validateStyle } from '../style'
 import { EVENT } from '../events/constants'
 import { OPERATIONS } from './constants'
 
+/** @template [TElement=unknown] */
 export default class Node {
     /** @type {import('./UI').default | null} */
     ui
-    /** @type {any} */
+    /** @type {TElement | null} */
     element = null
-    /** @type {Node | null} */
+    /** @type {Node<TElement> | null} */
     parent = null
-    /** @type {Node[]} */
+    /** @type {Node<TElement>[]} */
     children = []
     /** @type {number[]} */
     path = []

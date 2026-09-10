@@ -3,8 +3,8 @@
  *   resources: import('../renderer/dom/ResourcesDom').default
  * }} UIDomOptions
  */
-/** @extends {UI<RendererDom>} */
-export default class UIDom extends UI<RendererDom> {
+/** @extends {UI<RendererDom, import('../renderer/dom/ResourcesDom').default>} */
+export default class UIDom extends UI<RendererDom, import("../renderer/dom/ResourcesDom").default> {
     /** @param {UIDomOptions} options */
     static create(options: UIDomOptions): Promise<{
         ui: UIDom;

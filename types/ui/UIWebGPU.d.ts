@@ -4,8 +4,8 @@
 /**
  * @typedef {import('../renderer/RendererWebGPU').RendererWebGPUOptions & import('../core/UI').EventOptions<UIWebGPU>} UIWebGPUOptions
  */
-/** @extends {UI<RendererWebGPU>} */
-export default class UIWebGPU extends UI<RendererWebGPU> {
+/** @extends {UI<RendererWebGPU, import('../renderer/webgpu/ResourcesWebGPU').default>} */
+export default class UIWebGPU extends UI<RendererWebGPU, import("../renderer/webgpu/ResourcesWebGPU").default> {
     /** @param {UIWebGPUOptions} options */
     static create(options: UIWebGPUOptions): Promise<{
         ui: UIWebGPU;

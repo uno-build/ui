@@ -178,3 +178,15 @@ new UIBabylonLite({ ...options, scene: lite_scene, engine: lite_engine })
 new UIPlayCanvas({ ...options, app })
 // @ts-expect-error Renderer hooks remain protected.
 three.ui.createTexture({})
+
+for (const world_ui of [three.ui, babylon.ui, lite.ui, playcanvas.ui]) {
+    const world_resources: ResourcesWebGPU | null = world_ui.resources
+    world_ui.resources?.device.createCommandEncoder()
+    world_ui.resources?.context.getCurrentTexture()
+    const element: undefined | null = world_ui.create()?.element
+    const root_element: undefined | null = world_ui.root?.element
+    // @ts-expect-error World-space nodes do not have DOM elements.
+    world_ui.root?.element?.style
+    // @ts-expect-error World-space resources retain their concrete interface.
+    world_ui.resources?.missing
+}

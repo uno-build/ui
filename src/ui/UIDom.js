@@ -20,7 +20,7 @@ const DOM_EVENTS = [defineDomPointer, defineDomWheel, defineDomScroll, defineDom
  * }} UIDomOptions
  */
 
-/** @extends {UI<RendererDom>} */
+/** @extends {UI<RendererDom, import('../renderer/dom/ResourcesDom').default>} */
 export default class UIDom extends UI {
     /**
      * @protected

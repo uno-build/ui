@@ -1,6 +1,7 @@
 /// <reference types="@webgpu/types" />
 import UI, { EventOptions } from '../core/UI'
 import RendererWebGPU, { RendererWebGPUOptions } from '../renderer/RendererWebGPU'
+import ResourcesWebGPU from '../renderer/webgpu/ResourcesWebGPU'
 import { WebGPUDrawOptions, WebGPUDrawResult } from '../renderer/webgpu/contracts'
 
 export type TextureOptions = {
@@ -41,7 +42,7 @@ export type UIWorldSpaceOutput<TTexture, TMaterial, TPlane> =
 
 export type WorldSpaceDrawOptions = Omit<WebGPUDrawOptions, 'texture_view' | 'load_op'>
 
-export default abstract class UIWorldSpace<TTexture = unknown, TMaterial = unknown, TPlane = unknown, TUI extends UI = UI> extends UI<RendererWebGPU> {
+export default abstract class UIWorldSpace<TTexture = unknown, TMaterial = unknown, TPlane = unknown, TUI extends UI = UI> extends UI<RendererWebGPU, ResourcesWebGPU> {
     protected texture_width: number
     protected texture_height: number
     protected world_width: number

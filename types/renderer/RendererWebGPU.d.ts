@@ -76,7 +76,8 @@ export default class RendererWebGPU extends Renderer<import("./webgpu/contracts"
     setDevicePixelRatio(device_pixel_ratio: any): void;
     setViewport(width: any, height: any): void;
     setRootSize(root_size: any): void;
-    createElement(node: any): void;
+    /** @returns {undefined} */
+    createElement(node: any): undefined;
     getChildIndex(node: any): any;
     prepareLayout(nodes_created: any, operations: any): any;
     initializeTextNode(node: any): void;

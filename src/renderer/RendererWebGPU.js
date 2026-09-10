@@ -222,6 +222,7 @@ export default class RendererWebGPU extends Renderer {
         this.root_size = root_size
     }
 
+    /** @returns {undefined} */
     createElement(node) {
         if (node.id === 0) {
             this.root_node = node

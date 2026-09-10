@@ -12,7 +12,7 @@ export default abstract class Renderer<TDrawOptions = any, TDrawResult = void> {
     draw(options?: TDrawOptions): TDrawResult
     initializeTextNode(node: any): void
     invalidateTextNode(node: any): void
-    abstract createElement(node: any): any
+    abstract createElement(node: any): unknown
     abstract getChildIndex(node: any): any
     abstract getLayout(node: any): any
     abstract detachChild(parent: any, node: any, release_subtree?: boolean): any

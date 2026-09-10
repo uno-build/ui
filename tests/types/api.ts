@@ -193,3 +193,32 @@ gpu.ui.dispatchPlatformEvent({
 })
 // @ts-expect-error Platform pointer events require coordinates and a surface.
 gpu.ui.dispatchPlatformEvent({ type: 'pointerdown' })
+
+const dom_ui_resources: ResourcesDom | null = ui.resources
+ui.resources?.observeFonts()()
+node.element?.style.setProperty('color', 'red')
+node.parent?.element?.focus()
+node.children[0]?.element?.getBoundingClientRect()
+ui.root?.element?.appendChild(document.createElement('div'))
+// @ts-expect-error DOM resources do not expose a GPU device.
+ui.resources?.device
+// @ts-expect-error Elements are nullable after destruction.
+node.element.focus()
+// @ts-expect-error DOM elements have an HTML interface.
+node.element?.missing
+
+const gpu_ui_resources: ResourcesWebGPU | null = gpu.ui.resources
+gpu.ui.resources?.device.createCommandEncoder()
+gpu.ui.resources?.context.getCurrentTexture()
+gpu.ui.resources?.image_manager.getImage('icon')
+const gpu_node = gpu.ui.create()!
+const gpu_element: undefined | null = gpu_node.element
+const gpu_root_element: undefined | null = gpu.ui.root?.element
+const gpu_child_element: undefined | null = gpu_node.children[0]?.element
+const gpu_parent_element: undefined | null = gpu_node.parent?.element
+// @ts-expect-error WebGPU nodes do not have DOM elements.
+gpu_node.element?.style
+// @ts-expect-error Resources can be cleared when the UI is destroyed.
+gpu.ui.resources.device
+// @ts-expect-error Resources retain their concrete interface.
+gpu.ui.resources?.missing

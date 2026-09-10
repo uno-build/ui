@@ -15,7 +15,8 @@ export default class RendererDom extends Renderer<any, void> {
     init(): Promise<void>;
     prepareLayout(nodes_created: any, operations: any): any;
     setRootSize(root_size: any): void;
-    createElement(node: any): any;
+    /** @returns {HTMLElement} */
+    createElement(node: any): HTMLElement;
     /**
      * @protected
      * @param {any} parent

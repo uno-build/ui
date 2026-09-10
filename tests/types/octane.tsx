@@ -1,6 +1,7 @@
 import { View, Text, Image, ScrollView, Input, registerRootComponent, createUniversalDriver, useUI } from 'uno-ui/octane'
 import { defineUniversalComponent } from 'octane/universal/native'
 import type UIDom from 'uno-ui/UIDom'
+import type UIWebGPU from 'uno-ui/UIWebGPU'
 
 declare const ui: UIDom
 function JsxApp(props: { title: string }) { return <View>
@@ -53,3 +54,21 @@ const fixture_13 = <View unsupported="value" />
 const empty_props = <View onClick={null} style={null} />
 declare const input_ref: import('octane').RefObject<import('uno-ui/octane').InputHandle | null>
 const input_with_ref = <Input ref={input_ref} />
+
+function TypedContext() {
+    const dom_ui = useUI<UIDom>()
+    dom_ui.resources?.observeFonts()()
+    dom_ui.create()?.element?.focus()
+    const gpu_ui = useUI<UIWebGPU>()
+    gpu_ui.resources?.device.createCommandEncoder()
+    const element: undefined | null = gpu_ui.root?.element
+    // @ts-expect-error A DOM context does not have GPU resources.
+    dom_ui.resources?.device
+    // @ts-expect-error A WebGPU context does not have DOM elements.
+    gpu_ui.create()?.element?.focus()
+    // @ts-expect-error The default context cannot assume a specific element type.
+    useUI().create()?.element?.focus()
+    // @ts-expect-error Context specialization must be a UI type.
+    useUI<string>()
+    return <View ref={(handle) => { if (handle) dom_ui.root?.remove(handle.nodes.main) }} />
+}

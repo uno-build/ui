@@ -18,13 +18,16 @@ import { isSameLayout } from '../layouter/utils'
  * @property {Array<(options: { ui: TUI }) => DefinedEvent>} [defined_events]
  */
 
-/** @template {import('./Renderer').default<any, any>} [TRenderer=import('./Renderer').default<any, unknown>] */
+/**
+ * @template {import('./Renderer').default<any, any>} [TRenderer=import('./Renderer').default<any, unknown>]
+ * @template {import('./Resources').default} [TResources=import('./Resources').default]
+ */
 export default class UI {
-    /** @type {Node | null} */
+    /** @type {Node<ReturnType<TRenderer['createElement']>> | null} */
     root = null
     /** @type {TRenderer | null} */
     renderer = null
-    /** @type {import('./Resources').default | null} */
+    /** @type {TResources | null} */
     resources = null
     defined_events = []
     /** @type {EventEmitter<import('../events/types').UIEventMap>} */
@@ -80,6 +83,7 @@ export default class UI {
         return output
     }
 
+    /** @returns {Node<ReturnType<TRenderer['createElement']>> | undefined} */
     create() {
         if (!this.destroyed) {
             const node = new Node({

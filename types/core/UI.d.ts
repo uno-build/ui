@@ -9,19 +9,22 @@
  * @typedef {object} EventOptions
  * @property {Array<(options: { ui: TUI }) => DefinedEvent>} [defined_events]
  */
-/** @template {import('./Renderer').default<any, any>} [TRenderer=import('./Renderer').default<any, unknown>] */
-export default class UI<TRenderer extends import("./Renderer").default<any, any> = import("./Renderer").default<any, unknown>> {
+/**
+ * @template {import('./Renderer').default<any, any>} [TRenderer=import('./Renderer').default<any, unknown>]
+ * @template {import('./Resources').default} [TResources=import('./Resources').default]
+ */
+export default class UI<TRenderer extends import("./Renderer").default<any, any> = import("./Renderer").default<any, unknown>, TResources extends import("./Resources").default = import("./Resources").default<any>> {
     /**
      *
      * @param {any} options
      */
     protected constructor({ renderer, resources, defined_events }: any);
-    /** @type {Node | null} */
-    root: Node | null;
+    /** @type {Node<ReturnType<TRenderer['createElement']>> | null} */
+    root: Node<ReturnType<TRenderer["createElement"]>> | null;
     /** @type {TRenderer | null} */
     renderer: TRenderer | null;
-    /** @type {import('./Resources').default | null} */
-    resources: import("./Resources").default | null;
+    /** @type {TResources | null} */
+    resources: TResources | null;
     defined_events: any[];
     /** @type {EventEmitter<import('../events/types').UIEventMap>} */
     events: EventEmitter<import("../events/types").UIEventMap>;
@@ -50,7 +53,8 @@ export default class UI<TRenderer extends import("./Renderer").default<any, any>
     private offFontResources;
     /** @protected */
     protected initialize(): Promise<any>;
-    create(): Node | undefined;
+    /** @returns {Node<ReturnType<TRenderer['createElement']>> | undefined} */
+    create(): Node<ReturnType<TRenderer["createElement"]>> | undefined;
     update(): void;
     /**
      * @param {Parameters<TRenderer['draw']>[0]} [options]

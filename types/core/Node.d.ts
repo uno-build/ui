@@ -1,4 +1,5 @@
-export default class Node {
+/** @template [TElement=unknown] */
+export default class Node<TElement = unknown> {
     /** @param {{ id: number, ui: import('./UI').default }} options */
     constructor({ id, ui }: {
         id: number;
@@ -6,12 +7,12 @@ export default class Node {
     });
     /** @type {import('./UI').default | null} */
     ui: import("./UI").default | null;
-    /** @type {any} */
-    element: any;
-    /** @type {Node | null} */
-    parent: Node | null;
-    /** @type {Node[]} */
-    children: Node[];
+    /** @type {TElement | null} */
+    element: TElement | null;
+    /** @type {Node<TElement> | null} */
+    parent: Node<TElement> | null;
+    /** @type {Node<TElement>[]} */
+    children: Node<TElement>[];
     /** @type {number[]} */
     path: number[];
     /** @type {import('../style/types').NodeLayout} */

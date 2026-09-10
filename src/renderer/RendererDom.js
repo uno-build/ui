@@ -46,6 +46,7 @@ export default class RendererDom extends Renderer {
         document.body.parentElement.style.fontSize = `${root_size}px`
     }
 
+    /** @returns {HTMLElement} */
     createElement(node) {
         let element
         if (node.id === 0) {
