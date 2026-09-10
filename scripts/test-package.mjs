@@ -24,10 +24,8 @@ function run(command, args, cwd) {
 try {
     // Parse every implementation, including modules unreachable from public exports.
     for (const file of await readdir(path.join(ROOT, 'src'), { recursive: true })) {
-        const octane_component = file === 'components/octane/components.tsx'
-        assert.ok(!/\.tsx?$/.test(file) || file.endsWith('.d.ts') || octane_component, `TypeScript implementation remains: ${file}`)
-        if (!/\.jsx?$/.test(file) && !octane_component) continue
-        await transform(await readFile(path.join(ROOT, 'src', file), 'utf8'), { loader: file.endsWith('.jsx') || octane_component ? 'jsx' : 'js', jsx: 'preserve' })
+        if (!/\.[jt]sx?$/.test(file) || file.endsWith('.d.ts')) continue
+        await transform(await readFile(path.join(ROOT, 'src', file), 'utf8'), { loader: path.extname(file).slice(1), jsx: 'preserve' })
     }
 
     const entrypoints = Object.values(PACKAGE.exports).map((entry) => path.join(ROOT, entry.types))

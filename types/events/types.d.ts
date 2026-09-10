@@ -1,5 +1,5 @@
-import type Node from '../core/Node'
-import type { EVENT } from './constants'
+import type Node from '../../src/core/Node'
+import type { EVENT } from '#js/events/constants'
 
 export type PointerSource = Pick<PointerEvent, 'type' | 'pointerId' | 'pointerType' | 'preventDefault'> & Partial<PointerEvent>
 export type WheelSource = Pick<WheelEvent, 'type' | 'deltaX' | 'deltaY' | 'deltaMode' | 'preventDefault'> & Partial<WheelEvent>

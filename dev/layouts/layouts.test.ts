@@ -11,7 +11,7 @@ import {
 
 const layoutRunnerUrl = `/@fs${path.resolve('dev/layouts/layout-runner.ts')}`
 const layoutHarnessUrl = `/@fs${path.resolve('dev/layouts/layout-harness.html')}`
-const uiUrl = `/@fs${path.resolve('src/core/UI.js')}`
+const uiUrl = `/@fs${path.resolve('src/core/UI.ts')}`
 const loadImageUrl = `/@fs${path.resolve('src/utils/loadAssets.ts')}`
 const LAYOUT_VIEWPORTS = [
     // { width: 360, height: 640 },

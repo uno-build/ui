@@ -1,4 +1,4 @@
-export { default as EventEmitter } from "../core/EventEmitter";
+export { default as EventEmitter } from "../../src/core/EventEmitter";
 export * from "./constants";
 export const DEFINED_EVENTS: (typeof definePointers | typeof defineWheel | typeof defineScroll | typeof defineClick | typeof defineFocus)[];
 export type NodeEventMap = import("./types").NodeEventMap;

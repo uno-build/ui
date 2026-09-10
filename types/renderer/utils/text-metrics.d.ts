@@ -11,4 +11,4 @@ export function measureGlyphAdvances(font: any, font_size: any, text: any): numb
 export function getTextLayout(record: any, prepared_text: any, layout_width: any, line_height: any): any;
 export function constrainMeasuredSize(measured_size: any, available_size: any, measure_mode: any): any;
 export function roundToDevicePixel(value: any, device_pixel_ratio: any): number;
-export const TEXT_MEASURE_STYLE_NAMES: ("fontFamily" | "lineHeight" | "letterSpacing" | "fontSize" | "whiteSpace")[];
+export const TEXT_MEASURE_STYLE_NAMES: ("fontFamily" | "fontSize" | "lineHeight" | "letterSpacing" | "whiteSpace")[];

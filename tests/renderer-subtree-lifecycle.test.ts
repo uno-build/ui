@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { loadYoga } from 'yoga-layout/load'
-import { OPERATIONS } from '../src/core/constants.js'
+import { OPERATIONS } from '../src/core/constants.ts'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.js'
 import {
     COMMAND_KIND_GLYPH,

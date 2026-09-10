@@ -1,4 +1,4 @@
-import type Node from '../core/Node'
+import type Node from '../../src/core/Node'
 import type { EventProps } from '../events/types'
 import type { StyleProps } from '../style/types'
 

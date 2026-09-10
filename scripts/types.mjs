@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { cp, mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -57,7 +57,10 @@ async function buildTypes(output_directory) {
     const diagnostics = [...parsed.errors, ...ts.getPreEmitDiagnostics(program)]
     if (diagnostics.length) throw new Error(ts.formatDiagnosticsWithColorAndContext(diagnostics, host))
 
-    const result = program.emit(undefined, undefined, undefined, true, {
+    const result = program.emit(undefined, (filename, text, write_bom) => {
+        const source_path = path.join(SOURCE, path.relative(output_directory, filename)).replace(/\.d\.ts$/, '.ts')
+        if (!existsSync(source_path)) host.writeFile(filename, text, write_bom)
+    }, undefined, true, {
         afterDeclarations: [(context) => (source) => {
             const names = protected_constructors.get(source.fileName)
             const implementation = program.getSourceFile(source.fileName)
@@ -93,6 +96,22 @@ async function buildTypes(output_directory) {
         const destination = path.join(output_directory, filename)
         await mkdir(path.dirname(destination), { recursive: true })
         await cp(path.join(SOURCE, filename), destination)
+    }
+
+    // During migration, declarations for JS modules reference TS implementations directly.
+    for (const filename of await readdir(output_directory, { recursive: true })) {
+        if (!filename.endsWith('.d.ts')) continue
+        const destination = path.join(output_directory, filename)
+        let text = await readFile(destination, 'utf8')
+        for (const entry of ts.preProcessFile(text).importedFiles.reverse()) {
+            if (!entry.fileName.startsWith('.')) continue
+            const source_path = path.resolve(SOURCE, path.dirname(filename), entry.fileName)
+            if (!existsSync(source_path + '.ts')) continue
+            const relative_path = path.relative(path.dirname(path.join(TYPES, filename)), source_path)
+            const specifier = relative_path.startsWith('.') ? relative_path : './' + relative_path
+            text = text.slice(0, entry.pos + 1) + specifier + text.slice(entry.pos + 1 + entry.fileName.length)
+        }
+        await writeFile(destination, text)
     }
 }
 

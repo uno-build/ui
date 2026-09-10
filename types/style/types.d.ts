@@ -1,4 +1,4 @@
-import type { STYLE } from './index'
+import type { STYLE } from '#js/style/index'
 
 export type StyleName = typeof STYLE[keyof typeof STYLE]['name']
 // Values are parsed by Uno at runtime; unlike CSS-in-JS, numeric values are not accepted.

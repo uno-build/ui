@@ -1,5 +1,5 @@
 import type { JSX, OctaneNode, Ref } from 'octane'
-import type Node from '../../core/Node'
+import type Node from '../../../src/core/Node'
 import type { StyleProps } from '../../style/types'
 import type { BaseProps, ImageOptions, InputOptions, NodeHandle, ScrollViewHandle, InputHandle } from '../props'
 

@@ -1,9 +1,9 @@
-import Renderer from '../../types/core/Renderer'
-import Resources from '../../types/core/Resources'
+import Renderer from '../../src/core/Renderer'
+import Resources from '../../src/core/Resources'
 import UIWorldSpace from '../../types/ui/UIWorldSpace'
-import Node from '../../types/core/Node'
-import Operations from '../../types/core/Operations'
-import { OPERATIONS } from '../../types/core/constants'
+import Node from '../../src/core/Node'
+import Operations from '../../src/core/Operations'
+import { OPERATIONS } from '../../src/core/constants'
 import type { ComputedLayout, StyleUpdate } from '../../types/style/types'
 
 // @ts-expect-error Abstract renderer methods must be implemented.

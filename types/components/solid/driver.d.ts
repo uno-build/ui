@@ -1,7 +1,7 @@
 import type { Renderer } from '@solidjs/universal'
 import type { Component } from 'solid-js'
-import type Node from '../../core/Node'
-import type UI from '../../core/UI'
+import type Node from '../../../src/core/Node'
+import type UI from '../../../src/core/UI'
 
 export const effect: Renderer<Node>['effect']
 export const memo: Renderer<Node>['memo']

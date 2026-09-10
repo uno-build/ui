@@ -132,7 +132,7 @@ export type RendererWebGPUOptions = {
     image_min_filter?: "linear" | "nearest" | undefined;
     image_mag_filter?: "linear" | "nearest" | undefined;
 };
-export type WebGPUNode = import("../core/Node").default<undefined>;
-export type WebGPUOperations = import("../core/Operations").default<undefined>;
+export type WebGPUNode = import("../../src/core/Node").default<undefined>;
+export type WebGPUOperations = import("../../src/core/Operations").default<undefined>;
 export type RendererWebGPUOutput = Pick<import("./webgpu/ResourcesWebGPU").default, "adapter" | "device" | "context" | "format">;
-import Renderer from '../core/Renderer';
+import Renderer from '../../src/core/Renderer';

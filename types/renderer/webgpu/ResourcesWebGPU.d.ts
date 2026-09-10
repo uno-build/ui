@@ -80,6 +80,6 @@ export default class ResourcesWebGPU extends Resources<import("./contracts").Web
      */
     disposeFont(name: string): void;
 }
-import Resources from '../../core/Resources';
+import Resources from '../../../src/core/Resources';
 import { FontManager } from './FontManager';
 import { ImageManager } from './ImageManager';

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import RendererWebGPU from '../src/renderer/RendererWebGPU.js'
-import { OPERATIONS, RESOURCE_EVENT } from '../src/core/constants.js'
-import Operations from '../src/core/Operations.js'
+import { OPERATIONS, RESOURCE_EVENT } from '../src/core/constants.ts'
+import Operations from '../src/core/Operations.ts'
 import { createCommands } from '../src/renderer/utils/render-records.js'
 import {
     createNodeMetricsResolver,

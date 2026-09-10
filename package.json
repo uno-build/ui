@@ -2,6 +2,12 @@
     "name": "uno-ui",
     "version": "0.1.0",
     "type": "module",
+    "imports": {
+        "#js/*": {
+            "types": "./types/*.d.ts",
+            "default": "./src/*.js"
+        }
+    },
     "exports": {
         "./events": {
             "types": "./types/events/index.d.ts",

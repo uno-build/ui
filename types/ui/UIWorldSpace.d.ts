@@ -1,5 +1,5 @@
 /// <reference types="@webgpu/types" />
-import UI, { EventOptions } from '../core/UI'
+import UI, { EventOptions } from '../../src/core/UI'
 import RendererWebGPU, { RendererWebGPUOptions } from '../renderer/RendererWebGPU'
 import ResourcesWebGPU from '../renderer/webgpu/ResourcesWebGPU'
 import { WebGPUDrawOptions, WebGPUDrawResult } from '../renderer/webgpu/contracts'

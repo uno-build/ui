@@ -83,4 +83,4 @@ export type DomImage = {
     src?: string;
 };
 export type FontMetrics = Pick<import("../webgpu/contracts").FontMetrics, "lineHeight"> & Partial<import("../webgpu/contracts").FontMetrics>;
-import Resources from '../../core/Resources';
+import Resources from '../../../src/core/Resources';

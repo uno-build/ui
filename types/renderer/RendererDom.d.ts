@@ -46,6 +46,6 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
     /** @override @param {DomNode} node @returns {import('../style/types').ComputedLayout} */
     getLayout(node: DomNode): import("../style/types").ComputedLayout;
 }
-export type DomNode = import("../core/Node").default<HTMLElement>;
-export type DomOperations = import("../core/Operations").default<HTMLElement>;
-import Renderer from '../core/Renderer';
+export type DomNode = import("../../src/core/Node").default<HTMLElement>;
+export type DomOperations = import("../../src/core/Operations").default<HTMLElement>;
+import Renderer from '../../src/core/Renderer';

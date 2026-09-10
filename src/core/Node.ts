@@ -1,23 +1,20 @@
-import { resolveStyle, validateStyle } from '../style'
-import { EVENT } from '../events/constants'
+import type UI from './UI'
+import type { EventSource, EventPayload, UIEventMap } from '../events/types'
+import type { NodeLayout, StyleName, ResolvedStyle, StyleUpdate } from '../style/types'
+
+import { resolveStyle, validateStyle } from '#js/style/index'
+import { EVENT } from '#js/events/constants'
 import { OPERATIONS } from './constants'
 
-/** @template [TElement=unknown] */
-export default class Node {
-    /** @type {import('./UI').default | null} */
-    ui
-    /** @type {TElement | null} */
-    element = null
-    /** @type {Node<TElement> | null} */
-    parent = null
-    /** @type {Node<TElement>[]} */
-    children = []
-    /** @type {number[]} */
-    path = []
-    /** @type {import('../style/types').NodeLayout} */
-    layout = {}
-    /** @type {string | undefined} */
-    text_content = undefined
+export default class Node<TElement = unknown> {
+    declare id: number
+    ui: UI | null
+    element: TElement | null = null
+    parent: Node<TElement> | null = null
+    children: Node<TElement>[] = []
+    path: number[] = []
+    layout: NodeLayout = {}
+    text_content: string | undefined = undefined
     order = 0
     scroll_top = 0
     scroll_left = 0
@@ -26,24 +23,16 @@ export default class Node {
     clientHeight = 0
     clientWidth = 0
     scrolling = false
-    /** @type {Partial<Record<import('../style/types').StyleName, import('../style/types').ResolvedStyle>>} */
-    styles = {}
-    /** @private */
-    styles_declared = {}
-    /** @private */
-    listeners = new Map()
+    styles: Partial<Record<StyleName | (string & {}), ResolvedStyle>> = {}
+    private styles_declared: Partial<Record<string, StyleUpdate>> = {}
+    private listeners = new Map<string, { listeners: Set<(event: any) => void>, processEvent: (event: any) => void }>()
 
-    /** @param {{ id: number, ui: import('./UI').default }} options */
-    constructor({ id, ui }) {
+    constructor({ id, ui }: { id: number, ui: UI }) {
         this.id = id
         this.ui = ui
     }
 
-    /**
-     * @param {Node} child
-     * @param {Node | null} [before_node]
-     */
-    add(child, before_node = null) {
+    add(child: Node, before_node: Node | null = null) {
         if (this.ui === null) {
             return
         }
@@ -55,8 +44,7 @@ export default class Node {
         this.ui.addChild(this, child, before_node)
     }
 
-    /** @param {Node} child */
-    remove(child) {
+    remove(child: Node) {
         if (this.ui === null) {
             return
         }
@@ -76,8 +64,7 @@ export default class Node {
         this.ui?.destroyNode(this)
     }
 
-    /** @param {import('../events/types').EventSource | null} [source_event] */
-    focus(source_event = null) {
+    focus(source_event: EventSource | null = null) {
         if (this.ui !== null) {
             this.ui.events_source.emit(EVENT.FOCUS.name, {
                 source_event,
@@ -87,8 +74,7 @@ export default class Node {
         }
     }
 
-    /** @param {import('../events/types').EventSource | null} [source_event] */
-    blur(source_event = null) {
+    blur(source_event: EventSource | null = null) {
         if (this.ui !== null) {
             this.ui.events_source.emit(EVENT.BLUR.name, {
                 source_event,
@@ -98,12 +84,7 @@ export default class Node {
         }
     }
 
-    /**
-     * @template {string} TName
-     * @param {TName} type
-     * @param {(event: import('../events/types').EventPayload<TName>) => void} listener
-     */
-    on(type, listener) {
+    on<TName extends string>(type: TName, listener: (event: EventPayload<TName>) => void) {
         if (this.ui === null) {
             return
         }
@@ -111,24 +92,19 @@ export default class Node {
         let node_event = this.listeners.get(type)
 
         if (node_event === undefined) {
-            const process_event = (event) => this.processEvent(type, event)
+            const processEvent = (event: any) => this.processEvent(type, event)
             node_event = {
                 listeners: new Set(),
-                process_event,
+                processEvent,
             }
             this.listeners.set(type, node_event)
-            this.ui.events.on(type, process_event)
+            this.ui.events.on(type, processEvent)
         }
 
         node_event.listeners.add(listener)
     }
 
-    /**
-     * @template {string} TName
-     * @param {TName} type
-     * @param {(event: import('../events/types').EventPayload<TName>) => void} listener
-     */
-    off(type, listener) {
+    off<TName extends string>(type: TName, listener: (event: EventPayload<TName>) => void) {
         if (this.ui === null) {
             return
         }
@@ -139,7 +115,7 @@ export default class Node {
             node_event.listeners.delete(listener)
 
             if (node_event.listeners.size === 0) {
-                this.ui.events.off(type, node_event.process_event)
+                this.ui.events.off(type, node_event.processEvent)
                 this.listeners.delete(type)
             }
         }
@@ -147,14 +123,13 @@ export default class Node {
 
     destroyEvents() {
         for (const [type, node_event] of this.listeners) {
-            this.ui.events.off(type, node_event.process_event)
+            this.ui!.events.off(type, node_event.processEvent)
         }
 
         this.listeners.clear()
     }
 
-    /** @private */
-    processEvent(type, event) {
+    private processEvent(type: string, event: UIEventMap[keyof UIEventMap]) {
         if (!this.isEventDispatcher(type, event.target)) {
             return
         }
@@ -171,7 +146,7 @@ export default class Node {
                 propagation_stopped = true
             },
         }
-        let current_target = event.target
+        let current_target: Node | null = event.target
 
         while (current_target !== null) {
             propagated_event.current_target = current_target
@@ -185,12 +160,11 @@ export default class Node {
         }
     }
 
-    /** @private */
-    isEventDispatcher(type, target) {
-        let current_target = target
+    private isEventDispatcher(type: string, target: Node) {
+        let current_target: Node | null = target
 
         while (current_target !== null) {
-            if (current_target.listeners.get(type)?.listeners.size > 0) {
+            if (current_target.listeners.get(type)?.listeners.size! > 0) {
                 return current_target === this
             }
 
@@ -200,8 +174,7 @@ export default class Node {
         return false
     }
 
-    /** @private */
-    dispatchListeners(type, event) {
+    private dispatchListeners(type: string, event: EventPayload<string>) {
         const listeners = this.listeners.get(type)?.listeners
 
         if (listeners !== undefined) {
@@ -209,8 +182,7 @@ export default class Node {
         }
     }
 
-    /** @param {import('../style/types').StyleName | (string & {})} name @param {string} value */
-    style(name, value) {
+    style(name: StyleName | (string & {}), value: string) {
         if (this.ui === null) {
             return
         }
@@ -223,7 +195,7 @@ export default class Node {
             previous_resolved.value !== value ||
             previous_resolved.expanded.some((style) => this.styles[style.name]?.value !== style.value)
         ) {
-            const resolved_style = resolveStyle(normalized_name, value)
+            const resolved_style: StyleUpdate = resolveStyle(normalized_name, value)
             const has_changes = resolved_style.expanded.some((style) => this.styles[style.name]?.value !== style.value)
 
             this.styles_declared[normalized_name] = resolved_style
@@ -240,10 +212,7 @@ export default class Node {
         }
     }
 
-    /**
-     * @param {string} value
-     */
-    text(value) {
+    text(value: string) {
         if (this.ui === null) {
             return
         }
@@ -258,13 +227,13 @@ export default class Node {
             }
 
             this.text_content = value
-            this.ui.renderer.invalidateTextNode(this)
+            this.ui.renderer!.invalidateTextNode(this)
             this.ui.operations.add({ op: OPERATIONS.TEXT, node: this, value })
             return
         }
 
         this.text_content = value
-        this.ui.renderer.initializeTextNode(this)
+        this.ui.renderer!.initializeTextNode(this)
         this.ui.operations.add({ op: OPERATIONS.TEXT, node: this, value })
     }
 
@@ -273,14 +242,14 @@ export default class Node {
     }
 
     hasTextContent() {
-        return this.isTextNode() && this.text_content.length > 0
+        return this.isTextNode() && this.text_content!.length > 0
     }
 
     get scrollTop() {
         return this.scroll_top
     }
 
-    set scrollTop(value) {
+    set scrollTop(value: number) {
         if (this.ui !== null && this.scroll_top !== value) {
             this.scroll_top = value
             this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this })
@@ -291,7 +260,7 @@ export default class Node {
         return this.scroll_left
     }
 
-    set scrollLeft(value) {
+    set scrollLeft(value: number) {
         if (this.ui !== null && this.scroll_left !== value) {
             this.scroll_left = value
             this.ui.operations.add({ op: OPERATIONS.SCROLL, node: this })

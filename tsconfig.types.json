@@ -8,10 +8,8 @@
         "rootDir": "src",
         "outDir": "types"
     },
-    "include": ["src/**/*.js", "src/**/*.d.ts"],
+    "include": ["src/**/*.js", "src/**/*.d.ts", "src/core/**/*.ts"],
     "exclude": [
-        "src/core/Renderer.js",
-        "src/core/Resources.js",
         "src/ui/UIWorldSpace.js",
         "src/components/solid/driver.js",
         "src/components/octane/driver.js"

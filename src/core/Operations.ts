@@ -1,50 +1,33 @@
+import type Node from './Node'
+import type { StyleUpdate } from '../style/types'
 import { OPERATIONS } from './constants'
-import { isPaintStyle, STYLE } from '../style'
+import { isPaintStyle, STYLE } from '#js/style/index'
 
-/**
- * @template [TElement=unknown]
- * @typedef {import('./Node').default<TElement>} OperationNode
- */
+export type OperationNode<TElement = unknown> = Node<TElement>
 
-/**
- * @template [TElement=unknown]
- * @typedef {(
- *   { op: 'add', parent: OperationNode<TElement> | null, node: OperationNode<TElement>, child_index?: number } |
- *   { op: 'remove', parent: OperationNode<TElement>, node: OperationNode<TElement> } |
- *   { op: 'style', node: OperationNode<TElement>, style: import('../style/types').StyleUpdate } |
- *   { op: 'text', node: OperationNode<TElement>, value: string } |
- *   { op: 'scroll', node: OperationNode<TElement> } |
- *   { op: 'viewport', width: number, height: number } |
- *   { op: 'root_size' | 'pixel_ratio', value: number } |
- *   { op: 'resource_image' | 'resource_font' }
- * )} Operation
- */
+export type Operation<TElement = unknown> =
+    { op: 'add', parent: Node<TElement> | null, node: Node<TElement>, child_index?: number } |
+    { op: 'remove', parent: Node<TElement>, node: Node<TElement> } |
+    { op: 'style', node: Node<TElement>, style: StyleUpdate } |
+    { op: 'text', node: Node<TElement>, value: string } |
+    { op: 'scroll', node: Node<TElement> } |
+    { op: 'viewport', width: number, height: number } |
+    { op: 'root_size' | 'pixel_ratio', value: number } |
+    { op: 'resource_image' | 'resource_font' }
 
-/** @template [TElement=unknown] */
-export default class Operations {
-    /** @type {Operation<TElement>[]} */
-    items = []
-    /** @type {Set<OperationNode<TElement>>} */
-    layout_nodes = new Set()
-    /** @type {Set<OperationNode<TElement>>} */
-    scroll_nodes = new Set()
-    /** @private @type {Operation<TElement>[]} */
-    pending = []
-    /** @private @type {Set<Operation<TElement>>} */
-    captured = new Set()
-    /** @private */
-    update_order = false
-    /** @private */
-    check_layout = false
-    /** @private */
-    update_layout = false
-    /** @private */
-    update_scroll_metrics = false
-    /** @private */
-    context_changed = false
+export default class Operations<TElement = unknown> {
+    items: Operation<TElement>[] = []
+    layout_nodes = new Set<Node<TElement>>()
+    scroll_nodes = new Set<Node<TElement>>()
+    private pending: Operation<TElement>[] = []
+    private captured = new Set<Operation<TElement>>()
+    private update_order = false
+    private check_layout = false
+    private update_layout = false
+    private update_scroll_metrics = false
+    private context_changed = false
 
-    /** @param {Operation<TElement>} operation */
-    add(operation) {
+    add(operation: Operation<TElement>) {
         this.pending.push(operation)
     }
 
@@ -83,11 +66,10 @@ export default class Operations {
         this.captured.clear()
     }
 
-    /** @param {OperationNode<TElement>} node */
-    discardNode(node) {
+    discardNode(node: Node<TElement>) {
         this.pending = this.pending.filter(
             (operation) =>
-                operation.node !== node || operation.op === OPERATIONS.ADD || operation.op === OPERATIONS.REMOVE,
+                (operation as { node?: Node<TElement> }).node !== node || operation.op === OPERATIONS.ADD || operation.op === OPERATIONS.REMOVE,
         )
     }
 
@@ -106,8 +88,7 @@ export default class Operations {
         return this.check_layout
     }
 
-    /** @param {boolean} update_layout */
-    setUpdateLayout(update_layout) {
+    setUpdateLayout(update_layout: boolean) {
         this.update_layout = update_layout
     }
 
@@ -123,8 +104,7 @@ export default class Operations {
         return this.context_changed
     }
 
-    /** @private */
-    reset() {
+    private reset() {
         this.layout_nodes.clear()
         this.scroll_nodes.clear()
         this.update_order = false
@@ -134,16 +114,15 @@ export default class Operations {
         this.context_changed = false
     }
 
-    /** @private */
-    compact(operations) {
+    private compact(operations: Operation<TElement>[]) {
         const compacted_operations = []
-        const style_names_by_node = new Map()
+        const style_names_by_node = new Map<Node<TElement>, Set<string>>()
         const text_nodes = new Set()
         const scroll_nodes = new Set()
         const global_operations = new Set()
 
         for (let i = operations.length - 1; i >= 0; i--) {
-            const operation = operations[i]
+            const operation = operations[i]!
 
             if (
                 (operation.op === OPERATIONS.STYLE ||
@@ -160,7 +139,7 @@ export default class Operations {
                     style_names = new Set()
                     style_names_by_node.set(operation.node, style_names)
                 }
-                if (operation.style.expanded.every(({ name }) => style_names.has(name))) {
+                if (operation.style.expanded.every(({ name }) => style_names!.has(name))) {
                     continue
                 }
                 for (const { name } of operation.style.expanded) {

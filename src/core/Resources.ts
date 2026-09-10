@@ -10,10 +10,12 @@ export type ResourceTypes = {
 
 export default abstract class Resources<TCanvas = unknown, TTypes extends ResourceTypes = ResourceTypes> {
     canvas: TCanvas
-    events: EventEmitter
-    protected constructor({ canvas }: {
-        canvas: TCanvas
-    })
+    events = new EventEmitter()
+
+    protected constructor({ canvas }: { canvas: TCanvas }) {
+        this.canvas = canvas
+    }
+
     abstract registerImage(src: string, image: TTypes['image']): TTypes['registered_image']
     abstract disposeImage(src: string): void
     abstract getImageSize(src: string): {

@@ -3,6 +3,8 @@
         "allowJs": true,
         "checkJs": false,
         "noEmit": true,
+        "erasableSyntaxOnly": true,
+        "verbatimModuleSyntax": true,
         "strict": true,
         "noUncheckedIndexedAccess": true,
         "target": "ESNext",
@@ -11,5 +13,5 @@
         "types": [],
         "skipLibCheck": true
     },
-    "include": ["src/events/**/*.js", "src/core/EventEmitter.js"]
+    "include": ["src/events/**/*.js", "src/core/**/*.ts"]
 }

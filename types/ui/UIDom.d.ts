@@ -15,8 +15,8 @@ export default class UIDom extends UI<RendererDom, import("../renderer/dom/Resou
      */
     protected constructor({ resources, defined_events }: UIDomOptions);
 }
-export type UIDomOptions = import("../core/UI").EventOptions<UIDom> & {
+export type UIDomOptions = import("../../src/core/UI").EventOptions<UIDom> & {
     resources: import("../renderer/dom/ResourcesDom").default;
 };
 import RendererDom from '../renderer/RendererDom';
-import UI from '../core/UI';
+import UI from '../../src/core/UI';

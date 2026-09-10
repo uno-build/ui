@@ -1,4 +1,4 @@
-import { OPERATIONS } from '../../src/core/constants.js'
+import { OPERATIONS } from '../../src/core/constants.ts'
 import {
     COMMAND_SIZE,
     COMMAND_KIND_PANEL,

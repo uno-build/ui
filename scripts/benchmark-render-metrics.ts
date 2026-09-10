@@ -49,10 +49,10 @@ if (values.worker) {
     const [{ default: RendererWebGPU }, { default: Operations }, { GpuPool }, buffers, constants, styles, style_constants] =
         await Promise.all([
             importSource('src/renderer/RendererWebGPU.js'),
-            importSource('src/core/Operations.js'),
+            importSource('src/core/Operations.ts'),
             importSource('src/renderer/webgpu/GpuPool.js'),
             importSource('src/renderer/webgpu/buffers.js'),
-            importSource('src/core/constants.js'),
+            importSource('src/core/constants.ts'),
             importSource('src/style/index.js'),
             importSource('src/style/constants.js'),
         ])

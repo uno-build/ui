@@ -3,7 +3,7 @@ export const RESOURCE_EVENT = {
     FONT: 'font',
 }
 
-export const OPERATIONS = /** @type {const} */ ({
+export const OPERATIONS = {
     ADD: 'add',
     REMOVE: 'remove',
     STYLE: 'style',
@@ -14,4 +14,4 @@ export const OPERATIONS = /** @type {const} */ ({
     PIXEL_RATIO: 'pixel_ratio',
     RESOURCE_IMAGE: 'resource_image',
     RESOURCE_FONT: 'resource_font',
-})
+} as const
