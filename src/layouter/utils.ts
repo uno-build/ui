@@ -1,4 +1,7 @@
-export function getParentLayout(node) {
+import type Node from '../core/Node'
+import type { ComputedLayout, NodeLayout, LayoutEdges } from '../style/types'
+
+export function getParentLayout(node: Node) {
     const parent = node.parent
 
     if (parent === null || parent.parent === null) {
@@ -13,15 +16,15 @@ export function getParentLayout(node) {
     return parent.layout
 }
 
-export function calculateLayoutRect(node_rect, parent_rect) {
+export function calculateLayoutRect(node_rect: Pick<ComputedLayout, 'width' | 'height' | 'left' | 'top'>, parent_rect: Pick<NodeLayout, 'x' | 'y' | 'width' | 'height'>) {
     const width = node_rect.width
     const height = node_rect.height
     const left = node_rect.left
     const top = node_rect.top
-    const x = parent_rect.x + left
-    const y = parent_rect.y + top
-    const centerX = left + width / 2 - parent_rect.width / 2
-    const centerY = -(top + height / 2 - parent_rect.height / 2)
+    const x = parent_rect.x! + left
+    const y = parent_rect.y! + top
+    const centerX = left + width / 2 - parent_rect.width! / 2
+    const centerY = -(top + height / 2 - parent_rect.height! / 2)
 
     return {
         width,
@@ -35,7 +38,7 @@ export function calculateLayoutRect(node_rect, parent_rect) {
     }
 }
 
-export function isSameLayout(a, b) {
+export function isSameLayout(a: NodeLayout, b: NodeLayout) {
     return (
         a.x === b.x &&
         a.y === b.y &&
@@ -46,7 +49,7 @@ export function isSameLayout(a, b) {
     )
 }
 
-function isSameEdges(a, b) {
+function isSameEdges(a: LayoutEdges | undefined, b: LayoutEdges | undefined) {
     return (
         a === b ||
         (a !== undefined &&

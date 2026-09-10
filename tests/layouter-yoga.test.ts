@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { loadYoga } from 'yoga-layout/load'
-import createYogaLayouter from '../src/layouter/yoga.js'
+import createYogaLayouter from '../src/layouter/yoga.ts'
 import Style, { computeStyleValue } from '../src/style'
 import { MEASURE_MODE } from '../src/style/constants'
 

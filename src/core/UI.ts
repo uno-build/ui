@@ -7,9 +7,9 @@ import type { StyleUpdate } from '../style/types'
 import Node from './Node'
 import EventEmitter from './EventEmitter'
 import Operations from './Operations'
-import { isNodeAtPoint, sortPaintingOrder } from '#js/utils/nodes'
+import { isNodeAtPoint, sortPaintingOrder } from '../utils/nodes'
 import { OPERATIONS, RESOURCE_EVENT } from './constants'
-import { isSameLayout } from '#js/layouter/utils'
+import { isSameLayout } from '../layouter/utils'
 
 export type DefinedEvent = {
     types: Array<{ platform: boolean, name: string, prop: string, priority: string }>
@@ -200,7 +200,7 @@ export default class UI<
 
     private getNodeAtPoint(x: number, y: number) {
         for (let i = this.nodes.length - 1; i >= 0; i--) {
-            if (isNodeAtPoint(this.nodes[i], x, y)) {
+            if (isNodeAtPoint(this.nodes[i]!, x, y)) {
                 return this.nodes[i]!
             }
         }

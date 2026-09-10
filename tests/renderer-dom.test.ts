@@ -4,7 +4,7 @@ import Operations from '../src/core/Operations.ts'
 import Resources from '../src/core/Resources.ts'
 import RendererDom from '../src/renderer/RendererDom.js'
 import ResourcesDom from '../src/renderer/dom/ResourcesDom.js'
-import { isSameLayout } from '../src/layouter/utils.js'
+import { isSameLayout } from '../src/layouter/utils.ts'
 import Style from '../src/style'
 import TestUI from './utils/TestUI.ts'
 
