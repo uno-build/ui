@@ -13,7 +13,7 @@ export default class Node {
     children = []
     /** @type {number[]} */
     path = []
-    /** @type {Record<string, any>} */
+    /** @type {import('../style/types').NodeLayout} */
     layout = {}
     /** @type {string | undefined} */
     text_content = undefined
@@ -25,13 +25,14 @@ export default class Node {
     clientHeight = 0
     clientWidth = 0
     scrolling = false
-    /** @type {Record<string, any>} */
+    /** @type {Partial<Record<import('../style/types').StyleName, import('../style/types').ResolvedStyle>>} */
     styles = {}
     /** @private */
     styles_declared = {}
     /** @private */
     listeners = new Map()
 
+    /** @param {{ id: number, ui: import('./UI').default }} options */
     constructor({ id, ui }) {
         this.id = id
         this.ui = ui
@@ -53,6 +54,7 @@ export default class Node {
         this.ui.addChild(this, child, before_node)
     }
 
+    /** @param {Node} child */
     remove(child) {
         if (this.ui === null) {
             return
@@ -73,7 +75,7 @@ export default class Node {
         this.ui?.destroyNode(this)
     }
 
-    /** @param {any} [source_event] */
+    /** @param {import('../events/types').EventSource | null} [source_event] */
     focus(source_event = null) {
         if (this.ui !== null) {
             this.ui.events_source.emit(EVENT.FOCUS.name, {
@@ -84,7 +86,7 @@ export default class Node {
         }
     }
 
-    /** @param {any} [source_event] */
+    /** @param {import('../events/types').EventSource | null} [source_event] */
     blur(source_event = null) {
         if (this.ui !== null) {
             this.ui.events_source.emit(EVENT.BLUR.name, {
@@ -95,6 +97,11 @@ export default class Node {
         }
     }
 
+    /**
+     * @template {string} TName
+     * @param {TName} type
+     * @param {(event: import('../events/types').EventPayload<TName>) => void} listener
+     */
     on(type, listener) {
         if (this.ui === null) {
             return
@@ -115,6 +122,11 @@ export default class Node {
         node_event.listeners.add(listener)
     }
 
+    /**
+     * @template {string} TName
+     * @param {TName} type
+     * @param {(event: import('../events/types').EventPayload<TName>) => void} listener
+     */
     off(type, listener) {
         if (this.ui === null) {
             return
@@ -196,6 +208,7 @@ export default class Node {
         }
     }
 
+    /** @param {import('../style/types').StyleName | (string & {})} name @param {string} value */
     style(name, value) {
         if (this.ui === null) {
             return

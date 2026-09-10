@@ -1,7 +1,8 @@
 export default class Node {
+    /** @param {{ id: number, ui: import('./UI').default }} options */
     constructor({ id, ui }: {
-        id: any;
-        ui: any;
+        id: number;
+        ui: import("./UI").default;
     });
     /** @type {import('./UI').default | null} */
     ui: import("./UI").default | null;
@@ -13,8 +14,8 @@ export default class Node {
     children: Node[];
     /** @type {number[]} */
     path: number[];
-    /** @type {Record<string, any>} */
-    layout: Record<string, any>;
+    /** @type {import('../style/types').NodeLayout} */
+    layout: import("../style/types").NodeLayout;
     /** @type {string | undefined} */
     text_content: string | undefined;
     order: number;
@@ -25,27 +26,38 @@ export default class Node {
     clientHeight: number;
     clientWidth: number;
     scrolling: boolean;
-    /** @type {Record<string, any>} */
-    styles: Record<string, any>;
+    /** @type {Partial<Record<import('../style/types').StyleName, import('../style/types').ResolvedStyle>>} */
+    styles: Partial<Record<import("../style/types").StyleName, import("../style/types").ResolvedStyle>>;
     /** @private */
     private styles_declared;
     /** @private */
     private listeners;
-    id: any;
+    id: number;
     /**
      * @param {Node} child
      * @param {Node | null} [before_node]
      */
     add(child: Node, before_node?: Node | null): void;
-    remove(child: any): void;
+    /** @param {Node} child */
+    remove(child: Node): void;
     detach(): void;
     destroy(): void;
-    /** @param {any} [source_event] */
-    focus(source_event?: any): void;
-    /** @param {any} [source_event] */
-    blur(source_event?: any): void;
-    on(type: any, listener: any): void;
-    off(type: any, listener: any): void;
+    /** @param {import('../events/types').EventSource | null} [source_event] */
+    focus(source_event?: import("../events/types").EventSource | null): void;
+    /** @param {import('../events/types').EventSource | null} [source_event] */
+    blur(source_event?: import("../events/types").EventSource | null): void;
+    /**
+     * @template {string} TName
+     * @param {TName} type
+     * @param {(event: import('../events/types').EventPayload<TName>) => void} listener
+     */
+    on<TName extends string>(type: TName, listener: (event: import("../events/types").EventPayload<TName>) => void): void;
+    /**
+     * @template {string} TName
+     * @param {TName} type
+     * @param {(event: import('../events/types').EventPayload<TName>) => void} listener
+     */
+    off<TName extends string>(type: TName, listener: (event: import("../events/types").EventPayload<TName>) => void): void;
     destroyEvents(): void;
     /** @private */
     private processEvent;
@@ -53,7 +65,8 @@ export default class Node {
     private isEventDispatcher;
     /** @private */
     private dispatchListeners;
-    style(name: any, value: any): void;
+    /** @param {import('../style/types').StyleName | (string & {})} name @param {string} value */
+    style(name: import("../style/types").StyleName | (string & {}), value: string): void;
     /**
      * @param {string} value
      */

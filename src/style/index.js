@@ -143,6 +143,22 @@ function computeUnitValue(parsed, context) {
     }
 }
 
+/**
+ * @template {string} TName
+ * @typedef {object} StyleDefinition
+ * @property {TName} name
+ * @property {number} record_parts
+ * @property {boolean} [painter]
+ * @property {(value: string) => Array<{ name: string, value: string, parsed: unknown }>} resolve
+ */
+
+/**
+ * @template {string} TName
+ * @param {TName} name
+ * @param {Function} shorthandCallback
+ * @param {{ record_parts?: number, painter?: boolean }} [options]
+ * @returns {StyleDefinition<TName>}
+ */
 function createStyle(name, shorthandCallback, options = {}) {
     return {
         name,
@@ -196,7 +212,6 @@ function expandHelper(name, value, definitions) {
 }
 
 /* prettier-ignore */
-/** @type {Record<string, any>} */
 export const STYLE = {
     ZINDEX: createStyle('zIndex', (name, value) => [
         { name, value, definition: INTEGER_DEFINITION },

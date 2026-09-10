@@ -1,5 +1,10 @@
 // @ts-check
 
+/**
+ * @typedef {import('./types').NodeEventMap} NodeEventMap
+ * @typedef {import('./types').UIEventMap} UIEventMap
+ */
+
 import { definePointers } from './pointers'
 import { defineClick } from './click'
 import { defineWheel } from './wheel'

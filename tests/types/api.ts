@@ -18,7 +18,7 @@ const canvas = document.createElement('canvas')
 const resources = ResourcesDom.create({ canvas })
 resources.registerImage('icon', { width: 10, height: 20 })
 resources.disposeImage('icon')
-resources.registerFont('font', {}, { metrics: {} })
+resources.registerFont('font', {}, { metrics: { lineHeight: 1.2 } })
 resources.disposeFont('font')
 const image_size: { width: number; height: number } | undefined = resources.getImageSize('icon')
 const { ui } = await UIDom.create({ resources })
@@ -33,9 +33,14 @@ node.blur()
 ui.draw()
 
 const gpu_resources = await ResourcesWebGPU.create({ canvas })
-gpu_resources.registerImage('icon', {})
+const gpu_image = { bitmap: canvas, width: 10, height: 20 }
+gpu_resources.registerImage('icon', gpu_image)
 gpu_resources.disposeImage('icon')
-gpu_resources.registerFont('font', {}, {})
+gpu_resources.registerFont('font', gpu_image, {
+    metrics: { lineHeight: 1.2, ascender: 0.9, descender: -0.3 },
+    atlas: { size: 32, distanceRange: 4, yOrigin: 'bottom' },
+    glyphs: [{ unicode: 65, advance: 0.6 }],
+})
 gpu_resources.disposeFont('font')
 const gpu = await UIWebGPU.create({ resources: gpu_resources, loadYoga, defined_events: DEFINED_EVENTS })
 await UIWebGPU.create({
@@ -103,3 +108,88 @@ UIWebGPU.create({ resources: gpu_resources, loadYoga, defined_events: [() => ({ 
 UIWebGPU.create({ resources: gpu_resources, loadYoga, image_filter: 'linear' })
 // @ts-expect-error WebGPU constructors remain protected.
 new UIWebGPU({ resources: gpu_resources, loadYoga })
+
+const draw_result = gpu.ui.draw({ submit: false, load_op: 'clear' })
+draw_result?.command_encoder.finish()
+draw_result?.texture_view.label.toUpperCase()
+gpu_resources.device.createCommandEncoder()
+gpu_resources.context.present?.()
+gpu_resources.image_manager.getImage('icon')?.image_size[0].toFixed()
+gpu_resources.font_manager.getFont('font')?.metrics.ascender.toFixed()
+resources.getFont('font')?.lineHeight.toFixed()
+resources.getImage('icon')?.width.toFixed()
+ui.setViewport(800, 600)
+ui.setDevicePixelRatio(2)
+ui.setRootSize(16)
+node.layout.width?.toFixed()
+node.layout.border?.top.toFixed()
+node.id.toFixed()
+node.on(EVENT.CLICK.name, (event) => {
+    event.x.toFixed()
+    event.current_target.text('clicked')
+    event.stopPropagation()
+    // @ts-expect-error Click events do not have wheel deltas.
+    event.delta_y
+})
+node.on('wheel', (event) => event.delta_y.toFixed())
+node.on('focus', (event) => event.related_target?.blur())
+node.on('scroll', (event) => event.scroll_top.toFixed())
+node.on('custom', (event: { detail: string }) => event.detail.toUpperCase())
+ui.events.on('click', (event) => event.event_data.x.toFixed())
+// @ts-expect-error Raw UI events are not propagated node events.
+ui.events.on('click', (event) => event.stopPropagation())
+
+// @ts-expect-error Drawing uses WebGPU load operations.
+gpu.ui.draw({ load_op: 'invalid' })
+// @ts-expect-error Drawing returns a typed result.
+draw_result?.missing
+// @ts-expect-error Dimensions must be numbers.
+ui.setViewport('800', 600)
+// @ts-expect-error Pixel ratio must be numeric.
+ui.setDevicePixelRatio('2')
+// @ts-expect-error Root font size must be numeric.
+ui.setRootSize('16px')
+// @ts-expect-error Node removal requires a Node.
+node.remove({})
+// @ts-expect-error Styles use string values, including numbers encoded as strings.
+node.style('width', 100)
+// @ts-expect-error Listeners must be callable.
+node.on('click', 42)
+// @ts-expect-error Registered images require a bitmap and dimensions.
+gpu_resources.registerImage('invalid', {})
+// @ts-expect-error Font data requires atlas metrics and glyphs.
+gpu_resources.registerFont('invalid', gpu_image, {})
+// @ts-expect-error DOM resources need an HTMLElement.
+ResourcesDom.create({ canvas: {} })
+// @ts-expect-error A context or a canvas is required.
+ResourcesWebGPU.create({})
+// @ts-expect-error Atlas sizes must be numbers.
+ResourcesWebGPU.create({ canvas, image_atlas_size: '2048' })
+// @ts-expect-error Texture formats are WebGPU formats.
+ResourcesWebGPU.create({ canvas, format: 'invalid' })
+declare const context: GPUCanvasContext & { present(): void }
+declare const device: GPUDevice
+await ResourcesWebGPU.create({ context, device, format: 'rgba8unorm' })
+await ResourcesWebGPU.create({ canvas: { getContext: () => context }, device })
+const key = Symbol('event')
+emitter.on(key, () => {})
+emitter.emit(key)
+emitter.on({}, () => {})
+const typed_emitter = new EventEmitter<{ ready: { count: number } }>()
+typed_emitter.on('ready', (event) => event.count.toFixed())
+// @ts-expect-error Event payloads follow the supplied event map.
+typed_emitter.emit('ready', { count: '1' })
+
+// @ts-expect-error Required payloads cannot be omitted from explicitly typed event maps.
+typed_emitter.emit('ready')
+const optional_emitter = new EventEmitter<{ ready: { count: number } | undefined }>()
+optional_emitter.emit('ready')
+optional_emitter.on('ready', (event) => event?.count.toFixed())
+
+gpu.ui.dispatchPlatformEvent(new PointerEvent('pointerdown'))
+gpu.ui.dispatchPlatformEvent({
+    type: 'pointermove', clientX: 1, clientY: 2, pointerId: 1,
+    currentTarget: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) },
+})
+// @ts-expect-error Platform pointer events require coordinates and a surface.
+gpu.ui.dispatchPlatformEvent({ type: 'pointerdown' })

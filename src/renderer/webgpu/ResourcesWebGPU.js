@@ -6,20 +6,30 @@ import { ImageManager } from './ImageManager'
 const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 2048
 
+/** @extends {Resources<import('./contracts').WebGPUCanvas | undefined>} */
 export default class ResourcesWebGPU extends Resources {
+    /** @type {GPUAdapter | null | undefined} */
     adapter
+    /** @type {GPUDevice} */
     device
+    /** @type {import('./contracts').WebGPUContext} */
     context
+    /** @type {GPUTextureFormat} */
     format
+    /** @type {number} */
     font_atlas_size
+    /** @type {number} */
     image_atlas_size
+    /** @type {FontManager} */
     font_manager
+    /** @type {ImageManager} */
     image_manager
+    /** @type {boolean} */
     has_present
 
     /**
      * @protected
-     * @param {any} options
+     * @param {import('./contracts').ResourcesWebGPUOptions} options
      */
     constructor({
         canvas,
@@ -39,6 +49,7 @@ export default class ResourcesWebGPU extends Resources {
         this.font_atlas_size = font_atlas_size
     }
 
+    /** @param {import('./contracts').ResourcesWebGPUOptions} options */
     static async create(options) {
         const resources = new ResourcesWebGPU(options)
         await resources.initialize()
@@ -78,7 +89,7 @@ export default class ResourcesWebGPU extends Resources {
     /**
      * @override
      * @param {string} src
-     * @param {any} image
+     * @param {import('./contracts').WebGPUImage} image
      */
     registerImage(src, image) {
         const registered_image = this.image_manager.imageUpload(src, image)
@@ -100,6 +111,7 @@ export default class ResourcesWebGPU extends Resources {
     /**
      * @override
      * @param {string} src
+     * @returns {{ width: number, height: number } | undefined}
      */
     getImageSize(src) {
         const image = this.image_manager.getImage(src)
@@ -109,8 +121,8 @@ export default class ResourcesWebGPU extends Resources {
     /**
      * @override
      * @param {string} name
-     * @param {any} image
-     * @param {any} json
+     * @param {import('./contracts').WebGPUImage} image
+     * @param {import('./contracts').FontData} json
      */
     registerFont(name, image, json) {
         const font = this.font_manager.fontRegister(name, image, json)

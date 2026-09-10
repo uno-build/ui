@@ -1,10 +1,17 @@
 import Resources from '../../core/Resources'
 import { RESOURCE_EVENT } from '../../core/constants'
 
+/**
+ * @typedef {{ canvas: HTMLElement }} ResourcesDomOptions
+ * @typedef {{ width: number, height: number, src?: string }} DomImage
+ * @typedef {Pick<import('../webgpu/contracts').FontMetrics, 'lineHeight'> & Partial<import('../webgpu/contracts').FontMetrics>} FontMetrics
+ */
+
+/** @extends {Resources<HTMLElement>} */
 export default class ResourcesDom extends Resources {
-    /** @private */
+    /** @private @type {Map<string, DomImage>} */
     images = new Map()
-    /** @private */
+    /** @private @type {Map<string, FontMetrics>} */
     fonts = new Map()
     /** @private */
     font_observers = new Set()
@@ -15,12 +22,13 @@ export default class ResourcesDom extends Resources {
 
     /**
      * @protected
-     * @param {any} options
+     * @param {ResourcesDomOptions} options
      */
     constructor(options) {
         super(options)
     }
 
+    /** @param {ResourcesDomOptions} options */
     static create(options) {
         return new ResourcesDom(options)
     }
@@ -43,7 +51,7 @@ export default class ResourcesDom extends Resources {
     /**
      * @override
      * @param {string} src
-     * @param {any} image
+     * @param {DomImage} image
      */
     registerImage(src, image) {
         if (this.images.has(src)) {
@@ -83,8 +91,8 @@ export default class ResourcesDom extends Resources {
     /**
      * @override
      * @param {string} name
-     * @param {any} image
-     * @param {any} json
+     * @param {unknown} image
+     * @param {{ metrics: FontMetrics }} json
      */
     registerFont(name, image, json) {
         if (this.fonts.has(name)) {

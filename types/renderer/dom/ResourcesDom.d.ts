@@ -1,13 +1,20 @@
-export default class ResourcesDom extends Resources {
-    static create(options: any): ResourcesDom;
+/**
+ * @typedef {{ canvas: HTMLElement }} ResourcesDomOptions
+ * @typedef {{ width: number, height: number, src?: string }} DomImage
+ * @typedef {Pick<import('../webgpu/contracts').FontMetrics, 'lineHeight'> & Partial<import('../webgpu/contracts').FontMetrics>} FontMetrics
+ */
+/** @extends {Resources<HTMLElement>} */
+export default class ResourcesDom extends Resources<HTMLElement> {
+    /** @param {ResourcesDomOptions} options */
+    static create(options: ResourcesDomOptions): ResourcesDom;
     /**
      *
-     * @param {any} options
+     * @param {ResourcesDomOptions} options
      */
-    protected constructor(options: any);
-    /** @private */
+    protected constructor(options: ResourcesDomOptions);
+    /** @private @type {Map<string, DomImage>} */
     private images;
-    /** @private */
+    /** @private @type {Map<string, FontMetrics>} */
     private fonts;
     /** @private */
     private font_observers;
@@ -17,32 +24,26 @@ export default class ResourcesDom extends Resources {
     /**
      * @override
      * @param {string} src
-     * @param {any} image
+     * @param {DomImage} image
      */
-    override registerImage(src: string, image: any): void;
+    override registerImage(src: string, image: DomImage): void;
     /**
      * @param {string} src
      */
-    getImage(src: string): any;
-    /**
-     * @override
-     * @param {string} src
-     */
-    override getImageSize(src: string): {
-        width: any;
-        height: any;
-    } | undefined;
+    getImage(src: string): DomImage | undefined;
     /**
      * @override
      * @param {string} name
-     * @param {any} image
-     * @param {any} json
+     * @param {unknown} image
+     * @param {{ metrics: FontMetrics }} json
      */
-    override registerFont(name: string, image: any, json: any): void;
+    override registerFont(name: string, image: unknown, json: {
+        metrics: FontMetrics;
+    }): void;
     /**
      * @param {string} name
      */
-    getFont(name: string): any;
+    getFont(name: string): FontMetrics | undefined;
     /**
      * @override
      * @param {string} src
@@ -50,8 +51,22 @@ export default class ResourcesDom extends Resources {
     disposeImage(src: string): void;
     /**
      * @override
+     * @param {string} src
+     */
+    getImageSize(src: string): { width: number; height: number; } | undefined;
+    /**
+     * @override
      * @param {string} name
      */
     disposeFont(name: string): void;
 }
+export type ResourcesDomOptions = {
+    canvas: HTMLElement;
+};
+export type DomImage = {
+    width: number;
+    height: number;
+    src?: string;
+};
+export type FontMetrics = Pick<import("../webgpu/contracts").FontMetrics, "lineHeight"> & Partial<import("../webgpu/contracts").FontMetrics>;
 import Resources from '../../core/Resources';

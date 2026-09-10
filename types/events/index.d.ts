@@ -1,4 +1,10 @@
 export { default as EventEmitter } from "../core/EventEmitter";
 export * from "./constants";
-export const DEFINED_EVENTS: (typeof defineWheel)[];
+export const DEFINED_EVENTS: (typeof definePointers | typeof defineWheel | typeof defineScroll | typeof defineClick | typeof defineFocus)[];
+export type NodeEventMap = import("./types").NodeEventMap;
+export type UIEventMap = import("./types").UIEventMap;
+import { definePointers } from './pointers';
 import { defineWheel } from './wheel';
+import { defineScroll } from './scroll';
+import { defineClick } from './click';
+import { defineFocus } from './focus';

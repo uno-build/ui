@@ -10,6 +10,7 @@ import RendererWebGPU from '../renderer/RendererWebGPU'
  * @typedef {import('../renderer/RendererWebGPU').RendererWebGPUOptions & import('../core/UI').EventOptions<UIWebGPU>} UIWebGPUOptions
  */
 
+/** @extends {UI<RendererWebGPU>} */
 export default class UIWebGPU extends UI {
     /**
      * @protected
@@ -27,6 +28,7 @@ export default class UIWebGPU extends UI {
         return { ui }
     }
 
+    /** @param {import('../events/types').PlatformEvent} source_event */
     dispatchPlatformEvent(source_event) {
         const rect = source_event.currentTarget.getBoundingClientRect()
         this.emitPlatformEvent(source_event, {

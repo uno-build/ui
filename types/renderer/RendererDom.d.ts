@@ -1,4 +1,4 @@
-export default class RendererDom extends Renderer {
+export default class RendererDom extends Renderer<any, void> {
     constructor({ resources }: {
         resources: any;
     });

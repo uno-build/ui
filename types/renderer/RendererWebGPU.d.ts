@@ -5,7 +5,8 @@
  * @property {'linear' | 'nearest'} [image_min_filter]
  * @property {'linear' | 'nearest'} [image_mag_filter]
  */
-export default class RendererWebGPU extends Renderer {
+/** @extends {Renderer<import('./webgpu/contracts').WebGPUDrawOptions, import('./webgpu/contracts').WebGPUDrawResult>} */
+export default class RendererWebGPU extends Renderer<import("./webgpu/contracts").WebGPUDrawOptions, import("./webgpu/contracts").WebGPUDrawResult> {
     /** @param {RendererWebGPUOptions} options */
     constructor({ resources, image_min_filter, image_mag_filter, loadYoga }: RendererWebGPUOptions);
     /** @private */
@@ -67,10 +68,10 @@ export default class RendererWebGPU extends Renderer {
     private computeStyle;
     loadYoga: typeof import("yoga-layout/load").loadYoga;
     init(): Promise<{
-        adapter: any;
-        device: any;
-        context: any;
-        format: any;
+        adapter: GPUAdapter | null | undefined;
+        device: GPUDevice;
+        context: import("./webgpu/contracts").WebGPUContext;
+        format: GPUTextureFormat;
     }>;
     setDevicePixelRatio(device_pixel_ratio: any): void;
     setViewport(width: any, height: any): void;
@@ -98,16 +99,6 @@ export default class RendererWebGPU extends Renderer {
     beforeUpdate(nodes: any, operations: any): void;
     update(nodes: any, operations: any): void;
     afterUpdate(nodes: any, operations: any): void;
-    /** @param {{ submit?: boolean, command_encoder?: any, texture_view?: any, load_op?: string }} [options] */
-    draw({ submit, command_encoder, texture_view, load_op }?: {
-        submit?: boolean;
-        command_encoder?: any;
-        texture_view?: any;
-        load_op?: string;
-    }): {
-        command_encoder: any;
-        texture_view: any;
-    };
     /** @private */
     private createBindGroup;
     /** @private */

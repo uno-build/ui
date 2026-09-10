@@ -63,6 +63,7 @@ const SUBTREE_STYLE_NAMES = new Set([STYLE.OPACITY.name, STYLE.OVERFLOWX.name, S
  * @property {'linear' | 'nearest'} [image_mag_filter]
  */
 
+/** @extends {Renderer<import('./webgpu/contracts').WebGPUDrawOptions, import('./webgpu/contracts').WebGPUDrawResult>} */
 export default class RendererWebGPU extends Renderer {
     /** @private */
     resources
@@ -384,7 +385,10 @@ export default class RendererWebGPU extends Renderer {
         }
     }
 
-    /** @param {{ submit?: boolean, command_encoder?: any, texture_view?: any, load_op?: string }} [options] */
+    /**
+     * @param {import('./webgpu/contracts').WebGPUDrawOptions} [options]
+     * @returns {import('./webgpu/contracts').WebGPUDrawResult}
+     */
     draw({ submit = true, command_encoder, texture_view, load_op = 'load' } = {}) {
         if (
             this.image_texture_version !== this.image_manager.texture_version ||

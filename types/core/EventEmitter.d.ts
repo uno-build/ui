@@ -1,20 +1,33 @@
-export default class EventEmitter {
+/** @template [TEvents=Record<string, any>] */
+export default class EventEmitter<TEvents = Record<string, any>> {
     /** @private */
     private listeners;
     /**
-     * @param {any} type
-     * @param {(event_data: any) => void} listener
+     * @template {PropertyKey | object | null | undefined | boolean | bigint} TName
+     * @param {TName} type
+     * @param {(event_data: TName extends keyof TEvents ? TEvents[TName] : any) => void} listener
      */
-    on(type: any, listener: (event_data: any) => void): () => void;
+    on<TName extends PropertyKey | object | null | undefined | boolean | bigint>(type: TName, listener: (event_data: TName extends keyof TEvents ? TEvents[TName] : any) => void): () => void;
     /**
-     * @param {any} type
-     * @param {(event_data: any) => void} listener
+     * @template {PropertyKey | object | null | undefined | boolean | bigint} TName
+     * @param {TName} type
+     * @param {(event_data: TName extends keyof TEvents ? TEvents[TName] : any) => void} listener
      */
-    off(type: any, listener: (event_data: any) => void): void;
+    off<TName extends PropertyKey | object | null | undefined | boolean | bigint>(type: TName, listener: (event_data: TName extends keyof TEvents ? TEvents[TName] : any) => void): void;
     /**
-     * @param {any} type
-     * @param {any} [event_data]
+     * @template {PropertyKey | object | null | undefined | boolean | bigint} TName
+     * @overload
+     * @param {TName} type
+     * @param {TName extends keyof TEvents ? TEvents[TName] : any} event_data
+     * @returns {void}
      */
-    emit(type: any, event_data?: any): void;
+    emit<TName extends PropertyKey | object | null | undefined | boolean | bigint>(type: TName, event_data: TName extends keyof TEvents ? TEvents[TName] : any): void;
+    /**
+     * @template {PropertyKey | object | null | undefined | boolean | bigint} TName
+     * @overload
+     * @param {TName & (TName extends keyof TEvents ? undefined extends TEvents[TName] ? unknown : never : unknown)} type
+     * @returns {void}
+     */
+    emit<TName extends PropertyKey | object | null | undefined | boolean | bigint>(type: TName & (TName extends keyof TEvents ? undefined extends TEvents[TName] ? unknown : never : unknown)): void;
     destroy(): void;
 }

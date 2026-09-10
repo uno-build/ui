@@ -3,10 +3,10 @@
  */
 export function defineWheel({ ui }: any): {
     types: {
-        platform: boolean;
-        name: string;
-        prop: string;
-        priority: string;
+        readonly platform: true;
+        readonly name: "wheel";
+        readonly prop: "onWheel";
+        readonly priority: "continuous";
     }[];
     destroy(): void;
 };

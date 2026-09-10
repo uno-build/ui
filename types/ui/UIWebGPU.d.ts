@@ -4,7 +4,8 @@
 /**
  * @typedef {import('../renderer/RendererWebGPU').RendererWebGPUOptions & import('../core/UI').EventOptions<UIWebGPU>} UIWebGPUOptions
  */
-export default class UIWebGPU extends UI {
+/** @extends {UI<RendererWebGPU>} */
+export default class UIWebGPU extends UI<RendererWebGPU> {
     /** @param {UIWebGPUOptions} options */
     static create(options: UIWebGPUOptions): Promise<{
         ui: UIWebGPU;
@@ -14,8 +15,10 @@ export default class UIWebGPU extends UI {
      * @param {UIWebGPUOptions} options
      */
     protected constructor({ resources, defined_events, ...renderer_options }: UIWebGPUOptions);
-    dispatchPlatformEvent(source_event: any): void;
+    /** @param {import('../events/types').PlatformEvent} source_event */
+    dispatchPlatformEvent(source_event: import("../events/types").PlatformEvent): void;
 }
 export type DefinedEvent = import("../core/UI").DefinedEvent;
 export type UIWebGPUOptions = import("../renderer/RendererWebGPU").RendererWebGPUOptions & import("../core/UI").EventOptions<UIWebGPU>;
+import RendererWebGPU from '../renderer/RendererWebGPU';
 import UI from '../core/UI';

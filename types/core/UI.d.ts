@@ -1,6 +1,6 @@
 /**
  * @typedef {object} DefinedEvent
- * @property {Array<typeof import('../events/constants').EVENT[keyof typeof import('../events/constants').EVENT]>} types
+ * @property {Array<{ platform: boolean, name: string, prop: string, priority: string }>} types
  * @property {() => void} destroy
  * @property {(node: Node) => void} [destroyNode]
  */
@@ -9,7 +9,8 @@
  * @typedef {object} EventOptions
  * @property {Array<(options: { ui: TUI }) => DefinedEvent>} [defined_events]
  */
-export default class UI {
+/** @template {import('./Renderer').default<any, any>} [TRenderer=import('./Renderer').default<any, unknown>] */
+export default class UI<TRenderer extends import("./Renderer").default<any, any> = import("./Renderer").default<any, unknown>> {
     /**
      *
      * @param {any} options
@@ -17,13 +18,14 @@ export default class UI {
     protected constructor({ renderer, resources, defined_events }: any);
     /** @type {Node | null} */
     root: Node | null;
-    /** @type {import('./Renderer').default | null} */
-    renderer: import("./Renderer").default | null;
+    /** @type {TRenderer | null} */
+    renderer: TRenderer | null;
     /** @type {import('./Resources').default | null} */
     resources: import("./Resources").default | null;
     defined_events: any[];
-    events: EventEmitter;
-    events_source: EventEmitter;
+    /** @type {EventEmitter<import('../events/types').UIEventMap>} */
+    events: EventEmitter<import("../events/types").UIEventMap>;
+    events_source: EventEmitter<Record<string, any>>;
     /** @protected */
     protected operations: Operations;
     /** @private */
@@ -51,12 +53,16 @@ export default class UI {
     create(): Node | undefined;
     update(): void;
     /**
-     * @param {any} [options]
+     * @param {Parameters<TRenderer['draw']>[0]} [options]
+     * @returns {ReturnType<TRenderer['draw']> | undefined}
      */
-    draw(options?: any): void;
-    setDevicePixelRatio(device_pixel_ratio: any): void;
-    setViewport(width: any, height: any): void;
-    setRootSize(root_size: any): void;
+    draw(options?: Parameters<TRenderer["draw"]>[0]): ReturnType<TRenderer["draw"]> | undefined;
+    /** @param {number} device_pixel_ratio */
+    setDevicePixelRatio(device_pixel_ratio: number): void;
+    /** @param {number} width @param {number} height */
+    setViewport(width: number, height: number): void;
+    /** @param {number} root_size */
+    setRootSize(root_size: number): void;
     /** @returns {boolean | void} */
     destroy(): boolean | void;
     /**
@@ -81,7 +87,12 @@ export default class UI {
     private releaseNode;
 }
 export type DefinedEvent = {
-    types: Array<typeof import("../events/constants").EVENT[keyof typeof import("../events/constants").EVENT]>;
+    types: Array<{
+        platform: boolean;
+        name: string;
+        prop: string;
+        priority: string;
+    }>;
     destroy: () => void;
     destroyNode?: ((node: Node) => void) | undefined;
 };

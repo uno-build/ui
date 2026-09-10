@@ -3,10 +3,10 @@
  */
 export function defineScroll({ ui }: any): {
     types: {
-        platform: boolean;
-        name: string;
-        prop: string;
-        priority: string;
+        readonly platform: false;
+        readonly name: "scroll";
+        readonly prop: "onScroll";
+        readonly priority: "continuous";
     }[];
     /**
      * @param {any} node

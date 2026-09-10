@@ -7,7 +7,7 @@ import { isSameLayout } from '../layouter/utils'
 
 /**
  * @typedef {object} DefinedEvent
- * @property {Array<typeof import('../events/constants').EVENT[keyof typeof import('../events/constants').EVENT]>} types
+ * @property {Array<{ platform: boolean, name: string, prop: string, priority: string }>} types
  * @property {() => void} destroy
  * @property {(node: Node) => void} [destroyNode]
  */
@@ -18,14 +18,16 @@ import { isSameLayout } from '../layouter/utils'
  * @property {Array<(options: { ui: TUI }) => DefinedEvent>} [defined_events]
  */
 
+/** @template {import('./Renderer').default<any, any>} [TRenderer=import('./Renderer').default<any, unknown>] */
 export default class UI {
     /** @type {Node | null} */
     root = null
-    /** @type {import('./Renderer').default | null} */
+    /** @type {TRenderer | null} */
     renderer = null
     /** @type {import('./Resources').default | null} */
     resources = null
     defined_events = []
+    /** @type {EventEmitter<import('../events/types').UIEventMap>} */
     events
     events_source
     /** @protected */
@@ -139,7 +141,8 @@ export default class UI {
     }
 
     /**
-     * @param {any} [options]
+     * @param {Parameters<TRenderer['draw']>[0]} [options]
+     * @returns {ReturnType<TRenderer['draw']> | undefined}
      */
     draw(options) {
         if (!this.destroyed) {
@@ -147,6 +150,7 @@ export default class UI {
         }
     }
 
+    /** @param {number} device_pixel_ratio */
     setDevicePixelRatio(device_pixel_ratio) {
         if (!this.destroyed && this.device_pixel_ratio !== device_pixel_ratio) {
             this.renderer.setDevicePixelRatio(device_pixel_ratio)
@@ -155,6 +159,7 @@ export default class UI {
         }
     }
 
+    /** @param {number} width @param {number} height */
     setViewport(width, height) {
         if (!this.destroyed && (this.viewport_width !== width || this.viewport_height !== height)) {
             this.renderer.setViewport(width, height)
@@ -164,6 +169,7 @@ export default class UI {
         }
     }
 
+    /** @param {number} root_size */
     setRootSize(root_size) {
         if (!this.destroyed && this.root_size !== root_size) {
             this.renderer.setRootSize(root_size)

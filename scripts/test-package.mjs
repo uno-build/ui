@@ -63,10 +63,11 @@ import UIDom from 'uno-ui/UIDom'
 import UIWebGPU from 'uno-ui/UIWebGPU'
 import { loadYoga } from 'yoga-layout/load'
 new EventEmitter().emit('ready')
-const resources = ResourcesDom.create({ canvas: {} })
-resources.registerImage('icon', {})
+const canvas = document.createElement('canvas')
+const resources = ResourcesDom.create({ canvas })
+resources.registerImage('icon', { width: 1, height: 1 })
 UIDom.create({ resources })
-UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas: {} }), loadYoga })
+UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas }), loadYoga })
 `)
     run(process.execPath, [path.join(ROOT, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--module', 'esnext', '--moduleResolution', 'bundler', '--target', 'esnext', minimal_fixture], CONSUMER)
 

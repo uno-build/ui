@@ -36,10 +36,10 @@ export default class UIBabylon extends UIWorldSpace<Texture, StandardMaterial, {
     /** @private */
     private plane;
     /**
-     * @param {any} source_event
+     * @param {import('../events/types').PlatformEvent} source_event
      * @param {{ camera: import('@babylonjs/core/Cameras/camera').Camera }} options
      */
-    dispatchPlatformEvent(source_event: any, { camera }: {
+    dispatchPlatformEvent(source_event: import("../events/types").PlatformEvent, { camera }: {
         camera: import("@babylonjs/core/Cameras/camera").Camera;
     }): void;
     /**

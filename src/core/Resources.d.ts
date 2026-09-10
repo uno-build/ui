@@ -1,9 +1,9 @@
 import EventEmitter from './EventEmitter'
-export default abstract class Resources {
-    canvas: any
+export default abstract class Resources<TCanvas = any> {
+    canvas: TCanvas
     events: EventEmitter
     protected constructor({ canvas }: {
-        canvas: any
+        canvas: TCanvas
     })
     abstract registerImage(src: string, image: any): any
     abstract disposeImage(src: string): void

@@ -37,7 +37,7 @@ export default class UIThree extends UIWorldSpace {
     }
 
     /**
-     * @param {any} source_event
+     * @param {import('../events/types').PlatformEvent} source_event
      * @param {{ camera: THREE.Camera }} options
      */
     dispatchPlatformEvent(source_event, { camera }) {

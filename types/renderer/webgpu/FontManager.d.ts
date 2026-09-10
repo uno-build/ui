@@ -1,12 +1,12 @@
 /**
  * @typedef {{
  *     name: string
- *     image: any
- *     json: any
+ *     image: import('./contracts').WebGPUImage
+ *     json: import('./contracts').FontData
  *     layer: number
  *     uv_rect: [number, number, number, number]
  *     image_size: [number, number]
- *     metrics: any
+ *     metrics: import('./contracts').FontMetrics
  *     glyphs_by_unicode: Map<number, ManagedGlyph>
  * }} ManagedFont
  */
@@ -19,17 +19,18 @@
  * }} ManagedGlyph
  */
 export class FontManager {
+    /** @param {{ device: GPUDevice, atlas_size: number }} options */
     constructor({ device, atlas_size }: {
-        device: any;
-        atlas_size: any;
+        device: GPUDevice;
+        atlas_size: number;
     });
     fonts: Map<string, ManagedFont>;
     texture_version: number;
-    /** @private */
+    /** @private @type {GPUDevice} */
     private device;
     /** @private */
     private atlas_size;
-    /** @private */
+    /** @private @type {GPUTexture | null} */
     private font_texture;
     /** @private */
     private font_layer_count;
@@ -53,11 +54,11 @@ export class FontManager {
     fontDispose(name: string): boolean;
     /**
      * @param {string} name
-     * @param {any} image
-     * @param {any} json
+     * @param {import('./contracts').WebGPUImage} image
+     * @param {import('./contracts').FontData} json
      * @returns {ManagedFont}
      */
-    fontRegister(name: string, image: any, json: any): ManagedFont;
+    fontRegister(name: string, image: import("./contracts").WebGPUImage, json: import("./contracts").FontData): ManagedFont;
     /**
      * @returns {ManagedFont | undefined}
      */
@@ -67,7 +68,7 @@ export class FontManager {
      * @returns {ManagedFont | undefined}
      */
     getFont(name: string): ManagedFont | undefined;
-    getTextureView(): any;
+    getTextureView(): GPUTextureView;
     /**
      * @private
      * @returns {number}
@@ -77,7 +78,7 @@ export class FontManager {
     private growFontTexture;
     /** @private */
     private createFontTexture;
-    /** @private */
+    /** @private @returns {GPUTexture} */
     private getFontTexture;
     /**
      * @private
@@ -87,12 +88,12 @@ export class FontManager {
 }
 export type ManagedFont = {
     name: string;
-    image: any;
-    json: any;
+    image: import("./contracts").WebGPUImage;
+    json: import("./contracts").FontData;
     layer: number;
     uv_rect: [number, number, number, number];
     image_size: [number, number];
-    metrics: any;
+    metrics: import("./contracts").FontMetrics;
     glyphs_by_unicode: Map<number, ManagedGlyph>;
 };
 export type ManagedGlyph = {

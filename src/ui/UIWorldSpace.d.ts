@@ -1,10 +1,11 @@
 /// <reference types="@webgpu/types" />
 import UI, { EventOptions } from '../core/UI'
-import { RendererWebGPUOptions } from '../renderer/RendererWebGPU'
+import RendererWebGPU, { RendererWebGPUOptions } from '../renderer/RendererWebGPU'
+import { WebGPUDrawOptions, WebGPUDrawResult } from '../renderer/webgpu/contracts'
 
 export type TextureOptions = {
     output: {
-        adapter: GPUAdapter | undefined
+        adapter: GPUAdapter | null | undefined
         device: GPUDevice
         context: GPUCanvasContext
         format: GPUTextureFormat
@@ -38,12 +39,9 @@ export type UIWorldSpaceOptions<TTexture, TMaterial, TPlane, TUI extends UI = UI
 export type UIWorldSpaceOutput<TTexture, TMaterial, TPlane> =
     Omit<MaterialOptions<TTexture> & { material: TMaterial }, keyof TPlane> & TPlane
 
-export type WorldSpaceDrawOptions = {
-    submit?: boolean
-    command_encoder?: GPUCommandEncoder
-}
+export type WorldSpaceDrawOptions = Omit<WebGPUDrawOptions, 'texture_view' | 'load_op'>
 
-export default abstract class UIWorldSpace<TTexture = unknown, TMaterial = unknown, TPlane = unknown, TUI extends UI = UI> extends UI {
+export default abstract class UIWorldSpace<TTexture = unknown, TMaterial = unknown, TPlane = unknown, TUI extends UI = UI> extends UI<RendererWebGPU> {
     protected texture_width: number
     protected texture_height: number
     protected world_width: number
@@ -54,10 +52,7 @@ export default abstract class UIWorldSpace<TTexture = unknown, TMaterial = unkno
     private createPlane
     protected constructor(options: UIWorldSpaceOptions<TTexture, TMaterial, TPlane, TUI>)
     protected initialize(): Promise<UIWorldSpaceOutput<TTexture, TMaterial, TPlane>>
-    draw(options?: WorldSpaceDrawOptions): {
-        command_encoder: GPUCommandEncoder
-        texture_view: GPUTextureView
-    } | undefined
+    draw(options?: WorldSpaceDrawOptions): WebGPUDrawResult | undefined
     destroy(): void
     protected abstract createTexture(options: TextureOptions): TTexture
     protected abstract createDefaultMaterial(options: MaterialOptions<TTexture>): TMaterial

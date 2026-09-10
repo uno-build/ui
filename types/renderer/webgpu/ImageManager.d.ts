@@ -26,17 +26,18 @@ export const ATLAS_PADDING: 2;
  * }} ManagedAtlasImage
  */
 export class ImageManager {
+    /** @param {{ device: GPUDevice, atlas_size: number }} options */
     constructor({ device, atlas_size }: {
-        device: any;
-        atlas_size: any;
+        device: GPUDevice;
+        atlas_size: number;
     });
     images: Map<string, ManagedAtlasImage>;
     texture_version: number;
-    /** @private */
+    /** @private @type {GPUDevice} */
     private device;
     /** @private */
     private atlas_size;
-    /** @private */
+    /** @private @type {GPUTexture | null} */
     private atlas_texture;
     /** @private */
     private atlas_layer_count;
@@ -56,13 +57,13 @@ export class ImageManager {
      * @returns {AtlasImage | undefined}
      */
     getImage(src: string): AtlasImage | undefined;
-    getTextureView(): any;
+    getTextureView(): GPUTextureView;
     /**
      * @param {string} src
-     * @param {any} image
+     * @param {import('./contracts').WebGPUImage} image
      * @returns {ManagedAtlasImage}
      */
-    imageUpload(src: string, image: any): ManagedAtlasImage;
+    imageUpload(src: string, image: import("./contracts").WebGPUImage): ManagedAtlasImage;
     /**
      * @param {string} src
      * @returns {boolean}
@@ -84,7 +85,7 @@ export class ImageManager {
     private growAtlasTexture;
     /** @private */
     private createAtlasTexture;
-    /** @private */
+    /** @private @returns {GPUTexture} */
     private getAtlasTexture;
     /** @private */
     private copyImagePadding;

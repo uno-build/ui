@@ -3,10 +3,10 @@
  */
 export function defineClick({ ui }: any): {
     types: {
-        platform: boolean;
-        name: string;
-        prop: string;
-        priority: string;
+        readonly platform: false;
+        readonly name: "click";
+        readonly prop: "onClick";
+        readonly priority: "discrete";
     }[];
     /**
      * @param {any} node

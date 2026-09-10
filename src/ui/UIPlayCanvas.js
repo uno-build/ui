@@ -63,7 +63,7 @@ export default class UIPlayCanvas extends UIWorldSpace {
     }
 
     /**
-     * @param {any} source_event
+     * @param {import('../events/types').PlatformEvent} source_event
      * @param {{ camera: Entity }} options
      */
     dispatchPlatformEvent(source_event, { camera }) {

@@ -39,11 +39,11 @@ export const ATLAS_PADDING = 2
 export class ImageManager {
     images = /** @type {Map<string, ManagedAtlasImage>} */ (new Map())
     texture_version = 0
-    /** @private */
+    /** @private @type {GPUDevice} */
     device
     /** @private */
     atlas_size
-    /** @private */
+    /** @private @type {GPUTexture | null} */
     atlas_texture
     /** @private */
     atlas_layer_count = 1
@@ -55,6 +55,7 @@ export class ImageManager {
      */
     atlas_layers = []
 
+    /** @param {{ device: GPUDevice, atlas_size: number }} options */
     constructor({ device, atlas_size }) {
         this.device = device
         this.atlas_size = atlas_size
@@ -98,7 +99,7 @@ export class ImageManager {
 
     /**
      * @param {string} src
-     * @param {any} image
+     * @param {import('./contracts').WebGPUImage} image
      * @returns {ManagedAtlasImage}
      */
     imageUpload(src, image) {
@@ -313,7 +314,7 @@ export class ImageManager {
         })
     }
 
-    /** @private */
+    /** @private @returns {GPUTexture} */
     getAtlasTexture() {
         this.atlas_texture ??= this.createAtlasTexture(this.atlas_texture_layer_count)
         return this.atlas_texture

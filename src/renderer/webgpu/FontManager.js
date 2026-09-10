@@ -1,12 +1,12 @@
 /**
  * @typedef {{
  *     name: string
- *     image: any
- *     json: any
+ *     image: import('./contracts').WebGPUImage
+ *     json: import('./contracts').FontData
  *     layer: number
  *     uv_rect: [number, number, number, number]
  *     image_size: [number, number]
- *     metrics: any
+ *     metrics: import('./contracts').FontMetrics
  *     glyphs_by_unicode: Map<number, ManagedGlyph>
  * }} ManagedFont
  */
@@ -23,11 +23,11 @@
 export class FontManager {
     fonts = /** @type {Map<string, ManagedFont>} */ (new Map())
     texture_version = 0
-    /** @private */
+    /** @private @type {GPUDevice} */
     device
     /** @private */
     atlas_size
-    /** @private */
+    /** @private @type {GPUTexture | null} */
     font_texture
     /** @private */
     font_layer_count = 0
@@ -41,6 +41,7 @@ export class FontManager {
     /** @private */
     default_font_name = null
 
+    /** @param {{ device: GPUDevice, atlas_size: number }} options */
     constructor({ device, atlas_size }) {
         this.device = device
         this.atlas_size = atlas_size
@@ -83,8 +84,8 @@ export class FontManager {
 
     /**
      * @param {string} name
-     * @param {any} image
-     * @param {any} json
+     * @param {import('./contracts').WebGPUImage} image
+     * @param {import('./contracts').FontData} json
      * @returns {ManagedFont}
      */
     fontRegister(name, image, json) {
@@ -220,7 +221,7 @@ export class FontManager {
         })
     }
 
-    /** @private */
+    /** @private @returns {GPUTexture} */
     getFontTexture() {
         this.font_texture ??= this.createFontTexture(this.font_texture_layer_count)
         return this.font_texture
