@@ -1,14 +1,17 @@
-const CARD_WIDTH = 58
-const CARD_HEIGHT = 38
+import { verifyGlyphs } from '../coverage'
+
+const TEXT_WIDTH = 58
+const TEXT_HEIGHT = 38
 const GAP = 18
 const PHASES = {
     unset: 'unset',
-    small: '0px 2px 6px 0px #00000040',
-    large: '0px 8px 22px 0px #00000040',
+    small: '2px #172554',
+    large: '4px #172554',
 }
 
-export function createScene({ ui, nodes: target_nodes, width, height }) {
-    const cards = []
+export function createScene({ ui, resources, nodes: target_nodes, width, height }) {
+    verifyGlyphs(resources)
+    const texts = []
     let created = 0
     let destroyed = 0
     let actions = 0
@@ -16,11 +19,12 @@ export function createScene({ ui, nodes: target_nodes, width, height }) {
     let phase = 'mixed'
     let target = target_nodes
 
-    function createNode(parent, styles) {
+    function createNode(parent, styles, text?) {
         const node = ui.create()
         created++
         live_nodes++
         for (const [name, value] of Object.entries(styles)) node.style(name, value)
+        if (text !== undefined) node.text(text)
         parent.add(node)
         return node
     }
@@ -32,22 +36,23 @@ export function createScene({ ui, nodes: target_nodes, width, height }) {
 
     function applyPhase(node, index) {
         const effect_phase = phase === 'mixed' ? ['unset', 'small', 'large'][index % 3] : phase
-        node.style('boxShadow', PHASES[effect_phase])
+        node.style('textStroke', PHASES[effect_phase])
     }
 
-    function createCard(index) {
-        const columns = Math.max(1, Math.floor((width - GAP) / (CARD_WIDTH + GAP)))
+    function createText(index) {
+        const columns = Math.max(1, Math.floor((width - GAP) / (TEXT_WIDTH + GAP)))
         const row = Math.floor(index / columns)
         const column = index % columns
         const node = createNode(root, {
             position: 'absolute',
-            left: `${GAP + column * (CARD_WIDTH + GAP)}px`,
-            top: `${GAP + row * (CARD_HEIGHT + GAP)}px`,
-            width: `${CARD_WIDTH}px`,
-            height: `${CARD_HEIGHT}px`,
-            borderRadius: '6px',
-            backgroundColor: index % 2 === 0 ? '#ffffff' : '#eef2ff',
-        })
+            left: `${GAP + column * (TEXT_WIDTH + GAP)}px`,
+            top: `${GAP + row * (TEXT_HEIGHT + GAP)}px`,
+            width: `${TEXT_WIDTH}px`,
+            height: `${TEXT_HEIGHT}px`,
+            fontFamily: 'Poppins-Regular',
+            fontSize: `${8 + index % 17}px`,
+            color: '#ffffff',
+        }, `Text ${index}`)
         applyPhase(node, index)
         return node
     }
@@ -58,20 +63,20 @@ export function createScene({ ui, nodes: target_nodes, width, height }) {
         }
         target = next_target
         while (live_nodes > target) {
-            cards.pop().destroy()
+            texts.pop().destroy()
             destroyed++
             live_nodes--
             actions++
         }
         while (live_nodes < target) {
-            cards.push(createCard(cards.length))
+            texts.push(createText(texts.length))
             actions++
         }
     }
 
     function clearContent() {
-        while (cards.length > 0) {
-            cards.pop().destroy()
+        while (texts.length > 0) {
+            texts.pop().destroy()
             destroyed++
             live_nodes--
         }
@@ -83,27 +88,27 @@ export function createScene({ ui, nodes: target_nodes, width, height }) {
         enterPhase(next_phase) {
             if (phase === next_phase) return
             phase = next_phase
-            for (const [index, node] of cards.entries()) applyPhase(node, index)
-            actions += cards.length
+            for (const [index, node] of texts.entries()) applyPhase(node, index)
+            actions += texts.length
         },
         tick() {},
         setPopulation,
         clearContent,
         getState() {
             return {
-                live_nodes, base_nodes, created, destroyed, actions, text_nodes: 0,
-                cards: cards.length, target_nodes: target, viewport: { width, height }, tick: 0,
+                live_nodes, base_nodes, created, destroyed, actions, text_nodes: texts.length,
+                target_nodes: target, viewport: { width, height }, tick: 0,
             }
         },
         verify() {
             if (root.ui !== ui || root.parent !== ui.root) throw new Error('Scene root is detached')
-            if (cards.length + base_nodes !== live_nodes || live_nodes !== 1 + created - destroyed) {
+            if (texts.length + base_nodes !== live_nodes || live_nodes !== 1 + created - destroyed) {
                 throw new Error('Scene node counters disagree')
             }
-            for (const node of cards) {
+            for (const node of texts) {
                 if (node.ui !== ui || node.parent !== root) throw new Error('Scene retains a destroyed or detached node')
             }
-            return { passed: true, live_nodes, checks: ['tree-parents', 'survivors', 'exact-count'] }
+            return { passed: true, live_nodes, checks: ['tree-parents', 'survivors', 'exact-count', 'fixed-fonts'] }
         },
         destroy() {
             clearContent()

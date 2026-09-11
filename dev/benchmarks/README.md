@@ -29,9 +29,13 @@ npm run benchmark:general -- --check
 # Compare with an earlier report from the same scenario and environment
 npm run benchmark:general -- --compare tests/.results/webgpu/DATE/results.json
 
-# Run the box-shadow workload with the same runner
+# Run each effect independently with the same runner
 npm run benchmark:box-shadow -- --repeats 5
 npm run benchmark:box-shadow:headed
+npm run benchmark:text-shadow -- --repeats 5
+npm run benchmark:text-shadow:headed
+npm run benchmark:text-stroke -- --repeats 5
+npm run benchmark:text-stroke:headed
 
 # Isolate invalidation types with real UI nodes and WebGPU
 npm run benchmark:render-metrics -- --shape chain --content panel-text --nodes 1026
@@ -40,15 +44,25 @@ npm run benchmark:render-metrics:headed -- --shape wide --content panel --nodes 
 
 ## Workloads
 
-Select a workload with `--workload general|box-shadow|render-metrics` or from the manual page. `general` is the default with 5,000 live nodes; `box-shadow` defaults to 400; `render-metrics` defaults to 1,026. All use a 1280×720 canvas, a 60 FPS target, and one repetition; the general workload is seeded. Headless runs default to DPR 1; `--headed` uses the screen's native DPR unless `--dpr` is explicitly set. The manual page defaults to `window.devicePixelRatio`. Automated run options: `--nodes`, `--seed`, `--width`, `--height`, `--dpr`, `--target-fps`, `--duration`, `--warmup`, and `--repeats`.
+Select a workload with `--workload general|box-shadow|text-shadow|text-stroke|render-metrics` or from the manual page. `general` is the default with 5,000 live nodes; each effect workload defaults to 400; `render-metrics` defaults to 1,026. All use a 1280×720 canvas, a 60 FPS target, and one repetition; the general workload is seeded. Headless runs default to DPR 1; `--headed` uses the screen's native DPR unless `--dpr` is explicitly set. The manual page defaults to `window.devicePixelRatio`. Automated run options: `--nodes`, `--seed`, `--width`, `--height`, `--dpr`, `--target-fps`, `--duration`, `--warmup`, and `--repeats`.
 
 Fonts and Images are loaded before measurement. Resources are not replaced, registered, or removed during the test. Each node retains its image/font until it is destroyed.
 
-- **performance:** 10 s of warmup and 60 s of measurement. The general workload measures paint, text, structure, and mixed phases. Box shadow measures unset, small, large, and mixed shadow phases for equal portions of the duration.
+- **performance:** 10 s of warmup and 60 s of measurement. The general workload measures paint, text, structure, and mixed phases. Each effect workload measures unset, small, large, and mixed phases for equal portions of the duration.
 - **capacity:** steps of 1,000, 2,500, 5,000, 10,000, 20,000, and 50,000 nodes. Each step has 10 s of warmup and 30 s of measured mixed workload. A step passes with average FPS ≥95% of the target, p95 frame interval ≤1.5 times the frame budget, and pending-work delay <200 ms during the final 10 s. Execution stops at the first failure. `--duration` and `--warmup` apply to each step; `--nodes` does not change the steps.
 - **stability:** 900 s in 30 s cycles: mount/update for 29 s, then return to the shell for 1 s of recovery. Resources remain fixed between cycles. Destruction is timed separately, and checkpoints show memory/occupancy at the same point in each cycle without forcing GC. Synchronous work may increase the total wall-clock duration.
 
-The general workload schedules actions every 100 ms. Each frame processes at most one pending interval, without reducing the offered workload when FPS drops. `scheduled`, `completed`, and `pending` count these intervals; `actions` counts scene operations. The rates of 5% of texts/styles per interval and 20% of subtrees per second are approximate; selection may pick the same node more than once. Half of a list is replaced every five seconds. The scene exercises reparenting, nested scrolling, overlays, and a fixed sequence of viewport changes. The box-shadow workload keeps each phase static after applying its shadow configuration.
+The general workload schedules actions every 100 ms. Each frame processes at most one pending interval, without reducing the offered workload when FPS drops. `scheduled`, `completed`, and `pending` count these intervals; `actions` counts scene operations. The rates of 5% of texts/styles per interval and 20% of subtrees per second are approximate; selection may pick the same node more than once. Half of a list is replaced every five seconds. The scene exercises reparenting, nested scrolling, overlays, and a fixed sequence of viewport changes.
+
+The three effect workloads keep each phase static after applying their configuration. `box-shadow` draws rounded cards without text and changes only `boxShadow`. `text-shadow` and `text-stroke` draw `Text <index>` in Poppins-Regular at 8–24 px, without card backgrounds, and change only their respective text effect. Each uses a grid of 58×38 px nodes with an 18 px gap; rows may extend below the viewport. `--nodes` includes the UI root and scene root, so the default creates 398 content nodes.
+
+| Workload | Small | Large |
+| --- | --- | --- |
+| `box-shadow` | `0px 2px 6px 0px #00000040` | `0px 8px 22px 0px #00000040` |
+| `text-shadow` | `2px 2px 2px #00000040` | `4px 4px 4px #00000040` |
+| `text-stroke` | `2px #172554` | `4px #172554` |
+
+`unset` disables the effect. `mixed` repeats the exact unset/small/large values by node index modulo three. Compare each effect against its own unset phase. Benchmark version 3 prevents comparisons with earlier reports, whose box-shadow workload combined all three effects.
 
 `render-metrics` uses the same 100 ms schedule, alternating values on every tick. Its performance phases get equal time: `full` changes the root size to invalidate all existing records, `background` changes the last panel, `color` changes the last text leaf, `opacity` changes the scene root, and `pointerEvents` changes the last leaf without uploading render data. `color` is omitted for panel-only scenes. Warmup, capacity, and stability cycle through these operations as `mixed`.
 
@@ -81,6 +95,8 @@ A tab becoming hidden during measurement invalidates and stops the run. JS/WebGP
 # Build and check the dependency graph; does not start a server
 npm run benchmark:general -- --build-only
 npm run benchmark:box-shadow -- --build-only
+npm run benchmark:text-shadow -- --build-only
+npm run benchmark:text-stroke -- --build-only
 npm run benchmark:render-metrics -- --build-only
 
 # Invalidation, node lifecycle and report statistics with a fake GPU; no browser

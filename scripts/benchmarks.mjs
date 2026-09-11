@@ -208,7 +208,7 @@ function printHelp() {
     console.log(`Raw RendererWebGPU benchmark
 
   --mode performance|capacity|stability
-  --workload general|box-shadow|render-metrics
+  --workload general|box-shadow|text-shadow|text-stroke|render-metrics
   --shape wide|chain --content panel|panel-text  Render-metrics scene options
   --nodes N --duration SECONDS --warmup SECONDS --seed N --repeats N
   --target-fps N --width N --height N --dpr N

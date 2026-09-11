@@ -1,5 +1,7 @@
 import { createScene as createGeneralScene } from './general'
 import { createScene as createBoxShadowScene } from './box-shadow'
+import { createScene as createTextShadowScene } from './text-shadow'
+import { createScene as createTextStrokeScene } from './text-stroke'
 import { createScene as createRenderMetricsScene, getPerformancePhases } from './render-metrics'
 
 export const WORKLOADS = {
@@ -10,6 +12,16 @@ export const WORKLOADS = {
     },
     'box-shadow': {
         createScene: createBoxShadowScene,
+        getPerformancePhases() { return [['unset', 1 / 4], ['small', 1 / 4], ['large', 1 / 4], ['mixed', 1 / 4]] as const },
+        preflight_phases: [[10, 'mixed'], [50, 'mixed']],
+    },
+    'text-shadow': {
+        createScene: createTextShadowScene,
+        getPerformancePhases() { return [['unset', 1 / 4], ['small', 1 / 4], ['large', 1 / 4], ['mixed', 1 / 4]] as const },
+        preflight_phases: [[10, 'mixed'], [50, 'mixed']],
+    },
+    'text-stroke': {
+        createScene: createTextStrokeScene,
         getPerformancePhases() { return [['unset', 1 / 4], ['small', 1 / 4], ['large', 1 / 4], ['mixed', 1 / 4]] as const },
         preflight_phases: [[10, 'mixed'], [50, 'mixed']],
     },

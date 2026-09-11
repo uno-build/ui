@@ -1,7 +1,7 @@
-export const BENCHMARK_VERSION = 2
+export const BENCHMARK_VERSION = 3
 export const SAMPLE_LIMIT = 7200
 export const CAPACITY_STEPS = [1000, 2500, 5000, 10000, 20000, 50000]
-export const WORKLOAD_NAMES = ['general', 'box-shadow', 'render-metrics']
+export const WORKLOAD_NAMES = ['general', 'box-shadow', 'text-shadow', 'text-stroke', 'render-metrics']
 
 export function normalizeOptions(input = {}) {
     const mode = input.mode ?? 'performance'
@@ -11,7 +11,7 @@ export function normalizeOptions(input = {}) {
     const options = {
         mode,
         workload,
-        nodes: workload === 'render-metrics' ? 1026 : workload === 'box-shadow' ? 400 : 5000,
+        nodes: workload === 'general' ? 5000 : workload === 'render-metrics' ? 1026 : 400,
         duration: mode === 'stability' ? 900 : mode === 'capacity' ? 30 : 60,
         warmup: 10,
         seed: 42,
