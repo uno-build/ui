@@ -1,4 +1,5 @@
-import type { EngineProfile } from './measurement'
+import type { SegmentBreakKind, TextAnalysis, WhiteSpaceMode, WordBreakMode as AnalysisWordBreakMode } from './analysis'
+import type { EngineProfile, BreakableFitMode, MeasureText, SegmentMetrics } from './measurement'
 export type PreparedCore = {
     widths: number[];
     lineEndFitAdvances: number[];
@@ -64,19 +65,15 @@ export type MeasuredTextUnit = {
     start: number;
 };
 
-export type SegmentBreakKind = import("./analysis").SegmentBreakKind;
-
-export type TextAnalysis = import("./analysis").TextAnalysis;
-
-export type WhiteSpaceMode = import("./analysis").WhiteSpaceMode;
-
-export type AnalysisWordBreakMode = import("./analysis").WordBreakMode;
-
-export type BreakableFitMode = import("./measurement").BreakableFitMode;
-
-export type MeasureText = import("./measurement").MeasureText;
-
-export type SegmentMetrics = import("./measurement").SegmentMetrics;
+export type {
+    SegmentBreakKind,
+    TextAnalysis,
+    WhiteSpaceMode,
+    AnalysisWordBreakMode,
+    BreakableFitMode,
+    MeasureText,
+    SegmentMetrics,
+}
 
 // Text analysis and layout with caller-provided measurements.
 //

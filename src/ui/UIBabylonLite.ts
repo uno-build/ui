@@ -1,5 +1,20 @@
-import type { EngineContext, SceneContext, GpuPicker, StandardMaterialProps } from '@babylonjs/lite'
-import type { MaterialOptions, PlaneOptions, TextureOptions } from './UIWorldSpace'
+import type {
+    Camera,
+    EngineContext,
+    SceneContext,
+    GpuPicker,
+    MaterialPlugin,
+    Mesh,
+    StandardMaterialProps,
+    Texture2D,
+} from '@babylonjs/lite'
+import type {
+    MaterialOptions,
+    PlaneOptions,
+    TextureOptions,
+    UIWorldSpaceOptions,
+    UIWorldSpaceOutput,
+} from './UIWorldSpace'
 import type { PlatformEvent } from '../events/types'
 import {
     createGpuPicker,
@@ -13,29 +28,27 @@ import {
 } from '@babylonjs/lite'
 import UIWorldSpace from './UIWorldSpace'
 
-export type MaterialPlugin = import('@babylonjs/lite').MaterialPlugin
+export type { MaterialPlugin, Texture2D }
 
-export type Texture2D = import('@babylonjs/lite').Texture2D
-
-export type UIBabylonLiteMaterial = import('@babylonjs/lite').StandardMaterialProps
+export type UIBabylonLiteMaterial = StandardMaterialProps
 
 export type UIBabylonLiteOptions<
-    TMaterial extends UIBabylonLiteMaterial = import('@babylonjs/lite').StandardMaterialProps,
+    TMaterial extends UIBabylonLiteMaterial = StandardMaterialProps,
     TPlane extends {
-        plane: import('@babylonjs/lite').Mesh
+        plane: Mesh
     } = {
-        plane: import('@babylonjs/lite').Mesh
+        plane: Mesh
     },
-> = import('./UIWorldSpace').UIWorldSpaceOptions<Texture2D, TMaterial, TPlane, UIBabylonLite> & {
-    engine: import('@babylonjs/lite').EngineContext
-    scene: import('@babylonjs/lite').SceneContext
+> = UIWorldSpaceOptions<Texture2D, TMaterial, TPlane, UIBabylonLite> & {
+    engine: EngineContext
+    scene: SceneContext
 }
 
 export default class UIBabylonLite extends UIWorldSpace<
-    import('@babylonjs/lite').Texture2D,
-    import('@babylonjs/lite').StandardMaterialProps,
+    Texture2D,
+    StandardMaterialProps,
     {
-        plane: import('@babylonjs/lite').Mesh
+        plane: Mesh
     },
     UIBabylonLite
 > {
@@ -45,13 +58,13 @@ export default class UIBabylonLite extends UIWorldSpace<
 
     private picker: GpuPicker | null
 
-    private plane!: import('@babylonjs/lite').Mesh | null
+    private plane!: Mesh | null
 
     protected constructor({
         engine,
         scene,
         ...options
-    }: UIBabylonLiteOptions<StandardMaterialProps, { plane: import('@babylonjs/lite').Mesh }>) {
+    }: UIBabylonLiteOptions<StandardMaterialProps, { plane: Mesh }>) {
         super(options)
         this.engine = engine
         this.scene = scene
@@ -59,18 +72,18 @@ export default class UIBabylonLite extends UIWorldSpace<
     }
 
     static async create<
-        TMaterial extends UIBabylonLiteMaterial = import('@babylonjs/lite').StandardMaterialProps,
+        TMaterial extends UIBabylonLiteMaterial = StandardMaterialProps,
         TPlane extends {
-            plane: import('@babylonjs/lite').Mesh
+            plane: Mesh
         } = {
-            plane: import('@babylonjs/lite').Mesh
+            plane: Mesh
         },
     >(
         options: UIBabylonLiteOptions<TMaterial, TPlane>,
     ): Promise<
         {
             ui: UIBabylonLite
-        } & import('./UIWorldSpace').UIWorldSpaceOutput<Texture2D, TMaterial, TPlane>
+        } & UIWorldSpaceOutput<Texture2D, TMaterial, TPlane>
     > {
         const ui = new UIBabylonLite(options)
         const resources = await ui.initialize()
@@ -83,7 +96,7 @@ export default class UIBabylonLite extends UIWorldSpace<
         return output
     }
 
-    dispatchPlatformEvent(source_event: PlatformEvent, { camera }: { camera: import('@babylonjs/lite').Camera }) {
+    dispatchPlatformEvent(source_event: PlatformEvent, { camera }: { camera: Camera }) {
         const rect = (source_event.currentTarget as Element).getBoundingClientRect()
         const canvas = this.scene.surface.canvas as HTMLCanvasElement
         const x = ((source_event.clientX - rect.left) / rect.width) * canvas.clientWidth
@@ -162,7 +175,7 @@ export default class UIBabylonLite extends UIWorldSpace<
         material,
         world_width,
         world_height,
-    }: PlaneOptions<Texture2D, StandardMaterialProps>): { plane: import('@babylonjs/lite').Mesh } {
+    }: PlaneOptions<Texture2D, StandardMaterialProps>): { plane: Mesh } {
         const plane = createPlane(this.engine, {
             width: world_width,
             height: world_height,

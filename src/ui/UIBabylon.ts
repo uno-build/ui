@@ -1,6 +1,16 @@
+import type { Camera } from '@babylonjs/core/Cameras/camera'
+import type { WebGPUHardwareTexture } from '@babylonjs/core/Engines/WebGPU/webgpuHardwareTexture.js'
 import type { WebGPUEngine } from '@babylonjs/core/Engines/webgpuEngine'
+import type { Geometry } from '@babylonjs/core/Meshes/geometry'
+import type { Mesh } from '@babylonjs/core/Meshes/mesh'
 import type { Scene } from '@babylonjs/core/scene'
-import type { MaterialOptions, PlaneOptions, TextureOptions } from './UIWorldSpace'
+import type {
+    MaterialOptions,
+    PlaneOptions,
+    TextureOptions,
+    UIWorldSpaceOptions,
+    UIWorldSpaceOutput,
+} from './UIWorldSpace'
 import type { PlatformEvent } from '../events/types'
 import '@babylonjs/core/Culling/ray.js'
 import { Constants } from '@babylonjs/core/Engines/constants.js'
@@ -12,39 +22,38 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector.js'
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js'
 import UIWorldSpace from './UIWorldSpace'
 
-export type WebGPUHardwareTexture =
-    import('@babylonjs/core/Engines/WebGPU/webgpuHardwareTexture.js').WebGPUHardwareTexture
+export type { WebGPUHardwareTexture }
 
 export type UIBabylonMaterial = StandardMaterial
 
 export type UIBabylonOptions<
     TMaterial extends UIBabylonMaterial = StandardMaterial,
     TPlane extends {
-        plane: import('@babylonjs/core/Meshes/mesh').Mesh
+        plane: Mesh
     } = {
-        plane: import('@babylonjs/core/Meshes/mesh').Mesh
-        geometry: import('@babylonjs/core/Meshes/geometry').Geometry | null
+        plane: Mesh
+        geometry: Geometry | null
     },
-> = import('./UIWorldSpace').UIWorldSpaceOptions<Texture, TMaterial, TPlane, UIBabylon> & {
-    scene: import('@babylonjs/core/scene').Scene
+> = UIWorldSpaceOptions<Texture, TMaterial, TPlane, UIBabylon> & {
+    scene: Scene
 }
 
 export default class UIBabylon extends UIWorldSpace<
     Texture,
     StandardMaterial,
     {
-        plane: import('@babylonjs/core/Meshes/mesh').Mesh
+        plane: Mesh
     },
     UIBabylon
 > {
     private scene: Scene
 
-    private plane!: import('@babylonjs/core/Meshes/mesh').Mesh | null
+    private plane!: Mesh | null
 
     protected constructor({
         scene,
         ...options
-    }: UIBabylonOptions<StandardMaterial, { plane: import('@babylonjs/core/Meshes/mesh').Mesh }>) {
+    }: UIBabylonOptions<StandardMaterial, { plane: Mesh }>) {
         super(options)
         this.scene = scene
     }
@@ -52,17 +61,17 @@ export default class UIBabylon extends UIWorldSpace<
     static async create<
         TMaterial extends UIBabylonMaterial = StandardMaterial,
         TPlane extends {
-            plane: import('@babylonjs/core/Meshes/mesh').Mesh
+            plane: Mesh
         } = {
-            plane: import('@babylonjs/core/Meshes/mesh').Mesh
-            geometry: import('@babylonjs/core/Meshes/geometry').Geometry | null
+            plane: Mesh
+            geometry: Geometry | null
         },
     >(
         options: UIBabylonOptions<TMaterial, TPlane>,
     ): Promise<
         {
             ui: UIBabylon
-        } & import('./UIWorldSpace').UIWorldSpaceOutput<Texture, TMaterial, TPlane>
+        } & UIWorldSpaceOutput<Texture, TMaterial, TPlane>
     > {
         const ui = new UIBabylon(options)
         const resources = await ui.initialize()
@@ -75,10 +84,7 @@ export default class UIBabylon extends UIWorldSpace<
         return output
     }
 
-    dispatchPlatformEvent(
-        source_event: PlatformEvent,
-        { camera }: { camera: import('@babylonjs/core/Cameras/camera').Camera },
-    ) {
+    dispatchPlatformEvent(source_event: PlatformEvent, { camera }: { camera: Camera }) {
         const rect = (source_event.currentTarget as Element).getBoundingClientRect()
         const engine = this.scene.getEngine()
         const scaling_level = engine.getHardwareScalingLevel()

@@ -7,6 +7,7 @@ type ComputedStyle = {
     }
 }
 
+import type { loadYoga } from 'yoga-layout/load'
 import type Node from '../core/Node'
 import type Operations from '../core/Operations'
 import type { Operation } from '../core/Operations'
@@ -15,17 +16,17 @@ import type { WebGPUDrawOptions, WebGPUDrawResult } from './webgpu/contracts'
 import type ResourcesWebGPU from './webgpu/ResourcesWebGPU'
 import type { ImageManager } from './webgpu/ImageManager'
 export type RendererWebGPUOptions = {
-    resources: import("./webgpu/ResourcesWebGPU").default;
-    loadYoga: typeof import("yoga-layout/load").loadYoga;
+    resources: ResourcesWebGPU;
+    loadYoga: typeof loadYoga;
     image_min_filter?: "linear" | "nearest" | undefined;
     image_mag_filter?: "linear" | "nearest" | undefined;
 };
 
-export type WebGPUNode = import("../../src/core/Node").default<undefined>;
+export type WebGPUNode = Node<undefined>;
 
-export type WebGPUOperations = import("../../src/core/Operations").default<undefined>;
+export type WebGPUOperations = Operations<undefined>;
 
-export type RendererWebGPUOutput = Pick<import("./webgpu/ResourcesWebGPU").default, "adapter" | "device" | "context" | "format">;
+export type RendererWebGPUOutput = Pick<ResourcesWebGPU, "adapter" | "device" | "context" | "format">;
 
 import Renderer from '../core/Renderer'
 import { OPERATIONS } from '../core/constants'
@@ -84,8 +85,8 @@ import Segmenter from './pretext/segmenter'
 
 const SUBTREE_STYLE_NAMES = new Set([STYLE.OPACITY.name, STYLE.OVERFLOWX.name, STYLE.OVERFLOWY.name])
 
-export default class RendererWebGPU extends Renderer<import("./webgpu/contracts").WebGPUDrawOptions, import("./webgpu/contracts").WebGPUDrawResult, undefined, RendererWebGPUOutput> {
-    declare loadYoga: typeof import("yoga-layout/load").loadYoga
+export default class RendererWebGPU extends Renderer<WebGPUDrawOptions, WebGPUDrawResult, undefined, RendererWebGPUOutput> {
+    declare loadYoga: typeof loadYoga
 
     private resources: ResourcesWebGPU | null
 

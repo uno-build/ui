@@ -1,5 +1,5 @@
 /** @jsxRuntime classic */
-import type { Element, Ref } from 'solid-js'
+import type { Element as SolidElement, Ref } from 'solid-js'
 import type Node from '../../core/Node'
 import type { NodeEventMap } from '../../events'
 import type { StyleProps } from '../../style/types'
@@ -20,7 +20,7 @@ import {
 
 export type { StyleProps, StyleName } from '../../style/types'
 export type { NodeHandle, ScrollViewHandle, InputHandle } from '../props'
-export type ComponentProps<TRef = Node> = BaseProps & { children?: Element; ref?: Ref<TRef> }
+export type ComponentProps<TRef = Node> = BaseProps & { children?: SolidElement; ref?: Ref<TRef> }
 export type ImageProps = Omit<ComponentProps, 'style'> & ImageOptions
 export type ScrollViewProps = ComponentProps<ScrollViewHandle> & { horizontal?: boolean }
 export type InputProps = Omit<ComponentProps<InputHandle>, 'style'> & InputOptions & { style?: StyleProps }
@@ -167,7 +167,7 @@ export function Input(props: InputProps) {
 
 // HELPERS
 
-function joinText(children: Element) {
+function joinText(children: SolidElement) {
     const values = flatten(children, { skipNonRendered: true })
     return (Array.isArray(values) ? values : [values ?? '']).map(toTextValue).join('')
 }
@@ -183,7 +183,7 @@ function toTextValue(value: unknown) {
 // Local host JSX types; the framework compiler handles the JSX output.
 declare namespace React {
     namespace JSX {
-        type Element = import('solid-js').Element
+        type Element = SolidElement
         interface ElementChildrenAttribute {
             children: {}
         }

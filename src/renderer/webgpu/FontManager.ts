@@ -1,8 +1,8 @@
-import type { WebGPUImage, FontData } from './contracts'
+import type { WebGPUImage, FontData, FontMetrics } from './contracts'
 export type ManagedFont = {
     name: string;
-    image: import("./contracts").WebGPUImage;
-    json: import("./contracts").FontData;
+    image: WebGPUImage;
+    json: FontData;
     layer: number;
     uv_rect: [
         number,
@@ -14,7 +14,7 @@ export type ManagedFont = {
         number,
         number
     ];
-    metrics: import("./contracts").FontMetrics;
+    metrics: FontMetrics;
     glyphs_by_unicode: Map<number, ManagedGlyph>;
 };
 

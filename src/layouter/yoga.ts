@@ -23,10 +23,6 @@ import {
 import { calculateLayoutRect, getParentLayout } from './utils'
 
 export default async function createYogaLayouter({ loadYoga }: { loadYoga?: () => Promise<Yoga> } = {}) {
-    // if (typeof loadYoga !== 'function') {
-    //     loadYoga = (await import('yoga-layout/load')).loadYoga
-    // }
-
     const yoga = await loadYoga!()
     const yoga_config = yoga.Config.create()
     const elements = new WeakMap<Node, YogaNode>()
