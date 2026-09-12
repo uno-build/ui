@@ -6,7 +6,7 @@ import { act, Component, createElement, createRef, Fragment, StrictMode, useEffe
 import type { ReactNode } from 'react'
 import { useUI } from '../src/components/react/context.ts'
 import { registerRootComponent } from '../src/components/react/driver.ts'
-import type { NodeHandle } from '../src/components/props'
+import type { InputHandle, NodeHandle, ScrollViewHandle } from '../src/components/props'
 import { DEFINED_EVENTS } from '../src/events'
 import ResourcesDom from '../src/renderer/dom/ResourcesDom'
 import TestRenderer from './utils/TestRenderer'
@@ -20,10 +20,11 @@ const compiled_components = transformSync(readFileSync(COMPONENTS_URL, 'utf8'), 
     jsxImportSource: 'react',
 }).code
     .replaceAll('from "react/jsx-runtime"', `from '${import.meta.resolve('react/jsx-runtime')}'`)
+    .replaceAll('from "react"', `from '${import.meta.resolve('react')}'`)
     .replace('from "./context"', `from '${new URL('../src/components/react/context.ts', import.meta.url)}'`)
     .replace('from "../shared"', `from '${new URL('../src/components/shared.ts', import.meta.url)}'`)
 
-const { Image, Text, View } = await import(
+const { Image, Input, ScrollView, Text, View } = await import(
     `data:text/javascript;base64,${Buffer.from(compiled_components).toString('base64')}`
 )
 
@@ -422,6 +423,226 @@ test('Image rejects unregistered resources through a React error boundary', asyn
     expect(ui.root.children).toEqual([])
     await act(() => root.unmount())
     ui.destroy()
+})
+
+test('ScrollView preserves its handle and children while updating its axis and events', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
+    const reference = createRef<ScrollViewHandle>()
+    const received = []
+    const root = registerRootComponent(ScrollView, { ui })
+    await act(() => root.render({
+        ref: reference,
+        style: { width: '100px', height: '50px' },
+        onScroll: (event) => received.push({ handler: 'first', ...event }),
+        children: createElement(View, { style: { height: '100px' } }),
+    }))
+    const main = ui.root.children[0]
+    const content = main.children[0]
+    const child = content.children[0]
+    const handle = reference.current
+    expect(handle).toEqual({ nodes: { main, content } })
+    expect(main.styles.flexDirection.value).toBe('column')
+    expect(main.styles.overflowY.value).toBe('scroll')
+    expect(content.styles.flexDirection.value).toBe('column')
+    expect(content.styles.flexShrink.value).toBe('0')
+
+    await act(() => root.render({
+        ref: reference,
+        horizontal: true,
+        style: { width: '100px', height: '50px' },
+        onScroll: (event) => received.push({ handler: 'latest', ...event }),
+        children: createElement(View, { style: { width: '200px', height: '20px' } }),
+    }))
+    expect(reference.current).toBe(handle)
+    expect(main.children).toEqual([content])
+    expect(content.children).toEqual([child])
+    expect(child.styles.width.value).toBe('200px')
+    expect(main.styles.flexDirection.value).toBe('row')
+    expect(main.styles.overflowX.value).toBe('scroll')
+    expect(main.styles.overflowY.value).toBe('unset')
+    expect(content.styles.flexDirection.value).toBe('row')
+    await act(() => ui.events.emit('scroll', {
+        source_event: null,
+        event_data: { scroll_left: 12, scroll_top: 0 },
+        target: main,
+    }))
+    expect(received).toHaveLength(1)
+    expect(received[0]).toMatchObject({ handler: 'latest', type: 'scroll', scroll_left: 12, scroll_top: 0 })
+    expect(received[0].current_target).toBe(main)
+    await act(() => root.unmount())
+    expect(reference.current).toBe(null)
+    expect(main.ui).toBe(null)
+    expect(content.ui).toBe(null)
+    expect(child.ui).toBe(null)
+    ui.destroy()
+})
+
+test('Input exposes stable nodes and forwards focus, blur, and pointer callbacks', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
+    const reference = createRef<InputHandle>()
+    const received = []
+    let prevent_default_count = 0
+    const props = {
+        ref: reference,
+        value: 'Value',
+        style: { width: '100px', height: '40px' },
+        onFocus: (event) => received.push({ handler: 'first focus', ...event }),
+    }
+    const root = registerRootComponent(Input, { ui })
+    await act(() => root.render(props))
+    const main = ui.root.children[0]
+    const content = main.children[0]
+    const text = content.children[0]
+    const handle = reference.current
+    expect(handle.nodes).toEqual({ main, content, text, caret: null })
+    expect(content.styles.pointerEvents.value).toBe('none')
+    expect(text.text_content).toBe('Value')
+    await act(() => handle.focus())
+    const caret = content.children[1]
+    expect(reference.current).toBe(handle)
+    expect(handle.nodes).toEqual({ main, content, text, caret })
+    expect(caret.styles.width.value).toBe('1px')
+    expect(received[0].handler).toBe('first focus')
+    expect(received[0].target).toBe(main)
+
+    await act(() => root.render({
+        ...props,
+        onFocus: (event) => received.push({ handler: 'latest focus', ...event }),
+        onBlur: (event) => received.push({ handler: 'latest blur', ...event }),
+        onPointerDown(event) {
+            expect(prevent_default_count).toBe(1)
+            received.push({ handler: 'pointer', ...event })
+        },
+    }))
+    await act(() => handle.blur())
+    expect(handle.nodes).toEqual({ main, content, text, caret: null })
+    expect(content.children).toEqual([text])
+    expect(caret.ui).toBe(null)
+    expect(received[1].handler).toBe('latest blur')
+    expect(received[1].target).toBe(main)
+    await act(() => ui.dispatchPlatformEvent({
+        type: 'pointerdown',
+        pointerId: 1,
+        preventDefault() { prevent_default_count++ },
+    }, { x: 10, y: 10 }))
+    expect(prevent_default_count).toBe(1)
+    expect(received.map((event) => event.handler)).toEqual(['first focus', 'latest blur', 'latest focus', 'pointer'])
+    expect(received[3].target).toBe(main)
+    expect(received[3].current_target).toBe(main)
+    expect(handle.nodes.caret).toBe(content.children[1])
+    await act(() => root.unmount())
+    expect(reference.current).toBe(null)
+    expect(main.ui).toBe(null)
+    expect(content.ui).toBe(null)
+    expect(text.ui).toBe(null)
+    ui.destroy()
+})
+
+test('Input updates values and placeholder styling without replacing its text node', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
+    const reference = createRef<InputHandle>()
+    const root = registerRootComponent(Input, { ui })
+    const props = {
+        ref: reference,
+        placeholder: 'Name',
+        placeholderTextColor: '#abcdef',
+        style: { width: '120px', color: '#123456', lineHeight: '20px', letterSpacing: '1px', textAlign: 'right' },
+    }
+    await act(() => root.render({ ...props, value: null }))
+    const handle = reference.current
+    const { main, content, text } = handle.nodes
+    expect(main.styles.width.value).toBe('120px')
+    expect(main.styles.backgroundColor.value).toBe('#ffffff')
+    expect(content.styles.justifyContent.value).toBe('flex-end')
+    expect(text.text_content).toBe('Name')
+    expect(text.styles.color.value).toBe('#abcdef')
+    expect(text.styles.lineHeight.value).toBe('20px')
+    expect(text.styles.letterSpacing.value).toBe('1px')
+    await act(() => root.render({ ...props, value: 0 }))
+    expect(text.text_content).toBe('0')
+    expect(text.styles.color.value).toBe('#123456')
+    await act(() => root.render({ ...props, value: 'Filled', style: { textAlign: 'center' } }))
+    expect(text.text_content).toBe('Filled')
+    expect(text.styles.color.value).toBe('unset')
+    expect(text.styles.lineHeight.value).toBe('unset')
+    expect(text.styles.letterSpacing.value).toBe('unset')
+    expect(main.styles.width.value).toBe('100%')
+    expect(content.styles.justifyContent.value).toBe('center')
+    for (const value of ['', null, undefined]) {
+        await act(() => root.render({ ref: reference, value, placeholder: 0 }))
+        expect(text.text_content).toBe('0')
+        expect(text.styles.color.value).toBe('#777777')
+    }
+    await act(() => root.render({ ref: reference }))
+    expect(text.text_content).toBe('\u00A0')
+    expect(reference.current).toBe(handle)
+    expect(handle.nodes.text).toBe(text)
+    await act(() => root.unmount())
+    ui.destroy()
+})
+
+test('Input caret blinks, resets on value changes, and releases intervals under StrictMode', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
+    const reference = createRef<InputHandle>()
+    const active_intervals = new Map<number, () => void>()
+    const interval_delays: number[] = []
+    const cleared_intervals: number[] = []
+    let next_interval_id = 0
+    const setIntervalOriginal = globalThis.setInterval
+    const clearIntervalOriginal = globalThis.clearInterval
+    globalThis.setInterval = ((onInterval: () => void, delay: number) => {
+        const interval_id = ++next_interval_id
+        active_intervals.set(interval_id, onInterval)
+        interval_delays.push(delay)
+        return interval_id
+    }) as typeof setInterval
+    globalThis.clearInterval = ((interval_id: number) => {
+        active_intervals.delete(interval_id)
+        cleared_intervals.push(interval_id)
+    }) as typeof clearInterval
+    function App(props) {
+        return createElement(StrictMode, null, createElement(Input, props))
+    }
+    const root = registerRootComponent(App, { ui })
+    try {
+        await act(() => root.render({ ref: reference, value: '', placeholder: 'Name' }))
+        expect(active_intervals.size).toBe(0)
+        await act(() => reference.current.focus())
+        const { text, caret } = reference.current.nodes
+        expect(text.text_content).toBe('\u00A0')
+        expect(active_intervals.size).toBe(1)
+        expect(interval_delays).toEqual([500])
+        expect(caret.styles.opacity.value).toBe('1')
+        const blink = active_intervals.get(1)!
+        await act(() => blink())
+        expect(reference.current.nodes.caret).toBe(caret)
+        expect(caret.styles.opacity.value).toBe('0')
+        await act(() => root.render({ ref: reference, value: 'Changed', placeholder: 'Name' }))
+        expect(active_intervals.size).toBe(1)
+        expect(cleared_intervals).toEqual([1])
+        expect(interval_delays).toEqual([500, 500])
+        expect(reference.current.nodes.caret).toBe(caret)
+        expect(caret.styles.opacity.value).toBe('1')
+        expect(text.text_content).toBe('Changed')
+        await act(() => reference.current.blur())
+        expect(active_intervals.size).toBe(0)
+        expect(cleared_intervals).toEqual([1, 2])
+        expect(reference.current.nodes.caret).toBe(null)
+        expect(caret.ui).toBe(null)
+        await act(() => reference.current.focus())
+        expect(active_intervals.size).toBe(1)
+    } finally {
+        try {
+            await act(() => root.unmount())
+            ui.destroy()
+        } finally {
+            globalThis.setInterval = setIntervalOriginal
+            globalThis.clearInterval = clearIntervalOriginal
+        }
+    }
+    expect(active_intervals.size).toBe(0)
+    expect(cleared_intervals).toEqual([1, 2, 3])
+    expect(reference.current).toBe(null)
 })
 
 test('StrictMode balances effects and callback ref cleanup without duplicating Uno nodes', async () => {

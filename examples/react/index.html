@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>React components</title>
+        <script>
+            if (new URLSearchParams(location.search).has('example') === false) {
+                location.replace('?example=image')
+            }
+        </script>
+        <style>
+            @font-face {
+                font-family: 'Poppins-Regular';
+                src: url('/assets/fonts/Poppins-Regular.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: 'ChangaOne-Regular';
+                src: url('/assets/fonts/ChangaOne-Regular.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: 'Nougat-ExtraBlack';
+                src: url('/assets/fonts/Nougat-ExtraBlack.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+
+            html,
+            body {
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                overscroll-behavior: none;
+                font-family: 'Poppins-Regular', system-ui, sans-serif;
+                background-color: #202125;
+                color: #f5f6f7;
+            }
+
+            #root {
+                position: fixed;
+                inset: 0;
+                overflow: hidden;
+            }
+            #root > * {
+                display: flex;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+            canvas {
+                touch-action: none;
+            }
+
+            body #settings-panel {
+                background: #292a2f;
+                color: #f5f6f7;
+            }
+            #settings-panel .settings-renderer-opacity {
+                color: #a5a8b0;
+            }
+            #settings-panel input {
+                accent-color: #82d8f7;
+            }
+
+            .settings-examples-title {
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px solid #3c3e45;
+            }
+            .settings-example {
+                display: block;
+                padding: 2px 0;
+                color: inherit;
+                text-decoration: none;
+            }
+            .settings-example:hover {
+                text-decoration: underline;
+            }
+            .settings-example[aria-current='page'] {
+                color: #82d8f7;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="root"></div>
+        <div id="settings-panel">
+            <div class="settings-panel-title">Renderers</div>
+            <div id="settings-renderers"></div>
+            <div class="settings-panel-title settings-examples-title">Examples</div>
+            <div id="settings-examples"></div>
+        </div>
+        <script type="module">
+            import ResourcesDom from 'uno-ui/ResourcesDom'
+            import ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
+            import UIDom from 'uno-ui/UIDom'
+            import UIWebGPU from 'uno-ui/UIWebGPU'
+            import { PLATFORM_EVENT_NAMES } from 'uno-ui/events'
+            import { loadYoga } from 'yoga-layout/load'
+            import { initSettingsPanel } from '../settings/settings-panel'
+
+            const EXAMPLES = {
+                input: () => import('./input'),
+                image: () => import('./image'),
+                scrollview: () => import('./scrollview'),
+                todo: () => import('./todo'),
+            }
+            const RENDERERS = {
+                RendererDom: { element_type: 'div', ui_class: UIDom, resources_class: ResourcesDom },
+                RendererWebGPU: { element_type: 'canvas', ui_class: UIWebGPU, resources_class: ResourcesWebGPU },
+            }
+            const root = document.getElementById('root')
+            const settings_examples = document.getElementById('settings-examples')
+            const example_name = new URLSearchParams(location.search).get('example')
+            const { default: createExample } = await EXAMPLES[example_name]()
+            const device_pixel_ratio = window.devicePixelRatio
+            const uis = []
+
+            for (const available_example_name of Object.keys(EXAMPLES)) {
+                const example_url = new URL(window.location.href)
+                example_url.searchParams.set('example', available_example_name)
+
+                const example_link = document.createElement('a')
+                example_link.className = 'settings-example'
+                example_link.href = example_url.href
+                example_link.textContent = available_example_name
+                if (available_example_name === example_name) {
+                    example_link.ariaCurrent = 'page'
+                }
+                settings_examples.appendChild(example_link)
+            }
+
+            initSettingsPanel({ root })
+
+            for (const [renderer_name, setup] of Object.entries(RENDERERS)) {
+                const is_canvas = setup.element_type === 'canvas'
+                const element = document.createElement(setup.element_type)
+                element.id = renderer_name
+                root.appendChild(element)
+
+                const resources = await setup.resources_class.create({ canvas: element })
+                const { ui } = await setup.ui_class.create({ resources, loadYoga, device_pixel_ratio })
+
+                function syncRendererSize() {
+                    const width = root.clientWidth
+                    const height = root.clientHeight
+
+                    if (is_canvas) {
+                        element.width = Math.max(1, Math.round(width * device_pixel_ratio))
+                        element.height = Math.max(1, Math.round(height * device_pixel_ratio))
+                    }
+
+                    ui.setViewport(width, height)
+                    ui.setDevicePixelRatio(device_pixel_ratio)
+                    ui.update()
+                }
+
+                syncRendererSize()
+                window.addEventListener('resize', syncRendererSize)
+
+                // UIDom listens on its own element, UIWebGPU needs the canvas events forwarded.
+                if (is_canvas) {
+                    PLATFORM_EVENT_NAMES.forEach((type) => {
+                        element.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))
+                    })
+                }
+
+                await createExample({ ui, resources })
+                uis.push(ui)
+            }
+
+            requestAnimationFrame(function render() {
+                uis.forEach((ui) => ui.draw())
+                requestAnimationFrame(render)
+            })
+        </script>
+    </body>
+</html>

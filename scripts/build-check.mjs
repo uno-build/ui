@@ -142,9 +142,9 @@ export default { plugins: [plugin(compilerConfig)] }
     }
 
     const react_entry = path.join(CONSUMER, 'react.tsx')
-    await writeFile(react_entry, `import { View, Text, Image, registerRootComponent } from 'uno-ui/react'
+    await writeFile(react_entry, `import { View, Text, Image, ScrollView, Input, registerRootComponent } from 'uno-ui/react'
 export function App({ title }: { title: string }) {
-    return <View><Text>{title}</Text><Image src="icon" width="24px" /></View>
+    return <View><ScrollView><Text>{title}</Text><Image src="icon" width="24px" /></ScrollView><Input value={title} /></View>
 }
 export function mountRoot(ui: Parameters<typeof registerRootComponent>[1]['ui']) {
     const root = registerRootComponent(App, { ui })

@@ -1,6 +1,7 @@
 /** @jsxRuntime classic */
 import type { Element, Ref } from 'solid-js'
 import type Node from '../../core/Node'
+import type { NodeEventMap } from '../../events'
 import type { StyleProps } from '../../style/types'
 import type { BaseProps, ImageOptions, InputOptions, NodeHandle, ScrollViewHandle, InputHandle } from '../props'
 import { createEffect, createSignal, flatten, omit } from 'solid-js'
@@ -77,17 +78,17 @@ export function Input(props: InputProps) {
     const [isFocused, setIsFocused] = createSignal(false)
     const [caretVisible, setCaretVisible] = createSignal(true)
 
-    function onFocus(event: import('../../events/types').NodeEventMap['focus']) {
+    function onFocus(event: NodeEventMap['focus']) {
         setIsFocused(true)
         props.onFocus?.(event)
     }
 
-    function onBlur(event: import('../../events/types').NodeEventMap['blur']) {
+    function onBlur(event: NodeEventMap['blur']) {
         setIsFocused(false)
         props.onBlur?.(event)
     }
 
-    function onPointerDown(event: import('../../events/types').NodeEventMap['pointerdown']) {
+    function onPointerDown(event: NodeEventMap['pointerdown']) {
         event.source_event.preventDefault()
         props.onPointerDown?.(event)
     }

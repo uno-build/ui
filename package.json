@@ -143,6 +143,7 @@
         "examples": "vite ./examples --config ./examples/vite/typegpu.config.ts",
         "examples:solid": "vite ./examples --config ./examples/vite/solid.config.ts",
         "examples:octane": "vite ./examples --config ./examples/vite/octane.config.ts",
+        "examples:react": "vite ./examples --config ./examples/vite/react.config.ts",
         "benchmark": "node ./scripts/benchmarks.mjs --browser",
         "benchmark:general": "node ./scripts/benchmarks.mjs --workload general",
         "benchmark:general:headed": "node ./scripts/benchmarks.mjs --workload general --headed",

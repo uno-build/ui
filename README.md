@@ -16,7 +16,7 @@ run `npm run build` after changing the sources. Generated files are ignored by G
 
 ## React
 
-The `uno-ui/react` adapter supports React 19.2 with `View`, `Text`, and `Image`.
+The `uno-ui/react` adapter supports React 19.2 with `View`, `Text`, `Image`, `ScrollView`, and `Input`.
 Install its optional peers when using the adapter:
 
 ```sh
@@ -55,9 +55,9 @@ the root's nodes and cleans up React effects without destroying the UI or its
 resources. Both calls commit their changes before returning.
 
 React hooks and context work normally. `useUI<TUI>()`, exported from `uno-ui/react`,
-returns the current UI inside a component. Object and callback refs receive a
-stable `NodeHandle`; its `nodes.main` property is the underlying Uno node. Events
-use Uno's event names, payloads, and propagation.
+returns the current UI inside a component. Object and callback refs on `View`,
+`Text`, and `Image` receive a stable `NodeHandle`; its `nodes.main` property is the
+underlying Uno node. Events use Uno's event names, payloads, and propagation.
 
 `Text` joins strings, numbers, and nested arrays, ignoring booleans, `null`, and
 `undefined`. Elements, fragments, and components inside `Text` are unsupported,
@@ -66,7 +66,14 @@ and supports `fill`, `contain`, `cover`, and `none` through `style.objectFit`.
 Its default dimensions come from the image, and dimensions in `style` take
 precedence over the `width` and `height` props.
 
-This adapter does not yet include `Input`, `ScrollView`, SSR, hydration, portals,
+`ScrollView` scrolls vertically by default, or horizontally with `horizontal`.
+Its `ScrollViewHandle` exposes `nodes.main` and `nodes.content`. `Input` renders
+the supplied `value`, a `placeholder` while empty and unfocused, and a blinking
+caret while focused. Its `InputHandle` exposes `focus()`, `blur()`, and the
+`main`, `content`, `text`, and nullable `caret` nodes. Both components follow
+the same behavior and shared styles as the Solid and Octane adapters.
+
+This adapter does not yet include SSR, hydration, portals,
 or specific support for Suspense and Activity. Its tests run with the existing
 Playwright suite in `tests/react.test.ts`. `npm run build:check` also checks the
 published React types and a consumer using standard JSX compilation.

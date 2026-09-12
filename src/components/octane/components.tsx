@@ -1,6 +1,7 @@
 /** @jsxRuntime classic */
 import type { JSX as OctaneJSX, OctaneNode, Ref } from 'octane'
 import type Node from '../../core/Node'
+import type { NodeEventMap } from '../../events'
 import type { StyleProps } from '../../style/types'
 import type { BaseProps, ImageOptions, InputOptions, NodeHandle, ScrollViewHandle, InputHandle } from '../props'
 import { useEffect, useImperativeHandle, useRef, useState } from 'octane'
@@ -88,17 +89,17 @@ export function Input({
     const [is_focused, setIsFocused] = useState(false)
     const [caret_visible, setCaretVisible] = useState(true)
 
-    function handleFocus(event: import('../../events/types').NodeEventMap['focus']) {
+    function handleFocus(event: NodeEventMap['focus']) {
         setIsFocused(true)
         onFocus?.(event)
     }
 
-    function handleBlur(event: import('../../events/types').NodeEventMap['blur']) {
+    function handleBlur(event: NodeEventMap['blur']) {
         setIsFocused(false)
         onBlur?.(event)
     }
 
-    function handlePointerDown(event: import('../../events/types').NodeEventMap['pointerdown']) {
+    function handlePointerDown(event: NodeEventMap['pointerdown']) {
         event.source_event.preventDefault()
         onPointerDown?.(event)
     }
