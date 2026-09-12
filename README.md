@@ -8,11 +8,68 @@ the source types without generating files; the compiler enforces erasable TypeSc
 
 `npm run build` uses `tsconfig.publish.json` to generate separate `.js` and `.d.ts` modules
 in `dist/`, preserving the source directory structure. Solid and Octane JSX is compiled
-with their respective compilers. No modules are bundled together.
+with their respective compilers; React JSX uses the automatic runtime. No modules are bundled together.
 
 `npm pack` and `npm publish` run this build automatically. Only `dist/` is published;
 consumers do not need TypeScript to execute the package. For a local file dependency,
 run `npm run build` after changing the sources. Generated files are ignored by Git.
+
+## React
+
+The `uno-ui/react` adapter supports React 19.2 with `View`, `Text`, and `Image`.
+Install its optional peers when using the adapter:
+
+```sh
+npm install react@~19.2.0 react-reconciler@0.33.0
+npm install --save-dev @types/react@~19.2.0
+```
+
+Use standard React JSX compilation (`"jsx": "react-jsx"` in TypeScript). The adapter
+does not need a JSX compiler plugin or `react-dom`.
+
+```tsx
+import { useRef, useState } from 'react'
+import { View, Text, Image, registerRootComponent } from 'uno-ui/react'
+import type { NodeHandle } from 'uno-ui/react'
+
+function App({ title }: { title: string }) {
+    const view_ref = useRef<NodeHandle>(null)
+    const [count, setCount] = useState(0)
+
+    return (
+        <View ref={view_ref} onClick={() => setCount((value) => value + 1)}>
+            <Text>{title}: {count}</Text>
+            <Image src="icon" width="24px" style={{ objectFit: 'contain' }} />
+        </View>
+    )
+}
+
+const root = registerRootComponent(App, { ui })
+root.render({ title: 'Uno' })
+```
+
+Pass an initialized Uno UI as `ui`, with the image `icon` and any required fonts
+already registered in its resources. Use one framework root per UI. Calling
+`root.render(props)` again preserves component state, and `root.unmount()` removes
+the root's nodes and cleans up React effects without destroying the UI or its
+resources. Both calls commit their changes before returning.
+
+React hooks and context work normally. `useUI<TUI>()`, exported from `uno-ui/react`,
+returns the current UI inside a component. Object and callback refs receive a
+stable `NodeHandle`; its `nodes.main` property is the underlying Uno node. Events
+use Uno's event names, payloads, and propagation.
+
+`Text` joins strings, numbers, and nested arrays, ignoring booleans, `null`, and
+`undefined`. Elements, fragments, and components inside `Text` are unsupported,
+and text directly inside `View` is invalid. `Image` uses registered image resources
+and supports `fill`, `contain`, `cover`, and `none` through `style.objectFit`.
+Its default dimensions come from the image, and dimensions in `style` take
+precedence over the `width` and `height` props.
+
+This adapter does not yet include `Input`, `ScrollView`, SSR, hydration, portals,
+or specific support for Suspense and Activity. Its tests run with the existing
+Playwright suite in `tests/react.test.ts`. `npm run build:check` also checks the
+published React types and a consumer using standard JSX compilation.
 
 ## WebGPU resources
 

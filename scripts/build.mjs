@@ -20,7 +20,7 @@ const result = program.emit()
 assert.equal(result.emitSkipped, false)
 
 // Framework compilers handle JSX; all other modules are emitted directly by TypeScript.
-for (const framework of ['solid', 'octane']) {
+for (const framework of ['solid', 'octane', 'react']) {
     const filename = path.join(SOURCE, 'components', framework, 'components.tsx')
     const source = await readFile(filename, 'utf8')
     const renderer = { id: 'uno', module: 'octane/universal/native', target: 'universal', server: 'client-only', text: 'host' }
@@ -30,8 +30,12 @@ for (const framework of ['solid', 'octane']) {
             builtIns: ['Errored', 'For', 'Loading', 'Match', 'Repeat', 'Reveal', 'Show', 'Switch'],
             wrapConditionals: true,
         }).code
-        : compileOctane(source, filename, { mode: 'client', renderer, rendererRegistry: { uno: renderer } }).code
-    const { code } = await transform(compiled, { loader: 'ts', target: 'esnext', format: 'esm' })
+        : framework === 'octane'
+          ? compileOctane(source, filename, { mode: 'client', renderer, rendererRegistry: { uno: renderer } }).code
+          : source
+    const { code } = await transform(compiled, {
+        loader: framework === 'react' ? 'tsx' : 'ts', jsx: 'automatic', target: 'esnext', format: 'esm',
+    })
     await writeFile(path.join(OUTPUT, 'components', framework, 'components.js'), code)
     await rm(path.join(OUTPUT, 'components', framework, 'components.jsx'))
 }

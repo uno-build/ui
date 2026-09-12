@@ -23,6 +23,7 @@ for (const [fixture, jsx_options] of [
     ...(CONSUMER === ROOT ? [['internals.ts', {}]] : []),
     ['solid.tsx', { jsx: ts.JsxEmit.Preserve, jsxImportSource: undefined }],
     ['octane.tsx', { jsx: ts.JsxEmit.Preserve, jsxImportSource: 'octane' }],
+    ['react.tsx', { jsx: ts.JsxEmit.ReactJSX, jsxImportSource: 'react' }],
 ]) {
     const options = { ...OPTIONS, ...jsx_options, skipLibCheck: true }
     const program = ts.createProgram([path.join(CONSUMER, 'tests/types', fixture)], options)

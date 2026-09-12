@@ -54,6 +54,10 @@
         "./solid/config": {
             "types": "./dist/components/solid/config.d.ts",
             "import": "./dist/components/solid/config.js"
+        },
+        "./react": {
+            "types": "./dist/components/react/index.d.ts",
+            "import": "./dist/components/react/index.js"
         }
     },
     "dependencies": {
@@ -64,10 +68,13 @@
         "@babylonjs/core": "^9.22.2",
         "@babylonjs/lite": "^1.24.0",
         "@solidjs/universal": "^2.0.0-rc.0",
+        "@types/react": "~19.2.0",
         "@types/three": "^0.185.0",
         "octane": "^0.2.6",
         "pixi.js": "^8.20.1",
         "playcanvas": "^2.22.0",
+        "react": "~19.2.0",
+        "react-reconciler": "0.33.0",
         "solid-js": "^2.0.0-rc.0",
         "three": "^0.185.1"
     },
@@ -79,6 +86,15 @@
             "optional": true
         },
         "@solidjs/universal": {
+            "optional": true
+        },
+        "@types/react": {
+            "optional": true
+        },
+        "react": {
+            "optional": true
+        },
+        "react-reconciler": {
             "optional": true
         },
         "octane": {
@@ -106,11 +122,15 @@
         "@playwright/test": "^1.52.0",
         "@solidjs/universal": "2.0.0-rc.0",
         "@solidjs/vite-plugin": "3.0.0-next.28",
+        "@types/react": "~19.2.0",
+        "@types/react-reconciler": "0.33.0",
         "@types/three": "0.185.0",
         "esbuild": "0.28.2",
         "octane": "^0.2.6",
         "playcanvas": "^2.22.0",
         "pngjs": "^7.0.0",
+        "react": "~19.2.0",
+        "react-reconciler": "0.33.0",
         "solid-js": "^2.0.0-rc.0",
         "three": "^0.185.1",
         "typegpu": "^0.12.3",

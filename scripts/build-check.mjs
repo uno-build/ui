@@ -69,12 +69,18 @@ UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas }), loadYoga 
 
     // Execute published JS with Node before installing any optional peers or TypeScript.
     run(process.execPath, ['--input-type=module', '-e', `
+        import assert from 'node:assert/strict'
+        import { createRequire } from 'node:module'
         import { EventEmitter } from 'uno-ui/events'
         import 'uno-ui/UIDom'
         import 'uno-ui/UIWebGPU'
         import 'uno-ui/solid/config'
         import 'uno-ui/octane/config'
         new EventEmitter().emit('ready')
+        const require = createRequire(import.meta.url)
+        for (const name of ['react', 'react-reconciler', '@types/react/package.json']) {
+            assert.throws(() => require.resolve(name), { code: 'MODULE_NOT_FOUND' })
+        }
     `], CONSUMER)
 
     const peers = Object.keys(PACKAGE.peerDependencies).filter((name) => name !== 'pixi.js')
@@ -133,6 +139,28 @@ export default { plugins: [plugin(compilerConfig)] }
             assert.ok(!chunk.code.includes('React.createElement'), `${framework}: JSX was compiled with React`)
             await transform(chunk.code, { loader: 'js' })
         }
+    }
+
+    const react_entry = path.join(CONSUMER, 'react.tsx')
+    await writeFile(react_entry, `import { View, Text, Image, registerRootComponent } from 'uno-ui/react'
+export function App({ title }: { title: string }) {
+    return <View><Text>{title}</Text><Image src="icon" width="24px" /></View>
+}
+export function mountRoot(ui: Parameters<typeof registerRootComponent>[1]['ui']) {
+    const root = registerRootComponent(App, { ui })
+    root.render({ title: 'Uno' })
+    return root
+}
+`)
+    const react_output = await bundle({
+        absWorkingDir: CONSUMER, entryPoints: [react_entry], bundle: true, write: false,
+        external: ['react', 'react-reconciler'], format: 'esm', platform: 'neutral',
+        jsx: 'automatic', jsxImportSource: 'react', metafile: true,
+    })
+    assert.deepEqual(Object.values(react_output.metafile.outputs)[0].exports.sort(), ['App', 'mountRoot'])
+    assert.ok(Object.values(react_output.metafile.outputs)[0].imports.some((entry) => entry.path === 'react/jsx-runtime'))
+    for (const output_file of react_output.outputFiles) {
+        await transform(output_file.text, { loader: 'js' })
     }
     console.log('Packed package, optional-peer isolation, exports and JSX consumer builds passed.')
 } finally {
