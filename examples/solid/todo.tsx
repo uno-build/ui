@@ -525,39 +525,39 @@ export function SolidTodo() {
                             </View>
                         </Show>
 
-                        <For each={visibleTodos()}>
+                        <For each={visibleTodos()} keyed={(todo) => todo.id}>
                             {(todo) => (
                                 <View
-                                    style={{ ...ITEM_STYLE, ...(hoveredId() === todo.id && ITEM_HOVER_STYLE) }}
-                                    onPointerOver={() => setHoveredId(todo.id)}
+                                    style={{ ...ITEM_STYLE, ...(hoveredId() === todo().id && ITEM_HOVER_STYLE) }}
+                                    onPointerOver={() => setHoveredId(todo().id)}
                                     onPointerOut={() => setHoveredId(null)}
                                 >
                                     <View
                                         style={{
                                             ...CHECK_STYLE,
-                                            ...(todo.completed && CHECK_DONE_STYLE),
-                                            ...(hovered() === `check:${todo.id}` && CHECK_HOVER_STYLE),
+                                            ...(todo().completed && CHECK_DONE_STYLE),
+                                            ...(hovered() === `check:${todo().id}` && CHECK_HOVER_STYLE),
                                         }}
-                                        onPointerOver={() => setHovered(`check:${todo.id}`)}
+                                        onPointerOver={() => setHovered(`check:${todo().id}`)}
                                         onPointerOut={() => setHovered(null)}
-                                        onClick={() => toggleTodo(todo.id)}
+                                        onClick={() => toggleTodo(todo().id)}
                                     >
-                                        <Show when={todo.completed}>
+                                        <Show when={todo().completed}>
                                             <View style={CHECK_DOT_STYLE} />
                                         </Show>
                                     </View>
 
                                     <Show
-                                        when={editingId() === todo.id}
+                                        when={editingId() === todo().id}
                                         fallback={
                                             <Text
                                                 style={{
                                                     ...ITEM_TEXT_STYLE,
-                                                    ...(todo.completed && ITEM_TEXT_DONE_STYLE),
+                                                    ...(todo().completed && ITEM_TEXT_DONE_STYLE),
                                                 }}
-                                                onClick={() => onLabelClick(todo)}
+                                                onClick={() => onLabelClick(todo())}
                                             >
-                                                {todo.title}
+                                                {todo().title}
                                             </Text>
                                         }
                                     >
@@ -575,17 +575,17 @@ export function SolidTodo() {
                                     <View
                                         style={{
                                             ...DESTROY_STYLE,
-                                            ...(hoveredId() === todo.id && DESTROY_VISIBLE_STYLE),
-                                            ...(hovered() === `destroy:${todo.id}` && DESTROY_HOVER_STYLE),
+                                            ...(hoveredId() === todo().id && DESTROY_VISIBLE_STYLE),
+                                            ...(hovered() === `destroy:${todo().id}` && DESTROY_HOVER_STYLE),
                                         }}
-                                        onPointerOver={() => setHovered(`destroy:${todo.id}`)}
+                                        onPointerOver={() => setHovered(`destroy:${todo().id}`)}
                                         onPointerOut={() => setHovered(null)}
-                                        onClick={() => removeTodo(todo.id)}
+                                        onClick={() => removeTodo(todo().id)}
                                     >
                                         <Text
                                             style={{
                                                 ...DESTROY_TEXT_STYLE,
-                                                ...(hovered() === `destroy:${todo.id}` && DESTROY_TEXT_HOVER_STYLE),
+                                                ...(hovered() === `destroy:${todo().id}` && DESTROY_TEXT_HOVER_STYLE),
                                             }}
                                         >
                                             x

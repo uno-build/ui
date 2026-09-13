@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'octane'
+import { universalKey } from 'octane/universal/native'
 import { registerRootComponent, View, Text, Image, Input, ScrollView } from 'uno-ui/octane'
 import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
@@ -518,7 +519,7 @@ export function OctaneTodo({
                             </View>
                         )}
 
-                        {visible_todos.map((todo) => (
+                        {visible_todos.map((todo) => universalKey(todo.id,
                             <View
                                 key={todo.id}
                                 style={{ ...ITEM_STYLE, ...(hovered_id === todo.id && ITEM_HOVER_STYLE) }}
