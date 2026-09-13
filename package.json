@@ -66,6 +66,18 @@
         "./vue/config": {
             "types": "./dist/components/vue/config.d.ts",
             "import": "./dist/components/vue/config.js"
+        },
+        "./svelte": {
+            "types": "./dist/components/svelte/index.d.ts",
+            "import": "./dist/components/svelte/index.js"
+        },
+        "./svelte/renderer": {
+            "types": "./dist/components/svelte/renderer.d.ts",
+            "import": "./dist/components/svelte/renderer.js"
+        },
+        "./svelte/config": {
+            "types": "./dist/components/svelte/config.d.ts",
+            "import": "./dist/components/svelte/config.js"
         }
     },
     "dependencies": {
@@ -84,6 +96,7 @@
         "react": "~19.2.0",
         "react-reconciler": "0.33.0",
         "solid-js": "^2.0.0-rc.0",
+        "svelte": "5.56.7",
         "three": "^0.185.1",
         "vue": "~3.5.42"
     },
@@ -123,6 +136,9 @@
         },
         "vue": {
             "optional": true
+        },
+        "svelte": {
+            "optional": true
         }
     },
     "devDependencies": {
@@ -134,6 +150,7 @@
         "@playwright/test": "^1.52.0",
         "@solidjs/universal": "2.0.0-rc.0",
         "@solidjs/vite-plugin": "3.0.0-next.28",
+        "@sveltejs/vite-plugin-svelte": "7.3.0",
         "@types/react": "~19.2.0",
         "@types/react-reconciler": "0.33.0",
         "@types/three": "0.185.0",
@@ -145,6 +162,9 @@
         "react": "~19.2.0",
         "react-reconciler": "0.33.0",
         "solid-js": "^2.0.0-rc.0",
+        "svelte": "https://pkg.pr.new/svelte@216f258068d93170a927ad4d27ee6864b0b305c5",
+        "svelte-check": "4.7.6",
+        "svelte2tsx": "0.7.61",
         "three": "^0.185.1",
         "typegpu": "^0.12.3",
         "typescript": "5.9.3",
@@ -159,6 +179,7 @@
         "examples:octane": "vite ./examples --config ./examples/vite/octane.config.ts",
         "examples:react": "vite ./examples --config ./examples/vite/react.config.ts",
         "examples:vue": "vite ./examples --config ./examples/vite/vue.config.ts",
+        "examples:svelte": "vite ./examples --config ./examples/vite/svelte.config.ts",
         "benchmark": "node ./scripts/benchmarks.mjs --browser",
         "benchmark:general": "node ./scripts/benchmarks.mjs --workload general",
         "benchmark:general:headed": "node ./scripts/benchmarks.mjs --workload general --headed",
@@ -172,7 +193,7 @@
         "benchmark:render-metrics:headed": "node ./scripts/benchmarks.mjs --workload render-metrics --headed",
         "test": "playwright test tests",
         "test:layouts": "playwright test dev/layouts",
-        "typescript": "tsc -p tsconfig.json",
+        "typescript": "svelte-check --tsconfig ./tsconfig.json",
         "build": "node scripts/build.mjs",
         "build:check": "node scripts/build-check.mjs",
         "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"

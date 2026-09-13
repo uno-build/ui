@@ -8,6 +8,8 @@ import { build as bundle, transform } from 'esbuild'
 import { build as buildVite } from 'vite'
 import ts from 'typescript'
 import vue from '@vitejs/plugin-vue'
+import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { compile as compileSvelte } from 'svelte/compiler'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const PACKAGE = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8'))
@@ -21,6 +23,7 @@ function run(command, args, cwd) {
 }
 
 try {
+    run(process.execPath, [path.join(ROOT, 'node_modules/svelte-check/bin/svelte-check'), '--tsconfig', path.join(ROOT, 'tsconfig.json')], ROOT)
     // Parse every implementation, including modules unreachable from public exports.
     for (const file of await readdir(path.join(ROOT, 'src'), { recursive: true })) {
         assert.ok(!/\.(?:js|jsx|d\.ts)$/.test(file), `${file}: source modules must use a single TypeScript file`)
@@ -39,6 +42,8 @@ try {
         })
         const source = program.getSourceFile(path.join(ROOT, entry.types))
         const values = checker.getExportsOfModule(checker.getSymbolAtLocation(source)).filter((symbol) => {
+            if (symbol.declarations?.some((declaration) => ts.isExportSpecifier(declaration)
+                && (declaration.isTypeOnly || declaration.parent.parent.isTypeOnly))) return false
             const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol
             return target.flags & ts.SymbolFlags.Value
         }).map((symbol) => symbol.name).sort()
@@ -79,15 +84,17 @@ UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas }), loadYoga 
         import 'uno-ui/solid/config'
         import 'uno-ui/octane/config'
         import 'uno-ui/vue/config'
+        import 'uno-ui/svelte/config'
         new EventEmitter().emit('ready')
         const require = createRequire(import.meta.url)
-        for (const name of ['react', 'react-reconciler', '@types/react/package.json', 'vue']) {
+        for (const name of ['react', 'react-reconciler', '@types/react/package.json', 'vue', 'svelte']) {
             assert.throws(() => require.resolve(name), { code: 'MODULE_NOT_FOUND' })
         }
     `], CONSUMER)
 
     const peers = Object.keys(PACKAGE.peerDependencies).filter((name) => name !== 'pixi.js')
     const versions = await Promise.all(peers.map(async (name) => {
+        if (name === 'svelte') return `svelte@${PACKAGE.devDependencies.svelte}`
         const installed = JSON.parse(await readFile(path.join(ROOT, 'node_modules', name, 'package.json'), 'utf8'))
         return `${name}@${installed.version}`
     }))
@@ -113,6 +120,8 @@ UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas }), loadYoga 
     const published_files = await readdir(installed_directory, { recursive: true })
     assert.ok(!published_files.some((file) => file === 'src' || file.startsWith('src/')))
     assert.ok(!published_files.some((file) => /\.tsx?$/.test(file) && !file.endsWith('.d.ts')))
+    assert.ok(!published_files.some((file) => file.endsWith('.svelte')))
+    assert.ok(!published_files.some((file) => /\.svelte\.(?:js|d\.ts)$/.test(file)))
     run(process.execPath, ['--input-type=module', '-e',
         Object.keys(PACKAGE.exports).map((subpath) => `await import('uno-ui/${subpath.slice(2)}')`).join('\n'),
     ], CONSUMER)
@@ -165,6 +174,76 @@ export function mountRoot(ui: Parameters<typeof registerRootComponent>[1]['ui'])
     for (const output_file of react_output.outputFiles) {
         await transform(output_file.text, { loader: 'js' })
     }
+
+    const svelte_directory = path.join(CONSUMER, 'svelte')
+    await mkdir(svelte_directory)
+    await writeFile(path.join(svelte_directory, 'App.svelte'), `<script lang="ts">
+import { View, Text, Image } from 'uno-ui/svelte'
+let { title }: { title: string } = $props()
+</script>
+<View><Text>{title}</Text><Image src="icon" width="24px" /></View>
+`)
+    const svelte_entry = path.join(svelte_directory, 'index.ts')
+    await writeFile(svelte_entry, `import App from './App.svelte'
+import { registerRootComponent } from 'uno-ui/svelte'
+export { App }
+export function mountRoot(ui: Parameters<typeof registerRootComponent>[1]['ui']) {
+    const root = registerRootComponent(App, { ui })
+    root.render({ title: 'Uno' })
+    return root
+}
+`)
+    const { compilerConfig: svelte_config } = await import(pathToFileURL(path.join(installed_directory, installed_package.exports['./svelte/config'].import)).href)
+    const svelte_output = await buildVite({
+        root: svelte_directory,
+        configFile: false,
+        logLevel: 'error',
+        plugins: [svelte(svelte_config)],
+        build: {
+            write: false,
+            minify: false,
+            lib: { entry: svelte_entry, formats: ['es'] },
+            rollupOptions: { external: (id) => !id.startsWith('.') && !path.isAbsolute(id) && !id.startsWith('uno-ui/') },
+        },
+    })
+    const svelte_chunks = (Array.isArray(svelte_output) ? svelte_output : [svelte_output])
+        .flatMap((result) => result.output).filter((item) => item.type === 'chunk')
+    assert.ok(svelte_chunks.some((chunk) => chunk.exports.includes('App') && chunk.exports.includes('mountRoot')))
+    for (const chunk of svelte_chunks) {
+        await transform(chunk.code, { loader: 'js' })
+    }
+
+    const svelte_runner_path = path.join(svelte_directory, 'checks.mjs')
+    await bundle({
+        absWorkingDir: CONSUMER,
+        entryPoints: [path.join(ROOT, 'tests/fixtures/svelte/checks.ts')],
+        outfile: svelte_runner_path,
+        bundle: true,
+        packages: 'external',
+        platform: 'node',
+        conditions: ['browser'],
+        format: 'esm',
+        target: 'esnext',
+        plugins: [{
+            name: 'svelte-check-fixtures',
+            setup(build) {
+                build.onLoad({ filter: /\.svelte$/ }, async ({ path: filename }) => {
+                    const { js, warnings } = compileSvelte(await readFile(filename, 'utf8'), {
+                        ...svelte_config.compilerOptions,
+                        filename,
+                        generate: 'client',
+                        runes: true,
+                    })
+                    assert.deepEqual(warnings, [], `${path.basename(filename)}: unexpected compiler warnings`)
+                    return { contents: js.code, loader: 'js', resolveDir: path.dirname(filename) }
+                })
+            },
+        }],
+    })
+    run(process.execPath, ['--conditions=browser', '--input-type=module', '-e',
+        "const { runChecks } = await import('./svelte/checks.mjs'); await runChecks()",
+    ], CONSUMER)
+
     const vue_directory = path.join(CONSUMER, 'vue')
     await cp(path.join(ROOT, 'tests/fixtures/vue'), vue_directory, { recursive: true })
     const { compilerConfig } = await import(pathToFileURL(path.join(installed_directory, installed_package.exports['./vue/config'].import)).href)
@@ -213,7 +292,7 @@ export function mountRoot(ui: Parameters<typeof registerRootComponent>[1]['ui'])
     })
     const { runChecks } = await import(pathToFileURL(vue_runner_path).href)
     await runChecks()
-    console.log('Packed package, optional-peer isolation, exports, JSX/SFC consumer builds and Vue lifecycle passed.')
+    console.log('Packed package, optional-peer isolation, exports, JSX/SFC consumer builds and framework lifecycles passed.')
 } finally {
     await rm(DIRECTORY, { recursive: true, force: true })
 }

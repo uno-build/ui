@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Svelte components</title>
+        <style>
+            @font-face {
+                font-family: 'Poppins-Regular';
+                src: url('/assets/fonts/Poppins-Regular.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+
+            html,
+            body {
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                overscroll-behavior: none;
+                font-family: 'Poppins-Regular', system-ui, sans-serif;
+                background-color: #f2f7f4;
+                color: #203b2e;
+            }
+
+            #root {
+                position: fixed;
+                inset: 0;
+                overflow: hidden;
+            }
+            #root > * {
+                display: flex;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+            canvas {
+                touch-action: none;
+            }
+
+            body #settings-panel {
+                background: #ffffff;
+                color: #203b2e;
+            }
+            #settings-panel .settings-renderer-opacity {
+                color: #658273;
+            }
+            #settings-panel input {
+                accent-color: #4fae7f;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="root"></div>
+        <div id="settings-panel">
+            <div class="settings-panel-title">Renderers</div>
+            <div id="settings-renderers"></div>
+        </div>
+        <script type="module" src="./main.ts"></script>
+    </body>
+</html>

@@ -15,7 +15,8 @@
     },
     "include": [
         "src/**/*.ts",
-        "src/**/*.tsx"
+        "src/**/*.tsx",
+        "src/**/*.svelte"
     ],
     "ts-node": {
         "transpileOnly": true,

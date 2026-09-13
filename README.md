@@ -2,13 +2,14 @@
 
 ## TypeScript sources
 
-`src/` contains the only maintained `.ts` and `.tsx` sources. `npm run typescript` checks
+`src/` contains the maintained `.ts`, `.tsx`, and `.svelte` package sources. `npm run typescript` checks
 the source types without generating files; the compiler enforces erasable TypeScript syntax.
 `npm run build:check` validates the generated package, including its public types.
 
 `npm run build` uses `tsconfig.publish.json` to generate separate `.js` and `.d.ts` modules
 in `dist/`, preserving the source directory structure. Solid and Octane JSX is compiled
-with their respective compilers; React JSX uses the automatic runtime. No modules are bundled together.
+with their respective compilers; React JSX uses the automatic runtime. Svelte components
+and rune modules use the pinned experimental Svelte compiler. No modules are bundled together.
 
 `npm pack` and `npm publish` run this build automatically. Only `dist/` is published;
 consumers do not need TypeScript to execute the package. For a local file dependency,
@@ -77,6 +78,77 @@ This adapter does not yet include SSR, hydration, portals,
 or specific support for Suspense and Activity. Its tests run with the existing
 Playwright suite in `tests/react.test.ts`. `npm run build:check` also checks the
 published React types and a consumer using standard JSX compilation.
+
+## Svelte
+
+The `uno-ui/svelte` adapter supports `View`, `Text`, and `Image` through Svelte 5's
+experimental custom renderer. Install this exact Svelte build; the stable release
+does not contain the required renderer API:
+
+```sh
+npm install 'https://pkg.pr.new/svelte@216f258068d93170a927ad4d27ee6864b0b305c5'
+npm install --save-dev vite@^8.2.1 @sveltejs/vite-plugin-svelte@7.3.0
+```
+
+The application and Uno must resolve the same Svelte build. Configure the Vite plugin
+with the adapter's compiler options:
+
+```ts
+import { defineConfig } from 'vite'
+import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { compilerConfig } from 'uno-ui/svelte/config'
+
+export default defineConfig({
+    plugins: [svelte(compilerConfig)],
+})
+```
+
+```svelte
+<script lang="ts">
+    import { View, Text, Image } from 'uno-ui/svelte'
+    import type { NodeHandle } from 'uno-ui/svelte'
+
+    let { title }: { title: string } = $props()
+    let count = $state(0)
+    let view_ref = $state<NodeHandle>()
+</script>
+
+<View bind:this={view_ref} style={{ padding: '20px' }} onClick={() => count += 1}>
+    <Text>{title}: {count}</Text>
+    <Image src="icon" width="24px" style={{ objectFit: 'contain' }} />
+</View>
+```
+
+Mount the component on an initialized UI with its fonts and images already registered:
+
+```ts
+import { registerRootComponent } from 'uno-ui/svelte'
+import App from './App.svelte'
+
+const root = registerRootComponent(App, { ui })
+root.render({ title: 'Uno' })
+root.render({ title: 'Updated title' })
+// When finished:
+root.unmount()
+```
+
+Use one framework root per UI. Further `render(props)` calls update props while
+preserving component state and existing nodes. `unmount()` removes the root's nodes
+and runs Svelte cleanup without destroying the UI or its resources. `useUI<TUI>()`
+returns the current UI during component initialization. `bind:this` exposes a
+`NodeHandle` with the underlying Uno node at `nodes.main`.
+
+Pass styles as objects and use Uno callbacks such as `onClick`, with Uno event payloads
+and propagation. `Text` joins its text and interpolations into one Uno node, including
+conditional content. Place text inside `Text`; nesting `View` or `Image` inside `Text`
+is unsupported. Keyed `{#each}` blocks retain and reorder existing nodes. `Image` uses
+registered resources and the same dimensions and `style.objectFit` behavior as the
+other adapters.
+
+This adapter does not include `Input`, `ScrollView`, SSR, hydration, or transitions.
+After `npm run build`, `npm run examples:svelte` serves the example at `/svelte/` for
+manual comparison of DOM and WebGPU, reactive text, conditional images, and keyed
+card reordering.
 
 ## WebGPU resources
 
