@@ -2,7 +2,7 @@ import { Image, registerRootComponent, Text, View } from 'uno-ui/react'
 import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
-const IMAGE_SRC = 'assets/images/react.png'
+const IMAGE_SRC = 'assets/images/coin.png'
 const PAGE_STYLE = {
     width: '100%',
     height: '100%',
@@ -45,7 +45,7 @@ export function ReactImage() {
     return (
         <View style={PAGE_STYLE}>
             <View style={IMAGE_CARD_STYLE}>
-                <Text style={IMAGE_LABEL_STYLE}>No width or height - 512x512</Text>
+                <Text style={IMAGE_LABEL_STYLE}>No width or height - 256x256</Text>
                 <View style={IMAGE_STAGE_STYLE}>
                     <Image src={IMAGE_SRC} />
                 </View>

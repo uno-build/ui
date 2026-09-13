@@ -5,9 +5,9 @@ const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const LOGO_SRC = 'assets/images/logo.jpg'
 const TEXTURE_SRC = 'assets/images/texture.jpg'
-const REACT_LOGO_SRC = 'assets/images/react.png'
+const COIN_SRC = 'assets/images/coin.png'
 
-const GALLERY_SOURCES = [TEXTURE_SRC, LOGO_SRC, REACT_LOGO_SRC, TEXTURE_SRC, LOGO_SRC, REACT_LOGO_SRC, TEXTURE_SRC, LOGO_SRC]
+const GALLERY_SOURCES = [TEXTURE_SRC, LOGO_SRC, COIN_SRC, TEXTURE_SRC, LOGO_SRC, COIN_SRC, TEXTURE_SRC, LOGO_SRC]
 
 const PARAGRAPHS = [
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
@@ -26,13 +26,13 @@ const ENTRIES = [
 ]
 
 const ITEMS = [
-    { src: REACT_LOGO_SRC, title: 'Golden coin', price: '120 gems' },
+    { src: COIN_SRC, title: 'Golden coin', price: '120 gems' },
     { src: LOGO_SRC, title: 'Founder badge', price: '340 gems' },
     { src: TEXTURE_SRC, title: 'Stone banner', price: '80 gems' },
-    { src: REACT_LOGO_SRC, title: 'Lucky charm', price: '210 gems' },
+    { src: COIN_SRC, title: 'Lucky charm', price: '210 gems' },
     { src: LOGO_SRC, title: 'Season frame', price: '450 gems' },
     { src: TEXTURE_SRC, title: 'Arena skin', price: '150 gems' },
-    { src: REACT_LOGO_SRC, title: 'Coin bundle', price: '999 gems' },
+    { src: COIN_SRC, title: 'Coin bundle', price: '999 gems' },
 ]
 
 const PAGE_STYLE = {
@@ -239,7 +239,7 @@ export function ReactScrollView() {
             <View style={PAGE_CONTENT_STYLE}>
                 <View style={PAGE_HEADER_STYLE}>
                     <View style={BADGE_STYLE}>
-                        <Image src={REACT_LOGO_SRC} width="38px" />
+                        <Image src={COIN_SRC} width="38px" />
                     </View>
                     <View style={{ flex: '1', flexDirection: 'column', gap: '4px' }}>
                         <Text style={PAGE_TITLE_STYLE}>Scroll playground</Text>
@@ -282,7 +282,7 @@ export function ReactScrollView() {
                                 <View style={ENTRIES_CONTENT_STYLE}>
                                     {ENTRIES.map((entry) => (
                                         <View key={entry.title} style={ENTRY_STYLE}>
-                                            <Image src={REACT_LOGO_SRC} style={ENTRY_THUMB_STYLE} />
+                                            <Image src={COIN_SRC} style={ENTRY_THUMB_STYLE} />
                                             <View style={ENTRY_TEXTS_STYLE}>
                                                 <Text style={ENTRY_TITLE_STYLE}>{entry.title}</Text>
                                                 <Text style={ENTRY_BODY_STYLE}>{entry.body}</Text>
@@ -327,15 +327,15 @@ export default function createReactScrollView({ ui, resources }) {
     return Promise.all([
         loadImage(`/${LOGO_SRC}`),
         loadImage(`/${TEXTURE_SRC}`),
-        loadImage(`/${REACT_LOGO_SRC}`),
+        loadImage(`/${COIN_SRC}`),
         loadImage(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
         loadJson(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
         loadImage(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
         loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
-    ]).then(([logo, texture, react_logo, title_font_image, title_font_json, text_font_image, text_font_json]) => {
+    ]).then(([logo, texture, coin, title_font_image, title_font_json, text_font_image, text_font_json]) => {
         resources.registerImage(LOGO_SRC, logo)
         resources.registerImage(TEXTURE_SRC, texture)
-        resources.registerImage(REACT_LOGO_SRC, react_logo)
+        resources.registerImage(COIN_SRC, coin)
         resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
         resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
 

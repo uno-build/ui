@@ -5,7 +5,7 @@ import { loadImage, loadJson } from '../../tests/utils/load-assets'
 const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const GAME_FONT_FAMILY = 'Nougat-ExtraBlack'
-const REACT_LOGO_SRC = 'assets/images/react.png'
+const COIN_SRC = 'assets/images/coin.png'
 const MAX_LENGTHS = {
     nickname: 16,
     clan: 3,
@@ -199,7 +199,7 @@ export function ReactInput() {
             <View style={CARD_STYLE}>
                 <View style={HEADER_STYLE}>
                     <View style={BADGE_STYLE}>
-                        <Image src={REACT_LOGO_SRC} width="42px" />
+                        <Image src={COIN_SRC} width="42px" />
                     </View>
                     <View style={HEADER_TEXTS_STYLE}>
                         <Text style={TITLE_STYLE}>Player profile</Text>
@@ -301,7 +301,7 @@ const showPlatformKeyboard = (function () {
 
 export default function createReactInput({ ui, resources }) {
     return Promise.all([
-        loadImage(`/${REACT_LOGO_SRC}`),
+        loadImage(`/${COIN_SRC}`),
         loadImage(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
         loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
         loadImage(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
@@ -310,7 +310,7 @@ export default function createReactInput({ ui, resources }) {
         loadJson(`/assets/fonts/${GAME_FONT_FAMILY}.mtsdf.json`),
     ]).then(
         ([
-            react_logo,
+            coin,
             text_font_image,
             text_font_json,
             title_font_image,
@@ -318,7 +318,7 @@ export default function createReactInput({ ui, resources }) {
             game_font_image,
             game_font_json,
         ]) => {
-            resources.registerImage(REACT_LOGO_SRC, react_logo)
+            resources.registerImage(COIN_SRC, coin)
             resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
             resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
             resources.registerFont(GAME_FONT_FAMILY, game_font_image, game_font_json)

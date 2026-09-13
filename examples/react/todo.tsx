@@ -5,7 +5,7 @@ import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
 const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
-const REACT_LOGO_SRC = 'assets/images/react.png'
+const COIN_SRC = 'assets/images/coin.png'
 const MAX_TITLE_LENGTH = 48
 const DOUBLE_CLICK_DELAY = 320
 const LIST_HEIGHT = 268
@@ -414,7 +414,7 @@ export function ReactTodo({
             <View style={{ ...CARD_STYLE, boxShadow: box_shadow }}>
                 <View style={HEADER_STYLE}>
                     <View style={BADGE_STYLE}>
-                        <Image src={REACT_LOGO_SRC} width="42px" />
+                        <Image src={COIN_SRC} width="42px" />
                     </View>
                     <View style={HEADER_TEXTS_STYLE}>
                         <Text style={TITLE_STYLE}>Todo App</Text>
@@ -673,13 +673,13 @@ const PLATFORM_KEYBOARD = (function () {
 
 export default function createReactTodo({ ui, resources }) {
     return Promise.all([
-        loadImage(`/${REACT_LOGO_SRC}`),
+        loadImage(`/${COIN_SRC}`),
         loadImage(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
         loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
         loadImage(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
         loadJson(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
-    ]).then(([react_logo, text_font_image, text_font_json, title_font_image, title_font_json]) => {
-        resources.registerImage(REACT_LOGO_SRC, react_logo)
+    ]).then(([coin, text_font_image, text_font_json, title_font_image, title_font_json]) => {
+        resources.registerImage(COIN_SRC, coin)
         resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
         resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
 

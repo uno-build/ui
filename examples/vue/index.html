@@ -4,10 +4,27 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Vue components</title>
+        <script>
+            if (new URLSearchParams(location.search).has('example') === false) {
+                location.replace('?example=image')
+            }
+        </script>
         <style>
             @font-face {
                 font-family: 'Poppins-Regular';
                 src: url('/assets/fonts/Poppins-Regular.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: 'ChangaOne-Regular';
+                src: url('/assets/fonts/ChangaOne-Regular.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: 'Nougat-ExtraBlack';
+                src: url('/assets/fonts/Nougat-ExtraBlack.ttf') format('truetype');
                 font-weight: normal;
                 font-style: normal;
             }
@@ -20,6 +37,8 @@
                 overflow: hidden;
                 overscroll-behavior: none;
                 font-family: 'Poppins-Regular', system-ui, sans-serif;
+                background-color: #f2f7f4;
+                color: #203b2e;
             }
 
             #root {
@@ -39,6 +58,35 @@
             canvas {
                 touch-action: none;
             }
+
+            body #settings-panel {
+                background: #ffffff;
+                color: #203b2e;
+            }
+            #settings-panel .settings-renderer-opacity {
+                color: #658273;
+            }
+            #settings-panel input {
+                accent-color: #4fae7f;
+            }
+
+            .settings-examples-title {
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px solid #a8cdb8;
+            }
+            .settings-example {
+                display: block;
+                padding: 2px 0;
+                color: inherit;
+                text-decoration: none;
+            }
+            .settings-example:hover {
+                text-decoration: underline;
+            }
+            .settings-example[aria-current='page'] {
+                color: #4fae7f;
+            }
         </style>
     </head>
     <body>
@@ -46,6 +94,8 @@
         <div id="settings-panel">
             <div class="settings-panel-title">Renderers</div>
             <div id="settings-renderers"></div>
+            <div class="settings-panel-title settings-examples-title">Examples</div>
+            <div id="settings-examples"></div>
         </div>
         <script type="module" src="./main.ts"></script>
     </body>

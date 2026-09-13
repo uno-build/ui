@@ -5,24 +5,37 @@ import UIWebGPU from 'uno-ui/UIWebGPU'
 import { PLATFORM_EVENT_NAMES } from 'uno-ui/events'
 import { registerRootComponent } from 'uno-ui/vue'
 import { loadYoga } from 'yoga-layout/load'
-import { loadImage, loadJson } from '../../tests/utils/load-assets'
 import { initSettingsPanel } from '../settings/settings-panel'
-import Components from './Components.vue'
 
-const TEXT_FONT_FAMILY = 'Poppins-Regular'
-const IMAGE_SRC = 'assets/images/coin.png'
+const EXAMPLES = {
+    input: () => import('./input.vue'),
+    image: () => import('./image.vue'),
+    scrollview: () => import('./scrollview.vue'),
+}
 const RENDERERS = {
     RendererDom: { element_type: 'div', ui_class: UIDom, resources_class: ResourcesDom },
     RendererWebGPU: { element_type: 'canvas', ui_class: UIWebGPU, resources_class: ResourcesWebGPU },
 }
 const root = document.getElementById('root')!
+const settings_examples = document.getElementById('settings-examples')!
+const example_name = new URLSearchParams(location.search).get('example') as keyof typeof EXAMPLES
+const { default: Example, loadResources } = await EXAMPLES[example_name]()
 const device_pixel_ratio = window.devicePixelRatio
 const uis = []
-const [image, font_image, font_json] = await Promise.all([
-    loadImage(`/${IMAGE_SRC}`),
-    loadImage(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-    loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
-])
+
+for (const available_example_name of Object.keys(EXAMPLES)) {
+    const example_url = new URL(window.location.href)
+    example_url.searchParams.set('example', available_example_name)
+
+    const example_link = document.createElement('a')
+    example_link.className = 'settings-example'
+    example_link.href = example_url.href
+    example_link.textContent = available_example_name
+    if (available_example_name === example_name) {
+        example_link.ariaCurrent = 'page'
+    }
+    settings_examples.appendChild(example_link)
+}
 
 initSettingsPanel({ root })
 
@@ -33,8 +46,6 @@ for (const [renderer_name, setup] of Object.entries(RENDERERS)) {
 
     const resources = await setup.resources_class.create({ canvas: element })
     const { ui } = await setup.ui_class.create({ resources, loadYoga, device_pixel_ratio })
-    resources.registerImage(IMAGE_SRC, image)
-    resources.registerFont(TEXT_FONT_FAMILY, font_image, font_json)
 
     function syncRendererSize() {
         const width = root.clientWidth
@@ -59,8 +70,9 @@ for (const [renderer_name, setup] of Object.entries(RENDERERS)) {
         })
     }
 
-    const renderer = registerRootComponent(Components, { ui })
-    renderer.render({ image_src: IMAGE_SRC })
+    await loadResources(resources)
+    const renderer = registerRootComponent(Example, { ui })
+    renderer.render({})
     uis.push(ui)
 }
 
