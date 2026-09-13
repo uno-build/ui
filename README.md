@@ -81,7 +81,7 @@ published React types and a consumer using standard JSX compilation.
 
 ## Svelte
 
-The `uno-ui/svelte` adapter supports `View`, `Text`, and `Image` through Svelte 5's
+The `uno-ui/svelte` adapter supports `View`, `Text`, `Image`, `ScrollView`, and `Input` through Svelte 5's
 experimental custom renderer. Install this exact Svelte build; the stable release
 does not contain the required renderer API:
 
@@ -135,8 +135,8 @@ root.unmount()
 Use one framework root per UI. Further `render(props)` calls update props while
 preserving component state and existing nodes. `unmount()` removes the root's nodes
 and runs Svelte cleanup without destroying the UI or its resources. `useUI<TUI>()`
-returns the current UI during component initialization. `bind:this` exposes a
-`NodeHandle` with the underlying Uno node at `nodes.main`.
+returns the current UI during component initialization. `bind:this` on `View`, `Text`,
+and `Image` exposes a `NodeHandle` with the underlying Uno node at `nodes.main`.
 
 Pass styles as objects and use Uno callbacks such as `onClick`, with Uno event payloads
 and propagation. `Text` joins its text and interpolations into one Uno node, including
@@ -145,10 +145,18 @@ is unsupported. Keyed `{#each}` blocks retain and reorder existing nodes. `Image
 registered resources and the same dimensions and `style.objectFit` behavior as the
 other adapters.
 
-This adapter does not include `Input`, `ScrollView`, SSR, hydration, or transitions.
-After `npm run build`, `npm run examples:svelte` serves the example at `/svelte/` for
-manual comparison of DOM and WebGPU, reactive text, conditional images, and keyed
-card reordering.
+`ScrollView` scrolls vertically by default, or horizontally with `horizontal`.
+Its `ScrollViewHandle`, exposed through `bind:this`, provides `nodes.main` and
+`nodes.content`. `Input` renders the supplied `value`, a `placeholder` while empty
+and unfocused, and a blinking caret while focused. Its `InputHandle`, also exposed
+through `bind:this`, provides `focus()`, `blur()`, and the `main`, `content`, `text`,
+and nullable `caret` nodes.
+
+This adapter does not include SSR, hydration, or transitions.
+After `npm run build`, `npm run examples:svelte` serves the examples at `/svelte/` for
+manual comparison of DOM and WebGPU. Select `?example=image`, `?example=input`,
+`?example=scrollview`, or `?example=todo` to inspect image sizing, input focus and carets,
+nested scrolling, or the interactive todo list.
 
 ## WebGPU resources
 

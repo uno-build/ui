@@ -178,10 +178,10 @@ export function mountRoot(ui: Parameters<typeof registerRootComponent>[1]['ui'])
     const svelte_directory = path.join(CONSUMER, 'svelte')
     await mkdir(svelte_directory)
     await writeFile(path.join(svelte_directory, 'App.svelte'), `<script lang="ts">
-import { View, Text, Image } from 'uno-ui/svelte'
+import { View, Text, Image, ScrollView, Input } from 'uno-ui/svelte'
 let { title }: { title: string } = $props()
 </script>
-<View><Text>{title}</Text><Image src="icon" width="24px" /></View>
+<View><ScrollView horizontal><Text>{title}</Text><Image src="icon" width="24px" /></ScrollView><Input value={title} placeholder="Name" /></View>
 `)
     const svelte_entry = path.join(svelte_directory, 'index.ts')
     await writeFile(svelte_entry, `import App from './App.svelte'

@@ -6,15 +6,37 @@ import { PLATFORM_EVENT_NAMES } from 'uno-ui/events'
 import { registerRootComponent } from 'uno-ui/svelte'
 import { loadYoga } from 'yoga-layout/load'
 import { initSettingsPanel } from '../settings/settings-panel'
-import App, { loadResources } from './App.svelte'
 
+const EXAMPLES = {
+    input: () => import('./input.svelte'),
+    image: () => import('./image.svelte'),
+    scrollview: () => import('./scrollview.svelte'),
+    todo: () => import('./todo.svelte'),
+}
 const RENDERERS = {
     RendererDom: { element_type: 'div', ui_class: UIDom, resources_class: ResourcesDom },
     RendererWebGPU: { element_type: 'canvas', ui_class: UIWebGPU, resources_class: ResourcesWebGPU },
 }
 const root = document.getElementById('root')!
+const settings_examples = document.getElementById('settings-examples')!
+const example_name = new URLSearchParams(location.search).get('example') as keyof typeof EXAMPLES
+const { default: Example, loadResources } = await EXAMPLES[example_name]()
 const device_pixel_ratio = window.devicePixelRatio
 const uis = []
+
+for (const available_example_name of Object.keys(EXAMPLES)) {
+    const example_url = new URL(window.location.href)
+    example_url.searchParams.set('example', available_example_name)
+
+    const example_link = document.createElement('a')
+    example_link.className = 'settings-example'
+    example_link.href = example_url.href
+    example_link.textContent = available_example_name
+    if (available_example_name === example_name) {
+        example_link.ariaCurrent = 'page'
+    }
+    settings_examples.appendChild(example_link)
+}
 
 initSettingsPanel({ root })
 
@@ -50,8 +72,8 @@ for (const [renderer_name, setup] of Object.entries(RENDERERS)) {
     }
 
     await loadResources(resources)
-    const renderer = registerRootComponent(App, { ui })
-    renderer.render({ title: 'Svelte 5 components' })
+    const renderer = registerRootComponent(Example, { ui })
+    renderer.render({})
     uis.push(ui)
 }
 

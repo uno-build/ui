@@ -7,6 +7,7 @@ import TestUI from '../../utils/TestUI'
 import TestRenderer from '../../utils/TestRenderer'
 import App from './App.svelte'
 import Invalid from './Invalid.svelte'
+import Widgets from './Widgets.svelte'
 
 async function flush() {
     await tick()
@@ -39,6 +40,216 @@ async function checkErrors(resources: ResourcesDom) {
             root.unmount()
             await flush()
             ui.destroy()
+        }
+    }
+}
+
+async function checkWidgets(resources: ResourcesDom) {
+    const ui = await TestUI.create({ renderer: new TestRenderer(), resources, defined_events: DEFINED_EVENTS })
+    const root = registerRootComponent(Widgets, { ui })
+    const initial_node_count = ui.nodes_created.size
+    const active_intervals = new Map<number, () => void>()
+    const interval_delays: number[] = []
+    const cleared_intervals: number[] = []
+    const scroll_events: any[] = []
+    const input_events: any[] = []
+    let next_interval_id = 0
+    let prevent_default_count = 0
+    let controls: any
+    const setIntervalOriginal = globalThis.setInterval
+    const clearIntervalOriginal = globalThis.clearInterval
+    globalThis.setInterval = ((onInterval: () => void, delay: number) => {
+        const interval_id = ++next_interval_id
+        active_intervals.set(interval_id, onInterval)
+        interval_delays.push(delay)
+        return interval_id
+    }) as typeof setInterval
+    globalThis.clearInterval = ((interval_id: number) => {
+        active_intervals.delete(interval_id)
+        cleared_intervals.push(interval_id)
+    }) as typeof clearInterval
+
+    const props = {
+        title: 'Widgets',
+        onReady(value: any) { controls = value },
+        onScroll(event: any) { scroll_events.push({ handler: 'first', ...event }) },
+        onFocus(event: any) { input_events.push({ handler: 'first focus', ...event }) },
+    }
+    try {
+        root.render(props)
+        await flush()
+        const scroll_handle = controls.scroll_ref
+        const { main: scroll_main, content: scroll_content } = scroll_handle.nodes
+        const scroll_child = scroll_content.children[0]
+        assert.ok(scroll_main.children[0] === scroll_content)
+        assert.equal(scroll_child.children[0].text_content, 'Widgets')
+        assert.equal(scroll_main.styles.flexDirection.value, 'column')
+        assert.equal(scroll_main.styles.overflowY.value, 'scroll')
+        assert.equal(scroll_content.styles.flexDirection.value, 'column')
+        assert.equal(scroll_content.styles.flexShrink.value, '0')
+        assert.equal(controls.horizontal_ref.nodes.main.styles.overflowX.value, 'scroll', 'bare horizontal is a Boolean prop')
+
+        controls.setHorizontal(true)
+        controls.scroll_style.width = '150px'
+        delete controls.scroll_style.height
+        root.render({ ...props, title: 'Changed', onScroll(event: any) { scroll_events.push({ handler: 'latest', ...event }) } })
+        await flush()
+        assert.ok(controls.scroll_ref === scroll_handle)
+        assert.ok(scroll_content.children[0] === scroll_child)
+        assert.equal(scroll_child.children[0].text_content, 'Changed')
+        assert.equal(scroll_main.styles.width.value, '150px')
+        assert.equal(scroll_main.styles.height.value, 'unset')
+        assert.equal(scroll_main.styles.overflowX.value, 'scroll')
+        assert.equal(scroll_main.styles.overflowY.value, 'unset')
+        assert.equal(scroll_content.styles.flexDirection.value, 'row')
+        ui.events.emit('scroll', { source_event: null, event_data: { scroll_left: 12, scroll_top: 0 }, target: scroll_main })
+        assert.equal(scroll_events.length, 1)
+        assert.equal(scroll_events[0].handler, 'latest')
+        assert.equal(scroll_events[0].scroll_left, 12)
+        assert.ok(scroll_events[0].current_target === scroll_main)
+        root.render({ ...props, onScroll: null })
+        await flush()
+        ui.events.emit('scroll', { source_event: null, event_data: { scroll_left: 18, scroll_top: 0 }, target: scroll_main })
+        assert.equal(scroll_events.length, 1, 'null removes the ScrollView callback')
+        controls.setHorizontal(false)
+        await flush()
+        assert.equal(scroll_main.styles.overflowX.value, 'unset')
+        assert.equal(scroll_main.styles.overflowY.value, 'scroll')
+        assert.equal(scroll_content.styles.flexDirection.value, 'column')
+
+        const input_handle = controls.input_ref
+        const { main: input_main, content: input_content, text: input_text } = input_handle.nodes
+        assert.ok(input_main.children[0] === input_content)
+        assert.ok(input_content.children[0] === input_text)
+        assert.equal(input_handle.nodes.caret, null)
+        assert.equal(input_content.styles.pointerEvents.value, 'none')
+        assert.equal(input_main.styles.width.value, '120px')
+        assert.equal(input_content.styles.justifyContent.value, 'flex-end')
+        assert.equal(input_text.text_content, 'Name')
+        assert.equal(input_text.styles.color.value, '#abcdef')
+        assert.equal(input_text.styles.lineHeight.value, '20px')
+        controls.setInputValue(0)
+        controls.input_style.color = '#654321'
+        await flush()
+        assert.equal(input_text.text_content, '0')
+        assert.equal(input_text.styles.color.value, '#654321', 'input styles respond to mutation in place')
+        controls.setInputValue('Filled')
+        controls.setInputStyle({ textAlign: 'center' })
+        await flush()
+        assert.equal(input_text.text_content, 'Filled')
+        assert.equal(input_text.styles.color.value, 'unset')
+        assert.equal(input_text.styles.lineHeight.value, 'unset')
+        assert.equal(input_text.styles.letterSpacing.value, 'unset')
+        assert.equal(input_main.styles.width.value, '100%')
+        assert.equal(input_content.styles.justifyContent.value, 'center')
+        controls.setInputPlaceholder(0)
+        controls.setInputPlaceholderColor(undefined)
+        for (const value of ['', null, undefined]) {
+            controls.setInputValue(value)
+            await flush()
+            assert.equal(input_text.text_content, '0')
+            assert.equal(input_text.styles.color.value, '#777777')
+        }
+        controls.setInputPlaceholder(undefined)
+        await flush()
+        assert.equal(input_text.text_content, '\u00A0')
+        assert.ok(controls.input_ref === input_handle)
+        controls.setInputPlaceholder('Name')
+        await flush()
+        assert.equal(active_intervals.size, 0, 'an unfocused Input has no blink timer')
+        input_handle.focus()
+        await flush()
+        const caret = input_handle.nodes.caret
+        assert.equal(input_text.text_content, '\u00A0', 'focus hides the placeholder')
+        assert.equal(caret.styles.width.value, '1px')
+        assert.equal(caret.styles.opacity.value, '1')
+        assert.equal(active_intervals.size, 1)
+        assert.deepEqual(interval_delays, [500])
+        assert.equal(input_events[0].handler, 'first focus')
+        assert.ok(input_events[0].target === input_main)
+        active_intervals.get(1)!()
+        await flush()
+        assert.equal(caret.styles.opacity.value, '0')
+        assert.equal(active_intervals.size, 1, 'blinking reuses its timer')
+        controls.setInputValue('Changed')
+        await flush()
+        assert.equal(input_text.text_content, 'Changed')
+        assert.ok(input_handle.nodes.caret === caret, 'value changes retain the caret node')
+        assert.equal(caret.styles.opacity.value, '1')
+        assert.equal(active_intervals.size, 1)
+        assert.deepEqual(cleared_intervals, [1])
+        assert.deepEqual(interval_delays, [500, 500], 'value changes reset the 500ms interval')
+
+        root.render({
+            ...props,
+            onFocus(event: any) { input_events.push({ handler: 'latest focus', ...event }) },
+            onBlur(event: any) { input_events.push({ handler: 'latest blur', ...event }) },
+            onPointerDown(event: any) {
+                assert.equal(prevent_default_count, 1, 'Input prevents default before forwarding the event')
+                input_events.push({ handler: 'pointer', ...event })
+            },
+        })
+        await flush()
+        input_handle.blur()
+        await flush()
+        assert.equal(active_intervals.size, 0)
+        assert.equal(input_handle.nodes.caret, null)
+        assert.equal(caret.ui, null)
+        assert.deepEqual(cleared_intervals, [1, 2])
+        ui.events.emit('pointerdown', {
+            source_event: { type: 'pointerdown', preventDefault() { prevent_default_count++ } },
+            event_data: { x: 10, y: 10 },
+            target: input_main,
+        })
+        await flush()
+        assert.equal(prevent_default_count, 1)
+        assert.deepEqual(input_events.map((event) => event.handler), ['first focus', 'latest blur', 'latest focus', 'pointer'])
+        assert.ok(input_events[3].current_target === input_main)
+        assert.equal(active_intervals.size, 1)
+
+        root.render({ ...props, onFocus: null, onBlur: null, onPointerDown: null })
+        input_handle.blur()
+        await flush()
+        assert.equal(input_handle.nodes.caret, null, 'internal blur behavior remains when callbacks are removed')
+        input_handle.focus()
+        await flush()
+        assert.equal(active_intervals.size, 1)
+        assert.equal(input_events.length, 4, 'null removes callbacks without disabling focus behavior')
+        ui.events.emit('pointerdown', {
+            source_event: { type: 'pointerdown', preventDefault() { prevent_default_count++ } },
+            event_data: { x: 10, y: 10 },
+            target: input_main,
+        })
+        await flush()
+        assert.equal(prevent_default_count, 2, 'Input also prevents default without a user callback')
+
+        const removed_caret = input_handle.nodes.caret
+        controls.setInputVisible(false)
+        await flush()
+        assert.equal(controls.input_ref, null)
+        assert.equal(active_intervals.size, 0, 'conditional removal clears the blink timer')
+        assert.ok([input_main, input_content, input_text, removed_caret].every((node) => node.ui === null))
+        controls.setInputVisible(true)
+        await flush()
+        controls.input_ref.focus()
+        await flush()
+        assert.equal(active_intervals.size, 1)
+        root.unmount()
+        await flush()
+        assert.equal(controls.input_ref, null)
+        assert.equal(controls.scroll_ref, null)
+        assert.equal(controls.horizontal_ref, null)
+        assert.equal(active_intervals.size, 0, 'root unmount clears the blink timer')
+        assert.ok([scroll_main, scroll_content, scroll_child].every((node) => node.ui === null))
+        assert.equal(ui.nodes_created.size, initial_node_count, 'widgets release every owned Uno node')
+    } finally {
+        try {
+            root.unmount()
+            await flush()
+            ui.destroy()
+        } finally {
+            globalThis.setInterval = setIntervalOriginal
+            globalThis.clearInterval = clearIntervalOriginal
         }
     }
 }
@@ -223,6 +434,7 @@ export async function runChecks() {
         assert.equal(second_controls.text_ref.nodes.main.text_content, 'Independent 1')
 
         await checkErrors(resources)
+        await checkWidgets(resources)
     } finally {
         root.unmount()
         second_root.unmount()
