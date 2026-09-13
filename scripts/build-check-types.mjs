@@ -24,6 +24,7 @@ for (const [fixture, jsx_options] of [
     ['solid.tsx', { jsx: ts.JsxEmit.Preserve, jsxImportSource: undefined }],
     ['octane.tsx', { jsx: ts.JsxEmit.Preserve, jsxImportSource: 'octane' }],
     ['react.tsx', { jsx: ts.JsxEmit.ReactJSX, jsxImportSource: 'react' }],
+    ['vue.ts', {}],
 ]) {
     const options = { ...OPTIONS, ...jsx_options, skipLibCheck: true }
     const program = ts.createProgram([path.join(CONSUMER, 'tests/types', fixture)], options)

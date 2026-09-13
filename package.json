@@ -58,6 +58,14 @@
         "./react": {
             "types": "./dist/components/react/index.d.ts",
             "import": "./dist/components/react/index.js"
+        },
+        "./vue": {
+            "types": "./dist/components/vue/index.d.ts",
+            "import": "./dist/components/vue/index.js"
+        },
+        "./vue/config": {
+            "types": "./dist/components/vue/config.d.ts",
+            "import": "./dist/components/vue/config.js"
         }
     },
     "dependencies": {
@@ -76,7 +84,8 @@
         "react": "~19.2.0",
         "react-reconciler": "0.33.0",
         "solid-js": "^2.0.0-rc.0",
-        "three": "^0.185.1"
+        "three": "^0.185.1",
+        "vue": "~3.5.42"
     },
     "peerDependenciesMeta": {
         "@babylonjs/core": {
@@ -111,6 +120,9 @@
         },
         "@types/three": {
             "optional": true
+        },
+        "vue": {
+            "optional": true
         }
     },
     "devDependencies": {
@@ -125,6 +137,7 @@
         "@types/react": "~19.2.0",
         "@types/react-reconciler": "0.33.0",
         "@types/three": "0.185.0",
+        "@vitejs/plugin-vue": "6.0.8",
         "esbuild": "0.28.2",
         "octane": "^0.2.6",
         "playcanvas": "^2.22.0",
@@ -137,6 +150,7 @@
         "typescript": "5.9.3",
         "unplugin-typegpu": "^0.12.2",
         "vite": "^8.2.1",
+        "vue": "3.5.42",
         "wgpu-matrix": "^3.4.2"
     },
     "scripts": {
@@ -144,6 +158,7 @@
         "examples:solid": "vite ./examples --config ./examples/vite/solid.config.ts",
         "examples:octane": "vite ./examples --config ./examples/vite/octane.config.ts",
         "examples:react": "vite ./examples --config ./examples/vite/react.config.ts",
+        "examples:vue": "vite ./examples --config ./examples/vite/vue.config.ts",
         "benchmark": "node ./scripts/benchmarks.mjs --browser",
         "benchmark:general": "node ./scripts/benchmarks.mjs --workload general",
         "benchmark:general:headed": "node ./scripts/benchmarks.mjs --workload general --headed",

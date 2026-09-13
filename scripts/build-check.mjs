@@ -3,9 +3,11 @@ import { spawnSync } from 'node:child_process'
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { build as bundle, transform } from 'esbuild'
 import { build as buildVite } from 'vite'
 import ts from 'typescript'
+import vue from '@vitejs/plugin-vue'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const PACKAGE = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8'))
@@ -76,9 +78,10 @@ UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas }), loadYoga 
         import 'uno-ui/UIWebGPU'
         import 'uno-ui/solid/config'
         import 'uno-ui/octane/config'
+        import 'uno-ui/vue/config'
         new EventEmitter().emit('ready')
         const require = createRequire(import.meta.url)
-        for (const name of ['react', 'react-reconciler', '@types/react/package.json']) {
+        for (const name of ['react', 'react-reconciler', '@types/react/package.json', 'vue']) {
             assert.throws(() => require.resolve(name), { code: 'MODULE_NOT_FOUND' })
         }
     `], CONSUMER)
@@ -162,7 +165,55 @@ export function mountRoot(ui: Parameters<typeof registerRootComponent>[1]['ui'])
     for (const output_file of react_output.outputFiles) {
         await transform(output_file.text, { loader: 'js' })
     }
-    console.log('Packed package, optional-peer isolation, exports and JSX consumer builds passed.')
+    const vue_directory = path.join(CONSUMER, 'vue')
+    await cp(path.join(ROOT, 'tests/fixtures/vue'), vue_directory, { recursive: true })
+    const { compilerConfig } = await import(pathToFileURL(path.join(installed_directory, installed_package.exports['./vue/config'].import)).href)
+    const static_filename = path.join(vue_directory, 'Static.vue')
+    await writeFile(static_filename, `<template><div>${'<span>Static</span>'.repeat(25)}</div></template>\n`)
+    const vue_output = await buildVite({
+        root: vue_directory,
+        configFile: false,
+        logLevel: 'error',
+        plugins: [vue(compilerConfig)],
+        build: {
+            write: false,
+            minify: false,
+            lib: {
+                entry: { app: path.join(vue_directory, 'App.vue'), static: static_filename },
+                formats: ['es'],
+                fileName: (_format, entry_name) => `${entry_name}.mjs`,
+            },
+            rollupOptions: { external: ['vue', 'uno-ui/vue'] },
+        },
+    })
+    for (const output of (Array.isArray(vue_output) ? vue_output : [vue_output]).flatMap((result) => result.output)) {
+        assert.equal(output.type, 'chunk', 'Vue fixtures should emit only JavaScript')
+        assert.ok(!output.code.includes('createStaticVNode'), 'custom hosts must not receive static HTML')
+        await writeFile(path.join(vue_directory, output.fileName), output.code)
+    }
+
+    const vue_runner_path = path.join(vue_directory, 'checks.mjs')
+    await bundle({
+        entryPoints: [path.join(vue_directory, 'checks.ts')],
+        outfile: vue_runner_path,
+        bundle: true,
+        packages: 'external',
+        platform: 'node',
+        format: 'esm',
+        target: 'esnext',
+        plugins: [{
+            name: 'vue-check-fixtures',
+            setup(build) {
+                build.onResolve({ filter: /^\.\/App\.vue$/ }, () => ({ path: './app.mjs', external: true }))
+                build.onResolve({ filter: /^\.\.\/\.\.\/utils\/Test(UI|Renderer)$/ }, (args) => ({
+                    path: path.join(ROOT, 'tests/utils', `${path.basename(args.path)}.ts`),
+                }))
+            },
+        }],
+    })
+    const { runChecks } = await import(pathToFileURL(vue_runner_path).href)
+    await runChecks()
+    console.log('Packed package, optional-peer isolation, exports, JSX/SFC consumer builds and Vue lifecycle passed.')
 } finally {
     await rm(DIRECTORY, { recursive: true, force: true })
 }
