@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test'
-import { OPERATIONS, RESOURCE_EVENT } from '../src/core/constants.ts'
-import Operations from '../src/core/Operations.ts'
-import Resources from '../src/core/Resources.ts'
-import RendererDom from '../src/renderer/RendererDom.ts'
-import ResourcesDom from '../src/renderer/dom/ResourcesDom.ts'
-import { isSameLayout } from '../src/layouter/utils.ts'
-import Style from '../src/style'
-import TestUI from './utils/TestUI.ts'
+import { OPERATIONS, RESOURCE_EVENT } from '../../src/core/constants.ts'
+import Operations from '../../src/core/Operations.ts'
+import Resources from '../../src/core/Resources.ts'
+import RendererDom from '../../src/renderer/RendererDom.ts'
+import ResourcesDom from '../../src/renderer/dom/ResourcesDom.ts'
+import { isSameLayout } from '../../src/layouter/utils.ts'
+import Style from '../../src/style'
+import TestUI from '../utils/TestUI.ts'
 
 test('layout comparison supports DOM layouts without padding', () => {
     const border = { top: 0, right: 0, bottom: 0, left: 0 }

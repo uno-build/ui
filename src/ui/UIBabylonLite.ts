@@ -98,9 +98,11 @@ export default class UIBabylonLite extends UIWorldSpace<
 
     dispatchPlatformEvent(source_event: PlatformEvent, { camera }: { camera: Camera }) {
         const rect = (source_event.currentTarget as Element).getBoundingClientRect()
-        const canvas = this.scene.surface.canvas as HTMLCanvasElement
-        const x = ((source_event.clientX - rect.left) / rect.width) * canvas.clientWidth
-        const y = ((source_event.clientY - rect.top) / rect.height) * canvas.clientHeight
+        const canvas = this.scene.surface.canvas
+        const canvas_width = 'clientWidth' in canvas ? canvas.clientWidth : canvas.width
+        const canvas_height = 'clientHeight' in canvas ? canvas.clientHeight : canvas.height
+        const x = ((source_event.clientX - rect.left) / rect.width) * canvas_width
+        const y = ((source_event.clientY - rect.top) / rect.height) * canvas_height
 
         return pickAsync(this.picker!, x, y, { filter: (mesh) => mesh === this.plane }).then((intersection) => {
             if (intersection.hit === false) {

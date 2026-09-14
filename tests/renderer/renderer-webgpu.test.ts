@@ -1,16 +1,16 @@
 import { expect, test } from '@playwright/test'
-import RendererWebGPU from '../src/renderer/RendererWebGPU.ts'
-import { OPERATIONS, RESOURCE_EVENT } from '../src/core/constants.ts'
-import Operations from '../src/core/Operations.ts'
-import { createCommands } from '../src/renderer/utils/render-records.ts'
+import RendererWebGPU from '../../src/renderer/RendererWebGPU.ts'
+import { OPERATIONS, RESOURCE_EVENT } from '../../src/core/constants.ts'
+import Operations from '../../src/core/Operations.ts'
+import { createCommands } from '../../src/renderer/utils/render-records.ts'
 import {
     createNodeMetricsResolver,
     getAncestorClipping,
     getNodeOpacity,
     getNodeRenderLayout,
-} from '../src/renderer/utils/render-metrics.ts'
-import Segmenter from '../src/renderer/pretext/segmenter.ts'
-import { resolveStyle, validateStyle } from '../src/style/index.ts'
+} from '../../src/renderer/utils/render-metrics.ts'
+import Segmenter from '../../src/renderer/pretext/segmenter.ts'
+import { resolveStyle, validateStyle } from '../../src/style/index.ts'
 import {
     BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
@@ -25,7 +25,7 @@ import {
     RECORD_ALL,
     RECORD_PANEL,
     RECORD_TEXT_RUN,
-} from '../src/style/constants.ts'
+} from '../../src/style/constants.ts'
 import {
     COMMAND,
     COMMAND_KIND_GLYPH,
@@ -41,15 +41,15 @@ import {
     TEXT_RUN,
     TEXT_RUN_SIZE,
     UINT32_SIZE,
-} from '../src/renderer/webgpu/buffers.ts'
-import { FontManager } from '../src/renderer/webgpu/FontManager.ts'
-import { GpuPool } from '../src/renderer/webgpu/GpuPool.ts'
-import { ATLAS_PADDING, ImageManager } from '../src/renderer/webgpu/ImageManager.ts'
-import ResourcesWebGPU from '../src/renderer/webgpu/ResourcesWebGPU.ts'
-import { createUIWGSL } from '../src/renderer/webgpu/shaders/'
-import { TEXT_EFFECT_WGSL as MTSDF_TEXT_EFFECT_WGSL } from '../src/renderer/webgpu/shaders/text-mtsdf.ts'
-import { TEXT_WGSL } from '../src/renderer/webgpu/shaders/text.ts'
-import { writeCommandData, writeGlyphData, writePanelData, writeTextRunData } from '../src/renderer/webgpu/writers.ts'
+} from '../../src/renderer/webgpu/buffers.ts'
+import { FontManager } from '../../src/renderer/webgpu/FontManager.ts'
+import { GpuPool } from '../../src/renderer/webgpu/GpuPool.ts'
+import { ATLAS_PADDING, ImageManager } from '../../src/renderer/webgpu/ImageManager.ts'
+import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU.ts'
+import { createUIWGSL } from '../../src/renderer/webgpu/shaders/'
+import { TEXT_EFFECT_WGSL as MTSDF_TEXT_EFFECT_WGSL } from '../../src/renderer/webgpu/shaders/text-mtsdf.ts'
+import { TEXT_WGSL } from '../../src/renderer/webgpu/shaders/text.ts'
+import { writeCommandData, writeGlyphData, writePanelData, writeTextRunData } from '../../src/renderer/webgpu/writers.ts'
 ;(globalThis as any).GPUTextureUsage = {
     TEXTURE_BINDING: 1,
     COPY_SRC: 2,

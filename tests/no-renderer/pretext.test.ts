@@ -4,8 +4,8 @@ import {
     measureLineStats,
     measureNaturalWidth,
     prepareWithSegments,
-} from '../src/renderer/pretext/layout.ts'
-import Segmenter from '../src/renderer/pretext/segmenter.ts'
+} from '../../src/renderer/pretext/layout.ts'
+import Segmenter from '../../src/renderer/pretext/segmenter.ts'
 
 function measureText(text: string) {
     let width = 0

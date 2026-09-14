@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import Style, { computeStyleValue, isPaintStyle } from '../src/style'
+import Style, { computeStyleValue, isPaintStyle } from '../../src/style'
 
 test('expanded paint shorthands are classified without requesting layout', () => {
     const declarations = [

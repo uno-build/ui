@@ -4,15 +4,15 @@ import { transformSync } from 'esbuild'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
-const COMPONENTS_PATH = fileURLToPath(new URL('../src/components/solid/components.tsx', import.meta.url))
+const COMPONENTS_PATH = fileURLToPath(new URL('../../src/components/solid/components.tsx', import.meta.url))
+const TEST_PAGE_URL = '/tests/'
 const MODULE_PATHS = {
-    renderer: `/@fs${WORKSPACE_PATH}src/components/solid/driver.ts`,
-    context: `/@fs${WORKSPACE_PATH}src/components/solid/context.ts`,
-    shared: `/@fs${WORKSPACE_PATH}src/components/shared.ts`,
-    test_renderer: `/@fs${WORKSPACE_PATH}tests/utils/TestRenderer.ts`,
-    test_ui: `/@fs${WORKSPACE_PATH}tests/utils/TestUI.ts`,
-    events: `/@fs${WORKSPACE_PATH}src/events/index.ts`,
+    renderer: '/src/components/solid/driver.ts',
+    context: '/src/components/solid/context.ts',
+    shared: '/src/components/shared.ts',
+    test_renderer: '/tests/utils/TestRenderer.ts',
+    test_ui: '/tests/utils/TestUI.ts',
+    events: '/src/events/index.ts',
 }
 
 const FIXTURE_SOURCE = `
@@ -165,7 +165,7 @@ const COMPONENTS_CODE = transformSync(
 ).code
 
 async function loadFixture(page) {
-    await page.goto('/dev/layouts/?renderers=RendererDom')
+    await page.goto(TEST_PAGE_URL)
     await page.evaluate(
         async ({ components_code, fixture_code, module_paths }) => {
             const renderer_url = new URL(module_paths.renderer, window.location.origin).href

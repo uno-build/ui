@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
-import { PLATFORM_EVENT_NAMES } from '../src/events/constants'
+import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 
-const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
+const WORKSPACE_PATH = fileURLToPath(new URL('../..', import.meta.url))
+const TEST_PAGE_URL = '/tests/'
 const EVENT_FLOW = [
     ['pointerdown', 'child'],
     ['pointerdown', 'root'],
@@ -17,7 +18,7 @@ const EVENT_FLOW = [
 ]
 
 test('UIWebGPU dispatches pointer events in UI coordinates', { tag: '@webgpu' }, async ({ page }) => {
-    await page.goto('/dev/layouts/?renderers=RendererDom')
+    await page.goto(TEST_PAGE_URL)
 
     const events = await page.evaluate(
         async ({ event_types, module_urls }) => {

@@ -154,6 +154,10 @@
         "wgpu-matrix": "^3.4.2"
     },
     "scripts": {
+        "test": "npm run test:no-renderer && npm run test:renderer && npm run test:layouts",
+        "test:no-renderer": "playwright test --project=no-renderer",
+        "test:renderer": "playwright test --project=renderer --workers=1",
+        "test:layouts": "playwright test --project=layouts --workers=1",
         "examples": "vite ./examples --config ./examples/vite/typegpu.config.ts",
         "examples:solid": "vite ./examples --config ./examples/vite/solid.config.ts",
         "examples:octane": "vite ./examples --config ./examples/vite/octane.config.ts",
@@ -170,10 +174,6 @@
         "benchmark:text-stroke:headed": "node ./scripts/benchmarks.mjs --workload text-stroke --headed",
         "benchmark:render-metrics": "node ./scripts/benchmarks.mjs --workload render-metrics",
         "benchmark:render-metrics:headed": "node ./scripts/benchmarks.mjs --workload render-metrics --headed",
-        "test": "npm run test:headless && npm run test:layouts && npm run test:webgpu",
-        "test:headless": "playwright test tests --grep-invert @webgpu",
-        "test:layouts": "playwright test dev/layouts --workers=1",
-        "test:webgpu": "playwright test tests --grep @webgpu --workers=1 --headed",
         "typescript": "tsc -p tsconfig.json",
         "build": "node scripts/build.mjs",
         "build:check": "node scripts/build-check.mjs",

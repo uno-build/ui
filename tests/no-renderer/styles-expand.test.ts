@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import Style from '../src/style'
+import Style from '../../src/style'
 
 test('flex expands to grow, shrink, basis', () => {
     expect(Style.resolveStyle('flex', '1.5').expanded).toEqual([

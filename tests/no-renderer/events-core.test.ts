@@ -1,13 +1,10 @@
 import { expect, test } from '@playwright/test'
-import EventEmitter from '../src/core/EventEmitter'
-import { RESOURCE_EVENT } from '../src/core/constants'
-import { DEFINED_EVENTS } from '../src/events'
-import { EVENT } from '../src/events/constants'
-import ResourcesDom from '../src/renderer/dom/ResourcesDom'
-import { OVERFLOW } from '../src/style/constants'
-import UIDom from '../src/ui/UIDom'
-import TestRenderer from './utils/TestRenderer.ts'
-import TestUI from './utils/TestUI.ts'
+import EventEmitter from '../../src/core/EventEmitter'
+import { DEFINED_EVENTS } from '../../src/events'
+import { EVENT } from '../../src/events/constants'
+import { OVERFLOW } from '../../src/style/constants'
+import TestRenderer from '../utils/TestRenderer.ts'
+import TestUI from '../utils/TestUI.ts'
 
 test('EventEmitter registers, removes, emits, and destroys listeners', () => {
     const events = new EventEmitter()
@@ -375,80 +372,6 @@ test('UI notifies every stateful definition when destroying a node subtree', asy
     ])
 
     ui.destroy()
-})
-
-test('UIDom adapts native source events and removes its listeners on destroy', async () => {
-    const listeners = new Map()
-    const canvas = {
-        addEventListener(type, listener) {
-            if (!listeners.has(type)) {
-                listeners.set(type, new Set())
-            }
-            listeners.get(type).add(listener)
-        },
-        removeEventListener(type, listener) {
-            listeners.get(type).delete(listener)
-        },
-        getBoundingClientRect() {
-            return {
-                left: 20,
-                top: 30,
-                width: 400,
-                height: 200,
-            }
-        },
-        dispatchEvent(source_event) {
-            listeners.get(source_event.type)?.forEach((listener) => listener(source_event))
-        },
-    }
-    const fonts = new EventTarget()
-    const original_document = (globalThis as any).document
-    ;(globalThis as any).document = { fonts }
-
-    try {
-        const resources = ResourcesDom.create({ canvas })
-        const { ui } = await UIDom.create({ resources })
-        const received_events = []
-        let font_event_count = 0
-
-        resources.events.on(RESOURCE_EVENT.FONT, () => font_event_count++)
-
-        ui.root.layout = { x: 0, y: 0, width: 200, height: 100 }
-        ui.root.on('pointerdown', (event) => received_events.push(event))
-
-        const source_event = {
-            type: 'pointerdown',
-            target: canvas,
-            pointerId: 1,
-            pointerType: 'mouse',
-            clientX: 120,
-            clientY: 80,
-        }
-        canvas.dispatchEvent(source_event)
-        fonts.dispatchEvent(new Event('loadingdone'))
-
-        expect(received_events).toHaveLength(1)
-        expect(received_events[0]).toMatchObject({
-            type: 'pointerdown',
-            x: 50,
-            y: 25,
-            target: ui.root,
-            current_target: ui.root,
-            source_event,
-        })
-        expect([...listeners.values()].every((event_listeners) => event_listeners.size === 1)).toBe(true)
-        expect(font_event_count).toBe(1)
-
-        ui.destroy()
-        canvas.dispatchEvent(source_event)
-        fonts.dispatchEvent(new Event('loadingdone'))
-
-        expect(received_events).toHaveLength(1)
-        expect([...listeners.values()].every((event_listeners) => event_listeners.size === 0)).toBe(true)
-        expect(font_event_count).toBe(1)
-    } finally {
-        ;(globalThis as any).document = original_document
-    }
 })
 
 test('pointer events use capture while hover follows the hit node', async () => {

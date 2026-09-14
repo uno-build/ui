@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
-import { PLATFORM_EVENT_NAMES } from '../src/events/constants'
+import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 
-const WORKSPACE_PATH = fileURLToPath(new URL('..', import.meta.url))
+const WORKSPACE_PATH = fileURLToPath(new URL('../..', import.meta.url))
+const TEST_PAGE_URL = '/tests/'
 const EVENT_FLOW = [
     ['pointerdown', 'child'],
     ['pointerdown', 'root'],
@@ -17,7 +18,7 @@ const EVENT_FLOW = [
 ]
 
 test('UIThree dispatches pointer events from raycast intersections', { tag: '@webgpu' }, async ({ page }) => {
-    await page.goto('/dev/layouts/?renderers=RendererDom')
+    await page.goto(TEST_PAGE_URL)
 
     const events = await page.evaluate(
         async ({ event_types, module_urls }) => {
@@ -133,7 +134,7 @@ test('UIThree dispatches pointer events from raycast intersections', { tag: '@we
 })
 
 test('UIBabylon dispatches pointer events from raycast intersections', { tag: '@webgpu' }, async ({ page }) => {
-    await page.goto('/dev/layouts/?renderers=RendererDom')
+    await page.goto(TEST_PAGE_URL)
 
     const events = await page.evaluate(
         async ({ event_types, module_urls }) => {
@@ -280,7 +281,7 @@ test('UIBabylon dispatches pointer events from raycast intersections', { tag: '@
 })
 
 test('UIBabylonLite dispatches pointer events from raycast intersections', { tag: '@webgpu' }, async ({ page }) => {
-    await page.goto('/dev/layouts/?renderers=RendererDom')
+    await page.goto(TEST_PAGE_URL)
 
     const events = await page.evaluate(
         async ({ event_types, module_urls }) => {
@@ -303,12 +304,13 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', { tag
             })
             document.body.appendChild(canvas)
 
-            const engine = await BABYLON.createEngine(canvas, { msaaSamples: 1, alphaMode: 'premultiplied' })
+            const render_canvas = new OffscreenCanvas(400, 200)
+            const engine = await BABYLON.createEngine(render_canvas, { msaaSamples: 1, alphaMode: 'premultiplied' })
             const scene = BABYLON.createSceneContext(engine)
             const resources = await ResourcesWebGPU.create({
-                canvas,
+                canvas: render_canvas,
                 device: engine._device,
-                context: canvas.getContext('webgpu'),
+                context: render_canvas.getContext('webgpu'),
                 format: engine.format,
             })
             const { ui, plane } = await UIBabylonLite.create({
@@ -410,7 +412,7 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', { tag
 })
 
 test('UIPlayCanvas dispatches pointer events from raycast intersections', { tag: '@webgpu' }, async ({ page }) => {
-    await page.goto('/dev/layouts/?renderers=RendererDom')
+    await page.goto(TEST_PAGE_URL)
 
     const events = await page.evaluate(
         async ({ event_types, module_urls }) => {

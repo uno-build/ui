@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
-import Resources from '../src/core/Resources'
-import Operations from '../src/core/Operations'
-import { OPERATIONS, RESOURCE_EVENT } from '../src/core/constants'
-import ResourcesWebGPU from '../src/renderer/webgpu/ResourcesWebGPU'
-import UIWorldSpace from '../src/ui/UIWorldSpace.ts'
-import TestRenderer from './utils/TestRenderer.ts'
-import TestUI from './utils/TestUI.ts'
+import Resources from '../../src/core/Resources'
+import Operations from '../../src/core/Operations'
+import { OPERATIONS, RESOURCE_EVENT } from '../../src/core/constants'
+import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
+import UIWorldSpace from '../../src/ui/UIWorldSpace.ts'
+import TestRenderer from '../utils/TestRenderer.ts'
+import TestUI from '../utils/TestUI.ts'
 
 test('UI and Node api creates, styles, updates, and removes nodes', async () => {
     const renderer = new TestRenderer()

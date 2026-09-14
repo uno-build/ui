@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import Style from '../src/style'
+import Style from '../../src/style'
 
 test('validateStyle', () => {
     expect(Style.validateStyle('  background-color  ', '#f00')).toBe('backgroundColor')

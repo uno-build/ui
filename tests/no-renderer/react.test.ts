@@ -4,15 +4,15 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { act, Component, createElement, createRef, Fragment, StrictMode, useEffect, useLayoutEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useUI } from '../src/components/react/context.ts'
-import { registerRootComponent } from '../src/components/react/driver.ts'
-import type { InputHandle, NodeHandle, ScrollViewHandle } from '../src/components/props'
-import { DEFINED_EVENTS } from '../src/events'
-import ResourcesDom from '../src/renderer/dom/ResourcesDom'
-import TestRenderer from './utils/TestRenderer'
-import TestUI from './utils/TestUI'
+import { useUI } from '../../src/components/react/context.ts'
+import { registerRootComponent } from '../../src/components/react/driver.ts'
+import type { InputHandle, NodeHandle, ScrollViewHandle } from '../../src/components/props'
+import { DEFINED_EVENTS } from '../../src/events'
+import ResourcesDom from '../../src/renderer/dom/ResourcesDom'
+import TestRenderer from '../utils/TestRenderer'
+import TestUI from '../utils/TestUI'
 
-const COMPONENTS_URL = new URL('../src/components/react/components.tsx', import.meta.url)
+const COMPONENTS_URL = new URL('../../src/components/react/components.tsx', import.meta.url)
 const compiled_components = transformSync(readFileSync(COMPONENTS_URL, 'utf8'), {
     sourcefile: fileURLToPath(COMPONENTS_URL),
     loader: 'tsx',
@@ -21,8 +21,8 @@ const compiled_components = transformSync(readFileSync(COMPONENTS_URL, 'utf8'), 
 }).code
     .replaceAll('from "react/jsx-runtime"', `from '${import.meta.resolve('react/jsx-runtime')}'`)
     .replaceAll('from "react"', `from '${import.meta.resolve('react')}'`)
-    .replace('from "./context"', `from '${new URL('../src/components/react/context.ts', import.meta.url)}'`)
-    .replace('from "../shared"', `from '${new URL('../src/components/shared.ts', import.meta.url)}'`)
+    .replace('from "./context"', `from '${new URL('../../src/components/react/context.ts', import.meta.url)}'`)
+    .replace('from "../shared"', `from '${new URL('../../src/components/shared.ts', import.meta.url)}'`)
 
 const { Image, Input, ScrollView, Text, View } = await import(
     `data:text/javascript;base64,${Buffer.from(compiled_components).toString('base64')}`

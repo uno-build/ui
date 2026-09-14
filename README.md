@@ -75,7 +75,7 @@ the same behavior and shared styles as the Solid and Octane adapters.
 
 This adapter does not yet include SSR, hydration, portals,
 or specific support for Suspense and Activity. Its tests run with the existing
-Playwright suite in `tests/react.test.ts`. `npm run build:check` also checks the
+Playwright suite in `tests/no-renderer/react.test.ts`. `npm run build:check` also checks the
 published React types and a consumer using standard JSX compilation.
 
 ## Vue CSS classes

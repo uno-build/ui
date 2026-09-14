@@ -9,15 +9,15 @@ import {
     universalValue,
     useState,
 } from 'octane/universal/native'
-import { useUI } from '../src/components/octane/context.ts'
-import { createUniversalDriver, registerRootComponent } from '../src/components/octane/driver.ts'
-import { getImageStyle } from '../src/components/shared.ts'
-import EventEmitter from '../src/core/EventEmitter'
-import { DEFINED_EVENTS } from '../src/events'
-import TestRenderer from './utils/TestRenderer.ts'
-import TestUI from './utils/TestUI.ts'
+import { useUI } from '../../src/components/octane/context.ts'
+import { createUniversalDriver, registerRootComponent } from '../../src/components/octane/driver.ts'
+import { getImageStyle } from '../../src/components/shared.ts'
+import EventEmitter from '../../src/core/EventEmitter'
+import { DEFINED_EVENTS } from '../../src/events'
+import TestRenderer from '../utils/TestRenderer.ts'
+import TestUI from '../utils/TestUI.ts'
 
-const COMPONENTS_URL = new URL('../src/components/octane/components.tsx', import.meta.url)
+const COMPONENTS_URL = new URL('../../src/components/octane/components.tsx', import.meta.url)
 const OCTANE_RENDERER = {
     id: 'uno',
     module: 'octane/universal/native',
@@ -32,8 +32,8 @@ const compiled_components = compile(readFileSync(COMPONENTS_URL, 'utf8'), fileUR
     rendererRegistry: { uno: OCTANE_RENDERER },
 })
     .code.replaceAll("from 'octane/universal/native'", `from '${import.meta.resolve('octane/universal/native')}'`)
-    .replace("from './context'", `from '${new URL('../src/components/octane/context.ts', import.meta.url)}'`)
-    .replace("from '../shared'", `from '${new URL('../src/components/shared.ts', import.meta.url)}'`)
+    .replace("from './context'", `from '${new URL('../../src/components/octane/context.ts', import.meta.url)}'`)
+    .replace("from '../shared'", `from '${new URL('../../src/components/shared.ts', import.meta.url)}'`)
 
 const { Image, Input, ScrollView, Text, View } = await import(
     `data:text/javascript;base64,${Buffer.from(compiled_components).toString('base64')}`
