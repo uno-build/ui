@@ -8,7 +8,7 @@ import { loadYoga } from 'yoga-layout/load'
 import { initSettingsPanel } from '../settings/settings-panel'
 
 const EXAMPLES = {
-    input: () => import('./input.vue'),
+    // input: () => import('./input.vue'),
     image: () => import('./image.vue'),
     scrollview: () => import('./scrollview.vue'),
     todo: () => import('./todo.vue'),

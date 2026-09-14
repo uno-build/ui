@@ -31,7 +31,6 @@ const PAGE_STYLE = {
     width: '100%',
     height: '100%',
     padding: '32px',
-    backgroundColor: '#f2f3f5',
     alignItems: 'center',
     justifyContent: 'center',
 }
@@ -43,7 +42,6 @@ const CARD_STYLE = {
     backgroundColor: '#ffffff',
     border: '2px solid #1c1c1c',
     borderRadius: '28px',
-    boxShadow: '0px 18px 40px -14px #1b1b1b33',
 }
 const HEADER_STYLE = {
     flexDirection: 'row',
@@ -293,7 +291,10 @@ const CLEAR_TEXT_HOVER_STYLE = {
     color: '#e04f4f',
 }
 
-export function SolidTodo() {
+export function SolidTodo({
+    backgroundColor: background_color = '#f2f3f5',
+    boxShadow: box_shadow = '0px 18px 40px -14px #1b1b1b33',
+}) {
     let draft_ref
     let edit_ref
     let next_id = INITIAL_TODOS.length + 1
@@ -414,8 +415,8 @@ export function SolidTodo() {
     )
 
     return (
-        <View style={PAGE_STYLE}>
-            <View style={CARD_STYLE}>
+        <View style={{ ...PAGE_STYLE, backgroundColor: background_color }}>
+            <View style={{ ...CARD_STYLE, boxShadow: box_shadow }}>
                 <View style={HEADER_STYLE}>
                     <View style={BADGE_STYLE}>
                         <Image src={COIN_SRC} width="42px" />
