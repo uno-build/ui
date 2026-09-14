@@ -195,7 +195,13 @@ for (const [name, children] of [
             })
         }
         const root = registerRootComponent(App, { ui })
-        await act(() => root.render({}))
+        const consoleError = console.error
+        console.error = function ignoreExpectedError() {}
+        try {
+            await act(() => root.render({}))
+        } finally {
+            console.error = consoleError
+        }
         expect(errors.length).toBe(1)
         expect(errors[0].message).toMatch(/Text/)
         expect(ui.root.children).toEqual([])
@@ -214,7 +220,13 @@ test('text outside Text is rejected without committing a node', async () => {
         })
     }
     const root = registerRootComponent(App, { ui })
-    await act(() => root.render({}))
+    const consoleError = console.error
+    console.error = function ignoreExpectedError() {}
+    try {
+        await act(() => root.render({}))
+    } finally {
+        console.error = consoleError
+    }
     expect(errors.length).toBe(1)
     expect(errors[0].message).toMatch(/Text/)
     expect(ui.root.children).toEqual([])
@@ -417,7 +429,13 @@ test('Image rejects unregistered resources through a React error boundary', asyn
         })
     }
     const root = registerRootComponent(App, { ui })
-    await act(() => root.render({}))
+    const consoleError = console.error
+    console.error = function ignoreExpectedError() {}
+    try {
+        await act(() => root.render({}))
+    } finally {
+        console.error = consoleError
+    }
     expect(errors.length).toBe(1)
     expect(errors[0].message).toMatch(/Image source "missing" is not registered/)
     expect(ui.root.children).toEqual([])

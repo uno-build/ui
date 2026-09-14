@@ -4,7 +4,6 @@
 
 `src/` contains the only maintained `.ts` and `.tsx` sources. `npm run typescript` checks
 the source types without generating files; the compiler enforces erasable TypeScript syntax.
-`npm run build:check` validates the generated package, including its public types.
 
 `npm run build` uses `tsconfig.publish.json` to generate separate `.js` and `.d.ts` modules
 in `dist/`, preserving the source directory structure. Solid and Octane JSX is compiled
@@ -75,8 +74,7 @@ the same behavior and shared styles as the Solid and Octane adapters.
 
 This adapter does not yet include SSR, hydration, portals,
 or specific support for Suspense and Activity. Its tests run with the existing
-Playwright suite in `tests/no-renderer/react.test.ts`. `npm run build:check` also checks the
-published React types and a consumer using standard JSX compilation.
+Playwright suite in `tests/no-renderer/react.test.ts`.
 
 ## Vue CSS classes
 
