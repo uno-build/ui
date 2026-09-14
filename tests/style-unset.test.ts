@@ -179,7 +179,7 @@ test('Dom unset restores the undefined state for all 81 styles', async ({ page }
     }
 })
 
-test('WebGPU unset restores the undefined state for all 81 styles', async ({ page }) => {
+test('WebGPU unset restores the undefined state for all 81 styles', { tag: '@webgpu' }, async ({ page }) => {
     expect(STYLE_NAMES).toHaveLength(81)
     expect(Object.keys(STYLE_VALUES)).toEqual(STYLE_NAMES)
 

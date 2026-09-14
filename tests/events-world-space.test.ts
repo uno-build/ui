@@ -16,7 +16,7 @@ const EVENT_FLOW = [
     ['pointercancel', 'root'],
 ]
 
-test('UIThree dispatches pointer events from raycast intersections', async ({ page }) => {
+test('UIThree dispatches pointer events from raycast intersections', { tag: '@webgpu' }, async ({ page }) => {
     await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const events = await page.evaluate(
@@ -132,7 +132,7 @@ test('UIThree dispatches pointer events from raycast intersections', async ({ pa
     }
 })
 
-test('UIBabylon dispatches pointer events from raycast intersections', async ({ page }) => {
+test('UIBabylon dispatches pointer events from raycast intersections', { tag: '@webgpu' }, async ({ page }) => {
     await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const events = await page.evaluate(
@@ -279,7 +279,7 @@ test('UIBabylon dispatches pointer events from raycast intersections', async ({ 
     }
 })
 
-test('UIBabylonLite dispatches pointer events from raycast intersections', async ({ page }) => {
+test('UIBabylonLite dispatches pointer events from raycast intersections', { tag: '@webgpu' }, async ({ page }) => {
     await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const events = await page.evaluate(
@@ -409,7 +409,7 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', async
     }
 })
 
-test('UIPlayCanvas dispatches pointer events from raycast intersections', async ({ page }) => {
+test('UIPlayCanvas dispatches pointer events from raycast intersections', { tag: '@webgpu' }, async ({ page }) => {
     await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const events = await page.evaluate(

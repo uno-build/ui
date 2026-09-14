@@ -21,7 +21,7 @@ const LAYOUT_VIEWPORTS = [
 
 for (const layout of layoutNames) {
     for (const viewport of LAYOUT_VIEWPORTS) {
-        test(`Layout: ${layout} ${viewport.width}x${viewport.height}`, async ({ page }) => {
+        test(`Layout: ${layout} ${viewport.width}x${viewport.height}`, { tag: '@webgpu' }, async ({ page }) => {
             await page.setViewportSize(viewport)
             const results = await renderLayout(page, layout)
             const [baseline, ...comparisons] = results

@@ -16,7 +16,7 @@ const EVENT_FLOW = [
     ['pointercancel', 'root'],
 ]
 
-test('UIWebGPU dispatches pointer events in UI coordinates', async ({ page }) => {
+test('UIWebGPU dispatches pointer events in UI coordinates', { tag: '@webgpu' }, async ({ page }) => {
     await page.goto('/dev/layouts/?renderers=RendererDom')
 
     const events = await page.evaluate(

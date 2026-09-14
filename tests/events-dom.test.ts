@@ -366,7 +366,7 @@ test('UIDom uses native scrolling inside bordered scroll containers', async ({ p
     })
 })
 
-test('UIDom preserves native event sources alongside UIWebGPU normalization', async ({ page }) => {
+test('UIDom preserves native event sources alongside UIWebGPU normalization', { tag: '@webgpu' }, async ({ page }) => {
     await page.goto('/dev/layouts/?renderers=RendererDom')
 
     await page.evaluate(

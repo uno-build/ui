@@ -165,7 +165,7 @@ const COMPONENTS_CODE = transformSync(
 ).code
 
 async function loadFixture(page) {
-    await page.goto('/dev/layouts/')
+    await page.goto('/dev/layouts/?renderers=RendererDom')
     await page.evaluate(
         async ({ components_code, fixture_code, module_paths }) => {
             const renderer_url = new URL(module_paths.renderer, window.location.origin).href

@@ -723,7 +723,13 @@ test('a discarded render creates no Uno nodes or event listeners', async () => {
         })
     }
     const root = registerRootComponent(App, { ui })
-    await act(() => root.render({}))
+    const consoleError = console.error
+    console.error = function ignoreExpectedError() {}
+    try {
+        await act(() => root.render({}))
+    } finally {
+        console.error = consoleError
+    }
     expect(errors.length).toBe(1)
     expect(errors[0].message).toBe('Discard this render')
     expect(created_count).toBe(0)
