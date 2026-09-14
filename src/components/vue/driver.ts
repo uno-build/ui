@@ -91,9 +91,7 @@ export function registerRootComponent<P extends Record<string, any>>(
                     }
                 }
                 for (const key in styles_next) {
-                    if (styles_next[key] !== styles_prev[key]) {
-                        node.style(key, styles_next[key]!)
-                    }
+                    node.style(key, styles_next[key]!)
                 }
                 styles.set(node, styles_next)
             } else if (name === 'value') {

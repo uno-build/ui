@@ -78,6 +78,60 @@ or specific support for Suspense and Activity. Its tests run with the existing
 Playwright suite in `tests/react.test.ts`. `npm run build:check` also checks the
 published React types and a consumer using standard JSX compilation.
 
+## Vue CSS classes
+
+The Vue adapter accepts `class` and reactive `:class` on `View`, `Text`, `Image`,
+`ScrollView`, and `Input`. Add `stylesPlugin()` alongside the Vue compiler plugin
+to use CSS blocks in `.vue` files:
+
+```ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { compilerConfig, stylesPlugin } from 'uno-ui/vue/config'
+
+export default defineConfig({
+    plugins: [vue(compilerConfig), stylesPlugin()],
+})
+```
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import { Text, View } from 'uno-ui/vue'
+
+const active = ref(false)
+</script>
+
+<template>
+    <View class="example" :class="{ active }" @click="active = !active">
+        <Text>Toggle background</Text>
+    </View>
+</template>
+
+<style scoped>
+.example {
+    padding: 16px;
+    background-color: #ffffff;
+}
+.example.active {
+    background-color: #d9f0e4;
+}
+</style>
+```
+
+CSS declarations compile to Uno styles and work with both DOM and GPU renderers.
+Unscoped blocks apply globally to Uno Vue components; `scoped` blocks apply to
+the component's own nodes and child component roots. Class strings, arrays,
+and objects are supported. Rules use class specificity and stylesheet source
+order; inline `:style` overrides class styles.
+
+The supported CSS subset is class selectors (`.example`, `.example.active`,
+and comma-separated lists) with Uno's existing style properties and values.
+Property names use CSS spelling, such as `background-color` and `object-fit`.
+Descendant selectors, pseudo-classes, at-rules, `!important`, CSS variables, CSS modules,
+external style blocks, and preprocessors are unsupported. Use `:class` for
+interaction states and `:style` for computed values instead of CSS `v-bind()`.
+
 ## WebGPU resources
 
 Create one `ResourcesWebGPU` and pass the same instance as `resources` to every UI that should share its adapter,

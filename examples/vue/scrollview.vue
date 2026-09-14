@@ -29,7 +29,6 @@ export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
 
 <script setup lang="ts">
 import { Image, ScrollView, Text, View } from 'uno-ui/vue'
-import type { ImageProps } from 'uno-ui/vue'
 
 const GALLERY_SOURCES = [TEXTURE_SRC, LOGO_SRC, COIN_SRC, TEXTURE_SRC, LOGO_SRC, COIN_SRC, TEXTURE_SRC, LOGO_SRC]
 const PARAGRAPHS = [
@@ -55,277 +54,315 @@ const ITEMS = [
     { src: TEXTURE_SRC, title: 'Arena skin', price: '150 gems' },
     { src: COIN_SRC, title: 'Coin bundle', price: '999 gems' },
 ]
-
-const PAGE_STYLE = {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#f2f7f4',
-}
-const PAGE_CONTENT_STYLE = {
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '32px',
-    gap: '24px',
-}
-const PAGE_HEADER_STYLE = {
-    width: '988px',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: '16px',
-}
-const BADGE_STYLE = {
-    width: '58px',
-    height: '58px',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#d9f0e4',
-    border: '2px solid #a8cdb8',
-    borderRadius: '20px',
-}
-const PAGE_TITLE_STYLE = {
-    fontFamily: TITLE_FONT_FAMILY,
-    fontSize: '30px',
-    color: '#203b2e',
-    letterSpacing: '0.5px',
-}
-const PAGE_SUBTITLE_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '13px',
-    lineHeight: '18px',
-    color: '#658273',
-}
-const PANELS_STYLE = {
-    flexDirection: 'row',
-    gap: '28px',
-}
-const PANEL_STYLE = {
-    width: '480px',
-    height: '560px',
-    backgroundColor: '#ffffff',
-    border: '2px solid #a8cdb8',
-    borderRadius: '28px',
-    boxShadow: '0px 18px 40px -14px #203b2e22',
-}
-const PANEL_CONTENT_STYLE = {
-    flexDirection: 'column',
-    padding: '24px',
-    gap: '18px',
-}
-const HERO_STYLE: NonNullable<ImageProps['style']> = {
-    width: '100%',
-    height: '190px',
-    objectFit: 'cover',
-    borderRadius: '16px',
-}
-const PANEL_TITLE_STYLE = {
-    fontFamily: TITLE_FONT_FAMILY,
-    fontSize: '22px',
-    color: '#203b2e',
-    letterSpacing: '0.4px',
-}
-const LABEL_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '11px',
-    letterSpacing: '1.6px',
-    color: '#4fae7f',
-}
-const TEXT_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '14px',
-    lineHeight: '22px',
-    color: '#203b2e',
-    textAlign: 'justify',
-}
-const DIVIDER_STYLE = {
-    height: '1px',
-    backgroundColor: '#a8cdb8',
-}
-const GALLERY_STYLE = {
-    width: '100%',
-    height: '150px',
-    backgroundColor: '#eaf4ee',
-    border: '1px solid #a8cdb8',
-    borderRadius: '18px',
-}
-const GALLERY_CONTENT_STYLE = {
-    padding: '14px',
-    gap: '14px',
-    alignItems: 'center',
-}
-const GALLERY_IMAGE_STYLE: NonNullable<ImageProps['style']> = {
-    width: '120px',
-    height: '120px',
-    objectFit: 'cover',
-    borderRadius: '14px',
-}
-const ENTRIES_STYLE = {
-    width: '100%',
-    height: '290px',
-    backgroundColor: '#eaf4ee',
-    border: '1px solid #a8cdb8',
-    borderRadius: '18px',
-}
-const ENTRIES_CONTENT_STYLE = {
-    flexDirection: 'column',
-    padding: '14px',
-    gap: '12px',
-}
-const ENTRY_STYLE = {
-    flexDirection: 'row',
-    gap: '12px',
-    padding: '12px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #a8cdb8',
-    borderRadius: '14px',
-}
-const ENTRY_THUMB_STYLE: NonNullable<ImageProps['style']> = {
-    width: '56px',
-    height: '56px',
-    objectFit: 'cover',
-    borderRadius: '12px',
-}
-const ENTRY_TEXTS_STYLE = {
-    flex: '1',
-    flexDirection: 'column',
-    gap: '4px',
-}
-const ENTRY_TITLE_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '14px',
-    color: '#203b2e',
-    letterSpacing: '0.3px',
-}
-const ENTRY_BODY_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '12px',
-    lineHeight: '18px',
-    color: '#658273',
-}
-const STRIP_STYLE = {
-    width: '988px',
-    height: '250px',
-    backgroundColor: '#ffffff',
-    border: '2px solid #a8cdb8',
-    borderRadius: '28px',
-    boxShadow: '0px 18px 40px -14px #203b2e22',
-}
-const STRIP_CONTENT_STYLE = {
-    padding: '20px',
-    gap: '16px',
-    alignItems: 'stretch',
-}
-const STRIP_HEADER_STYLE = {
-    width: '190px',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    gap: '8px',
-    paddingRight: '4px',
-}
-const CARD_STYLE = {
-    width: '170px',
-    flexDirection: 'column',
-    gap: '10px',
-    padding: '12px',
-    backgroundColor: '#eaf4ee',
-    border: '1px solid #a8cdb8',
-    borderRadius: '18px',
-}
-const CARD_IMAGE_STYLE: NonNullable<ImageProps['style']> = {
-    width: '100%',
-    height: '120px',
-    objectFit: 'cover',
-    borderRadius: '12px',
-}
-const CARD_TITLE_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '13px',
-    color: '#203b2e',
-}
-const CARD_PRICE_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '12px',
-    letterSpacing: '0.4px',
-    color: '#4fae7f',
-}
-const FOOTER_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '12px',
-    color: '#4fae7f',
-}
 </script>
 
 <template>
-    <ScrollView :style="PAGE_STYLE">
-        <View :style="PAGE_CONTENT_STYLE">
-            <View :style="PAGE_HEADER_STYLE">
-                <View :style="BADGE_STYLE">
+    <ScrollView class="page">
+        <View class="page-content">
+            <View class="page-header">
+                <View class="badge">
                     <Image :src="COIN_SRC" width="38px" />
                 </View>
-                <View :style="{ flex: '1', flexDirection: 'column', gap: '4px' }">
-                    <Text :style="PAGE_TITLE_STYLE">Scroll playground</Text>
-                    <Text :style="PAGE_SUBTITLE_STYLE">Two panels, each with a nested scroll area.</Text>
+                <View class="header-texts">
+                    <Text class="page-title">Scroll playground</Text>
+                    <Text class="page-subtitle">Two panels, each with a nested scroll area.</Text>
                 </View>
             </View>
 
-            <View :style="PANELS_STYLE">
-                <ScrollView :style="PANEL_STYLE">
-                    <View :style="PANEL_CONTENT_STYLE">
-                        <Text :style="LABEL_STYLE">VERTICAL + INNER HORIZONTAL</Text>
-                        <Text :style="PANEL_TITLE_STYLE">Featured drop</Text>
-                        <Image :src="LOGO_SRC" :style="HERO_STYLE" />
-                        <Text :style="TEXT_STYLE">{{ PARAGRAPHS[0] }}</Text>
+            <View class="panels">
+                <ScrollView class="panel">
+                    <View class="panel-content">
+                        <Text class="label">VERTICAL + INNER HORIZONTAL</Text>
+                        <Text class="panel-title">Featured drop</Text>
+                        <Image :src="LOGO_SRC" class="hero" />
+                        <Text class="text">{{ PARAGRAPHS[0] }}</Text>
 
-                        <ScrollView horizontal :style="GALLERY_STYLE">
-                            <View :style="GALLERY_CONTENT_STYLE">
-                                <Image v-for="(src, index) in GALLERY_SOURCES" :key="index" :src="src" :style="GALLERY_IMAGE_STYLE" />
+                        <ScrollView horizontal class="gallery">
+                            <View class="gallery-content">
+                                <Image v-for="(src, index) in GALLERY_SOURCES" :key="index" :src="src" class="gallery-image" />
                             </View>
                         </ScrollView>
 
-                        <View :style="DIVIDER_STYLE" />
-                        <Text v-for="paragraph in PARAGRAPHS" :key="paragraph" :style="TEXT_STYLE">{{ paragraph }}</Text>
-                        <Text :style="FOOTER_STYLE">Drag the strip sideways</Text>
+                        <View class="divider" />
+                        <Text v-for="paragraph in PARAGRAPHS" :key="paragraph" class="text">{{ paragraph }}</Text>
+                        <Text class="footer">Drag the strip sideways</Text>
                     </View>
                 </ScrollView>
 
-                <ScrollView :style="PANEL_STYLE">
-                    <View :style="PANEL_CONTENT_STYLE">
-                        <Text :style="LABEL_STYLE">VERTICAL + INNER VERTICAL</Text>
-                        <Text :style="PANEL_TITLE_STYLE">Patch notes</Text>
-                        <Image :src="TEXTURE_SRC" :style="{ ...HERO_STYLE, height: '140px' }" />
+                <ScrollView class="panel">
+                    <View class="panel-content">
+                        <Text class="label">VERTICAL + INNER VERTICAL</Text>
+                        <Text class="panel-title">Patch notes</Text>
+                        <Image :src="TEXTURE_SRC" class="hero hero-short" />
 
-                        <ScrollView :style="ENTRIES_STYLE">
-                            <View :style="ENTRIES_CONTENT_STYLE">
-                                <View v-for="entry in ENTRIES" :key="entry.title" :style="ENTRY_STYLE">
-                                    <Image :src="COIN_SRC" :style="ENTRY_THUMB_STYLE" />
-                                    <View :style="ENTRY_TEXTS_STYLE">
-                                        <Text :style="ENTRY_TITLE_STYLE">{{ entry.title }}</Text>
-                                        <Text :style="ENTRY_BODY_STYLE">{{ entry.body }}</Text>
+                        <ScrollView class="entries">
+                            <View class="entries-content">
+                                <View v-for="entry in ENTRIES" :key="entry.title" class="entry">
+                                    <Image :src="COIN_SRC" class="entry-thumb" />
+                                    <View class="entry-texts">
+                                        <Text class="entry-title">{{ entry.title }}</Text>
+                                        <Text class="entry-body">{{ entry.body }}</Text>
                                     </View>
                                 </View>
                             </View>
                         </ScrollView>
 
-                        <View :style="DIVIDER_STYLE" />
-                        <Text v-for="paragraph in PARAGRAPHS" :key="paragraph" :style="TEXT_STYLE">{{ paragraph }}</Text>
-                        <Text :style="FOOTER_STYLE">Inner list scrolls on its own</Text>
+                        <View class="divider" />
+                        <Text v-for="paragraph in PARAGRAPHS" :key="paragraph" class="text">{{ paragraph }}</Text>
+                        <Text class="footer">Inner list scrolls on its own</Text>
                     </View>
                 </ScrollView>
             </View>
 
-            <ScrollView horizontal :style="STRIP_STYLE">
-                <View :style="STRIP_CONTENT_STYLE">
-                    <View :style="STRIP_HEADER_STYLE">
-                        <Text :style="LABEL_STYLE">HORIZONTAL</Text>
-                        <Text :style="PANEL_TITLE_STYLE">Night market</Text>
-                        <Text :style="ENTRY_BODY_STYLE">Drag left and right to browse the offers.</Text>
+            <ScrollView horizontal class="strip">
+                <View class="strip-content">
+                    <View class="strip-header">
+                        <Text class="label">HORIZONTAL</Text>
+                        <Text class="panel-title">Night market</Text>
+                        <Text class="entry-body">Drag left and right to browse the offers.</Text>
                     </View>
-                    <View v-for="item in ITEMS" :key="item.title" :style="CARD_STYLE">
-                        <Image :src="item.src" :style="CARD_IMAGE_STYLE" />
-                        <Text :style="CARD_TITLE_STYLE">{{ item.title }}</Text>
-                        <Text :style="CARD_PRICE_STYLE">{{ item.price }}</Text>
+                    <View v-for="item in ITEMS" :key="item.title" class="card">
+                        <Image :src="item.src" class="card-image" />
+                        <Text class="card-title">{{ item.title }}</Text>
+                        <Text class="card-price">{{ item.price }}</Text>
                     </View>
                 </View>
             </ScrollView>
         </View>
     </ScrollView>
 </template>
+
+<style scoped>
+.page {
+    width: 100%;
+    height: 100%;
+    background-color: #f2f7f4;
+}
+
+.page-content {
+    flex-direction: column;
+    align-items: center;
+    padding: 32px;
+    gap: 24px;
+}
+
+.page-header {
+    width: 988px;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+}
+
+.badge {
+    width: 58px;
+    height: 58px;
+    align-items: center;
+    justify-content: center;
+    background-color: #d9f0e4;
+    border: 2px solid #a8cdb8;
+    border-radius: 20px;
+}
+
+.page-title {
+    font-family: Nougat-ExtraBlack;
+    font-size: 30px;
+    color: #203b2e;
+    letter-spacing: 0.5px;
+}
+
+.page-subtitle {
+    font-family: Poppins-Regular;
+    font-size: 13px;
+    line-height: 18px;
+    color: #658273;
+}
+
+.panels {
+    flex-direction: row;
+    gap: 28px;
+}
+
+.panel {
+    width: 480px;
+    height: 560px;
+    background-color: #ffffff;
+    border: 2px solid #a8cdb8;
+    border-radius: 28px;
+    box-shadow: 0px 18px 40px -14px #203b2e22;
+}
+
+.panel-content {
+    flex-direction: column;
+    padding: 24px;
+    gap: 18px;
+}
+
+.hero {
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+    border-radius: 16px;
+}
+
+.panel-title {
+    font-family: Nougat-ExtraBlack;
+    font-size: 22px;
+    color: #203b2e;
+    letter-spacing: 0.4px;
+}
+
+.label {
+    font-family: Poppins-Regular;
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    color: #4fae7f;
+}
+
+.text {
+    font-family: Poppins-Regular;
+    font-size: 14px;
+    line-height: 22px;
+    color: #203b2e;
+    text-align: justify;
+}
+
+.divider {
+    height: 1px;
+    background-color: #a8cdb8;
+}
+
+.gallery {
+    width: 100%;
+    height: 150px;
+    background-color: #eaf4ee;
+    border: 1px solid #a8cdb8;
+    border-radius: 18px;
+}
+
+.gallery-content {
+    padding: 14px;
+    gap: 14px;
+    align-items: center;
+}
+
+.gallery-image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 14px;
+}
+
+.entries {
+    width: 100%;
+    height: 290px;
+    background-color: #eaf4ee;
+    border: 1px solid #a8cdb8;
+    border-radius: 18px;
+}
+
+.entries-content {
+    flex-direction: column;
+    padding: 14px;
+    gap: 12px;
+}
+
+.entry {
+    flex-direction: row;
+    gap: 12px;
+    padding: 12px;
+    background-color: #ffffff;
+    border: 1px solid #a8cdb8;
+    border-radius: 14px;
+}
+
+.entry-thumb {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.header-texts,
+.entry-texts {
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.entry-title {
+    font-family: Poppins-Regular;
+    font-size: 14px;
+    color: #203b2e;
+    letter-spacing: 0.3px;
+}
+
+.entry-body {
+    font-family: Poppins-Regular;
+    font-size: 12px;
+    line-height: 18px;
+    color: #658273;
+}
+
+.strip {
+    width: 988px;
+    height: 250px;
+    background-color: #ffffff;
+    border: 2px solid #a8cdb8;
+    border-radius: 28px;
+    box-shadow: 0px 18px 40px -14px #203b2e22;
+}
+
+.strip-content {
+    padding: 20px;
+    gap: 16px;
+    align-items: stretch;
+}
+
+.strip-header {
+    width: 190px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    padding-right: 4px;
+}
+
+.card {
+    width: 170px;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    background-color: #eaf4ee;
+    border: 1px solid #a8cdb8;
+    border-radius: 18px;
+}
+
+.card-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.card-title {
+    font-family: Poppins-Regular;
+    font-size: 13px;
+    color: #203b2e;
+}
+
+.card-price {
+    font-family: Poppins-Regular;
+    font-size: 12px;
+    letter-spacing: 0.4px;
+    color: #4fae7f;
+}
+
+.footer {
+    font-family: Poppins-Regular;
+    font-size: 12px;
+    color: #4fae7f;
+}
+
+.hero-short {
+    height: 140px;
+}
+</style>

@@ -16,19 +16,23 @@ import {
     showInputPlaceholder,
 } from '../shared'
 import { useUI } from './context'
+import { useStyle } from './styles'
+import type { ClassValue } from './styles'
 
 export type { StyleProps, StyleName } from '../../style/types'
 export type { NodeHandle, ScrollViewHandle, InputHandle } from '../props'
-export type ViewProps = BaseProps
-export type TextProps = BaseProps
-export type ImageProps = Omit<BaseProps, 'style'> & ImageOptions
-export type ScrollViewProps = BaseProps & { horizontal?: boolean }
-export type InputProps = Omit<BaseProps, 'style'> & InputOptions & { style?: StyleProps }
+export type { ClassValue } from './styles'
+export type ViewProps = BaseProps & { class?: ClassValue }
+export type TextProps = ViewProps
+export type ImageProps = Omit<ViewProps, 'style'> & ImageOptions
+export type ScrollViewProps = ViewProps & { horizontal?: boolean }
+export type InputProps = Omit<ViewProps, 'style'> & InputOptions & { style?: StyleProps }
 
 export const View = defineComponent(
     (_props: ViewProps, { attrs, slots, expose }) => {
         const setNode = createNodeRef(expose)
-        return () => h('view', { ...attrs, style: { ...attrs.style as StyleProps }, ref: setNode }, slots.default?.())
+        const resolveStyle = useStyle()
+        return () => h('view', { ...attrs, style: resolveStyle(attrs.class, attrs.style as StyleProps), ref: setNode }, slots.default?.())
     },
     { name: 'View', inheritAttrs: false },
 ) as DefineComponent<ViewProps, NodeHandle>
@@ -36,9 +40,10 @@ export const View = defineComponent(
 export const Text = defineComponent(
     (_props: TextProps, { attrs, slots, expose }) => {
         const setNode = createNodeRef(expose)
+        const resolveStyle = useStyle()
         return () => h('text', {
             ...attrs,
-            style: { ...attrs.style as StyleProps },
+            style: resolveStyle(attrs.class, attrs.style as StyleProps),
             value: joinText(slots.default?.()),
             ref: setNode,
         })
@@ -50,6 +55,7 @@ export const Image = defineComponent(
     (_props: ImageProps, { attrs, expose }) => {
         const ui = useUI()
         const setNode = createNodeRef(expose)
+        const resolveStyle = useStyle()
 
         return () => {
             const { src, width, height, style, ...props } = attrs as ImageProps
@@ -58,8 +64,8 @@ export const Image = defineComponent(
                 style: getImageStyle(ui.resources!, src, {
                     ...(width !== undefined && { width }),
                     ...(height !== undefined && { height }),
-                    ...style,
-                }),
+                    ...resolveStyle(attrs.class, style),
+                } as NonNullable<ImageProps['style']>),
                 ref: setNode,
             })
         }
@@ -69,6 +75,7 @@ export const Image = defineComponent(
 
 export const ScrollView = defineComponent(
     (props: ScrollViewProps, { attrs, slots, expose }) => {
+        const resolveStyle = useStyle()
         let main_node!: Node
         let content_node!: Node
 
@@ -94,7 +101,7 @@ export const ScrollView = defineComponent(
         return () => h('view', {
             ...attrs,
             ref: setMainNode,
-            style: getScrollViewStyle(props.horizontal ?? false, attrs.style as StyleProps | null),
+            style: getScrollViewStyle(props.horizontal ?? false, resolveStyle(attrs.class, attrs.style as StyleProps)),
         }, [
             h('view', {
                 ref: setContentNode,
@@ -107,6 +114,7 @@ export const ScrollView = defineComponent(
 
 export const Input = defineComponent(
     (props: InputProps, { attrs, expose }) => {
+        const resolveStyle = useStyle()
         let input_node!: Node
         let content_node!: Node
         let text_node!: Node
@@ -178,7 +186,8 @@ export const Input = defineComponent(
         } satisfies InputHandle)
 
         return () => {
-            const { style = {}, value, placeholder, placeholderTextColor: placeholder_text_color = '#777777' } = props
+            const { value, placeholder, placeholderTextColor: placeholder_text_color = '#777777' } = props
+            const style = resolveStyle(attrs.class, props.style)
             const show_placeholder = showInputPlaceholder(value, placeholder, is_focused.value)
 
             return h('view', {

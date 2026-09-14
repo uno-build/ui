@@ -167,19 +167,19 @@ export function mountRoot(ui: Parameters<typeof registerRootComponent>[1]['ui'])
     }
     const vue_directory = path.join(CONSUMER, 'vue')
     await cp(path.join(ROOT, 'tests/fixtures/vue'), vue_directory, { recursive: true })
-    const { compilerConfig } = await import(pathToFileURL(path.join(installed_directory, installed_package.exports['./vue/config'].import)).href)
+    const { compilerConfig, stylesPlugin } = await import(pathToFileURL(path.join(installed_directory, installed_package.exports['./vue/config'].import)).href)
     const static_filename = path.join(vue_directory, 'Static.vue')
     await writeFile(static_filename, `<template><div>${'<span>Static</span>'.repeat(25)}</div></template>\n`)
     const vue_output = await buildVite({
         root: vue_directory,
         configFile: false,
         logLevel: 'error',
-        plugins: [vue(compilerConfig)],
+        plugins: [vue(compilerConfig), stylesPlugin()],
         build: {
             write: false,
             minify: false,
             lib: {
-                entry: { app: path.join(vue_directory, 'App.vue'), static: static_filename },
+                entry: { app: path.join(vue_directory, 'App.vue'), css: path.join(vue_directory, 'Css.vue'), static: static_filename },
                 formats: ['es'],
                 fileName: (_format, entry_name) => `${entry_name}.mjs`,
             },
@@ -192,9 +192,35 @@ export function mountRoot(ui: Parameters<typeof registerRootComponent>[1]['ui'])
         await writeFile(path.join(vue_directory, output.fileName), output.code)
     }
 
-    const vue_runner_path = path.join(vue_directory, 'checks.mjs')
+    const invalid_css_filename = path.join(vue_directory, 'InvalidCss.vue')
+    for (const [style, expected_error] of [
+        ['<style>.example:hover { width: 10px; }</style>', /Unsupported Uno Vue selector/],
+        ['<style>@media (min-width: 100px) { .example { width: 10px; } }</style>', /at-rules are not supported/],
+        ['<style>.example { width: 10px !important; }</style>', /do not support !important/],
+        ['<style>.example { width: v-bind(width); }</style>', /do not support CSS v-bind/],
+        ['<style>.example { width: var(--width); }</style>', /do not support CSS custom properties or var/],
+        ['<style scoped lang="scss">.example { width: 10px; }</style>', /preprocessors are not supported/],
+    ]) {
+        await writeFile(invalid_css_filename, `<template><view /></template>${style}`)
+        await assert.rejects(() => buildVite({
+            root: vue_directory,
+            configFile: false,
+            logLevel: 'silent',
+            plugins: [vue(compilerConfig), stylesPlugin()],
+            build: {
+                write: false,
+                lib: { entry: invalid_css_filename, formats: ['es'] },
+                rollupOptions: { external: ['vue', 'uno-ui/vue'] },
+            },
+        }), expected_error)
+    }
+
+    const vue_runner_path = path.join(vue_directory, 'runner.mjs')
     await bundle({
-        entryPoints: [path.join(vue_directory, 'checks.ts')],
+        stdin: {
+            contents: "export { runChecks } from './checks.ts'\nexport { runStyleChecks } from './style-checks.ts'\n",
+            resolveDir: vue_directory,
+        },
         outfile: vue_runner_path,
         bundle: true,
         packages: 'external',
@@ -205,15 +231,17 @@ export function mountRoot(ui: Parameters<typeof registerRootComponent>[1]['ui'])
             name: 'vue-check-fixtures',
             setup(build) {
                 build.onResolve({ filter: /^\.\/App\.vue$/ }, () => ({ path: './app.mjs', external: true }))
+                build.onResolve({ filter: /^\.\/Css\.vue$/ }, () => ({ path: './css.mjs', external: true }))
                 build.onResolve({ filter: /^\.\.\/\.\.\/utils\/Test(UI|Renderer)$/ }, (args) => ({
                     path: path.join(ROOT, 'tests/utils', `${path.basename(args.path)}.ts`),
                 }))
             },
         }],
     })
-    const { runChecks } = await import(pathToFileURL(vue_runner_path).href)
+    const { runChecks, runStyleChecks } = await import(pathToFileURL(vue_runner_path).href)
     await runChecks()
-    console.log('Packed package, optional-peer isolation, exports, JSX/SFC consumer builds and Vue lifecycle passed.')
+    await runStyleChecks()
+    console.log('Packed package, optional-peer isolation, exports, JSX/SFC consumer builds, Vue lifecycle and CSS passed.')
 } finally {
     await rm(DIRECTORY, { recursive: true, force: true })
 }

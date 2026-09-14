@@ -1,6 +1,6 @@
 import { defineComponent, h, ref } from 'vue'
 import { Image, Input, ScrollView, Text, View, registerRootComponent, useUI } from 'uno-ui/vue'
-import { compilerConfig } from 'uno-ui/vue/config'
+import { compilerConfig, stylesPlugin } from 'uno-ui/vue/config'
 import type { ImageProps, InputHandle, InputProps, NodeHandle, ScrollViewHandle, ScrollViewProps, StyleName, TextProps, ViewProps } from 'uno-ui/vue'
 import type UIDom from 'uno-ui/UIDom'
 import type UIWebGPU from 'uno-ui/UIWebGPU'
@@ -41,6 +41,7 @@ root.render({ title: 42 })
 root.render({})
 
 const view_props: ViewProps = {
+    class: ['example', { active: true }, ['nested']],
     style: { width: '100%' },
     onClick(event) {
         event.x.toFixed()
@@ -49,9 +50,10 @@ const view_props: ViewProps = {
         event.scroll_top
     },
 }
-const text_props: TextProps = { style: null, onClick: null }
-const image_props: ImageProps = { src: 'icon', width: '20px', style: { objectFit: 'contain' } }
+const text_props: TextProps = { class: 'example active', style: null, onClick: null }
+const image_props: ImageProps = { class: { icon: true }, src: 'icon', width: '20px', style: { objectFit: 'contain' } }
 const scroll_props: ScrollViewProps = {
+    class: null,
     horizontal: true,
     style: null,
     onScroll(event) {
@@ -61,6 +63,7 @@ const scroll_props: ScrollViewProps = {
     },
 }
 const input_props: InputProps = {
+    class: ['field', { filled: true }],
     value: 0,
     placeholder: null,
     placeholderTextColor: '#777777',
@@ -104,6 +107,7 @@ const style_name: StyleName = 'backgroundColor'
 const invalid_style_name: StyleName = 'misspelled'
 const asset_config: boolean = compilerConfig.template.transformAssetUrls
 const hoist_config: boolean = compilerConfig.template.compilerOptions.hoistStatic
+const css_plugin_name: string = stylesPlugin()[0]!.name
 
 function typedContext() {
     const dom_ui = useUI<UIDom>()

@@ -32,103 +32,6 @@ import type { InputHandle } from 'uno-ui/vue'
 import type { NodeEventMap } from 'uno-ui/events'
 
 const MAX_LENGTHS = { nickname: 16, clan: 3, code: 6, cry: 40 }
-const PAGE_STYLE = {
-    width: '100%',
-    height: '100%',
-    padding: '32px',
-    backgroundColor: '#f2f7f4',
-    alignItems: 'center',
-    justifyContent: 'center',
-}
-const CARD_STYLE = {
-    width: '560px',
-    flexDirection: 'column',
-    gap: '22px',
-    padding: '30px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #a8cdb8',
-    borderRadius: '24px',
-    boxShadow: '0px 24px 50px -12px #203b2e33',
-}
-const HEADER_STYLE = { flexDirection: 'row', alignItems: 'center', gap: '16px' }
-const BADGE_STYLE = {
-    width: '64px',
-    height: '64px',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#d9f0e4',
-    border: '1px solid #a8cdb8',
-    borderRadius: '20px',
-}
-const HEADER_TEXTS_STYLE = { flex: '1', flexDirection: 'column', gap: '4px' }
-const TITLE_STYLE = {
-    fontFamily: TITLE_FONT_FAMILY,
-    fontSize: '30px',
-    color: '#203b2e',
-    letterSpacing: '0.5px',
-}
-const SUBTITLE_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '13px',
-    lineHeight: '18px',
-    color: '#658273',
-}
-const DIVIDER_STYLE = { height: '1px', backgroundColor: '#a8cdb8' }
-const ROW_STYLE = { flexDirection: 'row', gap: '16px' }
-const FIELD_STYLE = { flexDirection: 'column', gap: '8px' }
-const ROW_FIELD_STYLE = { flex: '1', ...FIELD_STYLE }
-const CLAN_FIELD_STYLE = { width: '96px', ...FIELD_STYLE }
-const LABEL_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '11px',
-    letterSpacing: '1.6px',
-    color: '#658273',
-}
-const NICKNAME_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    color: '#203b2e',
-    letterSpacing: '0.3px',
-    backgroundColor: '#eaf4ee',
-    border: '2px solid #a8cdb8',
-    borderRadius: '12px',
-    padding: '10px 14px',
-}
-const CLAN_STYLE = {
-    fontFamily: GAME_FONT_FAMILY,
-    color: '#ffffff',
-    letterSpacing: '3px',
-    textAlign: 'center',
-    textStroke: '1px #203b2e',
-    textShadow: '0px 2px 0px #203b2e33',
-    backgroundColor: '#4fae7f',
-    border: '2px solid #a8cdb8',
-    borderRadius: '14px',
-    padding: '10px 14px',
-}
-const CODE_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    color: '#4fae7f',
-    letterSpacing: '8px',
-    textAlign: 'center',
-    backgroundColor: '#eaf4ee',
-    border: '2px solid #a8cdb8',
-    borderRadius: '12px',
-    padding: '10px 14px',
-}
-const CRY_STYLE = {
-    fontFamily: TITLE_FONT_FAMILY,
-    color: '#203b2e',
-    letterSpacing: '0.5px',
-    lineHeight: '22px',
-    backgroundColor: '#d9f0e4',
-    border: '2px solid #a8cdb8',
-    borderRadius: '999px',
-    padding: '10px 20px',
-}
-const FOCUS_STYLE = { border: '2px solid #4fae7f', boxShadow: '0px 0px 0px 4px #4fae7f2e' }
-const FOOTER_STYLE = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }
-const STATUS_STYLE = { fontFamily: TEXT_FONT_FAMILY, fontSize: '12px', color: '#658273' }
-const TAPS_STYLE = { fontFamily: TEXT_FONT_FAMILY, fontSize: '12px', color: '#4fae7f' }
 
 const nickname_ref = ref<InputHandle | null>(null)
 const focused = ref<keyof typeof MAX_LENGTHS | null>(null)
@@ -171,26 +74,27 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <View :style="PAGE_STYLE">
-        <View :style="CARD_STYLE">
-            <View :style="HEADER_STYLE">
-                <View :style="BADGE_STYLE">
+    <View class="page">
+        <View class="card">
+            <View class="header">
+                <View class="badge">
                     <Image :src="COIN_SRC" width="42px" />
                 </View>
-                <View :style="HEADER_TEXTS_STYLE">
-                    <Text :style="TITLE_STYLE">Player profile</Text>
-                    <Text :style="SUBTITLE_STYLE">Four inputs, four type treatments.</Text>
+                <View class="header-texts">
+                    <Text class="title">Player profile</Text>
+                    <Text class="subtitle">Four inputs, four type treatments.</Text>
                 </View>
             </View>
 
-            <View :style="DIVIDER_STYLE" />
+            <View class="divider" />
 
-            <View :style="FIELD_STYLE">
-                <Text :style="LABEL_STYLE">NICKNAME</Text>
+            <View class="field">
+                <Text class="label">NICKNAME</Text>
                 <Input
                     id="nickname"
                     ref="nickname_ref"
-                    :style="{ ...NICKNAME_STYLE, ...(focused === 'nickname' && FOCUS_STYLE) }"
+                    class="nickname"
+                    :class="{ focus: focused === 'nickname' }"
                     :value="values.nickname"
                     placeholder="Player one"
                     placeholder-text-color="#658273"
@@ -199,12 +103,13 @@ onUnmounted(() => {
                 />
             </View>
 
-            <View :style="ROW_STYLE">
-                <View :style="CLAN_FIELD_STYLE">
-                    <Text :style="LABEL_STYLE">CLAN TAG</Text>
+            <View class="row">
+                <View class="clan-field">
+                    <Text class="label">CLAN TAG</Text>
                     <Input
                         id="clan"
-                        :style="{ ...CLAN_STYLE, ...(focused === 'clan' && FOCUS_STYLE) }"
+                        class="clan"
+                        :class="{ focus: focused === 'clan' }"
                         :value="values.clan"
                         placeholder="UNO"
                         placeholder-text-color="#d9f0e4"
@@ -212,11 +117,12 @@ onUnmounted(() => {
                         @blur="handleBlur"
                     />
                 </View>
-                <View :style="ROW_FIELD_STYLE">
-                    <Text :style="LABEL_STYLE">ACCESS CODE</Text>
+                <View class="row-field">
+                    <Text class="label">ACCESS CODE</Text>
                     <Input
                         id="code"
-                        :style="{ ...CODE_STYLE, ...(focused === 'code' && FOCUS_STYLE) }"
+                        class="code"
+                        :class="{ focus: focused === 'code' }"
                         :value="values.code.replace(/./g, '•').trim()"
                         placeholder="000000"
                         placeholder-text-color="#658273"
@@ -226,11 +132,12 @@ onUnmounted(() => {
                 </View>
             </View>
 
-            <View :style="FIELD_STYLE">
-                <Text :style="LABEL_STYLE">BATTLE CRY</Text>
+            <View class="field">
+                <Text class="label">BATTLE CRY</Text>
                 <Input
                     id="cry"
-                    :style="{ ...CRY_STYLE, ...(focused === 'cry' && FOCUS_STYLE) }"
+                    class="cry"
+                    :class="{ focus: focused === 'cry' }"
                     :value="values.cry"
                     placeholder="For glory and coins!"
                     placeholder-text-color="#658273"
@@ -239,12 +146,172 @@ onUnmounted(() => {
                 />
             </View>
 
-            <View :style="DIVIDER_STYLE" />
+            <View class="divider" />
 
-            <View :style="FOOTER_STYLE">
-                <Text :style="STATUS_STYLE">{{ focused === null ? 'Tap a field to edit' : `Editing ${focused}` }}</Text>
-                <Text :style="TAPS_STYLE">{{ taps }} taps</Text>
+            <View class="footer">
+                <Text class="status">{{ focused === null ? 'Tap a field to edit' : `Editing ${focused}` }}</Text>
+                <Text class="taps">{{ taps }} taps</Text>
             </View>
         </View>
     </View>
 </template>
+
+<style scoped>
+.page {
+    width: 100%;
+    height: 100%;
+    padding: 32px;
+    background-color: #f2f7f4;
+    align-items: center;
+    justify-content: center;
+}
+
+.card {
+    width: 560px;
+    flex-direction: column;
+    gap: 22px;
+    padding: 30px;
+    background-color: #ffffff;
+    border: 1px solid #a8cdb8;
+    border-radius: 24px;
+    box-shadow: 0px 24px 50px -12px #203b2e33;
+}
+
+.header {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+}
+
+.badge {
+    width: 64px;
+    height: 64px;
+    align-items: center;
+    justify-content: center;
+    background-color: #d9f0e4;
+    border: 1px solid #a8cdb8;
+    border-radius: 20px;
+}
+
+.header-texts {
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.title {
+    font-family: ChangaOne-Regular;
+    font-size: 30px;
+    color: #203b2e;
+    letter-spacing: 0.5px;
+}
+
+.subtitle {
+    font-family: Poppins-Regular;
+    font-size: 13px;
+    line-height: 18px;
+    color: #658273;
+}
+
+.divider {
+    height: 1px;
+    background-color: #a8cdb8;
+}
+
+.row {
+    flex-direction: row;
+    gap: 16px;
+}
+
+.field {
+    flex-direction: column;
+    gap: 8px;
+}
+
+.row-field {
+    flex: 1;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.clan-field {
+    width: 96px;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label {
+    font-family: Poppins-Regular;
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    color: #658273;
+}
+
+.nickname {
+    font-family: Poppins-Regular;
+    color: #203b2e;
+    letter-spacing: 0.3px;
+    background-color: #eaf4ee;
+    border: 2px solid #a8cdb8;
+    border-radius: 12px;
+    padding: 10px 14px;
+}
+
+.clan {
+    font-family: Nougat-ExtraBlack;
+    color: #ffffff;
+    letter-spacing: 3px;
+    text-align: center;
+    text-stroke: 1px #203b2e;
+    text-shadow: 0px 2px 0px #203b2e33;
+    background-color: #4fae7f;
+    border: 2px solid #a8cdb8;
+    border-radius: 14px;
+    padding: 10px 14px;
+}
+
+.code {
+    font-family: Poppins-Regular;
+    color: #4fae7f;
+    letter-spacing: 8px;
+    text-align: center;
+    background-color: #eaf4ee;
+    border: 2px solid #a8cdb8;
+    border-radius: 12px;
+    padding: 10px 14px;
+}
+
+.cry {
+    font-family: ChangaOne-Regular;
+    color: #203b2e;
+    letter-spacing: 0.5px;
+    line-height: 22px;
+    background-color: #d9f0e4;
+    border: 2px solid #a8cdb8;
+    border-radius: 999px;
+    padding: 10px 20px;
+}
+
+.focus {
+    border: 2px solid #4fae7f;
+    box-shadow: 0px 0px 0px 4px #4fae7f2e;
+}
+
+.footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.status {
+    font-family: Poppins-Regular;
+    font-size: 12px;
+    color: #658273;
+}
+
+.taps {
+    font-family: Poppins-Regular;
+    font-size: 12px;
+    color: #4fae7f;
+}
+</style>

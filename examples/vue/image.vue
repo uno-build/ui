@@ -20,116 +20,137 @@ export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
 
 <script setup lang="ts">
 import { Image, Text, View } from 'uno-ui/vue'
-
-const PAGE_STYLE = {
-    width: '100%',
-    height: '100%',
-    padding: '32px',
-    gap: '24px',
-    backgroundColor: '#f2f7f4',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignContent: 'flex-start',
-    overflow: 'scroll',
-}
-const IMAGE_CARD_STYLE = {
-    width: '350px',
-    height: '330px',
-    padding: '20px',
-    gap: '14px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #a8cdb8',
-    borderRadius: '24px',
-    boxShadow: '0px 18px 40px -14px #203b2e22',
-    flexDirection: 'column',
-}
-const IMAGE_STAGE_STYLE = {
-    flex: '1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#eaf4ee',
-    border: '1px solid #a8cdb8',
-    borderRadius: '18px',
-}
-const IMAGE_LABEL_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '13px',
-    lineHeight: '18px',
-    letterSpacing: '0.3px',
-    color: '#658273',
-}
 </script>
 
 <template>
-    <View :style="PAGE_STYLE">
-        <View :style="IMAGE_CARD_STYLE">
-            <Text :style="IMAGE_LABEL_STYLE">No width or height - 256x256</Text>
-            <View :style="IMAGE_STAGE_STYLE">
+    <View class="page">
+        <View class="image-card">
+            <Text class="image-label">No width or height - 256x256</Text>
+            <View class="image-stage">
                 <Image :src="IMAGE_SRC" />
             </View>
         </View>
 
-        <View :style="IMAGE_CARD_STYLE">
-            <Text :style="IMAGE_LABEL_STYLE">Width only: 160px - result 160x160</Text>
-            <View :style="IMAGE_STAGE_STYLE">
+        <View class="image-card">
+            <Text class="image-label">Width only: 160px - result 160x160</Text>
+            <View class="image-stage">
                 <Image :src="IMAGE_SRC" width="160px" />
             </View>
         </View>
 
-        <View :style="IMAGE_CARD_STYLE">
-            <Text :style="IMAGE_LABEL_STYLE">Height only: 120px - result 120x120</Text>
-            <View :style="IMAGE_STAGE_STYLE">
+        <View class="image-card">
+            <Text class="image-label">Height only: 120px - result 120x120</Text>
+            <View class="image-stage">
                 <Image :src="IMAGE_SRC" height="120px" />
             </View>
         </View>
 
-        <View :style="IMAGE_CARD_STYLE">
-            <Text :style="IMAGE_LABEL_STYLE">objectFit: fill - 180x90 box</Text>
-            <View :style="IMAGE_STAGE_STYLE">
-                <Image :src="IMAGE_SRC" width="180px" height="90px" :style="{ objectFit: 'fill' }" />
+        <View class="image-card">
+            <Text class="image-label">objectFit: fill - 180x90 box</Text>
+            <View class="image-stage">
+                <Image :src="IMAGE_SRC" width="180px" height="90px" class="fit-fill" />
             </View>
         </View>
 
-        <View :style="IMAGE_CARD_STYLE">
-            <Text :style="IMAGE_LABEL_STYLE">objectFit: contain - 180x90 box</Text>
-            <View :style="IMAGE_STAGE_STYLE">
-                <Image :src="IMAGE_SRC" width="180px" height="90px" :style="{ objectFit: 'contain' }" />
+        <View class="image-card">
+            <Text class="image-label">objectFit: contain - 180x90 box</Text>
+            <View class="image-stage">
+                <Image :src="IMAGE_SRC" width="180px" height="90px" class="fit-contain" />
             </View>
         </View>
 
-        <View :style="IMAGE_CARD_STYLE">
-            <Text :style="IMAGE_LABEL_STYLE">objectFit: cover - 180x90 box</Text>
-            <View :style="IMAGE_STAGE_STYLE">
-                <Image :src="IMAGE_SRC" width="180px" height="90px" :style="{ objectFit: 'cover' }" />
+        <View class="image-card">
+            <Text class="image-label">objectFit: cover - 180x90 box</Text>
+            <View class="image-stage">
+                <Image :src="IMAGE_SRC" width="180px" height="90px" class="fit-cover" />
             </View>
         </View>
 
-        <View :style="IMAGE_CARD_STYLE">
-            <Text :style="IMAGE_LABEL_STYLE">objectFit: none - 180x90 box</Text>
-            <View :style="IMAGE_STAGE_STYLE">
-                <Image :src="IMAGE_SRC" width="180px" height="90px" :style="{ objectFit: 'none' }" />
+        <View class="image-card">
+            <Text class="image-label">objectFit: none - 180x90 box</Text>
+            <View class="image-stage">
+                <Image :src="IMAGE_SRC" width="180px" height="90px" class="fit-none" />
             </View>
         </View>
 
-        <View :style="IMAGE_CARD_STYLE">
-            <Text :style="IMAGE_LABEL_STYLE">Width only: 50% - height preserves the aspect ratio</Text>
-            <View :style="IMAGE_STAGE_STYLE">
+        <View class="image-card">
+            <Text class="image-label">Width only: 50% - height preserves the aspect ratio</Text>
+            <View class="image-stage">
                 <Image :src="IMAGE_SRC" width="50%" />
             </View>
         </View>
 
-        <View :style="IMAGE_CARD_STYLE">
-            <Text :style="IMAGE_LABEL_STYLE">Height only: 50% - width preserves the aspect ratio</Text>
-            <View :style="IMAGE_STAGE_STYLE">
+        <View class="image-card">
+            <Text class="image-label">Height only: 50% - width preserves the aspect ratio</Text>
+            <View class="image-stage">
                 <Image :src="IMAGE_SRC" height="50%" />
             </View>
         </View>
 
-        <View :style="IMAGE_CARD_STYLE">
-            <Text :style="IMAGE_LABEL_STYLE">Width and height: 50% - independent box</Text>
-            <View :style="IMAGE_STAGE_STYLE">
+        <View class="image-card">
+            <Text class="image-label">Width and height: 50% - independent box</Text>
+            <View class="image-stage">
                 <Image :src="IMAGE_SRC" width="50%" height="50%" />
             </View>
         </View>
     </View>
 </template>
+
+<style scoped>
+.page {
+    width: 100%;
+    height: 100%;
+    padding: 32px;
+    gap: 24px;
+    background-color: #f2f7f4;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    overflow: scroll;
+}
+
+.image-card {
+    width: 350px;
+    height: 330px;
+    padding: 20px;
+    gap: 14px;
+    background-color: #ffffff;
+    border: 1px solid #a8cdb8;
+    border-radius: 24px;
+    box-shadow: 0px 18px 40px -14px #203b2e22;
+    flex-direction: column;
+}
+
+.image-stage {
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    background-color: #eaf4ee;
+    border: 1px solid #a8cdb8;
+    border-radius: 18px;
+}
+
+.image-label {
+    font-family: Poppins-Regular;
+    font-size: 13px;
+    line-height: 18px;
+    letter-spacing: 0.3px;
+    color: #658273;
+}
+
+.fit-fill {
+    object-fit: fill;
+}
+
+.fit-contain {
+    object-fit: contain;
+}
+
+.fit-cover {
+    object-fit: cover;
+}
+
+.fit-none {
+    object-fit: none;
+}
+</style>
