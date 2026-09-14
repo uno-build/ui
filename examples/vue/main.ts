@@ -12,17 +12,23 @@ const EXAMPLES = {
     image: () => import('./image.vue'),
     scrollview: () => import('./scrollview.vue'),
     todo: () => import('./todo.vue'),
+    'todo-playcanvas': () => import('./todo-playcanvas'),
 }
 const RENDERERS = {
-    RendererDom: { element_type: 'div', ui_class: UIDom, resources_class: ResourcesDom },
-    RendererWebGPU: { element_type: 'canvas', ui_class: UIWebGPU, resources_class: ResourcesWebGPU },
+    RendererDom: { element: document.createElement('div'), ui_class: UIDom, resources_class: ResourcesDom },
+    RendererWebGPU: {
+        element: document.createElement('canvas'),
+        ui_class: UIWebGPU,
+        resources_class: ResourcesWebGPU,
+    },
 }
 const root = document.getElementById('root')!
 const settings_examples = document.getElementById('settings-examples')!
 const example_name = new URLSearchParams(location.search).get('example') as keyof typeof EXAMPLES
-const { default: Example, loadResources } = await EXAMPLES[example_name]()
-const device_pixel_ratio = window.devicePixelRatio
-const uis = []
+
+for (const [renderer_name, setup] of Object.entries(RENDERERS)) {
+    setup.element.id = renderer_name
+}
 
 for (const available_example_name of Object.keys(EXAMPLES)) {
     const example_url = new URL(window.location.href)
@@ -40,44 +46,63 @@ for (const available_example_name of Object.keys(EXAMPLES)) {
 
 initSettingsPanel({ root })
 
-for (const [renderer_name, setup] of Object.entries(RENDERERS)) {
-    const element = document.createElement(setup.element_type)
-    element.id = renderer_name
-    root.appendChild(element)
+if (example_name === 'todo-playcanvas') {
+    const [{ main }, { default: UIPlayCanvas }] = await Promise.all([
+        EXAMPLES[example_name](),
+        import('uno-ui/UIPlayCanvas'),
+    ])
+    const canvas = RENDERERS.RendererWebGPU.element
+    root.appendChild(canvas)
+    await main({
+        canvas,
+        onCanvasEvent: window.addEventListener.bind(window),
+        ResourcesWebGPU,
+        UIPlayCanvas,
+        loadYoga,
+    })
+} else {
+    const { default: Example, loadResources } = await EXAMPLES[example_name]()
+    const device_pixel_ratio = window.devicePixelRatio
+    const uis = []
 
-    const resources = await setup.resources_class.create({ canvas: element })
-    const { ui } = await setup.ui_class.create({ resources, loadYoga, device_pixel_ratio })
+    for (const setup of Object.values(RENDERERS)) {
+        const { element } = setup
+        root.appendChild(element)
 
-    function syncRendererSize() {
-        const width = root.clientWidth
-        const height = root.clientHeight
+        const resources = await setup.resources_class.create({ canvas: element })
+        const { ui } = await setup.ui_class.create({ resources, loadYoga, device_pixel_ratio })
 
-        if (element instanceof HTMLCanvasElement) {
-            element.width = Math.max(1, Math.round(width * device_pixel_ratio))
-            element.height = Math.max(1, Math.round(height * device_pixel_ratio))
+        function syncRendererSize() {
+            const width = root.clientWidth
+            const height = root.clientHeight
+
+            if (element instanceof HTMLCanvasElement) {
+                element.width = Math.max(1, Math.round(width * device_pixel_ratio))
+                element.height = Math.max(1, Math.round(height * device_pixel_ratio))
+            }
+
+            ui.setViewport(width, height)
+            ui.setDevicePixelRatio(device_pixel_ratio)
+            ui.update()
         }
 
-        ui.setViewport(width, height)
-        ui.setDevicePixelRatio(device_pixel_ratio)
-        ui.update()
+        syncRendererSize()
+        window.addEventListener('resize', syncRendererSize)
+
+        if (element instanceof HTMLCanvasElement) {
+            PLATFORM_EVENT_NAMES.forEach((type) => {
+                element.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))
+            })
+        }
+
+        await loadResources(resources)
+        const renderer = registerRootComponent(Example, { ui })
+        renderer.render({})
+        uis.push(ui)
     }
 
-    syncRendererSize()
-    window.addEventListener('resize', syncRendererSize)
-
-    if (element instanceof HTMLCanvasElement) {
-        PLATFORM_EVENT_NAMES.forEach((type) => {
-            element.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))
-        })
-    }
-
-    await loadResources(resources)
-    const renderer = registerRootComponent(Example, { ui })
-    renderer.render({})
-    uis.push(ui)
+    requestAnimationFrame(function render() {
+        uis.forEach((ui) => ui.draw())
+        requestAnimationFrame(render)
+    })
 }
-
-requestAnimationFrame(function render() {
-    uis.forEach((ui) => ui.draw())
-    requestAnimationFrame(render)
-})

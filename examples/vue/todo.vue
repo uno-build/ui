@@ -27,6 +27,11 @@ import { Image, Input, ScrollView, Text, View } from 'uno-ui/vue'
 import type { InputHandle } from 'uno-ui/vue'
 import type { NodeEventMap } from 'uno-ui/events'
 
+const props = defineProps<{
+    backgroundColor?: string
+    boxShadow?: string
+}>()
+
 const MAX_TITLE_LENGTH = 48
 const DOUBLE_CLICK_DELAY = 320
 const LIST_HEIGHT = 268
@@ -256,8 +261,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <View class="page">
-        <View class="card">
+    <View class="page" :style="{ backgroundColor: props.backgroundColor }">
+        <View class="card" :style="{ boxShadow: props.boxShadow }">
             <View class="header">
                 <View class="badge">
                     <Image :src="COIN_SRC" width="42px" />

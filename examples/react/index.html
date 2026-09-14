@@ -109,13 +109,21 @@
                 'todo-three': () => import('./todo-three'),
             }
             const RENDERERS = {
-                RendererDom: { element_type: 'div', ui_class: UIDom, resources_class: ResourcesDom },
-                RendererWebGPU: { element_type: 'canvas', ui_class: UIWebGPU, resources_class: ResourcesWebGPU },
+                RendererDom: { element: document.createElement('div'), ui_class: UIDom, resources_class: ResourcesDom },
+                RendererWebGPU: {
+                    element: document.createElement('canvas'),
+                    ui_class: UIWebGPU,
+                    resources_class: ResourcesWebGPU,
+                },
             }
             const root = document.getElementById('root')
             const settings_examples = document.getElementById('settings-examples')
             const requested_example_name = new URLSearchParams(location.search).get('example')
             const example_name = Object.hasOwn(EXAMPLES, requested_example_name) ? requested_example_name : 'image'
+
+            for (const [renderer_name, setup] of Object.entries(RENDERERS)) {
+                setup.element.id = renderer_name
+            }
 
             for (const available_example_name of Object.keys(EXAMPLES)) {
                 const example_url = new URL(window.location.href)
@@ -139,8 +147,7 @@
                     import('uno-ui/UIThree'),
                     import('../../tests/utils/load-assets'),
                 ])
-                const canvas = document.createElement('canvas')
-                canvas.id = 'RendererThree'
+                const canvas = RENDERERS.RendererWebGPU.element
                 root.appendChild(canvas)
                 await main({
                     canvas,
@@ -156,10 +163,9 @@
                 const device_pixel_ratio = window.devicePixelRatio
                 const uis = []
 
-                for (const [renderer_name, setup] of Object.entries(RENDERERS)) {
-                    const is_canvas = setup.element_type === 'canvas'
-                    const element = document.createElement(setup.element_type)
-                    element.id = renderer_name
+                for (const setup of Object.values(RENDERERS)) {
+                    const { element } = setup
+                    const is_canvas = element instanceof HTMLCanvasElement
                     root.appendChild(element)
 
                     const resources = await setup.resources_class.create({ canvas: element })
