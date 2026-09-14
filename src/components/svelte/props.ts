@@ -1,6 +1,9 @@
 import type { Snippet } from 'svelte'
+import type { ClassValue } from 'svelte/elements'
 import type { StyleProps } from '../../style/types'
-import type { BaseProps, ImageOptions, InputOptions } from '../props'
+import type { BaseProps as SharedProps, ImageOptions, InputOptions } from '../props'
+
+export type BaseProps = SharedProps & { class?: ClassValue, css_scope?: string }
 
 export type ViewProps = BaseProps & { children?: Snippet }
 export type TextProps = BaseProps & { children?: Snippet }

@@ -1,3 +1,5 @@
+import './elements'
+
 export { default as View } from './View.svelte'
 export { default as Text } from './Text.svelte'
 export { default as Image } from './Image.svelte'

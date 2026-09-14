@@ -1,9 +1,12 @@
 import type Node from '../../core/Node'
 import type UI from '../../core/UI'
-import type { BaseProps } from '../props'
+import type { BaseProps } from './props'
 import type { StyleProps } from '../../style/types'
-import { tick } from 'svelte'
+import type { CssRule } from './styles'
+import type { EventProps } from '../../events/types'
+import { flushSync, tick } from 'svelte'
 import { createRenderer } from 'svelte/renderer'
+import { normalizeClass, resolveStyles } from './styles'
 
 class HostNode {
     type: 'element' | 'fragment' | 'text' | 'comment'
@@ -14,6 +17,13 @@ class HostNode {
     node: Node | null = null
     attributes: Record<string, any> = {}
     props: BaseProps = {}
+    styles: StyleProps = {}
+    listeners = new Map<string, Set<(event: any) => void>>()
+
+    get class_name() { return `${normalizeClass(this.attributes.class ?? this.props.class)} ${this.attributes.css_scope ?? ''}` }
+    get tag_name() { return this.attributes.css_tag ?? this.name }
+    get id() { return this.attributes.id ?? this.props.id }
+    get nodes() { return { main: this.node! } }
 
     constructor(type: HostNode['type'], name = '', value = '') {
         this.type = type
@@ -23,6 +33,13 @@ class HostNode {
 }
 
 const PENDING_UIS = new Set<UI>()
+const ROOTS = new Map<UI, HostNode>()
+const STYLESHEETS = new Map<string, CssRule[]>()
+
+export function registerStyles(id: string, rules: CssRule[]) {
+    STYLESHEETS.set(id, rules)
+    for (const ui of ROOTS.keys()) enqueueUpdate(ui)
+}
 
 export function enqueueUpdate(ui: UI) {
     if (PENDING_UIS.has(ui)) return
@@ -31,13 +48,42 @@ export function enqueueUpdate(ui: UI) {
 }
 
 export function flushUI(ui: UI) {
-    if (PENDING_UIS.delete(ui)) ui.update()
+    if (!PENDING_UIS.has(ui)) return
+    while (PENDING_UIS.delete(ui)) {
+        const root = ROOTS.get(ui)
+        if (root) flushSync(() => syncStyles(root))
+    }
+    ui.update()
 }
 
 export function createRoot(ui: UI) {
     const root = new HostNode('element', 'root')
     root.node = ui.root!
     return root
+}
+
+export function attachRoot(root: HostNode) {
+    ROOTS.set(root.node!.ui!, root)
+}
+
+export function detachRoot(ui: UI) {
+    ROOTS.delete(ui)
+}
+
+export function clearRoot(root: HostNode) {
+    for (const child of [...root.children]) {
+        removeNode(child)
+        destroyNodes(child)
+    }
+}
+
+function syncStyles(host: HostNode) {
+    if (host.node?.ui && host.name !== 'root') {
+        const styles = resolveStyles(host, STYLESHEETS.values(), host.attributes.style ?? host.props.style)
+        if (host.attributes.receiveStyles) host.attributes.receiveStyles(styles)
+        else applyNodeStyles(host, styles)
+    }
+    for (const child of host.children) syncStyles(child)
 }
 
 function updateNode(host: HostNode) {
@@ -59,6 +105,15 @@ function syncChildren(parent: HostNode) {
         for (const child of parent.children) {
             if (child.type === 'text' && child.value.trim() !== '') {
                 throw new Error('Texts must be inserted into a <Text> component.')
+            }
+            if (parent.node !== null && child.type === 'element' && child.node === null) {
+                child.node = parent.node.ui!.create()!
+                if (child.name === 'uno-text') child.node.text('')
+                applyProps(child, child.attributes.props ?? {})
+                for (const [name, listeners] of child.listeners) {
+                    for (const listener of listeners) child.node.on(name, listener)
+                }
+                syncChildren(child)
             }
             if (parent.node !== null && child.node !== null) {
                 const anchor = parent.node.children[index] ?? null
@@ -95,31 +150,38 @@ function insertNode(parent: HostNode, host: HostNode, anchor: HostNode | null) {
     syncChildren(parent)
 }
 
-function applyProps(host: HostNode, props: BaseProps) {
+function applyNodeStyles(host: HostNode, styles_next: StyleProps) {
     const node = host.node
-    if (node === null) return
-    const styles_prev = host.props.style ?? {}
-    const styles_next: StyleProps = { ...props.style }
-    for (const name in styles_next) {
-        if (styles_next[name] === undefined) delete styles_next[name]
-    }
+    if (!node?.ui) return
+    const styles_prev = host.styles
     for (const name in styles_prev) {
         if (!Object.hasOwn(styles_next, name)) node.style(name, 'unset')
     }
     for (const name in styles_next) {
         if (styles_next[name] !== styles_prev[name]) node.style(name, styles_next[name]!)
     }
+    host.styles = styles_next
+}
+
+function applyProps(host: HostNode, props: BaseProps) {
+    const node = host.node
+    if (node === null) return
     for (const event of node.ui!.defined_events) {
         for (const type of event.types) {
-            const previousListener = host.props[type.prop as keyof BaseProps]
-            const nextListener = props[type.prop as keyof BaseProps]
+            const previousListener = host.props[type.prop as keyof EventProps]
+            const nextListener = props[type.prop as keyof EventProps]
             if (previousListener === nextListener) continue
             if (typeof previousListener === 'function') node.off(type.name, previousListener)
             if (typeof nextListener === 'function') node.on(type.name, nextListener)
         }
     }
-    host.props = { ...props, style: styles_next }
+    host.props = { ...props, style: { ...props.style } }
     updateNode(host)
+}
+
+function destroyNodes(host: HostNode) {
+    for (const child of host.children) destroyNodes(child)
+    if (host.type === 'element' && !host.attributes.node) host.node?.destroy()
 }
 
 const renderer = createRenderer<{
@@ -150,11 +212,15 @@ const renderer = createRenderer<{
             if (host.parent !== null) syncChildren(host.parent)
         } else if (name === 'props') {
             applyProps(host, value)
+        } else if (name === 'resolvedStyle') {
+            applyNodeStyles(host, resolveStyles(host, [], value))
         }
+        updateNode(host)
     },
     removeAttribute(host, name) {
         delete host.attributes[name]
         if (name === 'props') applyProps(host, {})
+        updateNode(host)
     },
     setText(host, value) {
         if (host.type === 'text' || host.type === 'comment') {
@@ -174,12 +240,21 @@ const renderer = createRenderer<{
     },
     getParent: (host) => host.parent,
     insert: insertNode,
-    remove: removeNode,
+    remove(host) {
+        removeNode(host)
+        destroyNodes(host)
+    },
     addEventListener(host, type, listener) {
-        host.node!.on(type, listener)
+        const name = type.toLowerCase()
+        let listeners = host.listeners.get(name)
+        if (!listeners) host.listeners.set(name, listeners = new Set())
+        listeners.add(listener)
+        host.node?.on(name, listener)
     },
     removeEventListener(host, type, listener) {
-        host.node!.off(type, listener)
+        const name = type.toLowerCase()
+        host.listeners.get(name)?.delete(listener)
+        host.node?.off(name, listener)
     },
 })
 

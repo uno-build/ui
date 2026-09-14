@@ -105,18 +105,38 @@ export default defineConfig({
 
 ```svelte
 <script lang="ts">
-    import { View, Text, Image } from 'uno-ui/svelte'
-    import type { NodeHandle } from 'uno-ui/svelte'
+    import { Image, Text, View } from 'uno-ui/svelte'
 
     let { title }: { title: string } = $props()
     let count = $state(0)
-    let view_ref = $state<NodeHandle>()
 </script>
 
-<View bind:this={view_ref} style={{ padding: '20px' }} onClick={() => count += 1}>
-    <Text>{title}: {count}</Text>
-    <Image src="icon" width="24px" style={{ objectFit: 'contain' }} />
+<View class={['card', { active: count > 0 }]} onClick={() => count += 1}>
+    <Text class="label">{title}: {count}</Text>
+    <Image class="icon" src="icon" width="24px" />
 </View>
+
+<style>
+    .card {
+        padding: 20px;
+        gap: 12px;
+        border: 1px solid #e8eef2;
+    }
+
+    .card.active {
+        border: 1px solid #ff3e00;
+    }
+
+    .label {
+        font-family: Poppins-Regular;
+        font-size: 14px;
+        color: #141414;
+    }
+
+    .card .icon {
+        object-fit: contain;
+    }
+</style>
 ```
 
 Mount the component on an initialized UI with its fonts and images already registered:
@@ -138,12 +158,35 @@ and runs Svelte cleanup without destroying the UI or its resources. `useUI<TUI>(
 returns the current UI during component initialization. `bind:this` on `View`, `Text`,
 and `Image` exposes a `NodeHandle` with the underlying Uno node at `nodes.main`.
 
-Pass styles as objects and use Uno callbacks such as `onClick`, with Uno event payloads
-and propagation. `Text` joins its text and interpolations into one Uno node, including
-conditional content. Place text inside `Text`; nesting `View` or `Image` inside `Text`
-is unsupported. Keyed `{#each}` blocks retain and reorder existing nodes. `Image` uses
-registered resources and the same dimensions and `style.objectFit` behavior as the
-other adapters.
+Write CSS in `<style>` using Uno's supported properties and values in kebab-case.
+`compilerConfig` includes the preprocessor that registers Svelte's scoped rules with
+the adapter; keep its `preprocess` and `emitCss` settings when configuring Vite.
+The adapter resolves these rules into Uno node styles for both DOM and WebGPU,
+without changes to the core. Classes, IDs, and conditional classes update reactively.
+
+The preprocessor enables scoped CSS on Uno's `View`, `Text`, `Image`, `Input`, and
+`ScrollView` components. Pass `class` and target it directly, as with `.card .icon`
+above. Your own child components retain Svelte's normal component boundaries;
+parent styles do not automatically reach their contents.
+Selectors support elements, `*`, classes, IDs, compound selectors, descendants,
+direct children (`>`), and comma-separated lists. Rules respect specificity, source
+order, and `!important`. CSS at-rules, nesting, sibling and attribute selectors, and
+pseudo-classes such as `:hover` and `:focus` are unsupported; use reactive classes
+with Uno event callbacks for those states.
+
+Components retain object `style` props for dynamic values, such as
+`style={{ opacity: String(opacity) }}`.
+Inline styles override normal stylesheet declarations; `!important` declarations
+take priority over normal inline styles. This integration does not add browser-only
+CSS properties or values to Uno. It does not provide automatic CSS inheritance,
+custom properties, or `var()`; apply text styles directly to the text elements.
+
+Use Uno callbacks such as `onClick`, with Uno event payloads and propagation.
+`Text` joins text and interpolations into one Uno node, including conditional
+content. Place text inside `Text`; nesting views or images inside text is
+unsupported. Keyed `{#each}` blocks retain and reorder existing
+nodes. `Image` uses registered resources and the same dimensions and `objectFit`
+behavior as the other adapters, including `object-fit` supplied through CSS.
 
 `ScrollView` scrolls vertically by default, or horizontally with `horizontal`.
 Its `ScrollViewHandle`, exposed through `bind:this`, provides `nodes.main` and

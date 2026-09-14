@@ -6,7 +6,7 @@ import ts from 'typescript'
 import { transform as transformSolid } from '@dom-expressions/compiler'
 import { compile as compileOctane } from 'octane/compiler'
 import { transform } from 'esbuild'
-import { compile as compileSvelte, compileModule } from 'svelte/compiler'
+import { compile as compileSvelte, compileModule, preprocess } from 'svelte/compiler'
 import { svelte2tsx } from 'svelte2tsx'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
@@ -65,7 +65,8 @@ for (const framework of ['solid', 'octane', 'react']) {
 
 const { compilerConfig } = await import(pathToFileURL(path.join(OUTPUT, 'components/svelte/config.js')).href)
 for (const [filename, source] of svelte_sources) {
-    const compiled = compileSvelte(source, { ...compilerConfig.compilerOptions, filename })
+    const processed = await preprocess(source, compilerConfig.preprocess, { filename })
+    const compiled = compileSvelte(processed.code, { ...compilerConfig.compilerOptions, filename, sourcemap: processed.map })
     await writeFile(path.join(OUTPUT, path.relative(SOURCE, filename)).replace(/\.svelte$/, '.js'), compiled.js.code)
 }
 for (const filename of parsed.fileNames.filter((filename) => filename.endsWith('.svelte.ts'))) {

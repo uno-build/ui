@@ -29,7 +29,6 @@ export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
 
 <script lang="ts">
 import { Image, ScrollView, Text, View } from 'uno-ui/svelte'
-import type { ImageProps } from 'uno-ui/svelte'
 
 const GALLERY_SOURCES = [TEXTURE_SRC, LOGO_SRC, COIN_SRC, TEXTURE_SRC, LOGO_SRC, COIN_SRC, TEXTURE_SRC, LOGO_SRC]
 
@@ -58,288 +57,331 @@ const ITEMS = [
     { src: TEXTURE_SRC, title: 'Arena skin', price: '150 gems' },
     { src: COIN_SRC, title: 'Coin bundle', price: '999 gems' },
 ]
-
-const PAGE_STYLE = {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#ebf0f4',
-}
-const PAGE_CONTENT_STYLE = {
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '32px',
-    gap: '24px',
-}
-const PAGE_HEADER_STYLE = {
-    width: '988px',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: '16px',
-}
-const BADGE_STYLE = {
-    width: '58px',
-    height: '58px',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e8eef2',
-    borderRadius: '18px',
-}
-const PAGE_TITLE_STYLE = {
-    fontFamily: TITLE_FONT_FAMILY,
-    fontSize: '30px',
-    color: '#141414',
-    letterSpacing: '0.5px',
-    textShadow: '0px 3px 0px #1414141a',
-}
-const PAGE_SUBTITLE_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '13px',
-    lineHeight: '18px',
-    color: '#141414',
-}
-const PANELS_STYLE = {
-    flexDirection: 'row',
-    gap: '28px',
-}
-const PANEL_STYLE = {
-    width: '480px',
-    height: '560px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e8eef2',
-    borderRadius: '24px',
-    boxShadow: '0px 24px 50px -12px #1414141a',
-}
-const PANEL_CONTENT_STYLE = {
-    flexDirection: 'column',
-    padding: '24px',
-    gap: '18px',
-}
-const HERO_STYLE: NonNullable<ImageProps['style']> = {
-    width: '100%',
-    height: '190px',
-    objectFit: 'cover',
-    borderRadius: '16px',
-}
-const PANEL_TITLE_STYLE = {
-    fontFamily: TITLE_FONT_FAMILY,
-    fontSize: '22px',
-    color: '#141414',
-    letterSpacing: '0.4px',
-}
-const LABEL_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '11px',
-    letterSpacing: '1.6px',
-    color: '#141414',
-}
-const TEXT_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '14px',
-    lineHeight: '22px',
-    color: '#141414',
-    textAlign: 'justify',
-}
-const DIVIDER_STYLE = {
-    height: '1px',
-    backgroundColor: '#e8eef2',
-}
-const GALLERY_STYLE = {
-    width: '100%',
-    height: '150px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e8eef2',
-    borderRadius: '18px',
-}
-const GALLERY_CONTENT_STYLE = {
-    padding: '14px',
-    gap: '14px',
-    alignItems: 'center',
-}
-const GALLERY_IMAGE_STYLE: NonNullable<ImageProps['style']> = {
-    width: '120px',
-    height: '120px',
-    objectFit: 'cover',
-    borderRadius: '14px',
-}
-const ENTRIES_STYLE = {
-    width: '100%',
-    height: '290px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e8eef2',
-    borderRadius: '18px',
-}
-const ENTRIES_CONTENT_STYLE = {
-    flexDirection: 'column',
-    padding: '14px',
-    gap: '12px',
-}
-const ENTRY_STYLE = {
-    flexDirection: 'row',
-    gap: '12px',
-    padding: '12px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e8eef2',
-    borderRadius: '14px',
-}
-const ENTRY_THUMB_STYLE: NonNullable<ImageProps['style']> = {
-    width: '56px',
-    height: '56px',
-    objectFit: 'cover',
-    borderRadius: '12px',
-}
-const ENTRY_TEXTS_STYLE = {
-    flex: '1',
-    flexDirection: 'column',
-    gap: '4px',
-}
-const ENTRY_TITLE_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '14px',
-    color: '#d43109',
-    letterSpacing: '0.3px',
-}
-const ENTRY_BODY_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '12px',
-    lineHeight: '18px',
-    color: '#141414',
-}
-const STRIP_STYLE = {
-    width: '988px',
-    height: '250px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e8eef2',
-    borderRadius: '24px',
-    boxShadow: '0px 24px 50px -12px #1414141a',
-}
-const STRIP_CONTENT_STYLE = {
-    padding: '20px',
-    gap: '16px',
-    alignItems: 'stretch',
-}
-const STRIP_HEADER_STYLE = {
-    width: '190px',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    gap: '8px',
-    paddingRight: '4px',
-}
-const CARD_STYLE = {
-    width: '170px',
-    flexDirection: 'column',
-    gap: '10px',
-    padding: '12px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e8eef2',
-    borderRadius: '18px',
-}
-const CARD_IMAGE_STYLE: NonNullable<ImageProps['style']> = {
-    width: '100%',
-    height: '120px',
-    objectFit: 'cover',
-    borderRadius: '12px',
-}
-const CARD_TITLE_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '13px',
-    color: '#141414',
-}
-const CARD_PRICE_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '12px',
-    letterSpacing: '0.4px',
-    color: '#d43109',
-}
-const FOOTER_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '12px',
-    color: '#d43109',
-}
 </script>
 
-<ScrollView style={PAGE_STYLE}>
-    <View style={PAGE_CONTENT_STYLE}>
-        <View style={PAGE_HEADER_STYLE}>
-            <View style={BADGE_STYLE}>
+<ScrollView class="scroll-page">
+    <View class="page-content">
+        <View class="page-header">
+            <View class="badge">
                 <Image src={COIN_SRC} width="38px" />
             </View>
-            <View style={{ flex: '1', flexDirection: 'column', gap: '4px' }}>
-                <Text style={PAGE_TITLE_STYLE}>Scroll playground</Text>
-                <Text style={PAGE_SUBTITLE_STYLE}>Two panels, each with a nested scroll area.</Text>
+            <View class="header-texts">
+                <Text class="page-title">Scroll playground</Text>
+                <Text class="page-subtitle">Two panels, each with a nested scroll area.</Text>
             </View>
         </View>
 
-        <View style={PANELS_STYLE}>
-            <ScrollView style={PANEL_STYLE}>
-                <View style={PANEL_CONTENT_STYLE}>
-                    <Text style={LABEL_STYLE}>VERTICAL + INNER HORIZONTAL</Text>
-                    <Text style={PANEL_TITLE_STYLE}>Featured drop</Text>
-                    <Image src={LOGO_SRC} style={HERO_STYLE} />
-                    <Text style={TEXT_STYLE}>{PARAGRAPHS[0]}</Text>
+        <View class="panels">
+            <ScrollView class="panel">
+                <View class="panel-content">
+                    <Text class="label">VERTICAL + INNER HORIZONTAL</Text>
+                    <Text class="panel-title">Featured drop</Text>
+                    <Image src={LOGO_SRC} class="hero" />
+                    <Text class="text">{PARAGRAPHS[0]}</Text>
 
-                    <ScrollView horizontal style={GALLERY_STYLE}>
-                        <View style={GALLERY_CONTENT_STYLE}>
+                    <ScrollView horizontal class="gallery">
+                        <View class="gallery-content">
                             {#each GALLERY_SOURCES as src, index (index)}
-                                <Image src={src} style={GALLERY_IMAGE_STYLE} />
+                                <Image src={src} class="gallery-image" />
                             {/each}
                         </View>
                     </ScrollView>
 
-                    <View style={DIVIDER_STYLE} />
+                    <View class="divider" />
 
                     {#each PARAGRAPHS as paragraph (paragraph)}
-                        <Text style={TEXT_STYLE}>{paragraph}</Text>
+                        <Text class="text">{paragraph}</Text>
                     {/each}
-                    <Text style={FOOTER_STYLE}>Drag the strip sideways</Text>
+                    <Text class="footer">Drag the strip sideways</Text>
                 </View>
             </ScrollView>
 
-            <ScrollView style={PANEL_STYLE}>
-                <View style={PANEL_CONTENT_STYLE}>
-                    <Text style={LABEL_STYLE}>VERTICAL + INNER VERTICAL</Text>
-                    <Text style={PANEL_TITLE_STYLE}>Patch notes</Text>
-                    <Image src={TEXTURE_SRC} style={{ ...HERO_STYLE, height: '140px' }} />
+            <ScrollView class="panel">
+                <View class="panel-content">
+                    <Text class="label">VERTICAL + INNER VERTICAL</Text>
+                    <Text class="panel-title">Patch notes</Text>
+                    <Image src={TEXTURE_SRC} class="hero hero-compact" />
 
-                    <ScrollView style={ENTRIES_STYLE}>
-                        <View style={ENTRIES_CONTENT_STYLE}>
+                    <ScrollView class="entries">
+                        <View class="entries-content">
                             {#each ENTRIES as entry (entry.title)}
-                                <View style={ENTRY_STYLE}>
-                                    <Image src={COIN_SRC} style={ENTRY_THUMB_STYLE} />
-                                    <View style={ENTRY_TEXTS_STYLE}>
-                                        <Text style={ENTRY_TITLE_STYLE}>{entry.title}</Text>
-                                        <Text style={ENTRY_BODY_STYLE}>{entry.body}</Text>
+                                <View class="entry">
+                                    <Image src={COIN_SRC} class="entry-thumb" />
+                                    <View class="entry-texts">
+                                        <Text class="entry-title">{entry.title}</Text>
+                                        <Text class="entry-body">{entry.body}</Text>
                                     </View>
                                 </View>
                             {/each}
                         </View>
                     </ScrollView>
 
-                    <View style={DIVIDER_STYLE} />
+                    <View class="divider" />
 
                     {#each PARAGRAPHS as paragraph (paragraph)}
-                        <Text style={TEXT_STYLE}>{paragraph}</Text>
+                        <Text class="text">{paragraph}</Text>
                     {/each}
-                    <Text style={FOOTER_STYLE}>Inner list scrolls on its own</Text>
+                    <Text class="footer">Inner list scrolls on its own</Text>
                 </View>
             </ScrollView>
         </View>
 
-        <ScrollView horizontal style={STRIP_STYLE}>
-            <View style={STRIP_CONTENT_STYLE}>
-                <View style={STRIP_HEADER_STYLE}>
-                    <Text style={LABEL_STYLE}>HORIZONTAL</Text>
-                    <Text style={PANEL_TITLE_STYLE}>Night market</Text>
-                    <Text style={ENTRY_BODY_STYLE}>Drag left and right to browse the offers.</Text>
+        <ScrollView horizontal class="strip">
+            <View class="strip-content">
+                <View class="strip-header">
+                    <Text class="label">HORIZONTAL</Text>
+                    <Text class="panel-title">Night market</Text>
+                    <Text class="entry-body">Drag left and right to browse the offers.</Text>
                 </View>
                 {#each ITEMS as item (item.title)}
-                    <View style={CARD_STYLE}>
-                        <Image src={item.src} style={CARD_IMAGE_STYLE} />
-                        <Text style={CARD_TITLE_STYLE}>{item.title}</Text>
-                        <Text style={CARD_PRICE_STYLE}>{item.price}</Text>
+                    <View class="card">
+                        <Image src={item.src} class="card-image" />
+                        <Text class="card-title">{item.title}</Text>
+                        <Text class="card-price">{item.price}</Text>
                     </View>
                 {/each}
             </View>
         </ScrollView>
     </View>
 </ScrollView>
+
+<style>
+    .scroll-page {
+        width: 100%;
+        height: 100%;
+        background-color: #ebf0f4;
+    }
+
+    .page-content {
+        flex-direction: column;
+        align-items: center;
+        padding: 32px;
+        gap: 24px;
+    }
+
+    .page-header {
+        width: 988px;
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .badge {
+        width: 58px;
+        height: 58px;
+        align-items: center;
+        justify-content: center;
+        background-color: #ffffff;
+        border: 1px solid #e8eef2;
+        border-radius: 18px;
+    }
+
+    .page-title {
+        font-family: ChangaOne-Regular;
+        font-size: 30px;
+        color: #141414;
+        letter-spacing: 0.5px;
+        text-shadow: 0px 3px 0px #1414141a;
+    }
+
+    .page-subtitle {
+        font-family: Poppins-Regular;
+        font-size: 13px;
+        line-height: 18px;
+        color: #141414;
+    }
+
+    .panels {
+        flex-direction: row;
+        gap: 28px;
+    }
+
+    .page-content .panel {
+        width: 480px;
+        height: 560px;
+        background-color: #ffffff;
+        border: 1px solid #e8eef2;
+        border-radius: 24px;
+        box-shadow: 0px 24px 50px -12px #1414141a;
+    }
+
+    .panel-content {
+        flex-direction: column;
+        padding: 24px;
+        gap: 18px;
+    }
+
+    .page-content .hero {
+        width: 100%;
+        height: 190px;
+        object-fit: cover;
+        border-radius: 16px;
+    }
+
+    .panel-title {
+        font-family: ChangaOne-Regular;
+        font-size: 22px;
+        color: #141414;
+        letter-spacing: 0.4px;
+    }
+
+    .label {
+        font-family: Poppins-Regular;
+        font-size: 11px;
+        letter-spacing: 1.6px;
+        color: #141414;
+    }
+
+    .text {
+        font-family: Poppins-Regular;
+        font-size: 14px;
+        line-height: 22px;
+        color: #141414;
+        text-align: justify;
+    }
+
+    .divider {
+        height: 1px;
+        background-color: #e8eef2;
+    }
+
+    .page-content .gallery {
+        width: 100%;
+        height: 150px;
+        background-color: #ffffff;
+        border: 1px solid #e8eef2;
+        border-radius: 18px;
+    }
+
+    .gallery-content {
+        padding: 14px;
+        gap: 14px;
+        align-items: center;
+    }
+
+    .page-content .gallery-image {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 14px;
+    }
+
+    .page-content .entries {
+        width: 100%;
+        height: 290px;
+        background-color: #ffffff;
+        border: 1px solid #e8eef2;
+        border-radius: 18px;
+    }
+
+    .entries-content {
+        flex-direction: column;
+        padding: 14px;
+        gap: 12px;
+    }
+
+    .entry {
+        flex-direction: row;
+        gap: 12px;
+        padding: 12px;
+        background-color: #ffffff;
+        border: 1px solid #e8eef2;
+        border-radius: 14px;
+    }
+
+    .page-content .entry-thumb {
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+        border-radius: 12px;
+    }
+
+    .entry-texts {
+        flex: 1;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .entry-title {
+        font-family: Poppins-Regular;
+        font-size: 14px;
+        color: #d43109;
+        letter-spacing: 0.3px;
+    }
+
+    .entry-body {
+        font-family: Poppins-Regular;
+        font-size: 12px;
+        line-height: 18px;
+        color: #141414;
+    }
+
+    .page-content .strip {
+        width: 988px;
+        height: 250px;
+        background-color: #ffffff;
+        border: 1px solid #e8eef2;
+        border-radius: 24px;
+        box-shadow: 0px 24px 50px -12px #1414141a;
+    }
+
+    .strip-content {
+        padding: 20px;
+        gap: 16px;
+        align-items: stretch;
+    }
+
+    .strip-header {
+        width: 190px;
+        flex-direction: column;
+        justify-content: center;
+        gap: 8px;
+        padding-right: 4px;
+    }
+
+    .card {
+        width: 170px;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+        background-color: #ffffff;
+        border: 1px solid #e8eef2;
+        border-radius: 18px;
+    }
+
+    .page-content .card-image {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 12px;
+    }
+
+    .card-title {
+        font-family: Poppins-Regular;
+        font-size: 13px;
+        color: #141414;
+    }
+
+    .card-price {
+        font-family: Poppins-Regular;
+        font-size: 12px;
+        letter-spacing: 0.4px;
+        color: #d43109;
+    }
+
+    .footer {
+        font-family: Poppins-Regular;
+        font-size: 12px;
+        color: #d43109;
+    }
+
+    .header-texts {
+        flex: 1;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .page-content .hero-compact {
+        height: 140px;
+    }
+</style>

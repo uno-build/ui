@@ -11,10 +11,12 @@ import {
     getInputTextValue,
     showInputPlaceholder,
 } from '../shared'
-import { createNode } from './context.svelte'
+import { createNode, createStyles } from './context.svelte'
 import View from './View.svelte'
 
 let {
+    class: class_name,
+    css_scope,
     style = {},
     value,
     placeholder,
@@ -26,6 +28,8 @@ let {
 }: InputProps = $props()
 
 const main_node = createNode()
+const css_styles = createStyles()
+const input_style = $derived(css_styles.current)
 const content_node = createNode()
 const text_node = createNode()
 text_node.text('')
@@ -76,11 +80,11 @@ $effect(() => {
 })
 </script>
 
-<uno-view node={main_node} props={{ ...props, onFocus: handleFocus, onBlur: handleBlur, onPointerDown: handlePointerDown, style: getInputStyle(style) }}>
-    <uno-view node={content_node} props={{ style: getInputContentStyle(style) }}>
-        <uno-text node={text_node} props={{ style: getInputTextStyle(style, show_placeholder, placeholder_text_color) }}>{getInputTextValue(value, placeholder, show_placeholder)}</uno-text>
+<uno-view class={class_name} {css_scope} css_tag="Input" node={main_node} props={{ ...props, onFocus: handleFocus, onBlur: handleBlur, onPointerDown: handlePointerDown, style: { ...style } }} receiveStyles={css_styles.setCurrent} resolvedStyle={getInputStyle(input_style)}>
+    <uno-view node={content_node} props={{ style: getInputContentStyle(input_style) }}>
+        <uno-text node={text_node} props={{ style: getInputTextStyle(input_style, show_placeholder, placeholder_text_color) }}>{getInputTextValue(value, placeholder, show_placeholder)}</uno-text>
         {#if is_focused}
-            <View bind:this={caret_ref} style={getInputCaretStyle(style, caret_visible)} />
+            <View bind:this={caret_ref} style={getInputCaretStyle(input_style, caret_visible)} />
         {/if}
     </uno-view>
 </uno-view>

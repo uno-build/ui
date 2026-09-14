@@ -8,6 +8,8 @@ import TestRenderer from '../../utils/TestRenderer'
 import App from './App.svelte'
 import Invalid from './Invalid.svelte'
 import Widgets from './Widgets.svelte'
+import { runStyleChecks } from './styles-checks'
+import { runCssChecks } from './css-checks'
 
 async function flush() {
     await tick()
@@ -435,6 +437,8 @@ export async function runChecks() {
 
         await checkErrors(resources)
         await checkWidgets(resources)
+        runStyleChecks()
+        await runCssChecks(resources)
     } finally {
         root.unmount()
         second_root.unmount()

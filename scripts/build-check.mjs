@@ -9,7 +9,7 @@ import { build as buildVite } from 'vite'
 import ts from 'typescript'
 import vue from '@vitejs/plugin-vue'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
-import { compile as compileSvelte } from 'svelte/compiler'
+import { compile as compileSvelte, preprocess } from 'svelte/compiler'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const PACKAGE = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8'))
@@ -228,9 +228,11 @@ export function mountRoot(ui: Parameters<typeof registerRootComponent>[1]['ui'])
             name: 'svelte-check-fixtures',
             setup(build) {
                 build.onLoad({ filter: /\.svelte$/ }, async ({ path: filename }) => {
-                    const { js, warnings } = compileSvelte(await readFile(filename, 'utf8'), {
+                    const processed = await preprocess(await readFile(filename, 'utf8'), svelte_config.preprocess, { filename })
+                    const { js, warnings } = compileSvelte(processed.code, {
                         ...svelte_config.compilerOptions,
                         filename,
+                        sourcemap: processed.map,
                         generate: 'client',
                         runes: true,
                     })

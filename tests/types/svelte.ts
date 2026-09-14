@@ -4,6 +4,19 @@ import { compilerConfig } from 'uno-ui/svelte/config'
 import type { ImageProps, InputHandle, InputProps, NodeHandle, ScrollViewHandle, ScrollViewProps, StyleName, TextProps, ViewProps } from 'uno-ui/svelte'
 import type UIDom from 'uno-ui/UIDom'
 import type UIWebGPU from 'uno-ui/UIWebGPU'
+import type { SvelteHTMLElements } from 'svelte/elements'
+
+const native_view_props: SvelteHTMLElements['uno-view'] = {
+    class: ['card', { active: true }],
+    id: 'card',
+    style: 'padding: 20px',
+    onClick(event) { event.current_target.style('opacity', '1') },
+}
+const native_text_props: SvelteHTMLElements['uno-text'] = { class: 'title' }
+// @ts-expect-error Native inline styles use CSS strings.
+const invalid_native_style: SvelteHTMLElements['uno-view'] = { style: { width: '20px' } }
+// @ts-expect-error Class support does not allow arbitrary native props.
+const invalid_native_prop: SvelteHTMLElements['uno-view'] = { unsupported: 'value' }
 
 declare const ui: UIDom
 declare const App: Component<{ title: string; subtitle?: string }>
@@ -31,6 +44,7 @@ const view_props: ViewProps = {
 }
 const text_props: TextProps = { children: renderChildren, style: null, onClick: null }
 const image_props: ImageProps = { src: 'icon', width: '20px', style: { objectFit: 'contain' } }
+const css_image_props: ImageProps = { src: 'icon', class: ['image', { selected: true }] }
 const scroll_props: ScrollViewProps = {
     children: renderChildren,
     horizontal: true,

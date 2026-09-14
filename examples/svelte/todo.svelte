@@ -29,9 +29,6 @@ import type { NodeEventMap } from 'uno-ui/events'
 
 const MAX_TITLE_LENGTH = 48
 const DOUBLE_CLICK_DELAY = 320
-const LIST_HEIGHT = 268
-const LIST_BORDER = 1
-const LIST_PADDING = 12
 
 const INITIAL_TODOS = [
     { id: 1, title: 'Render a todo list on the GPU', completed: true },
@@ -50,273 +47,6 @@ const FILTER_PREDICATES = {
     completed: (todo: Todo) => todo.completed,
 }
 const FILTER_NAMES = Object.keys(FILTER_PREDICATES) as (keyof typeof FILTER_PREDICATES)[]
-
-const PAGE_STYLE = {
-    width: '100%',
-    height: '100%',
-    padding: '32px',
-    alignItems: 'center',
-    justifyContent: 'center',
-}
-const CARD_STYLE = {
-    width: '620px',
-    flexDirection: 'column',
-    gap: '20px',
-    padding: '28px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e8eef2',
-    borderRadius: '24px',
-}
-const HEADER_STYLE = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: '16px',
-}
-const BADGE_STYLE = {
-    width: '64px',
-    height: '64px',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ff3e00',
-    border: '1px solid #e8eef2',
-    borderRadius: '20px',
-}
-const HEADER_TEXTS_STYLE = {
-    flex: '1',
-    flexDirection: 'column',
-    gap: '4px',
-}
-const TITLE_STYLE = {
-    fontFamily: TITLE_FONT_FAMILY,
-    fontSize: '32px',
-    color: '#141414',
-    letterSpacing: '0.5px',
-    textShadow: '0px 3px 0px #1414141a',
-}
-const SUBTITLE_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '13px',
-    lineHeight: '18px',
-    color: '#141414',
-}
-const DIVIDER_STYLE = {
-    height: '1px',
-    backgroundColor: '#e8eef2',
-}
-const NEW_TODO_STYLE = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: '12px',
-}
-const FIELD_STYLE = {
-    flex: '1',
-}
-const DRAFT_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    color: '#141414',
-    letterSpacing: '0.3px',
-    backgroundColor: '#ffffff',
-    border: '2px solid #e8eef2',
-    borderRadius: '14px',
-    padding: '12px 16px',
-}
-const DRAFT_FOCUS_STYLE = {
-    border: '2px solid #ff3e00',
-    boxShadow: '0px 0px 0px 4px #ff3e002e',
-}
-const BUTTON_STYLE = {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '13px 20px',
-    backgroundColor: '#ffffff',
-    border: '2px solid #e8eef2',
-    borderRadius: '14px',
-}
-const BUTTON_HOVER_STYLE = {
-    backgroundColor: '#ebf0f4',
-    border: '2px solid #ff3e00',
-}
-const BUTTON_PRESSED_STYLE = {
-    backgroundColor: '#ff3e00',
-    border: '2px solid #ff3e00',
-}
-const BUTTON_TEXT_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '12px',
-    letterSpacing: '1.4px',
-    color: '#d43109',
-}
-const BUTTON_TEXT_HOVER_STYLE = {
-    color: '#d43109',
-}
-const BUTTON_TEXT_PRESSED_STYLE = {
-    color: '#ffffff',
-}
-const TOOLBAR_STYLE = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: '8px',
-}
-const SPACER_STYLE = {
-    flex: '1',
-}
-const PILL_STYLE = {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '8px 14px',
-    backgroundColor: '#ffffff',
-    border: '2px solid #e8eef2',
-    borderRadius: '999px',
-}
-const PILL_HOVER_STYLE = {
-    backgroundColor: '#ebf0f4',
-    border: '2px solid #ff3e00',
-}
-const PILL_SELECTED_STYLE = {
-    backgroundColor: '#ebf0f4',
-    border: '2px solid #ff3e00',
-}
-const PILL_TEXT_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '12px',
-    letterSpacing: '1.2px',
-    color: '#141414',
-}
-const PILL_TEXT_HIGHLIGHT_STYLE = {
-    color: '#d43109',
-}
-const LIST_STYLE = {
-    height: `${LIST_HEIGHT}px`,
-    backgroundColor: '#ffffff',
-    border: `${LIST_BORDER}px solid #e8eef2`,
-    borderRadius: '18px',
-}
-const LIST_CONTENT_STYLE = {
-    flexDirection: 'column',
-    padding: `${LIST_PADDING}px`,
-    gap: '8px',
-}
-// The scroll content is sized by its children, so the empty state spans the list to center inside it.
-const EMPTY_STYLE = {
-    height: `${LIST_HEIGHT - (LIST_BORDER + LIST_PADDING) * 2}px`,
-    alignItems: 'center',
-    justifyContent: 'center',
-}
-const EMPTY_TEXT_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '13px',
-    color: '#14141480',
-}
-const ITEM_STYLE = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '10px 12px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e8eef2',
-    borderRadius: '14px',
-}
-const ITEM_HOVER_STYLE = {
-    backgroundColor: '#ebf0f4',
-    border: '1px solid #ff3e00',
-}
-const CHECK_STYLE = {
-    width: '24px',
-    height: '24px',
-    flexShrink: '0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: '2px solid #e8eef2',
-    borderRadius: '999px',
-}
-const CHECK_HOVER_STYLE = {
-    backgroundColor: '#ff3e00',
-    border: '2px solid #ff3e00',
-}
-const CHECK_DONE_STYLE = {
-    backgroundColor: '#ff3e00',
-    border: '2px solid #ff3e00',
-}
-const CHECK_DOT_STYLE = {
-    width: '10px',
-    height: '10px',
-    borderRadius: '999px',
-    backgroundColor: '#ffffff',
-}
-const ITEM_TEXT_STYLE = {
-    flex: '1',
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '14px',
-    lineHeight: '20px',
-    color: '#141414',
-}
-const ITEM_TEXT_DONE_STYLE = {
-    color: '#14141480',
-}
-const EDIT_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    color: '#141414',
-    letterSpacing: '0.3px',
-    backgroundColor: '#ffffff',
-    border: '2px solid #ff3e00',
-    borderRadius: '10px',
-    padding: '5px 10px',
-}
-const DESTROY_STYLE = {
-    width: '26px',
-    height: '26px',
-    flexShrink: '0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '999px',
-    opacity: '0',
-}
-const DESTROY_VISIBLE_STYLE = {
-    backgroundColor: '#ebf0f4',
-    opacity: '1',
-}
-const DESTROY_HOVER_STYLE = {
-    backgroundColor: '#ff3e00',
-}
-const DESTROY_TEXT_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '13px',
-    color: '#d43109',
-}
-const DESTROY_TEXT_HOVER_STYLE = {
-    color: '#ffffff',
-}
-const FOOTER_STYLE = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-}
-const COUNT_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '12px',
-    color: '#141414',
-}
-const CLEAR_STYLE = {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '8px 14px',
-    backgroundColor: '#ffffff',
-    border: '2px solid #e8eef2',
-    borderRadius: '999px',
-}
-const CLEAR_HOVER_STYLE = {
-    backgroundColor: '#ff3e00',
-    border: '2px solid #ff3e00',
-}
-const CLEAR_TEXT_STYLE = {
-    fontFamily: TEXT_FONT_FAMILY,
-    fontSize: '12px',
-    letterSpacing: '1.2px',
-    color: '#d43109',
-}
-const CLEAR_TEXT_HOVER_STYLE = {
-    color: '#ffffff',
-}
 
 let {
     backgroundColor: background_color = '#ebf0f4',
@@ -495,25 +225,25 @@ $effect(() => {
 })
 </script>
 
-<View style={{ ...PAGE_STYLE, backgroundColor: background_color }}>
-    <View style={{ ...CARD_STYLE, boxShadow: box_shadow }}>
-        <View style={HEADER_STYLE}>
-            <View style={BADGE_STYLE}>
+<View class="page" style={{ backgroundColor: background_color }}>
+    <View class="card" style={{ boxShadow: box_shadow }}>
+        <View class="header">
+            <View class="badge">
                 <Image src={COIN_SRC} width="42px" />
             </View>
-            <View style={HEADER_TEXTS_STYLE}>
-                <Text style={TITLE_STYLE}>Todo App</Text>
-                <Text style={SUBTITLE_STYLE}>Type to add, click to complete, double click to rename.</Text>
+            <View class="header-texts">
+                <Text class="title">Todo App</Text>
+                <Text class="subtitle">Type to add, click to complete, double click to rename.</Text>
             </View>
         </View>
 
-        <View style={DIVIDER_STYLE} />
+        <View class="divider" />
 
-        <View style={NEW_TODO_STYLE}>
-            <View style={FIELD_STYLE}>
+        <View class="new-todo">
+            <View class="field">
                 <Input
                     bind:this={draft_ref}
-                    style={{ ...DRAFT_STYLE, ...(draft_focused && DRAFT_FOCUS_STYLE) }}
+                    class={['draft', (draft_focused && 'draft-focus')]}
                     value={draft}
                     placeholder="What needs to be done?"
                     placeholderTextColor="#14141480"
@@ -522,11 +252,7 @@ $effect(() => {
                 />
             </View>
             <View
-                style={{
-                    ...BUTTON_STYLE,
-                    ...(hovered === 'add' && BUTTON_HOVER_STYLE),
-                    ...(pressed === 'add' && BUTTON_PRESSED_STYLE),
-                }}
+                class={['button', (hovered === 'add' && 'button-hover'), (pressed === 'add' && 'button-pressed')]}
                 onPointerOver={() => { hovered = 'add' }}
                 onPointerOut={() => { hovered = null }}
                 onPointerDown={() => { pressed = 'add' }}
@@ -534,23 +260,15 @@ $effect(() => {
                 onClick={() => addTodo(draft)}
             >
                 <Text
-                    style={{
-                        ...BUTTON_TEXT_STYLE,
-                        ...(hovered === 'add' && BUTTON_TEXT_HOVER_STYLE),
-                        ...(pressed === 'add' && BUTTON_TEXT_PRESSED_STYLE),
-                    }}
+                    class={['button-text', (hovered === 'add' && 'button-text-hover'), (pressed === 'add' && 'button-text-pressed')]}
                 >ADD</Text>
             </View>
         </View>
 
         {#if todos.length > 0}
-            <View style={TOOLBAR_STYLE}>
+            <View class="toolbar">
                 <View
-                    style={{
-                        ...PILL_STYLE,
-                        ...(hovered === 'toggle-all' && PILL_HOVER_STYLE),
-                        ...(pressed === 'toggle-all' && PILL_SELECTED_STYLE),
-                    }}
+                    class={['pill', (hovered === 'toggle-all' && 'pill-hover'), (pressed === 'toggle-all' && 'pill-selected')]}
                     onPointerOver={() => { hovered = 'toggle-all' }}
                     onPointerOut={() => { hovered = null }}
                     onPointerDown={() => { pressed = 'toggle-all' }}
@@ -558,71 +276,57 @@ $effect(() => {
                     onClick={toggleAll}
                 >
                     <Text
-                        style={{
-                            ...PILL_TEXT_STYLE,
-                            ...(hovered === 'toggle-all' && PILL_TEXT_HIGHLIGHT_STYLE),
-                        }}
+                        class={['pill-text', (hovered === 'toggle-all' && 'pill-text-highlight')]}
                     >{remaining > 0 ? 'COMPLETE ALL' : 'REOPEN ALL'}</Text>
                 </View>
 
-                <View style={SPACER_STYLE} />
+                <View class="spacer" />
 
                 {#each FILTER_NAMES as name (name)}
                     <View
-                        style={{
-                            ...PILL_STYLE,
-                            ...(hovered === `filter:${name}` && PILL_HOVER_STYLE),
-                            ...(filter === name && PILL_SELECTED_STYLE),
-                        }}
+                        class={['pill', (hovered === `filter:${name}` && 'pill-hover'), (filter === name && 'pill-selected')]}
                         onPointerOver={() => { hovered = `filter:${name}` }}
                         onPointerOut={() => { hovered = null }}
                         onClick={() => { filter = name }}
                     >
                         <Text
-                            style={{
-                                ...PILL_TEXT_STYLE,
-                                ...((filter === name || hovered === `filter:${name}`) && PILL_TEXT_HIGHLIGHT_STYLE),
-                            }}
+                            class={['pill-text', ((filter === name || hovered === `filter:${name}`) && 'pill-text-highlight')]}
                         >{name.toUpperCase()}</Text>
                     </View>
                 {/each}
             </View>
         {/if}
 
-        <ScrollView style={LIST_STYLE}>
-            <View style={LIST_CONTENT_STYLE}>
+        <ScrollView class="list">
+            <View class="list-content">
                 {#if visible_todos.length === 0}
-                    <View style={EMPTY_STYLE}>
-                        <Text style={EMPTY_TEXT_STYLE}>Nothing to show here.</Text>
+                    <View class="empty">
+                        <Text class="empty-text">Nothing to show here.</Text>
                     </View>
                 {/if}
 
                 {#each visible_todos as todo (todo.id)}
                     <View
-                        style={{ ...ITEM_STYLE, ...(hovered_id === todo.id && ITEM_HOVER_STYLE) }}
+                        class={['item', (hovered_id === todo.id && 'item-hover')]}
                         onPointerOver={() => { hovered_id = todo.id }}
                         onPointerOut={() => { hovered_id = null }}
                     >
                         <View
-                            style={{
-                                ...CHECK_STYLE,
-                                ...(todo.completed && CHECK_DONE_STYLE),
-                                ...(hovered === `check:${todo.id}` && CHECK_HOVER_STYLE),
-                            }}
+                            class={['check', (todo.completed && 'check-done'), (hovered === `check:${todo.id}` && 'check-hover')]}
                             onPointerOver={() => { hovered = `check:${todo.id}` }}
                             onPointerOut={() => { hovered = null }}
                             onClick={() => toggleTodo(todo.id)}
                         >
                             {#if todo.completed}
-                                <View style={CHECK_DOT_STYLE} />
+                                <View class="check-dot" />
                             {/if}
                         </View>
 
                         {#if editing_id === todo.id}
-                            <View style={FIELD_STYLE}>
+                            <View class="field">
                                 <Input
                                     bind:this={edit_ref}
-                                    style={EDIT_STYLE}
+                                    class="edit"
                                     value={edit_draft}
                                     onFocus={onEditFocus}
                                     onBlur={() => commitEdit(edit_draft)}
@@ -630,26 +334,19 @@ $effect(() => {
                             </View>
                         {:else}
                             <Text
-                                style={{ ...ITEM_TEXT_STYLE, ...(todo.completed && ITEM_TEXT_DONE_STYLE) }}
+                                class={['item-text', (todo.completed && 'item-text-done')]}
                                 onClick={() => onLabelClick(todo)}
                             >{todo.title}</Text>
                         {/if}
 
                         <View
-                            style={{
-                                ...DESTROY_STYLE,
-                                ...(hovered_id === todo.id && DESTROY_VISIBLE_STYLE),
-                                ...(hovered === `destroy:${todo.id}` && DESTROY_HOVER_STYLE),
-                            }}
+                            class={['destroy', (hovered_id === todo.id && 'destroy-visible'), (hovered === `destroy:${todo.id}` && 'destroy-hover')]}
                             onPointerOver={() => { hovered = `destroy:${todo.id}` }}
                             onPointerOut={() => { hovered = null }}
                             onClick={() => removeTodo(todo.id)}
                         >
                             <Text
-                                style={{
-                                    ...DESTROY_TEXT_STYLE,
-                                    ...(hovered === `destroy:${todo.id}` && DESTROY_TEXT_HOVER_STYLE),
-                                }}
+                                class={['destroy-text', (hovered === `destroy:${todo.id}` && 'destroy-text-hover')]}
                             >x</Text>
                         </View>
                     </View>
@@ -658,21 +355,18 @@ $effect(() => {
         </ScrollView>
 
         {#if todos.length > 0}
-            <View style={DIVIDER_STYLE} />
-            <View style={FOOTER_STYLE}>
-                <Text style={COUNT_STYLE}>{remaining} {remaining === 1 ? 'item' : 'items'} left</Text>
+            <View class="divider" />
+            <View class="footer">
+                <Text class="count">{remaining} {remaining === 1 ? 'item' : 'items'} left</Text>
                 {#if completed_count > 0}
                     <View
-                        style={{ ...CLEAR_STYLE, ...(hovered === 'clear' && CLEAR_HOVER_STYLE) }}
+                        class={['clear', (hovered === 'clear' && 'clear-hover')]}
                         onPointerOver={() => { hovered = 'clear' }}
                         onPointerOut={() => { hovered = null }}
                         onClick={clearCompleted}
                     >
                         <Text
-                            style={{
-                                ...CLEAR_TEXT_STYLE,
-                                ...(hovered === 'clear' && CLEAR_TEXT_HOVER_STYLE),
-                            }}
+                            class={['clear-text', (hovered === 'clear' && 'clear-text-hover')]}
                         >CLEAR COMPLETED ({completed_count})</Text>
                     </View>
                 {/if}
@@ -680,3 +374,320 @@ $effect(() => {
         {/if}
     </View>
 </View>
+
+<style>
+    .page {
+        width: 100%;
+        height: 100%;
+        padding: 32px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card {
+        width: 620px;
+        flex-direction: column;
+        gap: 20px;
+        padding: 28px;
+        background-color: #ffffff;
+        border: 1px solid #e8eef2;
+        border-radius: 24px;
+    }
+
+    .header {
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .badge {
+        width: 64px;
+        height: 64px;
+        align-items: center;
+        justify-content: center;
+        background-color: #ff3e00;
+        border: 1px solid #e8eef2;
+        border-radius: 20px;
+    }
+
+    .header-texts {
+        flex: 1;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .title {
+        font-family: ChangaOne-Regular;
+        font-size: 32px;
+        color: #141414;
+        letter-spacing: 0.5px;
+        text-shadow: 0px 3px 0px #1414141a;
+    }
+
+    .subtitle {
+        font-family: Poppins-Regular;
+        font-size: 13px;
+        line-height: 18px;
+        color: #141414;
+    }
+
+    .divider {
+        height: 1px;
+        background-color: #e8eef2;
+    }
+
+    .new-todo {
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .field {
+        flex: 1;
+    }
+
+    .page .draft {
+        font-family: Poppins-Regular;
+        color: #141414;
+        letter-spacing: 0.3px;
+        background-color: #ffffff;
+        border: 2px solid #e8eef2;
+        border-radius: 14px;
+        padding: 12px 16px;
+    }
+
+    .page .draft-focus {
+        border: 2px solid #ff3e00;
+        box-shadow: 0px 0px 0px 4px #ff3e002e;
+    }
+
+    .button {
+        align-items: center;
+        justify-content: center;
+        padding: 13px 20px;
+        background-color: #ffffff;
+        border: 2px solid #e8eef2;
+        border-radius: 14px;
+    }
+
+    .button-hover {
+        background-color: #ebf0f4;
+        border: 2px solid #ff3e00;
+    }
+
+    .button-pressed {
+        background-color: #ff3e00;
+        border: 2px solid #ff3e00;
+    }
+
+    .button-text {
+        font-family: Poppins-Regular;
+        font-size: 12px;
+        letter-spacing: 1.4px;
+        color: #d43109;
+    }
+
+    .button-text-hover {
+        color: #d43109;
+    }
+
+    .button-text-pressed {
+        color: #ffffff;
+    }
+
+    .toolbar {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .spacer {
+        flex: 1;
+    }
+
+    .pill {
+        align-items: center;
+        justify-content: center;
+        padding: 8px 14px;
+        background-color: #ffffff;
+        border: 2px solid #e8eef2;
+        border-radius: 999px;
+    }
+
+    .pill-hover {
+        background-color: #ebf0f4;
+        border: 2px solid #ff3e00;
+    }
+
+    .pill-selected {
+        background-color: #ebf0f4;
+        border: 2px solid #ff3e00;
+    }
+
+    .pill-text {
+        font-family: Poppins-Regular;
+        font-size: 12px;
+        letter-spacing: 1.2px;
+        color: #141414;
+    }
+
+    .pill-text-highlight {
+        color: #d43109;
+    }
+
+    .page .list {
+        height: 268px;
+        background-color: #ffffff;
+        border: 1px solid #e8eef2;
+        border-radius: 18px;
+    }
+
+    .list-content {
+        flex-direction: column;
+        padding: 12px;
+        gap: 8px;
+    }
+
+    /* The scroll content is sized by its children; fill the list to center the empty state. */
+    .empty {
+        height: 242px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .empty-text {
+        font-family: Poppins-Regular;
+        font-size: 13px;
+        color: #14141480;
+    }
+
+    .item {
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background-color: #ffffff;
+        border: 1px solid #e8eef2;
+        border-radius: 14px;
+    }
+
+    .item-hover {
+        background-color: #ebf0f4;
+        border: 1px solid #ff3e00;
+    }
+
+    .check {
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #e8eef2;
+        border-radius: 999px;
+    }
+
+    .check-hover {
+        background-color: #ff3e00;
+        border: 2px solid #ff3e00;
+    }
+
+    .check-done {
+        background-color: #ff3e00;
+        border: 2px solid #ff3e00;
+    }
+
+    .check-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background-color: #ffffff;
+    }
+
+    .item-text {
+        flex: 1;
+        font-family: Poppins-Regular;
+        font-size: 14px;
+        line-height: 20px;
+        color: #141414;
+    }
+
+    .item-text-done {
+        color: #14141480;
+    }
+
+    .page .edit {
+        font-family: Poppins-Regular;
+        color: #141414;
+        letter-spacing: 0.3px;
+        background-color: #ffffff;
+        border: 2px solid #ff3e00;
+        border-radius: 10px;
+        padding: 5px 10px;
+    }
+
+    .destroy {
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        opacity: 0;
+    }
+
+    .destroy-visible {
+        background-color: #ebf0f4;
+        opacity: 1;
+    }
+
+    .destroy-hover {
+        background-color: #ff3e00;
+    }
+
+    .destroy-text {
+        font-family: Poppins-Regular;
+        font-size: 13px;
+        color: #d43109;
+    }
+
+    .destroy-text-hover {
+        color: #ffffff;
+    }
+
+    .footer {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .count {
+        font-family: Poppins-Regular;
+        font-size: 12px;
+        color: #141414;
+    }
+
+    .clear {
+        align-items: center;
+        justify-content: center;
+        padding: 8px 14px;
+        background-color: #ffffff;
+        border: 2px solid #e8eef2;
+        border-radius: 999px;
+    }
+
+    .clear-hover {
+        background-color: #ff3e00;
+        border: 2px solid #ff3e00;
+    }
+
+    .clear-text {
+        font-family: Poppins-Regular;
+        font-size: 12px;
+        letter-spacing: 1.2px;
+        color: #d43109;
+    }
+
+    .clear-text-hover {
+        color: #ffffff;
+    }
+</style>

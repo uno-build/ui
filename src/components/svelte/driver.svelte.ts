@@ -2,7 +2,7 @@ import type { Component } from 'svelte'
 import type UI from '../../core/UI'
 import { flushSync, mount, unmount as unmountSvelte } from 'svelte'
 import { UI_CONTEXT } from './context.svelte'
-import renderer, { createRoot, flushUI } from './renderer'
+import renderer, { attachRoot, clearRoot, createRoot, detachRoot, flushUI } from './renderer'
 
 export function registerRootComponent<P extends Record<string, any>>(rootComponent: Component<P>, { ui }: { ui: UI }) {
     const root = createRoot(ui)
@@ -17,12 +17,19 @@ export function registerRootComponent<P extends Record<string, any>>(rootCompone
                 }
                 Object.assign(root_props, props)
                 if (instance === null) {
-                    instance = mount(rootComponent, {
-                        renderer,
-                        target: root,
-                        props: root_props as P,
-                        context: new Map([[UI_CONTEXT, ui]]),
-                    })
+                    attachRoot(root)
+                    try {
+                        instance = mount(rootComponent, {
+                            renderer,
+                            target: root,
+                            props: root_props as P,
+                            context: new Map([[UI_CONTEXT, ui]]),
+                        })
+                    } catch (error) {
+                        detachRoot(ui)
+                        clearRoot(root)
+                        throw error
+                    }
                 }
             })
             flushUI(ui)
@@ -34,6 +41,7 @@ export function registerRootComponent<P extends Record<string, any>>(rootCompone
                 instance = null
             })
             flushUI(ui)
+            detachRoot(ui)
         },
     }
 }
