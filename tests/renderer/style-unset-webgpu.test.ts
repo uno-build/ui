@@ -1,9 +1,7 @@
 import { expect, test } from '@playwright/test'
-import { fileURLToPath } from 'node:url'
 import { STYLE_CASES, STYLE_NAMES, STYLE_VALUES } from '../utils/style-unset-cases'
 
-const WORKSPACE_PATH = fileURLToPath(new URL('../..', import.meta.url))
-const TEST_PAGE_URL = '/tests/'
+const TEST_PAGE_URL = '/tests/renderer/'
 
 test('WebGPU unset restores the undefined state for all 81 styles', { tag: '@webgpu' }, async ({ page }) => {
     expect(STYLE_NAMES).toHaveLength(81)
@@ -12,22 +10,16 @@ test('WebGPU unset restores the undefined state for all 81 styles', { tag: '@web
     await page.goto(TEST_PAGE_URL)
 
     const states = await page.evaluate(
-        async ({ module_urls, style_cases }) => {
-            const [
-                { default: UIWebGPU },
-                { default: ResourcesWebGPU },
-                { loadYoga },
-                { loadImage, loadJson },
-                { createNodeMetricsResolver },
-                { RECORD_ALL },
-            ] = await Promise.all([
-                import(module_urls.ui),
-                import(module_urls.resources),
-                import('/@id/yoga-layout/load'),
-                import(module_urls.assets),
-                import(module_urls.metrics),
-                import(module_urls.constants),
-            ])
+        async ({ style_cases }) => {
+            const {
+                UIWebGPU,
+                ResourcesWebGPU,
+                loadYoga,
+                loadImage,
+                loadJson,
+                createNodeMetricsResolver,
+                RECORD_ALL,
+            } = await import('/tests/renderer/browser-entry.ts')
             const [coin, poppins_image, poppins_json, changa_image, changa_json] = await Promise.all([
                 loadImage('/examples/assets/images/coin.png'),
                 loadImage('/examples/assets/fonts/Poppins-Regular.mtsdf.png'),
@@ -223,13 +215,6 @@ test('WebGPU unset restores the undefined state for all 81 styles', { tag: '@web
             return states
         },
         {
-            module_urls: {
-                ui: `/@fs${WORKSPACE_PATH}src/ui/UIWebGPU.ts`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
-                metrics: `/@fs${WORKSPACE_PATH}src/renderer/utils/render-metrics.ts`,
-                constants: `/@fs${WORKSPACE_PATH}src/style/constants.ts`,
-                assets: `/@fs${WORKSPACE_PATH}tests/utils/load-assets.ts`,
-            },
             style_cases: STYLE_CASES,
         },
     )

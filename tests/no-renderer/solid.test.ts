@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const COMPONENTS_PATH = fileURLToPath(new URL('../../src/components/solid/components.tsx', import.meta.url))
-const TEST_PAGE_URL = '/tests/'
+const TEST_PAGE_URL = '/tests/no-renderer/'
 const MODULE_PATHS = {
     renderer: '/src/components/solid/driver.ts',
     context: '/src/components/solid/context.ts',
@@ -13,6 +13,7 @@ const MODULE_PATHS = {
     test_renderer: '/tests/utils/TestRenderer.ts',
     test_ui: '/tests/utils/TestUI.ts',
     events: '/src/events/index.ts',
+    solid: '/tests/no-renderer/browser-entry.ts',
 }
 
 const FIXTURE_SOURCE = `
@@ -171,7 +172,7 @@ async function loadFixture(page) {
             const renderer_url = new URL(module_paths.renderer, window.location.origin).href
             const context_url = new URL(module_paths.context, window.location.origin).href
             const shared_url = new URL(module_paths.shared, window.location.origin).href
-            const solid_url = new URL('/@id/solid-js', window.location.origin).href
+            const solid_url = new URL(module_paths.solid, window.location.origin).href
             const compiled_components = components_code
                 .replaceAll('__SOLID_RENDERER__', renderer_url)
                 .replaceAll('"solid-js"', JSON.stringify(solid_url))
@@ -268,7 +269,7 @@ test('Solid updates styles without replacing node identity and unsets removed st
         const [{ registerRootComponent }, { createSignal, flush }, { default: TestRenderer }, { default: TestUI }] =
             await Promise.all([
                 import(module_paths.renderer),
-                import('/@id/solid-js'),
+                import(module_paths.solid),
                 import(module_paths.test_renderer),
                 import(module_paths.test_ui),
             ])
@@ -344,7 +345,7 @@ test('Solid keyed lists insert and move nodes before existing siblings', async (
         const [{ registerRootComponent }, { createSignal, flush }, { default: TestRenderer }, { default: TestUI }] =
             await Promise.all([
                 import(module_paths.renderer),
-                import('/@id/solid-js'),
+                import(module_paths.solid),
                 import(module_paths.test_renderer),
                 import(module_paths.test_ui),
             ])
@@ -393,7 +394,7 @@ test('Solid removes and destroys a conditional Uno subtree in order', async ({ p
         const [{ registerRootComponent }, { createSignal, flush }, { default: TestRenderer }, { default: TestUI }] =
             await Promise.all([
                 import(module_paths.renderer),
-                import('/@id/solid-js'),
+                import(module_paths.solid),
                 import(module_paths.test_renderer),
                 import(module_paths.test_ui),
             ])
@@ -527,7 +528,7 @@ test('Solid updates, joins, clears, and unmounts text without retaining Uno node
         const [{ registerRootComponent }, { createSignal, flush }, { default: TestRenderer }, { default: TestUI }] =
             await Promise.all([
                 import(module_paths.renderer),
-                import('/@id/solid-js'),
+                import(module_paths.solid),
                 import(module_paths.test_renderer),
                 import(module_paths.test_ui),
             ])
@@ -593,7 +594,7 @@ test('Solid event props rebind the Uno listener and dispatch the latest handler'
             { DEFINED_EVENTS },
         ] = await Promise.all([
             import(module_paths.renderer),
-            import('/@id/solid-js'),
+            import(module_paths.solid),
             import(module_paths.test_renderer),
             import(module_paths.test_ui),
             import(module_paths.events),
@@ -679,7 +680,7 @@ test('Solid commits state updates from an event handler within the dispatch', as
             { DEFINED_EVENTS },
         ] = await Promise.all([
             import(module_paths.renderer),
-            import('/@id/solid-js'),
+            import(module_paths.solid),
             import(module_paths.test_renderer),
             import(module_paths.test_ui),
             import(module_paths.events),
@@ -753,7 +754,7 @@ test('Input refs expose its Uno nodes and focus and blur the main node', async (
             { DEFINED_EVENTS },
         ] = await Promise.all([
             import(module_paths.renderer),
-            import('/@id/solid-js'),
+            import(module_paths.solid),
             import(module_paths.test_renderer),
             import(module_paths.test_ui),
             import(module_paths.events),
@@ -830,7 +831,7 @@ test('Input swaps placeholder and value styling', async ({ page }) => {
             { DEFINED_EVENTS },
         ] = await Promise.all([
             import(module_paths.renderer),
-            import('/@id/solid-js'),
+            import(module_paths.solid),
             import(module_paths.test_renderer),
             import(module_paths.test_ui),
             import(module_paths.events),
@@ -864,7 +865,7 @@ test('Solid keeps sibling order around an empty conditional slot', async ({ page
         const [{ registerRootComponent }, { createSignal, flush }, { default: TestRenderer }, { default: TestUI }] =
             await Promise.all([
                 import(module_paths.renderer),
-                import('/@id/solid-js'),
+                import(module_paths.solid),
                 import(module_paths.test_renderer),
                 import(module_paths.test_ui),
             ])

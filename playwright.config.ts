@@ -13,7 +13,7 @@ const config = {
     },
     outputDir: './tests/.results',
     webServer: {
-        command: 'vite . --config ./playwright.vite.config.ts --host 127.0.0.1',
+        command: 'vite . --host 127.0.0.1',
         url: 'http://127.0.0.1:5173/tests/',
         reuseExistingServer: false,
     },

@@ -1,9 +1,7 @@
 import { expect, test } from '@playwright/test'
-import { fileURLToPath } from 'node:url'
 import { STYLE_CASES, STYLE_NAMES, STYLE_VALUES } from '../utils/style-unset-cases'
 
-const WORKSPACE_PATH = fileURLToPath(new URL('../..', import.meta.url))
-const TEST_PAGE_URL = '/tests/'
+const TEST_PAGE_URL = '/tests/renderer/'
 
 test('Dom unset restores the undefined state for all 81 styles', async ({ page }) => {
     expect(STYLE_NAMES).toHaveLength(81)
@@ -12,11 +10,8 @@ test('Dom unset restores the undefined state for all 81 styles', async ({ page }
     await page.goto(TEST_PAGE_URL)
 
     const states = await page.evaluate(
-        async ({ module_urls, style_cases }) => {
-            const [{ default: UIDom }, { default: ResourcesDom }] = await Promise.all([
-                import(module_urls.ui),
-                import(module_urls.resources),
-            ])
+        async ({ style_cases }) => {
+            const { UIDom, ResourcesDom } = await import('/tests/renderer/browser-entry.ts')
             const css_property = {
                 textStroke: 'webkitTextStroke',
                 backgroundSizeWidth: 'backgroundSize',
@@ -75,10 +70,6 @@ test('Dom unset restores the undefined state for all 81 styles', async ({ page }
             return states
         },
         {
-            module_urls: {
-                ui: `/@fs${WORKSPACE_PATH}src/ui/UIDom.ts`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.ts`,
-            },
             style_cases: STYLE_CASES,
         },
     )

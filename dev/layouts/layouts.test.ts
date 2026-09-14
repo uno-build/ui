@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test'
-import path from 'node:path'
 import {
     comparedLayoutKeys,
     comparedPaintedRectKeys,
@@ -9,10 +8,10 @@ import {
     layoutNames,
 } from './layout-runner'
 
-const layoutRunnerUrl = `/@fs${path.resolve('dev/layouts/layout-runner.ts')}`
-const layoutHarnessUrl = `/@fs${path.resolve('dev/layouts/layout-harness.html')}`
-const uiUrl = `/@fs${path.resolve('src/core/UI.ts')}`
-const loadImageUrl = `/@fs${path.resolve('src/utils/loadAssets.ts')}`
+const layoutRunnerUrl = '/dev/layouts/layout-runner.ts'
+const layoutHarnessUrl = '/dev/layouts/layout-harness.html'
+const uiUrl = '/src/core/UI.ts'
+const loadImageUrl = '/src/utils/loadAssets.ts'
 const LAYOUT_VIEWPORTS = [
     // { width: 360, height: 640 },
     { width: 800, height: 600 },

@@ -1,9 +1,7 @@
 import { expect, test } from '@playwright/test'
-import { fileURLToPath } from 'node:url'
 import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 
-const WORKSPACE_PATH = fileURLToPath(new URL('../..', import.meta.url))
-const TEST_PAGE_URL = '/tests/'
+const TEST_PAGE_URL = '/tests/renderer/'
 const EVENT_FLOW = [
     ['pointerdown', 'child'],
     ['pointerdown', 'root'],
@@ -21,12 +19,8 @@ test('UIWebGPU dispatches pointer events in UI coordinates', { tag: '@webgpu' },
     await page.goto(TEST_PAGE_URL)
 
     const events = await page.evaluate(
-        async ({ event_types, module_urls }) => {
-            const [{ default: UIWebGPU }, { default: ResourcesWebGPU }, { loadYoga }] = await Promise.all([
-                import(module_urls.ui),
-                import(module_urls.resources),
-                import('/@id/yoga-layout/load'),
-            ])
+        async ({ event_types }) => {
+            const { UIWebGPU, ResourcesWebGPU, loadYoga } = await import('/tests/renderer/browser-entry.ts')
             const canvas = document.createElement('canvas')
             canvas.width = 400
             canvas.height = 200
@@ -99,13 +93,7 @@ test('UIWebGPU dispatches pointer events in UI coordinates', { tag: '@webgpu' },
             canvas.remove()
             return events
         },
-        {
-            event_types: PLATFORM_EVENT_NAMES,
-            module_urls: {
-                ui: `/@fs${WORKSPACE_PATH}src/ui/UIWebGPU.ts`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
-            },
-        },
+        { event_types: PLATFORM_EVENT_NAMES },
     )
 
     expect(events.map(({ type, current_target }) => [type, current_target])).toEqual(EVENT_FLOW)

@@ -1,9 +1,7 @@
 import { expect, test } from '@playwright/test'
-import { fileURLToPath } from 'node:url'
 import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 
-const WORKSPACE_PATH = fileURLToPath(new URL('../..', import.meta.url))
-const TEST_PAGE_URL = '/tests/'
+const TEST_PAGE_URL = '/tests/renderer/'
 const EVENT_FLOW = [
     ['pointerdown', 'child'],
     ['pointerdown', 'root'],
@@ -21,13 +19,10 @@ test('UIThree dispatches pointer events from raycast intersections', { tag: '@we
     await page.goto(TEST_PAGE_URL)
 
     const events = await page.evaluate(
-        async ({ event_types, module_urls }) => {
-            const [{ default: UIThree }, { default: ResourcesWebGPU }, { loadYoga }, THREE] = await Promise.all([
-                import(module_urls.ui),
-                import(module_urls.resources),
-                import('/@id/yoga-layout/load'),
-                import('/@id/three/webgpu'),
-            ])
+        async ({ event_types }) => {
+            const { UIThree, ResourcesWebGPU, loadYoga, THREE } = await import(
+                '/tests/renderer/browser-entry.ts'
+            )
             const canvas = document.createElement('canvas')
             canvas.width = 400
             canvas.height = 200
@@ -112,13 +107,7 @@ test('UIThree dispatches pointer events from raycast intersections', { tag: '@we
             canvas.remove()
             return events
         },
-        {
-            event_types: PLATFORM_EVENT_NAMES,
-            module_urls: {
-                ui: `/@fs${WORKSPACE_PATH}src/ui/UIThree.ts`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
-            },
-        },
+        { event_types: PLATFORM_EVENT_NAMES },
     )
 
     expect(events.map(({ type, current_target }) => [type, current_target])).toEqual(EVENT_FLOW)
@@ -137,24 +126,10 @@ test('UIBabylon dispatches pointer events from raycast intersections', { tag: '@
     await page.goto(TEST_PAGE_URL)
 
     const events = await page.evaluate(
-        async ({ event_types, module_urls }) => {
-            const [
-                { default: UIBabylon },
-                { default: ResourcesWebGPU },
-                { loadYoga },
-                { WebGPUEngine },
-                { Scene },
-                { FreeCamera },
-                { Vector3 },
-            ] = await Promise.all([
-                import(module_urls.ui),
-                import(module_urls.resources),
-                import('/@id/yoga-layout/load'),
-                import('/@id/@babylonjs/core/Engines/webgpuEngine.js'),
-                import('/@id/@babylonjs/core/scene.js'),
-                import('/@id/@babylonjs/core/Cameras/freeCamera.js'),
-                import('/@id/@babylonjs/core/Maths/math.vector.js'),
-            ])
+        async ({ event_types }) => {
+            const { UIBabylon, ResourcesWebGPU, loadYoga, WebGPUEngine, Scene, FreeCamera, Vector3 } = await import(
+                '/tests/renderer/browser-entry.ts'
+            )
             const canvas = document.createElement('canvas')
             canvas.width = 400
             canvas.height = 200
@@ -259,13 +234,7 @@ test('UIBabylon dispatches pointer events from raycast intersections', { tag: '@
             canvas.remove()
             return events
         },
-        {
-            event_types: PLATFORM_EVENT_NAMES,
-            module_urls: {
-                ui: `/@fs${WORKSPACE_PATH}src/ui/UIBabylon.ts`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
-            },
-        },
+        { event_types: PLATFORM_EVENT_NAMES },
     )
 
     expect(events.map(({ type, current_target }) => [type, current_target])).toEqual(EVENT_FLOW)
@@ -284,14 +253,10 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', { tag
     await page.goto(TEST_PAGE_URL)
 
     const events = await page.evaluate(
-        async ({ event_types, module_urls }) => {
-            const [{ default: UIBabylonLite }, { default: ResourcesWebGPU }, { loadYoga }, BABYLON] =
-                await Promise.all([
-                    import(module_urls.ui),
-                    import(module_urls.resources),
-                    import('/@id/yoga-layout/load'),
-                    import('/@id/@babylonjs/lite'),
-                ])
+        async ({ event_types }) => {
+            const { UIBabylonLite, ResourcesWebGPU, loadYoga, BABYLON } = await import(
+                '/tests/renderer/browser-entry.ts'
+            )
             const canvas = document.createElement('canvas')
             canvas.width = 400
             canvas.height = 200
@@ -390,13 +355,7 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', { tag
             canvas.remove()
             return events
         },
-        {
-            event_types: PLATFORM_EVENT_NAMES,
-            module_urls: {
-                ui: `/@fs${WORKSPACE_PATH}src/ui/UIBabylonLite.ts`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
-            },
-        },
+        { event_types: PLATFORM_EVENT_NAMES },
     )
 
     expect(events.map(({ type, current_target }) => [type, current_target])).toEqual(EVENT_FLOW)
@@ -415,14 +374,10 @@ test('UIPlayCanvas dispatches pointer events from raycast intersections', { tag:
     await page.goto(TEST_PAGE_URL)
 
     const events = await page.evaluate(
-        async ({ event_types, module_urls }) => {
-            const [{ default: UIPlayCanvas }, { default: ResourcesWebGPU }, { loadYoga }, PLAYCANVAS] =
-                await Promise.all([
-                    import(module_urls.ui),
-                    import(module_urls.resources),
-                    import('/@id/yoga-layout/load'),
-                    import('/@id/playcanvas'),
-                ])
+        async ({ event_types }) => {
+            const { UIPlayCanvas, ResourcesWebGPU, loadYoga, PLAYCANVAS } = await import(
+                '/tests/renderer/browser-entry.ts'
+            )
             const canvas = document.createElement('canvas')
             canvas.width = 400
             canvas.height = 200
@@ -538,13 +493,7 @@ test('UIPlayCanvas dispatches pointer events from raycast intersections', { tag:
             canvas.remove()
             return events
         },
-        {
-            event_types: PLATFORM_EVENT_NAMES,
-            module_urls: {
-                ui: `/@fs${WORKSPACE_PATH}src/ui/UIPlayCanvas.ts`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
-            },
-        },
+        { event_types: PLATFORM_EVENT_NAMES },
     )
 
     expect(events.map(({ type, current_target }) => [type, current_target])).toEqual(EVENT_FLOW)

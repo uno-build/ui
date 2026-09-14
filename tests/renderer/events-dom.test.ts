@@ -1,12 +1,10 @@
 import { expect, test } from '@playwright/test'
-import { fileURLToPath } from 'node:url'
 import { RESOURCE_EVENT } from '../../src/core/constants'
 import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 import ResourcesDom from '../../src/renderer/dom/ResourcesDom'
 import UIDom from '../../src/ui/UIDom'
 
-const WORKSPACE_PATH = fileURLToPath(new URL('../..', import.meta.url))
-const TEST_PAGE_URL = '/tests/'
+const TEST_PAGE_URL = '/tests/renderer/'
 
 test('UIDom adapts native source events and removes its listeners on destroy', async () => {
     const listeners = new Map()
@@ -86,11 +84,8 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
     await page.goto(TEST_PAGE_URL)
 
     const result = await page.evaluate(
-        async ({ module_urls }) => {
-            const [{ default: UIDom }, { default: ResourcesDom }] = await Promise.all([
-                import(module_urls.ui),
-                import(module_urls.resources),
-            ])
+        async () => {
+            const { UIDom, ResourcesDom } = await import('/tests/renderer/browser-entry.ts')
             const canvas = document.createElement('div')
             Object.assign(canvas.style, {
                 boxSizing: 'border-box',
@@ -264,12 +259,6 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
                 destroyed_calls,
             }
         },
-        {
-            module_urls: {
-                ui: `/@fs${WORKSPACE_PATH}src/ui/UIDom.ts`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.ts`,
-            },
-        },
     )
 
     expect(result.pointer_events).toEqual([
@@ -321,11 +310,8 @@ test('UIDom uses native scrolling inside bordered scroll containers', async ({ p
     await page.goto(TEST_PAGE_URL)
 
     const result = await page.evaluate(
-        async ({ module_urls }) => {
-            const [{ default: UIDom }, { default: ResourcesDom }] = await Promise.all([
-                import(module_urls.ui),
-                import(module_urls.resources),
-            ])
+        async () => {
+            const { UIDom, ResourcesDom } = await import('/tests/renderer/browser-entry.ts')
             const canvas = document.createElement('div')
             Object.assign(canvas.style, {
                 boxSizing: 'border-box',
@@ -409,12 +395,6 @@ test('UIDom uses native scrolling inside bordered scroll containers', async ({ p
 
             return { border, pointer_down_calls, scroll_events, scroll_top, scroll_top_after_wheel, wheel_event }
         },
-        {
-            module_urls: {
-                ui: `/@fs${WORKSPACE_PATH}src/ui/UIDom.ts`,
-                resources: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.ts`,
-            },
-        },
     )
 
     expect(result).toEqual({
@@ -448,20 +428,10 @@ test('UIDom preserves native event sources alongside UIWebGPU normalization', { 
     await page.goto(TEST_PAGE_URL)
 
     await page.evaluate(
-        async ({ module_urls, platform_event_names }) => {
-            const [
-                { default: UIDom },
-                { default: UIWebGPU },
-                { default: ResourcesDom },
-                { default: ResourcesWebGPU },
-                { loadYoga },
-            ] = await Promise.all([
-                import(module_urls.ui_dom),
-                import(module_urls.ui_webgpu),
-                import(module_urls.resources_dom),
-                import(module_urls.resources_webgpu),
-                import('/@id/yoga-layout/load'),
-            ])
+        async ({ platform_event_names }) => {
+            const { UIDom, UIWebGPU, ResourcesDom, ResourcesWebGPU, loadYoga } = await import(
+                '/tests/renderer/browser-entry.ts'
+            )
             const dom_canvas = document.createElement('div')
             const webgpu_canvas = document.createElement('canvas')
             webgpu_canvas.width = 200
@@ -578,12 +548,6 @@ test('UIDom preserves native event sources alongside UIWebGPU normalization', { 
         },
         {
             platform_event_names: PLATFORM_EVENT_NAMES,
-            module_urls: {
-                ui_dom: `/@fs${WORKSPACE_PATH}src/ui/UIDom.ts`,
-                ui_webgpu: `/@fs${WORKSPACE_PATH}src/ui/UIWebGPU.ts`,
-                resources_dom: `/@fs${WORKSPACE_PATH}src/renderer/dom/ResourcesDom.ts`,
-                resources_webgpu: `/@fs${WORKSPACE_PATH}src/renderer/webgpu/ResourcesWebGPU.ts`,
-            },
         },
     )
 
