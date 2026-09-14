@@ -16,9 +16,6 @@ const INITIAL_TODOS = [
     { id: 1, title: 'Render a todo list on the GPU', completed: true },
     { id: 2, title: 'Hover the buttons to see them react', completed: false },
     { id: 3, title: 'Double click a row to rename it', completed: false },
-    { id: 4, title: 'Add a new todo item', completed: false },
-    { id: 5, title: 'Try out the new features', completed: true },
-    { id: 6, title: 'Delete completed todos', completed: false },
 ]
 
 const FILTER_PREDICATES = {
@@ -417,7 +414,7 @@ export function ReactTodo({
                         <Image src={COIN_SRC} width="42px" />
                     </View>
                     <View style={HEADER_TEXTS_STYLE}>
-                        <Text style={TITLE_STYLE}>Todo App</Text>
+                        <Text style={TITLE_STYLE}>React Todo App</Text>
                         <Text style={SUBTITLE_STYLE}>Type to add, click to complete, double click to rename.</Text>
                     </View>
                 </View>

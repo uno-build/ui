@@ -6,8 +6,8 @@ export function isForbiddenModule(module_id) {
     return /\/src\/components\//.test(normalized)
         || /\/src\/(?:ui\/UI|renderer\/Renderer)(?!WebGPU\b)[^/]+\.[cm]?[jt]s/.test(normalized)
         || /\/src\/renderer\/(?:dom|three|babylon|playcanvas)\//i.test(normalized)
-        || /\/node_modules\/(?:\.pnpm\/)?(?:@[^/]+\/)?(?:octane|solid-js|universal|three|playcanvas|@babylonjs)(?:\/|@)/.test(normalized)
-        || /\/node_modules\/(?:@octanejs|@solidjs|@babylonjs)\//.test(normalized)
+        || /\/node_modules\/(?:\.pnpm\/)?(?:@[^/]+\/)?(?:solid-js|universal|three|playcanvas|@babylonjs)(?:\/|@)/.test(normalized)
+        || /\/node_modules\/(?:@solidjs|@babylonjs)\//.test(normalized)
 }
 
 export default defineConfig({

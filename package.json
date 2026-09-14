@@ -39,13 +39,9 @@
             "types": "./dist/ui/UIDom.d.ts",
             "import": "./dist/ui/UIDom.js"
         },
-        "./octane": {
-            "types": "./dist/components/octane/index.d.ts",
-            "import": "./dist/components/octane/index.js"
-        },
-        "./octane/config": {
-            "types": "./dist/components/octane/config.d.ts",
-            "import": "./dist/components/octane/config.js"
+        "./react": {
+            "types": "./dist/components/react/index.d.ts",
+            "import": "./dist/components/react/index.js"
         },
         "./solid": {
             "types": "./dist/components/solid/index.d.ts",
@@ -54,10 +50,6 @@
         "./solid/config": {
             "types": "./dist/components/solid/config.d.ts",
             "import": "./dist/components/solid/config.js"
-        },
-        "./react": {
-            "types": "./dist/components/react/index.d.ts",
-            "import": "./dist/components/react/index.js"
         },
         "./vue": {
             "types": "./dist/components/vue/index.d.ts",
@@ -78,7 +70,6 @@
         "@solidjs/universal": "^2.0.0-rc.8",
         "@types/react": "^19.3.0",
         "@types/three": "^0.186.0",
-        "octane": "^0.2.6",
         "pixi.js": "^8.20.1",
         "playcanvas": "^2.22.2",
         "react": "^19.3.0",
@@ -106,9 +97,6 @@
         "react-reconciler": {
             "optional": true
         },
-        "octane": {
-            "optional": true
-        },
         "playcanvas": {
             "optional": true
         },
@@ -130,7 +118,6 @@
         "@babylonjs/core": "^9.26.0",
         "@babylonjs/lite": "^1.29.0",
         "@dom-expressions/compiler": "0.50.0-next.40",
-        "@octanejs/vite-plugin": "^0.1.53",
         "@playwright/test": "^1.52.0",
         "@solidjs/universal": "^2.0.0-rc.8",
         "@solidjs/vite-plugin": "3.0.0-next.28",
@@ -139,7 +126,6 @@
         "@types/three": "^0.186.0",
         "@vitejs/plugin-vue": "^6.0.9",
         "esbuild": "0.28.2",
-        "octane": "^0.2.6",
         "pixi.js": "^8.20.1",
         "playcanvas": "^2.22.2",
         "pngjs": "^7.0.0",
@@ -163,7 +149,6 @@
         "examples": "vite ./examples --config ./examples/vite/typegpu.config.ts",
         "examples:react": "vite ./examples --config ./examples/vite/react.config.ts",
         "examples:solid": "vite ./examples --config ./examples/vite/solid.config.ts",
-        "examples:octane": "vite ./examples --config ./examples/vite/octane.config.ts",
         "examples:vue": "vite ./examples --config ./examples/vite/vue.config.ts",
         "benchmark": "node ./scripts/benchmarks.mjs --workload general",
         "benchmark:browser": "node ./scripts/benchmarks.mjs --browser",

@@ -1,8 +1,8 @@
 import * as THREE from 'three/webgpu'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { registerRootComponent } from 'uno-ui/octane'
+import { registerRootComponent } from 'uno-ui/react'
 import { loadAssets, registerAssets } from './uis/assets'
-import { OctaneTodo } from './octane/todo'
+import { ReactTodo } from './react/todo'
 import { PLATFORM_EVENT_NAMES } from '../src/events/constants'
 
 // The todo card is 620x640 and PAGE_STYLE pads it by PAGE_PADDING on every side.
@@ -109,7 +109,7 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIThree, lo
     floor.position.y = FLOOR_Y
     scene.add(floor)
 
-    registerRootComponent(OctaneTodo, { ui }).render({ backgroundColor: 'unset', boxShadow: 'unset' })
+    registerRootComponent(ReactTodo, { ui }).render({ backgroundColor: 'unset', boxShadow: 'unset' })
 
     ui.setViewport(UI_WIDTH, UI_HEIGHT)
     ui.update()

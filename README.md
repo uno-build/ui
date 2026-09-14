@@ -6,7 +6,7 @@
 the source types without generating files; the compiler enforces erasable TypeScript syntax.
 
 `npm run build` uses `tsconfig.publish.json` to generate separate `.js` and `.d.ts` modules
-in `dist/`, preserving the source directory structure. Solid and Octane JSX is compiled
+in `dist/`, preserving the source directory structure. Solid JSX is compiled
 with their respective compilers; React JSX uses the automatic runtime. No modules are bundled together.
 
 `npm pack` and `npm publish` run this build automatically. Only `dist/` is published;
@@ -37,7 +37,9 @@ function App({ title }: { title: string }) {
 
     return (
         <View ref={view_ref} onClick={() => setCount((value) => value + 1)}>
-            <Text>{title}: {count}</Text>
+            <Text>
+                {title}: {count}
+            </Text>
             <Image src="icon" width="24px" style={{ objectFit: 'contain' }} />
         </View>
     )
@@ -70,7 +72,7 @@ Its `ScrollViewHandle` exposes `nodes.main` and `nodes.content`. `Input` renders
 the supplied `value`, a `placeholder` while empty and unfocused, and a blinking
 caret while focused. Its `InputHandle` exposes `focus()`, `blur()`, and the
 `main`, `content`, `text`, and nullable `caret` nodes. Both components follow
-the same behavior and shared styles as the Solid and Octane adapters.
+the same behavior and shared styles as the Solid adapters.
 
 This adapter does not yet include SSR, hydration, portals,
 or specific support for Suspense and Activity. Its tests run with the existing
