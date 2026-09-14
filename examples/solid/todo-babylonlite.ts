@@ -14,11 +14,11 @@ import {
     resizeEngine,
 } from '@babylonjs/lite'
 import { registerRootComponent } from 'uno-ui/solid'
-import { loadAssets, registerAssets } from './uis/assets'
-import { SolidTodo } from './solid/todo'
-import { PLATFORM_EVENT_NAMES } from '../src/events/constants'
+import { loadAssets, registerAssets } from '../uis/assets'
+import { SolidTodo } from './todo'
+import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 
-// The todo card is 620x640 and PAGE_STYLE pads it by PAGE_PADDING on every side.
+// The Todo card is 620x640 and PAGE_STYLE pads it by PAGE_PADDING on every side.
 const PAGE_PADDING = 32
 const UI_WIDTH = 620 + PAGE_PADDING * 2
 const UI_HEIGHT = 640 + PAGE_PADDING * 2
@@ -49,8 +49,8 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
 
     // loadAssets already covers the coin and Poppins-Regular the todo app needs.
     const [title_font_image, title_font_json] = await Promise.all([
-        loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
+        loadImage(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
+        loadJson(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
     ])
     resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
 

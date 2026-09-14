@@ -1,11 +1,16 @@
 export async function loadAssets({ loadImage, loadJson }) {
-    const coin = await loadImage('assets/images/coin.png')
-    const repeat_x = await loadImage('assets/images/repeat-x.png')
-    const repeat_y = await loadImage('assets/images/repeat-y.png')
-    const font_image = await loadImage(`assets/fonts/Supercell-Magic.mtsdf.png`)
-    const font_json = await loadJson(`assets/fonts/Supercell-Magic.mtsdf.json`)
-    const font_image2 = await loadImage(`assets/fonts/Poppins-Regular.mtsdf.png`)
-    const font_json2 = await loadJson(`assets/fonts/Poppins-Regular.mtsdf.json`)
+    async function loadAssetImage(src) {
+        const image = await loadImage(`/${src}`)
+        return { ...image, src }
+    }
+
+    const coin = await loadAssetImage('assets/images/coin.png')
+    const repeat_x = await loadAssetImage('assets/images/repeat-x.png')
+    const repeat_y = await loadAssetImage('assets/images/repeat-y.png')
+    const font_image = await loadAssetImage('assets/fonts/Supercell-Magic.mtsdf.png')
+    const font_json = await loadJson('/assets/fonts/Supercell-Magic.mtsdf.json')
+    const font_image2 = await loadAssetImage('assets/fonts/Poppins-Regular.mtsdf.png')
+    const font_json2 = await loadJson('/assets/fonts/Poppins-Regular.mtsdf.json')
 
     return { coin, repeat_x, repeat_y, font_image, font_json, font_image2, font_json2 }
 }
