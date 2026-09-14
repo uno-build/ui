@@ -5,17 +5,17 @@ import { loadImage, loadJson } from '../../tests/utils/load-assets'
 
 const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
-const COIN_SRC = 'assets/images/coin.png'
+const ICON_SRC = 'assets/images/vue.png'
 
 export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
-    const [coin, text_font_image, text_font_json, title_font_image, title_font_json] = await Promise.all([
-        loadImage(`/${COIN_SRC}`),
+    const [icon, text_font_image, text_font_json, title_font_image, title_font_json] = await Promise.all([
+        loadImage(`/${ICON_SRC}`),
         loadImage(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
         loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
         loadImage(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
         loadJson(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
     ])
-    resources.registerImage(COIN_SRC, coin)
+    resources.registerImage(ICON_SRC, icon)
     resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
     resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
 }
@@ -265,7 +265,7 @@ onUnmounted(() => {
         <View class="card" :style="{ boxShadow: props.boxShadow }">
             <View class="header">
                 <View class="badge">
-                    <Image :src="COIN_SRC" width="42px" />
+                    <Image :src="ICON_SRC" width="42px" />
                 </View>
                 <View class="header-texts">
                     <Text class="title">Vue Todo App</Text>

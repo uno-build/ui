@@ -30,6 +30,7 @@ const FLOOR_Y = -0.12
 const PANEL_Y = FLOOR_Y + WORLD_HEIGHT / 2 - WORLD_PAGE_PADDING
 const TEXTURE_SCALAR = window.devicePixelRatio
 const TITLE_FONT_FAMILY = 'Nougat-ExtraBlack'
+const ICON_SRC = 'assets/images/solid.png'
 
 export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, loadJson, loadYoga }) {
     const device_pixel_ratio = window.devicePixelRatio
@@ -47,11 +48,13 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })
 
-    // loadAssets already covers the coin and Poppins-Regular the todo app needs.
-    const [title_font_image, title_font_json] = await Promise.all([
+    // loadAssets already covers Poppins-Regular, which the todo app needs.
+    const [icon, title_font_image, title_font_json] = await Promise.all([
+        loadImage(`/${ICON_SRC}`),
         loadImage(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
         loadJson(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
     ])
+    resources.registerImage(ICON_SRC, icon)
     resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
 
     const texture_width = Math.round(UI_WIDTH * TEXTURE_SCALAR)
