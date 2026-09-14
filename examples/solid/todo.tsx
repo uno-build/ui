@@ -99,7 +99,7 @@ const DRAFT_STYLE = {
 }
 const DRAFT_FOCUS_STYLE = {
     border: '2px solid #1c1c1c',
-    boxShadow: '0px 0px 0px 4px #c3bcf566',
+    boxShadow: '0px 0px 0px 4px #0cdc7366',
 }
 const BUTTON_STYLE = {
     alignItems: 'center',
@@ -205,18 +205,18 @@ const CHECK_STYLE = {
     borderRadius: '999px',
 }
 const CHECK_HOVER_STYLE = {
-    backgroundColor: '#ece9fd',
+    backgroundColor: '#66e6ac',
     border: '2px solid #1c1c1c',
 }
 const CHECK_DONE_STYLE = {
-    backgroundColor: '#4fae7f',
+    backgroundColor: '#0cdc73',
     border: '2px solid #1c1c1c',
 }
 const CHECK_DOT_STYLE = {
     width: '10px',
     height: '10px',
     borderRadius: '999px',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#1c1c1c',
 }
 const ITEM_TEXT_STYLE = {
     flex: '1',
@@ -421,7 +421,7 @@ export function SolidTodo() {
                         <Image src={COIN_SRC} width="42px" />
                     </View>
                     <View style={HEADER_TEXTS_STYLE}>
-                        <Text style={TITLE_STYLE}>Todo App</Text>
+                        <Text style={TITLE_STYLE}>Solid.js Todo App</Text>
                         <Text style={SUBTITLE_STYLE}>Type to add, click to complete, double click to rename.</Text>
                     </View>
                 </View>

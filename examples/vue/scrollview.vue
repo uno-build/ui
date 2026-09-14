@@ -159,14 +159,14 @@ const ITEMS = [
     align-items: center;
     justify-content: center;
     background-color: #d9f0e4;
-    border: 2px solid #a8cdb8;
+    border: 2px solid #0a1f16;
     border-radius: 20px;
 }
 
 .page-title {
     font-family: Nougat-ExtraBlack;
     font-size: 30px;
-    color: #203b2e;
+    color: #0a1f16;
     letter-spacing: 0.5px;
 }
 
@@ -186,9 +186,9 @@ const ITEMS = [
     width: 480px;
     height: 560px;
     background-color: #ffffff;
-    border: 2px solid #a8cdb8;
+    border: 2px solid #0a1f16;
     border-radius: 28px;
-    box-shadow: 0px 18px 40px -14px #203b2e22;
+    box-shadow: 0px 18px 40px -14px #0a1f1622;
 }
 
 .panel-content {
@@ -207,7 +207,7 @@ const ITEMS = [
 .panel-title {
     font-family: Nougat-ExtraBlack;
     font-size: 22px;
-    color: #203b2e;
+    color: #0a1f16;
     letter-spacing: 0.4px;
 }
 
@@ -215,14 +215,14 @@ const ITEMS = [
     font-family: Poppins-Regular;
     font-size: 11px;
     letter-spacing: 1.6px;
-    color: #4fae7f;
+    color: #1f8a5b;
 }
 
 .text {
     font-family: Poppins-Regular;
     font-size: 14px;
     line-height: 22px;
-    color: #203b2e;
+    color: #0a1f16;
     text-align: justify;
 }
 
@@ -235,7 +235,7 @@ const ITEMS = [
     width: 100%;
     height: 150px;
     background-color: #eaf4ee;
-    border: 1px solid #a8cdb8;
+    border: 1px solid #0a1f16;
     border-radius: 18px;
 }
 
@@ -256,7 +256,7 @@ const ITEMS = [
     width: 100%;
     height: 290px;
     background-color: #eaf4ee;
-    border: 1px solid #a8cdb8;
+    border: 1px solid #0a1f16;
     border-radius: 18px;
 }
 
@@ -271,7 +271,7 @@ const ITEMS = [
     gap: 12px;
     padding: 12px;
     background-color: #ffffff;
-    border: 1px solid #a8cdb8;
+    border: 1px solid #0a1f16;
     border-radius: 14px;
 }
 
@@ -292,7 +292,7 @@ const ITEMS = [
 .entry-title {
     font-family: Poppins-Regular;
     font-size: 14px;
-    color: #203b2e;
+    color: #1f8a5b;
     letter-spacing: 0.3px;
 }
 
@@ -307,9 +307,9 @@ const ITEMS = [
     width: 988px;
     height: 250px;
     background-color: #ffffff;
-    border: 2px solid #a8cdb8;
+    border: 2px solid #0a1f16;
     border-radius: 28px;
-    box-shadow: 0px 18px 40px -14px #203b2e22;
+    box-shadow: 0px 18px 40px -14px #0a1f1622;
 }
 
 .strip-content {
@@ -332,7 +332,7 @@ const ITEMS = [
     gap: 10px;
     padding: 12px;
     background-color: #eaf4ee;
-    border: 1px solid #a8cdb8;
+    border: 1px solid #0a1f16;
     border-radius: 18px;
 }
 
@@ -346,20 +346,20 @@ const ITEMS = [
 .card-title {
     font-family: Poppins-Regular;
     font-size: 13px;
-    color: #203b2e;
+    color: #0a1f16;
 }
 
 .card-price {
     font-family: Poppins-Regular;
     font-size: 12px;
     letter-spacing: 0.4px;
-    color: #4fae7f;
+    color: #a86a12;
 }
 
 .footer {
     font-family: Poppins-Regular;
     font-size: 12px;
-    color: #4fae7f;
+    color: #1f8a5b;
 }
 
 .hero-short {

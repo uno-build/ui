@@ -8,7 +8,7 @@ const PAGE_STYLE = {
     height: '100%',
     padding: '32px',
     gap: '24px',
-    backgroundColor: '#202125',
+    backgroundColor: '#dfeaf7',
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignContent: 'flex-start',
@@ -19,18 +19,18 @@ const IMAGE_CARD_STYLE = {
     height: '330px',
     padding: '20px',
     gap: '14px',
-    backgroundColor: '#292a2f',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#ffffff',
+    border: '1px solid #cfe0f2',
     borderRadius: '24px',
-    boxShadow: '0px 24px 50px -12px #00000066',
+    boxShadow: '0px 24px 50px -12px #1f6fb233',
     flexDirection: 'column',
 }
 const IMAGE_STAGE_STYLE = {
     flex: '1',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1a1b1f',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#eef5fc',
+    border: '1px solid #cfe0f2',
     borderRadius: '18px',
 }
 const IMAGE_LABEL_STYLE = {
@@ -38,7 +38,7 @@ const IMAGE_LABEL_STYLE = {
     fontSize: '13px',
     lineHeight: '18px',
     letterSpacing: '0.3px',
-    color: '#a5a8b0',
+    color: '#54789a',
 }
 
 export function ReactImage() {

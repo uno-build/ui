@@ -38,7 +38,7 @@ const ITEMS = [
 const PAGE_STYLE = {
     width: '100%',
     height: '100%',
-    backgroundColor: '#202125',
+    backgroundColor: '#dfeaf7',
 }
 const PAGE_CONTENT_STYLE = {
     flexDirection: 'column',
@@ -57,22 +57,22 @@ const BADGE_STYLE = {
     height: '58px',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#292a2f',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#ffffff',
+    border: '1px solid #cfe0f2',
     borderRadius: '18px',
 }
 const PAGE_TITLE_STYLE = {
     fontFamily: TITLE_FONT_FAMILY,
     fontSize: '30px',
-    color: '#f5f6f7',
+    color: '#123f66',
     letterSpacing: '0.5px',
-    textShadow: '0px 3px 0px #00000066',
+    textShadow: '0px 3px 0px #b9d5ee',
 }
 const PAGE_SUBTITLE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '13px',
     lineHeight: '18px',
-    color: '#a5a8b0',
+    color: '#54789a',
 }
 const PANELS_STYLE = {
     flexDirection: 'row',
@@ -81,10 +81,10 @@ const PANELS_STYLE = {
 const PANEL_STYLE = {
     width: '480px',
     height: '560px',
-    backgroundColor: '#292a2f',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#ffffff',
+    border: '1px solid #cfe0f2',
     borderRadius: '24px',
-    boxShadow: '0px 24px 50px -12px #00000066',
+    boxShadow: '0px 24px 50px -12px #1f6fb233',
 }
 const PANEL_CONTENT_STYLE = {
     flexDirection: 'column',
@@ -100,31 +100,31 @@ const HERO_STYLE = {
 const PANEL_TITLE_STYLE = {
     fontFamily: TITLE_FONT_FAMILY,
     fontSize: '22px',
-    color: '#f5f6f7',
+    color: '#123f66',
     letterSpacing: '0.4px',
 }
 const LABEL_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '11px',
     letterSpacing: '1.6px',
-    color: '#a5a8b0',
+    color: '#54789a',
 }
 const TEXT_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '14px',
     lineHeight: '22px',
-    color: '#a5a8b0',
+    color: '#54789a',
     textAlign: 'justify',
 }
 const DIVIDER_STYLE = {
     height: '1px',
-    backgroundColor: '#3c3e45',
+    backgroundColor: '#cfe0f2',
 }
 const GALLERY_STYLE = {
     width: '100%',
     height: '150px',
-    backgroundColor: '#1a1b1f',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#eef5fc',
+    border: '1px solid #cfe0f2',
     borderRadius: '18px',
 }
 const GALLERY_CONTENT_STYLE = {
@@ -141,8 +141,8 @@ const GALLERY_IMAGE_STYLE = {
 const ENTRIES_STYLE = {
     width: '100%',
     height: '290px',
-    backgroundColor: '#1a1b1f',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#eef5fc',
+    border: '1px solid #cfe0f2',
     borderRadius: '18px',
 }
 const ENTRIES_CONTENT_STYLE = {
@@ -154,8 +154,8 @@ const ENTRY_STYLE = {
     flexDirection: 'row',
     gap: '12px',
     padding: '12px',
-    backgroundColor: '#292a2f',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#ffffff',
+    border: '1px solid #cfe0f2',
     borderRadius: '14px',
 }
 const ENTRY_THUMB_STYLE = {
@@ -172,22 +172,22 @@ const ENTRY_TEXTS_STYLE = {
 const ENTRY_TITLE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '14px',
-    color: '#82d8f7',
+    color: '#1f6fb2',
     letterSpacing: '0.3px',
 }
 const ENTRY_BODY_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
     lineHeight: '18px',
-    color: '#a5a8b0',
+    color: '#54789a',
 }
 const STRIP_STYLE = {
     width: '988px',
     height: '250px',
-    backgroundColor: '#292a2f',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#ffffff',
+    border: '1px solid #cfe0f2',
     borderRadius: '24px',
-    boxShadow: '0px 24px 50px -12px #00000066',
+    boxShadow: '0px 24px 50px -12px #1f6fb233',
 }
 const STRIP_CONTENT_STYLE = {
     padding: '20px',
@@ -206,8 +206,8 @@ const CARD_STYLE = {
     flexDirection: 'column',
     gap: '10px',
     padding: '12px',
-    backgroundColor: '#1a1b1f',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#eef5fc',
+    border: '1px solid #cfe0f2',
     borderRadius: '18px',
 }
 const CARD_IMAGE_STYLE = {
@@ -219,18 +219,18 @@ const CARD_IMAGE_STYLE = {
 const CARD_TITLE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '13px',
-    color: '#f5f6f7',
+    color: '#123f66',
 }
 const CARD_PRICE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
     letterSpacing: '0.4px',
-    color: '#82d8f7',
+    color: '#1f6fb2',
 }
 const FOOTER_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
-    color: '#82d8f7',
+    color: '#1f6fb2',
 }
 
 export function ReactScrollView() {

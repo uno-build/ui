@@ -17,7 +17,7 @@ const PAGE_STYLE = {
     width: '100%',
     height: '100%',
     padding: '32px',
-    backgroundColor: '#202125',
+    backgroundColor: '#dfeaf7',
     alignItems: 'center',
     justifyContent: 'center',
 }
@@ -26,10 +26,10 @@ const CARD_STYLE = {
     flexDirection: 'column',
     gap: '22px',
     padding: '30px',
-    backgroundColor: '#292a2f',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#ffffff',
+    border: '1px solid #cfe0f2',
     borderRadius: '24px',
-    boxShadow: '0px 24px 50px -12px #00000066',
+    boxShadow: '0px 24px 50px -12px #1f6fb233',
 }
 const HEADER_STYLE = {
     flexDirection: 'row',
@@ -41,8 +41,8 @@ const BADGE_STYLE = {
     height: '64px',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#263b44',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#d3e7fa',
+    border: '1px solid #cfe0f2',
     borderRadius: '20px',
 }
 const HEADER_TEXTS_STYLE = {
@@ -53,19 +53,19 @@ const HEADER_TEXTS_STYLE = {
 const TITLE_STYLE = {
     fontFamily: TITLE_FONT_FAMILY,
     fontSize: '30px',
-    color: '#f5f6f7',
+    color: '#123f66',
     letterSpacing: '0.5px',
-    textShadow: '0px 3px 0px #00000066',
+    textShadow: '0px 3px 0px #b9d5ee',
 }
 const SUBTITLE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '13px',
     lineHeight: '18px',
-    color: '#a5a8b0',
+    color: '#54789a',
 }
 const DIVIDER_STYLE = {
     height: '1px',
-    backgroundColor: '#3c3e45',
+    backgroundColor: '#cfe0f2',
 }
 const ROW_STYLE = {
     flexDirection: 'row',
@@ -89,64 +89,64 @@ const LABEL_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '11px',
     letterSpacing: '1.6px',
-    color: '#a5a8b0',
+    color: '#54789a',
 }
 const NICKNAME_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
-    color: '#f5f6f7',
+    color: '#123f66',
     letterSpacing: '0.3px',
-    backgroundColor: '#1a1b1f',
-    border: '2px solid #3c3e45',
+    backgroundColor: '#eef5fc',
+    border: '2px solid #cfe0f2',
     borderRadius: '12px',
     padding: '10px 14px',
 }
 const NICKNAME_FOCUS_STYLE = {
-    border: '2px solid #82d8f7',
-    boxShadow: '0px 0px 0px 4px #82d8f72e',
+    border: '2px solid #1f6fb2',
+    boxShadow: '0px 0px 0px 4px #1f6fb22e',
 }
 const CLAN_STYLE = {
     fontFamily: GAME_FONT_FAMILY,
-    color: '#82d8f7',
+    color: '#1f6fb2',
     letterSpacing: '3px',
     textAlign: 'center',
-    textStroke: '1px #202125',
-    textShadow: '0px 2px 0px #00000073',
-    backgroundColor: '#1a1b1f',
-    border: '2px solid #3c3e45',
+    textStroke: '1px #ffffff',
+    textShadow: '0px 2px 0px #b9d5ee',
+    backgroundColor: '#eef5fc',
+    border: '2px solid #cfe0f2',
     borderRadius: '14px',
     padding: '10px 14px',
 }
 const CLAN_FOCUS_STYLE = {
-    border: '2px solid #82d8f7',
-    boxShadow: '0px 0px 0px 4px #82d8f72e',
+    border: '2px solid #1f6fb2',
+    boxShadow: '0px 0px 0px 4px #1f6fb22e',
 }
 const CODE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
-    color: '#82d8f7',
+    color: '#1f6fb2',
     letterSpacing: '8px',
     textAlign: 'center',
-    backgroundColor: '#1a1b1f',
-    border: '2px solid #3c3e45',
+    backgroundColor: '#eef5fc',
+    border: '2px solid #cfe0f2',
     borderRadius: '12px',
     padding: '10px 14px',
 }
 const CODE_FOCUS_STYLE = {
-    border: '2px solid #82d8f7',
-    boxShadow: '0px 0px 0px 4px #82d8f72e',
+    border: '2px solid #1f6fb2',
+    boxShadow: '0px 0px 0px 4px #1f6fb22e',
 }
 const CRY_STYLE = {
     fontFamily: TITLE_FONT_FAMILY,
-    color: '#82d8f7',
+    color: '#1f6fb2',
     letterSpacing: '0.5px',
     lineHeight: '22px',
-    backgroundColor: '#1a1b1f',
-    border: '2px solid #3c3e45',
+    backgroundColor: '#eef5fc',
+    border: '2px solid #cfe0f2',
     borderRadius: '999px',
     padding: '10px 20px',
 }
 const CRY_FOCUS_STYLE = {
-    border: '2px solid #82d8f7',
-    boxShadow: '0px 0px 0px 4px #82d8f72e',
+    border: '2px solid #1f6fb2',
+    boxShadow: '0px 0px 0px 4px #1f6fb22e',
 }
 const FOOTER_STYLE = {
     flexDirection: 'row',
@@ -156,12 +156,12 @@ const FOOTER_STYLE = {
 const STATUS_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
-    color: '#a5a8b0',
+    color: '#54789a',
 }
 const TAPS_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
-    color: '#82d8f7',
+    color: '#1f6fb2',
 }
 
 export function ReactInput() {
@@ -220,7 +220,7 @@ export function ReactInput() {
                         }}
                         value={values.nickname}
                         placeholder="Player one"
-                        placeholderTextColor="#7d818c"
+                        placeholderTextColor="#6e8ca9"
                         onFocus={(event) => handleFocus('nickname', event)}
                         onBlur={handleBlur}
                     />
@@ -234,7 +234,7 @@ export function ReactInput() {
                             style={{ ...CLAN_STYLE, ...(focused === 'clan' && CLAN_FOCUS_STYLE) }}
                             value={values.clan}
                             placeholder="UNO"
-                            placeholderTextColor="#7d818c"
+                            placeholderTextColor="#6e8ca9"
                             onFocus={(event) => handleFocus('clan', event)}
                             onBlur={handleBlur}
                         />
@@ -246,7 +246,7 @@ export function ReactInput() {
                             style={{ ...CODE_STYLE, ...(focused === 'code' && CODE_FOCUS_STYLE), textAlign: 'center' }}
                             value={values.code.replace(/./g, '•').trim()}
                             placeholder="000000"
-                            placeholderTextColor="#7d818c"
+                            placeholderTextColor="#6e8ca9"
                             onFocus={(event) => handleFocus('code', event)}
                             onBlur={handleBlur}
                         />
@@ -260,7 +260,7 @@ export function ReactInput() {
                         style={{ ...CRY_STYLE, ...(focused === 'cry' && CRY_FOCUS_STYLE) }}
                         value={values.cry}
                         placeholder="For glory and coins!"
-                        placeholderTextColor="#7d818c"
+                        placeholderTextColor="#6e8ca9"
                         onFocus={(event) => handleFocus('cry', event)}
                         onBlur={handleBlur}
                     />

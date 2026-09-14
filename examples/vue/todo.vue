@@ -53,7 +53,7 @@ const FILTER_NAMES = Object.keys(FILTER_PREDICATES) as (keyof typeof FILTER_PRED
 
 const LIST_STYLE = {
     height: `${LIST_HEIGHT}px`,
-    border: `${LIST_BORDER}px solid #a8cdb8`,
+    border: `${LIST_BORDER}px solid #0a1f16`,
 }
 const LIST_CONTENT_STYLE = {
     padding: `${LIST_PADDING}px`,
@@ -116,9 +116,10 @@ function clearCompleted() {
 function commitEdit(title: string) {
     const next_title = title.trim()
 
-    todos.value = next_title === ''
-        ? todos.value.filter((todo) => todo.id !== editing_id.value)
-        : todos.value.map((todo) => (todo.id === editing_id.value ? { ...todo, title: next_title } : todo))
+    todos.value =
+        next_title === ''
+            ? todos.value.filter((todo) => todo.id !== editing_id.value)
+            : todos.value.map((todo) => (todo.id === editing_id.value ? { ...todo, title: next_title } : todo))
     editing_id.value = null
     hideKeyboard()
 }
@@ -130,8 +131,7 @@ function cancelEdit() {
 
 function onLabelClick(todo: Todo) {
     const time = Date.now()
-    const is_double_click =
-        last_label_click.id === todo.id && time - last_label_click.time < DOUBLE_CLICK_DELAY
+    const is_double_click = last_label_click.id === todo.id && time - last_label_click.time < DOUBLE_CLICK_DELAY
 
     last_label_click = { id: todo.id, time }
 
@@ -150,9 +150,13 @@ function onDraftFocus(event: NodeEventMap['focus']) {
     showKeyboard({
         node: event.target,
         value: draft.value,
-        onChange: (value) => { draft.value = value },
+        onChange: (value) => {
+            draft.value = value
+        },
         onSubmit: addTodo,
-        onCancel: () => { draft.value = '' },
+        onCancel: () => {
+            draft.value = ''
+        },
     })
 }
 
@@ -160,13 +164,21 @@ function onEditFocus(event: NodeEventMap['focus']) {
     showKeyboard({
         node: event.target,
         value: edit_draft.value,
-        onChange: (value) => { edit_draft.value = value },
+        onChange: (value) => {
+            edit_draft.value = value
+        },
         onSubmit: commitEdit,
         onCancel: cancelEdit,
     })
 }
 
-function showKeyboard({ node, value, onChange, onSubmit, onCancel }: {
+function showKeyboard({
+    node,
+    value,
+    onChange,
+    onSubmit,
+    onCancel,
+}: {
     node: NodeEventMap['focus']['target']
     value: string
     onChange: (value: string) => void
@@ -221,11 +233,15 @@ onMounted(() => {
     draft_ref.value!.focus()
 })
 
-watch(editing_id, (id) => {
-    if (id !== null) {
-        edit_ref!.focus()
-    }
-}, { flush: 'post' })
+watch(
+    editing_id,
+    (id) => {
+        if (id !== null) {
+            edit_ref!.focus()
+        }
+    },
+    { flush: 'post' },
+)
 
 onUnmounted(() => {
     if (keyboard_input === null) {
@@ -247,7 +263,7 @@ onUnmounted(() => {
                     <Image :src="COIN_SRC" width="42px" />
                 </View>
                 <View class="header-texts">
-                    <Text class="title">Todo App</Text>
+                    <Text class="title">Vue Todo App</Text>
                     <Text class="subtitle">Type to add, click to complete, double click to rename.</Text>
                 </View>
             </View>
@@ -304,10 +320,7 @@ onUnmounted(() => {
                     @pointer-up="pressed = null"
                     @click="toggleAll"
                 >
-                    <Text
-                        class="pill-text"
-                        :class="{ 'pill-text-highlight': hovered === 'toggle-all' }"
-                    >
+                    <Text class="pill-text" :class="{ 'pill-text-highlight': hovered === 'toggle-all' }">
                         {{ remaining > 0 ? 'COMPLETE ALL' : 'REOPEN ALL' }}
                     </Text>
                 </View>
@@ -413,10 +426,7 @@ onUnmounted(() => {
                     @pointer-out="hovered = null"
                     @click="clearCompleted"
                 >
-                    <Text
-                        class="clear-text"
-                        :class="{ 'clear-text-hover': hovered === 'clear' }"
-                    >
+                    <Text class="clear-text" :class="{ 'clear-text-hover': hovered === 'clear' }">
                         CLEAR COMPLETED ({{ completed_count }})
                     </Text>
                 </View>
@@ -441,9 +451,9 @@ onUnmounted(() => {
     gap: 20px;
     padding: 28px;
     background-color: #ffffff;
-    border: 1px solid #a8cdb8;
+    border: 1px solid #0a1f16;
     border-radius: 24px;
-    box-shadow: 0px 24px 50px -12px #203b2e33;
+    box-shadow: 0px 24px 50px -12px #0a1f1633;
 }
 
 .header {
@@ -458,7 +468,7 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     background-color: #d9f0e4;
-    border: 1px solid #a8cdb8;
+    border: 1px solid #0a1f16;
     border-radius: 20px;
 }
 
@@ -471,7 +481,7 @@ onUnmounted(() => {
 .title {
     font-family: ChangaOne-Regular;
     font-size: 32px;
-    color: #203b2e;
+    color: #0a1f16;
     letter-spacing: 0.5px;
 }
 
@@ -499,17 +509,17 @@ onUnmounted(() => {
 
 .draft {
     font-family: Poppins-Regular;
-    color: #203b2e;
+    color: #0a1f16;
     letter-spacing: 0.3px;
     background-color: #eaf4ee;
-    border: 2px solid #a8cdb8;
+    border: 2px solid #0a1f16;
     border-radius: 14px;
     padding: 12px 16px;
 }
 
 .draft-focus {
-    border: 2px solid #4fae7f;
-    box-shadow: 0px 0px 0px 4px #4fae7f2e;
+    border: 2px solid #1f8a5b;
+    box-shadow: 0px 0px 0px 4px #1f8a5b2e;
 }
 
 .button {
@@ -517,33 +527,33 @@ onUnmounted(() => {
     justify-content: center;
     padding: 13px 20px;
     background-color: #ffffff;
-    border: 2px solid #a8cdb8;
+    border: 2px solid #0a1f16;
     border-radius: 14px;
 }
 
 .button-hover {
-    background-color: #d9f0e4;
-    border: 2px solid #4fae7f;
+    background-color: #1f8a5b;
+    border: 2px solid #1f8a5b;
 }
 
 .button-pressed {
-    background-color: #4fae7f;
-    border: 2px solid #4fae7f;
+    background-color: #e8a33d;
+    border: 2px solid #e8a33d;
 }
 
 .button-text {
     font-family: Poppins-Regular;
     font-size: 12px;
     letter-spacing: 1.4px;
-    color: #4fae7f;
+    color: #0a1f16;
 }
 
 .button-text-hover {
-    color: #4fae7f;
+    color: #ffffff;
 }
 
 .button-text-pressed {
-    color: #ffffff;
+    color: #0a1f16;
 }
 
 .toolbar {
@@ -561,18 +571,18 @@ onUnmounted(() => {
     justify-content: center;
     padding: 8px 14px;
     background-color: #ffffff;
-    border: 2px solid #a8cdb8;
+    border: 2px solid #0a1f16;
     border-radius: 999px;
 }
 
 .pill-hover {
     background-color: #d9f0e4;
-    border: 2px solid #4fae7f;
+    border: 2px solid #1f8a5b;
 }
 
 .pill-selected {
-    background-color: #d9f0e4;
-    border: 2px solid #4fae7f;
+    background-color: #fdefd6;
+    border: 2px solid #e8a33d;
 }
 
 .pill-text {
@@ -583,7 +593,7 @@ onUnmounted(() => {
 }
 
 .pill-text-highlight {
-    color: #4fae7f;
+    color: #0a1f16;
 }
 
 .list {
@@ -613,13 +623,13 @@ onUnmounted(() => {
     gap: 12px;
     padding: 10px 12px;
     background-color: #ffffff;
-    border: 1px solid #a8cdb8;
+    border: 1px solid #0a1f16;
     border-radius: 14px;
 }
 
 .item-hover {
     background-color: #d9f0e4;
-    border: 1px solid #4fae7f;
+    border: 1px solid #1f8a5b;
 }
 
 .check {
@@ -628,18 +638,18 @@ onUnmounted(() => {
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    border: 2px solid #a8cdb8;
+    border: 2px solid #0a1f16;
     border-radius: 999px;
 }
 
 .check-hover {
-    background-color: #4fae7f;
-    border: 2px solid #4fae7f;
+    background-color: #e8a33d;
+    border: 2px solid #e8a33d;
 }
 
 .check-done {
-    background-color: #4fae7f;
-    border: 2px solid #4fae7f;
+    background-color: #1f8a5b;
+    border: 2px solid #1f8a5b;
 }
 
 .check-dot {
@@ -654,7 +664,7 @@ onUnmounted(() => {
     font-family: Poppins-Regular;
     font-size: 14px;
     line-height: 20px;
-    color: #203b2e;
+    color: #0a1f16;
 }
 
 .item-text-done {
@@ -663,10 +673,10 @@ onUnmounted(() => {
 
 .edit {
     font-family: Poppins-Regular;
-    color: #203b2e;
+    color: #0a1f16;
     letter-spacing: 0.3px;
     background-color: #eaf4ee;
-    border: 2px solid #4fae7f;
+    border: 2px solid #1f8a5b;
     border-radius: 10px;
     padding: 5px 10px;
 }
@@ -682,18 +692,18 @@ onUnmounted(() => {
 }
 
 .destroy-visible {
-    background-color: #d9f0e4;
+    background-color: #fde4e0;
     opacity: 1;
 }
 
 .destroy-hover {
-    background-color: #4fae7f;
+    background-color: #c1443a;
 }
 
 .destroy-text {
     font-family: Poppins-Regular;
     font-size: 13px;
-    color: #4fae7f;
+    color: #c1443a;
 }
 
 .destroy-text-hover {
@@ -717,20 +727,20 @@ onUnmounted(() => {
     justify-content: center;
     padding: 8px 14px;
     background-color: #ffffff;
-    border: 2px solid #a8cdb8;
+    border: 2px solid #0a1f16;
     border-radius: 999px;
 }
 
 .clear-hover {
-    background-color: #4fae7f;
-    border: 2px solid #4fae7f;
+    background-color: #c1443a;
+    border: 2px solid #c1443a;
 }
 
 .clear-text {
     font-family: Poppins-Regular;
     font-size: 12px;
     letter-spacing: 1.2px;
-    color: #4fae7f;
+    color: #c1443a;
 }
 
 .clear-text-hover {

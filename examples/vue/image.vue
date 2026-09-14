@@ -115,9 +115,9 @@ import { Image, Text, View } from 'uno-ui/vue'
     padding: 20px;
     gap: 14px;
     background-color: #ffffff;
-    border: 1px solid #a8cdb8;
+    border: 1px solid #0a1f16;
     border-radius: 24px;
-    box-shadow: 0px 18px 40px -14px #203b2e22;
+    box-shadow: 0px 18px 40px -14px #0a1f1622;
     flex-direction: column;
 }
 
@@ -126,7 +126,7 @@ import { Image, Text, View } from 'uno-ui/vue'
     align-items: center;
     justify-content: center;
     background-color: #eaf4ee;
-    border: 1px solid #a8cdb8;
+    border: 1px solid #0a1f16;
     border-radius: 18px;
 }
 
@@ -135,7 +135,7 @@ import { Image, Text, View } from 'uno-ui/vue'
     font-size: 13px;
     line-height: 18px;
     letter-spacing: 0.3px;
-    color: #658273;
+    color: #0a1f16;
 }
 
 .fit-fill {

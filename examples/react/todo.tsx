@@ -37,8 +37,8 @@ const CARD_STYLE = {
     flexDirection: 'column',
     gap: '20px',
     padding: '28px',
-    backgroundColor: '#292a2f',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#ffffff',
+    border: '1px solid #cfe0f2',
     borderRadius: '24px',
 }
 const HEADER_STYLE = {
@@ -51,8 +51,8 @@ const BADGE_STYLE = {
     height: '64px',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#263b44',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#d3e7fa',
+    border: '1px solid #cfe0f2',
     borderRadius: '20px',
 }
 const HEADER_TEXTS_STYLE = {
@@ -63,19 +63,19 @@ const HEADER_TEXTS_STYLE = {
 const TITLE_STYLE = {
     fontFamily: TITLE_FONT_FAMILY,
     fontSize: '32px',
-    color: '#f5f6f7',
+    color: '#123f66',
     letterSpacing: '0.5px',
-    textShadow: '0px 3px 0px #00000066',
+    textShadow: '0px 3px 0px #b9d5ee',
 }
 const SUBTITLE_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '13px',
     lineHeight: '18px',
-    color: '#a5a8b0',
+    color: '#54789a',
 }
 const DIVIDER_STYLE = {
     height: '1px',
-    backgroundColor: '#3c3e45',
+    backgroundColor: '#cfe0f2',
 }
 const NEW_TODO_STYLE = {
     flexDirection: 'row',
@@ -87,44 +87,44 @@ const FIELD_STYLE = {
 }
 const DRAFT_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
-    color: '#f5f6f7',
+    color: '#123f66',
     letterSpacing: '0.3px',
-    backgroundColor: '#1a1b1f',
-    border: '2px solid #3c3e45',
+    backgroundColor: '#eef5fc',
+    border: '2px solid #cfe0f2',
     borderRadius: '14px',
     padding: '12px 16px',
 }
 const DRAFT_FOCUS_STYLE = {
-    border: '2px solid #82d8f7',
-    boxShadow: '0px 0px 0px 4px #82d8f72e',
+    border: '2px solid #1f6fb2',
+    boxShadow: '0px 0px 0px 4px #1f6fb22e',
 }
 const BUTTON_STYLE = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '13px 20px',
-    backgroundColor: '#292a2f',
-    border: '2px solid #3c3e45',
+    backgroundColor: '#ffffff',
+    border: '2px solid #cfe0f2',
     borderRadius: '14px',
 }
 const BUTTON_HOVER_STYLE = {
-    backgroundColor: '#263b44',
-    border: '2px solid #82d8f7',
+    backgroundColor: '#d3e7fa',
+    border: '2px solid #1f6fb2',
 }
 const BUTTON_PRESSED_STYLE = {
-    backgroundColor: '#82d8f7',
-    border: '2px solid #82d8f7',
+    backgroundColor: '#1f6fb2',
+    border: '2px solid #1f6fb2',
 }
 const BUTTON_TEXT_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
     letterSpacing: '1.4px',
-    color: '#82d8f7',
+    color: '#1f6fb2',
 }
 const BUTTON_TEXT_HOVER_STYLE = {
-    color: '#82d8f7',
+    color: '#1f6fb2',
 }
 const BUTTON_TEXT_PRESSED_STYLE = {
-    color: '#202125',
+    color: '#ffffff',
 }
 const TOOLBAR_STYLE = {
     flexDirection: 'row',
@@ -138,31 +138,31 @@ const PILL_STYLE = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '8px 14px',
-    backgroundColor: '#292a2f',
-    border: '2px solid #3c3e45',
+    backgroundColor: '#ffffff',
+    border: '2px solid #cfe0f2',
     borderRadius: '999px',
 }
 const PILL_HOVER_STYLE = {
-    backgroundColor: '#263b44',
-    border: '2px solid #82d8f7',
+    backgroundColor: '#d3e7fa',
+    border: '2px solid #1f6fb2',
 }
 const PILL_SELECTED_STYLE = {
-    backgroundColor: '#263b44',
-    border: '2px solid #82d8f7',
+    backgroundColor: '#d3e7fa',
+    border: '2px solid #1f6fb2',
 }
 const PILL_TEXT_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
     letterSpacing: '1.2px',
-    color: '#a5a8b0',
+    color: '#54789a',
 }
 const PILL_TEXT_HIGHLIGHT_STYLE = {
-    color: '#82d8f7',
+    color: '#1f6fb2',
 }
 const LIST_STYLE = {
     height: `${LIST_HEIGHT}px`,
-    backgroundColor: '#1a1b1f',
-    border: `${LIST_BORDER}px solid #3c3e45`,
+    backgroundColor: '#eef5fc',
+    border: `${LIST_BORDER}px solid #cfe0f2`,
     borderRadius: '18px',
 }
 const LIST_CONTENT_STYLE = {
@@ -179,20 +179,20 @@ const EMPTY_STYLE = {
 const EMPTY_TEXT_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '13px',
-    color: '#7d818c',
+    color: '#6e8ca9',
 }
 const ITEM_STYLE = {
     flexDirection: 'row',
     alignItems: 'center',
     gap: '12px',
     padding: '10px 12px',
-    backgroundColor: '#292a2f',
-    border: '1px solid #3c3e45',
+    backgroundColor: '#ffffff',
+    border: '1px solid #cfe0f2',
     borderRadius: '14px',
 }
 const ITEM_HOVER_STYLE = {
-    backgroundColor: '#263b44',
-    border: '1px solid #82d8f7',
+    backgroundColor: '#d3e7fa',
+    border: '1px solid #1f6fb2',
 }
 const CHECK_STYLE = {
     width: '24px',
@@ -200,39 +200,39 @@ const CHECK_STYLE = {
     flexShrink: '0',
     alignItems: 'center',
     justifyContent: 'center',
-    border: '2px solid #3c3e45',
+    border: '2px solid #cfe0f2',
     borderRadius: '999px',
 }
 const CHECK_HOVER_STYLE = {
-    backgroundColor: '#82d8f7',
-    border: '2px solid #82d8f7',
+    backgroundColor: '#1f6fb2',
+    border: '2px solid #1f6fb2',
 }
 const CHECK_DONE_STYLE = {
-    backgroundColor: '#82d8f7',
-    border: '2px solid #82d8f7',
+    backgroundColor: '#1f6fb2',
+    border: '2px solid #1f6fb2',
 }
 const CHECK_DOT_STYLE = {
     width: '10px',
     height: '10px',
     borderRadius: '999px',
-    backgroundColor: '#202125',
+    backgroundColor: '#ffffff',
 }
 const ITEM_TEXT_STYLE = {
     flex: '1',
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '14px',
     lineHeight: '20px',
-    color: '#f5f6f7',
+    color: '#123f66',
 }
 const ITEM_TEXT_DONE_STYLE = {
-    color: '#7d818c',
+    color: '#6e8ca9',
 }
 const EDIT_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
-    color: '#f5f6f7',
+    color: '#123f66',
     letterSpacing: '0.3px',
-    backgroundColor: '#1a1b1f',
-    border: '2px solid #82d8f7',
+    backgroundColor: '#eef5fc',
+    border: '2px solid #1f6fb2',
     borderRadius: '10px',
     padding: '5px 10px',
 }
@@ -246,19 +246,19 @@ const DESTROY_STYLE = {
     opacity: '0',
 }
 const DESTROY_VISIBLE_STYLE = {
-    backgroundColor: '#263b44',
+    backgroundColor: '#d3e7fa',
     opacity: '1',
 }
 const DESTROY_HOVER_STYLE = {
-    backgroundColor: '#82d8f7',
+    backgroundColor: '#1f6fb2',
 }
 const DESTROY_TEXT_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '13px',
-    color: '#82d8f7',
+    color: '#1f6fb2',
 }
 const DESTROY_TEXT_HOVER_STYLE = {
-    color: '#202125',
+    color: '#ffffff',
 }
 const FOOTER_STYLE = {
     flexDirection: 'row',
@@ -268,33 +268,33 @@ const FOOTER_STYLE = {
 const COUNT_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
-    color: '#a5a8b0',
+    color: '#54789a',
 }
 const CLEAR_STYLE = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '8px 14px',
-    backgroundColor: '#292a2f',
-    border: '2px solid #3c3e45',
+    backgroundColor: '#ffffff',
+    border: '2px solid #cfe0f2',
     borderRadius: '999px',
 }
 const CLEAR_HOVER_STYLE = {
-    backgroundColor: '#82d8f7',
-    border: '2px solid #82d8f7',
+    backgroundColor: '#1f6fb2',
+    border: '2px solid #1f6fb2',
 }
 const CLEAR_TEXT_STYLE = {
     fontFamily: TEXT_FONT_FAMILY,
     fontSize: '12px',
     letterSpacing: '1.2px',
-    color: '#82d8f7',
+    color: '#1f6fb2',
 }
 const CLEAR_TEXT_HOVER_STYLE = {
-    color: '#202125',
+    color: '#ffffff',
 }
 
 export function ReactTodo({
-    backgroundColor: background_color = '#202125',
-    boxShadow: box_shadow = '0px 24px 50px -12px #00000066',
+    backgroundColor: background_color = '#dfeaf7',
+    boxShadow: box_shadow = '0px 24px 50px -12px #1f6fb233',
 }) {
     const draft_ref = useRef<InputHandle>(null)
     const edit_ref = useRef<InputHandle>(null)
@@ -428,7 +428,7 @@ export function ReactTodo({
                             style={{ ...DRAFT_STYLE, ...(draft_focused && DRAFT_FOCUS_STYLE) }}
                             value={draft}
                             placeholder="What needs to be done?"
-                            placeholderTextColor="#7d818c"
+                            placeholderTextColor="#6e8ca9"
                             onFocus={onDraftFocus}
                             onBlur={() => setDraftFocused(false)}
                         />

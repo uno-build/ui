@@ -112,7 +112,7 @@ onUnmounted(() => {
                         :class="{ focus: focused === 'clan' }"
                         :value="values.clan"
                         placeholder="UNO"
-                        placeholder-text-color="#d9f0e4"
+                        placeholder-text-color="#a86a12"
                         @focus="handleFocus('clan', $event)"
                         @blur="handleBlur"
                     />
@@ -172,9 +172,9 @@ onUnmounted(() => {
     gap: 22px;
     padding: 30px;
     background-color: #ffffff;
-    border: 1px solid #a8cdb8;
+    border: 1px solid #0a1f16;
     border-radius: 24px;
-    box-shadow: 0px 24px 50px -12px #203b2e33;
+    box-shadow: 0px 24px 50px -12px #0a1f1633;
 }
 
 .header {
@@ -189,7 +189,7 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     background-color: #d9f0e4;
-    border: 1px solid #a8cdb8;
+    border: 1px solid #0a1f16;
     border-radius: 20px;
 }
 
@@ -202,7 +202,7 @@ onUnmounted(() => {
 .title {
     font-family: ChangaOne-Regular;
     font-size: 30px;
-    color: #203b2e;
+    color: #0a1f16;
     letter-spacing: 0.5px;
 }
 
@@ -249,10 +249,10 @@ onUnmounted(() => {
 
 .nickname {
     font-family: Poppins-Regular;
-    color: #203b2e;
+    color: #0a1f16;
     letter-spacing: 0.3px;
     background-color: #eaf4ee;
-    border: 2px solid #a8cdb8;
+    border: 2px solid #0a1f16;
     border-radius: 12px;
     padding: 10px 14px;
 }
@@ -262,39 +262,39 @@ onUnmounted(() => {
     color: #ffffff;
     letter-spacing: 3px;
     text-align: center;
-    text-stroke: 1px #203b2e;
-    text-shadow: 0px 2px 0px #203b2e33;
-    background-color: #4fae7f;
-    border: 2px solid #a8cdb8;
+    text-stroke: 1px #0a1f16;
+    text-shadow: 0px 2px 0px #0a1f1666;
+    background-color: #e8a33d;
+    border: 2px solid #0a1f16;
     border-radius: 14px;
     padding: 10px 14px;
 }
 
 .code {
     font-family: Poppins-Regular;
-    color: #4fae7f;
+    color: #1f8a5b;
     letter-spacing: 8px;
     text-align: center;
     background-color: #eaf4ee;
-    border: 2px solid #a8cdb8;
+    border: 2px solid #0a1f16;
     border-radius: 12px;
     padding: 10px 14px;
 }
 
 .cry {
     font-family: ChangaOne-Regular;
-    color: #203b2e;
+    color: #0a1f16;
     letter-spacing: 0.5px;
     line-height: 22px;
     background-color: #d9f0e4;
-    border: 2px solid #a8cdb8;
+    border: 2px solid #0a1f16;
     border-radius: 999px;
     padding: 10px 20px;
 }
 
 .focus {
-    border: 2px solid #4fae7f;
-    box-shadow: 0px 0px 0px 4px #4fae7f2e;
+    border: 2px solid #1f8a5b;
+    box-shadow: 0px 0px 0px 4px #1f8a5b2e;
 }
 
 .footer {
@@ -312,6 +312,6 @@ onUnmounted(() => {
 .taps {
     font-family: Poppins-Regular;
     font-size: 12px;
-    color: #4fae7f;
+    color: #a86a12;
 }
 </style>
