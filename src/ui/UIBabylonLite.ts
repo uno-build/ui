@@ -22,7 +22,7 @@ import {
     createStandardMaterial,
     disposePicker,
     getCameraPosition,
-    mat4Invert,
+    invertMat4,
     pickAsync,
     setStandardOpacityTexture,
 } from '@babylonjs/lite'
@@ -112,7 +112,7 @@ export default class UIBabylonLite extends UIWorldSpace<
 
             const picked_point = intersection.pickedPoint!
             const camera_position = getCameraPosition(camera)
-            const inverse_world_matrix = mat4Invert(this.plane!.worldMatrix)!
+            const inverse_world_matrix = invertMat4(this.plane!.worldMatrix)!
             const local_x =
                 picked_point[0] * inverse_world_matrix[0]! +
                 picked_point[1] * inverse_world_matrix[4]! +
