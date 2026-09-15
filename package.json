@@ -170,6 +170,7 @@
         "benchmark:render-metrics:headed": "node ./scripts/benchmarks.mjs --workload render-metrics --headed",
         "typescript": "tsc -p tsconfig.json",
         "build": "node scripts/build.mjs",
+        "build:check": "node scripts/build-check.mjs",
         "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"
     },
     "files": [

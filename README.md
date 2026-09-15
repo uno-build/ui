@@ -1,33 +1,47 @@
 <p>
  <img src="./assets/banner.jpg" alt="uno/ui" width="100%" />
 </p>
-<p align="right">
- <a href="https://www.babylonjs.com/"><img src="./assets/babylon.svg" alt="Babylon.js" width="32" /></a>
- <a href="https://pixijs.com/"><img src="./assets/pixi.svg" alt="pixi.js" width="32" /></a>
- <a href="https://playcanvas.com/"><img src="./assets/playcanvas.svg" alt="PlayCanvas" width="32" /></a>
- <a href="https://threejs.org/"><img src="./assets/three.svg" alt="Three.js" width="32" /></a>
- <a href="https://docs.swmansion.com/TypeGPU/"><img src="./assets/typegpu.svg" alt=TypeGPU" width="32" /></a>
- <img src="./assets/separator.png" alt="separator" width="21" height="32" />
- <a href="https://react.dev/"><img src="./assets/react.svg" alt=React" width="32" /></a>
- <a href="https://www.solidjs.com/"><img src="./assets/solid.svg" alt=Solid.js" width="32" /></a>
- <a href="https://vuejs.org/"><img src="./assets/vue.svg" alt=Vue" width="32" /></a>
-</p>
 
-Build high-performance, pixel-perfect, cross-platform user interfaces with WebGPU. Use the rendering engine and UI framework of your choice.
+<table width="100%">
+  <tr>
+    <td align="left" width="50%">
+        <a href="https://github.com/Josema/uno-ui/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/josema/uno-ui/ci.yml?branch=main&logo=github&style=for-the-badge" alt="Babylon.js" height="5%" />
+    </td>
+    <td align="right" width="50%">
+        <a href="https://www.babylonjs.com/"><img src="./assets/babylon.svg" alt="Babylon.js" width="5%" /></a>
+        <a href="https://pixijs.com/"><img src="./assets/pixi.svg" alt="pixi.js" width="5%" /></a>
+        <a href="https://playcanvas.com/"><img src="./assets/playcanvas.svg" alt="PlayCanvas" width="5%" /></a>
+        <a href="https://threejs.org/"><img src="./assets/three.svg" alt="Three.js" width="5%" /></a>
+        <a href="https://docs.swmansion.com/TypeGPU/"><img src="./assets/typegpu.svg" alt=TypeGPU" width="5%" /></a>
+        <img src="./assets/separator.png" alt="separator" width="21" height="5%" />
+        <a href="https://react.dev/"><img src="./assets/react.svg" alt=React" width="5%" /></a>
+        <a href="https://www.solidjs.com/"><img src="./assets/solid.svg" alt=Solid.js" width="5%" /></a>
+        <a href="https://vuejs.org/"><img src="./assets/vue.svg" alt=Vue" width="5%" /></a>
+    </td>
+  </tr>
+</table>
 
-## TypeScript sources
+### Build high-performance and pixel-perfect user interfaces for WebGPU. Use the rendering engine and UI framework of your choice.
 
-`src/` contains the only maintained `.ts` and `.tsx` sources. `npm run typescript` checks
-the source types without generating files; the compiler enforces erasable TypeScript syntax.
+banner here
 
-`npm run build` uses `tsconfig.publish.json` to generate separate `.js` and `.d.ts` modules
-in `dist/`, preserving the source directory structure. Solid JSX is compiled
-with their respective compilers; React JSX uses the automatic runtime. No modules are bundled together.
+## Key Features
 
-`npm pack` and `npm publish` run this build automatically. Only `dist/` is published;
-consumers do not need TypeScript to execute the package. For a local file dependency,
-run `npm run build` after changing the sources. Generated files are ignored by Git.
+- Works with any WebGPU-compatible engine or library
+- Use it standalone or with React, SolidJS, or Vue
+- World-space integrations for Babylon.js, Babylon Lite, PlayCanvas, and Three.js
+- [Pixel-perfect parity with DOM rendering](https://uno.build/examples/dev)
+- High-quality text rendering with strokes and shadows
+- Accurate text measurement and layout powered by [Pretext](https://github.com/chenglou/pretext)
+- Flexbox layout powered by [Yoga](https://www.yogalayout.dev/)
+- Fine-grained updates for efficient rendering
+- Lightweight
 
+## Examples
+
+###
+
+<!--
 ## React
 
 The `uno-ui/react` adapter supports React 19.2 with `View`, `Text`, `Image`, `ScrollView`, and `Input`.
@@ -147,65 +161,6 @@ Descendant selectors, pseudo-classes, at-rules, `!important`, CSS variables, CSS
 external style blocks, and preprocessors are unsupported. Use `:class` for
 interaction states and `:style` for computed values instead of CSS `v-bind()`.
 
-## WebGPU resources
-
-Create one `ResourcesWebGPU` and pass the same instance as `resources` to every UI that should share its adapter,
-device, canvas context, format, fonts, and image atlases.
-
-```ts
-import UIWebGPU from 'uno-ui/UIWebGPU'
-import ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
-
-const resources = await ResourcesWebGPU.create({ canvas })
-
-resources.registerImage(icon_path, icon)
-resources.registerFont('Poppins', font_image, font_json)
-
-const { ui } = await UIWebGPU.create({ resources, loadYoga })
-```
-
-Fonts and images only need to be registered once per `ResourcesWebGPU` instance. Registering the same image `src` twice throws, so
-call `disposeImage` before replacing it.
-
-## WebGPU composition
-
-Both examples render to the same `GPUDevice`, `GPUCanvasContext`, and current
-`GPUTexture`. The difference is whether the render passes can share a command
-encoder and submit.
-
-### Raw WebGPU
-
-The raw WebGPU example records both render passes in one command encoder and
-submits them together.
-
-```text
-Shared GPUDevice + GPUCanvasContext + GPUTexture
-        │
-        └─ Single GPUCommandEncoder
-                │
-                ├─ Raw WebGPU render pass
-                │
-                └─ uno-ui render pass (loadOp: load)
-                        │
-                        └─ Single queue.submit() → Present
-```
-
-### Three.js WebGPU
-
-Three.js manages its command encoder internally and submits its work before
-`uno-ui` records a second render pass over the same canvas texture. Both submits
-use the same `GPUQueue`, which preserves their order.
-
-```text
-Shared GPUDevice + GPUCanvasContext + GPUTexture
-        │
-        ├─ Three.js render pass → queue.submit() #1
-        │
-        └─ uno-ui render pass (loadOp: load) → queue.submit() #2
-                                                   │
-                                                   └─ Present
-```
-
 ## RendererWebGPU opacity
 
 `RendererWebGPU` implements `opacity` as a simple accumulated alpha factor per
@@ -273,3 +228,4 @@ would clip them away.
 Until WebGPU supports rounded ancestor clipping, layout examples and visual
 comparisons should avoid relying on `borderRadius` to clip overflowing
 descendants.
+-->
