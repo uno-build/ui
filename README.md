@@ -13,6 +13,8 @@
  <a href="https://vuejs.org/"><img src="./assets/vue.svg" alt=Vue" width="32" /></a>
 </p>
 
+Build high-performance, pixel-perfect, cross-platform user interfaces with WebGPU. Use the rendering engine and UI framework of your choice.
+
 ## TypeScript sources
 
 `src/` contains the only maintained `.ts` and `.tsx` sources. `npm run typescript` checks

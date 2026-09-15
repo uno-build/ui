@@ -8,6 +8,7 @@ const CI_WEBGPU_ARGS = process.env.CI
           '--use-angle=swiftshader',
           '--disable-vulkan-fallback-to-gl-for-testing',
           '--ignore-gpu-blocklist',
+          '--font-render-hinting=none',
       ]
     : []
 
