@@ -1,15 +1,16 @@
 <p>
- <img src="./assets/babylon.svg" alt="Babylon.js" width="40" />
- <img src="./assets/pixi.svg" alt="pixi.js" width="40" />
- <img src="./assets/playcanvas.svg" alt="PlayCanvas" width="40" />
- <img src="./assets/three.svg" alt="Three.js" width="40" />
- <img src="./assets/typegpu.svg" alt=TypeGPU" width="40" />
- <img src="./assets/banner.jpg" alt="separation" width="1" height="40" style="margin:0 20px" />
- <img src="./assets/react.svg" alt=React" width="40" />
- <img src="./assets/solid.svg" alt=Solid.js" width="40" />
- <img src="./assets/vue.svg" alt=Vue" width="40" />
-
  <img src="./assets/banner.jpg" alt="uno/ui" width="100%" />
+</p>
+<p align="right">
+ <a href="https://www.babylonjs.com/"><img src="./assets/babylon.svg" alt="Babylon.js" width="32" /></a>
+ <a href="https://pixijs.com/"><img src="./assets/pixi.svg" alt="pixi.js" width="32" /></a>
+ <a href="https://playcanvas.com/"><img src="./assets/playcanvas.svg" alt="PlayCanvas" width="32" /></a>
+ <a href="https://threejs.org/"><img src="./assets/three.svg" alt="Three.js" width="32" /></a>
+ <a href="https://docs.swmansion.com/TypeGPU/"><img src="./assets/typegpu.svg" alt=TypeGPU" width="32" /></a>
+ <img src="./assets/banner.jpg" alt="separation" width="2" height="32" style="margin:0 20px" />
+ <a href="https://react.dev/"><img src="./assets/react.svg" alt=React" width="32" /></a>
+ <a href="https://www.solidjs.com/"><img src="./assets/solid.svg" alt=Solid.js" width="32" /></a>
+ <a href="https://vuejs.org/"><img src="./assets/vue.svg" alt=Vue" width="32" /></a>
 </p>
 
 ## TypeScript sources
