@@ -1,9 +1,19 @@
 import { defineConfig, devices } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
 
+const CI_WEBGPU_ARGS = process.env.CI
+    ? [
+          '--enable-features=Vulkan',
+          '--use-vulkan=swiftshader',
+          '--use-angle=swiftshader',
+          '--disable-vulkan-fallback-to-gl-for-testing',
+          '--ignore-gpu-blocklist',
+      ]
+    : []
+
 const WEBGPU_USE = {
     launchOptions: {
-        args: ['--enable-unsafe-webgpu'],
+        args: ['--enable-unsafe-webgpu', ...CI_WEBGPU_ARGS],
     },
 }
 
