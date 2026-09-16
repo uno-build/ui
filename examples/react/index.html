@@ -103,7 +103,7 @@
 
             const EXAMPLES = {
                 // input: () => import('./input'),
-                image: () => import('./image'),
+                // image: () => import('./image'),
                 scrollview: () => import('./scrollview'),
                 todo: () => import('./todo'),
                 'todo-three': () => import('./todo-three'),
@@ -119,7 +119,7 @@
             const root = document.getElementById('root')
             const settings_examples = document.getElementById('settings-examples')
             const requested_example_name = new URLSearchParams(location.search).get('example')
-            const example_name = Object.hasOwn(EXAMPLES, requested_example_name) ? requested_example_name : 'image'
+            const example_name = Object.hasOwn(EXAMPLES, requested_example_name) ? requested_example_name : 'scrollview'
 
             for (const [renderer_name, setup] of Object.entries(RENDERERS)) {
                 setup.element.id = renderer_name
