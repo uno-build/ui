@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <style>
+            @font-face {
+                font-family: 'Poppins-Regular';
+                src: url('examples/assets/fonts/Poppins-Regular.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: 'ChangaOne-Regular';
+                src: url('examples/assets/fonts/ChangaOne-Regular.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: 'Nougat-ExtraBlack';
+                src: url('examples/assets/fonts/Nougat-ExtraBlack.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+            }
+
+            * {
+                user-select: none;
+                touch-action: none;
+            }
+            #RendererDom,
+            #RendererDom * {
+                touch-action: auto;
+            }
+            html,
+            body {
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                overscroll-behavior: none;
+                font-family: 'Poppins-Regular', 'ChangaOne-Regular', system-ui, sans-serif;
+            }
+            body {
+                position: fixed;
+                inset: 0;
+            }
+            #root {
+                position: fixed;
+                inset: 0;
+                width: 100vw;
+                height: 100dvh;
+                overflow: hidden;
+            }
+            /* #root > * {
+                display: flex;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 0;
+            } */
+            #mouse-tooltip {
+                position: fixed;
+                left: 0;
+                top: 0;
+                z-index: 10;
+                padding: 4px 6px;
+                border-radius: 4px;
+                background: rgba(0, 0, 0, 0.75);
+                color: white;
+                font:
+                    12px/1.2 system-ui,
+                    sans-serif;
+                pointer-events: none;
+                transform: translate(12px, 12px);
+                white-space: nowrap;
+            }
+            .settings-layouts-title {
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            #settings-layouts {
+                max-height: 240px;
+                overflow-y: auto;
+            }
+            .settings-layout {
+                display: block;
+                padding: 2px 0;
+                color: inherit;
+                text-decoration: none;
+            }
+            .settings-layout:hover {
+                text-decoration: underline;
+            }
+            .settings-layout[aria-current='page'] {
+                color: #56ccf2;
+            }
+            #settings-buttons {
+                display: flex;
+                gap: 4px;
+            }
+            #settings-panel button {
+                display: block;
+                margin-top: 8px;
+                width: 100%;
+                padding: 4px 0;
+                border: none;
+                border-radius: 4px;
+                background: rgba(255, 255, 255, 0.1);
+                color: white;
+                font:
+                    11px system-ui,
+                    sans-serif;
+                cursor: pointer;
+            }
+        </style>
+        <script type="module" src="./main.ts"></script>
+    </head>
+    <body>
+        <div id="root"></div>
+        <div id="settings-panel">
+            <div class="settings-panel-title">Renderers</div>
+            <div id="settings-renderers"></div>
+            <div class="settings-panel-title settings-layouts-title">Layouts</div>
+            <div id="settings-layouts"></div>
+            <!-- <div id="settings-buttons">
+                <button id="add-random-node-button">+</button>
+                <button id="remove-random-node-button">-</button>
+            </div> -->
+        </div>
+        <div id="mouse-tooltip">x: 0, y: 0</div>
+        <script>
+            const tooltip = document.getElementById('mouse-tooltip')
+            const add_random_node_button = document.getElementById('add-random-node-button')
+            const remove_random_node_button = document.getElementById('remove-random-node-button')
+
+            window.addEventListener('mousemove', (event) => {
+                tooltip.textContent = `x: ${event.clientX}, y: ${event.clientY}`
+                tooltip.style.left = `${event.clientX}px`
+                tooltip.style.top = `${event.clientY}px`
+            })
+
+            if (add_random_node_button) {
+                add_random_node_button.addEventListener('click', () => {
+                    window.addRandomNode()
+                })
+            }
+
+            if (remove_random_node_button) {
+                remove_random_node_button.addEventListener('click', () => {
+                    window.removeRandomNode()
+                })
+            }
+        </script>
+    </body>
+</html>

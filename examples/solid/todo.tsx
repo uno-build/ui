@@ -1,10 +1,10 @@
 import { createEffect, createSignal, For, onSettled, Show } from 'solid-js'
-import { registerRootComponent, View, Text, Image, Input, ScrollView } from 'uno-ui/solid'
-import { loadImage, loadJson } from '../../tests/utils/load-assets'
+import { registerRootComponent, View, Text, Image, Input, ScrollView } from '../../src/components/solid'
+import { loadImage, loadJson } from '../shared/load-assets'
 
 const TITLE_FONT_FAMILY = 'Nougat-ExtraBlack'
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
-const COIN_SRC = 'assets/images/coin.png'
+const ICON_SRC = 'assets/images/solid.png'
 const MAX_TITLE_LENGTH = 48
 const DOUBLE_CLICK_DELAY = 320
 const LIST_HEIGHT = 268
@@ -31,7 +31,6 @@ const PAGE_STYLE = {
     width: '100%',
     height: '100%',
     padding: '32px',
-    backgroundColor: '#f2f3f5',
     alignItems: 'center',
     justifyContent: 'center',
 }
@@ -43,7 +42,6 @@ const CARD_STYLE = {
     backgroundColor: '#ffffff',
     border: '2px solid #1c1c1c',
     borderRadius: '28px',
-    boxShadow: '0px 18px 40px -14px #1b1b1b33',
 }
 const HEADER_STYLE = {
     flexDirection: 'row',
@@ -99,7 +97,7 @@ const DRAFT_STYLE = {
 }
 const DRAFT_FOCUS_STYLE = {
     border: '2px solid #1c1c1c',
-    boxShadow: '0px 0px 0px 4px #c3bcf566',
+    boxShadow: '0px 0px 0px 4px #0cdc7366',
 }
 const BUTTON_STYLE = {
     alignItems: 'center',
@@ -205,18 +203,18 @@ const CHECK_STYLE = {
     borderRadius: '999px',
 }
 const CHECK_HOVER_STYLE = {
-    backgroundColor: '#ece9fd',
+    backgroundColor: '#66e6ac',
     border: '2px solid #1c1c1c',
 }
 const CHECK_DONE_STYLE = {
-    backgroundColor: '#4fae7f',
+    backgroundColor: '#0cdc73',
     border: '2px solid #1c1c1c',
 }
 const CHECK_DOT_STYLE = {
     width: '10px',
     height: '10px',
     borderRadius: '999px',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#1c1c1c',
 }
 const ITEM_TEXT_STYLE = {
     flex: '1',
@@ -293,7 +291,10 @@ const CLEAR_TEXT_HOVER_STYLE = {
     color: '#e04f4f',
 }
 
-export function SolidTodo() {
+export function SolidTodo({
+    backgroundColor: background_color = '#f2f3f5',
+    boxShadow: box_shadow = '0px 18px 40px -14px #1b1b1b33',
+}) {
     let draft_ref
     let edit_ref
     let next_id = INITIAL_TODOS.length + 1
@@ -414,14 +415,14 @@ export function SolidTodo() {
     )
 
     return (
-        <View style={PAGE_STYLE}>
-            <View style={CARD_STYLE}>
+        <View style={{ ...PAGE_STYLE, backgroundColor: background_color }}>
+            <View style={{ ...CARD_STYLE, boxShadow: box_shadow }}>
                 <View style={HEADER_STYLE}>
                     <View style={BADGE_STYLE}>
-                        <Image src={COIN_SRC} width="42px" />
+                        <Image src={ICON_SRC} width="42px" />
                     </View>
                     <View style={HEADER_TEXTS_STYLE}>
-                        <Text style={TITLE_STYLE}>Todo App</Text>
+                        <Text style={TITLE_STYLE}>Solid.js Todo App</Text>
                         <Text style={SUBTITLE_STYLE}>Type to add, click to complete, double click to rename.</Text>
                     </View>
                 </View>
@@ -525,39 +526,39 @@ export function SolidTodo() {
                             </View>
                         </Show>
 
-                        <For each={visibleTodos()}>
+                        <For each={visibleTodos()} keyed={(todo) => todo.id}>
                             {(todo) => (
                                 <View
-                                    style={{ ...ITEM_STYLE, ...(hoveredId() === todo.id && ITEM_HOVER_STYLE) }}
-                                    onPointerOver={() => setHoveredId(todo.id)}
+                                    style={{ ...ITEM_STYLE, ...(hoveredId() === todo().id && ITEM_HOVER_STYLE) }}
+                                    onPointerOver={() => setHoveredId(todo().id)}
                                     onPointerOut={() => setHoveredId(null)}
                                 >
                                     <View
                                         style={{
                                             ...CHECK_STYLE,
-                                            ...(todo.completed && CHECK_DONE_STYLE),
-                                            ...(hovered() === `check:${todo.id}` && CHECK_HOVER_STYLE),
+                                            ...(todo().completed && CHECK_DONE_STYLE),
+                                            ...(hovered() === `check:${todo().id}` && CHECK_HOVER_STYLE),
                                         }}
-                                        onPointerOver={() => setHovered(`check:${todo.id}`)}
+                                        onPointerOver={() => setHovered(`check:${todo().id}`)}
                                         onPointerOut={() => setHovered(null)}
-                                        onClick={() => toggleTodo(todo.id)}
+                                        onClick={() => toggleTodo(todo().id)}
                                     >
-                                        <Show when={todo.completed}>
+                                        <Show when={todo().completed}>
                                             <View style={CHECK_DOT_STYLE} />
                                         </Show>
                                     </View>
 
                                     <Show
-                                        when={editingId() === todo.id}
+                                        when={editingId() === todo().id}
                                         fallback={
                                             <Text
                                                 style={{
                                                     ...ITEM_TEXT_STYLE,
-                                                    ...(todo.completed && ITEM_TEXT_DONE_STYLE),
+                                                    ...(todo().completed && ITEM_TEXT_DONE_STYLE),
                                                 }}
-                                                onClick={() => onLabelClick(todo)}
+                                                onClick={() => onLabelClick(todo())}
                                             >
-                                                {todo.title}
+                                                {todo().title}
                                             </Text>
                                         }
                                     >
@@ -575,17 +576,17 @@ export function SolidTodo() {
                                     <View
                                         style={{
                                             ...DESTROY_STYLE,
-                                            ...(hoveredId() === todo.id && DESTROY_VISIBLE_STYLE),
-                                            ...(hovered() === `destroy:${todo.id}` && DESTROY_HOVER_STYLE),
+                                            ...(hoveredId() === todo().id && DESTROY_VISIBLE_STYLE),
+                                            ...(hovered() === `destroy:${todo().id}` && DESTROY_HOVER_STYLE),
                                         }}
-                                        onPointerOver={() => setHovered(`destroy:${todo.id}`)}
+                                        onPointerOver={() => setHovered(`destroy:${todo().id}`)}
                                         onPointerOut={() => setHovered(null)}
-                                        onClick={() => removeTodo(todo.id)}
+                                        onClick={() => removeTodo(todo().id)}
                                     >
                                         <Text
                                             style={{
                                                 ...DESTROY_TEXT_STYLE,
-                                                ...(hovered() === `destroy:${todo.id}` && DESTROY_TEXT_HOVER_STYLE),
+                                                ...(hovered() === `destroy:${todo().id}` && DESTROY_TEXT_HOVER_STYLE),
                                             }}
                                         >
                                             x
@@ -689,13 +690,13 @@ const PLATFORM_KEYBOARD = (function () {
 
 export default function createSolidTodo({ ui, resources }) {
     return Promise.all([
-        loadImage(`/${COIN_SRC}`),
-        loadImage(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
-        loadImage(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
-    ]).then(([coin, text_font_image, text_font_json, title_font_image, title_font_json]) => {
-        resources.registerImage(COIN_SRC, coin)
+        loadImage(ICON_SRC),
+        loadImage(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
+        loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
+        loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
+        loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
+    ]).then(([icon, text_font_image, text_font_json, title_font_image, title_font_json]) => {
+        resources.registerImage(ICON_SRC, icon)
         resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
         resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
 

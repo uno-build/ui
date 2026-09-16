@@ -1,4 +1,10 @@
-import type { MaterialOptions, PlaneOptions, TextureOptions } from './UIWorldSpace'
+import type {
+    MaterialOptions,
+    PlaneOptions,
+    TextureOptions,
+    UIWorldSpaceOptions,
+    UIWorldSpaceOutput,
+} from './UIWorldSpace'
 import type { PlatformEvent } from '../events/types'
 import * as THREE from 'three/webgpu'
 import { materialReference, sRGBTransferEOTF, texture, vec4 } from 'three/tsl'
@@ -14,7 +20,7 @@ export type UIThreeOptions<
         plane: THREE.Mesh<THREE.PlaneGeometry, TMaterial>
         geometry: THREE.PlaneGeometry
     },
-> = import('./UIWorldSpace').UIWorldSpaceOptions<THREE.ExternalTexture, TMaterial, TPlane, UIThree>
+> = UIWorldSpaceOptions<THREE.ExternalTexture, TMaterial, TPlane, UIThree>
 
 export default class UIThree extends UIWorldSpace<
     THREE.ExternalTexture,
@@ -39,7 +45,7 @@ export default class UIThree extends UIWorldSpace<
     ): Promise<
         {
             ui: UIThree
-        } & import('./UIWorldSpace').UIWorldSpaceOutput<THREE.ExternalTexture, TMaterial, TPlane>
+        } & UIWorldSpaceOutput<THREE.ExternalTexture, TMaterial, TPlane>
     > {
         const ui = new UIThree(options)
         const resources = await ui.initialize()

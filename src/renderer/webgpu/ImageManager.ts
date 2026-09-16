@@ -1,7 +1,7 @@
 import type { WebGPUImage } from './contracts'
-export type AtlasRect = import("../utils/atlas-allocator").AtlasRect;
+import type { AtlasRect, SkylineNode } from '../utils/atlas-allocator'
 
-export type SkylineNode = import("../utils/atlas-allocator").SkylineNode;
+export type { AtlasRect, SkylineNode }
 
 export type AtlasImage = {
     src: string;

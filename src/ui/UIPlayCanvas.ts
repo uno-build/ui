@@ -1,5 +1,11 @@
 import type { AppBase } from 'playcanvas'
-import type { MaterialOptions, PlaneOptions, TextureOptions } from './UIWorldSpace'
+import type {
+    MaterialOptions,
+    PlaneOptions,
+    TextureOptions,
+    UIWorldSpaceOptions,
+    UIWorldSpaceOutput,
+} from './UIWorldSpace'
 import type { PlatformEvent } from '../events/types'
 import {
     ADDRESS_CLAMP_TO_EDGE,
@@ -32,8 +38,8 @@ export type UIPlayCanvasOptions<
         mesh: Mesh
         mesh_instance: MeshInstance
     },
-> = import('./UIWorldSpace').UIWorldSpaceOptions<Texture, TMaterial, TPlane, UIPlayCanvas> & {
-    app: import('playcanvas').AppBase
+> = UIWorldSpaceOptions<Texture, TMaterial, TPlane, UIPlayCanvas> & {
+    app: AppBase
 }
 
 export default class UIPlayCanvas extends UIWorldSpace<
@@ -68,7 +74,7 @@ export default class UIPlayCanvas extends UIWorldSpace<
     ): Promise<
         {
             ui: UIPlayCanvas
-        } & import('./UIWorldSpace').UIWorldSpaceOutput<Texture, TMaterial, TPlane>
+        } & UIWorldSpaceOutput<Texture, TMaterial, TPlane>
     > {
         const ui = new UIPlayCanvas(options)
         const resources = await ui.initialize()

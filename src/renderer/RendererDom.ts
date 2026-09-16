@@ -3,9 +3,9 @@ import type Operations from '../core/Operations'
 import type { Operation } from '../core/Operations'
 import type { StyleUpdate, ResolvedStyle, ComputedLayout, StyleName } from '../style/types'
 import type ResourcesDom from './dom/ResourcesDom'
-export type DomNode = import("../../src/core/Node").default<HTMLElement>;
+export type DomNode = Node<HTMLElement>;
 
-export type DomOperations = import("../../src/core/Operations").default<HTMLElement>;
+export type DomOperations = Operations<HTMLElement>;
 
 import Renderer from '../core/Renderer'
 import { OPERATIONS } from '../core/constants'
@@ -24,7 +24,7 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
 
     private stopObservingFonts: any
 
-    constructor({ resources }: { resources: import("./dom/ResourcesDom").default; }) {
+    constructor({ resources }: { resources: ResourcesDom; }) {
         super()
         this.resources = resources
     }

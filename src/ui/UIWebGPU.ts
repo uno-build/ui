@@ -1,23 +1,22 @@
+import type { EventOptions } from '../core/UI'
 import type { PlatformEvent } from '../events/types'
+import type { RendererWebGPUOptions } from '../renderer/RendererWebGPU'
+import type ResourcesWebGPU from '../renderer/webgpu/ResourcesWebGPU'
 import UI from '../core/UI'
 import { DEFINED_EVENTS } from '../events'
 import RendererWebGPU from '../renderer/RendererWebGPU'
 
-export type DefinedEvent = import('../core/UI').DefinedEvent
+export type { DefinedEvent } from '../core/UI'
 
-export type UIWebGPUOptions = import('../renderer/RendererWebGPU').RendererWebGPUOptions &
-    import('../core/UI').EventOptions<UIWebGPU>
+export type UIWebGPUOptions = RendererWebGPUOptions & EventOptions<UIWebGPU>
 
-export default class UIWebGPU extends UI<RendererWebGPU, import('../renderer/webgpu/ResourcesWebGPU').default> {
+export default class UIWebGPU extends UI<RendererWebGPU, ResourcesWebGPU> {
     protected constructor({ resources, defined_events = [], ...renderer_options }: UIWebGPUOptions) {
         const renderer = new RendererWebGPU({ resources, ...renderer_options })
         super({
             renderer,
             resources,
-            defined_events: [
-                ...DEFINED_EVENTS,
-                ...defined_events,
-            ] as import('../core/UI').EventOptions<UI>['defined_events'],
+            defined_events: [...DEFINED_EVENTS, ...defined_events] as EventOptions<UI>['defined_events'],
         })
     }
 

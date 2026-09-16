@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 
 const REPOSITORY = fileURLToPath(new URL('..', import.meta.url))
-const CONFIG_FILE = fileURLToPath(new URL('../dev/benchmarks/vite.config.mjs', import.meta.url))
+const CONFIG_FILE = fileURLToPath(new URL('../examples/benchmarks/vite.config.ts', import.meta.url))
 const SAMPLE_LIMIT = 7200
 const MEMORY_KEYS = ['jsHeap', 'jsUsed', 'jsExternal', 'jsEmbedder', 'memory']
 const NUMBER_OPTIONS = new Set(['nodes', 'duration', 'warmup', 'seed', 'repeats', 'target-fps', 'width', 'height', 'dpr'])
@@ -257,7 +257,7 @@ function printResults(report) {
 export async function main(arguments_list = process.argv.slice(2)) {
     const flags = parseArgs(arguments_list)
     if (flags.help) { printHelp(); return }
-    const { BENCHMARK_VERSION, normalizeOptions, resultsToCsv, summarizeRuns, compareReports } = await import('../dev/benchmarks/core.mjs')
+    const { BENCHMARK_VERSION, normalizeOptions, resultsToCsv, summarizeRuns, compareReports } = await import('../examples/benchmarks/core.mjs')
     const options = normalizeOptions(flags.options)
     const baseline = flags.compare ? JSON.parse(await readFile(resolve(flags.compare), 'utf8')) : null
     if (baseline) compareReports(baseline, { version: BENCHMARK_VERSION, options, runs: [] })

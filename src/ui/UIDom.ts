@@ -1,11 +1,13 @@
+import type { EventOptions } from '../core/UI'
+import type ResourcesDom from '../renderer/dom/ResourcesDom'
 import UI from '../core/UI'
 import { EVENT } from '../events/constants'
 import { defineFocus } from '../events/focus'
 import { normalizeDelta } from '../events/wheel'
 import RendererDom from '../renderer/RendererDom'
 
-export type UIDomOptions = import('../core/UI').EventOptions<UIDom> & {
-    resources: import('../renderer/dom/ResourcesDom').default
+export type UIDomOptions = EventOptions<UIDom> & {
+    resources: ResourcesDom
 }
 
 const DOM_POINTER_EVENTS = [
@@ -18,7 +20,7 @@ const DOM_POINTER_EVENTS = [
 ]
 const DOM_EVENTS = [defineDomPointer, defineDomWheel, defineDomScroll, defineDomClick, defineFocus]
 
-export default class UIDom extends UI<RendererDom, import('../renderer/dom/ResourcesDom').default> {
+export default class UIDom extends UI<RendererDom, ResourcesDom> {
     protected constructor({ resources, defined_events = [] }: UIDomOptions) {
         const renderer = new RendererDom({ resources })
         super({ renderer, resources, defined_events: [...DOM_EVENTS, ...defined_events] })

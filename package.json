@@ -39,13 +39,9 @@
             "types": "./dist/ui/UIDom.d.ts",
             "import": "./dist/ui/UIDom.js"
         },
-        "./octane": {
-            "types": "./dist/components/octane/index.d.ts",
-            "import": "./dist/components/octane/index.js"
-        },
-        "./octane/config": {
-            "types": "./dist/components/octane/config.d.ts",
-            "import": "./dist/components/octane/config.js"
+        "./react": {
+            "types": "./dist/components/react/index.d.ts",
+            "import": "./dist/components/react/index.js"
         },
         "./solid": {
             "types": "./dist/components/solid/index.d.ts",
@@ -54,6 +50,14 @@
         "./solid/config": {
             "types": "./dist/components/solid/config.d.ts",
             "import": "./dist/components/solid/config.js"
+        },
+        "./vue": {
+            "types": "./dist/components/vue/index.d.ts",
+            "import": "./dist/components/vue/index.js"
+        },
+        "./vue/config": {
+            "types": "./dist/components/vue/config.d.ts",
+            "import": "./dist/components/vue/config.js"
         }
     },
     "dependencies": {
@@ -61,15 +65,19 @@
         "yoga-layout": "^3.2.1"
     },
     "peerDependencies": {
-        "@babylonjs/core": "^9.22.2",
-        "@babylonjs/lite": "^1.24.0",
-        "@solidjs/universal": "^2.0.0-rc.0",
-        "@types/three": "^0.185.0",
-        "octane": "^0.2.6",
+        "@babylonjs/core": "^9.26.0",
+        "@babylonjs/lite": "^1.29.0",
+        "@solidjs/universal": "^2.0.0-rc.8",
+        "@types/react": "^19.3.0",
+        "@types/three": "^0.186.0",
         "pixi.js": "^8.20.1",
-        "playcanvas": "^2.22.0",
-        "solid-js": "^2.0.0-rc.0",
-        "three": "^0.185.1"
+        "playcanvas": "^2.22.2",
+        "react": "^19.3.0",
+        "react-reconciler": "^0.34.0",
+        "solid-js": "^2.0.0-rc.8",
+        "three": "^0.186.0",
+        "vite": "^8.2.1",
+        "vue": "^3.5.42"
     },
     "peerDependenciesMeta": {
         "@babylonjs/core": {
@@ -81,7 +89,16 @@
         "@solidjs/universal": {
             "optional": true
         },
-        "octane": {
+        "@types/react": {
+            "optional": true
+        },
+        "react": {
+            "optional": true
+        },
+        "react-reconciler": {
+            "optional": true
+        },
+        "solid-js": {
             "optional": true
         },
         "playcanvas": {
@@ -95,50 +112,71 @@
         },
         "@types/three": {
             "optional": true
+        },
+        "vite": {
+            "optional": true
+        },
+        "vue": {
+            "optional": true
         }
     },
     "devDependencies": {
         "@babel/plugin-transform-typescript": "^7.29.7",
-        "@babylonjs/core": "^9.22.2",
-        "@babylonjs/lite": "^1.24.0",
+        "@babylonjs/core": "^9.26.0",
+        "@babylonjs/lite": "^1.29.0",
         "@dom-expressions/compiler": "0.50.0-next.40",
-        "@octanejs/vite-plugin": "^0.1.53",
         "@playwright/test": "^1.52.0",
-        "@solidjs/universal": "2.0.0-rc.0",
+        "@solidjs/universal": "^2.0.0-rc.8",
         "@solidjs/vite-plugin": "3.0.0-next.28",
-        "@types/three": "0.185.0",
+        "@types/react": "^19.3.0",
+        "@types/react-reconciler": "^0.33.0",
+        "@types/three": "^0.186.0",
+        "@vitejs/plugin-vue": "^6.0.9",
         "esbuild": "0.28.2",
-        "octane": "^0.2.6",
-        "playcanvas": "^2.22.0",
+        "pixi.js": "^8.20.1",
+        "playcanvas": "^2.22.2",
         "pngjs": "^7.0.0",
-        "solid-js": "^2.0.0-rc.0",
-        "three": "^0.185.1",
-        "typegpu": "^0.12.3",
+        "react": "^19.3.0",
+        "react-reconciler": "^0.34.0",
+        "solid-js": "^2.0.0-rc.8",
+        "three": "^0.186.0",
+        "typegpu": "^0.12.5",
         "typescript": "5.9.3",
         "unplugin-typegpu": "^0.12.2",
         "vite": "^8.2.1",
+        "vue": "^3.5.42",
         "wgpu-matrix": "^3.4.2"
     },
     "scripts": {
-        "examples": "vite ./examples --config ./examples/vite/typegpu.config.ts",
-        "examples:solid": "vite ./examples --config ./examples/vite/solid.config.ts",
-        "examples:octane": "vite ./examples --config ./examples/vite/octane.config.ts",
-        "benchmark": "node ./scripts/benchmarks.mjs --browser",
-        "benchmark:general": "node ./scripts/benchmarks.mjs --workload general",
-        "benchmark:general:headed": "node ./scripts/benchmarks.mjs --workload general --headed",
-        "benchmark:box-shadow": "node ./scripts/benchmarks.mjs --workload box-shadow",
-        "benchmark:box-shadow:headed": "node ./scripts/benchmarks.mjs --workload box-shadow --headed",
-        "benchmark:text-shadow": "node ./scripts/benchmarks.mjs --workload text-shadow",
-        "benchmark:text-shadow:headed": "node ./scripts/benchmarks.mjs --workload text-shadow --headed",
-        "benchmark:text-stroke": "node ./scripts/benchmarks.mjs --workload text-stroke",
-        "benchmark:text-stroke:headed": "node ./scripts/benchmarks.mjs --workload text-stroke --headed",
-        "benchmark:render-metrics": "node ./scripts/benchmarks.mjs --workload render-metrics",
-        "benchmark:render-metrics:headed": "node ./scripts/benchmarks.mjs --workload render-metrics --headed",
-        "test": "playwright test tests",
-        "test:layouts": "playwright test dev/layouts",
         "typescript": "tsc -p tsconfig.json",
+        "test": "npm run test:no-renderer && npm run test:renderer && npm run test:layouts",
+        "test:no-renderer": "playwright test --project=no-renderer",
+        "test:renderer": "playwright test --project=renderer --workers=1",
+        "test:layouts": "playwright test --project=layouts --workers=1",
         "build": "node scripts/build.mjs",
         "build:check": "node scripts/build-check.mjs",
+        "examples:build": "npm run examples:layouts:build && npm run examples:engines:build && npm run examples:react:build && npm run examples:solid:build && npm run examples:vue:build",
+        "examples:layouts": "vite ./examples/layouts",
+        "examples:layouts:build": "vite build ./examples/layouts",
+        "examples:engines": "vite ./examples/engines",
+        "examples:engines:build": "vite build ./examples/engines",
+        "examples:react": "vite ./examples/react",
+        "examples:react:build": "vite build ./examples/react",
+        "examples:solid": "vite ./examples/solid",
+        "examples:solid:build": "vite build ./examples/solid",
+        "examples:vue": "vite ./examples/vue",
+        "examples:vue:build": "vite build ./examples/vue",
+        "benchmarks": "node ./scripts/benchmarks.mjs --workload general",
+        "benchmarks:browser": "node ./scripts/benchmarks.mjs --browser",
+        "benchmarks:general:headed": "node ./scripts/benchmarks.mjs --workload general --headed",
+        "benchmarks:box-shadow": "node ./scripts/benchmarks.mjs --workload box-shadow",
+        "benchmarks:box-shadow:headed": "node ./scripts/benchmarks.mjs --workload box-shadow --headed",
+        "benchmarks:text-shadow": "node ./scripts/benchmarks.mjs --workload text-shadow",
+        "benchmarks:text-shadow:headed": "node ./scripts/benchmarks.mjs --workload text-shadow --headed",
+        "benchmarks:text-stroke": "node ./scripts/benchmarks.mjs --workload text-stroke",
+        "benchmarks:text-stroke:headed": "node ./scripts/benchmarks.mjs --workload text-stroke --headed",
+        "benchmarks:render-metrics": "node ./scripts/benchmarks.mjs --workload render-metrics",
+        "benchmarks:render-metrics:headed": "node ./scripts/benchmarks.mjs --workload render-metrics --headed",
         "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"
     },
     "files": [

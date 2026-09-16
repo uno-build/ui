@@ -1,6 +1,7 @@
-export type SegmentBreakKind = import("./analysis").SegmentBreakKind;
+import type { SegmentBreakKind } from './analysis'
+import type { PreparedTextWithSegments } from './layout'
 
-export type PreparedTextWithSegments = import("./layout").PreparedTextWithSegments;
+export type { SegmentBreakKind, PreparedTextWithSegments }
 
 import Segmenter from './segmenter'
 

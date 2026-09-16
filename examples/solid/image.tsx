@@ -1,5 +1,5 @@
-import { registerRootComponent, Image, Text, View } from 'uno-ui/solid'
-import { loadImage, loadJson } from '../../tests/utils/load-assets'
+import { registerRootComponent, Image, Text, View } from '../../src/components/solid'
+import { loadImage, loadJson } from '../shared/load-assets'
 
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const IMAGE_SRC = 'assets/images/coin.png'
@@ -119,9 +119,9 @@ export function SolidImage() {
 
 export default function createSolidImage({ ui, resources }) {
     return Promise.all([
-        loadImage(`/${IMAGE_SRC}`),
-        loadImage(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
+        loadImage(IMAGE_SRC),
+        loadImage(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
+        loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
     ]).then(([image, font_image, font_json]) => {
         resources.registerImage(IMAGE_SRC, image)
         resources.registerFont(TEXT_FONT_FAMILY, font_image, font_json)

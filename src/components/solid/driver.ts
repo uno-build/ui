@@ -82,6 +82,13 @@ const {
         DETACHED_NODES.add(node)
         enqueueUpdate(parent.ui!)
     },
+    cleanupNodes(parent, nodes) {
+        for (const node of nodes) {
+            if (node.parent === parent) {
+                node.destroy()
+            }
+        }
+    },
     getParentNode(node) {
         return node.parent!
     },
@@ -127,11 +134,6 @@ export function registerRootComponent<P extends Record<string, any>>(RootCompone
         },
         unmount() {
             disposeRoot!()
-
-            for (const child of [...ui.root!.children]) {
-                child.destroy()
-            }
-
             ui.update()
         },
     }

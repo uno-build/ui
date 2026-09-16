@@ -1,77 +1,160 @@
-# Uno UI
+<p align="right">
+    <a href="https://www.babylonjs.com/"><img src="./assets/babylon.svg" alt="Babylon.js" width="3%" /></a>
+    <a href="https://pixijs.com/"><img src="./assets/pixi.svg" alt="pixi.js" width="3%" /></a>
+    <a href="https://playcanvas.com/"><img src="./assets/playcanvas.svg" alt="PlayCanvas" width="3%" /></a>
+    <a href="https://threejs.org/"><img src="./assets/three.svg" alt="Three.js" width="3%" /></a>
+    <a href="https://docs.swmansion.com/TypeGPU/"><img src="./assets/typegpu.svg" alt=TypeGPU" width="3%" /></a>
+    <img src="./assets/separator.png" alt="separator" width="21" height="3%" />
+    <a href="https://react.dev/"><img src="./assets/react.svg" alt=React" width="3%" /></a>
+    <a href="https://www.solidjs.com/"><img src="./assets/solid.svg" alt=Solid.js" width="3%" /></a>
+    <a href="https://vuejs.org/"><img src="./assets/vue.svg" alt=Vue" width="3%" /></a>
+    <br />
+ <img src="./assets/banner.jpg" alt="uno/ui" width="100%" />
+</p>
 
-## TypeScript sources
+<p>
+ <a href="https://github.com/Josema/uno-ui/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/josema/uno-ui/ci.yml?branch=main&logo=github&style=for-the-badge" alt="Babylon.js" height="28" /></a>
+</p>
 
-`src/` contains the only maintained `.ts` and `.tsx` sources. `npm run typescript` checks
-the source types without generating files; the compiler enforces erasable TypeScript syntax.
-`npm run build:check` validates the generated package, including its public types.
+**[Website](https://uno.build/) • [API Docs](https://docs.uno.build/)**
 
-`npm run build` uses `tsconfig.publish.json` to generate separate `.js` and `.d.ts` modules
-in `dist/`, preserving the source directory structure. Solid and Octane JSX is compiled
-with their respective compilers. No modules are bundled together.
+#### Build high-performance and pixel-perfect user interfaces for WebGPU. Use the rendering engine and UI framework of your choice.
 
-`npm pack` and `npm publish` run this build automatically. Only `dist/` is published;
-consumers do not need TypeScript to execute the package. For a local file dependency,
-run `npm run build` after changing the sources. Generated files are ignored by Git.
+## Key Features
 
-## WebGPU resources
+- Works with any WebGPU-compatible engine or library
+- Use it standalone or with React, SolidJS, or Vue
+- World-space integrations for Babylon.js, Babylon Lite, PlayCanvas, and Three.js
+- [Pixel-perfect parity with DOM rendering](https://uno.build/examples/dev)
+- High-quality text rendering with strokes and shadows
+- Accurate text measurement and layout powered by [Pretext](https://github.com/chenglou/pretext)
+- Flexbox layout powered by [Yoga](https://www.yogalayout.dev/)
+- Fine-grained updates for efficient rendering
+- Lightweight
 
-Create one `ResourcesWebGPU` and pass the same instance as `resources` to every UI that should share its adapter,
-device, canvas context, format, fonts, and image atlases.
+## Examples
+
+###
+
+<!--
+## React
+
+The `uno-ui/react` adapter supports React 19.2 with `View`, `Text`, `Image`, `ScrollView`, and `Input`.
+Install its optional peers when using the adapter:
+
+```sh
+npm install react@~19.2.0 react-reconciler@0.33.0
+npm install --save-dev @types/react@~19.2.0
+```
+
+Use standard React JSX compilation (`"jsx": "react-jsx"` in TypeScript). The adapter
+does not need a JSX compiler plugin or `react-dom`.
+
+```tsx
+import { useRef, useState } from 'react'
+import { View, Text, Image, registerRootComponent } from 'uno-ui/react'
+import type { NodeHandle } from 'uno-ui/react'
+
+function App({ title }: { title: string }) {
+    const view_ref = useRef<NodeHandle>(null)
+    const [count, setCount] = useState(0)
+
+    return (
+        <View ref={view_ref} onClick={() => setCount((value) => value + 1)}>
+            <Text>
+                {title}: {count}
+            </Text>
+            <Image src="icon" width="24px" style={{ objectFit: 'contain' }} />
+        </View>
+    )
+}
+
+const root = registerRootComponent(App, { ui })
+root.render({ title: 'Uno' })
+```
+
+Pass an initialized Uno UI as `ui`, with the image `icon` and any required fonts
+already registered in its resources. Use one framework root per UI. Calling
+`root.render(props)` again preserves component state, and `root.unmount()` removes
+the root's nodes and cleans up React effects without destroying the UI or its
+resources. Both calls commit their changes before returning.
+
+React hooks and context work normally. `useUI<TUI>()`, exported from `uno-ui/react`,
+returns the current UI inside a component. Object and callback refs on `View`,
+`Text`, and `Image` receive a stable `NodeHandle`; its `nodes.main` property is the
+underlying Uno node. Events use Uno's event names, payloads, and propagation.
+
+`Text` joins strings, numbers, and nested arrays, ignoring booleans, `null`, and
+`undefined`. Elements, fragments, and components inside `Text` are unsupported,
+and text directly inside `View` is invalid. `Image` uses registered image resources
+and supports `fill`, `contain`, `cover`, and `none` through `style.objectFit`.
+Its default dimensions come from the image, and dimensions in `style` take
+precedence over the `width` and `height` props.
+
+`ScrollView` scrolls vertically by default, or horizontally with `horizontal`.
+Its `ScrollViewHandle` exposes `nodes.main` and `nodes.content`. `Input` renders
+the supplied `value`, a `placeholder` while empty and unfocused, and a blinking
+caret while focused. Its `InputHandle` exposes `focus()`, `blur()`, and the
+`main`, `content`, `text`, and nullable `caret` nodes. Both components follow
+the same behavior and shared styles as the Solid adapters.
+
+This adapter does not yet include SSR, hydration, portals,
+or specific support for Suspense and Activity. Its tests run with the existing
+Playwright suite in `tests/no-renderer/react.test.ts`.
+
+## Vue CSS classes
+
+The Vue adapter accepts `class` and reactive `:class` on `View`, `Text`, `Image`,
+`ScrollView`, and `Input`. Add `stylesPlugin()` alongside the Vue compiler plugin
+to use CSS blocks in `.vue` files:
 
 ```ts
-import UIWebGPU from 'uno-ui/UIWebGPU'
-import ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { compilerConfig, stylesPlugin } from 'uno-ui/vue/config'
 
-const resources = await ResourcesWebGPU.create({ canvas })
-
-resources.registerImage(icon_path, icon)
-resources.registerFont('Poppins', font_image, font_json)
-
-const { ui } = await UIWebGPU.create({ resources, loadYoga })
+export default defineConfig({
+    plugins: [vue(compilerConfig), stylesPlugin()],
+})
 ```
 
-Fonts and images only need to be registered once per `ResourcesWebGPU` instance. Registering the same image `src` twice throws, so
-call `disposeImage` before replacing it.
+```vue
+<script setup>
+import { ref } from 'vue'
+import { Text, View } from 'uno-ui/vue'
 
-## WebGPU composition
+const active = ref(false)
+</script>
 
-Both examples render to the same `GPUDevice`, `GPUCanvasContext`, and current
-`GPUTexture`. The difference is whether the render passes can share a command
-encoder and submit.
+<template>
+    <View class="example" :class="{ active }" @click="active = !active">
+        <Text>Toggle background</Text>
+    </View>
+</template>
 
-### Raw WebGPU
-
-The raw WebGPU example records both render passes in one command encoder and
-submits them together.
-
-```text
-Shared GPUDevice + GPUCanvasContext + GPUTexture
-        │
-        └─ Single GPUCommandEncoder
-                │
-                ├─ Raw WebGPU render pass
-                │
-                └─ uno-ui render pass (loadOp: load)
-                        │
-                        └─ Single queue.submit() → Present
+<style scoped>
+.example {
+    padding: 16px;
+    background-color: #ffffff;
+}
+.example.active {
+    background-color: #d9f0e4;
+}
+</style>
 ```
 
-### Three.js WebGPU
+CSS declarations compile to Uno styles and work with both DOM and GPU renderers.
+Unscoped blocks apply globally to Uno Vue components; `scoped` blocks apply to
+the component's own nodes and child component roots. Class strings, arrays,
+and objects are supported. Rules use class specificity and stylesheet source
+order; inline `:style` overrides class styles.
 
-Three.js manages its command encoder internally and submits its work before
-`uno-ui` records a second render pass over the same canvas texture. Both submits
-use the same `GPUQueue`, which preserves their order.
-
-```text
-Shared GPUDevice + GPUCanvasContext + GPUTexture
-        │
-        ├─ Three.js render pass → queue.submit() #1
-        │
-        └─ uno-ui render pass (loadOp: load) → queue.submit() #2
-                                                   │
-                                                   └─ Present
-```
+The supported CSS subset is class selectors (`.example`, `.example.active`,
+and comma-separated lists) with Uno's existing style properties and values.
+Property names use CSS spelling, such as `background-color` and `object-fit`.
+Descendant selectors, pseudo-classes, at-rules, `!important`, CSS variables, CSS modules,
+external style blocks, and preprocessors are unsupported. Use `:class` for
+interaction states and `:style` for computed values instead of CSS `v-bind()`.
 
 ## RendererWebGPU opacity
 
@@ -140,3 +223,4 @@ would clip them away.
 Until WebGPU supports rounded ancestor clipping, layout examples and visual
 comparisons should avoid relying on `borderRadius` to clip overflowing
 descendants.
+-->

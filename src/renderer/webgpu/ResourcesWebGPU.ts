@@ -1,4 +1,4 @@
-import type { WebGPUContext, ResourcesWebGPUOptions, WebGPUImage, FontData } from './contracts'
+import type { WebGPUCanvas, WebGPUContext, ResourcesWebGPUOptions, WebGPUImage, FontData } from './contracts'
 import type { ManagedAtlasImage } from './ImageManager'
 import type { ManagedFont } from './FontManager'
 
@@ -10,12 +10,12 @@ import { ImageManager } from './ImageManager'
 const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 2048
 
-export default class ResourcesWebGPU extends Resources<import("./contracts").WebGPUCanvas | undefined, {
-    image: import("./contracts").WebGPUImage;
-    font_image: import("./contracts").WebGPUImage;
-    font_data: import("./contracts").FontData;
-    registered_image: import("./ImageManager").ManagedAtlasImage;
-    registered_font: import("./FontManager").ManagedFont;
+export default class ResourcesWebGPU extends Resources<WebGPUCanvas | undefined, {
+    image: WebGPUImage;
+    font_image: WebGPUImage;
+    font_data: FontData;
+    registered_image: ManagedAtlasImage;
+    registered_font: ManagedFont;
 }> {
 
     adapter: GPUAdapter | null | undefined

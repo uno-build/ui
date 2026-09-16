@@ -1,3 +1,5 @@
+import type { SegmentBreakKind } from './analysis'
+
 export type LineBreakCursor = {
     segmentIndex: number;
     graphemeIndex: number;
@@ -24,7 +26,7 @@ export type PreparedLineBreakData = {
 
 export type InternalLineVisitor = (width: number, startSegmentIndex: number, startGraphemeIndex: number, endSegmentIndex: number, endGraphemeIndex: number) => void;
 
-export type SegmentBreakKind = import("./analysis").SegmentBreakKind;
+export type { SegmentBreakKind }
 
 import { getEngineProfile } from './measurement'
 

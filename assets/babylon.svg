@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 41 41" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1,0,0,1,-53.125,-14.93)">
+        <path d="M90.62,24.97L85.18,21.83L79.94,24.85L85.39,28L90.62,24.97Z" style="fill:rgb(224,104,75);fill-rule:nonzero;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,-53.125,-14.93)">
+        <path d="M61.07,28L78.46,17.95L73.23,14.93L55.83,24.97L61.07,28Z" style="fill:rgb(224,104,75);fill-rule:nonzero;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,-53.125,-14.93)">
+        <path d="M67.78,38.16L73.23,41.3L78.67,38.16L73.23,35.02L67.78,38.16Z" style="fill:rgb(224,104,75);fill-rule:nonzero;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,-53.125,-14.93)">
+        <path d="M85.39,28L85.39,42.04L73.23,49.06L61.07,42.04L61.07,28L55.83,24.97L55.83,45.06L73.23,55.11L90.62,45.06L90.62,24.97L85.39,28Z" style="fill:rgb(187,70,75);fill-rule:nonzero;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,-53.125,-14.93)">
+        <path d="M73.23,28.73L67.78,31.87L67.78,38.16L73.23,35.02L78.67,38.16L78.67,31.87L73.23,28.73Z" style="fill:rgb(187,70,75);fill-rule:nonzero;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,-53.125,-14.93)">
+        <path d="M85.39,28L78.67,31.87L78.67,38.16L73.23,41.3L73.23,49.06L85.39,42.04L85.39,28Z" style="fill:rgb(224,222,216);fill-rule:nonzero;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,-53.125,-14.93)">
+        <path d="M61.07,28L67.78,31.87L67.78,38.16L73.23,41.3L73.23,49.06L61.07,42.04L61.07,28Z" style="fill:rgb(213,210,202);fill-rule:nonzero;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,-53.125,-14.93)">
+        <path d="M78.46,17.95L85.18,21.83L79.94,24.85L85.39,28L78.67,31.87L73.23,28.73L67.78,31.87L61.07,28L78.46,17.95Z" style="fill:white;fill-rule:nonzero;"/>
+    </g>
+</svg>

@@ -3,7 +3,6 @@ import { readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import ts from 'typescript'
 import { transform as transformSolid } from '@dom-expressions/compiler'
-import { compile as compileOctane } from 'octane/compiler'
 import { transform } from 'esbuild'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
@@ -20,18 +19,19 @@ const result = program.emit()
 assert.equal(result.emitSkipped, false)
 
 // Framework compilers handle JSX; all other modules are emitted directly by TypeScript.
-for (const framework of ['solid', 'octane']) {
+for (const framework of ['solid', 'react']) {
     const filename = path.join(SOURCE, 'components', framework, 'components.tsx')
     const source = await readFile(filename, 'utf8')
-    const renderer = { id: 'uno', module: 'octane/universal/native', target: 'universal', server: 'client-only', text: 'host' }
     const compiled = framework === 'solid'
         ? transformSolid(source, {
             filename, moduleName: 'uno-ui/solid', generate: 'universal',
             builtIns: ['Errored', 'For', 'Loading', 'Match', 'Repeat', 'Reveal', 'Show', 'Switch'],
             wrapConditionals: true,
         }).code
-        : compileOctane(source, filename, { mode: 'client', renderer, rendererRegistry: { uno: renderer } }).code
-    const { code } = await transform(compiled, { loader: 'ts', target: 'esnext', format: 'esm' })
+        : source
+    const { code } = await transform(compiled, {
+        loader: framework === 'react' ? 'tsx' : 'ts', jsx: 'automatic', target: 'esnext', format: 'esm',
+    })
     await writeFile(path.join(OUTPUT, 'components', framework, 'components.js'), code)
     await rm(path.join(OUTPUT, 'components', framework, 'components.jsx'))
 }

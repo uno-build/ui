@@ -1,3 +1,5 @@
+import type { FontMetrics as WebGPUFontMetrics } from '../webgpu/contracts'
+
 export type ResourcesDomOptions = {
     canvas: HTMLElement;
 };
@@ -8,7 +10,7 @@ export type DomImage = {
     src?: string;
 };
 
-export type FontMetrics = Pick<import("../webgpu/contracts").FontMetrics, "lineHeight"> & Partial<import("../webgpu/contracts").FontMetrics>;
+export type FontMetrics = Pick<WebGPUFontMetrics, "lineHeight"> & Partial<WebGPUFontMetrics>;
 
 import Resources from '../../core/Resources'
 import { RESOURCE_EVENT } from '../../core/constants'
