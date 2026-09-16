@@ -1,7 +1,7 @@
 <script lang="ts">
-import type ResourcesDom from 'uno-ui/ResourcesDom'
-import type ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
-import { loadImage, loadJson } from '../../tests/utils/load-assets'
+import type ResourcesDom from '../../src/renderer/dom/ResourcesDom'
+import type ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
+import { loadImage, loadJson } from '../shared/load-assets'
 
 const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
@@ -9,11 +9,11 @@ const ICON_SRC = 'assets/images/vue.png'
 
 export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
     const [icon, text_font_image, text_font_json, title_font_image, title_font_json] = await Promise.all([
-        loadImage(`/${ICON_SRC}`),
-        loadImage(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
-        loadImage(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
+        loadImage(ICON_SRC),
+        loadImage(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
+        loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
+        loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
+        loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
     ])
     resources.registerImage(ICON_SRC, icon)
     resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
@@ -23,9 +23,9 @@ export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Image, Input, ScrollView, Text, View } from 'uno-ui/vue'
-import type { InputHandle } from 'uno-ui/vue'
-import type { NodeEventMap } from 'uno-ui/events'
+import { Image, Input, ScrollView, Text, View } from '../../src/components/vue'
+import type { InputHandle } from '../../src/components/vue'
+import type { NodeEventMap } from '../../src/events'
 
 const props = defineProps<{
     backgroundColor?: string

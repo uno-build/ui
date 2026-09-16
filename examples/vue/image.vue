@@ -1,16 +1,16 @@
 <script lang="ts">
-import type ResourcesDom from 'uno-ui/ResourcesDom'
-import type ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
-import { loadImage, loadJson } from '../../tests/utils/load-assets'
+import type ResourcesDom from '../../src/renderer/dom/ResourcesDom'
+import type ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
+import { loadImage, loadJson } from '../shared/load-assets'
 
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const IMAGE_SRC = 'assets/images/coin.png'
 
 export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
     const [image, font_image, font_json] = await Promise.all([
-        loadImage(`/${IMAGE_SRC}`),
-        loadImage(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
+        loadImage(IMAGE_SRC),
+        loadImage(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
+        loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
     ])
 
     resources.registerImage(IMAGE_SRC, image)
@@ -19,7 +19,7 @@ export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
 </script>
 
 <script setup lang="ts">
-import { Image, Text, View } from 'uno-ui/vue'
+import { Image, Text, View } from '../../src/components/vue'
 </script>
 
 <template>

@@ -21,7 +21,7 @@ import {
     Vec3,
     createGraphicsDevice,
 } from 'playcanvas'
-import { registerRootComponent } from 'uno-ui/vue'
+import { registerRootComponent } from '../../src/components/vue'
 import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 import VueTodo, { loadResources } from './todo.vue'
 

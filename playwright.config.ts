@@ -20,7 +20,9 @@ const WEBGPU_USE = {
 
 const config = {
     '@playwright/test': {
-        babelPlugins: [[fileURLToPath(import.meta.resolve('@babel/plugin-transform-typescript')), { allowDeclareFields: true }]],
+        babelPlugins: [
+            [fileURLToPath(import.meta.resolve('@babel/plugin-transform-typescript')), { allowDeclareFields: true }],
+        ],
     },
     outputDir: './tests/.results',
     webServer: {
@@ -46,7 +48,7 @@ const config = {
         },
         {
             name: 'layouts',
-            testDir: './dev/layouts',
+            testDir: './examples/layouts',
             use: WEBGPU_USE,
         },
     ],

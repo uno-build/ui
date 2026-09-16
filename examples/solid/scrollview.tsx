@@ -1,6 +1,6 @@
-import { registerRootComponent, Image, ScrollView, Text, View } from 'uno-ui/solid'
+import { registerRootComponent, Image, ScrollView, Text, View } from '../../src/components/solid'
 import { For } from 'solid-js'
-import { loadImage, loadJson } from '../../tests/utils/load-assets'
+import { loadImage, loadJson } from '../shared/load-assets'
 
 const TITLE_FONT_FAMILY = 'Nougat-ExtraBlack'
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
@@ -325,13 +325,13 @@ export function SolidScrollView() {
 
 export default function createSolidScrollView({ ui, resources }) {
     return Promise.all([
-        loadImage(`/${LOGO_SRC}`),
-        loadImage(`/${TEXTURE_SRC}`),
-        loadImage(`/${COIN_SRC}`),
-        loadImage(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
-        loadImage(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
+        loadImage(LOGO_SRC),
+        loadImage(TEXTURE_SRC),
+        loadImage(COIN_SRC),
+        loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
+        loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
+        loadImage(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
+        loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
     ]).then(([logo, texture, coin, title_font_image, title_font_json, text_font_image, text_font_json]) => {
         resources.registerImage(LOGO_SRC, logo)
         resources.registerImage(TEXTURE_SRC, texture)

@@ -1,29 +1,24 @@
-<p>
+<p align="right">
+    <a href="https://www.babylonjs.com/"><img src="./assets/babylon.svg" alt="Babylon.js" width="3%" /></a>
+    <a href="https://pixijs.com/"><img src="./assets/pixi.svg" alt="pixi.js" width="3%" /></a>
+    <a href="https://playcanvas.com/"><img src="./assets/playcanvas.svg" alt="PlayCanvas" width="3%" /></a>
+    <a href="https://threejs.org/"><img src="./assets/three.svg" alt="Three.js" width="3%" /></a>
+    <a href="https://docs.swmansion.com/TypeGPU/"><img src="./assets/typegpu.svg" alt=TypeGPU" width="3%" /></a>
+    <img src="./assets/separator.png" alt="separator" width="21" height="3%" />
+    <a href="https://react.dev/"><img src="./assets/react.svg" alt=React" width="3%" /></a>
+    <a href="https://www.solidjs.com/"><img src="./assets/solid.svg" alt=Solid.js" width="3%" /></a>
+    <a href="https://vuejs.org/"><img src="./assets/vue.svg" alt=Vue" width="3%" /></a>
+    <br />
  <img src="./assets/banner.jpg" alt="uno/ui" width="100%" />
 </p>
 
-<table width="100%">
-  <tr>
-    <td align="left" width="50%">
-        <a href="https://github.com/Josema/uno-ui/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/josema/uno-ui/ci.yml?branch=main&logo=github&style=for-the-badge" alt="Babylon.js" height="5%" />
-    </td>
-    <td align="right" width="50%">
-        <a href="https://www.babylonjs.com/"><img src="./assets/babylon.svg" alt="Babylon.js" width="5%" /></a>
-        <a href="https://pixijs.com/"><img src="./assets/pixi.svg" alt="pixi.js" width="5%" /></a>
-        <a href="https://playcanvas.com/"><img src="./assets/playcanvas.svg" alt="PlayCanvas" width="5%" /></a>
-        <a href="https://threejs.org/"><img src="./assets/three.svg" alt="Three.js" width="5%" /></a>
-        <a href="https://docs.swmansion.com/TypeGPU/"><img src="./assets/typegpu.svg" alt=TypeGPU" width="5%" /></a>
-        <img src="./assets/separator.png" alt="separator" width="21" height="5%" />
-        <a href="https://react.dev/"><img src="./assets/react.svg" alt=React" width="5%" /></a>
-        <a href="https://www.solidjs.com/"><img src="./assets/solid.svg" alt=Solid.js" width="5%" /></a>
-        <a href="https://vuejs.org/"><img src="./assets/vue.svg" alt=Vue" width="5%" /></a>
-    </td>
-  </tr>
-</table>
+<p>
+ <a href="https://github.com/Josema/uno-ui/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/josema/uno-ui/ci.yml?branch=main&logo=github&style=for-the-badge" alt="Babylon.js" height="28" /></a>
+</p>
 
-### Build high-performance and pixel-perfect user interfaces for WebGPU. Use the rendering engine and UI framework of your choice.
+**[Website](https://uno.build/) • [API Docs](https://docs.uno.build/)**
 
-banner here
+#### Build high-performance and pixel-perfect user interfaces for WebGPU. Use the rendering engine and UI framework of your choice.
 
 ## Key Features
 

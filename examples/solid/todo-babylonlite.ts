@@ -13,8 +13,8 @@ import {
     renderFrame,
     resizeEngine,
 } from '@babylonjs/lite'
-import { registerRootComponent } from 'uno-ui/solid'
-import { loadAssets, registerAssets } from '../uis/assets'
+import { registerRootComponent } from '../../src/components/solid'
+import { loadAssets, registerAssets } from '../shared/assets'
 import { SolidTodo } from './todo'
 import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 
@@ -50,9 +50,9 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
 
     // loadAssets already covers Poppins-Regular, which the todo app needs.
     const [icon, title_font_image, title_font_json] = await Promise.all([
-        loadImage(`/${ICON_SRC}`),
-        loadImage(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
+        loadImage(ICON_SRC),
+        loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
+        loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
     ])
     resources.registerImage(ICON_SRC, icon)
     resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)

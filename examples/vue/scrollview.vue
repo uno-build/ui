@@ -1,7 +1,7 @@
 <script lang="ts">
-import type ResourcesDom from 'uno-ui/ResourcesDom'
-import type ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
-import { loadImage, loadJson } from '../../tests/utils/load-assets'
+import type ResourcesDom from '../../src/renderer/dom/ResourcesDom'
+import type ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
+import { loadImage, loadJson } from '../shared/load-assets'
 
 const TITLE_FONT_FAMILY = 'Nougat-ExtraBlack'
 const TEXT_FONT_FAMILY = 'Poppins-Regular'
@@ -10,15 +10,17 @@ const TEXTURE_SRC = 'assets/images/texture.jpg'
 const COIN_SRC = 'assets/images/coin.png'
 
 export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
-    const [logo, texture, coin, title_font_image, title_font_json, text_font_image, text_font_json] = await Promise.all([
-        loadImage(`/${LOGO_SRC}`),
-        loadImage(`/${TEXTURE_SRC}`),
-        loadImage(`/${COIN_SRC}`),
-        loadImage(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
-        loadImage(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`/assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
-    ])
+    const [logo, texture, coin, title_font_image, title_font_json, text_font_image, text_font_json] = await Promise.all(
+        [
+            loadImage(LOGO_SRC),
+            loadImage(TEXTURE_SRC),
+            loadImage(COIN_SRC),
+            loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
+            loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
+            loadImage(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
+            loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
+        ],
+    )
     resources.registerImage(LOGO_SRC, logo)
     resources.registerImage(TEXTURE_SRC, texture)
     resources.registerImage(COIN_SRC, coin)
@@ -28,7 +30,7 @@ export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
 </script>
 
 <script setup lang="ts">
-import { Image, ScrollView, Text, View } from 'uno-ui/vue'
+import { Image, ScrollView, Text, View } from '../../src/components/vue'
 
 const GALLERY_SOURCES = [TEXTURE_SRC, LOGO_SRC, COIN_SRC, TEXTURE_SRC, LOGO_SRC, COIN_SRC, TEXTURE_SRC, LOGO_SRC]
 const PARAGRAPHS = [
@@ -79,7 +81,12 @@ const ITEMS = [
 
                         <ScrollView horizontal class="gallery">
                             <View class="gallery-content">
-                                <Image v-for="(src, index) in GALLERY_SOURCES" :key="index" :src="src" class="gallery-image" />
+                                <Image
+                                    v-for="(src, index) in GALLERY_SOURCES"
+                                    :key="index"
+                                    :src="src"
+                                    class="gallery-image"
+                                />
                             </View>
                         </ScrollView>
 

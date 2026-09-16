@@ -1,11 +1,11 @@
-import ResourcesDom from 'uno-ui/ResourcesDom'
-import ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
-import UIDom from 'uno-ui/UIDom'
-import UIWebGPU from 'uno-ui/UIWebGPU'
-import { PLATFORM_EVENT_NAMES } from 'uno-ui/events'
-import { registerRootComponent } from 'uno-ui/vue'
+import ResourcesDom from '../../src/renderer/dom/ResourcesDom'
+import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
+import UIDom from '../../src/ui/UIDom'
+import UIWebGPU from '../../src/ui/UIWebGPU'
+import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
+import { registerRootComponent } from '../../src/components/vue'
 import { loadYoga } from 'yoga-layout/load'
-import { initSettingsPanel } from '../settings/settings-panel'
+import { initSettingsPanel } from '../shared/settings/settings-panel'
 
 const EXAMPLES = {
     // input: () => import('./input.vue'),
@@ -49,7 +49,7 @@ initSettingsPanel({ root })
 if (example_name === 'todo-playcanvas') {
     const [{ main }, { default: UIPlayCanvas }] = await Promise.all([
         EXAMPLES[example_name](),
-        import('uno-ui/UIPlayCanvas'),
+        import('../../src/ui/UIPlayCanvas'),
     ])
     const canvas = RENDERERS.RendererWebGPU.element
     root.appendChild(canvas)

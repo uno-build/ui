@@ -7,19 +7,19 @@
         <style>
             @font-face {
                 font-family: 'Poppins-Regular';
-                src: url('/assets/fonts/Poppins-Regular.ttf') format('truetype');
+                src: url('assets/fonts/Poppins-Regular.ttf') format('truetype');
                 font-weight: normal;
                 font-style: normal;
             }
             @font-face {
                 font-family: 'ChangaOne-Regular';
-                src: url('/assets/fonts/ChangaOne-Regular.ttf') format('truetype');
+                src: url('assets/fonts/ChangaOne-Regular.ttf') format('truetype');
                 font-weight: normal;
                 font-style: normal;
             }
             @font-face {
                 font-family: 'Nougat-ExtraBlack';
-                src: url('/assets/fonts/Nougat-ExtraBlack.ttf') format('truetype');
+                src: url('assets/fonts/Nougat-ExtraBlack.ttf') format('truetype');
                 font-weight: normal;
                 font-style: normal;
             }
@@ -80,13 +80,13 @@
             <div id="settings-examples"></div>
         </div>
         <script type="module">
-            import ResourcesDom from 'uno-ui/ResourcesDom'
-            import ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
-            import UIDom from 'uno-ui/UIDom'
-            import UIWebGPU from 'uno-ui/UIWebGPU'
-            import { PLATFORM_EVENT_NAMES } from 'uno-ui/events'
+            import ResourcesDom from '../../src/renderer/dom/ResourcesDom'
+            import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
+            import UIDom from '../../src/ui/UIDom'
+            import UIWebGPU from '../../src/ui/UIWebGPU'
+            import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
             import { loadYoga } from 'yoga-layout/load'
-            import { initSettingsPanel } from '../settings/settings-panel'
+            import { initSettingsPanel } from '../shared/settings/settings-panel'
 
             const EXAMPLES = {
                 // input: () => import('./input'),
@@ -131,8 +131,8 @@
             if (example_name === 'todo-babylonlite') {
                 const [{ main }, { default: UIBabylonLite }, { loadImage, loadJson }] = await Promise.all([
                     EXAMPLES[example_name](),
-                    import('uno-ui/UIBabylonLite'),
-                    import('../../tests/utils/load-assets'),
+                    import('../../src/ui/UIBabylonLite'),
+                    import('../shared/load-assets'),
                 ])
                 const canvas = RENDERERS.RendererWebGPU.element
                 root.appendChild(canvas)
