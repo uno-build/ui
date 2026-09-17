@@ -1,13 +1,14 @@
-const GAP = 16
+const GAP = 15
+const ITEM_COUNT = 2
 const ITEM_SIZE = 120
 
-export function createBackgroundUI({ ui, assets, title: title_text, background_color }) {
+export function createBackgroundUI({ ui, assets, title: title_text = 'Background UI', background_color }) {
     const { coin, repeat_x, repeat_y } = assets
 
     const grid = ui.create()
     grid.style('width', '100%')
     grid.style('height', '100%')
-    grid.style('flexDirection', 'row')
+    grid.style('flexDirection', 'column')
     grid.style('flexWrap', 'wrap')
     grid.style('alignContent', 'flex-start')
     grid.style('gap', `${GAP}px`)
@@ -22,97 +23,84 @@ export function createBackgroundUI({ ui, assets, title: title_text, background_c
         grid.style('backgroundColor', background_color)
     }
 
-    // const first = ui.create()
-    // first.style('width', `${ITEM_SIZE}px`)
-    // first.style('height', `${ITEM_SIZE}px`)
-    // first.style('borderRadius', '12px')
-    // first.style('backgroundImage', repeat_x.src)
-    // first.style('backgroundSize', '1px 100%')
-    // first.style('backgroundRepeat', 'repeat-x')
-    // first.style('border', '4px solid #000')
-    // grid.add(first)
-
-    // const second = ui.create()
-    // second.style('width', `${ITEM_SIZE}px`)
-    // second.style('height', `${ITEM_SIZE}px`)
-    // second.style('borderRadius', '12px')
-    // second.style('backgroundImage', repeat_y.src)
-    // second.style('backgroundSize', '100% 1px')
-    // second.style('backgroundRepeat', 'repeat-y')
-    // second.style('border', '4px solid #000')
-    // grid.add(second)
-
-    const combined = ui.create()
-    combined.style('width', `${ITEM_SIZE}px`)
-    combined.style('height', `${ITEM_SIZE}px`)
-    combined.style('borderRadius', '12px')
-    combined.style('backgroundImage', repeat_x.src)
-    combined.style('backgroundSize', '1px 100%')
-    combined.style('backgroundRepeat', 'repeat-x')
-    combined.style('border', '4px solid #000')
-    grid.add(combined)
-
-    const inside = ui.create()
-    inside.style('width', '100%')
-    inside.style('height', '100%')
-    inside.style('borderRadius', '8px')
-    inside.style('backgroundImage', repeat_y.src)
-    inside.style('backgroundSize', '100% 1px')
-    inside.style('backgroundRepeat', 'repeat-y')
-    inside.style('pointerEvents', 'none')
-    combined.add(inside)
-
-    combined.on('pointerover', (event) => {
-        combined.style('border', '4px solid #fff')
-    })
-    combined.on('pointerout', (event) => {
-        combined.style('border', '4px solid #000')
-    })
-
-    const combined2 = ui.create()
-    combined2.style('width', `${ITEM_SIZE}px`)
-    combined2.style('height', `${ITEM_SIZE}px`)
-    combined2.style('borderRadius', '12px')
-    combined2.style('backgroundImage', repeat_y.src)
-    combined2.style('backgroundSize', '100% 1px')
-    combined2.style('backgroundRepeat', 'repeat-y')
-    combined2.style('border', '4px solid #000')
-    grid.add(combined2)
-
-    const inside2 = ui.create()
-    inside2.style('width', '100%')
-    inside2.style('height', '100%')
-    inside2.style('borderRadius', '8px')
-    inside2.style('backgroundImage', repeat_x.src)
-    inside2.style('backgroundSize', '1px 100%')
-    inside2.style('backgroundRepeat', 'repeat-x')
-    inside2.style('pointerEvents', 'none')
-    combined2.add(inside2)
-
-    combined2.on('pointerover', (event) => {
-        combined2.style('border', '4px solid #fff')
-    })
-    combined2.on('pointerout', (event) => {
-        combined2.style('border', '4px solid #000')
-    })
-
     if (title_text) {
         const title = ui.create()
+        title.style('gap', `${GAP}px`)
+        title.style('padding', `${GAP}px`)
         title.style('fontFamily', 'Supercell-Magic')
-        title.style('fontSize', '50px')
+        title.style('fontSize', '40px')
         title.style('color', '#ffffff')
-        title.style('textStroke', '10px #000000')
-        title.style('textShadow', '0px 4px 0px #000000')
+        title.style('textStroke', '4px #000000')
+        title.style('textShadow', '0px 3px 0px #000000')
         title.text(title_text)
         title.on('pointerover', () => {
-            title.style('textStroke', '10px #00cb8b')
-            title.style('textShadow', '0px 4px 0px #00cb8b')
+            title.style('color', '#000000')
+            title.style('textStroke', '4px #ffffff')
+            title.style('textShadow', '0px 3px 0px #ffffff')
         })
         title.on('pointerout', () => {
-            title.style('textStroke', '10px #000000')
-            title.style('textShadow', '0px 4px 0px #000000')
+            title.style('color', '#ffffff')
+            title.style('textStroke', '4px #000000')
+            title.style('textShadow', '0px 3px 0px #000000')
         })
         grid.add(title)
+    }
+
+    const buttons = ui.create()
+    buttons.style('width', '100%')
+    buttons.style('minHeight', '0px')
+    buttons.style('flex', '1 1 0px')
+    buttons.style('flexWrap', 'wrap')
+    buttons.style('alignContent', 'flex-start')
+    buttons.style('gap', `${GAP}px`)
+    buttons.style('padding', `${GAP}px`)
+    grid.add(buttons)
+
+    function createItem(item_index) {
+        const horizontal_first = item_index % 2 === 0
+        const item = ui.create()
+        item.style('width', `${ITEM_SIZE}px`)
+        item.style('height', `${ITEM_SIZE}px`)
+        item.style('borderRadius', '12px')
+        item.style('backgroundImage', horizontal_first ? repeat_x.src : repeat_y.src)
+        item.style('backgroundSize', horizontal_first ? '1px 100%' : '100% 1px')
+        item.style('backgroundRepeat', horizontal_first ? 'repeat-x' : 'repeat-y')
+        item.style('border', '4px solid #000')
+        buttons.add(item)
+
+        const inside = ui.create()
+        inside.style('width', '100%')
+        inside.style('height', '100%')
+        inside.style('alignItems', 'center')
+        inside.style('justifyContent', 'center')
+        inside.style('borderRadius', '8px')
+        inside.style('backgroundImage', horizontal_first ? repeat_y.src : repeat_x.src)
+        inside.style('backgroundSize', horizontal_first ? '100% 1px' : '1px 100%')
+        inside.style('backgroundRepeat', horizontal_first ? 'repeat-y' : 'repeat-x')
+        inside.style('pointerEvents', 'none')
+        item.add(inside)
+
+        const label = ui.create()
+        label.style('fontFamily', 'Supercell-Magic')
+        label.style('fontSize', '40px')
+        label.style('color', '#ffffff')
+        label.style('textStroke', '4px #000000')
+        label.text(`${item_index + 1}`)
+        inside.add(label)
+
+        item.on('pointerover', () => {
+            item.style('border', '4px solid #fff')
+        })
+        item.on('pointerout', () => {
+            item.style('border', '4px solid #000')
+        })
+        item.on('pointerup', () => {
+            createItem(buttons.children.length)
+        })
+    }
+
+    for (let item_index = 0; item_index < ITEM_COUNT; item_index++) {
+        createItem(item_index)
     }
 
     return { grid }

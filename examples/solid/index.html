@@ -32,6 +32,8 @@
                 overflow: hidden;
                 overscroll-behavior: none;
                 font-family: 'Poppins-Regular', 'ChangaOne-Regular', system-ui, sans-serif;
+                background-color: #eaf4fb;
+                color: #1f3b77;
             }
 
             #root {
@@ -52,10 +54,21 @@
                 touch-action: none;
             }
 
+            body #settings-panel {
+                background: #ffffff;
+                color: #1f3b77;
+            }
+            #settings-panel .settings-renderer-opacity {
+                color: #518ac8;
+            }
+            #settings-panel input {
+                accent-color: #4377bb;
+            }
+
             .settings-examples-title {
                 margin-top: 8px;
                 padding-top: 8px;
-                border-top: 1px solid rgba(255, 255, 255, 0.2);
+                border-top: 1px solid #c7dfef;
             }
             .settings-example {
                 display: block;
@@ -67,7 +80,7 @@
                 text-decoration: underline;
             }
             .settings-example[aria-current='page'] {
-                color: #56ccf2;
+                color: #4377bb;
             }
         </style>
     </head>
