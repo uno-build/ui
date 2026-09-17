@@ -4,16 +4,14 @@ import { loadAssets, registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
 
-export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, loadImage, loadJson, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadImage, loadJson }) {
     const resources = await ResourcesWebGPU.create({ canvas })
-    const { ui: background_ui } = await UIWebGPU.create({
+    const { ui: background_ui } = await UI.create({
         resources,
-        loadYoga,
         device_pixel_ratio: devicePixelRatio,
     })
-    const { ui: foreground_ui } = await UIWebGPU.create({
+    const { ui: foreground_ui } = await UI.create({
         resources,
-        loadYoga,
         device_pixel_ratio: devicePixelRatio,
     })
     const { context, device } = resources

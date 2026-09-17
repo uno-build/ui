@@ -30,11 +30,11 @@ const CUBE_VERTEX = d.unstruct({
 
 const CUBE_VERTEX_LAYOUT = tgpu.vertexLayout((count) => d.disarrayOf(CUBE_VERTEX, count))
 
-export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, loadImage, loadJson, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadImage, loadJson }) {
     const resources = await ResourcesWebGPU.create({ canvas })
     const device_pixel_ratio = window.devicePixelRatio
-    const { ui: background_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
-    const { ui: foreground_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: background_ui } = await UI.create({ resources, device_pixel_ratio })
+    const { ui: foreground_ui } = await UI.create({ resources, device_pixel_ratio })
     const { device, context, format } = resources
     const root = tgpu.initFromDevice({ device })
 

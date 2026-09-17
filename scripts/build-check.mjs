@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { build as bundle } from 'esbuild'
@@ -11,10 +11,19 @@ const PACKAGE = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8
 const DIRECTORY = await mkdtemp(path.join(tmpdir(), 'uno-ui-package-'))
 const CONSUMER = path.join(DIRECTORY, 'consumer')
 const INSTALL_FLAGS = ['--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false']
+const ENGINE_PEERS = ['three', '@babylonjs/core', '@babylonjs/lite', 'playcanvas']
+const UI_PAIRS = [
+    ['UI', 'UIWebGPU'],
+    ['UIThree', 'UIWebGPUThree'],
+    ['UIBabylon', 'UIWebGPUBabylon'],
+    ['UIBabylonLite', 'UIWebGPUBabylonLite'],
+    ['UIPlayCanvas', 'UIWebGPUPlayCanvas'],
+]
 const SAFE_RUNTIME_EXPORTS = [
     './events',
     './ResourcesWebGPU',
     './ResourcesDom',
+    './UI',
     './UIWebGPU',
     './UIDom',
     './solid/config',
@@ -121,6 +130,32 @@ try {
         assert.deepEqual(type_exports, runtime_exports, `${subpath}: runtime/type export mismatch`)
     }
 
+    for (const [automatic, raw] of UI_PAIRS) {
+        for (const name of [automatic, raw]) {
+            const bundle_result = await bundle({
+                absWorkingDir: CONSUMER,
+                entryPoints: [`${PACKAGE.name}/${name}`],
+                bundle: true,
+                write: false,
+                external: ENGINE_PEERS,
+                format: 'esm',
+                platform: 'browser',
+                metafile: true,
+            })
+            const yoga_inputs = Object.keys(bundle_result.metafile.inputs).filter(
+                (filename) => filename.includes('/yoga-layout/'),
+            )
+            if (name === raw) {
+                assert.deepEqual(yoga_inputs, [], `${name}: raw entrypoint bundles Yoga`)
+            } else {
+                assert.ok(
+                    yoga_inputs.some((filename) => filename.endsWith('/yoga-wasm-base64-esm.js')),
+                    `${name}: automatic entrypoint does not bundle Yoga WASM`,
+                )
+            }
+        }
+    }
+
     const minimal_fixture = path.join(CONSUMER, 'minimal.ts')
     await writeFile(
         minimal_fixture,
@@ -128,6 +163,7 @@ try {
 import ResourcesDom from 'uno-ui/ResourcesDom'
 import ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
 import UIDom from 'uno-ui/UIDom'
+import UI from 'uno-ui/UI'
 import UIWebGPU from 'uno-ui/UIWebGPU'
 import { loadYoga } from 'yoga-layout/load'
 
@@ -137,6 +173,7 @@ const resources = ResourcesDom.create({ canvas })
 resources.registerImage('icon', { width: 1, height: 1 })
 UIDom.create({ resources })
 UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas }), loadYoga })
+UI.create({ resources: await ResourcesWebGPU.create({ canvas }) })
 `,
     )
     runCommand(
@@ -167,7 +204,32 @@ UIWebGPU.create({ resources: await ResourcesWebGPU.create({ canvas }), loadYoga 
         CONSUMER,
     )
 
-    console.log('Packed package installation, contents, exports, runtime imports and public types passed.')
+    for (const package_name of [...ENGINE_PEERS, '@types/three']) {
+        const destination = packageDirectory(CONSUMER, package_name)
+        await mkdir(path.dirname(destination), { recursive: true })
+        await symlink(packageDirectory(ROOT, package_name), destination, 'dir')
+    }
+    const ui_fixture = path.join(CONSUMER, 'ui-types.ts')
+    await writeFile(ui_fixture, await readFile(path.join(ROOT, 'scripts/fixtures/ui-types.ts'), 'utf8'))
+    runCommand(
+        process.execPath,
+        [
+            path.join(ROOT, 'node_modules/typescript/bin/tsc'),
+            '--noEmit',
+            '--strict',
+            '--skipLibCheck',
+            '--module',
+            'esnext',
+            '--moduleResolution',
+            'bundler',
+            '--target',
+            'esnext',
+            ui_fixture,
+        ],
+        CONSUMER,
+    )
+
+    console.log('Packed package, exports, imports, public types and Yoga bundle isolation passed.')
 } finally {
     await rm(DIRECTORY, { recursive: true, force: true })
 }

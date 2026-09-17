@@ -96,9 +96,8 @@
             import ResourcesDom from '../../src/renderer/dom/ResourcesDom'
             import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
             import UIDom from '../../src/ui/UIDom'
-            import UIWebGPU from '../../src/ui/UIWebGPU'
+            import UI from '../../src/ui/UI'
             import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
-            import { loadYoga } from 'yoga-layout/load'
             import { initSettingsPanel } from '../shared/settings/settings-panel'
 
             const EXAMPLES = {
@@ -112,7 +111,7 @@
                 RendererDom: { element: document.createElement('div'), ui_class: UIDom, resources_class: ResourcesDom },
                 RendererWebGPU: {
                     element: document.createElement('canvas'),
-                    ui_class: UIWebGPU,
+                    ui_class: UI,
                     resources_class: ResourcesWebGPU,
                 },
             }
@@ -156,7 +155,6 @@
                     UIThree,
                     loadImage,
                     loadJson,
-                    loadYoga,
                 })
             } else {
                 const { default: createExample } = await EXAMPLES[example_name]()
@@ -169,7 +167,7 @@
                     root.appendChild(element)
 
                     const resources = await setup.resources_class.create({ canvas: element })
-                    const { ui } = await setup.ui_class.create({ resources, loadYoga, device_pixel_ratio })
+                    const { ui } = await setup.ui_class.create({ resources, device_pixel_ratio })
 
                     function syncRendererSize() {
                         const width = root.clientWidth
@@ -188,7 +186,7 @@
                     syncRendererSize()
                     window.addEventListener('resize', syncRendererSize)
 
-                    // UIDom listens on its own element, UIWebGPU needs the canvas events forwarded.
+                    // UIDom listens on its own element, UI needs the canvas events forwarded.
                     if (is_canvas) {
                         PLATFORM_EVENT_NAMES.forEach((type) => {
                             element.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))

@@ -20,11 +20,10 @@ export async function main({
     canvas,
     onCanvasEvent,
     ResourcesWebGPU,
-    UIWebGPU,
+    UI,
     UIBabylon,
     loadImage,
     loadJson,
-    loadYoga,
 }) {
     const context = canvas.getContext('webgpu')
     const format = navigator.gpu.getPreferredCanvasFormat()
@@ -58,14 +57,13 @@ export async function main({
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })
 
-    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UI.create({ resources, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
     const { ui: first_ui, plane: first_plane } = await UIBabylon.create({
         scene,
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width,
         texture_height,
@@ -75,7 +73,6 @@ export async function main({
     const { ui: second_ui, plane: second_plane } = await UIBabylon.create({
         scene,
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width,
         texture_height,

@@ -15,6 +15,10 @@
             "types": "./dist/renderer/dom/ResourcesDom.d.ts",
             "import": "./dist/renderer/dom/ResourcesDom.js"
         },
+        "./UI": {
+            "types": "./dist/ui/UI.d.ts",
+            "import": "./dist/ui/UI.js"
+        },
         "./UIWebGPU": {
             "types": "./dist/ui/UIWebGPU.d.ts",
             "import": "./dist/ui/UIWebGPU.js"
@@ -34,6 +38,22 @@
         "./UIPlayCanvas": {
             "types": "./dist/ui/UIPlayCanvas.d.ts",
             "import": "./dist/ui/UIPlayCanvas.js"
+        },
+        "./UIWebGPUThree": {
+            "types": "./dist/ui/UIWebGPUThree.d.ts",
+            "import": "./dist/ui/UIWebGPUThree.js"
+        },
+        "./UIWebGPUBabylon": {
+            "types": "./dist/ui/UIWebGPUBabylon.d.ts",
+            "import": "./dist/ui/UIWebGPUBabylon.js"
+        },
+        "./UIWebGPUBabylonLite": {
+            "types": "./dist/ui/UIWebGPUBabylonLite.d.ts",
+            "import": "./dist/ui/UIWebGPUBabylonLite.js"
+        },
+        "./UIWebGPUPlayCanvas": {
+            "types": "./dist/ui/UIWebGPUPlayCanvas.d.ts",
+            "import": "./dist/ui/UIWebGPUPlayCanvas.js"
         },
         "./UIDom": {
             "types": "./dist/ui/UIDom.d.ts",

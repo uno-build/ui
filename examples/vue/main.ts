@@ -1,10 +1,9 @@
 import ResourcesDom from '../../src/renderer/dom/ResourcesDom'
 import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
 import UIDom from '../../src/ui/UIDom'
-import UIWebGPU from '../../src/ui/UIWebGPU'
+import UI from '../../src/ui/UI'
 import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 import { registerRootComponent } from '../../src/components/vue'
-import { loadYoga } from 'yoga-layout/load'
 import { initSettingsPanel } from '../shared/settings/settings-panel'
 
 const EXAMPLES = {
@@ -18,7 +17,7 @@ const RENDERERS = {
     RendererDom: { element: document.createElement('div'), ui_class: UIDom, resources_class: ResourcesDom },
     RendererWebGPU: {
         element: document.createElement('canvas'),
-        ui_class: UIWebGPU,
+        ui_class: UI,
         resources_class: ResourcesWebGPU,
     },
 }
@@ -58,7 +57,6 @@ if (example_name === 'todo-playcanvas') {
         onCanvasEvent: window.addEventListener.bind(window),
         ResourcesWebGPU,
         UIPlayCanvas,
-        loadYoga,
     })
 } else {
     const { default: Example, loadResources } = await EXAMPLES[example_name]()
@@ -70,7 +68,7 @@ if (example_name === 'todo-playcanvas') {
         root.appendChild(element)
 
         const resources = await setup.resources_class.create({ canvas: element })
-        const { ui } = await setup.ui_class.create({ resources, loadYoga, device_pixel_ratio })
+        const { ui } = await setup.ui_class.create({ resources, device_pixel_ratio })
 
         function syncRendererSize() {
             const width = root.clientWidth

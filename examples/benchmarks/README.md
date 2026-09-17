@@ -1,6 +1,6 @@
 # WebGPU benchmarks
 
-A shared runner for manual and automated workloads using only `UIWebGPU` and `ResourcesWebGPU`.
+A shared runner for manual and automated workloads using only `UI` and `ResourcesWebGPU`.
 
 ## Running
 

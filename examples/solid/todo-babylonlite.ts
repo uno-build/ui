@@ -32,7 +32,7 @@ const TEXTURE_SCALAR = window.devicePixelRatio
 const TITLE_FONT_FAMILY = 'Nougat-ExtraBlack'
 const ICON_SRC = 'assets/images/solid.png'
 
-export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, loadJson, loadYoga }) {
+export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, loadJson }) {
     const device_pixel_ratio = window.devicePixelRatio
     const engine = await createEngine(canvas, { msaaSamples: 1, alphaMode: 'premultiplied' })
     const scene = createSceneContext(engine)
@@ -63,7 +63,6 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
         engine,
         scene,
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width,
         texture_height,

@@ -12,11 +12,10 @@ export async function main({
     canvas,
     onCanvasEvent,
     ResourcesWebGPU,
-    UIWebGPU,
+    UI,
     UIThree,
     loadImage,
     loadJson,
-    loadYoga,
 }) {
     const device_pixel_ratio = window.devicePixelRatio
     const device_width = Math.max(canvas.clientWidth, canvas.clientHeight)
@@ -28,7 +27,7 @@ export async function main({
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })
 
-    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UI.create({ resources, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
@@ -40,7 +39,6 @@ export async function main({
         geometry: first_geometry,
     } = await UIThree.create({
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width: texture_width,
         texture_height: texture_height,
@@ -56,7 +54,6 @@ export async function main({
         geometry: second_geometry,
     } = await UIThree.create({
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width: texture_width,
         texture_height: texture_height,

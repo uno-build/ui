@@ -20,7 +20,7 @@ test('UIThree dispatches pointer events from raycast intersections', { tag: '@we
 
     const events = await page.evaluate(
         async ({ event_types }) => {
-            const { UIThree, ResourcesWebGPU, loadYoga, THREE } = await import(
+            const { UIThree, ResourcesWebGPU, THREE } = await import(
                 '/tests/renderer/browser-entry.ts'
             )
             const canvas = document.createElement('canvas')
@@ -38,7 +38,6 @@ test('UIThree dispatches pointer events from raycast intersections', { tag: '@we
             const resources = await ResourcesWebGPU.create({ canvas })
             const { ui, geometry, material, texture } = await UIThree.create({
                 resources,
-                loadYoga,
                 texture_width: 200,
                 texture_height: 100,
                 world_width: 2,
@@ -127,7 +126,7 @@ test('UIBabylon dispatches pointer events from raycast intersections', { tag: '@
 
     const events = await page.evaluate(
         async ({ event_types }) => {
-            const { UIBabylon, ResourcesWebGPU, loadYoga, WebGPUEngine, Scene, FreeCamera, Vector3 } = await import(
+            const { UIBabylon, ResourcesWebGPU, WebGPUEngine, Scene, FreeCamera, Vector3 } = await import(
                 '/tests/renderer/browser-entry.ts'
             )
             const canvas = document.createElement('canvas')
@@ -163,7 +162,6 @@ test('UIBabylon dispatches pointer events from raycast intersections', { tag: '@
             const { ui, plane, material, texture } = await UIBabylon.create({
                 scene,
                 resources,
-                loadYoga,
                 texture_width: 200,
                 texture_height: 100,
                 world_width: 2,
@@ -254,7 +252,7 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', { tag
 
     const events = await page.evaluate(
         async ({ event_types }) => {
-            const { UIBabylonLite, ResourcesWebGPU, loadYoga, BABYLON } = await import(
+            const { UIBabylonLite, ResourcesWebGPU, BABYLON } = await import(
                 '/tests/renderer/browser-entry.ts'
             )
             const canvas = document.createElement('canvas')
@@ -282,7 +280,6 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', { tag
                 engine,
                 scene,
                 resources,
-                loadYoga,
                 texture_width: 200,
                 texture_height: 100,
                 world_width: 2,
@@ -375,7 +372,7 @@ test('UIPlayCanvas dispatches pointer events from raycast intersections', { tag:
 
     const events = await page.evaluate(
         async ({ event_types }) => {
-            const { UIPlayCanvas, ResourcesWebGPU, loadYoga, PLAYCANVAS } = await import(
+            const { UIPlayCanvas, ResourcesWebGPU, PLAYCANVAS } = await import(
                 '/tests/renderer/browser-entry.ts'
             )
             const canvas = document.createElement('canvas')
@@ -415,7 +412,6 @@ test('UIPlayCanvas dispatches pointer events from raycast intersections', { tag:
             const { ui, plane, mesh, material, texture } = await UIPlayCanvas.create({
                 app,
                 resources,
-                loadYoga,
                 texture_width: 200,
                 texture_height: 100,
                 world_width: 2,

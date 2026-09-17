@@ -19,7 +19,7 @@ const TEXTURE_SCALAR = window.devicePixelRatio
 const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
 const ICON_SRC = 'assets/images/react.png'
 
-export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIThree, loadImage, loadJson, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIThree, loadImage, loadJson }) {
     const device_pixel_ratio = window.devicePixelRatio
 
     const resources = await ResourcesWebGPU.create({ canvas })
@@ -40,7 +40,6 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIThree, lo
     const texture_height = Math.round(UI_HEIGHT * TEXTURE_SCALAR)
     const { ui, plane, texture, material, geometry } = await UIThree.create({
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width: texture_width,
         texture_height: texture_height,

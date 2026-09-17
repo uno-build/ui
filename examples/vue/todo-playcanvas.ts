@@ -37,7 +37,7 @@ const FLOOR_Y = -0.12
 const PANEL_Y = FLOOR_Y + WORLD_HEIGHT / 2 - WORLD_PAGE_PADDING
 const TEXTURE_SCALAR = window.devicePixelRatio
 
-export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIPlayCanvas, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIPlayCanvas }) {
     const gfx_options = {
         deviceTypes: ['webgpu'],
         antialias: true,
@@ -71,7 +71,6 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIPlayCanva
     const { ui, plane } = await UIPlayCanvas.create({
         app,
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width,
         texture_height,
