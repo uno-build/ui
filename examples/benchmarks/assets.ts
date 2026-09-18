@@ -24,7 +24,7 @@ export async function loadBenchmarkAssets() {
         bitmaps.push(bitmap)
         return {
             src,
-            bitmap,
+            source: bitmap,
             width: bitmap.width,
             height: bitmap.height,
             preventBleeding: bitmap.width < 32 || bitmap.height < 32,

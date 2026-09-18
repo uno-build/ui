@@ -85,6 +85,8 @@ test('WebGPU resources retain manager return values and disposal', () => {
     const calls = []
     const image = { image_size: [8, 16] }
     const font = { id: 1 }
+    const input_image = { source: {}, width: 8, height: 16 }
+    const input_font_image = { source: {}, width: 8, height: 16 }
     resources.image_manager = {
         imageUpload(src, value) { calls.push(['image', src, value]); return image },
         getImage() { return image },
@@ -94,13 +96,13 @@ test('WebGPU resources retain manager return values and disposal', () => {
         fontRegister(name, image, json) { calls.push(['font', name, image, json]); return font },
         fontDispose(name) { calls.push(['disposeFont', name]); return true },
     }
-    assert.equal(resources.registerImage('icon', 'pixels'), image)
+    assert.equal(resources.registerImage('icon', input_image), image)
     assert.deepEqual(resources.getImageSize('icon'), { width: 8, height: 16 })
-    assert.equal(resources.registerFont('font', 'atlas', 'metrics'), font)
+    assert.equal(resources.registerFont('font', input_font_image, 'metrics'), font)
     resources.disposeImage('icon')
     resources.disposeFont('font')
     assert.deepEqual(calls, [
-        ['image', 'icon', 'pixels'], ['font', 'font', 'atlas', 'metrics'],
+        ['image', 'icon', input_image], ['font', 'font', input_font_image, 'metrics'],
         ['disposeImage', 'icon'], ['disposeFont', 'font'],
     ])
 })

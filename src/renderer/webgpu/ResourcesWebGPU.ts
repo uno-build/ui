@@ -1,4 +1,11 @@
-import type { WebGPUCanvas, WebGPUContext, ResourcesWebGPUOptions, WebGPUImage, FontData } from './contracts'
+import type {
+    WebGPUCanvas,
+    WebGPUContext,
+    ResourcesWebGPUOptions,
+    WebGPUImage,
+    ResolvedWebGPUImage,
+    FontData,
+} from './contracts'
 import type { ManagedAtlasImage } from './ImageManager'
 import type { ManagedFont } from './FontManager'
 
@@ -10,14 +17,16 @@ import { ImageManager } from './ImageManager'
 const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 2048
 
-export default class ResourcesWebGPU extends Resources<WebGPUCanvas | undefined, {
-    image: WebGPUImage;
-    font_image: WebGPUImage;
-    font_data: FontData;
-    registered_image: ManagedAtlasImage;
-    registered_font: ManagedFont;
-}> {
-
+export default class ResourcesWebGPU extends Resources<
+    WebGPUCanvas | undefined,
+    {
+        image: WebGPUImage
+        font_image: WebGPUImage
+        font_data: FontData
+        registered_image: ManagedAtlasImage
+        registered_font: ManagedFont
+    }
+> {
     adapter: GPUAdapter | null | undefined
 
     device: GPUDevice
@@ -90,7 +99,7 @@ export default class ResourcesWebGPU extends Resources<WebGPUCanvas | undefined,
     }
 
     registerImage(src: string, image: WebGPUImage): ManagedAtlasImage {
-        const registered_image = this.image_manager.imageUpload(src, image)
+        const registered_image = this.image_manager.imageUpload(src, resolveWebGPUImage(image))
         this.events.emit(RESOURCE_EVENT.IMAGE)
         return registered_image
     }
@@ -101,13 +110,13 @@ export default class ResourcesWebGPU extends Resources<WebGPUCanvas | undefined,
         }
     }
 
-    getImageSize(src: string): { width: number; height: number; } | undefined {
+    getImageSize(src: string): { width: number; height: number } | undefined {
         const image = this.image_manager.getImage(src)
         return image === undefined ? undefined : { width: image.image_size[0], height: image.image_size[1] }
     }
 
     registerFont(name: string, image: WebGPUImage, json: FontData): ManagedFont {
-        const font = this.font_manager.fontRegister(name, image, json)
+        const font = this.font_manager.fontRegister(name, resolveWebGPUImage(image), json)
         this.events.emit(RESOURCE_EVENT.FONT)
         return font
     }
@@ -130,4 +139,23 @@ export default class ResourcesWebGPU extends Resources<WebGPUCanvas | undefined,
             this.context.present!()
         }
     }
+}
+
+function resolveWebGPUImage(image: WebGPUImage): ResolvedWebGPUImage {
+    if (image.width !== undefined && image.height !== undefined) {
+        return image as ResolvedWebGPUImage
+    }
+
+    const source = image.source as { width?: number; height?: number }
+    const width = image.width ?? source.width
+    const height = image.height ?? source.height
+
+    if (width === undefined) {
+        throw new Error('Image width is required when source does not provide it.')
+    }
+    if (height === undefined) {
+        throw new Error('Image height is required when source does not provide it.')
+    }
+
+    return { ...image, width, height }
 }

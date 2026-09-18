@@ -1,7 +1,7 @@
-import type { WebGPUImage, FontData, FontMetrics } from './contracts'
+import type { ResolvedWebGPUImage, FontData, FontMetrics } from './contracts'
 export type ManagedFont = {
     name: string;
-    image: WebGPUImage;
+    image: ResolvedWebGPUImage;
     json: FontData;
     layer: number;
     uv_rect: [
@@ -86,7 +86,7 @@ export class FontManager {
         return true
     }
 
-    fontRegister(name: string, image: WebGPUImage, json: FontData): ManagedFont {
+    fontRegister(name: string, image: ResolvedWebGPUImage, json: FontData): ManagedFont {
         if (this.fonts.has(name)) {
             throw new Error(`Font "${name}" is already registered.`)
         }
@@ -102,7 +102,7 @@ export class FontManager {
         const font_texture = this.getFontTexture()
 
         this.device.queue.copyExternalImageToTexture(
-            { source: image.bitmap },
+            { source: image.source },
             {
                 texture: font_texture,
                 origin: [0, 0, layer],

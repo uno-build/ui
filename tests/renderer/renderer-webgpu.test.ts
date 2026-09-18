@@ -3015,7 +3015,7 @@ test('RendererWebGPU keeps interleaved panel and text command order', () => {
     ])
 })
 
-test('ImageManager creates separate resources for separate srcs with the same bitmap', () => {
+test('ImageManager creates separate resources for separate srcs with the same source', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
     const first_image = createImage('first.png', 32, 32)
@@ -3023,7 +3023,7 @@ test('ImageManager creates separate resources for separate srcs with the same bi
     const copy_count = device.copies.length
     const second = image_manager.imageUpload('second', {
         ...createImage('second.png', 32, 32),
-        bitmap: first_image.bitmap,
+        source: first_image.source,
     })
 
     expect(second).not.toBe(first)
@@ -3465,6 +3465,33 @@ test('ResourcesWebGPU skips notifications for rejected or missing images', async
     expect(resources.disposeImage('missing')).toBeUndefined()
     expect(changes).toEqual([RESOURCE_EVENT.IMAGE])
     expect(resources.getImageSize('avatar')).toEqual({ width: 16, height: 16 })
+})
+
+test('ResourcesWebGPU resolves missing dimensions from the source and requires unresolved dimensions', async () => {
+    const resources = await ResourcesWebGPU.create({
+        canvas: {},
+        device: createFakeDevice(),
+        context: {},
+        format: 'rgba8unorm',
+    })
+    const image = resources.registerImage('intrinsic-size', {
+        source: { width: 32, height: 16 },
+    })
+    const overridden_image = resources.registerImage('overridden-size', {
+        width: 8,
+        height: 4,
+        source: { width: 32, height: 16 },
+    })
+
+    expect(image.image_size).toEqual([32, 16])
+    expect(overridden_image.image_size).toEqual([8, 4])
+    expect(() => resources.registerImage('missing-width', {
+        source: {},
+    })).toThrow('Image width is required when source does not provide it.')
+    expect(() => resources.registerImage('missing-height', {
+        width: 32,
+        source: {},
+    })).toThrow('Image height is required when source does not provide it.')
 })
 
 test('ResourcesWebGPU notifies after updating its default font and skips rejected or missing fonts', async () => {
@@ -5000,7 +5027,7 @@ function createImage(src, width, height) {
         src,
         width,
         height,
-        bitmap: { src },
+        source: { src },
     }
 }
 

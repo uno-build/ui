@@ -1399,7 +1399,7 @@ function createImage(src, width, height) {
         src,
         width,
         height,
-        bitmap: { src },
+        source: { src },
         preventBleeding: false,
     }
 }
