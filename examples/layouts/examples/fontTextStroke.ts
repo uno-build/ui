@@ -1,13 +1,14 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
+import { FONT_NAME1, FONT_NAME2 } from '../../shared/assets'
 
 const STROKE_WIDTHS = Array.from({ length: 10 }, (_, index) => index)
 const FONT_SIZES = [5, 16, 32]
 
 export default async function createFontTextStrokeLayout({ ui, registerFont }) {
-    const font_image = await loadImage('examples/assets/fonts/Poppins-Regular.mtsdf.png')
-    const font_json = await loadJson('examples/assets/fonts/Poppins-Regular.mtsdf.json')
+    const font_image = await loadImage(`examples/assets/fonts/${FONT_NAME2}.mtsdf.png`)
+    const font_json = await loadJson(`examples/assets/fonts/${FONT_NAME2}.mtsdf.json`)
 
-    registerFont('Poppins-Regular', font_image, font_json)
+    registerFont(FONT_NAME2, font_image, font_json)
 
     const stage = ui.create()
     stage.style('width', '100%')

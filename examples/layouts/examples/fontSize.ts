@@ -1,4 +1,5 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
+import { FONT_NAME1, FONT_NAME2 } from '../../shared/assets'
 
 const MIN_FONT_SIZE = 3
 const MAX_FONT_SIZE = 50
@@ -13,13 +14,13 @@ const RAINBOW_STOPS = [
 ]
 
 export default async function createFontsLayout({ ui, registerFont }) {
-    const poppins_image = await loadImage('examples/assets/fonts/Poppins-Regular.mtsdf.png')
-    const poppins_json = await loadJson('examples/assets/fonts/Poppins-Regular.mtsdf.json')
-    const changaone_image = await loadImage('examples/assets/fonts/ChangaOne-Regular.mtsdf.png')
-    const changaone_json = await loadJson('examples/assets/fonts/ChangaOne-Regular.mtsdf.json')
+    const poppins_image = await loadImage(`examples/assets/fonts/${FONT_NAME1}.mtsdf.png`)
+    const poppins_json = await loadJson(`examples/assets/fonts/${FONT_NAME1}.mtsdf.json`)
+    const changaone_image = await loadImage(`examples/assets/fonts/${FONT_NAME2}.mtsdf.png`)
+    const changaone_json = await loadJson(`examples/assets/fonts/${FONT_NAME2}.mtsdf.json`)
 
-    registerFont('Poppins-Regular', poppins_image, poppins_json)
-    registerFont('ChangaOne-Regular', changaone_image, changaone_json)
+    registerFont(FONT_NAME1, poppins_image, poppins_json)
+    registerFont(FONT_NAME2, changaone_image, changaone_json)
 
     const stage = ui.create()
     stage.style('flex', '1')
@@ -30,8 +31,8 @@ export default async function createFontsLayout({ ui, registerFont }) {
     ui.root.add(stage)
 
     const font_columns = [
-        { font_family: 'Poppins-Regular', text_content: 'Poppins' },
-        { font_family: 'ChangaOne-Regular', text_content: 'ChangaOne mtsdf' },
+        { font_family: FONT_NAME2, text_content: FONT_NAME2 },
+        { font_family: FONT_NAME1, text_content: FONT_NAME1 },
     ]
 
     for (const font_column of font_columns) {

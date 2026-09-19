@@ -1,4 +1,5 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
+import { FONT_NAME1, FONT_NAME2 } from '../../shared/assets'
 
 const TEXT = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Curabitur pretium tincidunt lacus, nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida. Duis ac tellus et risus vulputate vehicula. Donec lobortis risus a elit. Etiam tempor, orci eu lobortis elementum, enim tellus molestie nunc, non blandit massa enim nec dui. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui.`
 const WORDS = TEXT.split(' ')
@@ -12,10 +13,10 @@ const VARIANTS = [
 ]
 
 export default async function createFontTextAlignLayout({ ui, registerFont }) {
-    const poppins_image = await loadImage('examples/assets/fonts/Poppins-Regular.mtsdf.png')
-    const poppins_json = await loadJson('examples/assets/fonts/Poppins-Regular.mtsdf.json')
+    const poppins_image = await loadImage(`examples/assets/fonts/${FONT_NAME2}.mtsdf.png`)
+    const poppins_json = await loadJson(`examples/assets/fonts/${FONT_NAME2}.mtsdf.json`)
 
-    registerFont('Poppins-Regular', poppins_image, poppins_json)
+    registerFont(FONT_NAME2, poppins_image, poppins_json)
 
     const stage = ui.create()
     stage.style('width', '100%')

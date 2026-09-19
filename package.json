@@ -197,7 +197,8 @@
         "benchmarks:text-stroke:headed": "node ./scripts/benchmarks.mjs --workload text-stroke --headed",
         "benchmarks:render-metrics": "node ./scripts/benchmarks.mjs --workload render-metrics",
         "benchmarks:render-metrics:headed": "node ./scripts/benchmarks.mjs --workload render-metrics --headed",
-        "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs"
+        "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs",
+        "msdf-atlas-gen:raw": "node ./scripts/msdf-atlas-gen-raw.mjs"
     },
     "files": [
         "dist"
