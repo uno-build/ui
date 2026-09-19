@@ -28,7 +28,8 @@ export default class UIWebGPUThree extends UIWorldSpace<
     {
         plane: THREE.Mesh
     },
-    UIWebGPUThree
+    UIWebGPUThree,
+    THREE.Camera
 > {
     private plane!: THREE.Mesh | null
 
@@ -58,7 +59,12 @@ export default class UIWebGPUThree extends UIWorldSpace<
         return output
     }
 
-    dispatchPlatformEvent(source_event: PlatformEvent, { camera }: { camera: THREE.Camera }) {
+    dispatchPlatformEvent(source_event: PlatformEvent) {
+        const camera = this.camera
+        if (camera === null) {
+            return
+        }
+
         const rect = (source_event.currentTarget as Element).getBoundingClientRect()
         const pointer = new THREE.Vector2(
             ((source_event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -82,8 +88,9 @@ export default class UIWebGPUThree extends UIWorldSpace<
     }
 
     destroy() {
-        super.destroy()
+        const destroyed = super.destroy()
         this.plane = null
+        return destroyed
     }
 
     protected createTexture({ gpu_texture }: TextureOptions) {

@@ -3,7 +3,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { loadAssets, registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
-import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 
 const WORLD_HEIGHT = 2
 const TEXTURE_SCALAR = window.devicePixelRatio
@@ -76,13 +75,8 @@ export async function main({
     const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
     camera.position.set(0, 3.5, 9)
 
-    PLATFORM_EVENT_NAMES.forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            overlay_ui.dispatchPlatformEvent(e)
-            first_ui.dispatchPlatformEvent(e, { camera })
-            second_ui.dispatchPlatformEvent(e, { camera })
-        })
-    })
+    first_ui.setCamera(camera)
+    second_ui.setCamera(camera)
 
     first_ui.root.on('pointerdown', (e) => {
         controls.enabled = false

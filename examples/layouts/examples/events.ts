@@ -1,4 +1,3 @@
-import { PLATFORM_EVENT_NAMES } from '../../../src/events/constants'
 import { loadImage, loadJson } from '../../shared/load-assets'
 import { FONT_NAME1, FONT_NAME2 } from '../../shared/assets'
 
@@ -384,12 +383,6 @@ export default async function createEventsLayout({ ui, resources, registerFont, 
     for (const node of node_names.keys()) {
         applyPattern(node, pattern_image.src)
         registerEvents(node)
-    }
-
-    if (renderer_name !== 'RendererDom') {
-        for (const type of PLATFORM_EVENT_NAMES) {
-            resources.canvas.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))
-        }
     }
 }
 

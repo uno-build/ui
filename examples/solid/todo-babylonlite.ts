@@ -60,6 +60,7 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
     const texture_width = Math.round(UI_WIDTH * TEXTURE_SCALAR)
     const texture_height = Math.round(UI_HEIGHT * TEXTURE_SCALAR)
     const { ui, plane } = await UIBabylonLite.create({
+        register_platform_events: false,
         engine,
         scene,
         resources,
@@ -88,6 +89,7 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
     camera.nearPlane = 0.1
     camera.farPlane = 100
     scene.camera = camera
+    ui.setCamera(camera)
 
     const active_pointers = new Map()
     const panel_pointers = new Set()
@@ -100,7 +102,7 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
                 pending_pointer_picks.add(e)
             }
 
-            const dispatch_result = ui.dispatchPlatformEvent(e, { camera })
+            const dispatch_result = ui.dispatchPlatformEvent(e)
 
             if (type === 'pointerdown') {
                 dispatch_result.then(

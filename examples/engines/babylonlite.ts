@@ -15,7 +15,6 @@ import {
     renderFrame,
     resizeEngine,
 } from '@babylonjs/lite'
-import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 import { loadAssets, registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
@@ -79,12 +78,6 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadIma
     foreground_ui.update()
 
     // Event handling
-    PLATFORM_EVENT_NAMES.forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            background_ui.dispatchPlatformEvent(e)
-            foreground_ui.dispatchPlatformEvent(e)
-        })
-    })
     onCanvasEvent('resize', () => {
         syncCanvasSize({ canvas, background_ui, foreground_ui })
         background_ui.update()

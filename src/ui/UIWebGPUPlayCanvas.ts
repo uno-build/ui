@@ -48,7 +48,8 @@ export default class UIWebGPUPlayCanvas extends UIWorldSpace<
     {
         plane: Entity
     },
-    UIWebGPUPlayCanvas
+    UIWebGPUPlayCanvas,
+    Entity
 > {
     private app: AppBase
 
@@ -87,7 +88,12 @@ export default class UIWebGPUPlayCanvas extends UIWorldSpace<
         return output
     }
 
-    dispatchPlatformEvent(source_event: PlatformEvent, { camera }: { camera: Entity }) {
+    dispatchPlatformEvent(source_event: PlatformEvent) {
+        const camera = this.camera
+        if (camera === null) {
+            return
+        }
+
         const rect = (source_event.currentTarget as Element).getBoundingClientRect()
         const { width, height } = this.app.graphicsDevice.clientRect
         const x = ((source_event.clientX - rect.left) / rect.width) * width
@@ -129,8 +135,9 @@ export default class UIWebGPUPlayCanvas extends UIWorldSpace<
     }
 
     destroy() {
-        super.destroy()
+        const destroyed = super.destroy()
         this.plane = null
+        return destroyed
     }
 
     protected createTexture({ output, gpu_texture, gpu_texture_view }: TextureOptions) {

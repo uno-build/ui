@@ -50,13 +50,16 @@ export default class UIWebGPUBabylonLite extends UIWorldSpace<
     {
         plane: Mesh
     },
-    UIWebGPUBabylonLite
+    UIWebGPUBabylonLite,
+    Camera
 > {
     private engine: EngineContext
 
     private scene: SceneContext
 
     private picker: GpuPicker | null
+
+    private pending_pick: Promise<void> | null = null
 
     private plane!: Mesh | null
 
@@ -96,7 +99,12 @@ export default class UIWebGPUBabylonLite extends UIWorldSpace<
         return output
     }
 
-    dispatchPlatformEvent(source_event: PlatformEvent, { camera }: { camera: Camera }) {
+    async dispatchPlatformEvent(source_event: PlatformEvent): Promise<void> {
+        const camera = this.camera
+        if (camera === null) {
+            return
+        }
+
         const rect = (source_event.currentTarget as Element).getBoundingClientRect()
         const canvas = this.scene.surface.canvas
         const canvas_width = 'clientWidth' in canvas ? canvas.clientWidth : canvas.width
@@ -104,7 +112,11 @@ export default class UIWebGPUBabylonLite extends UIWorldSpace<
         const x = ((source_event.clientX - rect.left) / rect.width) * canvas_width
         const y = ((source_event.clientY - rect.top) / rect.height) * canvas_height
 
-        return pickAsync(this.picker!, x, y, { filter: (mesh) => mesh === this.plane }).then((intersection) => {
+        const pending_pick = pickAsync(this.picker!, x, y, { filter: (mesh) => mesh === this.plane }).then((intersection) => {
+            if (this.camera !== camera) {
+                return
+            }
+
             if (intersection.hit === false) {
                 this.emitPlatformEvent(source_event, null)
                 return
@@ -134,15 +146,31 @@ export default class UIWebGPUBabylonLite extends UIWorldSpace<
                 ),
             })
         })
+        this.pending_pick = pending_pick
+        try {
+            await pending_pick
+        } finally {
+            if (this.pending_pick === pending_pick) {
+                this.pending_pick = null
+            }
+        }
     }
 
     destroy() {
-        super.destroy()
+        const destroyed = super.destroy()
         if (this.picker !== null) {
-            disposePicker(this.picker)
+            const picker = this.picker
             this.picker = null
+            if (this.pending_pick === null) {
+                disposePicker(picker)
+            } else {
+                const disposePendingPicker = () => disposePicker(picker)
+                void this.pending_pick.then(disposePendingPicker, disposePendingPicker)
+                this.pending_pick = null
+            }
         }
         this.plane = null
+        return destroyed
     }
 
     protected createTexture({ output, gpu_texture, gpu_texture_view }: TextureOptions) {

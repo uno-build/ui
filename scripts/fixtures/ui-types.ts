@@ -20,13 +20,41 @@ declare const babylon_scene: BABYLON.Scene
 declare const babylon_lite_scene: BABYLON_LITE.SceneContext
 declare const babylon_lite_engine: BABYLON_LITE.EngineContext
 declare const playcanvas_app: PLAYCANVAS.AppBase
+declare const source_event: PointerEvent
+declare const three_camera: THREE.Camera
+declare const babylon_camera: BABYLON.Camera
+declare const babylon_lite_camera: BABYLON_LITE.Camera
+declare const playcanvas_camera: PLAYCANVAS.Entity
 
-UI.create({ resources }).then(({ ui }) => { ui satisfies UI })
-UIWebGPU.create({ resources, loadYoga }).then(({ ui }) => { ui satisfies UIWebGPU })
+UI.create({ resources }).then(({ ui }) => {
+    ui satisfies UI
+    ui.registerPlatformEvents() satisfies void
+    ui.removePlatformEvents() satisfies void
+})
+UIWebGPU.create({ resources, loadYoga }).then(({ ui }) => {
+    ui satisfies UIWebGPU
+    ui.registerPlatformEvents() satisfies void
+    ui.removePlatformEvents() satisfies void
+})
 // @ts-expect-error Raw classes require an explicit Yoga loader.
 UIWebGPU.create({ resources })
 // @ts-expect-error Automatic classes select their own Yoga loader.
 UI.create({ resources, loadYoga })
+UI.create({
+    resources,
+    register_platform_events: false,
+    defined_events: [({ ui }) => {
+        ui satisfies UI
+        ui.dispatchPlatformEvent(source_event) satisfies void
+        ui.registerPlatformEvents() satisfies void
+        ui.removePlatformEvents() satisfies void
+        return { types: [], destroy() {} }
+    }],
+})
+// @ts-expect-error Raw classes never register platform events automatically.
+UIWebGPU.create({ resources, loadYoga, register_platform_events: false })
+// @ts-expect-error The previous option name is not supported.
+UI.create({ resources, platform_events: false })
 
 const WORLD_OPTIONS = { resources, texture_width: 256, texture_height: 256, world_width: 1, world_height: 1 }
 
@@ -39,12 +67,27 @@ async function checkThree() {
     UIWebGPUThree.create(options)
     // @ts-expect-error Automatic classes select their own Yoga loader.
     UIThree.create({ ...options, loadYoga })
+    UIThree.create({ ...options, register_platform_events: false })
+    // @ts-expect-error The previous option name is not supported.
+    UIThree.create({ ...options, platform_events: false })
+    // @ts-expect-error Assign the camera with setCamera(), not create().
+    UIThree.create({ ...options, camera: three_camera })
+    // @ts-expect-error Raw classes never register platform events automatically.
+    UIWebGPUThree.create({ ...options, loadYoga, register_platform_events: false })
 
     const defaults = [await UIThree.create(options), await UIWebGPUThree.create({ ...options, loadYoga })]
     for (const result of defaults) {
         result.geometry satisfies THREE.PlaneGeometry
         result.material satisfies THREE.MeshStandardNodeMaterial
         result.texture satisfies THREE.ExternalTexture
+        result.ui.setCamera(three_camera) satisfies void
+        result.ui.registerPlatformEvents() satisfies void
+        result.ui.removePlatformEvents() satisfies void
+        result.ui.dispatchPlatformEvent(source_event) satisfies void
+        // @ts-expect-error A Three UI requires a Three camera.
+        result.ui.setCamera(babylon_camera)
+        // @ts-expect-error Dispatch uses the stored camera.
+        result.ui.dispatchPlatformEvent(source_event, { camera: three_camera })
     }
 
     const automatic = await UIThree.create({
@@ -58,6 +101,9 @@ async function checkThree() {
         },
         defined_events: [({ ui }) => {
             ui satisfies UIThree
+            ui.setCamera(three_camera)
+            ui.registerPlatformEvents() satisfies void
+            ui.removePlatformEvents() satisfies void
             return { types: [], destroy() {} }
         }],
     })
@@ -101,12 +147,27 @@ async function checkBabylon() {
     UIWebGPUBabylon.create(options)
     // @ts-expect-error Automatic classes select their own Yoga loader.
     UIBabylon.create({ ...options, loadYoga })
+    UIBabylon.create({ ...options, register_platform_events: false })
+    // @ts-expect-error The previous option name is not supported.
+    UIBabylon.create({ ...options, platform_events: false })
+    // @ts-expect-error Assign the camera with setCamera(), not create().
+    UIBabylon.create({ ...options, camera: babylon_camera })
+    // @ts-expect-error Raw classes never register platform events automatically.
+    UIWebGPUBabylon.create({ ...options, loadYoga, register_platform_events: false })
 
     const defaults = [await UIBabylon.create(options), await UIWebGPUBabylon.create({ ...options, loadYoga })]
     for (const result of defaults) {
         result.geometry satisfies BABYLON.Geometry | null
         result.material satisfies BABYLON.StandardMaterial
         result.texture satisfies BABYLON.Texture
+        result.ui.setCamera(babylon_camera) satisfies void
+        result.ui.registerPlatformEvents() satisfies void
+        result.ui.removePlatformEvents() satisfies void
+        result.ui.dispatchPlatformEvent(source_event) satisfies void
+        // @ts-expect-error A Babylon UI requires a Babylon camera.
+        result.ui.setCamera(three_camera)
+        // @ts-expect-error Dispatch uses the stored camera.
+        result.ui.dispatchPlatformEvent(source_event, { camera: babylon_camera })
     }
 
     const automatic = await UIBabylon.create({
@@ -120,6 +181,9 @@ async function checkBabylon() {
         },
         defined_events: [({ ui }) => {
             ui satisfies UIBabylon
+            ui.setCamera(babylon_camera)
+            ui.registerPlatformEvents() satisfies void
+            ui.removePlatformEvents() satisfies void
             return { types: [], destroy() {} }
         }],
     })
@@ -163,12 +227,27 @@ async function checkBabylonLite() {
     UIWebGPUBabylonLite.create(options)
     // @ts-expect-error Automatic classes select their own Yoga loader.
     UIBabylonLite.create({ ...options, loadYoga })
+    UIBabylonLite.create({ ...options, register_platform_events: false })
+    // @ts-expect-error The previous option name is not supported.
+    UIBabylonLite.create({ ...options, platform_events: false })
+    // @ts-expect-error Assign the camera with setCamera(), not create().
+    UIBabylonLite.create({ ...options, camera: babylon_lite_camera })
+    // @ts-expect-error Raw classes never register platform events automatically.
+    UIWebGPUBabylonLite.create({ ...options, loadYoga, register_platform_events: false })
 
     const defaults = [await UIBabylonLite.create(options), await UIWebGPUBabylonLite.create({ ...options, loadYoga })]
     for (const result of defaults) {
         result.plane satisfies BABYLON_LITE.Mesh
         result.material satisfies BABYLON_LITE.StandardMaterialProps
         result.texture satisfies BABYLON_LITE.Texture2D
+        result.ui.setCamera(babylon_lite_camera) satisfies void
+        result.ui.registerPlatformEvents() satisfies void
+        result.ui.removePlatformEvents() satisfies void
+        result.ui.dispatchPlatformEvent(source_event) satisfies Promise<void>
+        // @ts-expect-error A Babylon Lite UI requires a Babylon Lite camera.
+        result.ui.setCamera(three_camera)
+        // @ts-expect-error Dispatch uses the stored camera.
+        result.ui.dispatchPlatformEvent(source_event, { camera: babylon_lite_camera })
     }
 
     const automatic = await UIBabylonLite.create({
@@ -182,6 +261,9 @@ async function checkBabylonLite() {
         },
         defined_events: [({ ui }) => {
             ui satisfies UIBabylonLite
+            ui.setCamera(babylon_lite_camera)
+            ui.registerPlatformEvents() satisfies void
+            ui.removePlatformEvents() satisfies void
             return { types: [], destroy() {} }
         }],
     })
@@ -225,6 +307,13 @@ async function checkPlayCanvas() {
     UIWebGPUPlayCanvas.create(options)
     // @ts-expect-error Automatic classes select their own Yoga loader.
     UIPlayCanvas.create({ ...options, loadYoga })
+    UIPlayCanvas.create({ ...options, register_platform_events: false })
+    // @ts-expect-error The previous option name is not supported.
+    UIPlayCanvas.create({ ...options, platform_events: false })
+    // @ts-expect-error Assign the camera with setCamera(), not create().
+    UIPlayCanvas.create({ ...options, camera: playcanvas_camera })
+    // @ts-expect-error Raw classes never register platform events automatically.
+    UIWebGPUPlayCanvas.create({ ...options, loadYoga, register_platform_events: false })
 
     const defaults = [await UIPlayCanvas.create(options), await UIWebGPUPlayCanvas.create({ ...options, loadYoga })]
     for (const result of defaults) {
@@ -233,6 +322,14 @@ async function checkPlayCanvas() {
         result.mesh_instance satisfies PLAYCANVAS.MeshInstance
         result.material satisfies PLAYCANVAS.StandardMaterial
         result.texture satisfies PLAYCANVAS.Texture
+        result.ui.setCamera(playcanvas_camera) satisfies void
+        result.ui.registerPlatformEvents() satisfies void
+        result.ui.removePlatformEvents() satisfies void
+        result.ui.dispatchPlatformEvent(source_event) satisfies void
+        // @ts-expect-error A PlayCanvas UI requires a PlayCanvas entity.
+        result.ui.setCamera(three_camera)
+        // @ts-expect-error Dispatch uses the stored camera.
+        result.ui.dispatchPlatformEvent(source_event, { camera: playcanvas_camera })
     }
 
     const automatic = await UIPlayCanvas.create({
@@ -246,6 +343,9 @@ async function checkPlayCanvas() {
         },
         defined_events: [({ ui }) => {
             ui satisfies UIPlayCanvas
+            ui.setCamera(playcanvas_camera)
+            ui.registerPlatformEvents() satisfies void
+            ui.removePlatformEvents() satisfies void
             return { types: [], destroy() {} }
         }],
     })

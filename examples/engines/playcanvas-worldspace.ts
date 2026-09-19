@@ -23,7 +23,6 @@ import {
     Vec3,
     createGraphicsDevice,
 } from 'playcanvas'
-import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 import { loadAssets, registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
@@ -193,13 +192,8 @@ export async function main({
     let touch_count = 0
 
     // Event handling
-    PLATFORM_EVENT_NAMES.forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            overlay_ui.dispatchPlatformEvent(e)
-            first_ui.dispatchPlatformEvent(e, { camera })
-            second_ui.dispatchPlatformEvent(e, { camera })
-        })
-    })
+    first_ui.setCamera(camera)
+    second_ui.setCamera(camera)
     first_ui.root.on('pointerdown', () => {
         camera_controls_enabled = false
     })

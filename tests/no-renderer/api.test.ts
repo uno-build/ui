@@ -743,6 +743,7 @@ test('UIWorldSpace destroy releases only its GPU texture once', () => {
     let texture_destroy_count = 0
     const ui = Object.assign(Object.create(UIWorldSpace.prototype), {
         root: null,
+        platform_event_canvas: null,
         renderer: {
             destroy(nodes) {
                 renderer_destroy_count++

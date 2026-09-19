@@ -1,4 +1,5 @@
 import type { Mesh, StandardMaterialProps, Texture2D } from '@babylonjs/lite'
+import type { EventOptions } from '../core/UI'
 import type { UIWorldSpaceOutput } from './UIWorldSpace'
 import type { UIWebGPUBabylonLiteMaterial as UIBabylonLiteMaterial, UIWebGPUBabylonLiteOptions } from './UIWebGPUBabylonLite'
 import { loadYoga } from 'yoga-layout/load'
@@ -14,7 +15,9 @@ export type UIBabylonLiteOptions<
     } = {
         plane: Mesh
     },
-> = Omit<UIWebGPUBabylonLiteOptions<TMaterial, TPlane>, 'loadYoga'>
+> = Omit<UIWebGPUBabylonLiteOptions<TMaterial, TPlane>, 'loadYoga' | 'defined_events'> & EventOptions<UIBabylonLite> & {
+    register_platform_events?: boolean
+}
 
 export default class UIBabylonLite extends UIWebGPUBabylonLite {
     static async create<
@@ -25,14 +28,15 @@ export default class UIBabylonLite extends UIWebGPUBabylonLite {
             plane: Mesh
         },
     >(
-        options: UIBabylonLiteOptions<TMaterial, TPlane>,
+        { register_platform_events = true, ...options }: UIBabylonLiteOptions<TMaterial, TPlane>,
     ): Promise<
         {
             ui: UIBabylonLite
         } & UIWorldSpaceOutput<Texture2D, TMaterial, TPlane>
     > {
-        const ui = new UIBabylonLite({ ...options, loadYoga })
+        const ui = new UIBabylonLite({ ...options, loadYoga } as UIWebGPUBabylonLiteOptions<TMaterial, TPlane>)
         const resources = await ui.initialize()
+        if (register_platform_events) ui.registerPlatformEvents()
         return { ui, ...resources } as unknown as Awaited<ReturnType<typeof UIBabylonLite.create<TMaterial, TPlane>>>
     }
 }

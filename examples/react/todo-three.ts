@@ -3,7 +3,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { registerRootComponent } from '../../src/components/react'
 import { loadAssets, registerAssets } from '../shared/assets'
 import { ReactTodo } from './todo'
-import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 
 // The Todo card is 620x640 and PAGE_STYLE pads it by PAGE_PADDING on every side.
 const PAGE_PADDING = 32
@@ -63,27 +62,27 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIThree, lo
     // Half of the original (0, 2.62, 9) offset from the panel: halving the distance doubles its on-screen size.
     camera.position.set(0, PANEL_Y + 1.31, 4.5)
 
-    // Registered before the dispatch below so the count is current when the panel handler reads it.
+    // Capture updates the count before the UI's automatically registered listeners.
     const active_pointers = new Set()
     const releasePointer = (e) => {
         active_pointers.delete(e.pointerId)
         controls.enabled = true
     }
-    canvas.addEventListener('pointerdown', (e) => {
-        active_pointers.add(e.pointerId)
-        // A second finger makes it a pinch, a camera gesture wherever the fingers landed.
-        if (active_pointers.size > 1) {
-            controls.enabled = true
-        }
-    })
-    canvas.addEventListener('pointerup', releasePointer)
-    canvas.addEventListener('pointercancel', releasePointer)
+    canvas.addEventListener(
+        'pointerdown',
+        (e) => {
+            active_pointers.add(e.pointerId)
+            // A second finger makes it a pinch, a camera gesture wherever the fingers landed.
+            if (active_pointers.size > 1) {
+                controls.enabled = true
+            }
+        },
+        { capture: true },
+    )
+    canvas.addEventListener('pointerup', releasePointer, { capture: true })
+    canvas.addEventListener('pointercancel', releasePointer, { capture: true })
 
-    PLATFORM_EVENT_NAMES.forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            ui.dispatchPlatformEvent(e, { camera })
-        })
-    })
+    ui.setCamera(camera)
 
     // A lone pointer on the panel drives the UI, so the camera must ignore it.
     ui.root.on('pointerdown', (e) => {

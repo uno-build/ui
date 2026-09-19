@@ -44,7 +44,8 @@ export default class UIWebGPUBabylon extends UIWorldSpace<
     {
         plane: Mesh
     },
-    UIWebGPUBabylon
+    UIWebGPUBabylon,
+    Camera
 > {
     private scene: Scene
 
@@ -84,7 +85,12 @@ export default class UIWebGPUBabylon extends UIWorldSpace<
         return output
     }
 
-    dispatchPlatformEvent(source_event: PlatformEvent, { camera }: { camera: Camera }) {
+    dispatchPlatformEvent(source_event: PlatformEvent) {
+        const camera = this.camera
+        if (camera === null) {
+            return
+        }
+
         const rect = (source_event.currentTarget as Element).getBoundingClientRect()
         const engine = this.scene.getEngine()
         const scaling_level = engine.getHardwareScalingLevel()
@@ -110,8 +116,9 @@ export default class UIWebGPUBabylon extends UIWorldSpace<
     }
 
     destroy() {
-        super.destroy()
+        const destroyed = super.destroy()
         this.plane = null
+        return destroyed
     }
 
     protected createTexture({ output, gpu_texture }: TextureOptions) {

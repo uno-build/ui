@@ -2,7 +2,6 @@ import ResourcesDom from '../../src/renderer/dom/ResourcesDom'
 import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
 import UIDom from '../../src/ui/UIDom'
 import UI from '../../src/ui/UI'
-import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 import { registerRootComponent } from '../../src/components/vue'
 import { initSettingsPanel } from '../shared/settings/settings-panel'
 
@@ -86,12 +85,6 @@ if (example_name === 'todo-playcanvas') {
 
         syncRendererSize()
         window.addEventListener('resize', syncRendererSize)
-
-        if (element instanceof HTMLCanvasElement) {
-            PLATFORM_EVENT_NAMES.forEach((type) => {
-                element.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))
-            })
-        }
 
         await loadResources(resources)
         const renderer = registerRootComponent(Example, { ui })
