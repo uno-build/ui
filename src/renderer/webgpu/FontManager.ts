@@ -102,7 +102,7 @@ export class FontManager {
         const font_texture = this.getFontTexture()
 
         this.device.queue.copyExternalImageToTexture(
-            { source: image.source },
+            { source: image.image },
             {
                 texture: font_texture,
                 origin: [0, 0, layer],

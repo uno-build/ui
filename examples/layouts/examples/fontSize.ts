@@ -19,8 +19,8 @@ export default async function createFontsLayout({ ui, registerFont }) {
     const changaone_image = await loadImage(`examples/assets/fonts/${FONT_NAME2}.mtsdf.png`)
     const changaone_json = await loadJson(`examples/assets/fonts/${FONT_NAME2}.mtsdf.json`)
 
-    registerFont(FONT_NAME1, poppins_image, poppins_json)
-    registerFont(FONT_NAME2, changaone_image, changaone_json)
+    registerFont(FONT_NAME1, { image: poppins_image.image, data: poppins_json })
+    registerFont(FONT_NAME2, { image: changaone_image.image, data: changaone_json })
 
     const stage = ui.create()
     stage.style('flex', '1')

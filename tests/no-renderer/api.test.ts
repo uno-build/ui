@@ -1338,11 +1338,16 @@ test('ResourcesWebGPU font api delegates to the font manager', () => {
     const image = createImage('/assets/fonts/Poppins.png', 484, 484)
     const json = { atlas: { type: 'msdf' } }
 
-    resources.registerFont('Poppins', image, json)
+    resources.registerFont('Poppins', { image: image.image, data: json })
     resources.disposeFont('Poppins')
 
     expect(calls).toEqual([
-        { kind: 'register', name: 'Poppins', image, json },
+        {
+            kind: 'register',
+            name: 'Poppins',
+            image: { image: image.image, width: image.width, height: image.height },
+            json,
+        },
         { kind: 'dispose', name: 'Poppins' },
     ])
 })
@@ -1400,7 +1405,7 @@ function createImage(src, width, height) {
         src,
         width,
         height,
-        source: { src },
+        image: { src, width, height },
         preventBleeding: false,
     }
 }

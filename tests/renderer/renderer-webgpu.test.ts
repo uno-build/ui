@@ -3015,7 +3015,7 @@ test('RendererWebGPU keeps interleaved panel and text command order', () => {
     ])
 })
 
-test('ImageManager creates separate resources for separate srcs with the same source', () => {
+test('ImageManager creates separate resources for separate srcs with the same image', () => {
     const device = createFakeDevice()
     const image_manager = createRealImageManager(device)
     const first_image = createImage('first.png', 32, 32)
@@ -3023,7 +3023,7 @@ test('ImageManager creates separate resources for separate srcs with the same so
     const copy_count = device.copies.length
     const second = image_manager.imageUpload('second', {
         ...createImage('second.png', 32, 32),
-        source: first_image.source,
+        image: first_image.image,
     })
 
     expect(second).not.toBe(first)
@@ -3423,13 +3423,17 @@ test('ResourcesWebGPU emits separate image and font events after changes and dis
     }
 
     const image = resources.registerImage('avatar', createImage('avatar.png', 16, 16))
-    const font = resources.registerFont('Poppins', createImage('Poppins.png', 64, 64), createFontJson())
+    const font_image = createImage('Poppins.png', 64, 64)
+    const font = resources.registerFont('Poppins', {
+        image: font_image.image,
+        data: createFontJson(),
+    })
     expect(image).toBe(resources.image_manager.getImage('avatar'))
     expect(font).toBe(resources.font_manager.getFont('Poppins'))
     expect(resources.disposeImage('avatar')).toBeUndefined()
     expect(resources.disposeFont('Poppins')).toBeUndefined()
     resources.registerImage('avatar', createImage('avatar.png', 16, 16))
-    resources.registerFont('Poppins', createImage('Poppins.png', 64, 64), createFontJson())
+    resources.registerFont('Poppins', { image: font_image.image, data: createFontJson() })
     resources.dispose()
 
     expect(changes).toEqual([
@@ -3467,7 +3471,7 @@ test('ResourcesWebGPU skips notifications for rejected or missing images', async
     expect(resources.getImageSize('avatar')).toEqual({ width: 16, height: 16 })
 })
 
-test('ResourcesWebGPU resolves missing dimensions from the source and requires unresolved dimensions', async () => {
+test('ResourcesWebGPU resolves missing dimensions from the image and requires unresolved dimensions', async () => {
     const resources = await ResourcesWebGPU.create({
         canvas: {},
         device: createFakeDevice(),
@@ -3475,23 +3479,23 @@ test('ResourcesWebGPU resolves missing dimensions from the source and requires u
         format: 'rgba8unorm',
     })
     const image = resources.registerImage('intrinsic-size', {
-        source: { width: 32, height: 16 },
+        image: { width: 32, height: 16 },
     })
     const overridden_image = resources.registerImage('overridden-size', {
         width: 8,
         height: 4,
-        source: { width: 32, height: 16 },
+        image: { width: 32, height: 16 },
     })
 
     expect(image.image_size).toEqual([32, 16])
     expect(overridden_image.image_size).toEqual([8, 4])
     expect(() => resources.registerImage('missing-width', {
-        source: {},
-    })).toThrow('Image width is required when source does not provide it.')
+        image: {},
+    })).toThrow('Image width is required when the image does not provide it.')
     expect(() => resources.registerImage('missing-height', {
         width: 32,
-        source: {},
-    })).toThrow('Image height is required when source does not provide it.')
+        image: {},
+    })).toThrow('Image height is required when the image does not provide it.')
 })
 
 test('ResourcesWebGPU notifies after updating its default font and skips rejected or missing fonts', async () => {
@@ -3503,15 +3507,15 @@ test('ResourcesWebGPU notifies after updating its default font and skips rejecte
     })
     const changes = []
     resources.events.on(RESOURCE_EVENT.FONT, () => changes.push(resources.font_manager.getDefaultFont()))
-    const first = resources.registerFont('Poppins', createImage('Poppins.png', 64, 64), createFontJson())
-    const second = resources.registerFont('Inter', createImage('Inter.png', 64, 64), createFontJson())
+    const first = resources.registerFont('Poppins', createFont('Poppins.png', 64, 64))
+    const second = resources.registerFont('Inter', createFont('Inter.png', 64, 64))
 
-    expect(() => resources.registerFont('Poppins', createImage('Poppins.png', 64, 64), createFontJson())).toThrow(
+    expect(() => resources.registerFont('Poppins', createFont('Poppins.png', 64, 64))).toThrow(
         'Font "Poppins" is already registered.',
     )
-    expect(() =>
-        resources.registerFont('too-large', createImage('too-large.png', ATLAS_SIZE + 1, 1), createFontJson()),
-    ).toThrow(/exceeds/)
+    expect(() => resources.registerFont('too-large', createFont('too-large.png', ATLAS_SIZE + 1, 1))).toThrow(
+        /exceeds/,
+    )
     expect(resources.disposeFont('missing')).toBeUndefined()
     expect(changes).toEqual([first, first])
 
@@ -5027,7 +5031,14 @@ function createImage(src, width, height) {
         src,
         width,
         height,
-        source: { src },
+        image: { src, width, height },
+    }
+}
+
+function createFont(src, width, height) {
+    return {
+        image: createImage(src, width, height).image,
+        data: createFontJson(),
     }
 }
 

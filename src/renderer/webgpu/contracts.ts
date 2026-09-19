@@ -11,7 +11,7 @@ export type ResourcesWebGPUOptions = {
 } & ({ canvas: WebGPUCanvas; context?: WebGPUContext } | { canvas?: WebGPUCanvas; context: WebGPUContext })
 
 export type WebGPUImage = {
-    source: GPUCopyExternalImageSource
+    image: GPUCopyExternalImageSource
     width?: number
     height?: number
     preventBleeding?: boolean
@@ -49,6 +49,10 @@ export type FontData = {
         atlasBounds?: GlyphBounds
     }>
     kerning?: Array<{ unicode1: number; unicode2: number; advance: number }>
+}
+
+export type WebGPUFont = WebGPUImage & {
+    data: FontData
 }
 
 export type WebGPUDrawOptions = {

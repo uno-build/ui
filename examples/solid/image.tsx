@@ -124,7 +124,7 @@ export default function createSolidImage({ ui, resources }) {
         loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
     ]).then(([image, font_image, font_json]) => {
         resources.registerImage(IMAGE_SRC, image)
-        resources.registerFont(TEXT_FONT_FAMILY, font_image, font_json)
+        resources.registerFont(TEXT_FONT_FAMILY, { image: font_image.image, data: font_json })
 
         const renderer = registerRootComponent(SolidImage, { ui })
         renderer.render({})

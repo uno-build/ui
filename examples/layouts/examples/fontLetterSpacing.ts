@@ -32,7 +32,7 @@ export default async function createFontLetterSpacingLayout({ ui, registerFont }
     const poppins_image = await loadImage(`examples/assets/fonts/${FONT_NAME2}.mtsdf.png`)
     const poppins_json = await loadJson(`examples/assets/fonts/${FONT_NAME2}.mtsdf.json`)
 
-    registerFont(FONT_NAME2, poppins_image, poppins_json)
+    registerFont(FONT_NAME2, { image: poppins_image.image, data: poppins_json })
 
     const stage = ui.create()
     stage.style('width', '100%')

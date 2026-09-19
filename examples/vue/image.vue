@@ -14,7 +14,7 @@ export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
     ])
 
     resources.registerImage(IMAGE_SRC, image)
-    resources.registerFont(TEXT_FONT_FAMILY, font_image, font_json)
+    resources.registerFont(TEXT_FONT_FAMILY, { image: font_image.image, data: font_json })
 }
 </script>
 

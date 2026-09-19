@@ -55,8 +55,8 @@ test('WebGPU unset restores the undefined state for all 81 styles', { tag: '@web
 
             const resources = await ResourcesWebGPU.create({ canvas })
             resources.registerImage(coin.src, coin)
-            resources.registerFont('Poppins-Regular', poppins_image, poppins_json)
-            resources.registerFont('ChangaOne-Regular', changa_image, changa_json)
+            resources.registerFont('Poppins-Regular', { image: poppins_image.image, data: poppins_json })
+            resources.registerFont('ChangaOne-Regular', { image: changa_image.image, data: changa_json })
 
             const { ui } = await UIWebGPU.create({ resources, loadYoga })
             ui.setViewport(400, 300)

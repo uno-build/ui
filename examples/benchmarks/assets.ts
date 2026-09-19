@@ -24,7 +24,7 @@ export async function loadBenchmarkAssets() {
         bitmaps.push(bitmap)
         return {
             src,
-            source: bitmap,
+            image: bitmap,
             width: bitmap.width,
             height: bitmap.height,
             preventBleeding: bitmap.width < 32 || bitmap.height < 32,
@@ -47,7 +47,9 @@ export async function loadBenchmarkAssets() {
         image_sources: IMAGES,
         register(resources) {
             for (const image of values.slice(0, IMAGES.length)) resources.registerImage(image.src, image)
-            for (const font of values.slice(IMAGES.length)) resources.registerFont(font.name, font.image, font.json)
+            for (const font of values.slice(IMAGES.length)) {
+                resources.registerFont(font.name, { image: font.image.image, data: font.json })
+            }
         },
         dispose() {
             bitmaps.forEach((bitmap) => bitmap.close())

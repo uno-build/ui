@@ -13,8 +13,8 @@ export default async function createFontTextShadowLayout({ ui, registerFont }) {
     const font_image2 = await loadImage(`examples/assets/fonts/${FONT_NAME2}.mtsdf.png`)
     const font_json2 = await loadJson(`examples/assets/fonts/${FONT_NAME2}.mtsdf.json`)
 
-    registerFont('ChangaOne-Regular', font_image, font_json)
-    registerFont(FONT_NAME2, font_image2, font_json2)
+    registerFont('ChangaOne-Regular', { image: font_image.image, data: font_json })
+    registerFont(FONT_NAME2, { image: font_image2.image, data: font_json2 })
 
     const stage = ui.create()
     stage.style('width', '100%')

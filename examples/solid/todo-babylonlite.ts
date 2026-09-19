@@ -55,7 +55,7 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
         loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
     ])
     resources.registerImage(ICON_SRC, icon)
-    resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
+    resources.registerFont(TITLE_FONT_FAMILY, { image: title_font_image.image, data: title_font_json })
 
     const texture_width = Math.round(UI_WIDTH * TEXTURE_SCALAR)
     const texture_height = Math.round(UI_HEIGHT * TEXTURE_SCALAR)

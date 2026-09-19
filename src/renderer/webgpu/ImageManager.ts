@@ -107,7 +107,7 @@ export class ImageManager {
         const atlas_texture = this.getAtlasTexture()
 
         this.device.queue.copyExternalImageToTexture(
-            { source: image.source },
+            { source: image.image },
             {
                 texture: atlas_texture,
                 origin: [allocation.x, allocation.y, allocation.atlas_layer.layer],
@@ -300,28 +300,28 @@ export class ImageManager {
 
         for (let index = 1; index <= left_padding; index++) {
             this.device.queue.copyExternalImageToTexture(
-                { source: image.source, origin: [0, 0] },
+                { source: image.image, origin: [0, 0] },
                 { texture, origin: [x - index, y, layer] },
                 [1, image.height, 1],
             )
         }
         for (let index = 0; index < right_padding; index++) {
             this.device.queue.copyExternalImageToTexture(
-                { source: image.source, origin: [image.width - 1, 0] },
+                { source: image.image, origin: [image.width - 1, 0] },
                 { texture, origin: [x + image.width + index, y, layer] },
                 [1, image.height, 1],
             )
         }
         for (let index = 1; index <= top_padding; index++) {
             this.device.queue.copyExternalImageToTexture(
-                { source: image.source, origin: [0, 0] },
+                { source: image.image, origin: [0, 0] },
                 { texture, origin: [x, y - index, layer] },
                 [image.width, 1, 1],
             )
         }
         for (let index = 0; index < bottom_padding; index++) {
             this.device.queue.copyExternalImageToTexture(
-                { source: image.source, origin: [0, image.height - 1] },
+                { source: image.image, origin: [0, image.height - 1] },
                 { texture, origin: [x, y + image.height + index, layer] },
                 [image.width, 1, 1],
             )
@@ -330,14 +330,14 @@ export class ImageManager {
         for (let x_index = 1; x_index <= left_padding; x_index++) {
             for (let y_index = 1; y_index <= top_padding; y_index++) {
                 this.device.queue.copyExternalImageToTexture(
-                    { source: image.source, origin: [0, 0] },
+                    { source: image.image, origin: [0, 0] },
                     { texture, origin: [x - x_index, y - y_index, layer] },
                     [1, 1, 1],
                 )
             }
             for (let y_index = 0; y_index < bottom_padding; y_index++) {
                 this.device.queue.copyExternalImageToTexture(
-                    { source: image.source, origin: [0, image.height - 1] },
+                    { source: image.image, origin: [0, image.height - 1] },
                     { texture, origin: [x - x_index, y + image.height + y_index, layer] },
                     [1, 1, 1],
                 )
@@ -346,14 +346,14 @@ export class ImageManager {
         for (let x_index = 0; x_index < right_padding; x_index++) {
             for (let y_index = 1; y_index <= top_padding; y_index++) {
                 this.device.queue.copyExternalImageToTexture(
-                    { source: image.source, origin: [image.width - 1, 0] },
+                    { source: image.image, origin: [image.width - 1, 0] },
                     { texture, origin: [x + image.width + x_index, y - y_index, layer] },
                     [1, 1, 1],
                 )
             }
             for (let y_index = 0; y_index < bottom_padding; y_index++) {
                 this.device.queue.copyExternalImageToTexture(
-                    { source: image.source, origin: [image.width - 1, image.height - 1] },
+                    { source: image.image, origin: [image.width - 1, image.height - 1] },
                     { texture, origin: [x + image.width + x_index, y + image.height + y_index, layer] },
                     [1, 1, 1],
                 )

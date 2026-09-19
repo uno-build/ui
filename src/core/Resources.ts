@@ -2,8 +2,7 @@ import EventEmitter from './EventEmitter'
 
 export type ResourceTypes = {
     image: unknown
-    font_image: unknown
-    font_data: unknown
+    font: unknown
     registered_image: unknown
     registered_font: unknown
 }
@@ -22,6 +21,6 @@ export default abstract class Resources<TCanvas = unknown, TTypes extends Resour
         width: number
         height: number
     } | undefined
-    abstract registerFont(name: string, image: TTypes['font_image'], json: TTypes['font_data']): TTypes['registered_font']
+    abstract registerFont(name: string, font: TTypes['font']): TTypes['registered_font']
     abstract disposeFont(name: string): void
 }

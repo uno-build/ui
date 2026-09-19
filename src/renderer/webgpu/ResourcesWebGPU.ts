@@ -3,8 +3,8 @@ import type {
     WebGPUContext,
     ResourcesWebGPUOptions,
     WebGPUImage,
+    WebGPUFont,
     ResolvedWebGPUImage,
-    FontData,
 } from './contracts'
 import type { ManagedAtlasImage } from './ImageManager'
 import type { ManagedFont } from './FontManager'
@@ -21,8 +21,7 @@ export default class ResourcesWebGPU extends Resources<
     WebGPUCanvas | undefined,
     {
         image: WebGPUImage
-        font_image: WebGPUImage
-        font_data: FontData
+        font: WebGPUFont
         registered_image: ManagedAtlasImage
         registered_font: ManagedFont
     }
@@ -115,8 +114,8 @@ export default class ResourcesWebGPU extends Resources<
         return image === undefined ? undefined : { width: image.image_size[0], height: image.image_size[1] }
     }
 
-    registerFont(name: string, image: WebGPUImage, json: FontData): ManagedFont {
-        const font = this.font_manager.fontRegister(name, resolveWebGPUImage(image), json)
+    registerFont(name: string, { data, ...image }: WebGPUFont): ManagedFont {
+        const font = this.font_manager.fontRegister(name, resolveWebGPUImage(image), data)
         this.events.emit(RESOURCE_EVENT.FONT)
         return font
     }
@@ -146,15 +145,15 @@ function resolveWebGPUImage(image: WebGPUImage): ResolvedWebGPUImage {
         return image as ResolvedWebGPUImage
     }
 
-    const source = image.source as { width?: number; height?: number }
-    const width = image.width ?? source.width
-    const height = image.height ?? source.height
+    const intrinsic_image = image.image as { width?: number; height?: number }
+    const width = image.width ?? intrinsic_image.width
+    const height = image.height ?? intrinsic_image.height
 
     if (width === undefined) {
-        throw new Error('Image width is required when source does not provide it.')
+        throw new Error('Image width is required when the image does not provide it.')
     }
     if (height === undefined) {
-        throw new Error('Image height is required when source does not provide it.')
+        throw new Error('Image height is required when the image does not provide it.')
     }
 
     return { ...image, width, height }

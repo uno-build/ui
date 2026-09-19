@@ -697,8 +697,8 @@ export default function createSolidTodo({ ui, resources }) {
         loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
     ]).then(([icon, text_font_image, text_font_json, title_font_image, title_font_json]) => {
         resources.registerImage(ICON_SRC, icon)
-        resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
-        resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
+        resources.registerFont(TEXT_FONT_FAMILY, { image: text_font_image.image, data: text_font_json })
+        resources.registerFont(TITLE_FONT_FAMILY, { image: title_font_image.image, data: title_font_json })
 
         const renderer = registerRootComponent(SolidTodo, { ui })
         renderer.render({})

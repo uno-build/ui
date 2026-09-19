@@ -24,8 +24,8 @@ export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
     resources.registerImage(LOGO_SRC, logo)
     resources.registerImage(TEXTURE_SRC, texture)
     resources.registerImage(COIN_SRC, coin)
-    resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
-    resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
+    resources.registerFont(TITLE_FONT_FAMILY, { image: title_font_image.image, data: title_font_json })
+    resources.registerFont(TEXT_FONT_FAMILY, { image: text_font_image.image, data: text_font_json })
 }
 </script>
 

@@ -26,7 +26,7 @@ export function registerAssets({ resources, assets }) {
     resources.registerImage(coin.src, coin)
     resources.registerImage(repeat_x.src, repeat_x)
     resources.registerImage(repeat_y.src, repeat_y)
-    resources.registerFont(FONT_NAME1, font_image, font_json)
-    resources.registerFont(FONT_NAME2, font_image2, font_json2)
-    resources.registerFont(FONT_NAME3, font_image3, font_json3)
+    resources.registerFont(FONT_NAME1, { image: font_image.image, data: font_json })
+    resources.registerFont(FONT_NAME2, { image: font_image2.image, data: font_json2 })
+    resources.registerFont(FONT_NAME3, { image: font_image3.image, data: font_json3 })
 }

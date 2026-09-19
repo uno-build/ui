@@ -42,7 +42,7 @@ export default async function createEventsLayout({ ui, resources, registerFont, 
         loadImage('examples/assets/images/logo.jpg'),
         loadImage('examples/assets/images/texture.jpg'),
     ])
-    registerFont(FONT_NAME2, font_image, font_json)
+    registerFont(FONT_NAME2, { image: font_image.image, data: font_json })
     resources.registerImage(pattern_image.src, pattern_image)
     resources.registerImage(logo_image.src, logo_image)
     resources.registerImage(texture_image.src, texture_image)
