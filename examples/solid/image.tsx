@@ -1,7 +1,7 @@
 import { registerRootComponent, Image, Text, View } from '../../src/components/solid'
 import { loadImage, loadJson } from '../shared/load-assets'
+import { loadFont, FONT_NAME2 as TEXT_FONT_FAMILY } from '../shared/assets'
 
-const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const IMAGE_SRC = 'assets/images/coin.png'
 const PAGE_STYLE = {
     width: '100%',
@@ -120,11 +120,10 @@ export function SolidImage() {
 export default function createSolidImage({ ui, resources }) {
     return Promise.all([
         loadImage(IMAGE_SRC),
-        loadImage(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
-    ]).then(([image, font_image, font_json]) => {
+        loadFont(TEXT_FONT_FAMILY, { loadImage, loadJson }),
+    ]).then(([image, font]) => {
         resources.registerImage(IMAGE_SRC, image)
-        resources.registerFont(TEXT_FONT_FAMILY, { image: font_image.image, data: font_json })
+        resources.registerFont(TEXT_FONT_FAMILY, font)
 
         const renderer = registerRootComponent(SolidImage, { ui })
         renderer.render({})

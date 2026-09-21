@@ -15,7 +15,6 @@ const FLOOR_Y = -0.12
 // That padding is transparent, so the plane drops by it for the card itself to land on the grid.
 const PANEL_Y = FLOOR_Y + WORLD_HEIGHT / 2 - WORLD_PAGE_PADDING
 const TEXTURE_SCALAR = window.devicePixelRatio
-const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
 const ICON_SRC = 'assets/images/react.png'
 
 export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIThree, loadImage, loadJson }) {
@@ -26,14 +25,8 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIThree, lo
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })
 
-    // loadAssets already covers Poppins-Regular, which the todo app needs.
-    const [icon, title_font_image, title_font_json] = await Promise.all([
-        loadImage(ICON_SRC),
-        loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
-    ])
+    const icon = await loadImage(ICON_SRC)
     resources.registerImage(ICON_SRC, icon)
-    resources.registerFont(TITLE_FONT_FAMILY, { image: title_font_image.image, data: title_font_json })
 
     const texture_width = Math.round(UI_WIDTH * TEXTURE_SCALAR)
     const texture_height = Math.round(UI_HEIGHT * TEXTURE_SCALAR)

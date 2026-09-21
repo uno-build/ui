@@ -1,5 +1,5 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
-import { FONT_NAME1, FONT_NAME2 } from '../../shared/assets'
+import { FONT_NAME1, FONT_NAME2, loadFont } from '../../shared/assets'
 
 const MIN_FONT_SIZE = 3
 const MAX_FONT_SIZE = 50
@@ -14,13 +14,11 @@ const RAINBOW_STOPS = [
 ]
 
 export default async function createFontsLayout({ ui, registerFont }) {
-    const poppins_image = await loadImage(`examples/assets/fonts/${FONT_NAME1}.mtsdf.png`)
-    const poppins_json = await loadJson(`examples/assets/fonts/${FONT_NAME1}.mtsdf.json`)
-    const changaone_image = await loadImage(`examples/assets/fonts/${FONT_NAME2}.mtsdf.png`)
-    const changaone_json = await loadJson(`examples/assets/fonts/${FONT_NAME2}.mtsdf.json`)
+    const font = await loadFont(FONT_NAME1, { loadImage, loadJson })
+    const font2 = await loadFont(FONT_NAME2, { loadImage, loadJson })
 
-    registerFont(FONT_NAME1, { image: poppins_image.image, data: poppins_json })
-    registerFont(FONT_NAME2, { image: changaone_image.image, data: changaone_json })
+    registerFont(FONT_NAME1, font)
+    registerFont(FONT_NAME2, font2)
 
     const stage = ui.create()
     stage.style('flex', '1')

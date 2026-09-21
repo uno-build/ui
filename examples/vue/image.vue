@@ -2,19 +2,18 @@
 import type ResourcesDom from '../../src/renderer/dom/ResourcesDom'
 import type ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
 import { loadImage, loadJson } from '../shared/load-assets'
+import { loadFont, FONT_NAME2 as TEXT_FONT_FAMILY } from '../shared/assets'
 
-const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const IMAGE_SRC = 'assets/images/coin.png'
 
 export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
-    const [image, font_image, font_json] = await Promise.all([
+    const [image, font] = await Promise.all([
         loadImage(IMAGE_SRC),
-        loadImage(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
+        loadFont(TEXT_FONT_FAMILY, { loadImage, loadJson }),
     ])
 
     resources.registerImage(IMAGE_SRC, image)
-    resources.registerFont(TEXT_FONT_FAMILY, { image: font_image.image, data: font_json })
+    resources.registerFont(TEXT_FONT_FAMILY, font)
 }
 </script>
 

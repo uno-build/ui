@@ -2,22 +2,19 @@
 import type ResourcesDom from '../../src/renderer/dom/ResourcesDom'
 import type ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
 import { loadImage, loadJson } from '../shared/load-assets'
+import { loadFont, FONT_NAME1 as TITLE_FONT_FAMILY, FONT_NAME2 as TEXT_FONT_FAMILY } from '../shared/assets'
 
-const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
-const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const ICON_SRC = 'assets/images/vue.png'
 
 export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
-    const [icon, text_font_image, text_font_json, title_font_image, title_font_json] = await Promise.all([
+    const [icon, text_font, title_font] = await Promise.all([
         loadImage(ICON_SRC),
-        loadImage(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
-        loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
+        loadFont(TEXT_FONT_FAMILY, { loadImage, loadJson }),
+        loadFont(TITLE_FONT_FAMILY, { loadImage, loadJson }),
     ])
     resources.registerImage(ICON_SRC, icon)
-    resources.registerFont(TEXT_FONT_FAMILY, { image: text_font_image.image, data: text_font_json })
-    resources.registerFont(TITLE_FONT_FAMILY, { image: title_font_image.image, data: title_font_json })
+    resources.registerFont(TEXT_FONT_FAMILY, text_font)
+    resources.registerFont(TITLE_FONT_FAMILY, title_font)
 }
 </script>
 

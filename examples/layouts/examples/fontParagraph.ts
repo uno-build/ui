@@ -1,5 +1,5 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
-import { FONT_NAME1, FONT_NAME2 } from '../../shared/assets'
+import { FONT_NAME2, loadFont } from '../../shared/assets'
 
 const VARIANTS = [
     {
@@ -51,10 +51,9 @@ const VARIANTS = [
 ]
 
 export default async function createFontParagraphLayout({ ui, registerFont }) {
-    const poppins_image = await loadImage(`examples/assets/fonts/${FONT_NAME2}.mtsdf.png`)
-    const poppins_json = await loadJson(`examples/assets/fonts/${FONT_NAME2}.mtsdf.json`)
+    const poppins = await loadFont(FONT_NAME2, { loadImage, loadJson })
 
-    registerFont(FONT_NAME2, { image: poppins_image.image, data: poppins_json })
+    registerFont(FONT_NAME2, poppins)
 
     const stage = ui.create()
     stage.style('width', '100%')

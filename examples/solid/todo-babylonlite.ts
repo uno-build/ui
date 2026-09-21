@@ -14,7 +14,7 @@ import {
     resizeEngine,
 } from '@babylonjs/lite'
 import { registerRootComponent } from '../../src/components/solid'
-import { loadAssets, registerAssets } from '../shared/assets'
+import { FONT_NAME4 as TITLE_FONT_FAMILY, loadAssets, loadFont, registerAssets } from '../shared/assets'
 import { SolidTodo } from './todo'
 import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 
@@ -29,7 +29,6 @@ const FLOOR_Y = -0.12
 // That padding is transparent, so the plane drops by it for the card itself to land on the grid.
 const PANEL_Y = FLOOR_Y + WORLD_HEIGHT / 2 - WORLD_PAGE_PADDING
 const TEXTURE_SCALAR = window.devicePixelRatio
-const TITLE_FONT_FAMILY = 'Nougat-ExtraBlack'
 const ICON_SRC = 'assets/images/solid.png'
 
 export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, loadJson }) {
@@ -48,14 +47,12 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })
 
-    // loadAssets already covers Poppins-Regular, which the todo app needs.
-    const [icon, title_font_image, title_font_json] = await Promise.all([
+    const [icon, title_font] = await Promise.all([
         loadImage(ICON_SRC),
-        loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
+        loadFont(TITLE_FONT_FAMILY, { loadImage, loadJson }),
     ])
     resources.registerImage(ICON_SRC, icon)
-    resources.registerFont(TITLE_FONT_FAMILY, { image: title_font_image.image, data: title_font_json })
+    resources.registerFont(TITLE_FONT_FAMILY, title_font)
 
     const texture_width = Math.round(UI_WIDTH * TEXTURE_SCALAR)
     const texture_height = Math.round(UI_HEIGHT * TEXTURE_SCALAR)

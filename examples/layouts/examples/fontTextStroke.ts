@@ -1,14 +1,13 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
-import { FONT_NAME1, FONT_NAME2 } from '../../shared/assets'
+import { FONT_NAME2, loadFont } from '../../shared/assets'
 
 const STROKE_WIDTHS = Array.from({ length: 10 }, (_, index) => index)
 const FONT_SIZES = [5, 16, 32]
 
 export default async function createFontTextStrokeLayout({ ui, registerFont }) {
-    const font_image = await loadImage(`examples/assets/fonts/${FONT_NAME2}.mtsdf.png`)
-    const font_json = await loadJson(`examples/assets/fonts/${FONT_NAME2}.mtsdf.json`)
+    const font = await loadFont(FONT_NAME2, { loadImage, loadJson })
 
-    registerFont(FONT_NAME2, { image: font_image.image, data: font_json })
+    registerFont(FONT_NAME2, font)
 
     const stage = ui.create()
     stage.style('width', '100%')

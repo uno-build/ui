@@ -2,9 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { registerRootComponent, View, Text, Image, Input, ScrollView } from '../../src/components/react'
 import type { InputHandle } from '../../src/components/react'
 import { loadImage, loadJson } from '../shared/load-assets'
+import { loadFont, FONT_NAME1 as TITLE_FONT_FAMILY, FONT_NAME2 as TEXT_FONT_FAMILY } from '../shared/assets'
 
-const TITLE_FONT_FAMILY = 'ChangaOne-Regular'
-const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const ICON_SRC = 'assets/images/react.png'
 const MAX_TITLE_LENGTH = 48
 const DOUBLE_CLICK_DELAY = 320
@@ -671,14 +670,12 @@ const PLATFORM_KEYBOARD = (function () {
 export default function createReactTodo({ ui, resources }) {
     return Promise.all([
         loadImage(ICON_SRC),
-        loadImage(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
-        loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
-    ]).then(([icon, text_font_image, text_font_json, title_font_image, title_font_json]) => {
+        loadFont(TEXT_FONT_FAMILY, { loadImage, loadJson }),
+        loadFont(TITLE_FONT_FAMILY, { loadImage, loadJson }),
+    ]).then(([icon, text_font, title_font]) => {
         resources.registerImage(ICON_SRC, icon)
-        resources.registerFont(TEXT_FONT_FAMILY, { image: text_font_image.image, data: text_font_json })
-        resources.registerFont(TITLE_FONT_FAMILY, { image: title_font_image.image, data: title_font_json })
+        resources.registerFont(TEXT_FONT_FAMILY, text_font)
+        resources.registerFont(TITLE_FONT_FAMILY, title_font)
 
         const renderer = registerRootComponent(ReactTodo, { ui })
         renderer.render({})
