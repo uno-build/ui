@@ -61,7 +61,7 @@ fn glyphMsdfCoverageAtUv(
         uv_width,
         run.font_data.z,
         distance_sample.x,
-        0.45,
+        0.5,
         dilation,
         softness,
     );
@@ -85,7 +85,7 @@ fn textStrokeColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
         uv_width,
         run.font_data.z,
         distance_sample.x,
-        0.45,
+        0.5,
         0.0,
         0.0,
     );

@@ -1,12 +1,3 @@
-type ComputedStyle = {
-    value: string
-    parsed: {
-        value?: number
-        text_shadow?: { offset_x: { value: number }, offset_y: { value: number }, blur: { value: number }, color: number[] }
-        text_stroke?: { width: { value: number }, color: number[] }
-    }
-}
-
 import type { loadYoga } from 'yoga-layout/load'
 import type Node from '../core/Node'
 import type Operations from '../core/Operations'
@@ -15,19 +6,6 @@ import type { StyleUpdate, ResolvedStyle, ComputedLayout, StyleName, StyleContex
 import type { WebGPUDrawOptions, WebGPUDrawResult } from './webgpu/contracts'
 import type ResourcesWebGPU from './webgpu/ResourcesWebGPU'
 import type { ImageManager } from './webgpu/ImageManager'
-export type RendererWebGPUOptions = {
-    resources: ResourcesWebGPU;
-    loadYoga: typeof loadYoga;
-    image_min_filter?: "linear" | "nearest" | undefined;
-    image_mag_filter?: "linear" | "nearest" | undefined;
-};
-
-export type WebGPUNode = Node<undefined>;
-
-export type WebGPUOperations = Operations<undefined>;
-
-export type RendererWebGPUOutput = Pick<ResourcesWebGPU, "adapter" | "device" | "context" | "format">;
-
 import Renderer from '../core/Renderer'
 import { OPERATIONS } from '../core/constants'
 import { computeStyleValue, STYLE, STYLE_BY_NAME } from '../style'
@@ -83,16 +61,45 @@ import { writeCommandData, writeGlyphData, writePanelData, writeTextRunData } fr
 import { GpuPool } from './webgpu/GpuPool'
 import Segmenter from './pretext/segmenter'
 
+export type WebGPUNode = Node<undefined>
+export type WebGPUOperations = Operations<undefined>
+export type RendererWebGPUOutput = Pick<ResourcesWebGPU, 'adapter' | 'device' | 'context' | 'format'>
+export type RendererWebGPUOptions = {
+    resources: ResourcesWebGPU
+    loadYoga: typeof loadYoga
+    image_min_filter?: 'linear' | 'nearest' | undefined
+    image_mag_filter?: 'linear' | 'nearest' | undefined
+}
+
+type ComputedStyle = {
+    value: string
+    parsed: {
+        value?: number
+        text_shadow?: {
+            offset_x: { value: number }
+            offset_y: { value: number }
+            blur: { value: number }
+            color: number[]
+        }
+        text_stroke?: { width: { value: number }; color: number[] }
+    }
+}
+
 const SUBTREE_STYLE_NAMES = new Set([STYLE.OPACITY.name, STYLE.OVERFLOWX.name, STYLE.OVERFLOWY.name])
 
-export default class RendererWebGPU extends Renderer<WebGPUDrawOptions, WebGPUDrawResult, undefined, RendererWebGPUOutput> {
+export default class RendererWebGPU extends Renderer<
+    WebGPUDrawOptions,
+    WebGPUDrawResult,
+    undefined,
+    RendererWebGPUOutput
+> {
     declare loadYoga: typeof loadYoga
 
     private resources: ResourcesWebGPU | null
 
-    private image_min_filter: "linear" | "nearest"
+    private image_min_filter: 'linear' | 'nearest'
 
-    private image_mag_filter: "linear" | "nearest"
+    private image_mag_filter: 'linear' | 'nearest'
 
     private device_pixel_ratio: number = 1
 
@@ -140,9 +147,15 @@ export default class RendererWebGPU extends Renderer<WebGPUDrawOptions, WebGPUDr
 
     private grapheme_segmenter: Segmenter = new Segmenter(undefined, { granularity: 'grapheme' })
 
-    private computeStyle = (style: any) => computeStyleValue(style, this as unknown as StyleContext) as ComputedStyle | undefined
+    private computeStyle = (style: any) =>
+        computeStyleValue(style, this as unknown as StyleContext) as ComputedStyle | undefined
 
-    constructor({ resources, image_min_filter = 'linear', image_mag_filter = 'linear', loadYoga }: RendererWebGPUOptions) {
+    constructor({
+        resources,
+        image_min_filter = 'linear',
+        image_mag_filter = 'linear',
+        loadYoga,
+    }: RendererWebGPUOptions) {
         super()
         this.resources = resources
         this.image_manager = resources.image_manager
@@ -276,7 +289,10 @@ export default class RendererWebGPU extends Renderer<WebGPUDrawOptions, WebGPUDr
 
         return (
             operations.hasContextChanges() ||
-            operations.items.some(({ op, node }: Operation<undefined> & { node?: Node<undefined> }) => op === OPERATIONS.ADD && node === this.root_node) ||
+            operations.items.some(
+                ({ op, node }: Operation<undefined> & { node?: Node<undefined> }) =>
+                    op === OPERATIONS.ADD && node === this.root_node,
+            ) ||
             this.layouter.isDirty()
         )
     }
@@ -295,10 +311,14 @@ export default class RendererWebGPU extends Renderer<WebGPUDrawOptions, WebGPUDr
     getTextMeasure(
         node: Node<undefined>,
         available_width: number | undefined = NaN,
-        width_mode: "undefined" | "exactly" | "at-most" | undefined = (Number.isNaN(available_width) ? MEASURE_MODE.UNDEFINED : MEASURE_MODE.AT_MOST) as "undefined" | "at-most",
+        width_mode: 'undefined' | 'exactly' | 'at-most' | undefined = (Number.isNaN(available_width)
+            ? MEASURE_MODE.UNDEFINED
+            : MEASURE_MODE.AT_MOST) as 'undefined' | 'at-most',
         available_height: number | undefined = NaN,
-        height_mode: "undefined" | "exactly" | "at-most" | undefined = (Number.isNaN(available_height) ? MEASURE_MODE.UNDEFINED : MEASURE_MODE.AT_MOST) as "undefined" | "at-most",
-    ): { width: number; height: number; } {
+        height_mode: 'undefined' | 'exactly' | 'at-most' | undefined = (Number.isNaN(available_height)
+            ? MEASURE_MODE.UNDEFINED
+            : MEASURE_MODE.AT_MOST) as 'undefined' | 'at-most',
+    ): { width: number; height: number } {
         let measured_width = 0
         let measured_height = 0
 
@@ -345,7 +365,12 @@ export default class RendererWebGPU extends Renderer<WebGPUDrawOptions, WebGPUDr
             this.updateResolvedStyle(node, style)
         }
 
-        if (node.isTextNode() && resolved_style.expanded.some(({ name }: ResolvedStyle & { name: StyleName | (string & {}); }) => TEXT_MEASURE_STYLE_NAMES.includes(name))) {
+        if (
+            node.isTextNode() &&
+            resolved_style.expanded.some(({ name }: ResolvedStyle & { name: StyleName | (string & {}) }) =>
+                TEXT_MEASURE_STYLE_NAMES.includes(name),
+            )
+        ) {
             this.invalidateTextNode(node)
         }
     }
@@ -369,12 +394,7 @@ export default class RendererWebGPU extends Renderer<WebGPUDrawOptions, WebGPUDr
         for (const node of record_parts === null ? nodes : record_parts.keys()) {
             const parts = record_parts === null ? RECORD_ALL : record_parts.get(node)
             getNodeMetrics ??= createNodeMetricsResolver(record_parts?.size === 1 ? parts : 0)
-            const { structural } = this.updateRecord(
-                node,
-                this.getRecord(node),
-                parts,
-                getNodeMetrics,
-            )
+            const { structural } = this.updateRecord(node, this.getRecord(node), parts, getNodeMetrics)
             rebuild_commands ||= structural
         }
 
@@ -397,7 +417,12 @@ export default class RendererWebGPU extends Renderer<WebGPUDrawOptions, WebGPUDr
         }
     }
 
-    draw({ submit = true, command_encoder, texture_view, load_op = 'load' }: WebGPUDrawOptions | undefined = {}): WebGPUDrawResult {
+    draw({
+        submit = true,
+        command_encoder,
+        texture_view,
+        load_op = 'load',
+    }: WebGPUDrawOptions | undefined = {}): WebGPUDrawResult {
         if (
             this.image_texture_version !== this.image_manager!.texture_version ||
             this.font_texture_version !== this.resources!.font_manager.texture_version
@@ -648,13 +673,15 @@ export default class RendererWebGPU extends Renderer<WebGPUDrawOptions, WebGPUDr
             if (record.glyph_count === 0) {
                 parts |= RECORD_TEXT
             }
-            text_data = record.run_slot === -1 ? null : this.collectTextInstanceData(node, record, parts, getNodeMetrics)
+            text_data =
+                record.run_slot === -1 ? null : this.collectTextInstanceData(node, record, parts, getNodeMetrics)
             if (text_data === null) {
                 record.glyph_count = 0
             } else {
                 if (text_data.run !== null) {
                     record.has_text_shadow = text_data.run.text_shadow_color[3] > 0
-                    record.text_stroke_width = text_data.run.text_stroke_color[3] > 0 ? text_data.run.text_stroke_width : 0
+                    record.text_stroke_width =
+                        text_data.run.text_stroke_color[3] > 0 ? text_data.run.text_stroke_width : 0
                     this.text_run_pool.write(record.run_slot, text_data.run, writeTextRunData)
                 }
 
@@ -822,7 +849,8 @@ export default class RendererWebGPU extends Renderer<WebGPUDrawOptions, WebGPUDr
             const text_stroke_width = text_stroke?.width.value ?? 0
             const text_stroke_width_limit =
                 (effect_distance_range * font_size) / (font.json.atlas.size * 2) - 0.5 / this.device_pixel_ratio
-            const text_stroke_multisampling = text_stroke_width > 0 && text_stroke_width > text_stroke_width_limit ? 1 : 0
+            const text_stroke_multisampling =
+                text_stroke_width > 0 && text_stroke_width > text_stroke_width_limit ? 1 : 0
             run = {
                 color: (node.styles.color as { parsed: { rgba: number[] } } | undefined)?.parsed.rgba ?? [0, 0, 0, 255],
                 font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.resources!.font_atlas_size],
