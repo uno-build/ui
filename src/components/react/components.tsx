@@ -153,7 +153,10 @@ export function Input({
             <view ref={content_ref} style={getInputContentStyle(style)}>
                 <text
                     ref={text_ref}
-                    style={getInputTextStyle(style, show_placeholder, placeholder_text_color)}
+                    style={{
+                        ...getInputTextStyle(style, show_placeholder, placeholder_text_color),
+                        ...(is_focused && { textAlign: 'right', justifyContent: 'flex-end' }),
+                    }}
                     value={joinText(getInputTextValue(value, placeholder, show_placeholder))}
                 />
                 {is_focused && <view ref={caret_ref} style={getInputCaretStyle(style, caret_visible)} />}

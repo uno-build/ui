@@ -141,7 +141,10 @@ export function Input(props: InputProps) {
             <view ref={content_node} style={getInputContentStyle(props.style)}>
                 <text
                     ref={text_node}
-                    style={getInputTextStyle(props.style, showPlaceholder(), props.placeholderTextColor ?? '#777777')}
+                    style={{
+                        ...getInputTextStyle(props.style, showPlaceholder(), props.placeholderTextColor ?? '#777777'),
+                        ...(isFocused() && { textAlign: 'right', justifyContent: 'flex-end' }),
+                    }}
                     value={getInputTextValue(props.value, props.placeholder, showPlaceholder())}
                 />
                 {isFocused() && <view ref={caret_node} style={getInputCaretStyle(props.style, caretVisible())} />}

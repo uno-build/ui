@@ -201,7 +201,10 @@ export const Input = defineComponent(
                 h('view', { ref: setContentNode, style: getInputContentStyle(style) }, [
                     h('text', {
                         ref: setTextNode,
-                        style: getInputTextStyle(style, show_placeholder, placeholder_text_color),
+                        style: {
+                            ...getInputTextStyle(style, show_placeholder, placeholder_text_color),
+                            ...(is_focused.value && { textAlign: 'right', justifyContent: 'flex-end' }),
+                        },
                         value: joinText(getInputTextValue(value, placeholder, show_placeholder)),
                     }),
                     is_focused.value ? h('view', {
