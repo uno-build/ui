@@ -1,6 +1,10 @@
 import { Image, registerRootComponent, View, ScrollView, Text } from '../../src/components/react'
 import { loadImage, loadJson } from '../shared/load-assets'
-import { loadFont, FONT_NAME1 as TITLE_FONT_FAMILY, FONT_NAME2 as TEXT_FONT_FAMILY } from '../shared/assets'
+import {
+    loadFont,
+    FONT_NAME_CHANGA as TITLE_FONT_FAMILY,
+    FONT_NAME_POPPINS as TEXT_FONT_FAMILY,
+} from '../shared/assets'
 
 const LOGO_SRC = 'assets/images/logo.jpg'
 const TEXTURE_SRC = 'assets/images/texture.jpg'

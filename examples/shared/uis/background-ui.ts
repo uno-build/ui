@@ -1,4 +1,4 @@
-import { FONT_NAME3 } from '../assets'
+import { FONT_NAME_SUPERCELL } from '../assets'
 
 const GAP = 15
 const ITEM_COUNT = 2
@@ -29,7 +29,7 @@ export function createBackgroundUI({ ui, assets, title: title_text = 'Background
         const title = ui.create()
         title.style('gap', `${GAP}px`)
         title.style('padding', `${GAP}px`)
-        title.style('fontFamily', FONT_NAME3)
+        title.style('fontFamily', FONT_NAME_SUPERCELL)
         title.style('fontSize', '40px')
         title.style('color', '#ffffff')
         title.style('textStroke', '4px #000000')
@@ -83,7 +83,7 @@ export function createBackgroundUI({ ui, assets, title: title_text = 'Background
         item.add(inside)
 
         const label = ui.create()
-        label.style('fontFamily', FONT_NAME3)
+        label.style('fontFamily', FONT_NAME_SUPERCELL)
         label.style('fontSize', '40px')
         label.style('color', '#ffffff')
         label.style('textStroke', '4px #000000')

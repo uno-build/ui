@@ -1,5 +1,5 @@
 {
-    "name": "uno-ui",
+    "name": "@uno/ui",
     "version": "0.1.0",
     "type": "module",
     "exports": {
@@ -196,10 +196,7 @@
         "benchmarks:text-stroke": "node ./scripts/benchmarks.mjs --workload text-stroke",
         "benchmarks:text-stroke:headed": "node ./scripts/benchmarks.mjs --workload text-stroke --headed",
         "benchmarks:render-metrics": "node ./scripts/benchmarks.mjs --workload render-metrics",
-        "benchmarks:render-metrics:headed": "node ./scripts/benchmarks.mjs --workload render-metrics --headed",
-        "msdf-atlas-gen": "node ./scripts/msdf-atlas-gen.mjs",
-        "msdf-atlas-gen:raw": "node ./scripts/msdf-atlas-gen-raw.mjs",
-        "fonts": "node /Users/enzo/projects/uno/fonts/cli/msdf-atlas-gen.mjs -type mtsdf -font examples/assets/fonts/Poppins-Regular.ttf -json examples/assets/fonts/Poppins-Regular.mtsdf.json -imageout examples/assets/fonts/Poppins-Regular.mtsdf.png -size 64 -pxrange 16"
+        "benchmarks:render-metrics:headed": "node ./scripts/benchmarks.mjs --workload render-metrics --headed"
     },
     "files": [
         "dist"

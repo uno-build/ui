@@ -61,7 +61,7 @@ fn glyphMsdfCoverageAtUv(
         uv_width,
         run.font_data.z,
         distance_sample.x,
-        0.5,
+        0.47,
         dilation,
         softness,
     );

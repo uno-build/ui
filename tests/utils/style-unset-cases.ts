@@ -1,3 +1,4 @@
+import { FONT_NAME_CHANGA } from '../../examples/shared/assets'
 import Style from '../../src/style'
 
 export const STYLE_VALUES: Record<string, string> = {
@@ -33,7 +34,7 @@ export const STYLE_VALUES: Record<string, string> = {
     backgroundPositionY: '30px',
     backgroundRepeat: 'repeat-x',
     color: '#123456',
-    fontFamily: 'ChangaOne-Regular',
+    fontFamily: FONT_NAME_CHANGA,
     fontSize: '24px',
     lineHeight: '30px',
     letterSpacing: '2px',

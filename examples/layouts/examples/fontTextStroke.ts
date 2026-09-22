@@ -1,13 +1,13 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
-import { FONT_NAME2, loadFont } from '../../shared/assets'
+import { FONT_NAME_POPPINS, loadFont } from '../../shared/assets'
 
 const STROKE_WIDTHS = Array.from({ length: 10 }, (_, index) => index)
 const FONT_SIZES = [5, 16, 32]
 
 export default async function createFontTextStrokeLayout({ ui, registerFont }) {
-    const font = await loadFont(FONT_NAME2, { loadImage, loadJson })
+    const font = await loadFont(FONT_NAME_POPPINS, { loadImage, loadJson })
 
-    registerFont(FONT_NAME2, font)
+    registerFont(FONT_NAME_POPPINS, font)
 
     const stage = ui.create()
     stage.style('width', '100%')

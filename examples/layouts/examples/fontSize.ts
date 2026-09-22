@@ -1,5 +1,5 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
-import { FONT_NAME1, FONT_NAME2, loadFont } from '../../shared/assets'
+import { FONT_NAME_CHANGA, FONT_NAME_POPPINS, loadFont } from '../../shared/assets'
 
 const MIN_FONT_SIZE = 3
 const MAX_FONT_SIZE = 50
@@ -14,11 +14,11 @@ const RAINBOW_STOPS = [
 ]
 
 export default async function createFontsLayout({ ui, registerFont }) {
-    const font = await loadFont(FONT_NAME1, { loadImage, loadJson })
-    const font2 = await loadFont(FONT_NAME2, { loadImage, loadJson })
+    const font = await loadFont(FONT_NAME_CHANGA, { loadImage, loadJson })
+    const font2 = await loadFont(FONT_NAME_POPPINS, { loadImage, loadJson })
 
-    registerFont(FONT_NAME1, font)
-    registerFont(FONT_NAME2, font2)
+    registerFont(FONT_NAME_CHANGA, font)
+    registerFont(FONT_NAME_POPPINS, font2)
 
     const stage = ui.create()
     stage.style('flex', '1')
@@ -29,8 +29,8 @@ export default async function createFontsLayout({ ui, registerFont }) {
     ui.root.add(stage)
 
     const font_columns = [
-        { font_family: FONT_NAME2, text_content: FONT_NAME2 },
-        { font_family: FONT_NAME1, text_content: FONT_NAME1 },
+        { font_family: FONT_NAME_POPPINS, text_content: FONT_NAME_POPPINS },
+        { font_family: FONT_NAME_CHANGA, text_content: FONT_NAME_CHANGA },
     ]
 
     for (const font_column of font_columns) {

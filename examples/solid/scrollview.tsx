@@ -1,7 +1,11 @@
 import { registerRootComponent, Image, ScrollView, Text, View } from '../../src/components/solid'
 import { For } from 'solid-js'
 import { loadImage, loadJson } from '../shared/load-assets'
-import { loadFont, FONT_NAME4 as TITLE_FONT_FAMILY, FONT_NAME2 as TEXT_FONT_FAMILY } from '../shared/assets'
+import {
+    loadFont,
+    FONT_NAME_NOUGAT as TITLE_FONT_FAMILY,
+    FONT_NAME_POPPINS as TEXT_FONT_FAMILY,
+} from '../shared/assets'
 
 const LOGO_SRC = 'assets/images/logo.jpg'
 const TEXTURE_SRC = 'assets/images/texture.jpg'

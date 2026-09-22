@@ -2,22 +2,24 @@
 import type ResourcesDom from '../../src/renderer/dom/ResourcesDom'
 import type ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
 import { loadImage, loadJson } from '../shared/load-assets'
-import { loadFont, FONT_NAME4 as TITLE_FONT_FAMILY, FONT_NAME2 as TEXT_FONT_FAMILY } from '../shared/assets'
+import {
+    loadFont,
+    FONT_NAME_NOUGAT as TITLE_FONT_FAMILY,
+    FONT_NAME_POPPINS as TEXT_FONT_FAMILY,
+} from '../shared/assets'
 
 const LOGO_SRC = 'assets/images/logo.jpg'
 const TEXTURE_SRC = 'assets/images/texture.jpg'
 const COIN_SRC = 'assets/images/coin.png'
 
 export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
-    const [logo, texture, coin, title_font, text_font] = await Promise.all(
-        [
-            loadImage(LOGO_SRC),
-            loadImage(TEXTURE_SRC),
-            loadImage(COIN_SRC),
-            loadFont(TITLE_FONT_FAMILY, { loadImage, loadJson }),
-            loadFont(TEXT_FONT_FAMILY, { loadImage, loadJson }),
-        ],
-    )
+    const [logo, texture, coin, title_font, text_font] = await Promise.all([
+        loadImage(LOGO_SRC),
+        loadImage(TEXTURE_SRC),
+        loadImage(COIN_SRC),
+        loadFont(TITLE_FONT_FAMILY, { loadImage, loadJson }),
+        loadFont(TEXT_FONT_FAMILY, { loadImage, loadJson }),
+    ])
     resources.registerImage(LOGO_SRC, logo)
     resources.registerImage(TEXTURE_SRC, texture)
     resources.registerImage(COIN_SRC, coin)

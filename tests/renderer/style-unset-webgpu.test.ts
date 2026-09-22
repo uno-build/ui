@@ -20,12 +20,11 @@ test('WebGPU unset restores the undefined state for all 81 styles', { tag: '@web
                 createNodeMetricsResolver,
                 RECORD_ALL,
             } = await import('/tests/renderer/browser-entry.ts')
-            const [coin, poppins_image, poppins_json, changa_image, changa_json] = await Promise.all([
+            const { FONT_NAME_POPPINS, FONT_NAME_CHANGA, loadFont } = await import('/examples/shared/assets.ts')
+            const [coin, poppins_font, changa_font] = await Promise.all([
                 loadImage('/examples/assets/images/coin.png'),
-                loadImage('/examples/assets/fonts/Poppins-Regular.mtsdf.png'),
-                loadJson('/examples/assets/fonts/Poppins-Regular.mtsdf.json'),
-                loadImage('/examples/assets/fonts/ChangaOne-Regular.mtsdf.png'),
-                loadJson('/examples/assets/fonts/ChangaOne-Regular.mtsdf.json'),
+                loadFont(FONT_NAME_POPPINS, { loadImage, loadJson }),
+                loadFont(FONT_NAME_CHANGA, { loadImage, loadJson }),
             ])
             const text_style_names = new Set([
                 'color',
@@ -55,8 +54,8 @@ test('WebGPU unset restores the undefined state for all 81 styles', { tag: '@web
 
             const resources = await ResourcesWebGPU.create({ canvas })
             resources.registerImage(coin.src, coin)
-            resources.registerFont('Poppins-Regular', { image: poppins_image.image, data: poppins_json })
-            resources.registerFont('ChangaOne-Regular', { image: changa_image.image, data: changa_json })
+            resources.registerFont(FONT_NAME_POPPINS, poppins_font)
+            resources.registerFont(FONT_NAME_CHANGA, changa_font)
 
             const { ui } = await UIWebGPU.create({ resources, loadYoga })
             ui.setViewport(400, 300)
@@ -156,7 +155,7 @@ test('WebGPU unset restores the undefined state for all 81 styles', { tag: '@web
                 setSetupStyle(text, expanded_names, 'width', '140px')
                 setSetupStyle(text, expanded_names, 'height', '80px')
                 setSetupStyle(text, expanded_names, 'flexShrink', '0')
-                setSetupStyle(text, expanded_names, 'fontFamily', 'Poppins-Regular')
+                setSetupStyle(text, expanded_names, 'fontFamily', FONT_NAME_POPPINS)
                 setSetupStyle(text, expanded_names, 'backgroundColor', '#eeeeee')
                 text.text('A A')
 

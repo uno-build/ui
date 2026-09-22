@@ -1,5 +1,5 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
-import { FONT_NAME2, loadFont } from '../../shared/assets'
+import { FONT_NAME_POPPINS, loadFont } from '../../shared/assets'
 
 const EVENT_TYPES = [
     'pointercancel',
@@ -36,12 +36,12 @@ const EVENT_COLORS = {
 
 export default async function createEventsLayout({ ui, resources, registerFont, rendererName: renderer_name }) {
     const [font, pattern_image, logo_image, texture_image] = await Promise.all([
-        loadFont(FONT_NAME2, { loadImage, loadJson }),
+        loadFont(FONT_NAME_POPPINS, { loadImage, loadJson }),
         loadImage(PATTERN_SRC),
         loadImage('examples/assets/images/logo.jpg'),
         loadImage('examples/assets/images/texture.jpg'),
     ])
-    registerFont(FONT_NAME2, font)
+    registerFont(FONT_NAME_POPPINS, font)
     resources.registerImage(pattern_image.src, pattern_image)
     resources.registerImage(logo_image.src, logo_image)
     resources.registerImage(texture_image.src, texture_image)

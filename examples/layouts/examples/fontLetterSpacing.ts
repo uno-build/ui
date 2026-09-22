@@ -1,5 +1,5 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
-import { FONT_NAME2, loadFont } from '../../shared/assets'
+import { FONT_NAME_POPPINS, loadFont } from '../../shared/assets'
 
 const TEXT = 'The same text changes its horizontal spacing and wraps across different lines.'
 const VARIANTS = [
@@ -29,9 +29,9 @@ const VARIANTS = [
 ]
 
 export default async function createFontLetterSpacingLayout({ ui, registerFont }) {
-    const poppins = await loadFont(FONT_NAME2, { loadImage, loadJson })
+    const poppins = await loadFont(FONT_NAME_POPPINS, { loadImage, loadJson })
 
-    registerFont(FONT_NAME2, poppins)
+    registerFont(FONT_NAME_POPPINS, poppins)
 
     const stage = ui.create()
     stage.style('width', '100%')

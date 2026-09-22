@@ -2,7 +2,11 @@
 import type ResourcesDom from '../../src/renderer/dom/ResourcesDom'
 import type ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
 import { loadImage, loadJson } from '../shared/load-assets'
-import { loadFont, FONT_NAME1 as TITLE_FONT_FAMILY, FONT_NAME2 as TEXT_FONT_FAMILY } from '../shared/assets'
+import {
+    loadFont,
+    FONT_NAME_CHANGA as TITLE_FONT_FAMILY,
+    FONT_NAME_POPPINS as TEXT_FONT_FAMILY,
+} from '../shared/assets'
 
 const ICON_SRC = 'assets/images/vue.png'
 

@@ -14,7 +14,7 @@ import {
     resizeEngine,
 } from '@babylonjs/lite'
 import { registerRootComponent } from '../../src/components/solid'
-import { FONT_NAME4 as TITLE_FONT_FAMILY, loadAssets, loadFont, registerAssets } from '../shared/assets'
+import { FONT_NAME_NOUGAT as TITLE_FONT_FAMILY, loadAssets, loadFont, registerAssets } from '../shared/assets'
 import { SolidTodo } from './todo'
 import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 
@@ -76,12 +76,11 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
     })
 
     // Babylon Lite's plane faces -Z, so this mirrors the Three.js camera offset onto its front side.
-    const camera = createArcRotateCamera(
-        -Math.PI / 2,
-        Math.atan2(4.5, 1.31),
-        Math.hypot(4.5, 1.31),
-        { x: 0, y: PANEL_Y, z: 0 },
-    )
+    const camera = createArcRotateCamera(-Math.PI / 2, Math.atan2(4.5, 1.31), Math.hypot(4.5, 1.31), {
+        x: 0,
+        y: PANEL_Y,
+        z: 0,
+    })
     camera.fov = Math.PI / 3
     camera.nearPlane = 0.1
     camera.farPlane = 100

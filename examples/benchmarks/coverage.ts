@@ -1,8 +1,8 @@
-import { FONT_NAME1, FONT_NAME2, FONT_NAME5 } from '../shared/assets'
+import { FONT_NAME_CHANGA, FONT_NAME_POPPINS, FONT_NAME_BANGERS } from '../shared/assets'
 import { STYLE, resolveStyle } from '../../src/style'
 import { FEATURES } from '../../src/renderer/utils/render-metrics'
 
-export const FONT_NAMES = [FONT_NAME2, FONT_NAME1, FONT_NAME5]
+export const FONT_NAMES = [FONT_NAME_POPPINS, FONT_NAME_CHANGA, FONT_NAME_BANGERS]
 export const TEXT_CORPUS = [
     'Revenue 12345',
     'Project Atlas ready',

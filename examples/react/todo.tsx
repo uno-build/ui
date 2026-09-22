@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { registerRootComponent, View, Text, Image, Input, ScrollView } from '../../src/components/react'
 import type { InputHandle } from '../../src/components/react'
 import { loadImage, loadJson } from '../shared/load-assets'
-import { loadFont, FONT_NAME1 as TITLE_FONT_FAMILY, FONT_NAME2 as TEXT_FONT_FAMILY } from '../shared/assets'
+import {
+    loadFont,
+    FONT_NAME_CHANGA as TITLE_FONT_FAMILY,
+    FONT_NAME_POPPINS as TEXT_FONT_FAMILY,
+} from '../shared/assets'
 
 const ICON_SRC = 'assets/images/react.png'
 const MAX_TITLE_LENGTH = 48

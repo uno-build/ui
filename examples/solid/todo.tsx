@@ -1,7 +1,11 @@
 import { createEffect, createSignal, For, onSettled, Show } from 'solid-js'
 import { registerRootComponent, View, Text, Image, Input, ScrollView } from '../../src/components/solid'
 import { loadImage, loadJson } from '../shared/load-assets'
-import { loadFont, FONT_NAME4 as TITLE_FONT_FAMILY, FONT_NAME2 as TEXT_FONT_FAMILY } from '../shared/assets'
+import {
+    loadFont,
+    FONT_NAME_NOUGAT as TITLE_FONT_FAMILY,
+    FONT_NAME_POPPINS as TEXT_FONT_FAMILY,
+} from '../shared/assets'
 
 const ICON_SRC = 'assets/images/solid.png'
 const MAX_TITLE_LENGTH = 48
