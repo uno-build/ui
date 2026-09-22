@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import EventEmitter from '../../src/core/EventEmitter'
+import { CORE_EVENT } from '../../src/core/constants'
 import { DEFINED_EVENTS } from '../../src/events'
 import { EVENT } from '../../src/events/constants'
 import { OVERFLOW } from '../../src/style/constants'
@@ -241,9 +242,9 @@ test('UI instantiates definitions, emits source events, and runs definition clea
     const initialized_uis = []
     const destroyed_uis = []
     const destroyed_nodes = []
-    const define_activate = ({ ui }) => {
+    const defineActivate = ({ ui }) => {
         initialized_uis.push(ui)
-        const off = ui.events_source.on('activate', (event) => {
+        const offActivate = ui.events_source.on('activate', (event) => {
             if (event.node !== null) {
                 ui.events.emit('activate', {
                     source_event: event.source_event,
@@ -255,20 +256,21 @@ test('UI instantiates definitions, emits source events, and runs definition clea
                 })
             }
         })
+        const offDestroyNode = ui.events_source.on(CORE_EVENT.NODE_DESTROY, ({ node }) => {
+            destroyed_nodes.push(node)
+        })
 
         return {
-            destroyNode(node) {
-                destroyed_nodes.push(node)
-            },
             destroy() {
                 destroyed_uis.push(ui)
-                off()
+                offActivate()
+                offDestroyNode()
             },
         }
     }
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: [define_activate],
+        defined_events: [defineActivate],
     })
     const child = ui.create()
     const source_events = []
@@ -337,7 +339,7 @@ test('UI instantiates definitions, emits source events, and runs definition clea
 
     const second_ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: [define_activate],
+        defined_events: [defineActivate],
     })
 
     expect(initialized_uis).toEqual([ui, second_ui])
@@ -347,19 +349,22 @@ test('UI instantiates definitions, emits source events, and runs definition clea
 
 test('UI notifies every stateful definition when destroying a node subtree', async () => {
     const destroyed_nodes = []
-    const define_event = (name) => () => ({
-        destroyNode(node) {
+    const public_events = []
+    const defineEvent = (name) => ({ ui }) => {
+        const removeListener = ui.events_source.on(CORE_EVENT.NODE_DESTROY, ({ node }) => {
+            expect(node.ui).toBe(ui)
             destroyed_nodes.push([name, node])
-        },
-        destroy() {},
-    })
+        })
+        return { destroy: removeListener }
+    }
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
-        defined_events: [define_event('first'), () => ({ destroy() {} }), define_event('second')],
+        defined_events: [defineEvent('first'), () => ({ destroy() {} }), defineEvent('second')],
     })
     const parent = ui.create()
     const child = ui.create()
 
+    ui.events.on(CORE_EVENT.NODE_DESTROY, (event) => public_events.push(event))
     ui.root.add(parent)
     parent.add(child)
     parent.destroy()
@@ -370,7 +375,54 @@ test('UI notifies every stateful definition when destroying a node subtree', asy
         ['first', parent],
         ['second', parent],
     ])
+    expect(public_events).toEqual([])
 
+    ui.destroy()
+})
+
+test('UI emits internal updates after successful rendering and journal consumption', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const received_updates = []
+    const public_events = []
+    const update = renderer.update.bind(renderer)
+    let rendered = false
+    function completeUpdate(nodes, operations) {
+        update(nodes, operations)
+        rendered = true
+    }
+    renderer.update = completeUpdate
+    ui.events_source.on(CORE_EVENT.UPDATED, ({ operations }) => {
+        expect(rendered).toBe(true)
+        expect((ui as any).operations.pending).toEqual([])
+        expect(operations.items.length).toBeGreaterThan(0)
+        received_updates.push({ nodes: [...operations.layout_nodes], width: ui.root.layout.width })
+    })
+    ui.events.on(CORE_EVENT.UPDATED, (event) => public_events.push(event))
+    ui.root.style('width', '100px')
+
+    ui.update()
+    expect(received_updates).toEqual([{ nodes: [ui.root], width: 100 }])
+
+    rendered = false
+    ui.update()
+    expect(rendered).toBe(false)
+    expect(received_updates).toHaveLength(1)
+
+    ui.root.style('width', '200px')
+    renderer.update = () => {
+        throw new Error('render failed')
+    }
+    expect(() => ui.update()).toThrow('render failed')
+    expect(received_updates).toHaveLength(1)
+
+    renderer.update = completeUpdate
+    ui.update()
+    expect(received_updates).toEqual([
+        { nodes: [ui.root], width: 100 },
+        { nodes: [], width: 200 },
+    ])
+    expect(public_events).toEqual([])
     ui.destroy()
 })
 
@@ -605,7 +657,13 @@ test('wheel is normalized before scrolling the nearest available node', async ()
     scroller.scrollHeight = 1000
     scroller.clientWidth = 200
     scroller.clientHeight = 200
-    ui.update = () => update_count++
+    ui.update()
+    await Promise.resolve()
+    const update = ui.update.bind(ui)
+    ui.update = () => {
+        update_count++
+        return update()
+    }
 
     ui.root.on('wheel', (event) => {
         received_events.push({
@@ -621,6 +679,11 @@ test('wheel is normalized before scrolling the nearest available node', async ()
             target: event.target,
             scroll_left: event.scroll_left,
             scroll_top: event.scroll_top,
+            scroll_width: event.scroll_width,
+            scroll_height: event.scroll_height,
+            client_width: event.client_width,
+            client_height: event.client_height,
+            source_event: event.source_event,
         })
     })
 
@@ -635,6 +698,8 @@ test('wheel is normalized before scrolling the nearest available node', async ()
         event_data: { x: 10, y: 20 },
         node: child,
     })
+    expect(received_events).toHaveLength(1)
+    await Promise.resolve()
 
     expect(received_events).toEqual([
         {
@@ -648,6 +713,11 @@ test('wheel is normalized before scrolling the nearest available node', async ()
             target: scroller,
             scroll_left: 0,
             scroll_top: 192,
+            scroll_width: 200,
+            scroll_height: 1000,
+            client_width: 200,
+            client_height: 200,
+            source_event,
         },
     ])
     expect(scroller.scrollTop).toBe(192)
@@ -674,35 +744,57 @@ test('touch drag emits scroll and suppresses click past the scroll slop', async 
     scroller.scrollHeight = 1000
     scroller.clientWidth = 200
     scroller.clientHeight = 200
-    ui.update = () => update_count++
+    ui.update()
+    await Promise.resolve()
+    const update = ui.update.bind(ui)
+    ui.update = () => {
+        update_count++
+        return update()
+    }
 
     ui.root.on('scroll', (event) => {
-        received_scrolls.push([event.scroll_left, event.scroll_top])
+        received_scrolls.push({
+            scroll_left: event.scroll_left,
+            scroll_top: event.scroll_top,
+            scroll_width: event.scroll_width,
+            scroll_height: event.scroll_height,
+            client_width: event.client_width,
+            client_height: event.client_height,
+            source_event: event.source_event,
+        })
     })
     ui.root.on('click', (event) => {
         received_clicks.push(event.source_event.pointerId)
     })
 
     const dispatch = (type, pointer_id, x, y) => {
+        const source_event = { type, pointerId: pointer_id, pointerType: 'touch' }
         ui.events_source.emit(type, {
-            source_event: {
-                type,
-                pointerId: pointer_id,
-                pointerType: 'touch',
-            },
+            source_event,
             event_data: { x, y },
             node: child,
         })
+        return source_event
     }
 
     dispatch('pointerdown', 1, 0, 100)
-    dispatch('pointermove', 1, 0, 60)
+    const source_event = dispatch('pointermove', 1, 0, 60)
     dispatch('pointerup', 1, 0, 60)
 
     dispatch('pointerdown', 2, 0, 100)
     dispatch('pointerup', 2, 0, 100)
 
-    expect(received_scrolls).toEqual([[0, 40]])
+    expect(received_scrolls).toEqual([])
+    await Promise.resolve()
+    expect(received_scrolls).toEqual([{
+        scroll_left: 0,
+        scroll_top: 40,
+        scroll_width: 200,
+        scroll_height: 1000,
+        client_width: 200,
+        client_height: 200,
+        source_event,
+    }])
     expect(received_clicks).toEqual([2])
     expect(scroller.scrolling).toBe(false)
     expect(update_count).toBe(1)

@@ -62,4 +62,13 @@ export default class TestRenderer extends Renderer {
     public getLayout(node) {
         return this.layouter.getLayout(node)
     }
+
+    public afterUpdate(nodes, operations) {
+        const scroll_nodes = operations.needUpdateLayout() || operations.needUpdateScrollMetrics()
+            ? nodes
+            : operations.scroll_nodes
+        for (const node of scroll_nodes) {
+            operations.recordScrollMetrics(node)
+        }
+    }
 }

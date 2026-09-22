@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 import Resources from '../../src/core/Resources'
 import Operations from '../../src/core/Operations'
 import { OPERATIONS, RESOURCE_EVENT } from '../../src/core/constants'
+import { defineScroll } from '../../src/events/scroll'
 import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
 import UIWorldSpace from '../../src/ui/UIWorldSpace.ts'
 import TestRenderer from '../utils/TestRenderer.ts'
@@ -229,8 +230,19 @@ test('UI consumes the captured journal by identity when rendering destroys nodes
 
 test('UI retains the captured journal when rendering throws', async () => {
     const renderer = new TestRenderer()
-    const ui = await TestUI.create({ renderer })
+    const ui = await TestUI.create({ renderer, defined_events: [defineScroll] })
+    const received_scrolls = []
+    ui.events.on('scroll', (event) => received_scrolls.push(event.event_data))
     ui.root.style('width', '100px')
+    ui.root.style('overflowY', 'scroll')
+    ui.root.scrollTop = 20
+    renderer.afterUpdate = (nodes, operations) => {
+        ui.root.scrollWidth = 100
+        ui.root.scrollHeight = 300
+        ui.root.clientWidth = 100
+        ui.root.clientHeight = 100
+        operations.recordScrollMetrics(ui.root)
+    }
     const captured_operations = [...(ui as any).operations.pending]
     const update = renderer.update.bind(renderer)
     renderer.update = () => {
@@ -241,6 +253,8 @@ test('UI retains the captured journal when rendering throws', async () => {
     expect((ui as any).operations.pending).toEqual(captured_operations)
     expect((ui as any).operations.pending.every((operation, index) => operation === captured_operations[index])).toBe(true)
     expect((ui as any).operations.layout_nodes).toEqual(new Set([ui.root]))
+    await Promise.resolve()
+    expect(received_scrolls).toEqual([])
 
     renderer.update = update
     ui.update()
@@ -248,11 +262,23 @@ test('UI retains the captured journal when rendering throws', async () => {
     expect(ui.root.layout.width).toBe(100)
     expect((ui as any).operations.pending).toEqual([])
     expect((ui as any).operations.layout_nodes).toEqual(new Set())
+    await Promise.resolve()
+    expect(received_scrolls).toEqual([{
+        scroll_left: 0,
+        scroll_top: 20,
+        scroll_width: 100,
+        scroll_height: 300,
+        client_width: 100,
+        client_height: 100,
+    }])
+    ui.destroy()
 })
 
 test('Node records only changed scroll positions and treats dimensions as results', async () => {
     const ui = await TestUI.create({ renderer: new TestRenderer() })
     const node = ui.create()
+    const received_scrolls = []
+    ui.events.on('scroll', (event) => received_scrolls.push(event))
     ui.update()
 
     node.scrollTop = 0
@@ -274,6 +300,9 @@ test('Node records only changed scroll positions and treats dimensions as result
     expect(node.scrollLeft).toBe(10)
     expect(node.scrollHeight).toBe(200)
     expect(node.scrollWidth).toBe(300)
+    ui.update()
+    await Promise.resolve()
+    expect(received_scrolls).toEqual([])
 
     node.destroy()
     const operation_count = (ui as any).operations.pending.length
@@ -282,6 +311,205 @@ test('Node records only changed scroll positions and treats dimensions as result
         node.scrollLeft = 40
     }).not.toThrow()
     expect((ui as any).operations.pending).toHaveLength(operation_count)
+})
+
+test('UI publishes initial and changed dimensions only for scroll containers', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer, defined_events: [defineScroll] })
+    const scroller = ui.create()
+    const ordinary = ui.create()
+    const received_scrolls = []
+    const ZERO_METRICS = {
+        scroll_left: 0,
+        scroll_top: 0,
+        scroll_width: 0,
+        scroll_height: 0,
+        client_width: 0,
+        client_height: 0,
+    }
+    ui.root.add(scroller)
+    ui.root.add(ordinary)
+    scroller.style('overflowY', 'scroll')
+    ui.events.on('scroll', (event) => received_scrolls.push(event))
+
+    ui.update()
+    expect(received_scrolls).toEqual([])
+    await Promise.resolve()
+    expect(received_scrolls).toEqual([{ target: scroller, source_event: null, event_data: ZERO_METRICS }])
+
+    ordinary.style('overflowX', 'scroll')
+    ui.update()
+    await Promise.resolve()
+    expect(received_scrolls[1]).toEqual({ target: ordinary, source_event: null, event_data: ZERO_METRICS })
+
+    ordinary.style('overflowX', 'hidden')
+    ui.update()
+    await Promise.resolve()
+    const event_count = received_scrolls.length
+    renderer.afterUpdate = (nodes, operations) => {
+        for (const node of [scroller, ordinary]) {
+            node.scrollWidth = 100
+            node.scrollHeight = 300
+            node.clientWidth = 100
+            node.clientHeight = 100
+            operations.recordScrollMetrics(node)
+        }
+    }
+    scroller.style('width', '100px')
+    ui.update()
+    await Promise.resolve()
+    expect(received_scrolls.slice(event_count)).toEqual([{
+        target: scroller,
+        source_event: null,
+        event_data: {
+            scroll_left: 0,
+            scroll_top: 0,
+            scroll_width: 100,
+            scroll_height: 300,
+            client_width: 100,
+            client_height: 100,
+        },
+    }])
+
+    ui.update()
+    scroller.style('backgroundColor', '#123')
+    ui.update()
+    await Promise.resolve()
+    expect(received_scrolls).toHaveLength(event_count + 1)
+    ui.destroy()
+})
+
+test('UI publishes both committed scroll axes once and ignores clamped no-ops', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer, defined_events: [defineScroll] })
+    const node = ui.create()
+    const received_scrolls = []
+    ui.root.add(node)
+    renderer.afterUpdate = (nodes, operations) => {
+        node.scrollWidth = 500
+        node.scrollHeight = 600
+        node.clientWidth = 100
+        node.clientHeight = 100
+        node.scroll_left = Math.max(0, Math.min(node.scrollLeft, 400))
+        node.scroll_top = Math.max(0, Math.min(node.scrollTop, 500))
+        operations.recordScrollMetrics(node)
+    }
+    ui.events.on('scroll', (event) => received_scrolls.push(event))
+    ui.update()
+    await Promise.resolve()
+    expect(received_scrolls).toEqual([])
+
+    node.scrollLeft = 50
+    node.scrollTop = 70
+    node.scrollTop = 70
+    ui.update()
+    expect(received_scrolls).toEqual([])
+    await Promise.resolve()
+    expect(received_scrolls).toEqual([{
+        target: node,
+        source_event: null,
+        event_data: {
+            scroll_left: 50,
+            scroll_top: 70,
+            scroll_width: 500,
+            scroll_height: 600,
+            client_width: 100,
+            client_height: 100,
+        },
+    }])
+
+    node.scrollLeft = 1000
+    node.scrollTop = 1000
+    ui.update()
+    await Promise.resolve()
+    expect(received_scrolls).toHaveLength(2)
+    expect(received_scrolls[1].event_data).toMatchObject({ scroll_left: 400, scroll_top: 500 })
+
+    node.scrollLeft = 1000
+    node.scrollTop = 1000
+    ui.update()
+    await Promise.resolve()
+    expect(received_scrolls).toHaveLength(2)
+    ui.destroy()
+})
+
+test('UI delivers scroll snapshots in order and defers updates from handlers', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: [defineScroll] })
+    const node = ui.create()
+    const received_scrolls = []
+    let inside_handler = false
+    ui.root.add(node)
+    ui.update()
+    ui.events.on('scroll', ({ event_data }) => {
+        expect(inside_handler).toBe(false)
+        received_scrolls.push(event_data)
+        if (event_data.scroll_top === 10) {
+            inside_handler = true
+            node.scrollLeft = 20
+            node.scrollTop = 30
+            ui.update()
+            inside_handler = false
+        }
+    })
+
+    node.scrollTop = 10
+    ui.update()
+    node.scrollTop = 20
+    ui.update()
+    await Promise.resolve()
+    expect(received_scrolls.map(({ scroll_left, scroll_top }) => [scroll_left, scroll_top])).toEqual([[0, 10], [0, 20]])
+    await Promise.resolve()
+    expect(received_scrolls.map(({ scroll_left, scroll_top }) => [scroll_left, scroll_top])).toEqual([[0, 10], [0, 20], [20, 30]])
+    expect((ui as any).operations.pending).toEqual([])
+    ui.destroy()
+})
+
+test('UI discards queued scroll events for nodes destroyed before or during delivery', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: [defineScroll] })
+    const first = ui.create()
+    const second = ui.create()
+    const removed = ui.create()
+    const received_targets = []
+    for (const node of [first, second, removed]) {
+        ui.root.add(node)
+    }
+    ui.update()
+    ui.events.on('scroll', ({ target }) => {
+        received_targets.push(target)
+        second.destroy()
+    })
+    for (const node of [first, second, removed]) {
+        node.scrollTop = 10
+    }
+    ui.update()
+    removed.destroy()
+    await Promise.resolve()
+    expect(received_targets).toEqual([first])
+    ui.destroy()
+})
+
+test('UI destruction cancels queued scroll delivery including the current batch', async () => {
+    for (const destroy_during_delivery of [false, true]) {
+        const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: [defineScroll] })
+        const first = ui.create()
+        const second = ui.create()
+        const received_targets = []
+        ui.root.add(first)
+        ui.root.add(second)
+        ui.update()
+        ui.events.on('scroll', ({ target }) => {
+            received_targets.push(target)
+            ui.destroy()
+        })
+        first.scrollTop = 10
+        second.scrollTop = 20
+        ui.update()
+        if (!destroy_during_delivery) {
+            ui.destroy()
+        }
+        await Promise.resolve()
+        expect(received_targets).toEqual(destroy_during_delivery ? [first] : [])
+    }
 })
 
 test('UI skips layout reads for paint, DPR, scroll, and painting order changes', async () => {

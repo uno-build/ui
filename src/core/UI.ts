@@ -1,6 +1,6 @@
 import type Renderer from './Renderer'
 import type Resources from './Resources'
-import type { UIEventMap } from '../events/types'
+import type { CoreEventMap, UIEventMap } from '../events/types'
 import type { Operation } from './Operations'
 import type { StyleUpdate } from '../style/types'
 
@@ -8,13 +8,12 @@ import Node from './Node'
 import EventEmitter from './EventEmitter'
 import Operations from './Operations'
 import { isNodeAtPoint, sortPaintingOrder } from '../utils/nodes'
-import { OPERATIONS, RESOURCE_EVENT } from './constants'
+import { CORE_EVENT, OPERATIONS, RESOURCE_EVENT } from './constants'
 import { isSameLayout } from '../layouter/utils'
 
 export type DefinedEvent = {
     types: Array<{ platform: boolean, name: string, prop: string, priority: string }>
     destroy(): void
-    destroyNode?(node: Node): void
 }
 
 export type EventOptions<TUI extends UI> = {
@@ -32,7 +31,7 @@ export default class UI<
     resources: TResources | null = null
     defined_events: DefinedEvent[] = []
     events: EventEmitter<UIEventMap>
-    events_source: EventEmitter
+    events_source: EventEmitter<CoreEventMap>
     operations = new Operations<ReturnType<TRenderer['createElement']>>()
     private nodes: RendererNode<TRenderer>[] = []
     private nodes_created = new Set<RendererNode<TRenderer>>()
@@ -122,6 +121,7 @@ export default class UI<
             this.renderer!.afterUpdate(this.nodes, operations)
             const output = this.renderer!.update(this.nodes, operations)
             operations.consume()
+            this.events_source.emit(CORE_EVENT.UPDATED, { operations })
 
             return output
         }
@@ -299,7 +299,7 @@ export default class UI<
         }
 
         this.operations.discardNode(node)
-        this.defined_events.forEach((defined_event) => defined_event.destroyNode?.(node))
+        this.events_source.emit(CORE_EVENT.NODE_DESTROY, { node })
         node.destroyEvents()
         this.renderer!.destroyNode(node)
         this.nodes_created.delete(node)

@@ -1,3 +1,4 @@
+import type Operations from '../../core/Operations'
 import {
     BACKGROUND_REPEAT,
     BACKGROUND_SIZE,
@@ -270,10 +271,10 @@ export function getNodeRenderLayout(node: any) {
     }
 }
 
-export function updateScrollMetrics(node: any, getContentSize: any, scroll_nodes: any) {
+export function updateScrollMetrics(node: any, getContentSize: any, operations: Operations<any>) {
     const display = node.styles.display?.parsed.enum ?? DISPLAY.flex
     if (display === DISPLAY.none) {
-        resetScrollMetrics(node, scroll_nodes)
+        resetScrollMetrics(node, operations)
         return {
             left: node.layout.x,
             top: node.layout.y,
@@ -313,7 +314,7 @@ export function updateScrollMetrics(node: any, getContentSize: any, scroll_nodes
     }
 
     for (const child of node.children) {
-        const child_overflow = updateScrollMetrics(child, getContentSize, scroll_nodes)
+        const child_overflow = updateScrollMetrics(child, getContentSize, operations)
         const child_display = child.styles.display?.parsed.enum ?? DISPLAY.flex
         if (child_display === DISPLAY.none) {
             continue
@@ -338,22 +339,23 @@ export function updateScrollMetrics(node: any, getContentSize: any, scroll_nodes
 
     node.scrollWidth = Math.round(Math.max(node.clientWidth, overflow_rect.right - node.layout.x - border_left))
     node.scrollHeight = Math.round(Math.max(node.clientHeight, overflow_rect.bottom - node.layout.y - border_top))
-    clampScroll(node, scroll_nodes)
+    clampScroll(node, operations)
 
     return overflow_rect
 }
 
-export function clampScroll(node: any, scroll_nodes: any) {
+export function clampScroll(node: any, operations: Operations<any>) {
     const scroll_left = Math.max(0, Math.min(node.scrollLeft, node.scrollWidth - node.clientWidth))
     const scroll_top = Math.max(0, Math.min(node.scrollTop, node.scrollHeight - node.clientHeight))
     if (node.scrollLeft !== scroll_left || node.scrollTop !== scroll_top) {
         node.scroll_left = scroll_left
         node.scroll_top = scroll_top
-        scroll_nodes.add(node)
+        operations.scroll_nodes.add(node)
     }
+    operations.recordScrollMetrics(node)
 }
 
-function resetScrollMetrics(node: any, scroll_nodes: any) {
+function resetScrollMetrics(node: any, operations: Operations<any>) {
     node.clientWidth = 0
     node.clientHeight = 0
     node.scrollWidth = 0
@@ -361,11 +363,12 @@ function resetScrollMetrics(node: any, scroll_nodes: any) {
     if (node.scrollLeft !== 0 || node.scrollTop !== 0) {
         node.scroll_left = 0
         node.scroll_top = 0
-        scroll_nodes.add(node)
+        operations.scroll_nodes.add(node)
     }
+    operations.recordScrollMetrics(node)
 
     for (const child of node.children) {
-        resetScrollMetrics(child, scroll_nodes)
+        resetScrollMetrics(child, operations)
     }
 }
 

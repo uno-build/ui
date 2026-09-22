@@ -109,7 +109,7 @@ export default async function createEventsLayout({ ui, resources, registerFont, 
 
         console.log(`[${renderer_name}] #${sequence}`, {
             type,
-            source_type: event.source_event.type,
+            source_type: event.source_event?.type ?? null,
             target: node_names.get(event.target) ?? null,
             current_target: node_names.get(event.current_target) ?? null,
             related_target: node_names.get(event.related_target) ?? null,

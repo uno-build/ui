@@ -2,6 +2,7 @@ import type UI from '../core/UI'
 import type Node from '../core/Node'
 import type { EventSource, UIEventMap } from './types'
 
+import { CORE_EVENT } from '../core/constants'
 import { EVENT } from './constants'
 
 export function defineFocus({ ui }: { ui: UI }) {
@@ -48,16 +49,15 @@ export function defineFocus({ ui }: { ui: UI }) {
         ui.events_source.on(EVENT.FOCUS.name, processFocus),
         ui.events_source.on(EVENT.BLUR.name, processBlur),
         ui.events.on(EVENT.POINTERDOWN.name, processPointerDown),
+        ui.events_source.on(CORE_EVENT.NODE_DESTROY, ({ node }) => {
+            if (focused_node === node) {
+                focused_node = null
+            }
+        }),
     ]
 
     return {
         types: [EVENT.FOCUS, EVENT.BLUR],
-
-        destroyNode(node: Node) {
-            if (focused_node === node) {
-                focused_node = null
-            }
-        },
 
         destroy() {
             remove_listeners.forEach((removeListener) => removeListener())

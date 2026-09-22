@@ -6,6 +6,7 @@ import RendererDom from '../../src/renderer/RendererDom.ts'
 import ResourcesDom from '../../src/renderer/dom/ResourcesDom.ts'
 import { isSameLayout } from '../../src/layouter/utils.ts'
 import Style from '../../src/style'
+import { OVERFLOW } from '../../src/style/constants.ts'
 import TestUI from '../utils/TestUI.ts'
 
 test('layout comparison supports DOM layouts without padding', () => {
@@ -485,6 +486,35 @@ test('RendererDom synchronizes root and child scroll state once after update', (
     expect(node.clientHeight).toBe(100)
 })
 
+test('RendererDom deduplicates native scroll against committed programmatic metrics', () => {
+    const canvas = createScrollableElement({ scrollWidth: 200, scrollHeight: 300, clientWidth: 100, clientHeight: 100 })
+    const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas }) })
+    const node = createNode(0)
+    node.styles.overflowY = { parsed: { enum: OVERFLOW.scroll } }
+    renderer.createElement(node)
+    const operations = createOperations([], true)
+
+    renderer.afterUpdate([node], operations)
+    expect(operations.scroll_changed_nodes.size).toBe(0)
+    operations.consume()
+    expect([...operations.scroll_changed_nodes]).toEqual([node])
+    expect(renderer.syncScroll(canvas, operations)).toBeUndefined()
+
+    node.scrollTop = 40
+    operations.add({ op: OPERATIONS.SCROLL, node })
+    operations.capture()
+    renderer.beforeUpdate([node], operations)
+    renderer.afterUpdate([node], operations)
+    operations.consume()
+    expect([...operations.scroll_changed_nodes]).toEqual([node])
+    expect(renderer.syncScroll(canvas, operations)).toBeUndefined()
+
+    canvas.scrollTop = 60
+    expect(renderer.syncScroll(canvas, operations)).toBe(node)
+    expect(node.scrollTop).toBe(60)
+    expect(renderer.syncScroll(canvas, operations)).toBeUndefined()
+})
+
 test('RendererDom updates only text operation targets, including root and detached nodes', () => {
     const canvas = createDomElement()
     const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas }) })
@@ -812,6 +842,7 @@ test('RendererDom layout remains in content coordinates while the parent is scro
 function createNode(id) {
     return {
         id,
+        styles: {},
         scroll_left: 0,
         scroll_top: 0,
         scrollWidth: 0,

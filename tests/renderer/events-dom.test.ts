@@ -342,6 +342,7 @@ test('UIDom uses native scrolling inside bordered scroll containers', async ({ p
             ui.root.add(scroll)
             scroll.add(child)
             ui.update()
+            await Promise.resolve()
 
             let pointer_down_calls = 0
             const scroll_events = []
@@ -422,6 +423,111 @@ test('UIDom uses native scrolling inside bordered scroll containers', async ({ p
             delta_y: 40,
         },
     })
+})
+
+test('UIDom deduplicates native scroll after programmatic updates and reports all metrics', async ({ page }) => {
+    await page.goto(TEST_PAGE_URL)
+
+    const result = await page.evaluate(async () => {
+        const { UIDom, ResourcesDom } = await import('/tests/renderer/browser-entry.ts')
+        const canvas = document.createElement('div')
+        Object.assign(canvas.style, { display: 'flex', width: '200px', height: '200px' })
+        document.body.appendChild(canvas)
+        const { ui } = await UIDom.create({ resources: ResourcesDom.create({ canvas }) })
+        try {
+            ui.root.style('width', '200px')
+            ui.root.style('height', '200px')
+            const scroll = ui.create()
+            const content = ui.create()
+            scroll.style('width', '100px')
+            scroll.style('height', '100px')
+            scroll.style('overflow', 'scroll')
+            content.style('width', '300px')
+            content.style('height', '300px')
+            content.style('flexShrink', '0')
+            scroll.add(content)
+            ui.root.add(scroll)
+
+            const scroll_events = []
+            const source_events = []
+            const readMetrics = () => ({
+                scroll_left: scroll.element.scrollLeft,
+                scroll_top: scroll.element.scrollTop,
+                scroll_width: scroll.element.scrollWidth,
+                scroll_height: scroll.element.scrollHeight,
+                client_width: scroll.element.clientWidth,
+                client_height: scroll.element.clientHeight,
+            })
+            scroll.on('scroll', (event) => {
+                source_events.push(event.source_event)
+                scroll_events.push({
+                    scroll_left: event.scroll_left,
+                    scroll_top: event.scroll_top,
+                    scroll_width: event.scroll_width,
+                    scroll_height: event.scroll_height,
+                    client_width: event.client_width,
+                    client_height: event.client_height,
+                    target_matches: event.target === scroll,
+                    current_target_matches: event.current_target === scroll,
+                })
+            })
+
+            ui.update()
+            const synchronous_count = scroll_events.length
+            const expected_metrics = [readMetrics()]
+            await Promise.resolve()
+            const initial_count = scroll_events.length
+
+            const programmatic_scroll = new Promise((resolve) => {
+                scroll.element.addEventListener('scroll', resolve, { once: true })
+            })
+            scroll.scrollLeft = 20
+            scroll.scrollTop = 40
+            ui.update()
+            expected_metrics.push(readMetrics())
+            await programmatic_scroll
+            await Promise.resolve()
+            const programmatic_count = scroll_events.length
+
+            const native_scroll = new Promise((resolve) => {
+                scroll.element.addEventListener('scroll', resolve, { once: true })
+            })
+            scroll.element.scrollTop = 60
+            const native_source = await native_scroll
+            await Promise.resolve()
+            expected_metrics.push(readMetrics())
+
+            scroll.scrollLeft = 20
+            scroll.scrollTop = 60
+            ui.update()
+            scroll.element.dispatchEvent(new Event('scroll'))
+            await Promise.resolve()
+
+            return {
+                synchronous_count,
+                initial_count,
+                programmatic_count,
+                scroll_events,
+                expected_metrics,
+                source_types: source_events.map((source_event) => source_event?.type ?? null),
+                native_source_matches: source_events[2] === native_source,
+            }
+        } finally {
+            ui.destroy()
+            canvas.remove()
+        }
+    })
+
+    expect(result.synchronous_count).toBe(0)
+    expect(result.initial_count).toBe(1)
+    expect(result.programmatic_count).toBe(2)
+    expect(result.scroll_events).toEqual(result.expected_metrics.map((metrics) => ({
+        ...metrics,
+        target_matches: true,
+        current_target_matches: true,
+    })))
+    expect(result.source_types).toEqual([null, null, 'scroll'])
+    expect(result.native_source_matches).toBe(true)
 })
 
 test('UIDom preserves native event sources alongside UIWebGPU normalization', { tag: '@webgpu' }, async ({ page }) => {

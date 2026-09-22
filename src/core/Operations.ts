@@ -1,7 +1,13 @@
 import type Node from './Node'
 import type { StyleUpdate } from '../style/types'
+import type { EventSource } from '../events/types'
 import { OPERATIONS } from './constants'
 import { isPaintStyle, STYLE } from '../style'
+import { OVERFLOW } from '../style/constants'
+
+type ScrollState = Pick<Node, 'scroll_left' | 'scroll_top' | 'scrollWidth' | 'scrollHeight' | 'clientWidth' | 'clientHeight'> & {
+    is_scroll_container: boolean
+}
 
 export type OperationNode<TElement = unknown> = Node<TElement>
 
@@ -10,7 +16,7 @@ export type Operation<TElement = unknown> =
     { op: 'remove', parent: Node<TElement>, node: Node<TElement> } |
     { op: 'style', node: Node<TElement>, style: StyleUpdate } |
     { op: 'text', node: Node<TElement>, value: string } |
-    { op: 'scroll', node: Node<TElement> } |
+    { op: 'scroll', node: Node<TElement>, source_event?: EventSource | null } |
     { op: 'viewport', width: number, height: number } |
     { op: 'root_size' | 'pixel_ratio', value: number } |
     { op: 'resource_image' | 'resource_font' }
@@ -19,6 +25,11 @@ export default class Operations<TElement = unknown> {
     items: Operation<TElement>[] = []
     layout_nodes = new Set<Node<TElement>>()
     scroll_nodes = new Set<Node<TElement>>()
+    scroll_changed_nodes = new Set<Node<TElement>>()
+    private confirmed_scroll_states = new WeakMap<Node<TElement>, ScrollState>()
+    // Retained until consumption: a failed render may retry without recalculating layout.
+    private pending_scroll_states = new Map<Node<TElement>, ScrollState>()
+    private pending_scroll_nodes = new Set<Node<TElement>>()
     private pending: Operation<TElement>[] = []
     private captured = new Set<Operation<TElement>>()
     private update_order = false
@@ -64,9 +75,19 @@ export default class Operations<TElement = unknown> {
     consume() {
         this.pending = this.pending.filter((operation) => !this.captured.has(operation))
         this.captured.clear()
+        for (const [node, state] of this.pending_scroll_states) {
+            this.confirmed_scroll_states.set(node, state)
+        }
+        this.pending_scroll_states.clear()
+        this.scroll_changed_nodes = this.pending_scroll_nodes
+        this.pending_scroll_nodes = new Set()
     }
 
     discardNode(node: Node<TElement>) {
+        this.confirmed_scroll_states.delete(node)
+        this.pending_scroll_states.delete(node)
+        this.pending_scroll_nodes.delete(node)
+        this.scroll_changed_nodes.delete(node)
         this.pending = this.pending.filter(
             (operation) =>
                 (operation as { node?: Node<TElement> }).node !== node || operation.op === OPERATIONS.ADD || operation.op === OPERATIONS.REMOVE,
@@ -74,10 +95,58 @@ export default class Operations<TElement = unknown> {
     }
 
     clear() {
+        this.confirmed_scroll_states = new WeakMap()
+        this.pending_scroll_states.clear()
+        this.pending_scroll_nodes.clear()
         this.pending.length = 0
         this.captured.clear()
         this.items = []
         this.reset()
+    }
+
+    recordScrollMetrics(node: Node<TElement>) {
+        const previous = this.confirmed_scroll_states.get(node)
+        const is_scroll_container =
+            (node.styles.overflowX as { parsed: { enum: number } } | undefined)?.parsed.enum === OVERFLOW.scroll ||
+            (node.styles.overflowY as { parsed: { enum: number } } | undefined)?.parsed.enum === OVERFLOW.scroll
+        const position_changed =
+            node.scrollLeft !== (previous?.scroll_left ?? 0) || node.scrollTop !== (previous?.scroll_top ?? 0)
+        const metrics_changed = is_scroll_container && (
+            previous?.is_scroll_container !== true ||
+            node.scrollWidth !== previous.scrollWidth || node.scrollHeight !== previous.scrollHeight ||
+            node.clientWidth !== previous.clientWidth || node.clientHeight !== previous.clientHeight
+        )
+
+        if (!position_changed && !metrics_changed && is_scroll_container === (previous?.is_scroll_container ?? false)) {
+            this.pending_scroll_states.delete(node)
+            this.pending_scroll_nodes.delete(node)
+            return
+        }
+
+        this.pending_scroll_states.set(node, {
+            scroll_left: node.scrollLeft,
+            scroll_top: node.scrollTop,
+            scrollWidth: node.scrollWidth,
+            scrollHeight: node.scrollHeight,
+            clientWidth: node.clientWidth,
+            clientHeight: node.clientHeight,
+            is_scroll_container,
+        })
+        if (position_changed || metrics_changed) {
+            this.pending_scroll_nodes.add(node)
+        } else {
+            this.pending_scroll_nodes.delete(node)
+        }
+    }
+
+    syncScrollMetrics(node: Node<TElement>) {
+        this.recordScrollMetrics(node)
+        const state = this.pending_scroll_states.get(node)
+        if (state !== undefined) {
+            this.confirmed_scroll_states.set(node, state)
+            this.pending_scroll_states.delete(node)
+        }
+        return this.pending_scroll_nodes.delete(node)
     }
 
     needUpdateOrder() {
@@ -107,6 +176,7 @@ export default class Operations<TElement = unknown> {
     private reset() {
         this.layout_nodes.clear()
         this.scroll_nodes.clear()
+        this.scroll_changed_nodes.clear()
         this.update_order = false
         this.check_layout = false
         this.update_layout = false

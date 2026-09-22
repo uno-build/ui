@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { loadYoga } from 'yoga-layout/load'
-import { OPERATIONS } from '../../src/core/constants.ts'
+import { CORE_EVENT, OPERATIONS } from '../../src/core/constants.ts'
 import RendererWebGPU from '../../src/renderer/RendererWebGPU.ts'
 import {
     COMMAND_KIND_GLYPH,
@@ -277,7 +277,10 @@ async function createFixture() {
     const destroyed_nodes = []
     const ui: any = await TestUI.create({
         renderer,
-        defined_events: [() => ({ destroyNode(node) { destroyed_nodes.push(node) }, destroy() {} })],
+        defined_events: [({ ui }) => {
+            const stopListening = ui.events_source.on(CORE_EVENT.NODE_DESTROY, ({ node }) => destroyed_nodes.push(node))
+            return { types: [], destroy: stopListening }
+        }],
     })
     ui.setViewport(400, 300)
     const freed = []

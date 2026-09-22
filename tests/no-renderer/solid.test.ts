@@ -97,7 +97,7 @@ export function MultiText(props) {
 
 export function ScrollViewTree(props) {
     return (
-        <ScrollView ref={props.setRef} style={{ height: '100px' }}>
+        <ScrollView ref={props.setRef} onScroll={props.getOnScroll()} style={{ height: '100px' }}>
             <view style={{ height: '10px' }} />
         </ScrollView>
     )
@@ -706,33 +706,78 @@ test('Solid commits state updates from an event handler within the dispatch', as
     expect(result).toEqual({ before: '100px', after: '101px', same_node: true })
 })
 
-test('ScrollView refs expose the main and content Uno nodes', async ({ page }) => {
+test('ScrollView exposes its nodes before notifying the initial and updated scroll callbacks', async ({ page }) => {
     const result = await page.evaluate(async (module_paths) => {
-        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
+        const [
+            { registerRootComponent },
+            { createSignal, flush },
+            { default: TestRenderer },
+            { default: TestUI },
+            { DEFINED_EVENTS },
+        ] = await Promise.all([
             import(module_paths.renderer),
+            import(module_paths.solid),
             import(module_paths.test_renderer),
             import(module_paths.test_ui),
+            import(module_paths.events),
         ])
         const fixture = (globalThis as any).solid_fixture
-        const ui = await TestUI.create({ renderer: new TestRenderer() })
+        const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
+        const received = []
         let reference = null
+        const [onScroll, setOnScroll] = createSignal(null)
+        setOnScroll(() => (event) => received.push({
+            handler: 'first',
+            ref_ready: reference?.nodes.main === event.target,
+            ...event,
+        }))
 
-        registerRootComponent(fixture.ScrollViewTree, { ui }).render({
+        const root = registerRootComponent(fixture.ScrollViewTree, { ui })
+        root.render({
             setRef(value) {
                 reference = value
             },
+            getOnScroll: onScroll,
         })
 
         const main = ui.root.children[0]
         const content = main.children[0]
+        const count_before_microtask = received.length
+        await Promise.resolve()
+        flush(() => setOnScroll(() => (event) => received.push({
+            handler: 'latest',
+            ref_ready: reference?.nodes.main === event.target,
+            ...event,
+        })))
+        main.scrollTop = 12
+        ui.update()
+        const count_before_update_microtask = received.length
+        await Promise.resolve()
 
-        return {
+        const result = {
             handle_keys: Object.keys(reference),
             nodes_match: reference.nodes.main === main && reference.nodes.content === content,
             main_height: main.styles.height.value,
             content_children: content.children.length,
             child_height: content.children[0].styles.height.value,
+            count_before_microtask,
+            count_before_update_microtask,
+            received: received.map((event) => ({
+                handler: event.handler,
+                ref_ready: event.ref_ready,
+                target_matches: event.target === main && event.current_target === main,
+                source_event: event.source_event,
+                scroll_left: event.scroll_left,
+                scroll_top: event.scroll_top,
+                scroll_width: event.scroll_width,
+                scroll_height: event.scroll_height,
+                client_width: event.client_width,
+                client_height: event.client_height,
+            })),
         }
+        root.unmount()
+        ui.destroy()
+        return result
     }, MODULE_PATHS)
 
     expect(result).toEqual({
@@ -741,6 +786,34 @@ test('ScrollView refs expose the main and content Uno nodes', async ({ page }) =
         main_height: '100px',
         content_children: 1,
         child_height: '10px',
+        count_before_microtask: 0,
+        count_before_update_microtask: 1,
+        received: [
+            {
+                handler: 'first',
+                ref_ready: true,
+                target_matches: true,
+                source_event: null,
+                scroll_left: 0,
+                scroll_top: 0,
+                scroll_width: 0,
+                scroll_height: 0,
+                client_width: 0,
+                client_height: 0,
+            },
+            {
+                handler: 'latest',
+                ref_ready: true,
+                target_matches: true,
+                source_event: null,
+                scroll_left: 0,
+                scroll_top: 12,
+                scroll_width: 0,
+                scroll_height: 0,
+                client_width: 0,
+                client_height: 0,
+            },
+        ],
     })
 })
 

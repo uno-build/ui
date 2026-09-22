@@ -409,10 +409,10 @@ export default class RendererWebGPU extends Renderer<
 
     afterUpdate(nodes: Node<undefined>[], operations: Operations<undefined>) {
         if (operations.needUpdateLayout() || operations.needUpdateScrollMetrics()) {
-            updateScrollMetrics(this.root_node, (node: any) => this.getNodeContentSize(node), operations.scroll_nodes)
+            updateScrollMetrics(this.root_node, (node: any) => this.getNodeContentSize(node), operations)
         } else {
             for (const node of operations.scroll_nodes) {
-                clampScroll(node, operations.scroll_nodes)
+                clampScroll(node, operations)
             }
         }
     }

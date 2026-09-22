@@ -448,12 +448,19 @@ test('ScrollView preserves its handle and children while updating its axis and e
     const reference = createRef<ScrollViewHandle>()
     const received = []
     const root = registerRootComponent(ScrollView, { ui })
-    await act(() => root.render({
-        ref: reference,
-        style: { width: '100px', height: '50px' },
-        onScroll: (event) => received.push({ handler: 'first', ...event }),
-        children: createElement(View, { style: { height: '100px' } }),
-    }))
+    await act(() => {
+        root.render({
+            ref: reference,
+            style: { width: '100px', height: '50px' },
+            onScroll: (event) => received.push({
+                handler: 'first',
+                ref_ready: reference.current?.nodes.main === event.target,
+                ...event,
+            }),
+            children: createElement(View, { style: { height: '100px' } }),
+        })
+        expect(received).toHaveLength(0)
+    })
     const main = ui.root.children[0]
     const content = main.children[0]
     const child = content.children[0]
@@ -463,6 +470,21 @@ test('ScrollView preserves its handle and children while updating its axis and e
     expect(main.styles.overflowY.value).toBe('scroll')
     expect(content.styles.flexDirection.value).toBe('column')
     expect(content.styles.flexShrink.value).toBe('0')
+    expect(received).toHaveLength(1)
+    expect(received[0]).toMatchObject({
+        handler: 'first',
+        ref_ready: true,
+        type: 'scroll',
+        source_event: null,
+        scroll_left: 0,
+        scroll_top: 0,
+        scroll_width: 0,
+        scroll_height: 0,
+        client_width: 0,
+        client_height: 0,
+    })
+    expect(received[0].target).toBe(main)
+    expect(received[0].current_target).toBe(main)
 
     await act(() => root.render({
         ref: reference,
@@ -479,19 +501,55 @@ test('ScrollView preserves its handle and children while updating its axis and e
     expect(main.styles.overflowX.value).toBe('scroll')
     expect(main.styles.overflowY.value).toBe('unset')
     expect(content.styles.flexDirection.value).toBe('row')
-    await act(() => ui.events.emit('scroll', {
-        source_event: null,
-        event_data: { scroll_left: 12, scroll_top: 0 },
-        target: main,
-    }))
-    expect(received).toHaveLength(1)
-    expect(received[0]).toMatchObject({ handler: 'latest', type: 'scroll', scroll_left: 12, scroll_top: 0 })
-    expect(received[0].current_target).toBe(main)
+    await act(() => {
+        main.scrollLeft = 12
+        ui.update()
+        expect(received).toHaveLength(1)
+    })
+    expect(received).toHaveLength(2)
+    expect(received[1]).toMatchObject({ handler: 'latest', type: 'scroll', scroll_left: 12, scroll_top: 0 })
+    expect(received[1].current_target).toBe(main)
     await act(() => root.unmount())
     expect(reference.current).toBe(null)
     expect(main.ui).toBe(null)
     expect(content.ui).toBe(null)
     expect(child.ui).toBe(null)
+    ui.destroy()
+})
+
+test('nested ScrollViews propagate metrics and can filter their own notifications', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
+    const outer_ref = createRef<ScrollViewHandle>()
+    const inner_ref = createRef<ScrollViewHandle>()
+    const received = []
+    const own_received = []
+    const root = registerRootComponent(ScrollView, { ui })
+    await act(() => root.render({
+        ref: outer_ref,
+        onScroll(event) {
+            received.push({ ...event })
+            if (event.target === event.current_target) {
+                own_received.push({ ...event })
+            }
+        },
+        children: createElement(ScrollView, { ref: inner_ref }),
+    }))
+    const outer = outer_ref.current.nodes.main
+    const inner = inner_ref.current.nodes.main
+    expect(received).toHaveLength(2)
+    expect(own_received).toHaveLength(1)
+    expect(own_received[0].target).toBe(outer)
+    expect(received.every((event) => event.current_target === outer)).toBe(true)
+
+    await act(() => {
+        inner.scrollTop = 15
+        ui.update()
+    })
+    expect(received).toHaveLength(3)
+    expect(own_received).toHaveLength(1)
+    expect(received[2].target).toBe(inner)
+    expect(received[2].scroll_top).toBe(15)
+    await act(() => root.unmount())
     ui.destroy()
 })
 

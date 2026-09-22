@@ -505,8 +505,14 @@ test('ScrollView preserves its handle and children while updating its axis and e
     const root = registerRootComponent(App, { ui })
     root.render({
         horizontal: false,
-        onScroll: (event) => received.push({ handler: 'first', ...event }),
+        onScroll: (event) => received.push({
+            handler: 'first',
+            ref_ready: reference.value?.nodes.main === event.target,
+            ...event,
+        }),
     })
+    expect(received).toHaveLength(0)
+    await nextTick()
     const main = ui.root.children[0]
     const content = main.children[0]
     const child = content.children[0]
@@ -517,6 +523,21 @@ test('ScrollView preserves its handle and children while updating its axis and e
     expect(main.styles.overflowY.value).toBe('scroll')
     expect(content.styles.flexDirection.value).toBe('column')
     expect(content.styles.flexShrink.value).toBe('0')
+    expect(received).toHaveLength(1)
+    expect(received[0]).toMatchObject({
+        handler: 'first',
+        ref_ready: true,
+        type: 'scroll',
+        source_event: null,
+        scroll_left: 0,
+        scroll_top: 0,
+        scroll_width: 0,
+        scroll_height: 0,
+        client_width: 0,
+        client_height: 0,
+    })
+    expect(received[0].target).toBe(main)
+    expect(received[0].current_target).toBe(main)
     root.render({
         horizontal: true,
         childWidth: '200px',
@@ -531,15 +552,13 @@ test('ScrollView preserves its handle and children while updating its axis and e
     expect(main.styles.overflowX.value).toBe('scroll')
     expect(main.styles.overflowY.value).toBe('unset')
     expect(content.styles.flexDirection.value).toBe('row')
-    ui.events.emit('scroll', {
-        source_event: null,
-        event_data: { scroll_left: 12, scroll_top: 0 },
-        target: main,
-    })
-    await nextTick()
+    main.scrollLeft = 12
+    ui.update()
     expect(received).toHaveLength(1)
-    expect(received[0]).toMatchObject({ handler: 'latest', type: 'scroll', scroll_left: 12, scroll_top: 0 })
-    expect(received[0].current_target).toBe(main)
+    await nextTick()
+    expect(received).toHaveLength(2)
+    expect(received[1]).toMatchObject({ handler: 'latest', type: 'scroll', scroll_left: 12, scroll_top: 0 })
+    expect(received[1].current_target).toBe(main)
     root.unmount()
     expect(reference.value).toBe(null)
     expect(main.ui).toBe(null)
