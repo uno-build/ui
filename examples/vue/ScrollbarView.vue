@@ -202,8 +202,8 @@ const styles = computed(() => {
         </ScrollView>
         <View
             v-if="visible"
-            @pointer-over="hovered = true"
-            @pointer-out="handlePointerOut"
+            @pointerover="hovered = true"
+            @pointerout="handlePointerOut"
             @click="(event) => event.stopPropagation()"
             :style="{
                 position: 'absolute',
@@ -226,7 +226,7 @@ const styles = computed(() => {
             }"
         >
             <View
-                @pointer-down="handlePointerDown"
+                @pointerdown="handlePointerDown"
                 :style="{
                     position: 'absolute',
                     pointerEvents: styles.scroll_style.pointerEvents,

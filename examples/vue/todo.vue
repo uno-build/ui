@@ -295,10 +295,10 @@ onUnmounted(() => {
                         'button-hover': hovered === 'add',
                         'button-pressed': pressed === 'add',
                     }"
-                    @pointer-over="hovered = 'add'"
-                    @pointer-out="hovered = null"
-                    @pointer-down="pressed = 'add'"
-                    @pointer-up="pressed = null"
+                    @pointerover="hovered = 'add'"
+                    @pointerout="hovered = null"
+                    @pointerdown="pressed = 'add'"
+                    @pointerup="pressed = null"
                     @click="addTodo(draft)"
                 >
                     <Text
@@ -320,10 +320,10 @@ onUnmounted(() => {
                         'pill-hover': hovered === 'toggle-all',
                         'pill-selected': pressed === 'toggle-all',
                     }"
-                    @pointer-over="hovered = 'toggle-all'"
-                    @pointer-out="hovered = null"
-                    @pointer-down="pressed = 'toggle-all'"
-                    @pointer-up="pressed = null"
+                    @pointerover="hovered = 'toggle-all'"
+                    @pointerout="hovered = null"
+                    @pointerdown="pressed = 'toggle-all'"
+                    @pointerup="pressed = null"
                     @click="toggleAll"
                 >
                     <Text class="pill-text" :class="{ 'pill-text-highlight': hovered === 'toggle-all' }">
@@ -341,8 +341,8 @@ onUnmounted(() => {
                         'pill-hover': hovered === `filter:${name}`,
                         'pill-selected': filter === name,
                     }"
-                    @pointer-over="hovered = `filter:${name}`"
-                    @pointer-out="hovered = null"
+                    @pointerover="hovered = `filter:${name}`"
+                    @pointerout="hovered = null"
                     @click="filter = name"
                 >
                     <Text
@@ -365,8 +365,8 @@ onUnmounted(() => {
                         :key="todo.id"
                         class="item"
                         :class="{ 'item-hover': hovered_id === todo.id }"
-                        @pointer-over="hovered_id = todo.id"
-                        @pointer-out="hovered_id = null"
+                        @pointerover="hovered_id = todo.id"
+                        @pointerout="hovered_id = null"
                     >
                         <View
                             class="check"
@@ -374,8 +374,8 @@ onUnmounted(() => {
                                 'check-done': todo.completed,
                                 'check-hover': hovered === `check:${todo.id}`,
                             }"
-                            @pointer-over="hovered = `check:${todo.id}`"
-                            @pointer-out="hovered = null"
+                            @pointerover="hovered = `check:${todo.id}`"
+                            @pointerout="hovered = null"
                             @click="toggleTodo(todo.id)"
                         >
                             <View v-if="todo.completed" class="check-dot" />
@@ -405,8 +405,8 @@ onUnmounted(() => {
                                 'destroy-visible': hovered_id === todo.id,
                                 'destroy-hover': hovered === `destroy:${todo.id}`,
                             }"
-                            @pointer-over="hovered = `destroy:${todo.id}`"
-                            @pointer-out="hovered = null"
+                            @pointerover="hovered = `destroy:${todo.id}`"
+                            @pointerout="hovered = null"
                             @click="removeTodo(todo.id)"
                         >
                             <Text
@@ -428,8 +428,8 @@ onUnmounted(() => {
                     v-if="completed_count > 0"
                     class="clear"
                     :class="{ 'clear-hover': hovered === 'clear' }"
-                    @pointer-over="hovered = 'clear'"
-                    @pointer-out="hovered = null"
+                    @pointerover="hovered = 'clear'"
+                    @pointerout="hovered = null"
                     @click="clearCompleted"
                 >
                     <Text class="clear-text" :class="{ 'clear-text-hover': hovered === 'clear' }">
