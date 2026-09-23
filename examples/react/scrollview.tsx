@@ -1,4 +1,5 @@
-import { Image, registerRootComponent, View, ScrollView, Text } from '../../src/components/react'
+import { registerRootComponent, Image, View, Text, ScrollView } from '../../src/components/react'
+import { ScrollbarView } from './ScrollbarView'
 import { loadImage, loadJson } from '../shared/load-assets'
 import {
     loadFont,
@@ -238,7 +239,7 @@ const FOOTER_STYLE = {
 
 export function ReactScrollView() {
     return (
-        <ScrollView style={PAGE_STYLE}>
+        <ScrollbarView style={PAGE_STYLE}>
             <View style={PAGE_CONTENT_STYLE}>
                 <View style={PAGE_HEADER_STYLE}>
                     <View style={BADGE_STYLE}>
@@ -326,7 +327,7 @@ export function ReactScrollView() {
                     </View>
                 </ScrollView>
             </View>
-        </ScrollView>
+        </ScrollbarView>
     )
 }
 

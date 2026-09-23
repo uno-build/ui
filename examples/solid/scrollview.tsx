@@ -1,4 +1,5 @@
 import { registerRootComponent, Image, ScrollView, Text, View } from '../../src/components/solid'
+import { ScrollbarView } from './ScrollbarView.tsx'
 import { For } from 'solid-js'
 import { loadImage, loadJson } from '../shared/load-assets'
 import {
@@ -238,7 +239,7 @@ const FOOTER_STYLE = {
 
 export function SolidScrollView() {
     return (
-        <ScrollView style={PAGE_STYLE}>
+        <ScrollbarView style={PAGE_STYLE}>
             <View style={PAGE_CONTENT_STYLE}>
                 <View style={PAGE_HEADER_STYLE}>
                     <View style={BADGE_STYLE}>
@@ -322,7 +323,7 @@ export function SolidScrollView() {
                     </View>
                 </ScrollView>
             </View>
-        </ScrollView>
+        </ScrollbarView>
     )
 }
 

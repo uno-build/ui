@@ -30,6 +30,7 @@ export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
 
 <script setup lang="ts">
 import { Image, ScrollView, Text, View } from '../../src/components/vue'
+import ScrollbarView from './ScrollbarView.vue'
 
 const GALLERY_SOURCES = [TEXTURE_SRC, LOGO_SRC, COIN_SRC, TEXTURE_SRC, LOGO_SRC, COIN_SRC, TEXTURE_SRC, LOGO_SRC]
 const PARAGRAPHS = [
@@ -58,7 +59,7 @@ const ITEMS = [
 </script>
 
 <template>
-    <ScrollView class="page">
+    <ScrollbarView class="page">
         <View class="page-content">
             <View class="page-header">
                 <View class="badge">
@@ -135,7 +136,7 @@ const ITEMS = [
                 </View>
             </ScrollView>
         </View>
-    </ScrollView>
+    </ScrollbarView>
 </template>
 
 <style scoped>
