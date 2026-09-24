@@ -1,7 +1,11 @@
 import type { Mesh, StandardMaterialProps, Texture2D } from '@babylonjs/lite'
 import type { EventOptions } from '../core/UI'
 import type { UIWorldSpaceOutput } from './UIWorldSpace'
-import type { UIWebGPUBabylonLiteMaterial as UIBabylonLiteMaterial, UIWebGPUBabylonLiteOptions } from './UIWebGPUBabylonLite'
+import type {
+    UIWebGPUBabylonLiteMaterial as UIBabylonLiteMaterial,
+    UIWebGPUBabylonLiteOptions,
+    UIWebGPUBabylonLitePlane,
+} from './UIWebGPUBabylonLite'
 import { loadYoga } from 'yoga-layout/load'
 import UIWebGPUBabylonLite from './UIWebGPUBabylonLite'
 
@@ -10,9 +14,7 @@ export type { MaterialPlugin, Texture2D } from './UIWebGPUBabylonLite'
 
 export type UIBabylonLiteOptions<
     TMaterial extends UIBabylonLiteMaterial = StandardMaterialProps,
-    TPlane extends {
-        plane: Mesh
-    } = {
+    TPlane extends UIWebGPUBabylonLitePlane = {
         plane: Mesh
     },
 > = Omit<UIWebGPUBabylonLiteOptions<TMaterial, TPlane>, 'loadYoga' | 'defined_events'> & EventOptions<UIBabylonLite> & {
@@ -22,9 +24,7 @@ export type UIBabylonLiteOptions<
 export default class UIBabylonLite extends UIWebGPUBabylonLite {
     static async create<
         TMaterial extends UIBabylonLiteMaterial = StandardMaterialProps,
-        TPlane extends {
-            plane: Mesh
-        } = {
+        TPlane extends UIWebGPUBabylonLitePlane = {
             plane: Mesh
         },
     >(

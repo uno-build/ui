@@ -4,7 +4,11 @@ import type { StandardMaterial } from '@babylonjs/core/Materials/standardMateria
 import type { Texture } from '@babylonjs/core/Materials/Textures/texture'
 import type { EventOptions } from '../core/UI'
 import type { UIWorldSpaceOutput } from './UIWorldSpace'
-import type { UIWebGPUBabylonMaterial as UIBabylonMaterial, UIWebGPUBabylonOptions } from './UIWebGPUBabylon'
+import type {
+    UIWebGPUBabylonMaterial as UIBabylonMaterial,
+    UIWebGPUBabylonOptions,
+    UIWebGPUBabylonPlane,
+} from './UIWebGPUBabylon'
 import { loadYoga } from 'yoga-layout/load'
 import UIWebGPUBabylon from './UIWebGPUBabylon'
 
@@ -13,9 +17,7 @@ export type { WebGPUHardwareTexture } from './UIWebGPUBabylon'
 
 export type UIBabylonOptions<
     TMaterial extends UIBabylonMaterial = StandardMaterial,
-    TPlane extends {
-        plane: Mesh
-    } = {
+    TPlane extends UIWebGPUBabylonPlane = {
         plane: Mesh
         geometry: Geometry | null
     },
@@ -26,9 +28,7 @@ export type UIBabylonOptions<
 export default class UIBabylon extends UIWebGPUBabylon {
     static async create<
         TMaterial extends UIBabylonMaterial = StandardMaterial,
-        TPlane extends {
-            plane: Mesh
-        } = {
+        TPlane extends UIWebGPUBabylonPlane = {
             plane: Mesh
             geometry: Geometry | null
         },

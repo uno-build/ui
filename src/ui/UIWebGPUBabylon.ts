@@ -1,10 +1,12 @@
 import type { Camera } from '@babylonjs/core/Cameras/camera'
+import type { PickingInfo } from '@babylonjs/core/Collisions/pickingInfo'
 import type { WebGPUHardwareTexture } from '@babylonjs/core/Engines/WebGPU/webgpuHardwareTexture.js'
 import type { WebGPUEngine } from '@babylonjs/core/Engines/webgpuEngine'
 import type { Geometry } from '@babylonjs/core/Meshes/geometry'
 import type { Mesh } from '@babylonjs/core/Meshes/mesh'
 import type { Scene } from '@babylonjs/core/scene'
 import type {
+    MapIntersection,
     MaterialOptions,
     PlaneOptions,
     TextureOptions,
@@ -26,44 +28,44 @@ export type { WebGPUHardwareTexture }
 
 export type UIWebGPUBabylonMaterial = StandardMaterial
 
+export type UIWebGPUBabylonPlane = {
+    plane: Mesh
+    mapIntersection?: MapIntersection<PickingInfo>
+}
+
 export type UIWebGPUBabylonOptions<
     TMaterial extends UIWebGPUBabylonMaterial = StandardMaterial,
-    TPlane extends {
-        plane: Mesh
-    } = {
+    TPlane extends UIWebGPUBabylonPlane = {
         plane: Mesh
         geometry: Geometry | null
     },
-> = UIWorldSpaceOptions<Texture, TMaterial, TPlane, UIWebGPUBabylon> & {
+> = UIWorldSpaceOptions<Texture, TMaterial, TPlane & UIWebGPUBabylonPlane, UIWebGPUBabylon> & {
     scene: Scene
 }
 
 export default class UIWebGPUBabylon extends UIWorldSpace<
     Texture,
     StandardMaterial,
-    {
-        plane: Mesh
-    },
+    UIWebGPUBabylonPlane,
     UIWebGPUBabylon,
     Camera
 > {
     private scene: Scene
 
     private plane!: Mesh | null
+    private mapIntersection: UIWebGPUBabylonPlane['mapIntersection']
 
     protected constructor({
         scene,
         ...options
-    }: UIWebGPUBabylonOptions<StandardMaterial, { plane: Mesh }>) {
+    }: UIWebGPUBabylonOptions<StandardMaterial, UIWebGPUBabylonPlane>) {
         super(options)
         this.scene = scene
     }
 
     static async create<
         TMaterial extends UIWebGPUBabylonMaterial = StandardMaterial,
-        TPlane extends {
-            plane: Mesh
-        } = {
+        TPlane extends UIWebGPUBabylonPlane = {
             plane: Mesh
             geometry: Geometry | null
         },
@@ -82,6 +84,7 @@ export default class UIWebGPUBabylon extends UIWorldSpace<
     protected async initialize() {
         const output = await super.initialize()
         this.plane = output.plane
+        this.mapIntersection = output.mapIntersection
         return output
     }
 
@@ -101,15 +104,20 @@ export default class UIWebGPUBabylon extends UIWorldSpace<
             false,
             camera,
         )
-        const uv = intersection.getTextureCoordinates()
+        const uv =
+            intersection.hit === false
+                ? null
+                : this.mapIntersection === undefined
+                  ? intersection.getTextureCoordinates()
+                  : this.mapIntersection(intersection)
 
         this.emitPlatformEvent(
             source_event,
-            intersection.hit === false
+            uv === null
                 ? null
                 : {
-                      x: uv!.x * this.root!.layout!.width!,
-                      y: (1 - uv!.y) * this.root!.layout!.height!,
+                      x: uv.x * this.root!.layout!.width!,
+                      y: (1 - uv.y) * this.root!.layout!.height!,
                       distance_to_camera: Vector3.Distance(camera.globalPosition, intersection.pickedPoint!),
                   },
         )
@@ -118,6 +126,7 @@ export default class UIWebGPUBabylon extends UIWorldSpace<
     destroy() {
         const destroyed = super.destroy()
         this.plane = null
+        this.mapIntersection = undefined
         return destroyed
     }
 

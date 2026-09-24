@@ -5,10 +5,12 @@ import type {
     GpuPicker,
     MaterialPlugin,
     Mesh,
+    PickingInfo,
     StandardMaterialProps,
     Texture2D,
 } from '@babylonjs/lite'
 import type {
+    MapIntersection,
     MaterialOptions,
     PlaneOptions,
     TextureOptions,
@@ -21,6 +23,7 @@ import {
     createPlane,
     createStandardMaterial,
     disposePicker,
+    enableDetailedPicking,
     getCameraPosition,
     invertMat4,
     pickAsync,
@@ -32,14 +35,17 @@ export type { MaterialPlugin, Texture2D }
 
 export type UIWebGPUBabylonLiteMaterial = StandardMaterialProps
 
+export type UIWebGPUBabylonLitePlane = {
+    plane: Mesh
+    mapIntersection?: MapIntersection<PickingInfo>
+}
+
 export type UIWebGPUBabylonLiteOptions<
     TMaterial extends UIWebGPUBabylonLiteMaterial = StandardMaterialProps,
-    TPlane extends {
-        plane: Mesh
-    } = {
+    TPlane extends UIWebGPUBabylonLitePlane = {
         plane: Mesh
     },
-> = UIWorldSpaceOptions<Texture2D, TMaterial, TPlane, UIWebGPUBabylonLite> & {
+> = UIWorldSpaceOptions<Texture2D, TMaterial, TPlane & UIWebGPUBabylonLitePlane, UIWebGPUBabylonLite> & {
     engine: EngineContext
     scene: SceneContext
 }
@@ -47,9 +53,7 @@ export type UIWebGPUBabylonLiteOptions<
 export default class UIWebGPUBabylonLite extends UIWorldSpace<
     Texture2D,
     StandardMaterialProps,
-    {
-        plane: Mesh
-    },
+    UIWebGPUBabylonLitePlane,
     UIWebGPUBabylonLite,
     Camera
 > {
@@ -62,12 +66,13 @@ export default class UIWebGPUBabylonLite extends UIWorldSpace<
     private pending_pick: Promise<void> | null = null
 
     private plane!: Mesh | null
+    private mapIntersection: UIWebGPUBabylonLitePlane['mapIntersection']
 
     protected constructor({
         engine,
         scene,
         ...options
-    }: UIWebGPUBabylonLiteOptions<StandardMaterialProps, { plane: Mesh }>) {
+    }: UIWebGPUBabylonLiteOptions<StandardMaterialProps, UIWebGPUBabylonLitePlane>) {
         super(options)
         this.engine = engine
         this.scene = scene
@@ -76,9 +81,7 @@ export default class UIWebGPUBabylonLite extends UIWorldSpace<
 
     static async create<
         TMaterial extends UIWebGPUBabylonLiteMaterial = StandardMaterialProps,
-        TPlane extends {
-            plane: Mesh
-        } = {
+        TPlane extends UIWebGPUBabylonLitePlane = {
             plane: Mesh
         },
     >(
@@ -96,6 +99,10 @@ export default class UIWebGPUBabylonLite extends UIWorldSpace<
     protected async initialize() {
         const output = await super.initialize()
         this.plane = output.plane
+        this.mapIntersection = output.mapIntersection
+        if (this.mapIntersection !== undefined) {
+            enableDetailedPicking(this.picker!)
+        }
         return output
     }
 
@@ -123,22 +130,36 @@ export default class UIWebGPUBabylonLite extends UIWorldSpace<
             }
 
             const picked_point = intersection.pickedPoint!
-            const camera_position = getCameraPosition(camera)
-            const inverse_world_matrix = invertMat4(this.plane!.worldMatrix)!
-            const local_x =
-                picked_point[0] * inverse_world_matrix[0]! +
-                picked_point[1] * inverse_world_matrix[4]! +
-                picked_point[2] * inverse_world_matrix[8]! +
-                inverse_world_matrix[12]!
-            const local_y =
-                picked_point[0] * inverse_world_matrix[1]! +
-                picked_point[1] * inverse_world_matrix[5]! +
-                picked_point[2] * inverse_world_matrix[9]! +
-                inverse_world_matrix[13]!
+            let uv
+            if (this.mapIntersection === undefined) {
+                const inverse_world_matrix = invertMat4(this.plane!.worldMatrix)!
+                const local_x =
+                    picked_point[0] * inverse_world_matrix[0]! +
+                    picked_point[1] * inverse_world_matrix[4]! +
+                    picked_point[2] * inverse_world_matrix[8]! +
+                    inverse_world_matrix[12]!
+                const local_y =
+                    picked_point[0] * inverse_world_matrix[1]! +
+                    picked_point[1] * inverse_world_matrix[5]! +
+                    picked_point[2] * inverse_world_matrix[9]! +
+                    inverse_world_matrix[13]!
+                uv = {
+                    x: local_x / this.world_width + 0.5,
+                    y: local_y / this.world_height + 0.5,
+                }
+            } else {
+                uv = this.mapIntersection(intersection)
+            }
 
+            if (uv === null) {
+                this.emitPlatformEvent(source_event, null)
+                return
+            }
+
+            const camera_position = getCameraPosition(camera)
             this.emitPlatformEvent(source_event, {
-                x: (local_x / this.world_width + 0.5) * this.root!.layout!.width!,
-                y: (0.5 - local_y / this.world_height) * this.root!.layout!.height!,
+                x: uv.x * this.root!.layout!.width!,
+                y: (1 - uv.y) * this.root!.layout!.height!,
                 distance_to_camera: Math.hypot(
                     picked_point[0] - camera_position.x,
                     picked_point[1] - camera_position.y,
@@ -170,6 +191,7 @@ export default class UIWebGPUBabylonLite extends UIWorldSpace<
             }
         }
         this.plane = null
+        this.mapIntersection = undefined
         return destroyed
     }
 
