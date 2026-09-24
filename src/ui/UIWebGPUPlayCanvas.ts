@@ -1,5 +1,6 @@
-import type { AppBase } from 'playcanvas'
+import type { AppBase, RenderComponent } from 'playcanvas'
 import type {
+    MapIntersection,
     MaterialOptions,
     PlaneOptions,
     TextureOptions,
@@ -21,50 +22,68 @@ import {
     MeshInstance,
     PIXELFORMAT_BGRA8,
     PIXELFORMAT_RGBA8,
+    PRIMITIVE_TRIANGLES,
+    Ray,
     StandardMaterial,
     Texture,
+    Tri,
+    Vec2,
+    Vec3,
 } from 'playcanvas'
 import UIWorldSpace from './UIWorldSpace'
 
 export type UIWebGPUPlayCanvasMaterial = StandardMaterial
 
+/** Intersection with a render component's triangles, before skinning or morph deformation. */
+export type UIWebGPUPlayCanvasIntersection = {
+    mesh_instance: MeshInstance
+    point: Vec3
+    local_point: Vec3
+    /** Triangle normal in mesh-local space. */
+    normal: Vec3
+    face_index: number
+    /** Interpolated UV0 coordinates, without flipping the mesh's V coordinate. */
+    uv: Vec2 | null
+    distance: number
+}
+
+export type UIWebGPUPlayCanvasPlane = {
+    plane: Entity
+    mapIntersection?: MapIntersection<UIWebGPUPlayCanvasIntersection>
+}
+
 export type UIWebGPUPlayCanvasOptions<
     TMaterial extends UIWebGPUPlayCanvasMaterial = StandardMaterial,
-    TPlane extends {
-        plane: Entity
-    } = {
+    TPlane extends UIWebGPUPlayCanvasPlane = {
         plane: Entity
         geometry: Geometry
         mesh: Mesh
         mesh_instance: MeshInstance
     },
-> = UIWorldSpaceOptions<Texture, TMaterial, TPlane, UIWebGPUPlayCanvas> & {
+> = UIWorldSpaceOptions<Texture, TMaterial, TPlane & UIWebGPUPlayCanvasPlane, UIWebGPUPlayCanvas> & {
     app: AppBase
 }
 
 export default class UIWebGPUPlayCanvas extends UIWorldSpace<
     Texture,
     StandardMaterial,
-    {
-        plane: Entity
-    },
+    UIWebGPUPlayCanvasPlane,
     UIWebGPUPlayCanvas,
     Entity
 > {
     private app: AppBase
 
     private plane!: Entity | null
+    private mapIntersection: UIWebGPUPlayCanvasPlane['mapIntersection']
 
-    protected constructor({ app, ...options }: UIWebGPUPlayCanvasOptions<StandardMaterial, { plane: Entity }>) {
+    protected constructor({ app, ...options }: UIWebGPUPlayCanvasOptions<StandardMaterial, UIWebGPUPlayCanvasPlane>) {
         super(options)
         this.app = app
     }
 
     static async create<
         TMaterial extends UIWebGPUPlayCanvasMaterial = StandardMaterial,
-        TPlane extends {
-            plane: Entity
-        } = {
+        TPlane extends UIWebGPUPlayCanvasPlane = {
             plane: Entity
             geometry: Geometry
             mesh: Mesh
@@ -85,6 +104,7 @@ export default class UIWebGPUPlayCanvas extends UIWorldSpace<
     protected async initialize() {
         const output = await super.initialize()
         this.plane = output.plane
+        this.mapIntersection = output.mapIntersection
         return output
     }
 
@@ -101,6 +121,24 @@ export default class UIWebGPUPlayCanvas extends UIWorldSpace<
         const camera_component = camera.camera!
         const ray_start = camera_component.screenToWorld(x, y, 0)
         const ray_end = camera_component.screenToWorld(x, y, camera_component.farClip - camera_component.nearClip)
+
+        if (this.mapIntersection !== undefined) {
+            const ray = new Ray(ray_start, ray_end.clone().sub(ray_start).normalize())
+            const intersection = this.intersectMeshes(ray, camera.getPosition())
+            const uv = intersection === null ? null : this.mapIntersection(intersection)
+            this.emitPlatformEvent(
+                source_event,
+                uv === null
+                    ? null
+                    : {
+                          x: uv.x * this.root!.layout!.width!,
+                          y: (1 - uv.y) * this.root!.layout!.height!,
+                          distance_to_camera: intersection!.distance,
+                      },
+            )
+            return
+        }
+
         const inverse_world_matrix = new Mat4().copy(this.plane!.getWorldTransform()).invert()
         const local_ray_start = inverse_world_matrix.transformPoint(ray_start)
         const local_ray_end = inverse_world_matrix.transformPoint(ray_end)
@@ -134,9 +172,96 @@ export default class UIWebGPUPlayCanvas extends UIWorldSpace<
         })
     }
 
+    private intersectMeshes(ray: Ray, camera_position: Vec3): UIWebGPUPlayCanvasIntersection | null {
+        let intersection: UIWebGPUPlayCanvasIntersection | null = null
+        const triangle = new Tri()
+        const local_point = new Vec3()
+        const edge_1 = new Vec3()
+        const edge_2 = new Vec3()
+        const offset = new Vec3()
+        const render_components = this.plane!.findComponents('render') as RenderComponent[]
+
+        for (const render of render_components) {
+            if (!render.enabled || !render.entity.enabled) {
+                continue
+            }
+            for (const mesh_instance of render.meshInstances) {
+                if (!mesh_instance.visible || !mesh_instance.pick || !mesh_instance.aabb.intersectsRay(ray)) {
+                    continue
+                }
+                const mesh = mesh_instance.mesh
+                const primitive = mesh.primitive[0]!
+                if (primitive.type !== PRIMITIVE_TRIANGLES) {
+                    continue
+                }
+
+                const world_matrix = mesh_instance.node.getWorldTransform()
+                const inverse_world_matrix = new Mat4().copy(world_matrix).invert()
+                const local_ray = new Ray(
+                    inverse_world_matrix.transformPoint(ray.origin),
+                    inverse_world_matrix.transformVector(ray.direction).normalize(),
+                )
+                const positions: number[] = []
+                const indices: number[] = []
+                const uvs: number[] = []
+                mesh.getPositions(positions)
+                mesh.getIndices(indices)
+                mesh.getUvs(0, uvs)
+
+                for (let i = primitive.base; i < primitive.base + primitive.count; i += 3) {
+                    const a = primitive.indexed ? indices[i]! + primitive.baseVertex : i
+                    const b = primitive.indexed ? indices[i + 1]! + primitive.baseVertex : i + 1
+                    const c = primitive.indexed ? indices[i + 2]! + primitive.baseVertex : i + 2
+                    triangle.v0.set(positions[a * 3]!, positions[a * 3 + 1]!, positions[a * 3 + 2]!)
+                    triangle.v1.set(positions[b * 3]!, positions[b * 3 + 1]!, positions[b * 3 + 2]!)
+                    triangle.v2.set(positions[c * 3]!, positions[c * 3 + 1]!, positions[c * 3 + 2]!)
+                    if (!triangle.intersectsRay(local_ray, local_point)) {
+                        continue
+                    }
+                    const point = world_matrix.transformPoint(local_point)
+                    const distance = point.distance(camera_position)
+                    if (intersection !== null && distance >= intersection.distance) {
+                        continue
+                    }
+
+                    edge_1.sub2(triangle.v1, triangle.v0)
+                    edge_2.sub2(triangle.v2, triangle.v0)
+                    let uv: Vec2 | null = null
+                    if (uvs.length > 0) {
+                        offset.sub2(local_point, triangle.v0)
+                        const d00 = edge_1.dot(edge_1)
+                        const d01 = edge_1.dot(edge_2)
+                        const d11 = edge_2.dot(edge_2)
+                        const d20 = offset.dot(edge_1)
+                        const d21 = offset.dot(edge_2)
+                        const denominator = d00 * d11 - d01 * d01
+                        const weight_b = (d11 * d20 - d01 * d21) / denominator
+                        const weight_c = (d00 * d21 - d01 * d20) / denominator
+                        const weight_a = 1 - weight_b - weight_c
+                        uv = new Vec2(
+                            uvs[a * 2]! * weight_a + uvs[b * 2]! * weight_b + uvs[c * 2]! * weight_c,
+                            uvs[a * 2 + 1]! * weight_a + uvs[b * 2 + 1]! * weight_b + uvs[c * 2 + 1]! * weight_c,
+                        )
+                    }
+                    intersection = {
+                        mesh_instance,
+                        point,
+                        local_point: local_point.clone(),
+                        normal: new Vec3().cross(edge_1, edge_2).normalize(),
+                        face_index: i / 3,
+                        uv,
+                        distance,
+                    }
+                }
+            }
+        }
+        return intersection
+    }
+
     destroy() {
         const destroyed = super.destroy()
         this.plane = null
+        this.mapIntersection = undefined
         return destroyed
     }
 

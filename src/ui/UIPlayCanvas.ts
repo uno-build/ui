@@ -1,17 +1,20 @@
 import type { Entity, Geometry, Mesh, MeshInstance, StandardMaterial, Texture } from 'playcanvas'
 import type { EventOptions } from '../core/UI'
 import type { UIWorldSpaceOutput } from './UIWorldSpace'
-import type { UIWebGPUPlayCanvasMaterial as UIPlayCanvasMaterial, UIWebGPUPlayCanvasOptions } from './UIWebGPUPlayCanvas'
+import type {
+    UIWebGPUPlayCanvasMaterial as UIPlayCanvasMaterial,
+    UIWebGPUPlayCanvasOptions,
+    UIWebGPUPlayCanvasPlane,
+} from './UIWebGPUPlayCanvas'
 import { loadYoga } from 'yoga-layout/load'
 import UIWebGPUPlayCanvas from './UIWebGPUPlayCanvas'
 
 export type { UIPlayCanvasMaterial }
+export type { UIWebGPUPlayCanvasIntersection as UIPlayCanvasIntersection } from './UIWebGPUPlayCanvas'
 
 export type UIPlayCanvasOptions<
     TMaterial extends UIPlayCanvasMaterial = StandardMaterial,
-    TPlane extends {
-        plane: Entity
-    } = {
+    TPlane extends UIWebGPUPlayCanvasPlane = {
         plane: Entity
         geometry: Geometry
         mesh: Mesh
@@ -24,9 +27,7 @@ export type UIPlayCanvasOptions<
 export default class UIPlayCanvas extends UIWebGPUPlayCanvas {
     static async create<
         TMaterial extends UIPlayCanvasMaterial = StandardMaterial,
-        TPlane extends {
-            plane: Entity
-        } = {
+        TPlane extends UIWebGPUPlayCanvasPlane = {
             plane: Entity
             geometry: Geometry
             mesh: Mesh
