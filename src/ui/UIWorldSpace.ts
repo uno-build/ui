@@ -28,6 +28,8 @@ export type PlaneOptions<TTexture, TMaterial> = MaterialOptions<TTexture> & {
     world_height: number
 }
 
+export type MapIntersection<TIntersection> = (intersection: TIntersection) => { x: number; y: number } | null
+
 export type UIWorldSpaceOptions<TTexture, TMaterial, TPlane, TUI extends UI = UI> = RendererWebGPUOptions &
     EventOptions<TUI> & {
         texture_width: number

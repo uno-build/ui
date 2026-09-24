@@ -1,4 +1,5 @@
 import type {
+    MapIntersection,
     MaterialOptions,
     PlaneOptions,
     TextureOptions,
@@ -12,32 +13,32 @@ import UIWorldSpace from './UIWorldSpace'
 
 export type UIWebGPUThreeMaterial = THREE.NodeMaterial & Pick<THREE.MeshBasicNodeMaterial, 'map' | 'color'>
 
+export type UIWebGPUThreePlane = {
+    plane: THREE.Mesh
+    mapIntersection?: MapIntersection<THREE.Intersection>
+}
+
 export type UIWebGPUThreeOptions<
     TMaterial extends UIWebGPUThreeMaterial = THREE.MeshStandardNodeMaterial,
-    TPlane extends {
-        plane: THREE.Mesh
-    } = {
+    TPlane extends UIWebGPUThreePlane = {
         plane: THREE.Mesh<THREE.PlaneGeometry, TMaterial>
         geometry: THREE.PlaneGeometry
     },
-> = UIWorldSpaceOptions<THREE.ExternalTexture, TMaterial, TPlane, UIWebGPUThree>
+> = UIWorldSpaceOptions<THREE.ExternalTexture, TMaterial, TPlane & UIWebGPUThreePlane, UIWebGPUThree>
 
 export default class UIWebGPUThree extends UIWorldSpace<
     THREE.ExternalTexture,
     UIWebGPUThreeMaterial,
-    {
-        plane: THREE.Mesh
-    },
+    UIWebGPUThreePlane,
     UIWebGPUThree,
     THREE.Camera
 > {
     private plane!: THREE.Mesh | null
+    private mapIntersection: UIWebGPUThreePlane['mapIntersection']
 
     static async create<
         TMaterial extends UIWebGPUThreeMaterial = THREE.MeshStandardNodeMaterial,
-        TPlane extends {
-            plane: THREE.Mesh
-        } = {
+        TPlane extends UIWebGPUThreePlane = {
             plane: THREE.Mesh<THREE.PlaneGeometry, TMaterial>
             geometry: THREE.PlaneGeometry
         },
@@ -56,6 +57,7 @@ export default class UIWebGPUThree extends UIWorldSpace<
     protected async initialize() {
         const output = await super.initialize()
         this.plane = output.plane
+        this.mapIntersection = output.mapIntersection
         return output
     }
 
@@ -74,15 +76,21 @@ export default class UIWebGPUThree extends UIWorldSpace<
         this.plane!.updateWorldMatrix(true, true)
         raycaster.setFromCamera(pointer, camera)
         const intersection = raycaster.intersectObject(this.plane!)[0]
+        const uv =
+            intersection === undefined
+                ? null
+                : this.mapIntersection === undefined
+                  ? intersection.uv!
+                  : this.mapIntersection(intersection)
 
         this.emitPlatformEvent(
             source_event,
-            intersection === undefined
+            uv === null
                 ? null
                 : {
-                      x: intersection.uv!.x * this.root!.layout!.width!,
-                      y: (1 - intersection.uv!.y) * this.root!.layout!.height!,
-                      distance_to_camera: intersection.distance,
+                      x: uv.x * this.root!.layout!.width!,
+                      y: (1 - uv.y) * this.root!.layout!.height!,
+                      distance_to_camera: intersection!.distance,
                   },
         )
     }
@@ -90,6 +98,7 @@ export default class UIWebGPUThree extends UIWorldSpace<
     destroy() {
         const destroyed = super.destroy()
         this.plane = null
+        this.mapIntersection = undefined
         return destroyed
     }
 

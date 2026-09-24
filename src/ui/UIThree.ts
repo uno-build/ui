@@ -1,7 +1,11 @@
 import type * as THREE from 'three/webgpu'
 import type { EventOptions } from '../core/UI'
 import type { UIWorldSpaceOutput } from './UIWorldSpace'
-import type { UIWebGPUThreeMaterial as UIThreeMaterial, UIWebGPUThreeOptions } from './UIWebGPUThree'
+import type {
+    UIWebGPUThreeMaterial as UIThreeMaterial,
+    UIWebGPUThreeOptions,
+    UIWebGPUThreePlane,
+} from './UIWebGPUThree'
 import { loadYoga } from 'yoga-layout/load'
 import UIWebGPUThree from './UIWebGPUThree'
 
@@ -9,9 +13,7 @@ export type { UIThreeMaterial }
 
 export type UIThreeOptions<
     TMaterial extends UIThreeMaterial = THREE.MeshStandardNodeMaterial,
-    TPlane extends {
-        plane: THREE.Mesh
-    } = {
+    TPlane extends UIWebGPUThreePlane = {
         plane: THREE.Mesh<THREE.PlaneGeometry, TMaterial>
         geometry: THREE.PlaneGeometry
     },
@@ -22,9 +24,7 @@ export type UIThreeOptions<
 export default class UIThree extends UIWebGPUThree {
     static async create<
         TMaterial extends UIThreeMaterial = THREE.MeshStandardNodeMaterial,
-        TPlane extends {
-            plane: THREE.Mesh
-        } = {
+        TPlane extends UIWebGPUThreePlane = {
             plane: THREE.Mesh<THREE.PlaneGeometry, TMaterial>
             geometry: THREE.PlaneGeometry
         },
