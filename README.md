@@ -16,7 +16,7 @@
  <a href="https://github.com/Josema/uno-ui/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/josema/uno-ui/ci.yml?branch=main&logo=github&style=for-the-badge" alt="Babylon.js" height="28" /></a>
 </p>
 
-**[Website](https://uno.build/) • [API Docs](https://uno.build/docs/) • [Examples](https://uno.build/examples/)**
+**[Website](https://uno.build/) • [API Docs](https://uno.build/docs/) • [Examples](https://uno.build/docs/examples/)**
 
 #### Build high-performance and pixel-perfect user interfaces for WebGPU. Use the rendering engine and UI framework of your choice.
 
