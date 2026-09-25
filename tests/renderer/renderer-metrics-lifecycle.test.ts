@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { loadYoga } from 'yoga-layout/load'
+import { defineScroll } from '../../src/events/scroll.ts'
+import { CORE_EVENT } from '../../src/core/constants.ts'
 import RendererWebGPU from '../../src/renderer/RendererWebGPU.ts'
 import {
     GLYPH_DATA,
@@ -107,6 +109,220 @@ test('RendererWebGPU uploads metrics after afterUpdate clamps scroll for both sc
     }
 })
 
+test('RendererWebGPU notifies committed scroll metrics in order after content and viewport changes', async () => {
+    const { ui, createNode } = await createFixture()
+    try {
+        const parent = createNode(ui.root, { width: '100%', height: '100%', overflow: 'scroll' })
+        const scroll_events = []
+        parent.on('scroll', (event) => scroll_events.push({ ...event }))
+
+        ui.update()
+        const content = createNode(parent, { width: '600px', height: '500px' })
+        ui.update()
+        parent.scrollLeft = 1000
+        parent.scrollTop = 1000
+        ui.update()
+        content.style('width', '450px')
+        content.style('height', '350px')
+        ui.update()
+        ui.setViewport(200, 100)
+        ui.update()
+
+        expect(scroll_events).toHaveLength(0)
+        await Promise.resolve()
+        expect(scroll_events).toHaveLength(5)
+        const metrics = scroll_events.map((event) => {
+            expect(event.target).toBe(parent)
+            expect(event.current_target).toBe(parent)
+            expect(event.source_event).toBeNull()
+            return [
+                event.scroll_left, event.scroll_top, event.scroll_width,
+                event.scroll_height, event.client_width, event.client_height,
+            ]
+        })
+        expect(metrics).toEqual([
+            [0, 0, 400, 300, 400, 300],
+            [0, 0, 600, 500, 400, 300],
+            [200, 200, 600, 500, 400, 300],
+            [50, 50, 450, 350, 400, 300],
+            [50, 50, 450, 350, 200, 100],
+        ])
+
+        parent.scrollLeft = 50
+        parent.scrollTop = 50
+        content.style('backgroundColor', '#f00')
+        ui.update()
+        await Promise.resolve()
+        expect(scroll_events).toHaveLength(5)
+    } finally {
+        ui.destroy()
+    }
+})
+
+test('RendererWebGPU notifies initial metrics when scrolling is enabled without a size change', async () => {
+    const { ui, createNode } = await createFixture()
+    try {
+        const parent = createNode(ui.root, { overflow: 'hidden' })
+        const scroll_events = []
+        parent.on('scroll', (event) => scroll_events.push(event))
+        ui.update()
+        await Promise.resolve()
+        expect(scroll_events).toHaveLength(0)
+
+        parent.style('overflowY', 'scroll')
+        ui.update()
+        await Promise.resolve()
+        expect(scroll_events).toHaveLength(1)
+        expect(scroll_events[0]).toMatchObject({
+            scroll_left: 0,
+            scroll_top: 0,
+            scroll_width: 100,
+            scroll_height: 100,
+            client_width: 100,
+            client_height: 100,
+            source_event: null,
+        })
+
+        parent.style('overflowY', 'hidden')
+        ui.update()
+        await Promise.resolve()
+        expect(scroll_events).toHaveLength(1)
+        parent.style('overflowX', 'scroll')
+        ui.update()
+        await Promise.resolve()
+        expect(scroll_events).toHaveLength(2)
+    } finally {
+        ui.destroy()
+    }
+})
+
+test('RendererWebGPU notifies metrics after retrying a failed update with clean Yoga layout', async () => {
+    const { ui, renderer, createNode } = await createFixture()
+    try {
+        const parent = createNode(ui.root, { overflow: 'scroll' })
+        const content = createNode(parent, { width: '200px', height: '200px' })
+        ui.update()
+        parent.scrollLeft = 100
+        parent.scrollTop = 100
+        ui.update()
+        await Promise.resolve()
+
+        const scroll_events = []
+        parent.on('scroll', (event) => scroll_events.push(event))
+        content.style('width', '120px')
+        content.style('height', '120px')
+        const updateRenderer = renderer.update.bind(renderer)
+        renderer.update = () => { throw new Error('render failure') }
+
+        expect(() => ui.update()).toThrow('render failure')
+        expect(parent.scrollLeft).toBe(20)
+        expect(parent.scrollTop).toBe(20)
+        await Promise.resolve()
+        expect(scroll_events).toHaveLength(0)
+
+        renderer.update = updateRenderer
+        ui.update()
+        expect(ui.operations.needUpdateLayout()).toBe(false)
+        await Promise.resolve()
+        expect(scroll_events).toHaveLength(1)
+        expect(scroll_events[0]).toMatchObject({
+            scroll_left: 20,
+            scroll_top: 20,
+            scroll_width: 120,
+            scroll_height: 120,
+            client_width: 100,
+            client_height: 100,
+            source_event: null,
+        })
+    } finally {
+        ui.destroy()
+    }
+})
+
+test('RendererWebGPU publishes only scroll containers whose confirmed metrics changed', async () => {
+    const { ui, createNode } = await createFixture()
+    try {
+        const parent = createNode(ui.root, { overflow: 'scroll' })
+        const content = createNode(parent, { width: '200px', height: '200px' })
+        const sibling = createNode(ui.root, { left: '200px', overflow: 'scroll' })
+        const updates = []
+        ui.events_source.on(CORE_EVENT.UPDATED, ({ operations }) => {
+            updates.push([...operations.scroll_changed_nodes])
+        })
+
+        ui.update()
+        expect(updates[0]).toEqual([parent, sibling])
+
+        content.style('width', '220px')
+        ui.update()
+        expect(updates[1]).toEqual([parent])
+
+        parent.style('left', '10px')
+        ui.update()
+        expect(updates[2]).toEqual([])
+
+        parent.scrollTop = 30
+        ui.update()
+        expect(updates[3]).toEqual([parent])
+
+        sibling.style('backgroundColor', '#f00')
+        ui.update()
+        expect(updates[4]).toEqual([])
+
+        parent.style('display', 'none')
+        ui.update()
+        expect(updates[5]).toEqual([parent])
+        expect(parent.scrollTop).toBe(0)
+        expect(parent.scrollWidth).toBe(0)
+        expect(parent.clientWidth).toBe(0)
+    } finally {
+        ui.destroy()
+    }
+})
+
+test('RendererWebGPU drops failed scroll changes that revert before a successful retry', async () => {
+    const { ui, renderer, createNode } = await createFixture()
+    try {
+        const parent = createNode(ui.root, { overflow: 'scroll' })
+        const content = createNode(parent, { width: '200px', height: '200px' })
+        ui.update()
+        parent.scrollTop = 100
+        ui.update()
+        await Promise.resolve()
+
+        const scroll_events = []
+        parent.on('scroll', (event) => scroll_events.push(event))
+        const updateRenderer = renderer.update.bind(renderer)
+        renderer.update = () => { throw new Error('render failure') }
+        content.style('height', '120px')
+        expect(() => ui.update()).toThrow('render failure')
+        expect(parent.scrollTop).toBe(20)
+        expect(ui.operations.scroll_changed_nodes.size).toBe(0)
+        await Promise.resolve()
+        expect(scroll_events).toEqual([])
+
+        content.style('height', '200px')
+        parent.scrollTop = 100
+        renderer.update = updateRenderer
+        ui.update()
+        await Promise.resolve()
+        expect(ui.operations.scroll_changed_nodes.size).toBe(0)
+        expect(scroll_events).toEqual([])
+
+        renderer.update = () => { throw new Error('render failure') }
+        content.style('height', '120px')
+        expect(() => ui.update()).toThrow('render failure')
+        parent.destroy()
+        renderer.update = updateRenderer
+        ui.update()
+        await Promise.resolve()
+        expect(ui.operations.scroll_changed_nodes.size).toBe(0)
+        expect(scroll_events).toEqual([])
+    } finally {
+        ui.destroy()
+    }
+})
+
 test('UI hit testing reads pending scroll and overflow changes before the next renderer update', async () => {
     const { ui, renderer, createNode } = await createFixture()
     try {
@@ -176,7 +392,7 @@ async function createFixture() {
             font_manager: { getDefaultFont() { return font }, getTextureView() { return {} } },
         },
     })
-    const ui = await TestUI.create({ renderer })
+    const ui = await TestUI.create({ renderer, defined_events: [defineScroll] })
     ui.setViewport(400, 300)
     const createNode = (parent, styles, text?) => {
         const node = ui.create()

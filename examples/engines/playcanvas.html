@@ -23,10 +23,9 @@
     <body>
         <canvas></canvas>
         <script type="module">
-            import UIWebGPU from '../../src/ui/UIWebGPU'
+            import UI from '../../src/ui/UI'
             import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
             import { loadImage, loadJson } from '../shared/load-assets'
-            import { loadYoga } from 'yoga-layout/load'
             import { main } from './playcanvas.ts'
 
             const canvas = document.querySelector('canvas')
@@ -34,11 +33,10 @@
             main({
                 canvas,
                 onCanvasEvent,
-                UIWebGPU,
+                UI,
                 ResourcesWebGPU,
                 loadImage,
                 loadJson,
-                loadYoga,
             }).catch(console.error)
         </script>
     </body>

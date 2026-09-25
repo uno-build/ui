@@ -1,4 +1,5 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
+import { FONT_NAME_CHANGA, FONT_NAME_POPPINS, loadFont } from '../../shared/assets'
 
 const BLUR_LEVELS = Array.from({ length: 10 }, (_, index) => index)
 const FONT_SIZES = [5, 15, 25, 35]
@@ -7,13 +8,11 @@ const ORBIT_RADIUS = 3
 const ORBIT_STEP = Math.PI / 500
 
 export default async function createFontTextShadowLayout({ ui, registerFont }) {
-    const font_image = await loadImage('examples/assets/fonts/ChangaOne-Regular.mtsdf.png')
-    const font_json = await loadJson('examples/assets/fonts/ChangaOne-Regular.mtsdf.json')
-    const font_image2 = await loadImage('examples/assets/fonts/Poppins-Regular.mtsdf.png')
-    const font_json2 = await loadJson('examples/assets/fonts/Poppins-Regular.mtsdf.json')
+    const font = await loadFont(FONT_NAME_CHANGA, { loadImage, loadJson })
+    const font2 = await loadFont(FONT_NAME_POPPINS, { loadImage, loadJson })
 
-    registerFont('ChangaOne-Regular', font_image, font_json)
-    registerFont('Poppins-Regular', font_image2, font_json2)
+    registerFont(FONT_NAME_CHANGA, font)
+    registerFont(FONT_NAME_POPPINS, font2)
 
     const stage = ui.create()
     stage.style('width', '100%')

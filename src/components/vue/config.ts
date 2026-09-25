@@ -1,13 +1,27 @@
 import type { Plugin } from 'vite'
-import type { SFCDescriptor } from 'vue/compiler-sfc'
+import type { CompilerOptions, SFCDescriptor } from 'vue/compiler-sfc'
 import type { StyleRule } from './styles'
+import { EVENT } from '../../events/constants'
+
+const EVENT_NAMES = new Map<string, string>(Object.values(EVENT).map(({ name, prop }) => [
+    name,
+    prop.slice(2).replace(/\B([A-Z])/g, '-$1').toLowerCase(),
+]))
 
 export const compilerConfig = {
     template: {
         transformAssetUrls: false,
         compilerOptions: {
             hoistStatic: false,
-        },
+            nodeTransforms: [(node) => {
+                if (node.type !== 1) return
+                for (const prop of node.props) {
+                    if (prop.type !== 7 || prop.name !== 'on' || prop.arg?.type !== 4 || !prop.arg.isStatic) continue
+                    const event_name = EVENT_NAMES.get(prop.arg.content)
+                    if (event_name !== undefined) prop.arg.content = event_name
+                }
+            }],
+        } satisfies CompilerOptions,
     },
 }
 

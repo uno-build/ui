@@ -1,5 +1,13 @@
 import type Node from '../core/Node'
+import type Operations from '../core/Operations'
+import type { CORE_EVENT } from '../core/constants'
 import type { EVENT } from './constants'
+
+export type CoreEventMap = {
+    // Borrowed for synchronous consumption; listeners must not call ui.update() here.
+    [CORE_EVENT.UPDATED]: { operations: Operations }
+    [CORE_EVENT.NODE_DESTROY]: { node: Node }
+}
 
 export type PointerSource = Pick<PointerEvent, 'type' | 'pointerId' | 'pointerType' | 'preventDefault'> & Partial<PointerEvent>
 export type WheelSource = Pick<WheelEvent, 'type' | 'deltaX' | 'deltaY' | 'deltaMode' | 'preventDefault'> & Partial<WheelEvent>
@@ -28,7 +36,14 @@ export interface NodeEventMap {
     pointerout: PointerNodeEvent<'pointerout'> & { related_target: Node | null }
     click: NodeEvent<'click', MouseEvent | PointerSource> & EventCoordinates
     wheel: NodeEvent<'wheel', WheelSource> & EventCoordinates & { delta_x: number, delta_y: number }
-    scroll: NodeEvent<'scroll'> & { scroll_left: number, scroll_top: number }
+    scroll: NodeEvent<'scroll'> & {
+        scroll_left: number
+        scroll_top: number
+        scroll_width: number
+        scroll_height: number
+        client_width: number
+        client_height: number
+    }
     focus: NodeEvent<'focus'> & { related_target: Node | null }
     blur: NodeEvent<'blur'> & { related_target: Node | null }
 }

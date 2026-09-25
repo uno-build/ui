@@ -1,15 +1,74 @@
 import type UI from '../core/UI'
 import type Node from '../core/Node'
-import type { SourceEvent, PointerSource, WheelSource, EventSource } from './types'
+import type { CoreEventMap, SourceEvent, PointerSource, WheelSource, EventSource, UIEventMap } from './types'
 
 import { OVERFLOW } from '../style/constants'
 import { EVENT } from './constants'
+import { CORE_EVENT, OPERATIONS } from '../core/constants'
 import { normalizeDelta } from './wheel'
 
 const SCROLL_SLOP = 10 // The minimum drag distance in pixels to mark the node as scrolling
 const WHEEL_FACTOR = 1 // The factor to scale the wheel scroll delta
 
+export function createScrollObserver(ui: UI) {
+    let scroll_events: UIEventMap['scroll'][] = []
+
+    function notifyScroll(node: Node, source_event: EventSource | null = null) {
+        if (node.ui !== ui) {
+            return
+        }
+
+        const event_data = {
+            scroll_left: node.scrollLeft,
+            scroll_top: node.scrollTop,
+            scroll_width: node.scrollWidth,
+            scroll_height: node.scrollHeight,
+            client_width: node.clientWidth,
+            client_height: node.clientHeight,
+        }
+        scroll_events.push({ source_event, event_data, target: node })
+        if (scroll_events.length === 1) {
+            // React assigns refs after resetAfterCommit calls update().
+            queueMicrotask(() => {
+                const events = scroll_events
+                scroll_events = []
+                for (const event of events) {
+                    if (event.target.ui === ui) {
+                        ui.events.emit(EVENT.SCROLL.name, event)
+                    }
+                }
+            })
+        }
+    }
+
+    function processUpdate({ operations }: CoreEventMap[typeof CORE_EVENT.UPDATED]) {
+        if (operations.scroll_changed_nodes.size === 0) {
+            return
+        }
+        const scroll_sources = new Map<Node, EventSource | null>()
+        for (const operation of operations.items) {
+            if (operation.op === OPERATIONS.SCROLL) {
+                scroll_sources.set(operation.node, operation.source_event ?? null)
+            }
+        }
+        for (const node of operations.scroll_changed_nodes) {
+            notifyScroll(node, scroll_sources.get(node) ?? null)
+        }
+    }
+
+    const stopObserving = ui.events_source.on(CORE_EVENT.UPDATED, processUpdate)
+
+    return {
+        notifyScroll,
+        destroy() {
+            stopObserving()
+            scroll_events.length = 0
+        },
+    }
+}
+
 export function defineScroll({ ui }: { ui: UI }) {
+    const scroll_observer = createScrollObserver(ui)
     const pointers = new Map<number, { node: Node, x: number, y: number, scroll_left: number, scroll_top: number }>()
 
     const scrollTo = (node: Node, scroll_left: number, scroll_top: number, source_event: EventSource) => {
@@ -20,14 +79,7 @@ export function defineScroll({ ui }: { ui: UI }) {
         node.scrollTop = Math.round(Math.max(0, Math.min(scroll_top, node.scrollHeight - node.clientHeight)))
 
         if (node.scrollLeft !== previous_left || node.scrollTop !== previous_top) {
-            ui.events.emit(EVENT.SCROLL.name, {
-                source_event,
-                event_data: {
-                    scroll_left: node.scrollLeft,
-                    scroll_top: node.scrollTop,
-                },
-                target: node,
-            })
+            ui.operations.add({ op: OPERATIONS.SCROLL, node, source_event })
             ui.update()
         }
     }
@@ -109,19 +161,19 @@ export function defineScroll({ ui }: { ui: UI }) {
         ui.events_source.on(EVENT.POINTERUP.name, processPointerEnd),
         ui.events_source.on(EVENT.POINTERCANCEL.name, processPointerEnd),
         ui.events_source.on(EVENT.WHEEL.name, processWheel),
-    ]
-
-    return {
-        types: [EVENT.SCROLL],
-        destroyNode(node: Node) {
+        ui.events_source.on(CORE_EVENT.NODE_DESTROY, ({ node }) => {
             for (const [pointer_id, pointer] of pointers) {
                 if (pointer.node === node) {
                     pointers.delete(pointer_id)
                 }
             }
-        },
+        }),
+    ]
 
+    return {
+        types: [EVENT.SCROLL],
         destroy() {
+            scroll_observer.destroy()
             remove_listeners.forEach((removeListener) => removeListener())
             pointers.clear()
         },

@@ -2,6 +2,7 @@ import type UI from '../core/UI'
 import type Node from '../core/Node'
 import type { SourceEvent, PointerSource, EventCoordinates } from './types'
 
+import { CORE_EVENT } from '../core/constants'
 import { EVENT } from './constants'
 
 export function defineClick({ ui }: { ui: UI }) {
@@ -40,17 +41,17 @@ export function defineClick({ ui }: { ui: UI }) {
         ui.events_source.on(EVENT.POINTERDOWN.name, processPointerDown),
         ui.events_source.on(EVENT.POINTERCANCEL.name, processPointerCancel),
         ui.events_source.on(EVENT.POINTERUP.name, processPointerUp),
-    ]
-
-    return {
-        types: [EVENT.CLICK],
-        destroyNode(node: Node) {
+        ui.events_source.on(CORE_EVENT.NODE_DESTROY, ({ node }) => {
             for (const [pointer_id, pointer] of pointers) {
                 if (pointer.target === node) {
                     pointers.delete(pointer_id)
                 }
             }
-        },
+        }),
+    ]
+
+    return {
+        types: [EVENT.CLICK],
 
         destroy() {
             remove_listeners.forEach((removeListener) => removeListener())

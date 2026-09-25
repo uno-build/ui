@@ -1,9 +1,8 @@
 import UIDom from '../../src/ui/UIDom'
-import UIWebGPU from '../../src/ui/UIWebGPU'
+import UI from '../../src/ui/UI'
 import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
 import ResourcesDom from '../../src/renderer/dom/ResourcesDom'
 import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
-import { loadYoga } from 'yoga-layout/load'
 
 export const SETUPS = {
     RendererDom: {
@@ -17,7 +16,7 @@ export const SETUPS = {
     },
     RendererWebGPU: {
         elementType: 'canvas',
-        ui: UIWebGPU,
+        ui: UI,
         resources_class: ResourcesWebGPU,
         attributes: {},
         inspectDomPaint: false,
@@ -48,7 +47,6 @@ export async function runLayout({
         const resources = await setup.resources_class.create({ canvas })
         const { ui } = await setup.ui.create({
             resources,
-            loadYoga,
             device_pixel_ratio: window.devicePixelRatio,
             ...renderer_options,
         })

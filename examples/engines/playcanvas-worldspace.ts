@@ -23,7 +23,6 @@ import {
     Vec3,
     createGraphicsDevice,
 } from 'playcanvas'
-import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 import { loadAssets, registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
@@ -35,11 +34,10 @@ export async function main({
     canvas,
     onCanvasEvent,
     UIPlayCanvas,
-    UIWebGPU,
+    UI,
     ResourcesWebGPU,
     loadImage,
     loadJson,
-    loadYoga,
 }) {
     const gfx_options = {
         deviceTypes: ['webgpu'],
@@ -75,14 +73,13 @@ export async function main({
 
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })
-    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UI.create({ resources, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
     const { ui: first_ui, plane: first_plane } = await UIPlayCanvas.create({
         app,
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width,
         texture_height,
@@ -92,7 +89,6 @@ export async function main({
     const { ui: second_ui, plane: second_plane } = await UIPlayCanvas.create({
         app,
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width,
         texture_height,
@@ -196,13 +192,8 @@ export async function main({
     let touch_count = 0
 
     // Event handling
-    PLATFORM_EVENT_NAMES.forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            overlay_ui.dispatchPlatformEvent(e)
-            first_ui.dispatchPlatformEvent(e, { camera })
-            second_ui.dispatchPlatformEvent(e, { camera })
-        })
-    })
+    first_ui.setCamera(camera)
+    second_ui.setCamera(camera)
     first_ui.root.on('pointerdown', () => {
         camera_controls_enabled = false
     })

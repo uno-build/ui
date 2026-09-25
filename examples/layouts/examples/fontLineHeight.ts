@@ -1,4 +1,5 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
+import { FONT_NAME_POPPINS, loadFont } from '../../shared/assets'
 
 const TEXT = 'The same text wraps across the same lines while vertical spacing changes.'
 const VARIANTS = [
@@ -28,10 +29,9 @@ const VARIANTS = [
 ]
 
 export default async function createFontLineHeightLayout({ ui, registerFont }) {
-    const poppins_image = await loadImage('examples/assets/fonts/Poppins-Regular.mtsdf.png')
-    const poppins_json = await loadJson('examples/assets/fonts/Poppins-Regular.mtsdf.json')
+    const poppins = await loadFont(FONT_NAME_POPPINS, { loadImage, loadJson })
 
-    registerFont('Poppins-Regular', poppins_image, poppins_json)
+    registerFont(FONT_NAME_POPPINS, poppins)
 
     const stage = ui.create()
     stage.style('width', '100%')

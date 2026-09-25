@@ -9,26 +9,16 @@
                 location.replace('?example=scrollview')
             }
         </script>
+        <script type="module">
+            import {
+                FONT_NAME_POPPINS,
+                FONT_NAME_CHANGA,
+                FONT_NAME_NOUGAT,
+                registerDomFonts,
+            } from '../shared/assets.ts'
+            registerDomFonts([FONT_NAME_POPPINS, FONT_NAME_CHANGA, FONT_NAME_NOUGAT])
+        </script>
         <style>
-            @font-face {
-                font-family: 'Poppins-Regular';
-                src: url('assets/fonts/Poppins-Regular.ttf') format('truetype');
-                font-weight: normal;
-                font-style: normal;
-            }
-            @font-face {
-                font-family: 'ChangaOne-Regular';
-                src: url('assets/fonts/ChangaOne-Regular.ttf') format('truetype');
-                font-weight: normal;
-                font-style: normal;
-            }
-            @font-face {
-                font-family: 'Nougat-ExtraBlack';
-                src: url('assets/fonts/Nougat-ExtraBlack.ttf') format('truetype');
-                font-weight: normal;
-                font-style: normal;
-            }
-
             html,
             body {
                 margin: 0;

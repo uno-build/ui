@@ -14,7 +14,7 @@ import {
     resizeEngine,
 } from '@babylonjs/lite'
 import { registerRootComponent } from '../../src/components/solid'
-import { loadAssets, registerAssets } from '../shared/assets'
+import { FONT_NAME_NOUGAT as TITLE_FONT_FAMILY, loadAssets, loadFont, registerAssets } from '../shared/assets'
 import { SolidTodo } from './todo'
 import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 
@@ -29,10 +29,9 @@ const FLOOR_Y = -0.12
 // That padding is transparent, so the plane drops by it for the card itself to land on the grid.
 const PANEL_Y = FLOOR_Y + WORLD_HEIGHT / 2 - WORLD_PAGE_PADDING
 const TEXTURE_SCALAR = window.devicePixelRatio
-const TITLE_FONT_FAMILY = 'Nougat-ExtraBlack'
 const ICON_SRC = 'assets/images/solid.png'
 
-export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, loadJson, loadYoga }) {
+export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, loadJson }) {
     const device_pixel_ratio = window.devicePixelRatio
     const engine = await createEngine(canvas, { msaaSamples: 1, alphaMode: 'premultiplied' })
     const scene = createSceneContext(engine)
@@ -48,22 +47,20 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })
 
-    // loadAssets already covers Poppins-Regular, which the todo app needs.
-    const [icon, title_font_image, title_font_json] = await Promise.all([
+    const [icon, title_font] = await Promise.all([
         loadImage(ICON_SRC),
-        loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
+        loadFont(TITLE_FONT_FAMILY, { loadImage, loadJson }),
     ])
     resources.registerImage(ICON_SRC, icon)
-    resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
+    resources.registerFont(TITLE_FONT_FAMILY, title_font)
 
     const texture_width = Math.round(UI_WIDTH * TEXTURE_SCALAR)
     const texture_height = Math.round(UI_HEIGHT * TEXTURE_SCALAR)
     const { ui, plane } = await UIBabylonLite.create({
+        register_platform_events: false,
         engine,
         scene,
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width,
         texture_height,
@@ -79,16 +76,16 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
     })
 
     // Babylon Lite's plane faces -Z, so this mirrors the Three.js camera offset onto its front side.
-    const camera = createArcRotateCamera(
-        -Math.PI / 2,
-        Math.atan2(4.5, 1.31),
-        Math.hypot(4.5, 1.31),
-        { x: 0, y: PANEL_Y, z: 0 },
-    )
+    const camera = createArcRotateCamera(-Math.PI / 2, Math.atan2(4.5, 1.31), Math.hypot(4.5, 1.31), {
+        x: 0,
+        y: PANEL_Y,
+        z: 0,
+    })
     camera.fov = Math.PI / 3
     camera.nearPlane = 0.1
     camera.farPlane = 100
     scene.camera = camera
+    ui.setCamera(camera)
 
     const active_pointers = new Map()
     const panel_pointers = new Set()
@@ -101,7 +98,7 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
                 pending_pointer_picks.add(e)
             }
 
-            const dispatch_result = ui.dispatchPlatformEvent(e, { camera })
+            const dispatch_result = ui.dispatchPlatformEvent(e)
 
             if (type === 'pointerdown') {
                 dispatch_result.then(
@@ -164,7 +161,7 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
     })
     addToScene(scene, floor)
 
-    registerRootComponent(SolidTodo, { ui }).render({ backgroundColor: 'unset', boxShadow: 'unset' })
+    registerRootComponent(SolidTodo, { ui }).mount({ backgroundColor: 'unset', boxShadow: 'unset' })
 
     ui.setViewport(UI_WIDTH, UI_HEIGHT)
     ui.update()

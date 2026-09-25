@@ -3,6 +3,11 @@ export const RESOURCE_EVENT = {
     FONT: 'font',
 }
 
+export const CORE_EVENT = {
+    UPDATED: 'core:updated',
+    NODE_DESTROY: 'core:node-destroy',
+} as const
+
 export const OPERATIONS = {
     ADD: 'add',
     REMOVE: 'remove',

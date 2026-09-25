@@ -8,14 +8,18 @@ export type ResourcesWebGPUOptions = {
     format?: GPUTextureFormat
     image_atlas_size?: number
     font_atlas_size?: number
-} & ({ canvas: WebGPUCanvas, context?: WebGPUContext } | { canvas?: WebGPUCanvas, context: WebGPUContext })
+} & ({ canvas: WebGPUCanvas; context?: WebGPUContext } | { canvas?: WebGPUCanvas; context: WebGPUContext })
 
 export type WebGPUImage = {
-    src?: string
+    image: GPUCopyExternalImageSource
+    width?: number
+    height?: number
+    preventBleeding?: boolean
+}
+
+export type ResolvedWebGPUImage = WebGPUImage & {
     width: number
     height: number
-    bitmap: GPUCopyExternalImageSource
-    preventBleeding?: boolean
 }
 
 export type FontMetrics = {
@@ -26,7 +30,7 @@ export type FontMetrics = {
     underlineY?: number
     underlineThickness?: number
 }
-export type GlyphBounds = { left: number, bottom: number, right: number, top: number }
+export type GlyphBounds = { left: number; bottom: number; right: number; top: number }
 export type FontData = {
     atlas: {
         size: number
@@ -44,7 +48,11 @@ export type FontData = {
         planeBounds?: GlyphBounds
         atlasBounds?: GlyphBounds
     }>
-    kerning?: Array<{ unicode1: number, unicode2: number, advance: number }>
+    kerning?: Array<{ unicode1: number; unicode2: number; advance: number }>
+}
+
+export type WebGPUFont = WebGPUImage & {
+    data: FontData
 }
 
 export type WebGPUDrawOptions = {

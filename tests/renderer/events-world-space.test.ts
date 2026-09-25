@@ -20,7 +20,7 @@ test('UIThree dispatches pointer events from raycast intersections', { tag: '@we
 
     const events = await page.evaluate(
         async ({ event_types }) => {
-            const { UIThree, ResourcesWebGPU, loadYoga, THREE } = await import(
+            const { UIThree, ResourcesWebGPU, THREE } = await import(
                 '/tests/renderer/browser-entry.ts'
             )
             const canvas = document.createElement('canvas')
@@ -38,7 +38,7 @@ test('UIThree dispatches pointer events from raycast intersections', { tag: '@we
             const resources = await ResourcesWebGPU.create({ canvas })
             const { ui, geometry, material, texture } = await UIThree.create({
                 resources,
-                loadYoga,
+                register_platform_events: false,
                 texture_width: 200,
                 texture_height: 100,
                 world_width: 2,
@@ -47,6 +47,7 @@ test('UIThree dispatches pointer events from raycast intersections', { tag: '@we
             const camera = new THREE.PerspectiveCamera(60, 2, 0.1, 100)
             camera.position.z = 2
             camera.updateMatrixWorld()
+            ui.setCamera(camera)
 
             const child = ui.create()
             const events = []
@@ -77,7 +78,7 @@ test('UIThree dispatches pointer events from raycast intersections', { tag: '@we
                 ui.root.on(type, record(ui.root, 'root'))
                 canvas.addEventListener(type, (source_event) => {
                     current_source_event = source_event
-                    ui.dispatchPlatformEvent(source_event, { camera })
+                    ui.dispatchPlatformEvent(source_event)
                 })
             }
 
@@ -127,7 +128,7 @@ test('UIBabylon dispatches pointer events from raycast intersections', { tag: '@
 
     const events = await page.evaluate(
         async ({ event_types }) => {
-            const { UIBabylon, ResourcesWebGPU, loadYoga, WebGPUEngine, Scene, FreeCamera, Vector3 } = await import(
+            const { UIBabylon, ResourcesWebGPU, WebGPUEngine, Scene, FreeCamera, Vector3 } = await import(
                 '/tests/renderer/browser-entry.ts'
             )
             const canvas = document.createElement('canvas')
@@ -163,7 +164,7 @@ test('UIBabylon dispatches pointer events from raycast intersections', { tag: '@
             const { ui, plane, material, texture } = await UIBabylon.create({
                 scene,
                 resources,
-                loadYoga,
+                register_platform_events: false,
                 texture_width: 200,
                 texture_height: 100,
                 world_width: 2,
@@ -172,6 +173,7 @@ test('UIBabylon dispatches pointer events from raycast intersections', { tag: '@
             const camera = new FreeCamera('camera', new Vector3(0, 0, -2), scene)
             camera.setTarget(Vector3.Zero())
             camera.minZ = 0.1
+            ui.setCamera(camera)
 
             const child = ui.create()
             const events = []
@@ -202,7 +204,7 @@ test('UIBabylon dispatches pointer events from raycast intersections', { tag: '@
                 ui.root.on(type, record(ui.root, 'root'))
                 canvas.addEventListener(type, (source_event) => {
                     current_source_event = source_event
-                    ui.dispatchPlatformEvent(source_event, { camera })
+                    ui.dispatchPlatformEvent(source_event)
                 })
             }
 
@@ -254,7 +256,7 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', { tag
 
     const events = await page.evaluate(
         async ({ event_types }) => {
-            const { UIBabylonLite, ResourcesWebGPU, loadYoga, BABYLON } = await import(
+            const { UIBabylonLite, ResourcesWebGPU, BABYLON } = await import(
                 '/tests/renderer/browser-entry.ts'
             )
             const canvas = document.createElement('canvas')
@@ -282,7 +284,7 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', { tag
                 engine,
                 scene,
                 resources,
-                loadYoga,
+                register_platform_events: false,
                 texture_width: 200,
                 texture_height: 100,
                 world_width: 2,
@@ -291,6 +293,7 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', { tag
             const camera = BABYLON.createFreeCamera({ x: 0, y: 0, z: -2 }, { x: 0, y: 0, z: 0 })
             camera.nearPlane = 0.1
             scene.camera = camera
+            ui.setCamera(camera)
             BABYLON.addToScene(scene, plane)
 
             const child = ui.create()
@@ -325,7 +328,7 @@ test('UIBabylonLite dispatches pointer events from raycast intersections', { tag
                 ui.root.on(type, record(ui.root, 'root'))
                 canvas.addEventListener(type, (source_event) => {
                     source_events.set(`${source_event.type}:${source_event.pointerId}`, source_event)
-                    dispatch_promises.push(ui.dispatchPlatformEvent(source_event, { camera }))
+                    dispatch_promises.push(ui.dispatchPlatformEvent(source_event))
                 })
             }
 
@@ -375,7 +378,7 @@ test('UIPlayCanvas dispatches pointer events from raycast intersections', { tag:
 
     const events = await page.evaluate(
         async ({ event_types }) => {
-            const { UIPlayCanvas, ResourcesWebGPU, loadYoga, PLAYCANVAS } = await import(
+            const { UIPlayCanvas, ResourcesWebGPU, PLAYCANVAS } = await import(
                 '/tests/renderer/browser-entry.ts'
             )
             const canvas = document.createElement('canvas')
@@ -415,7 +418,7 @@ test('UIPlayCanvas dispatches pointer events from raycast intersections', { tag:
             const { ui, plane, mesh, material, texture } = await UIPlayCanvas.create({
                 app,
                 resources,
-                loadYoga,
+                register_platform_events: false,
                 texture_width: 200,
                 texture_height: 100,
                 world_width: 2,
@@ -431,6 +434,7 @@ test('UIPlayCanvas dispatches pointer events from raycast intersections', { tag:
             camera.lookAt(0, 0, 0)
             app.root.addChild(camera)
             app.root.addChild(plane)
+            ui.setCamera(camera)
 
             const child = ui.create()
             const events = []
@@ -461,7 +465,7 @@ test('UIPlayCanvas dispatches pointer events from raycast intersections', { tag:
                 ui.root.on(type, record(ui.root, 'root'))
                 canvas.addEventListener(type, (source_event) => {
                     current_source_event = source_event
-                    ui.dispatchPlatformEvent(source_event, { camera })
+                    ui.dispatchPlatformEvent(source_event)
                 })
             }
 

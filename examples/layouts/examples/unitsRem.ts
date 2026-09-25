@@ -1,4 +1,5 @@
 import { loadImage, loadJson } from '../../shared/load-assets'
+import { FONT_NAME_POPPINS, loadFont } from '../../shared/assets'
 
 const MIN_ROOT_SIZE = 16
 const MAX_ROOT_SIZE = 24
@@ -6,11 +7,10 @@ const ROOT_SIZE_STEP = 0.02
 const ROOT_SIZE_INTERVAL = 1
 
 export default async function createUnitsRemLayout({ ui, resources, registerFont, animations_enabled }) {
-    const poppins_image = await loadImage('examples/assets/fonts/Poppins-Regular.mtsdf.png')
-    const poppins_json = await loadJson('examples/assets/fonts/Poppins-Regular.mtsdf.json')
+    const poppins = await loadFont(FONT_NAME_POPPINS, { loadImage, loadJson })
     const img = await loadImage('examples/assets/images/texture.jpg')
 
-    registerFont('Poppins-Regular', poppins_image, poppins_json)
+    registerFont(FONT_NAME_POPPINS, poppins)
     resources.registerImage?.(img.src, img)
 
     const stage = ui.create()

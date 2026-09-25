@@ -205,6 +205,7 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
             if (this.readNodeScroll(node, read_metrics)) {
                 operations.scroll_nodes.add(node)
             }
+            operations.recordScrollMetrics(node)
         }
     }
 
@@ -228,14 +229,15 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
         return scroll_changed
     }
 
-    syncScroll(element: HTMLElement): Node<HTMLElement> | undefined {
+    syncScroll(element: HTMLElement, operations: Operations<HTMLElement>): Node<HTMLElement> | undefined {
         const node = this.element_nodes.get(element)
 
         if (node !== undefined) {
             this.readNodeScroll(node, true)
+            if (operations.syncScrollMetrics(node)) {
+                return node
+            }
         }
-
-        return node
     }
 
     getEventNode(element: globalThis.Node | null): Node<HTMLElement> | null {

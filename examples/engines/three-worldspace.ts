@@ -3,7 +3,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { loadAssets, registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
-import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 
 const WORLD_HEIGHT = 2
 const TEXTURE_SCALAR = window.devicePixelRatio
@@ -12,11 +11,10 @@ export async function main({
     canvas,
     onCanvasEvent,
     ResourcesWebGPU,
-    UIWebGPU,
+    UI,
     UIThree,
     loadImage,
     loadJson,
-    loadYoga,
 }) {
     const device_pixel_ratio = window.devicePixelRatio
     const device_width = Math.max(canvas.clientWidth, canvas.clientHeight)
@@ -28,7 +26,7 @@ export async function main({
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })
 
-    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UI.create({ resources, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
@@ -40,7 +38,6 @@ export async function main({
         geometry: first_geometry,
     } = await UIThree.create({
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width: texture_width,
         texture_height: texture_height,
@@ -56,7 +53,6 @@ export async function main({
         geometry: second_geometry,
     } = await UIThree.create({
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width: texture_width,
         texture_height: texture_height,
@@ -79,13 +75,8 @@ export async function main({
     const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
     camera.position.set(0, 3.5, 9)
 
-    PLATFORM_EVENT_NAMES.forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            overlay_ui.dispatchPlatformEvent(e)
-            first_ui.dispatchPlatformEvent(e, { camera })
-            second_ui.dispatchPlatformEvent(e, { camera })
-        })
-    })
+    first_ui.setCamera(camera)
+    second_ui.setCamera(camera)
 
     first_ui.root.on('pointerdown', (e) => {
         controls.enabled = false

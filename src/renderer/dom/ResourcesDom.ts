@@ -17,9 +17,11 @@ import { RESOURCE_EVENT } from '../../core/constants'
 
 export default class ResourcesDom extends Resources<HTMLElement, {
     image: DomImage;
-    font_image: unknown;
-    font_data: {
-        metrics: FontMetrics;
+    font: {
+        image: unknown;
+        data: {
+            metrics: FontMetrics;
+        };
     };
     registered_image: void;
     registered_font: void;
@@ -82,12 +84,12 @@ export default class ResourcesDom extends Resources<HTMLElement, {
         return image === undefined ? undefined : { width: image.width, height: image.height }
     }
 
-    registerFont(name: string, image: unknown, json: { metrics: FontMetrics; }) {
+    registerFont(name: string, { data }: { image: unknown; data: { metrics: FontMetrics; } }) {
         if (this.fonts.has(name)) {
             throw new Error(`Font "${name}" is already registered.`)
         }
 
-        this.fonts.set(name, json.metrics)
+        this.fonts.set(name, data.metrics)
         this.events.emit(RESOURCE_EVENT.FONT)
     }
 

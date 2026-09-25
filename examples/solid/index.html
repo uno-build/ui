@@ -4,26 +4,16 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Solid components</title>
+        <script type="module">
+            import {
+                FONT_NAME_POPPINS,
+                FONT_NAME_CHANGA,
+                FONT_NAME_NOUGAT,
+                registerDomFonts,
+            } from '../shared/assets.ts'
+            registerDomFonts([FONT_NAME_POPPINS, FONT_NAME_CHANGA, FONT_NAME_NOUGAT])
+        </script>
         <style>
-            @font-face {
-                font-family: 'Poppins-Regular';
-                src: url('assets/fonts/Poppins-Regular.ttf') format('truetype');
-                font-weight: normal;
-                font-style: normal;
-            }
-            @font-face {
-                font-family: 'ChangaOne-Regular';
-                src: url('assets/fonts/ChangaOne-Regular.ttf') format('truetype');
-                font-weight: normal;
-                font-style: normal;
-            }
-            @font-face {
-                font-family: 'Nougat-ExtraBlack';
-                src: url('assets/fonts/Nougat-ExtraBlack.ttf') format('truetype');
-                font-weight: normal;
-                font-style: normal;
-            }
-
             html,
             body {
                 margin: 0;
@@ -32,6 +22,8 @@
                 overflow: hidden;
                 overscroll-behavior: none;
                 font-family: 'Poppins-Regular', 'ChangaOne-Regular', system-ui, sans-serif;
+                background-color: #eaf4fb;
+                color: #1f3b77;
             }
 
             #root {
@@ -52,10 +44,21 @@
                 touch-action: none;
             }
 
+            body #settings-panel {
+                background: #ffffff;
+                color: #1f3b77;
+            }
+            #settings-panel .settings-renderer-opacity {
+                color: #518ac8;
+            }
+            #settings-panel input {
+                accent-color: #4377bb;
+            }
+
             .settings-examples-title {
                 margin-top: 8px;
                 padding-top: 8px;
-                border-top: 1px solid rgba(255, 255, 255, 0.2);
+                border-top: 1px solid #c7dfef;
             }
             .settings-example {
                 display: block;
@@ -67,7 +70,7 @@
                 text-decoration: underline;
             }
             .settings-example[aria-current='page'] {
-                color: #56ccf2;
+                color: #4377bb;
             }
         </style>
     </head>
@@ -83,9 +86,7 @@
             import ResourcesDom from '../../src/renderer/dom/ResourcesDom'
             import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
             import UIDom from '../../src/ui/UIDom'
-            import UIWebGPU from '../../src/ui/UIWebGPU'
-            import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
-            import { loadYoga } from 'yoga-layout/load'
+            import UI from '../../src/ui/UI'
             import { initSettingsPanel } from '../shared/settings/settings-panel'
 
             const EXAMPLES = {
@@ -99,7 +100,7 @@
                 RendererDom: { element: document.createElement('div'), ui_class: UIDom, resources_class: ResourcesDom },
                 RendererWebGPU: {
                     element: document.createElement('canvas'),
-                    ui_class: UIWebGPU,
+                    ui_class: UI,
                     resources_class: ResourcesWebGPU,
                 },
             }
@@ -136,7 +137,7 @@
                 ])
                 const canvas = RENDERERS.RendererWebGPU.element
                 root.appendChild(canvas)
-                await main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, loadJson, loadYoga })
+                await main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, loadJson })
             } else {
                 const { default: createExample } = await EXAMPLES[example_name]()
                 const device_pixel_ratio = window.devicePixelRatio
@@ -148,7 +149,7 @@
                     root.appendChild(element)
 
                     const resources = await setup.resources_class.create({ canvas: element })
-                    const { ui } = await setup.ui_class.create({ resources, loadYoga, device_pixel_ratio })
+                    const { ui } = await setup.ui_class.create({ resources, device_pixel_ratio })
 
                     function syncRendererSize() {
                         const width = root.clientWidth
@@ -166,13 +167,6 @@
 
                     syncRendererSize()
                     window.addEventListener('resize', syncRendererSize)
-
-                    // UIDom listens on its own element, UIWebGPU needs the canvas events forwarded.
-                    if (is_canvas) {
-                        PLATFORM_EVENT_NAMES.forEach((type) => {
-                            element.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))
-                        })
-                    }
 
                     await createExample({ ui, resources })
                     uis.push(ui)

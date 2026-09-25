@@ -1,11 +1,9 @@
 /// <reference types="@webgpu/types" />
 import type { EventOptions } from '../core/UI'
+import type UI from '../core/UI'
 import type { RendererWebGPUOptions } from '../renderer/RendererWebGPU'
-import type ResourcesWebGPU from '../renderer/webgpu/ResourcesWebGPU'
 import type { WebGPUDrawOptions, WebGPUDrawResult } from '../renderer/webgpu/contracts'
-import UI from '../core/UI'
-import { DEFINED_EVENTS } from '../events'
-import RendererWebGPU from '../renderer/RendererWebGPU'
+import UIWebGPU from './UIWebGPU'
 
 export type TextureOptions = {
     output: {
@@ -30,6 +28,8 @@ export type PlaneOptions<TTexture, TMaterial> = MaterialOptions<TTexture> & {
     world_height: number
 }
 
+export type MapIntersection<TIntersection> = (intersection: TIntersection) => { x: number; y: number } | null
+
 export type UIWorldSpaceOptions<TTexture, TMaterial, TPlane, TUI extends UI = UI> = RendererWebGPUOptions &
     EventOptions<TUI> & {
         texture_width: number
@@ -53,7 +53,11 @@ export default abstract class UIWorldSpace<
     TMaterial = unknown,
     TPlane = unknown,
     TUI extends UI = UI,
-> extends UI<RendererWebGPU, ResourcesWebGPU> {
+    TCamera = unknown,
+> extends UIWebGPU {
+    declare static create: (options: never) => Promise<{ ui: UIWebGPU }>
+
+    protected camera: TCamera | null = null
     protected texture_width: number
     protected texture_height: number
     protected world_width: number
@@ -74,11 +78,10 @@ export default abstract class UIWorldSpace<
         defined_events = [],
         ...renderer_options
     }: UIWorldSpaceOptions<TTexture, TMaterial, TPlane, TUI>) {
-        const renderer = new RendererWebGPU({ resources, ...renderer_options })
         super({
-            renderer,
+            ...renderer_options,
             resources,
-            defined_events: [...DEFINED_EVENTS, ...defined_events] as EventOptions<UI>['defined_events'],
+            defined_events: defined_events as unknown as EventOptions<UIWebGPU>['defined_events'],
         })
         this.texture_width = texture_width
         this.texture_height = texture_height
@@ -133,6 +136,12 @@ export default abstract class UIWorldSpace<
         } as UIWorldSpaceOutput<TTexture, TMaterial, TPlane>
     }
 
+    setCamera(camera: TCamera): void {
+        if (this.resources !== null) {
+            this.camera = camera
+        }
+    }
+
     draw(options: WorldSpaceDrawOptions = {}): WebGPUDrawResult | undefined {
         return super.draw({
             ...options,
@@ -142,11 +151,14 @@ export default abstract class UIWorldSpace<
     }
 
     destroy() {
-        if (super.destroy()) {
+        this.camera = null
+        const destroyed = super.destroy()
+        if (destroyed) {
             this.gpu_texture!.destroy()
             this.gpu_texture = null
             this.gpu_texture_view = null
         }
+        return destroyed
     }
 
     protected abstract createTexture(options: TextureOptions): TTexture

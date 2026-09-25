@@ -2,6 +2,7 @@ import type UI from '../core/UI'
 import type Node from '../core/Node'
 import type { SourceEvent, PointerSource, EventCoordinates } from './types'
 
+import { CORE_EVENT } from '../core/constants'
 import { EVENT } from './constants'
 
 const POINTER_TYPES = [EVENT.POINTERDOWN.name, EVENT.POINTERMOVE.name, EVENT.POINTERUP.name, EVENT.POINTERCANCEL.name]
@@ -110,18 +111,9 @@ export function definePointers({ ui }: { ui: UI }) {
         }
     }
 
-    const remove_listeners = POINTER_TYPES.map((type) => ui.events_source.on(type, processPointer))
-
-    return {
-        types: [
-            EVENT.POINTERDOWN,
-            EVENT.POINTERMOVE,
-            EVENT.POINTERUP,
-            EVENT.POINTERCANCEL,
-            EVENT.POINTEROVER,
-            EVENT.POINTEROUT,
-        ],
-        destroyNode(node: Node) {
+    const remove_listeners = [
+        ...POINTER_TYPES.map((type) => ui.events_source.on(type, processPointer)),
+        ui.events_source.on(CORE_EVENT.NODE_DESTROY, ({ node }) => {
             for (const [pointer_id, pointer] of pointers) {
                 if (pointer.target === node) {
                     pointers.delete(pointer_id)
@@ -133,7 +125,18 @@ export function definePointers({ ui }: { ui: UI }) {
                     hovered_pointers.delete(pointer_id)
                 }
             }
-        },
+        }),
+    ]
+
+    return {
+        types: [
+            EVENT.POINTERDOWN,
+            EVENT.POINTERMOVE,
+            EVENT.POINTERUP,
+            EVENT.POINTERCANCEL,
+            EVENT.POINTEROVER,
+            EVENT.POINTEROUT,
+        ],
 
         destroy() {
             remove_listeners.forEach((removeListener) => removeListener())

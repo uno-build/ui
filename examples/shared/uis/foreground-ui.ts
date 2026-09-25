@@ -1,3 +1,5 @@
+import { FONT_NAME_SUPERCELL } from '../assets'
+
 const PADDING = 16
 
 export function createForegroundUI({ ui, assets, title: title_text }) {
@@ -13,7 +15,7 @@ export function createForegroundUI({ ui, assets, title: title_text }) {
     ui.root.add(overlay)
 
     const title = ui.create()
-    title.style('fontFamily', 'Supercell-Magic')
+    title.style('fontFamily', FONT_NAME_SUPERCELL)
     title.style('fontSize', '4.5vw')
     title.style('textStroke', '0.4vw #000000')
     title.style('textShadow', '0px 0.35vw 0px #000000')

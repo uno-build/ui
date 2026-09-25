@@ -11,7 +11,7 @@ export async function loadImage(src, createImageBitmap = globalThis.createImageB
     }
     return {
         src,
-        bitmap: image,
+        image,
         width: image.width,
         height: image.height,
         preventBleeding: image.width < 32 || image.height < 32,

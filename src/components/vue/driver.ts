@@ -120,7 +120,7 @@ export function registerRootComponent<P extends Record<string, any>>(
     })
 
     return {
-        render(props: P) {
+        mount(props: P) {
             renderer.render(h(RootProvider, null, { default: () => h(RootComponent, { ...props }) }), ui.root!)
         },
         unmount() {

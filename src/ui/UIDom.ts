@@ -3,6 +3,7 @@ import type ResourcesDom from '../renderer/dom/ResourcesDom'
 import UI from '../core/UI'
 import { EVENT } from '../events/constants'
 import { defineFocus } from '../events/focus'
+import { createScrollObserver } from '../events/scroll'
 import { normalizeDelta } from '../events/wheel'
 import RendererDom from '../renderer/RendererDom'
 
@@ -98,18 +99,12 @@ function defineDomWheel({ ui }: { ui: UIDom }) {
 
 function defineDomScroll({ ui }: { ui: UIDom }) {
     const canvas = ui.resources!.canvas
+    const scroll_observer = createScrollObserver(ui)
     const listener = (source_event: Event) => {
-        const node = ui.renderer!.syncScroll(source_event.target as HTMLElement)
+        const node = ui.renderer!.syncScroll(source_event.target as HTMLElement, ui.operations)
 
         if (node !== undefined) {
-            ui.events.emit(EVENT.SCROLL.name, {
-                source_event,
-                event_data: {
-                    scroll_left: node.scrollLeft,
-                    scroll_top: node.scrollTop,
-                },
-                target: node,
-            })
+            scroll_observer.notifyScroll(node, source_event)
         }
     }
 
@@ -118,6 +113,7 @@ function defineDomScroll({ ui }: { ui: UIDom }) {
     return {
         types: [EVENT.SCROLL],
         destroy() {
+            scroll_observer.destroy()
             canvas.removeEventListener(EVENT.SCROLL.name, listener, true)
         },
     }

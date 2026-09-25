@@ -16,12 +16,11 @@ import {
     Vec3,
     createGraphicsDevice,
 } from 'playcanvas'
-import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 import { loadAssets, registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
 
-export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, loadImage, loadJson, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadImage, loadJson }) {
     const gfxOptions = {
         deviceTypes: ['webgpu'],
         antialias: false,
@@ -38,8 +37,8 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
         format: graphics_device.canvasConfig.format,
     })
     const device_pixel_ratio = graphics_device.maxPixelRatio
-    const { ui: background_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
-    const { ui: foreground_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: background_ui } = await UI.create({ resources, device_pixel_ratio })
+    const { ui: foreground_ui } = await UI.create({ resources, device_pixel_ratio })
 
     const createOptions = new AppOptions()
     createOptions.graphicsDevice = graphics_device
@@ -105,12 +104,6 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     foreground_ui.update()
 
     // Event handling
-    PLATFORM_EVENT_NAMES.forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            background_ui.dispatchPlatformEvent(e)
-            foreground_ui.dispatchPlatformEvent(e)
-        })
-    })
     onCanvasEvent('resize', () => {
         syncCanvasSize({ canvas, app, graphics_device, background_ui, foreground_ui })
         background_ui.update()

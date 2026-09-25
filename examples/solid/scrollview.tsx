@@ -1,9 +1,13 @@
 import { registerRootComponent, Image, ScrollView, Text, View } from '../../src/components/solid'
+import { ScrollbarView } from './ScrollbarView.tsx'
 import { For } from 'solid-js'
 import { loadImage, loadJson } from '../shared/load-assets'
+import {
+    loadFont,
+    FONT_NAME_NOUGAT as TITLE_FONT_FAMILY,
+    FONT_NAME_POPPINS as TEXT_FONT_FAMILY,
+} from '../shared/assets'
 
-const TITLE_FONT_FAMILY = 'Nougat-ExtraBlack'
-const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const LOGO_SRC = 'assets/images/logo.jpg'
 const TEXTURE_SRC = 'assets/images/texture.jpg'
 const COIN_SRC = 'assets/images/coin.png'
@@ -235,7 +239,7 @@ const FOOTER_STYLE = {
 
 export function SolidScrollView() {
     return (
-        <ScrollView style={PAGE_STYLE}>
+        <ScrollbarView style={PAGE_STYLE}>
             <View style={PAGE_CONTENT_STYLE}>
                 <View style={PAGE_HEADER_STYLE}>
                     <View style={BADGE_STYLE}>
@@ -319,7 +323,7 @@ export function SolidScrollView() {
                     </View>
                 </ScrollView>
             </View>
-        </ScrollView>
+        </ScrollbarView>
     )
 }
 
@@ -328,18 +332,16 @@ export default function createSolidScrollView({ ui, resources }) {
         loadImage(LOGO_SRC),
         loadImage(TEXTURE_SRC),
         loadImage(COIN_SRC),
-        loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
-        loadImage(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-        loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
-    ]).then(([logo, texture, coin, title_font_image, title_font_json, text_font_image, text_font_json]) => {
+        loadFont(TITLE_FONT_FAMILY, { loadImage, loadJson }),
+        loadFont(TEXT_FONT_FAMILY, { loadImage, loadJson }),
+    ]).then(([logo, texture, coin, title_font, text_font]) => {
         resources.registerImage(LOGO_SRC, logo)
         resources.registerImage(TEXTURE_SRC, texture)
         resources.registerImage(COIN_SRC, coin)
-        resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
-        resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
+        resources.registerFont(TITLE_FONT_FAMILY, title_font)
+        resources.registerFont(TEXT_FONT_FAMILY, text_font)
 
         const renderer = registerRootComponent(SolidScrollView, { ui })
-        renderer.render({})
+        renderer.mount({})
     })
 }

@@ -74,7 +74,7 @@ test('DOM resources implement the manual base contracts', () => {
     assert.throws(() => resources.registerImage('icon', {}), /already registered/)
     resources.disposeImage('icon')
     assert.equal(resources.getImageSize('icon'), undefined)
-    resources.registerFont('font', {}, { metrics: { emSize: 1000 } })
+    resources.registerFont('font', { image: {}, data: { metrics: { emSize: 1000 } } })
     assert.deepEqual(resources.getFont('font'), { emSize: 1000 })
     resources.disposeFont('font')
     assert.equal(resources.getFont('font'), undefined)
@@ -85,6 +85,8 @@ test('WebGPU resources retain manager return values and disposal', () => {
     const calls = []
     const image = { image_size: [8, 16] }
     const font = { id: 1 }
+    const input_image = { image: {}, width: 8, height: 16 }
+    const input_font_image = { width: 8, height: 16 }
     resources.image_manager = {
         imageUpload(src, value) { calls.push(['image', src, value]); return image },
         getImage() { return image },
@@ -94,13 +96,14 @@ test('WebGPU resources retain manager return values and disposal', () => {
         fontRegister(name, image, json) { calls.push(['font', name, image, json]); return font },
         fontDispose(name) { calls.push(['disposeFont', name]); return true },
     }
-    assert.equal(resources.registerImage('icon', 'pixels'), image)
+    assert.equal(resources.registerImage('icon', input_image), image)
     assert.deepEqual(resources.getImageSize('icon'), { width: 8, height: 16 })
-    assert.equal(resources.registerFont('font', 'atlas', 'metrics'), font)
+    assert.equal(resources.registerFont('font', { image: input_font_image, data: 'metrics' }), font)
     resources.disposeImage('icon')
     resources.disposeFont('font')
     assert.deepEqual(calls, [
-        ['image', 'icon', 'pixels'], ['font', 'font', 'atlas', 'metrics'],
+        ['image', 'icon', input_image],
+        ['font', 'font', { image: input_font_image, width: 8, height: 16 }, 'metrics'],
         ['disposeImage', 'icon'], ['disposeFont', 'font'],
     ])
 })

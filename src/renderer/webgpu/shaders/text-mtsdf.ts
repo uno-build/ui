@@ -156,7 +156,7 @@ fn textShadowCoverageAtUv(
             uv_width,
             run.font_data.z,
             distance_sample.x,
-            0.45,
+            0.5,
             0.0,
             0.5,
         );
@@ -191,7 +191,7 @@ fn textShadowCoverageAtUv(
         uv_width,
         run.font_data.z,
         distance_sample.x,
-        0.45,
+        0.5,
         0.0,
         0.5,
     );

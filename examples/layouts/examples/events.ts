@@ -1,5 +1,5 @@
-import { PLATFORM_EVENT_NAMES } from '../../../src/events/constants'
 import { loadImage, loadJson } from '../../shared/load-assets'
+import { FONT_NAME_POPPINS, loadFont } from '../../shared/assets'
 
 const EVENT_TYPES = [
     'pointercancel',
@@ -35,14 +35,13 @@ const EVENT_COLORS = {
 }
 
 export default async function createEventsLayout({ ui, resources, registerFont, rendererName: renderer_name }) {
-    const [font_image, font_json, pattern_image, logo_image, texture_image] = await Promise.all([
-        loadImage('examples/assets/fonts/Poppins-Regular.mtsdf.png'),
-        loadJson('examples/assets/fonts/Poppins-Regular.mtsdf.json'),
+    const [font, pattern_image, logo_image, texture_image] = await Promise.all([
+        loadFont(FONT_NAME_POPPINS, { loadImage, loadJson }),
         loadImage(PATTERN_SRC),
         loadImage('examples/assets/images/logo.jpg'),
         loadImage('examples/assets/images/texture.jpg'),
     ])
-    registerFont('Poppins-Regular', font_image, font_json)
+    registerFont(FONT_NAME_POPPINS, font)
     resources.registerImage(pattern_image.src, pattern_image)
     resources.registerImage(logo_image.src, logo_image)
     resources.registerImage(texture_image.src, texture_image)
@@ -110,7 +109,7 @@ export default async function createEventsLayout({ ui, resources, registerFont, 
 
         console.log(`[${renderer_name}] #${sequence}`, {
             type,
-            source_type: event.source_event.type,
+            source_type: event.source_event?.type ?? null,
             target: node_names.get(event.target) ?? null,
             current_target: node_names.get(event.current_target) ?? null,
             related_target: node_names.get(event.related_target) ?? null,
@@ -383,12 +382,6 @@ export default async function createEventsLayout({ ui, resources, registerFont, 
     for (const node of node_names.keys()) {
         applyPattern(node, pattern_image.src)
         registerEvents(node)
-    }
-
-    if (renderer_name !== 'RendererDom') {
-        for (const type of PLATFORM_EVENT_NAMES) {
-            resources.canvas.addEventListener(type, (event) => ui.dispatchPlatformEvent(event))
-        }
     }
 }
 

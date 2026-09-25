@@ -2,7 +2,6 @@ import tgpu from 'typegpu'
 import * as d from 'typegpu/data'
 import * as std from 'typegpu/std'
 import { mat4 } from 'wgpu-matrix'
-import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 import { loadAssets, registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
@@ -30,23 +29,17 @@ const CUBE_VERTEX = d.unstruct({
 
 const CUBE_VERTEX_LAYOUT = tgpu.vertexLayout((count) => d.disarrayOf(CUBE_VERTEX, count))
 
-export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, loadImage, loadJson, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadImage, loadJson }) {
     const resources = await ResourcesWebGPU.create({ canvas })
     const device_pixel_ratio = window.devicePixelRatio
-    const { ui: background_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
-    const { ui: foreground_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: background_ui } = await UI.create({ resources, device_pixel_ratio })
+    const { ui: foreground_ui } = await UI.create({ resources, device_pixel_ratio })
     const { device, context, format } = resources
     const root = tgpu.initFromDevice({ device })
 
     syncCanvasSize({ canvas, background_ui, foreground_ui })
 
     // Event handling
-    PLATFORM_EVENT_NAMES.forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            background_ui.dispatchPlatformEvent(e)
-            foreground_ui.dispatchPlatformEvent(e)
-        })
-    })
     onCanvasEvent('resize', () => {
         syncCanvasSize({ canvas, background_ui, foreground_ui })
         background_ui.update()
@@ -59,12 +52,6 @@ export async function main({ canvas, onCanvasEvent, UIWebGPU, ResourcesWebGPU, l
     createForegroundUI({ ui: foreground_ui, assets, title: 'Hello TypeGPU!' })
     background_ui.update()
     foreground_ui.update()
-    PLATFORM_EVENT_NAMES.forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            background_ui.dispatchPlatformEvent(e)
-            foreground_ui.dispatchPlatformEvent(e)
-        })
-    })
 
     const vertex_buffer = root
         .createBuffer(CUBE_VERTEX_LAYOUT.schemaForCount(CUBE_VERTEX_COUNT), (buffer) =>

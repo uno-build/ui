@@ -70,7 +70,7 @@ test('render and unmount commit synchronously and preserve state between root re
     }
     const root = registerRootComponent(App, { ui })
     await act(() => {
-        root.render({ title: 'First ' })
+        root.mount({ title: 'First ' })
         expect(ui.root.children[0].children[0].text_content).toBe('First 0')
         expect(reference.current.nodes.main).toBe(ui.root.children[0])
         expect(update_count).toBe(1)
@@ -80,7 +80,7 @@ test('render and unmount commit synchronously and preserve state between root re
     await act(() => click(ui))
     expect(text_node.text_content).toBe('First 1')
     await act(() => {
-        root.render({ title: 'Second ' })
+        root.mount({ title: 'Second ' })
         expect(text_node.text_content).toBe('Second 1')
         expect(ui.root.children[0]).toBe(node)
     })
@@ -97,14 +97,14 @@ test('render and unmount commit synchronously and preserve state between root re
 test('style updates preserve nodes and unset removed properties', async () => {
     const ui = await TestUI.create({ renderer: new TestRenderer() })
     const root = registerRootComponent(View, { ui })
-    await act(() => root.render({ style: { width: '100px', height: '40px', backgroundColor: '#f00' } }))
+    await act(() => root.mount({ style: { width: '100px', height: '40px', backgroundColor: '#f00' } }))
     const node = ui.root.children[0]
-    await act(() => root.render({ style: { width: '200px', backgroundColor: '#00f' } }))
+    await act(() => root.mount({ style: { width: '200px', backgroundColor: '#00f' } }))
     expect(ui.root.children[0]).toBe(node)
     expect(node.styles.width.value).toBe('200px')
     expect(node.styles.height.value).toBe('unset')
     expect(node.styles.backgroundColor.value).toBe('#00f')
-    await act(() => root.render({ style: null }))
+    await act(() => root.mount({ style: null }))
     expect(node.styles.width.value).toBe('unset')
     expect(node.styles.backgroundColor.value).toBe('unset')
     await act(() => root.unmount())
@@ -120,16 +120,16 @@ test('keyed children insert, reorder, and destroy subtrees while retaining handl
         ))
     }
     const root = registerRootComponent(App, { ui })
-    await act(() => root.render({ keys: ['a', 'b', 'c'] }))
+    await act(() => root.mount({ keys: ['a', 'b', 'c'] }))
     const parent = ui.root.children[0]
     const [a_node, b_node, c_node] = parent.children
     const b_text = b_node.children[0]
     const a_handle = references.a.current
-    await act(() => root.render({ keys: ['c', 'a', 'b'] }))
+    await act(() => root.mount({ keys: ['c', 'a', 'b'] }))
     expect(parent.children).toEqual([c_node, a_node, b_node])
     expect(parent.children.map((node) => node.path)).toEqual([[0, 0], [0, 1], [0, 2]])
     expect(references.a.current).toBe(a_handle)
-    await act(() => root.render({ keys: ['c', 'x', 'a'] }))
+    await act(() => root.mount({ keys: ['c', 'x', 'a'] }))
     expect(parent.children).toEqual([c_node, references.x.current.nodes.main, a_node])
     expect(references.b.current).toBe(null)
     expect(b_node.ui).toBe(null)
@@ -150,13 +150,13 @@ test('root siblings and fragments retain their order around conditional children
         )
     }
     const root = registerRootComponent(App, { ui })
-    await act(() => root.render({ visible: false }))
+    await act(() => root.mount({ visible: false }))
     const [a_node, c_node] = ui.root.children
-    await act(() => root.render({ visible: true }))
+    await act(() => root.mount({ visible: true }))
     const b_node = ui.root.children[1]
     expect(ui.root.children).toEqual([a_node, b_node, c_node])
     expect(b_node.children[0].text_content).toBe('B')
-    await act(() => root.render({ visible: false }))
+    await act(() => root.mount({ visible: false }))
     expect(ui.root.children).toEqual([a_node, c_node])
     expect(b_node.ui).toBe(null)
     await act(() => root.unmount())
@@ -166,15 +166,15 @@ test('root siblings and fragments retain their order around conditional children
 test('Text joins nested primitives and clears conditional and empty content', async () => {
     const ui = await TestUI.create({ renderer: new TestRenderer() })
     const root = registerRootComponent(Text, { ui })
-    await act(() => root.render({ children: ['Hola ', [2, null, undefined, true, false, ['!']]] }))
+    await act(() => root.mount({ children: ['Hola ', [2, null, undefined, true, false, ['!']]] }))
     const node = ui.root.children[0]
     expect(node.text_content).toBe('Hola 2!')
     for (const children of [false, null, undefined, [], '']) {
-        await act(() => root.render({ children }))
+        await act(() => root.mount({ children }))
         expect(ui.root.children[0]).toBe(node)
         expect(node.text_content).toBe('')
     }
-    await act(() => root.render({ children: 0 }))
+    await act(() => root.mount({ children: 0 }))
     expect(node.text_content).toBe('0')
     await act(() => root.unmount())
     ui.destroy()
@@ -198,7 +198,7 @@ for (const [name, children] of [
         const consoleError = console.error
         console.error = function ignoreExpectedError() {}
         try {
-            await act(() => root.render({}))
+            await act(() => root.mount({}))
         } finally {
             console.error = consoleError
         }
@@ -223,7 +223,7 @@ test('text outside Text is rejected without committing a node', async () => {
     const consoleError = console.error
     console.error = function ignoreExpectedError() {}
     try {
-        await act(() => root.render({}))
+        await act(() => root.mount({}))
     } finally {
         console.error = consoleError
     }
@@ -255,10 +255,10 @@ test('events dispatch only the latest handler and preserve Uno event data and pr
         )
     }
     const root = registerRootComponent(App, { ui })
-    await act(() => root.render({ onClick: () => received.push('old') }))
+    await act(() => root.mount({ onClick: () => received.push('old') }))
     const parent = ui.root.children[0]
     const child = parent.children[0]
-    await act(() => root.render({ onClick: (event) => received.push({ ...event }) }))
+    await act(() => root.mount({ onClick: (event) => received.push({ ...event }) }))
     await act(() => click(ui))
     expect(received.length).toBe(1)
     expect(received[0].type).toBe('click')
@@ -267,10 +267,10 @@ test('events dispatch only the latest handler and preserve Uno event data and pr
     expect(received[0].x).toBe(10)
     expect(received[0].y).toBe(10)
     expect(received[0].source_event.type).toBe('pointerup')
-    await act(() => root.render({ onClick: null }))
+    await act(() => root.mount({ onClick: null }))
     await act(() => click(ui))
     expect(received.length).toBe(1)
-    await act(() => root.render({ onClick: () => received.push('new') }))
+    await act(() => root.mount({ onClick: () => received.push('new') }))
     await act(() => click(ui))
     expect(received[1]).toBe('new')
     await act(() => root.unmount())
@@ -299,7 +299,7 @@ test('stopPropagation prevents an ancestor handler and continuous events update 
         )
     }
     const root = registerRootComponent(App, { ui })
-    await act(() => root.render({}))
+    await act(() => root.mount({}))
     await act(() => click(ui))
     expect(received).toEqual(['child'])
     await act(() => ui.dispatchPlatformEvent({ type: 'pointermove', pointerId: 1 }, { x: 12, y: 10 }))
@@ -321,7 +321,7 @@ test('custom event props are resolved from the UI event definitions', async () =
         return createElement(Text, { onPress: (event) => setValue(event.value) }, value)
     }
     const root = registerRootComponent(App, { ui })
-    await act(() => root.render({}))
+    await act(() => root.mount({}))
     const node = ui.root.children[0]
     await act(() => ui.events.emit('press', { source_event: null, event_data: { value: 'After' }, target: node }))
     expect(node.text_content).toBe('After')
@@ -337,12 +337,12 @@ test('Text callback refs detach and object refs receive the same stable handle',
         callback_values.push(handle)
     }
     const root = registerRootComponent(Text, { ui })
-    await act(() => root.render({ children: 'First', ref: setRef }))
+    await act(() => root.mount({ children: 'First', ref: setRef }))
     const handle = callback_values[0]
     expect(handle.nodes.main).toBe(ui.root.children[0])
-    await act(() => root.render({ children: 'Second', ref: setRef }))
+    await act(() => root.mount({ children: 'Second', ref: setRef }))
     expect(callback_values).toEqual([handle])
-    await act(() => root.render({ children: 'Third', ref: reference }))
+    await act(() => root.mount({ children: 'Third', ref: reference }))
     expect(callback_values).toEqual([handle, null])
     expect(reference.current).toBe(handle)
     expect(handle.nodes.main.text_content).toBe('Third')
@@ -361,8 +361,8 @@ test('useUI isolates independent roots and survives another root unmounting', as
     }
     const first_root = registerRootComponent(App, { ui: first_ui })
     const second_root = registerRootComponent(App, { ui: second_ui })
-    await act(() => first_root.render({}))
-    await act(() => second_root.render({}))
+    await act(() => first_root.mount({}))
+    await act(() => second_root.mount({}))
     expect(received).toEqual([first_ui, second_ui])
     const second_node = second_ui.root.children[0]
     await act(() => first_root.unmount())
@@ -381,7 +381,7 @@ test('Image uses registered size, dimensions, aspect ratio and all fitting modes
     const ui = await TestUI.create({ renderer: new TestRenderer(), resources })
     const reference = createRef<NodeHandle>()
     const root = registerRootComponent(Image, { ui })
-    await act(() => root.render({ src: 'wide', ref: reference }))
+    await act(() => root.mount({ src: 'wide', ref: reference }))
     const node = ui.root.children[0]
     expect(reference.current.nodes.main).toBe(node)
     expect(node.styles.width.value).toBe('80px')
@@ -391,23 +391,23 @@ test('Image uses registered size, dimensions, aspect ratio and all fitting modes
     expect(node.styles.backgroundSizeHeight.value).toBe('100%')
     expect(node.styles.backgroundPositionX.value).toBe('50%')
     expect(node.styles.backgroundPositionY.value).toBe('50%')
-    await act(() => root.render({ src: 'wide', ref: reference, width: '100px' }))
+    await act(() => root.mount({ src: 'wide', ref: reference, width: '100px' }))
     expect(node.styles.width.value).toBe('100px')
     expect(node.styles.height.value).toBe('unset')
     expect(node.styles.aspectRatio.value).toBe('2')
-    await act(() => root.render({ src: 'wide', ref: reference, height: '50px' }))
+    await act(() => root.mount({ src: 'wide', ref: reference, height: '50px' }))
     expect(node.styles.width.value).toBe('unset')
     expect(node.styles.height.value).toBe('50px')
     expect(node.styles.aspectRatio.value).toBe('2')
     for (const [object_fit, background_size] of [['fill', '100%'], ['contain', 'contain'], ['cover', 'cover'], ['none', 'unset']] as const) {
-        await act(() => root.render({ src: 'wide', ref: reference, width: '100px', height: '60px', style: { width: '90px', objectFit: object_fit } }))
+        await act(() => root.mount({ src: 'wide', ref: reference, width: '100px', height: '60px', style: { width: '90px', objectFit: object_fit } }))
         expect(node.styles.width.value).toBe('90px')
         expect(node.styles.height.value).toBe('60px')
         expect(node.styles.aspectRatio.value).toBe('unset')
         expect(node.styles.backgroundSizeWidth.value).toBe(background_size)
         expect(node.styles.backgroundSizeHeight.value).toBe(background_size)
     }
-    await act(() => root.render({ src: 'square', ref: reference }))
+    await act(() => root.mount({ src: 'square', ref: reference }))
     expect(ui.root.children[0]).toBe(node)
     expect(node.styles.width.value).toBe('24px')
     expect(node.styles.height.value).toBe('24px')
@@ -432,7 +432,7 @@ test('Image rejects unregistered resources through a React error boundary', asyn
     const consoleError = console.error
     console.error = function ignoreExpectedError() {}
     try {
-        await act(() => root.render({}))
+        await act(() => root.mount({}))
     } finally {
         console.error = consoleError
     }
@@ -448,12 +448,19 @@ test('ScrollView preserves its handle and children while updating its axis and e
     const reference = createRef<ScrollViewHandle>()
     const received = []
     const root = registerRootComponent(ScrollView, { ui })
-    await act(() => root.render({
-        ref: reference,
-        style: { width: '100px', height: '50px' },
-        onScroll: (event) => received.push({ handler: 'first', ...event }),
-        children: createElement(View, { style: { height: '100px' } }),
-    }))
+    await act(() => {
+        root.mount({
+            ref: reference,
+            style: { width: '100px', height: '50px' },
+            onScroll: (event) => received.push({
+                handler: 'first',
+                ref_ready: reference.current?.nodes.main === event.target,
+                ...event,
+            }),
+            children: createElement(View, { style: { height: '100px' } }),
+        })
+        expect(received).toHaveLength(0)
+    })
     const main = ui.root.children[0]
     const content = main.children[0]
     const child = content.children[0]
@@ -463,8 +470,23 @@ test('ScrollView preserves its handle and children while updating its axis and e
     expect(main.styles.overflowY.value).toBe('scroll')
     expect(content.styles.flexDirection.value).toBe('column')
     expect(content.styles.flexShrink.value).toBe('0')
+    expect(received).toHaveLength(1)
+    expect(received[0]).toMatchObject({
+        handler: 'first',
+        ref_ready: true,
+        type: 'scroll',
+        source_event: null,
+        scroll_left: 0,
+        scroll_top: 0,
+        scroll_width: 0,
+        scroll_height: 0,
+        client_width: 0,
+        client_height: 0,
+    })
+    expect(received[0].target).toBe(main)
+    expect(received[0].current_target).toBe(main)
 
-    await act(() => root.render({
+    await act(() => root.mount({
         ref: reference,
         horizontal: true,
         style: { width: '100px', height: '50px' },
@@ -479,19 +501,55 @@ test('ScrollView preserves its handle and children while updating its axis and e
     expect(main.styles.overflowX.value).toBe('scroll')
     expect(main.styles.overflowY.value).toBe('unset')
     expect(content.styles.flexDirection.value).toBe('row')
-    await act(() => ui.events.emit('scroll', {
-        source_event: null,
-        event_data: { scroll_left: 12, scroll_top: 0 },
-        target: main,
-    }))
-    expect(received).toHaveLength(1)
-    expect(received[0]).toMatchObject({ handler: 'latest', type: 'scroll', scroll_left: 12, scroll_top: 0 })
-    expect(received[0].current_target).toBe(main)
+    await act(() => {
+        main.scrollLeft = 12
+        ui.update()
+        expect(received).toHaveLength(1)
+    })
+    expect(received).toHaveLength(2)
+    expect(received[1]).toMatchObject({ handler: 'latest', type: 'scroll', scroll_left: 12, scroll_top: 0 })
+    expect(received[1].current_target).toBe(main)
     await act(() => root.unmount())
     expect(reference.current).toBe(null)
     expect(main.ui).toBe(null)
     expect(content.ui).toBe(null)
     expect(child.ui).toBe(null)
+    ui.destroy()
+})
+
+test('nested ScrollViews propagate metrics and can filter their own notifications', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
+    const outer_ref = createRef<ScrollViewHandle>()
+    const inner_ref = createRef<ScrollViewHandle>()
+    const received = []
+    const own_received = []
+    const root = registerRootComponent(ScrollView, { ui })
+    await act(() => root.mount({
+        ref: outer_ref,
+        onScroll(event) {
+            received.push({ ...event })
+            if (event.target === event.current_target) {
+                own_received.push({ ...event })
+            }
+        },
+        children: createElement(ScrollView, { ref: inner_ref }),
+    }))
+    const outer = outer_ref.current.nodes.main
+    const inner = inner_ref.current.nodes.main
+    expect(received).toHaveLength(2)
+    expect(own_received).toHaveLength(1)
+    expect(own_received[0].target).toBe(outer)
+    expect(received.every((event) => event.current_target === outer)).toBe(true)
+
+    await act(() => {
+        inner.scrollTop = 15
+        ui.update()
+    })
+    expect(received).toHaveLength(3)
+    expect(own_received).toHaveLength(1)
+    expect(received[2].target).toBe(inner)
+    expect(received[2].scroll_top).toBe(15)
+    await act(() => root.unmount())
     ui.destroy()
 })
 
@@ -507,7 +565,7 @@ test('Input exposes stable nodes and forwards focus, blur, and pointer callbacks
         onFocus: (event) => received.push({ handler: 'first focus', ...event }),
     }
     const root = registerRootComponent(Input, { ui })
-    await act(() => root.render(props))
+    await act(() => root.mount(props))
     const main = ui.root.children[0]
     const content = main.children[0]
     const text = content.children[0]
@@ -523,7 +581,7 @@ test('Input exposes stable nodes and forwards focus, blur, and pointer callbacks
     expect(received[0].handler).toBe('first focus')
     expect(received[0].target).toBe(main)
 
-    await act(() => root.render({
+    await act(() => root.mount({
         ...props,
         onFocus: (event) => received.push({ handler: 'latest focus', ...event }),
         onBlur: (event) => received.push({ handler: 'latest blur', ...event }),
@@ -566,7 +624,7 @@ test('Input updates values and placeholder styling without replacing its text no
         placeholderTextColor: '#abcdef',
         style: { width: '120px', color: '#123456', lineHeight: '20px', letterSpacing: '1px', textAlign: 'right' },
     }
-    await act(() => root.render({ ...props, value: null }))
+    await act(() => root.mount({ ...props, value: null }))
     const handle = reference.current
     const { main, content, text } = handle.nodes
     expect(main.styles.width.value).toBe('120px')
@@ -576,10 +634,10 @@ test('Input updates values and placeholder styling without replacing its text no
     expect(text.styles.color.value).toBe('#abcdef')
     expect(text.styles.lineHeight.value).toBe('20px')
     expect(text.styles.letterSpacing.value).toBe('1px')
-    await act(() => root.render({ ...props, value: 0 }))
+    await act(() => root.mount({ ...props, value: 0 }))
     expect(text.text_content).toBe('0')
     expect(text.styles.color.value).toBe('#123456')
-    await act(() => root.render({ ...props, value: 'Filled', style: { textAlign: 'center' } }))
+    await act(() => root.mount({ ...props, value: 'Filled', style: { textAlign: 'center' } }))
     expect(text.text_content).toBe('Filled')
     expect(text.styles.color.value).toBe('unset')
     expect(text.styles.lineHeight.value).toBe('unset')
@@ -587,11 +645,11 @@ test('Input updates values and placeholder styling without replacing its text no
     expect(main.styles.width.value).toBe('100%')
     expect(content.styles.justifyContent.value).toBe('center')
     for (const value of ['', null, undefined]) {
-        await act(() => root.render({ ref: reference, value, placeholder: 0 }))
+        await act(() => root.mount({ ref: reference, value, placeholder: 0 }))
         expect(text.text_content).toBe('0')
         expect(text.styles.color.value).toBe('#777777')
     }
-    await act(() => root.render({ ref: reference }))
+    await act(() => root.mount({ ref: reference }))
     expect(text.text_content).toBe('\u00A0')
     expect(reference.current).toBe(handle)
     expect(handle.nodes.text).toBe(text)
@@ -623,7 +681,7 @@ test('Input caret blinks, resets on value changes, and releases intervals under 
     }
     const root = registerRootComponent(App, { ui })
     try {
-        await act(() => root.render({ ref: reference, value: '', placeholder: 'Name' }))
+        await act(() => root.mount({ ref: reference, value: '', placeholder: 'Name' }))
         expect(active_intervals.size).toBe(0)
         await act(() => reference.current.focus())
         const { text, caret } = reference.current.nodes
@@ -635,7 +693,7 @@ test('Input caret blinks, resets on value changes, and releases intervals under 
         await act(() => blink())
         expect(reference.current.nodes.caret).toBe(caret)
         expect(caret.styles.opacity.value).toBe('0')
-        await act(() => root.render({ ref: reference, value: 'Changed', placeholder: 'Name' }))
+        await act(() => root.mount({ ref: reference, value: 'Changed', placeholder: 'Name' }))
         expect(active_intervals.size).toBe(1)
         expect(cleared_intervals).toEqual([1])
         expect(interval_delays).toEqual([500, 500])
@@ -698,7 +756,7 @@ test('StrictMode balances effects and callback ref cleanup without duplicating U
         return createElement(StrictMode, null, createElement(Contents))
     }
     const root = registerRootComponent(App, { ui })
-    await act(() => root.render({}))
+    await act(() => root.mount({}))
     expect(created_count).toBe(1)
     expect(effects_active).toBe(1)
     expect(layouts_active).toBe(1)
@@ -744,7 +802,7 @@ test('a discarded render creates no Uno nodes or event listeners', async () => {
     const consoleError = console.error
     console.error = function ignoreExpectedError() {}
     try {
-        await act(() => root.render({}))
+        await act(() => root.mount({}))
     } finally {
         console.error = consoleError
     }

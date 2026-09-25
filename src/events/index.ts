@@ -1,4 +1,4 @@
-export type { NodeEventMap, UIEventMap } from './types'
+export type { CoreEventMap, NodeEventMap, UIEventMap } from './types'
 
 import { definePointers } from './pointers'
 import { defineClick } from './click'
@@ -7,6 +7,7 @@ import { defineScroll } from './scroll'
 import { defineFocus } from './focus'
 
 export { default as EventEmitter } from '../core/EventEmitter'
+export { CORE_EVENT } from '../core/constants'
 
 export * from './constants'
 

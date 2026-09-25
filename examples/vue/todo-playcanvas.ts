@@ -22,7 +22,6 @@ import {
     createGraphicsDevice,
 } from 'playcanvas'
 import { registerRootComponent } from '../../src/components/vue'
-import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 import VueTodo, { loadResources } from './todo.vue'
 
 // The Todo card is 620x640 and the page pads it by PAGE_PADDING on every side.
@@ -37,7 +36,7 @@ const FLOOR_Y = -0.12
 const PANEL_Y = FLOOR_Y + WORLD_HEIGHT / 2 - WORLD_PAGE_PADDING
 const TEXTURE_SCALAR = window.devicePixelRatio
 
-export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIPlayCanvas, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIPlayCanvas }) {
     const gfx_options = {
         deviceTypes: ['webgpu'],
         antialias: true,
@@ -71,7 +70,6 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIPlayCanva
     const { ui, plane } = await UIPlayCanvas.create({
         app,
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width,
         texture_height,
@@ -122,21 +120,21 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIPlayCanva
     const active_pointers = new Set()
     const panel_pointers = new Set()
 
-    canvas.addEventListener('pointerdown', (event) => {
-        active_pointers.add(event.pointerId)
-    })
+    canvas.addEventListener(
+        'pointerdown',
+        (event) => {
+            active_pointers.add(event.pointerId)
+        },
+        { capture: true },
+    )
     const releasePointer = (event) => {
         active_pointers.delete(event.pointerId)
         panel_pointers.delete(event.pointerId)
     }
-    canvas.addEventListener('pointerup', releasePointer)
-    canvas.addEventListener('pointercancel', releasePointer)
+    canvas.addEventListener('pointerup', releasePointer, { capture: true })
+    canvas.addEventListener('pointercancel', releasePointer, { capture: true })
 
-    PLATFORM_EVENT_NAMES.forEach((type) => {
-        canvas.addEventListener(type, (event) => {
-            ui.dispatchPlatformEvent(event, { camera })
-        })
-    })
+    ui.setCamera(camera)
 
     ui.root.on('pointerdown', (event) => {
         panel_pointers.add(event.source_event.pointerId)
@@ -230,7 +228,7 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIPlayCanva
         camera.setEulerAngles(pose.angles)
     })
 
-    registerRootComponent(VueTodo, { ui }).render({ backgroundColor: 'unset', boxShadow: 'unset' })
+    registerRootComponent(VueTodo, { ui }).mount({ backgroundColor: 'unset', boxShadow: 'unset' })
 
     ui.setViewport(UI_WIDTH, UI_HEIGHT)
     ui.update()

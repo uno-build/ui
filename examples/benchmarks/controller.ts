@@ -1,6 +1,5 @@
-import UIWebGPU from '../../src/ui/UIWebGPU'
+import UI from '../../src/ui/UI'
 import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
-import { loadYoga } from 'yoga-layout/load'
 import { loadBenchmarkAssets } from './assets'
 import { WORKLOADS } from './workloads'
 import { createCoverage } from './coverage'
@@ -375,7 +374,7 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
             resources = await ResourcesWebGPU.create({ canvas, adapter, device })
             assets = await loadBenchmarkAssets()
             assets.register(resources)
-            const initialized = await UIWebGPU.create({ resources, loadYoga })
+            const initialized = await UI.create({ resources })
             ui = initialized.ui
             ui.setDevicePixelRatio(options.dpr)
             setViewport(options.width, options.height)

@@ -97,7 +97,7 @@ export function MultiText(props) {
 
 export function ScrollViewTree(props) {
     return (
-        <ScrollView ref={props.setRef} style={{ height: '100px' }}>
+        <ScrollView ref={props.setRef} onScroll={props.getOnScroll()} style={{ height: '100px' }}>
             <view style={{ height: '10px' }} />
         </ScrollView>
     )
@@ -223,7 +223,7 @@ test('Solid create and insert build the Uno node tree and apply initial styles',
         }
 
         const root = registerRootComponent(fixture.StaticTree, { ui })
-        root.render({})
+        root.mount({})
 
         const parent = ui.root.children[0]
         const first_child = parent.children[0]
@@ -282,7 +282,7 @@ test('Solid updates styles without replacing node identity and unsets removed st
         })
 
         const root = registerRootComponent(fixture.DynamicStyle, { ui })
-        root.render({ getStyle: style })
+        root.mount({ getStyle: style })
         const node = ui.root.children[0]
         flush(() => setStyle({ width: '200px', backgroundColor: '#00f' }))
 
@@ -316,7 +316,7 @@ for (const component_name of ['HostRef', 'ViewRef', 'TextRef']) {
                 let reference
 
                 const root = registerRootComponent(fixture[component_name], { ui })
-                root.render({
+                root.mount({
                     setRef(value) {
                         reference = value
                     },
@@ -358,7 +358,7 @@ test('Solid keyed lists insert and move nodes before existing siblings', async (
         const [items, setItems] = createSignal([a, b, c])
 
         const root = registerRootComponent(fixture.KeyedList, { ui })
-        root.render({ getItems: items })
+        root.mount({ getItems: items })
         const parent = ui.root.children[0]
         const [a_node, b_node, c_node] = parent.children
 
@@ -422,7 +422,7 @@ test('Solid removes and destroys a conditional Uno subtree in order', async ({ p
 
         const [visible, setVisible] = createSignal(true)
         const root = registerRootComponent(fixture.ConditionalTree, { ui })
-        root.render({ getVisible: visible })
+        root.mount({ getVisible: visible })
         const parent = ui.root.children[0]
         const child = parent.children[0]
         flush(() => setVisible(false))
@@ -468,8 +468,8 @@ test('Solid roots isolate their node state and expose their own UI context', asy
         const second_ui = await TestUI.create({ renderer: new TestRenderer() })
         const first_root = registerRootComponent(fixture.UIContextTree, { ui: first_ui })
         const second_root = registerRootComponent(fixture.UIContextTree, { ui: second_ui })
-        first_root.render({})
-        second_root.render({})
+        first_root.mount({})
+        second_root.mount({})
         const second_node = second_ui.root.children[0]
         first_root.unmount()
 
@@ -509,7 +509,7 @@ for (const [component_name, message] of [
                 const root = registerRootComponent(fixture[component_name], { ui })
 
                 try {
-                    root.render({})
+                    root.mount({})
                 } catch (error) {
                     return error.message
                 }
@@ -537,7 +537,7 @@ test('Solid updates, joins, clears, and unmounts text without retaining Uno node
         const dynamic_ui = await TestUI.create({ renderer: new TestRenderer() })
         const [value, setValue] = createSignal('Antes')
         const dynamic_root = registerRootComponent(fixture.DynamicText, { ui: dynamic_ui })
-        dynamic_root.render({ getValue: value })
+        dynamic_root.mount({ getValue: value })
         const dynamic_node = dynamic_ui.root.children[0]
         flush(() => setValue('Después'))
         const dynamic_updated = dynamic_ui.root.children[0] === dynamic_node && dynamic_node.text_content === 'Después'
@@ -545,7 +545,7 @@ test('Solid updates, joins, clears, and unmounts text without retaining Uno node
         const conditional_ui = await TestUI.create({ renderer: new TestRenderer() })
         const [visible, setVisible] = createSignal(true)
         const conditional_root = registerRootComponent(fixture.ConditionalText, { ui: conditional_ui })
-        conditional_root.render({ getVisible: visible })
+        conditional_root.mount({ getVisible: visible })
         const conditional_node = conditional_ui.root.children[0]
         flush(() => setVisible(false))
         const conditional_cleared =
@@ -553,7 +553,7 @@ test('Solid updates, joins, clears, and unmounts text without retaining Uno node
 
         const multi_ui = await TestUI.create({ renderer: new TestRenderer() })
         const [name, setName] = createSignal('Mundo')
-        registerRootComponent(fixture.MultiText, { ui: multi_ui }).render({ getName: name })
+        registerRootComponent(fixture.MultiText, { ui: multi_ui }).mount({ getName: name })
         const multi_node = multi_ui.root.children[0]
         const joined = multi_node.text_content
         flush(() => setName('Uno'))
@@ -619,7 +619,7 @@ test('Solid event props rebind the Uno listener and dispatch the latest handler'
         const [onClick, setOnClick] = createSignal(null)
         setOnClick(() => () => received.push('first'))
         const root = registerRootComponent(fixture.EventTree, { ui })
-        root.render({ getOnClick: onClick })
+        root.mount({ getOnClick: onClick })
         const parent = ui.root.children[0]
         const child = parent.children[0]
         flush(() =>
@@ -688,7 +688,7 @@ test('Solid commits state updates from an event handler within the dispatch', as
         const fixture = (globalThis as any).solid_fixture
         const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
         const root = registerRootComponent(fixture.Counter, { ui })
-        root.render({})
+        root.mount({})
         const node = ui.root.children[0]
         const before = node.styles.width.value
 
@@ -706,33 +706,78 @@ test('Solid commits state updates from an event handler within the dispatch', as
     expect(result).toEqual({ before: '100px', after: '101px', same_node: true })
 })
 
-test('ScrollView refs expose the main and content Uno nodes', async ({ page }) => {
+test('ScrollView exposes its nodes before notifying the initial and updated scroll callbacks', async ({ page }) => {
     const result = await page.evaluate(async (module_paths) => {
-        const [{ registerRootComponent }, { default: TestRenderer }, { default: TestUI }] = await Promise.all([
+        const [
+            { registerRootComponent },
+            { createSignal, flush },
+            { default: TestRenderer },
+            { default: TestUI },
+            { DEFINED_EVENTS },
+        ] = await Promise.all([
             import(module_paths.renderer),
+            import(module_paths.solid),
             import(module_paths.test_renderer),
             import(module_paths.test_ui),
+            import(module_paths.events),
         ])
         const fixture = (globalThis as any).solid_fixture
-        const ui = await TestUI.create({ renderer: new TestRenderer() })
+        const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
+        const received = []
         let reference = null
+        const [onScroll, setOnScroll] = createSignal(null)
+        setOnScroll(() => (event) => received.push({
+            handler: 'first',
+            ref_ready: reference?.nodes.main === event.target,
+            ...event,
+        }))
 
-        registerRootComponent(fixture.ScrollViewTree, { ui }).render({
+        const root = registerRootComponent(fixture.ScrollViewTree, { ui })
+        root.mount({
             setRef(value) {
                 reference = value
             },
+            getOnScroll: onScroll,
         })
 
         const main = ui.root.children[0]
         const content = main.children[0]
+        const count_before_microtask = received.length
+        await Promise.resolve()
+        flush(() => setOnScroll(() => (event) => received.push({
+            handler: 'latest',
+            ref_ready: reference?.nodes.main === event.target,
+            ...event,
+        })))
+        main.scrollTop = 12
+        ui.update()
+        const count_before_update_microtask = received.length
+        await Promise.resolve()
 
-        return {
+        const result = {
             handle_keys: Object.keys(reference),
             nodes_match: reference.nodes.main === main && reference.nodes.content === content,
             main_height: main.styles.height.value,
             content_children: content.children.length,
             child_height: content.children[0].styles.height.value,
+            count_before_microtask,
+            count_before_update_microtask,
+            received: received.map((event) => ({
+                handler: event.handler,
+                ref_ready: event.ref_ready,
+                target_matches: event.target === main && event.current_target === main,
+                source_event: event.source_event,
+                scroll_left: event.scroll_left,
+                scroll_top: event.scroll_top,
+                scroll_width: event.scroll_width,
+                scroll_height: event.scroll_height,
+                client_width: event.client_width,
+                client_height: event.client_height,
+            })),
         }
+        root.unmount()
+        ui.destroy()
+        return result
     }, MODULE_PATHS)
 
     expect(result).toEqual({
@@ -741,6 +786,34 @@ test('ScrollView refs expose the main and content Uno nodes', async ({ page }) =
         main_height: '100px',
         content_children: 1,
         child_height: '10px',
+        count_before_microtask: 0,
+        count_before_update_microtask: 1,
+        received: [
+            {
+                handler: 'first',
+                ref_ready: true,
+                target_matches: true,
+                source_event: null,
+                scroll_left: 0,
+                scroll_top: 0,
+                scroll_width: 0,
+                scroll_height: 0,
+                client_width: 0,
+                client_height: 0,
+            },
+            {
+                handler: 'latest',
+                ref_ready: true,
+                target_matches: true,
+                source_event: null,
+                scroll_left: 0,
+                scroll_top: 12,
+                scroll_width: 0,
+                scroll_height: 0,
+                client_width: 0,
+                client_height: 0,
+            },
+        ],
     })
 })
 
@@ -763,7 +836,7 @@ test('Input refs expose its Uno nodes and focus and blur the main node', async (
         const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
         let reference = null
 
-        registerRootComponent(fixture.InputTree, { ui }).render({
+        registerRootComponent(fixture.InputTree, { ui }).mount({
             setRef(value) {
                 reference = value
             },
@@ -840,7 +913,7 @@ test('Input swaps placeholder and value styling', async ({ page }) => {
         const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
         const [value, setValue] = createSignal('')
 
-        registerRootComponent(fixture.InputPlaceholder, { ui }).render({ getValue: value })
+        registerRootComponent(fixture.InputPlaceholder, { ui }).mount({ getValue: value })
         const text = ui.root.children[0].children[0].children[0]
         const placeholder = { text: text.text_content, color: text.styles.color.value }
 
@@ -873,7 +946,7 @@ test('Solid keeps sibling order around an empty conditional slot', async ({ page
         const ui = await TestUI.create({ renderer: new TestRenderer() })
         const [visible, setVisible] = createSignal(false)
 
-        registerRootComponent(fixture.MixedChildren, { ui }).render({ getVisible: visible })
+        registerRootComponent(fixture.MixedChildren, { ui }).mount({ getVisible: visible })
         const parent = ui.root.children[0]
         const readWidths = () => parent.children.map((node) => node.styles.width?.value ?? node.styles.display.value)
 

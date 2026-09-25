@@ -141,7 +141,7 @@ export function registerRootComponent<P extends Record<string, any>>(RootCompone
         () => {},
     )
     return {
-        render(props: P) {
+        mount(props: P) {
             const tree = createElement(UI_CONTEXT, { value: ui }, createElement(RootComponent, props))
             reconciler.updateContainerSync(tree, container, null, null)
             reconciler.flushSyncWork()

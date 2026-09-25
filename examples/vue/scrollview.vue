@@ -2,35 +2,35 @@
 import type ResourcesDom from '../../src/renderer/dom/ResourcesDom'
 import type ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
 import { loadImage, loadJson } from '../shared/load-assets'
+import {
+    loadFont,
+    FONT_NAME_NOUGAT as TITLE_FONT_FAMILY,
+    FONT_NAME_POPPINS as TEXT_FONT_FAMILY,
+} from '../shared/assets'
 
-const TITLE_FONT_FAMILY = 'Nougat-ExtraBlack'
-const TEXT_FONT_FAMILY = 'Poppins-Regular'
 const LOGO_SRC = 'assets/images/logo.jpg'
 const TEXTURE_SRC = 'assets/images/texture.jpg'
 const COIN_SRC = 'assets/images/coin.png'
 
 export async function loadResources(resources: ResourcesDom | ResourcesWebGPU) {
-    const [logo, texture, coin, title_font_image, title_font_json, text_font_image, text_font_json] = await Promise.all(
-        [
-            loadImage(LOGO_SRC),
-            loadImage(TEXTURE_SRC),
-            loadImage(COIN_SRC),
-            loadImage(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.png`),
-            loadJson(`assets/fonts/${TITLE_FONT_FAMILY}.mtsdf.json`),
-            loadImage(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.png`),
-            loadJson(`assets/fonts/${TEXT_FONT_FAMILY}.mtsdf.json`),
-        ],
-    )
+    const [logo, texture, coin, title_font, text_font] = await Promise.all([
+        loadImage(LOGO_SRC),
+        loadImage(TEXTURE_SRC),
+        loadImage(COIN_SRC),
+        loadFont(TITLE_FONT_FAMILY, { loadImage, loadJson }),
+        loadFont(TEXT_FONT_FAMILY, { loadImage, loadJson }),
+    ])
     resources.registerImage(LOGO_SRC, logo)
     resources.registerImage(TEXTURE_SRC, texture)
     resources.registerImage(COIN_SRC, coin)
-    resources.registerFont(TITLE_FONT_FAMILY, title_font_image, title_font_json)
-    resources.registerFont(TEXT_FONT_FAMILY, text_font_image, text_font_json)
+    resources.registerFont(TITLE_FONT_FAMILY, title_font)
+    resources.registerFont(TEXT_FONT_FAMILY, text_font)
 }
 </script>
 
 <script setup lang="ts">
 import { Image, ScrollView, Text, View } from '../../src/components/vue'
+import ScrollbarView from './ScrollbarView.vue'
 
 const GALLERY_SOURCES = [TEXTURE_SRC, LOGO_SRC, COIN_SRC, TEXTURE_SRC, LOGO_SRC, COIN_SRC, TEXTURE_SRC, LOGO_SRC]
 const PARAGRAPHS = [
@@ -59,7 +59,7 @@ const ITEMS = [
 </script>
 
 <template>
-    <ScrollView class="page">
+    <ScrollbarView class="page">
         <View class="page-content">
             <View class="page-header">
                 <View class="badge">
@@ -136,7 +136,7 @@ const ITEMS = [
                 </View>
             </ScrollView>
         </View>
-    </ScrollView>
+    </ScrollbarView>
 </template>
 
 <style scoped>

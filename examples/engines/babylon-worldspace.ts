@@ -8,7 +8,6 @@ import { Color3, Color4 } from '@babylonjs/core/Maths/math.color.js'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js'
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js'
 import { Scene } from '@babylonjs/core/scene.js'
-import { PLATFORM_EVENT_NAMES } from '../../src/events/constants'
 import { loadAssets, registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
@@ -20,11 +19,10 @@ export async function main({
     canvas,
     onCanvasEvent,
     ResourcesWebGPU,
-    UIWebGPU,
+    UI,
     UIBabylon,
     loadImage,
     loadJson,
-    loadYoga,
 }) {
     const context = canvas.getContext('webgpu')
     const format = navigator.gpu.getPreferredCanvasFormat()
@@ -58,14 +56,13 @@ export async function main({
     const assets = await loadAssets({ loadImage, loadJson })
     registerAssets({ resources, assets })
 
-    const { ui: overlay_ui } = await UIWebGPU.create({ resources, loadYoga, device_pixel_ratio })
+    const { ui: overlay_ui } = await UI.create({ resources, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
     const { ui: first_ui, plane: first_plane } = await UIBabylon.create({
         scene,
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width,
         texture_height,
@@ -75,7 +72,6 @@ export async function main({
     const { ui: second_ui, plane: second_plane } = await UIBabylon.create({
         scene,
         resources,
-        loadYoga,
         device_pixel_ratio,
         texture_width,
         texture_height,
@@ -85,13 +81,8 @@ export async function main({
     const camera = new ArcRotateCamera('camera', -Math.PI / 2, 1.25, 9.5, new Vector3(0, 0.8, 0), scene)
 
     // Event handling
-    PLATFORM_EVENT_NAMES.forEach((type) => {
-        canvas.addEventListener(type, (e) => {
-            overlay_ui.dispatchPlatformEvent(e)
-            first_ui.dispatchPlatformEvent(e, { camera })
-            second_ui.dispatchPlatformEvent(e, { camera })
-        })
-    })
+    first_ui.setCamera(camera)
+    second_ui.setCamera(camera)
     first_ui.root.on('pointerdown', (e) => {
         camera.detachControl()
     })
