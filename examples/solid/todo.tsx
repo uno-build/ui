@@ -702,6 +702,6 @@ export default function createSolidTodo({ ui, resources }) {
         resources.registerFont(TITLE_FONT_FAMILY, title_font)
 
         const renderer = registerRootComponent(SolidTodo, { ui })
-        renderer.render({})
+        renderer.mount({})
     })
 }

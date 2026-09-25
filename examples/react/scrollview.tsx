@@ -346,6 +346,6 @@ export default function createReactScrollView({ ui, resources }) {
         resources.registerFont(TEXT_FONT_FAMILY, text_font)
 
         const renderer = registerRootComponent(ReactScrollView, { ui })
-        renderer.render({})
+        renderer.mount({})
     })
 }

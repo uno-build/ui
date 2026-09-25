@@ -682,6 +682,6 @@ export default function createReactTodo({ ui, resources }) {
         resources.registerFont(TITLE_FONT_FAMILY, title_font)
 
         const renderer = registerRootComponent(ReactTodo, { ui })
-        renderer.render({})
+        renderer.mount({})
     })
 }

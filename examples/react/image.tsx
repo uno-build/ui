@@ -124,7 +124,7 @@ export default function createReactImage({ ui, resources }) {
             resources.registerFont(TEXT_FONT_FAMILY, font)
 
             const renderer = registerRootComponent(ReactImage, { ui })
-            renderer.render({})
+            renderer.mount({})
         },
     )
 }

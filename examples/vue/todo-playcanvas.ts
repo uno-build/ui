@@ -228,7 +228,7 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIPlayCanva
         camera.setEulerAngles(pose.angles)
     })
 
-    registerRootComponent(VueTodo, { ui }).render({ backgroundColor: 'unset', boxShadow: 'unset' })
+    registerRootComponent(VueTodo, { ui }).mount({ backgroundColor: 'unset', boxShadow: 'unset' })
 
     ui.setViewport(UI_WIDTH, UI_HEIGHT)
     ui.update()

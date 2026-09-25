@@ -342,6 +342,6 @@ export default function createSolidScrollView({ ui, resources }) {
         resources.registerFont(TEXT_FONT_FAMILY, text_font)
 
         const renderer = registerRootComponent(SolidScrollView, { ui })
-        renderer.render({})
+        renderer.mount({})
     })
 }

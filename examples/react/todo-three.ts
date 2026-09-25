@@ -103,7 +103,7 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIThree, lo
     floor.position.y = FLOOR_Y
     scene.add(floor)
 
-    registerRootComponent(ReactTodo, { ui }).render({ backgroundColor: 'unset', boxShadow: 'unset' })
+    registerRootComponent(ReactTodo, { ui }).mount({ backgroundColor: 'unset', boxShadow: 'unset' })
 
     ui.setViewport(UI_WIDTH, UI_HEIGHT)
     ui.update()

@@ -120,7 +120,7 @@ export function registerRootComponent<P extends Record<string, any>>(RootCompone
     let disposeRoot: (() => void) | null = null
 
     return {
-        render(props: P) {
+        mount(props: P) {
             disposeRoot = render(
                 () =>
                     createComponent(UI_CONTEXT as unknown as (props: { value: UI; children: Node }) => Node, {

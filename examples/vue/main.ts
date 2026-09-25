@@ -88,7 +88,7 @@ if (example_name === 'todo-playcanvas') {
 
         await loadResources(resources)
         const renderer = registerRootComponent(Example, { ui })
-        renderer.render({})
+        renderer.mount({})
         uis.push(ui)
     }
 

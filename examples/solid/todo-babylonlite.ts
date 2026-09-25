@@ -161,7 +161,7 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
     })
     addToScene(scene, floor)
 
-    registerRootComponent(SolidTodo, { ui }).render({ backgroundColor: 'unset', boxShadow: 'unset' })
+    registerRootComponent(SolidTodo, { ui }).mount({ backgroundColor: 'unset', boxShadow: 'unset' })
 
     ui.setViewport(UI_WIDTH, UI_HEIGHT)
     ui.update()

@@ -124,7 +124,7 @@ export default function createSolidImage({ ui, resources }) {
             resources.registerFont(TEXT_FONT_FAMILY, font)
 
             const renderer = registerRootComponent(SolidImage, { ui })
-            renderer.render({})
+            renderer.mount({})
         },
     )
 }
