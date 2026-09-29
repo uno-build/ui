@@ -49,7 +49,7 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            'uno-ui/vue': fileURLToPath(new URL('../../src/components/vue/index.ts', import.meta.url)),
+            'uno.ui/vue': fileURLToPath(new URL('../../src/components/vue/index.ts', import.meta.url)),
         },
     },
     build: {

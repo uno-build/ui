@@ -333,7 +333,7 @@ export default class UIWebGPUPlayCanvas extends UIWorldSpace<
 
         const mesh = Mesh.fromGeometry(graphics_device, geometry)
         const mesh_instance = new MeshInstance(mesh, material)
-        const plane = new Entity('uno-ui-plane', this.app)
+        const plane = new Entity('uno.ui-plane', this.app)
         plane.addComponent('render', { meshInstances: [mesh_instance] })
         return { plane, geometry, mesh, mesh_instance }
     }

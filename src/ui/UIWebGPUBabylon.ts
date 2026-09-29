@@ -174,7 +174,7 @@ export default class UIWebGPUBabylon extends UIWorldSpace<
     }
 
     protected createDefaultMaterial() {
-        return new StandardMaterial('uno-ui-material', this.scene)
+        return new StandardMaterial('uno.ui-material', this.scene)
     }
 
     protected configureMaterial({
@@ -190,7 +190,7 @@ export default class UIWebGPUBabylon extends UIWorldSpace<
 
     protected createDefaultPlane({ material, world_width, world_height }: PlaneOptions<Texture, StandardMaterial>) {
         const plane = MeshBuilder.CreatePlane(
-            'uno-ui-plane',
+            'uno.ui-plane',
             {
                 width: world_width,
                 height: world_height,
@@ -204,7 +204,7 @@ export default class UIWebGPUBabylon extends UIWorldSpace<
 
 class UITexturePlugin extends MaterialPluginBase {
     constructor(material: StandardMaterial) {
-        super(material, 'uno-ui-texture', 200, undefined, true, true)
+        super(material, 'uno.ui-texture', 200, undefined, true, true)
     }
 
     isCompatible(shader_language: ShaderLanguage) {

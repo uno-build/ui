@@ -9,14 +9,17 @@
     <a href="https://vuejs.org/"><img src="./assets/vue.svg" alt=Vue" width="3%" /></a>
     <a href="https://www.solidjs.com/"><img src="./assets/solid.svg" alt=Solid.js" width="3%" /></a>
     <br />
- <img src="./assets/banner.jpg" alt="uno/ui" width="100%" />
+ <img src="./assets/banner.jpg" alt="uno.ui" width="100%" />
 </p>
 
 <p>
- <a href="https://github.com/Josema/uno-ui/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/josema/uno-ui/ci.yml?branch=main&logo=github&style=for-the-badge" alt="Babylon.js" height="28" /></a>
+ <a href="https://github.com/uno-build/ui/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/uno-build/ui/ci.yml?branch=main&amp;logo=github&amp;style=for-the-badge&amp;labelColor=000000" alt="CI: uno.ui" height="28" /></a>
+   <a href="https://www.npmjs.com/package/uno.ui"><img alt="npm version: uno.ui" src="https://img.shields.io/npm/v/uno.ui.svg?style=for-the-badge&amp;labelColor=000000" height="28"></a>
+  <a href="https://github.com/uno-build/ui/blob/main/LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/github/license/uno-build/ui.svg?style=for-the-badge&amp;labelColor=000000" height="28"></a>
+  <a href="https://www.npmjs.com/package/uno.ui"><img alt="npm downloads per month: uno.ui" src="https://img.shields.io/npm/dm/uno.ui.svg?style=for-the-badge&amp;labelColor=000000&amp;label=npm%20downloads" height="28"></a>
 </p>
 
-**[Website](https://uno.build/) • [API Docs](https://uno.build/docs/) • [Examples](https://uno.build/docs/examples/)**
+**[API Docs](https://uno.build/docs/) • [Examples](https://uno.build/docs/examples/) • [Website](https://uno.build/)**
 
 #### Build high-performance and pixel-perfect user interfaces for WebGPU. Use the rendering engine and UI framework of your choice.
 
@@ -38,7 +41,7 @@ uno UI solves both problems by rendering the UI directly through the game's rend
 - Fine-grained updates for efficient rendering
 - Lightweight, basic setup is around 280kb (93kb gzip)
 
-## Examples
+## Demos
 
 #### These examples illustrate how to combine two independent UIs, one in the background and one in the foreground, with the engine’s scene rendered between them.
 
@@ -62,3 +65,5 @@ uno UI solves both problems by rendering the UI directly through the game's rend
 - [React](https://uno.build/examples/react/): Includes a demo showing the to-do app integrated into a Three.js scene.
 - [Vue](https://uno.build/examples/vue/): Includes a demo showing the to-do app integrated into a PlayCanvas scene.
 - [SolidJS](https://uno.build/examples/solid/): Includes a demo showing the to-do app integrated into a Babylon Lite scene.
+
+##

@@ -238,7 +238,7 @@ export default class UIWebGPUBabylonLite extends UIWorldSpace<
 }
 
 const UI_TEXTURE_PLUGIN: MaterialPlugin = {
-    name: 'uno-ui-texture',
+    name: 'uno.ui-texture',
     getCustomCode(shader_type: 'vertex' | 'fragment') {
         if (shader_type === 'vertex') {
             return null

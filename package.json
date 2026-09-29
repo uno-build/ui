@@ -1,8 +1,30 @@
 {
-    "name": "uno-ui",
+    "name": "uno.ui",
     "version": "0.1.0",
-    "license": "Apache-2.0",
     "type": "module",
+    "license": "Apache-2.0",
+    "description": "UI system for WebGPU",
+    "homepage": "https://uno.build",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/uno-build/ui"
+    },
+    "keywords": [
+        "ui",
+        "ux",
+        "userinterface",
+        "webgpu",
+        "react",
+        "solid-js",
+        "vue",
+        "three.js",
+        "pixi.js",
+        "babylon.js",
+        "playcanvas",
+        "typegpu",
+        "flexbox",
+        "yoga"
+    ],
     "exports": {
         "./events": {
             "types": "./dist/events/index.d.ts",
