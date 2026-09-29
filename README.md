@@ -9,14 +9,14 @@
     <a href="https://vuejs.org/"><img src="./assets/vue.svg" alt=Vue" width="3%" /></a>
     <a href="https://www.solidjs.com/"><img src="./assets/solid.svg" alt=Solid.js" width="3%" /></a>
     <br />
- <img src="./assets/banner.jpg" alt="uno.ui" width="100%" />
+ <img src="./assets/banner.jpg" alt="@uno.build/ui" width="100%" />
 </p>
 
 <p>
- <a href="https://github.com/uno-build/ui/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/uno-build/ui/ci.yml?branch=main&amp;logo=github&amp;style=for-the-badge&amp;labelColor=000000" alt="CI: uno.ui" height="28" /></a>
-   <a href="https://www.npmjs.com/package/uno.ui"><img alt="npm version: uno.ui" src="https://img.shields.io/npm/v/uno.ui.svg?style=for-the-badge&amp;labelColor=000000" height="28"></a>
+ <a href="https://github.com/uno-build/ui/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/uno-build/ui/ci.yml?branch=main&amp;logo=github&amp;style=for-the-badge&amp;labelColor=000000" alt="CI: @uno.build/ui" height="28" /></a>
+   <a href="https://www.npmjs.com/package/@uno.build/ui"><img alt="npm version: @uno.build/ui" src="https://img.shields.io/npm/v/@uno.build/ui.svg?style=for-the-badge&amp;labelColor=000000" height="28"></a>
   <a href="https://github.com/uno-build/ui/blob/main/LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/github/license/uno-build/ui.svg?style=for-the-badge&amp;labelColor=000000" height="28"></a>
-  <a href="https://www.npmjs.com/package/uno.ui"><img alt="npm downloads per month: uno.ui" src="https://img.shields.io/npm/dm/uno.ui.svg?style=for-the-badge&amp;labelColor=000000&amp;label=npm%20downloads" height="28"></a>
+  <a href="https://www.npmjs.com/package/@uno.build/ui"><img alt="npm downloads per month: @uno.build/ui" src="https://img.shields.io/npm/dm/@uno.build/ui.svg?style=for-the-badge&amp;labelColor=000000&amp;label=npm%20downloads" height="28"></a>
 </p>
 
 **[API Docs](https://uno.build/docs/) • [Examples](https://uno.build/docs/examples/) • [Website](https://uno.build/)**

@@ -124,7 +124,7 @@ export function stylesPlugin(): Plugin[] {
             }
             const rules = await compileStyles(descriptor, scope_id)
 
-            code.prepend(`import { registerStyleSheet as __unoRegisterStyleSheet, removeStyleSheet as __unoRemoveStyleSheet } from 'uno.ui/vue'\n`)
+            code.prepend(`import { registerStyleSheet as __unoRegisterStyleSheet, removeStyleSheet as __unoRemoveStyleSheet } from '@uno.build/ui/vue'\n`)
             code.append(`\n__unoRegisterStyleSheet(${JSON.stringify(id)}, ${JSON.stringify(rules)})\nif (import.meta.hot) import.meta.hot.prune(() => __unoRemoveStyleSheet(${JSON.stringify(id)}))\n`)
             return { code: code.toString(), map: code.generateMap({ source: id, includeContent: true, hires: true }) }
         },
