@@ -221,6 +221,9 @@
         "benchmarks:render-metrics": "node ./scripts/benchmarks.mjs --workload render-metrics",
         "benchmarks:render-metrics:headed": "node ./scripts/benchmarks.mjs --workload render-metrics --headed"
     },
+    "publishConfig": {
+        "access": "public"
+    },
     "files": [
         "dist"
     ]
