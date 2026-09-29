@@ -8,7 +8,7 @@ import ts from 'typescript'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const PACKAGE = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8'))
-const DIRECTORY = await mkdtemp(path.join(tmpdir(), 'uno-ui-package-'))
+const DIRECTORY = await mkdtemp(path.join(tmpdir(), 'uno.ui-package-'))
 const CONSUMER = path.join(DIRECTORY, 'consumer')
 const INSTALL_FLAGS = ['--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false']
 const ENGINE_PEERS = ['three', '@babylonjs/core', '@babylonjs/lite', 'playcanvas']
@@ -159,12 +159,12 @@ try {
     const minimal_fixture = path.join(CONSUMER, 'minimal.ts')
     await writeFile(
         minimal_fixture,
-        `import { EventEmitter } from 'uno-ui/events'
-import ResourcesDom from 'uno-ui/ResourcesDom'
-import ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
-import UIDom from 'uno-ui/UIDom'
-import UI from 'uno-ui/UI'
-import UIWebGPU from 'uno-ui/UIWebGPU'
+        `import { EventEmitter } from 'uno.ui/events'
+import ResourcesDom from 'uno.ui/ResourcesDom'
+import ResourcesWebGPU from 'uno.ui/ResourcesWebGPU'
+import UIDom from 'uno.ui/UIDom'
+import UI from 'uno.ui/UI'
+import UIWebGPU from 'uno.ui/UIWebGPU'
 import { loadYoga } from 'yoga-layout/load'
 
 new EventEmitter().emit('ready')
@@ -212,21 +212,21 @@ UI.create({ resources: await ResourcesWebGPU.create({ canvas }) })
     const ui_fixture = path.join(CONSUMER, 'ui-types.ts')
     await writeFile(
         ui_fixture,
-        `import UI from 'uno-ui/UI'
-import UIWebGPU from 'uno-ui/UIWebGPU'
-import type ResourcesWebGPU from 'uno-ui/ResourcesWebGPU'
+        `import UI from 'uno.ui/UI'
+import UIWebGPU from 'uno.ui/UIWebGPU'
+import type ResourcesWebGPU from 'uno.ui/ResourcesWebGPU'
 import { loadYoga } from 'yoga-layout/load'
-import UIThree from 'uno-ui/UIThree'
-import UIWebGPUThree from 'uno-ui/UIWebGPUThree'
+import UIThree from 'uno.ui/UIThree'
+import UIWebGPUThree from 'uno.ui/UIWebGPUThree'
 import type * as THREE from 'three/webgpu'
-import UIBabylon from 'uno-ui/UIBabylon'
-import UIWebGPUBabylon from 'uno-ui/UIWebGPUBabylon'
+import UIBabylon from 'uno.ui/UIBabylon'
+import UIWebGPUBabylon from 'uno.ui/UIWebGPUBabylon'
 import type * as BABYLON from '@babylonjs/core'
-import UIBabylonLite from 'uno-ui/UIBabylonLite'
-import UIWebGPUBabylonLite from 'uno-ui/UIWebGPUBabylonLite'
+import UIBabylonLite from 'uno.ui/UIBabylonLite'
+import UIWebGPUBabylonLite from 'uno.ui/UIWebGPUBabylonLite'
 import type * as BABYLON_LITE from '@babylonjs/lite'
-import UIPlayCanvas from 'uno-ui/UIPlayCanvas'
-import UIWebGPUPlayCanvas from 'uno-ui/UIWebGPUPlayCanvas'
+import UIPlayCanvas from 'uno.ui/UIPlayCanvas'
+import UIWebGPUPlayCanvas from 'uno.ui/UIWebGPUPlayCanvas'
 import type * as PLAYCANVAS from 'playcanvas'
 
 declare const resources: ResourcesWebGPU

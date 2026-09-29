@@ -48,7 +48,7 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            'uno-ui/solid': fileURLToPath(new URL('../../src/components/solid/index.ts', import.meta.url)),
+            'uno.ui/solid': fileURLToPath(new URL('../../src/components/solid/index.ts', import.meta.url)),
         },
     },
     build: {
