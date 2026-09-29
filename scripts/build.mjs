@@ -24,7 +24,7 @@ for (const framework of ['solid', 'react']) {
     const source = await readFile(filename, 'utf8')
     const compiled = framework === 'solid'
         ? transformSolid(source, {
-            filename, moduleName: 'uno.ui/solid', generate: 'universal',
+            filename, moduleName: '@uno.build/ui/solid', generate: 'universal',
             builtIns: ['Errored', 'For', 'Loading', 'Match', 'Repeat', 'Reveal', 'Show', 'Switch'],
             wrapConditionals: true,
         }).code
