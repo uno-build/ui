@@ -23,10 +23,12 @@
     <body>
         <canvas></canvas>
         <script type="module">
-            import UI from '../../src/ui/UI'
-            import UIBabylon from '../../src/ui/UIBabylon'
+            import UI from '../../src/ui/UIWebGPU'
+            import UIBabylon from '../../src/ui/UIWebGPUBabylon'
             import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
             import { loadImage, loadJson } from '../shared/load-assets'
+            import { loadAssets } from '../shared/assets'
+            import { loadYoga } from 'yoga-layout/load'
             import { main } from './babylon-worldspace.ts'
 
             const canvas = document.querySelector('canvas')
@@ -37,8 +39,10 @@
                 UI,
                 UIBabylon,
                 ResourcesWebGPU,
-                loadImage,
-                loadJson,
+                loadYoga,
+                loadAssets: () => loadAssets({ loadImage, loadJson }),
+            }).then(({ uis }) => {
+                uis.forEach((ui) => ui.registerPlatformEvents())
             }).catch(console.error)
         </script>
     </body>

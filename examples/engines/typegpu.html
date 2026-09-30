@@ -23,9 +23,11 @@
     <body>
         <canvas></canvas>
         <script type="module">
-            import UI from '../../src/ui/UI'
+            import UI from '../../src/ui/UIWebGPU'
             import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
             import { loadImage, loadJson } from '../shared/load-assets'
+            import { loadAssets } from '../shared/assets'
+            import { loadYoga } from 'yoga-layout/load'
             import { main } from './typegpu.ts'
 
             const canvas = document.querySelector('canvas')
@@ -35,8 +37,10 @@
                 onCanvasEvent,
                 UI,
                 ResourcesWebGPU,
-                loadImage,
-                loadJson,
+                loadYoga,
+                loadAssets: () => loadAssets({ loadImage, loadJson }),
+            }).then(({ uis }) => {
+                uis.forEach((ui) => ui.registerPlatformEvents())
             }).catch(console.error)
         </script>
     </body>

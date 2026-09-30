@@ -8,7 +8,7 @@ import { Color3, Color4 } from '@babylonjs/core/Maths/math.color.js'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js'
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js'
 import { Scene } from '@babylonjs/core/scene.js'
-import { loadAssets, registerAssets } from '../shared/assets'
+import { registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
 
@@ -21,8 +21,8 @@ export async function main({
     ResourcesWebGPU,
     UI,
     UIBabylon,
-    loadImage,
-    loadJson,
+    loadAssets,
+    loadYoga,
 }) {
     const context = canvas.getContext('webgpu')
     const format = navigator.gpu.getPreferredCanvasFormat()
@@ -53,14 +53,15 @@ export async function main({
         context,
         format,
     })
-    const assets = await loadAssets({ loadImage, loadJson })
+    const assets = await loadAssets()
     registerAssets({ resources, assets })
 
-    const { ui: overlay_ui } = await UI.create({ resources, device_pixel_ratio })
+    const { ui: overlay_ui } = await UI.create({ loadYoga, resources, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
     const { ui: first_ui, plane: first_plane } = await UIBabylon.create({
+        loadYoga,
         scene,
         resources,
         device_pixel_ratio,
@@ -70,6 +71,7 @@ export async function main({
         world_height: WORLD_HEIGHT,
     })
     const { ui: second_ui, plane: second_plane } = await UIBabylon.create({
+        loadYoga,
         scene,
         resources,
         device_pixel_ratio,
@@ -180,6 +182,8 @@ export async function main({
     })
 
     engine.runRenderLoop(() => scene.render())
+
+    return { uis: [overlay_ui, first_ui, second_ui] }
 }
 
 function syncCanvasSize({ canvas, engine, overlay_ui }) {

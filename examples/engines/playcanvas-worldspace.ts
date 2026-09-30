@@ -23,7 +23,7 @@ import {
     Vec3,
     createGraphicsDevice,
 } from 'playcanvas'
-import { loadAssets, registerAssets } from '../shared/assets'
+import { registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
 
@@ -36,8 +36,8 @@ export async function main({
     UIPlayCanvas,
     UI,
     ResourcesWebGPU,
-    loadImage,
-    loadJson,
+    loadAssets,
+    loadYoga,
 }) {
     const gfx_options = {
         deviceTypes: ['webgpu'],
@@ -71,13 +71,14 @@ export async function main({
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
     const world_width = WORLD_HEIGHT * (device_width / device_height)
 
-    const assets = await loadAssets({ loadImage, loadJson })
+    const assets = await loadAssets()
     registerAssets({ resources, assets })
-    const { ui: overlay_ui } = await UI.create({ resources, device_pixel_ratio })
+    const { ui: overlay_ui } = await UI.create({ loadYoga, resources, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
     const { ui: first_ui, plane: first_plane } = await UIPlayCanvas.create({
+        loadYoga,
         app,
         resources,
         device_pixel_ratio,
@@ -87,6 +88,7 @@ export async function main({
         world_height: WORLD_HEIGHT,
     })
     const { ui: second_ui, plane: second_plane } = await UIPlayCanvas.create({
+        loadYoga,
         app,
         resources,
         device_pixel_ratio,
@@ -280,6 +282,8 @@ export async function main({
 
     app.on('frameend', () => resources.present())
     app.start()
+
+    return { uis: [overlay_ui, first_ui, second_ui] }
 }
 
 function setMouseButtons(mouse_buttons: boolean[], buttons: number) {

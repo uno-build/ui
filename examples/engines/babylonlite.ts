@@ -15,11 +15,11 @@ import {
     renderFrame,
     resizeEngine,
 } from '@babylonjs/lite'
-import { loadAssets, registerAssets } from '../shared/assets'
+import { registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
 
-export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadImage, loadJson }) {
+export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAssets, loadYoga }) {
     const engine = await createEngine(canvas, { msaaSamples: 1, alphaMode: 'premultiplied' })
     const scene = createSceneContext(engine, { defaultRenderTask: false })
 
@@ -66,10 +66,10 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadIma
         format: engine.format,
     })
     const device_pixel_ratio = window.devicePixelRatio
-    const { ui: background_ui } = await UI.create({ resources, device_pixel_ratio })
-    const { ui: foreground_ui } = await UI.create({ resources, device_pixel_ratio })
+    const { ui: background_ui } = await UI.create({ loadYoga, resources, device_pixel_ratio })
+    const { ui: foreground_ui } = await UI.create({ loadYoga, resources, device_pixel_ratio })
 
-    const assets = await loadAssets({ loadImage, loadJson })
+    const assets = await loadAssets()
     registerAssets({ resources, assets })
     const { grid } = createBackgroundUI({ ui: background_ui, assets, background_color: '#fbd0dd' })
     createForegroundUI({ ui: foreground_ui, assets, title: 'Hello Babylon Lite!' })
@@ -158,6 +158,8 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadIma
     }
 
     requestAnimationFrame(frame)
+
+    return { uis: [background_ui, foreground_ui] }
 }
 
 function syncCanvasSize({ canvas, background_ui, foreground_ui }) {

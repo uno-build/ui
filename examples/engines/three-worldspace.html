@@ -23,10 +23,12 @@
     <body>
         <canvas></canvas>
         <script type="module">
-            import UI from '../../src/ui/UI'
-            import UIThree from '../../src/ui/UIThree'
+            import UI from '../../src/ui/UIWebGPU'
+            import UIThree from '../../src/ui/UIWebGPUThree'
             import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
             import { loadImage, loadJson } from '../shared/load-assets'
+            import { loadAssets } from '../shared/assets'
+            import { loadYoga } from 'yoga-layout/load'
             import { main } from './three-worldspace.ts'
 
             const canvas = document.querySelector('canvas')
@@ -37,8 +39,10 @@
                 UI,
                 UIThree,
                 ResourcesWebGPU,
-                loadImage,
-                loadJson,
+                loadYoga,
+                loadAssets: () => loadAssets({ loadImage, loadJson }),
+            }).then(({ uis }) => {
+                uis.forEach((ui) => ui.registerPlatformEvents())
             }).catch(console.error)
         </script>
     </body>

@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { loadAssets, registerAssets } from '../shared/assets'
+import { registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
 
@@ -13,8 +13,8 @@ export async function main({
     ResourcesWebGPU,
     UI,
     UIThree,
-    loadImage,
-    loadJson,
+    loadAssets,
+    loadYoga,
 }) {
     const device_pixel_ratio = window.devicePixelRatio
     const device_width = Math.max(canvas.clientWidth, canvas.clientHeight)
@@ -23,10 +23,10 @@ export async function main({
 
     const resources = await ResourcesWebGPU.create({ canvas })
     const { context, device } = resources
-    const assets = await loadAssets({ loadImage, loadJson })
+    const assets = await loadAssets()
     registerAssets({ resources, assets })
 
-    const { ui: overlay_ui } = await UI.create({ resources, device_pixel_ratio })
+    const { ui: overlay_ui } = await UI.create({ loadYoga, resources, device_pixel_ratio })
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
@@ -37,6 +37,7 @@ export async function main({
         material: first_material,
         geometry: first_geometry,
     } = await UIThree.create({
+        loadYoga,
         resources,
         device_pixel_ratio,
         texture_width: texture_width,
@@ -52,6 +53,7 @@ export async function main({
         material: second_material,
         geometry: second_geometry,
     } = await UIThree.create({
+        loadYoga,
         resources,
         device_pixel_ratio,
         texture_width: texture_width,
@@ -177,6 +179,8 @@ export async function main({
     // }, 10000)
 
     requestAnimationFrame(renderFrame)
+
+    return { uis: [overlay_ui, first_ui, second_ui] }
 }
 
 function syncCanvasSize({ canvas, three_renderer, camera, overlay_ui }) {
