@@ -1,17 +1,17 @@
 import tgpu from 'typegpu'
 import * as d from 'typegpu/data'
 import * as std from 'typegpu/std'
-import { loadAssets, registerAssets } from '../shared/assets'
+import { registerAssets } from '../shared/assets'
 import { createBackgroundUI } from '../shared/uis/background-ui'
 import { createForegroundUI } from '../shared/uis/foreground-ui'
 
 const CUBE_VERTEX_COUNT = 36
 
-export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadImage, loadJson }) {
+export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAssets, loadYoga }) {
     const resources = await ResourcesWebGPU.create({ canvas })
     const device_pixel_ratio = window.devicePixelRatio
-    const { ui: background_ui } = await UI.create({ resources, device_pixel_ratio })
-    const { ui: foreground_ui } = await UI.create({ resources, device_pixel_ratio })
+    const { ui: background_ui } = await UI.create({ loadYoga, resources, device_pixel_ratio })
+    const { ui: foreground_ui } = await UI.create({ loadYoga, resources, device_pixel_ratio })
     const { device, context, format } = resources
     const root = tgpu.initFromDevice({ device })
 
@@ -24,7 +24,7 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadIma
         foreground_ui.update()
     })
 
-    const assets = await loadAssets({ loadImage, loadJson })
+    const assets = await loadAssets()
     registerAssets({ resources, assets })
     const { grid } = createBackgroundUI({ ui: background_ui, assets, background_color: '#f4efc2' })
     createForegroundUI({ ui: foreground_ui, assets, title: 'Hello TypeGPU!' })
@@ -114,6 +114,8 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadIma
     }
 
     requestAnimationFrame(frame)
+
+    return { uis: [background_ui, foreground_ui] }
 }
 
 function syncCanvasSize({ canvas, background_ui, foreground_ui }) {

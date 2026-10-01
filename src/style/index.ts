@@ -1,5 +1,7 @@
 import type { ResolvedStyle, StyleUpdate, StyleRule, StyleContext } from './types'
 
+export type * from './types'
+
 import { normalizeStyleName, normalizeStyleKey } from './normalizers'
 import { readUnit, runPipeline, runValidators } from './utils'
 import { expandProperty } from './expand'

@@ -24,9 +24,11 @@
         <canvas></canvas>
         <script type="module">
             import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
-            import UI from '../../src/ui/UI'
-            import UIPlayCanvas from '../../src/ui/UIPlayCanvas'
+            import UI from '../../src/ui/UIWebGPU'
+            import UIPlayCanvas from '../../src/ui/UIWebGPUPlayCanvas'
             import { loadImage, loadJson } from '../shared/load-assets'
+            import { loadAssets } from '../shared/assets'
+            import { loadYoga } from 'yoga-layout/load'
             import { main } from './playcanvas-worldspace.ts'
 
             const canvas = document.querySelector('canvas')
@@ -37,8 +39,10 @@
                 ResourcesWebGPU,
                 UI,
                 UIPlayCanvas,
-                loadImage,
-                loadJson,
+                loadYoga,
+                loadAssets: () => loadAssets({ loadImage, loadJson }),
+            }).then(({ uis }) => {
+                uis.forEach((ui) => ui.registerPlatformEvents())
             }).catch(console.error)
         </script>
     </body>

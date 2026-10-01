@@ -6,7 +6,8 @@ import UI from '../core/UI'
 import { DEFINED_EVENTS } from '../events'
 import RendererWebGPU from '../renderer/RendererWebGPU'
 
-export type { DefinedEvent } from '../core/UI'
+export type * from '../core/UI'
+export type * from '../renderer/RendererWebGPU'
 
 export type UIWebGPUOptions = RendererWebGPUOptions & EventOptions<UIWebGPU>
 
