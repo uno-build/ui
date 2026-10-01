@@ -1,4 +1,4 @@
-export type { CoreEventMap, NodeEventMap, UIEventMap } from './types'
+export type * from './types'
 
 import { definePointers } from './pointers'
 import { defineClick } from './click'

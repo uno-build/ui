@@ -1,6 +1,6 @@
 {
     "name": "@uno.build/ui",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "type": "module",
     "license": "Apache-2.0",
     "description": "UI system for WebGPU",
@@ -26,6 +26,14 @@
         "yoga"
     ],
     "exports": {
+        "./style": {
+            "types": "./dist/style/index.d.ts",
+            "import": "./dist/style/index.js"
+        },
+        "./components/props": {
+            "types": "./dist/components/props.d.ts",
+            "import": "./dist/components/props.js"
+        },
         "./events": {
             "types": "./dist/events/index.d.ts",
             "import": "./dist/events/index.js"
@@ -114,7 +122,7 @@
         "@types/react": "^19.3.0",
         "@types/three": "^0.186.0",
         "pixi.js": "^8.20.1",
-        "playcanvas": "^2.22.2",
+        "playcanvas": "^2.23.0",
         "react": "^19.3.0",
         "react-reconciler": "^0.34.0",
         "solid-js": "^2.0.0-rc.8",
@@ -177,7 +185,7 @@
         "@vitejs/plugin-vue": "^6.0.9",
         "esbuild": "0.28.2",
         "pixi.js": "^8.20.1",
-        "playcanvas": "^2.22.2",
+        "playcanvas": "^2.23.0",
         "pngjs": "^7.0.0",
         "react": "^19.3.0",
         "react-reconciler": "^0.34.0",

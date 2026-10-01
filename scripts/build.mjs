@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import ts from 'typescript'
 import { transform as transformSolid } from '@dom-expressions/compiler'
@@ -56,4 +56,21 @@ for (const file of await readdir(OUTPUT, { recursive: true })) {
     }
     await writeFile(destination, text)
 }
-console.log('Modular JavaScript and declarations generated in dist/.')
+const package_config = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8'))
+const declaration_program = ts.createProgram(Object.values(package_config.exports).map((entry) => path.join(ROOT, entry.types)), parsed.options)
+const checker = declaration_program.getTypeChecker()
+for (const [subpath, entry] of Object.entries(package_config.exports)) {
+    const destination = path.join(OUTPUT, 'public', subpath.slice(2))
+    const source = declaration_program.getSourceFile(path.join(ROOT, entry.types))
+    const exports = checker.getExportsOfModule(checker.getSymbolAtLocation(source))
+    const relative_path = path.relative(path.dirname(destination), path.join(ROOT, entry.import))
+    const specifier = relative_path.startsWith('.') ? relative_path : './' + relative_path
+    let contents = `export * from '${specifier}'\n`
+    if (exports.some((symbol) => symbol.name === 'default')) {
+        contents += `export { default } from '${specifier}'\n`
+    }
+    await mkdir(path.dirname(destination), { recursive: true })
+    await writeFile(destination + '.js', contents)
+    await writeFile(destination + '.d.ts', contents)
+}
+console.log('Modular JavaScript, declarations and public entrypoints generated in dist/.')

@@ -72,9 +72,10 @@ try {
     }
 
     const export_entries = Object.entries(installed_package.exports)
-    const type_entrypoints = export_entries.map(([, entry]) =>
+    const type_entrypoints = export_entries.flatMap(([subpath, entry]) => [
         resolvePackageTarget(installed_directory, entry.types),
-    )
+        resolvePackageTarget(installed_directory, `./dist/public/${subpath.slice(2)}.d.ts`),
+    ])
     const program = ts.createProgram(type_entrypoints, {
         module: ts.ModuleKind.ESNext,
         moduleResolution: ts.ModuleResolutionKind.Bundler,
@@ -92,11 +93,13 @@ try {
 
         const type_filename = resolvePackageTarget(installed_directory, entry.types)
         const import_filename = resolvePackageTarget(installed_directory, entry.import)
-        await Promise.all([access(type_filename), access(import_filename)])
+        const public_type_filename = resolvePackageTarget(installed_directory, `./dist/public/${subpath.slice(2)}.d.ts`)
+        const public_import_filename = resolvePackageTarget(installed_directory, `./dist/public/${subpath.slice(2)}.js`)
+        await Promise.all([access(type_filename), access(import_filename), access(public_type_filename), access(public_import_filename)])
 
         const bundle_result = await bundle({
             absWorkingDir: installed_directory,
-            entryPoints: [import_filename],
+            entryPoints: [public_import_filename],
             bundle: true,
             write: false,
             packages: 'external',
@@ -114,6 +117,14 @@ try {
         assert.ok(source, `${subpath}: declaration entrypoint was not loaded`)
         const module_symbol = checker.getSymbolAtLocation(source)
         assert.ok(module_symbol, `${subpath}: declaration entrypoint is not a module`)
+
+        const public_source = program.getSourceFile(public_type_filename)
+        const public_symbol = checker.getSymbolAtLocation(public_source)
+        assert.deepEqual(
+            checker.getExportsOfModule(public_symbol).map((symbol) => symbol.name).sort(),
+            checker.getExportsOfModule(module_symbol).map((symbol) => symbol.name).sort(),
+            `${subpath}: public entrypoint exports differ from package exports`,
+        )
 
         const type_exports = checker
             .getExportsOfModule(module_symbol)

@@ -14,6 +14,8 @@ import { RESOURCE_EVENT } from '../../core/constants'
 import { FontManager } from './FontManager'
 import { ImageManager } from './ImageManager'
 
+export type * from './contracts'
+
 const IMAGE_ATLAS_SIZE = 2048
 const FONT_ATLAS_SIZE = 2048
 
