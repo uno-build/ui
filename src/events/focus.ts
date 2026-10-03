@@ -42,13 +42,22 @@ export function defineFocus({ ui }: { ui: UI }) {
     }
 
     const processPointerDown = ({ source_event, target }: UIEventMap['pointerdown']) => {
-        processFocus({ source_event, node: target })
+        if (source_event.pointerType === 'mouse') {
+            processFocus({ source_event, node: target })
+        }
+    }
+
+    const processClick = ({ source_event, target }: UIEventMap['click']) => {
+        if ('pointerType' in source_event && (source_event.pointerType === 'touch' || source_event.pointerType === 'pen')) {
+            processFocus({ source_event, node: target })
+        }
     }
 
     const remove_listeners = [
         ui.events_source.on(EVENT.FOCUS.name, processFocus),
         ui.events_source.on(EVENT.BLUR.name, processBlur),
         ui.events.on(EVENT.POINTERDOWN.name, processPointerDown),
+        ui.events.on(EVENT.CLICK.name, processClick),
         ui.events_source.on(CORE_EVENT.NODE_DESTROY, ({ node }) => {
             if (focused_node === node) {
                 focused_node = null

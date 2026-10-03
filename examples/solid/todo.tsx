@@ -559,6 +559,7 @@ export function SolidTodo({
                                                     ...ITEM_TEXT_STYLE,
                                                     ...(todo().completed && ITEM_TEXT_DONE_STYLE),
                                                 }}
+                                                onPointerDown={(event) => event.source_event.preventDefault()}
                                                 onClick={() => onLabelClick(todo())}
                                             >
                                                 {todo().title}

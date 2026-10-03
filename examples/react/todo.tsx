@@ -553,6 +553,7 @@ export function ReactTodo({
                                 ) : (
                                     <Text
                                         style={{ ...ITEM_TEXT_STYLE, ...(todo.completed && ITEM_TEXT_DONE_STYLE) }}
+                                        onPointerDown={(event) => event.source_event.preventDefault()}
                                         onClick={() => onLabelClick(todo)}
                                     >
                                         {todo.title}

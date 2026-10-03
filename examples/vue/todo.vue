@@ -394,6 +394,7 @@ onUnmounted(() => {
                             v-else
                             class="item-text"
                             :class="{ 'item-text-done': todo.completed }"
+                            @pointerdown="$event.source_event.preventDefault()"
                             @click="onLabelClick(todo)"
                         >
                             {{ todo.title }}

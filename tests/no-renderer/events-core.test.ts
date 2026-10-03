@@ -167,7 +167,7 @@ test('focus and blur keep a single focused node and emit public transitions', as
     ui.destroy()
 })
 
-test('pointerdown moves focus to its target', async () => {
+test('mouse pointerdown moves focus to its target', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
         defined_events: DEFINED_EVENTS,
@@ -175,8 +175,8 @@ test('pointerdown moves focus to its target', async () => {
     const first = ui.create()
     const second = ui.create()
     const received_events = []
-    const first_source_event = { type: 'pointerdown' }
-    const second_source_event = { type: 'pointerdown' }
+    const first_source_event = { type: 'pointerdown', pointerType: 'mouse' }
+    const second_source_event = { type: 'pointerdown', pointerType: 'mouse' }
 
     ui.root.add(first)
     ui.root.add(second)
@@ -209,8 +209,71 @@ test('pointerdown moves focus to its target', async () => {
         ['focus', second, first, second_source_event],
     ])
 
+    first.focus()
+    received_events.length = 0
+    ui.events.emit(EVENT.CLICK.name, {
+        source_event: { type: 'pointerup', pointerType: 'mouse' },
+        event_data: { x: 10, y: 10 },
+        target: second,
+    })
+    expect(received_events).toEqual([])
+
     ui.destroy()
 })
+
+for (const pointer_type of ['touch', 'pen']) {
+    test(`${pointer_type} changes focus only after a confirmed tap`, async () => {
+        const ui = await TestUI.create({
+            renderer: new TestRenderer(),
+            defined_events: DEFINED_EVENTS,
+        })
+        const first = ui.create()
+        const second = ui.create()
+        const received_events = []
+
+        ui.root.add(first)
+        ui.root.add(second)
+        first.focus()
+
+        for (const type of ['focus', 'blur']) {
+            ui.root.on(type, (event) => {
+                received_events.push([event.type, event.target, event.related_target, event.source_event])
+            })
+        }
+
+        const dispatch = (type) => {
+            const source_event = { type, pointerId: 1, pointerType: pointer_type }
+            ui.events_source.emit(type, {
+                source_event,
+                event_data: { x: 0, y: 0 },
+                node: second,
+            })
+            return source_event
+        }
+
+        dispatch('pointerdown')
+        expect(received_events).toEqual([])
+        dispatch('pointercancel')
+        dispatch('pointerup')
+        first.focus()
+        expect(received_events).toEqual([])
+
+        dispatch('pointerdown')
+        expect(received_events).toEqual([])
+        const source_event = dispatch('pointerup')
+        expect(received_events).toEqual([
+            ['blur', first, second, source_event],
+            ['focus', second, first, source_event],
+        ])
+
+        received_events.length = 0
+        dispatch('pointerdown')
+        dispatch('pointerup')
+        expect(received_events).toEqual([])
+
+        ui.destroy()
+    })
+}
 
 test('destroying the focused node clears focus state', async () => {
     const ui = await TestUI.create({
@@ -726,7 +789,7 @@ test('wheel is normalized before scrolling the nearest available node', async ()
     ui.destroy()
 })
 
-test('touch drag emits scroll and suppresses click past the scroll slop', async () => {
+test('touch drag emits scroll, suppresses click, and preserves focus past the scroll slop', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),
         defined_events: DEFINED_EVENTS,
@@ -735,6 +798,7 @@ test('touch drag emits scroll and suppresses click past the scroll slop', async 
     const child = ui.create()
     const received_scrolls = []
     const received_clicks = []
+    const received_focus_events = []
     let update_count = 0
 
     ui.root.add(scroller)
@@ -766,6 +830,12 @@ test('touch drag emits scroll and suppresses click past the scroll slop', async 
     ui.root.on('click', (event) => {
         received_clicks.push(event.source_event.pointerId)
     })
+    scroller.focus()
+    for (const type of ['focus', 'blur']) {
+        ui.root.on(type, (event) => {
+            received_focus_events.push([event.type, event.target, event.related_target])
+        })
+    }
 
     const dispatch = (type, pointer_id, x, y) => {
         const source_event = { type, pointerId: pointer_id, pointerType: 'touch' }
@@ -778,11 +848,19 @@ test('touch drag emits scroll and suppresses click past the scroll slop', async 
     }
 
     dispatch('pointerdown', 1, 0, 100)
+    expect(received_focus_events).toEqual([])
     const source_event = dispatch('pointermove', 1, 0, 60)
     dispatch('pointerup', 1, 0, 60)
+    scroller.focus()
+    expect(received_focus_events).toEqual([])
 
     dispatch('pointerdown', 2, 0, 100)
+    expect(received_focus_events).toEqual([])
     dispatch('pointerup', 2, 0, 100)
+    expect(received_focus_events).toEqual([
+        ['blur', scroller, child],
+        ['focus', child, scroller],
+    ])
 
     expect(received_scrolls).toEqual([])
     await Promise.resolve()
