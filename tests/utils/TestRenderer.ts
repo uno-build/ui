@@ -34,6 +34,10 @@ export default class TestRenderer extends Renderer {
         return { width: 0, height: 0 }
     }
 
+    public getTextCaretOffset(_node, _position) {
+        return 0
+    }
+
     protected insertChild(parent, node, child_index) {
         this.layouter.insertChild(parent, node, child_index)
     }

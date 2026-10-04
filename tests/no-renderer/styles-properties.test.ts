@@ -628,7 +628,8 @@ test('whiteSpace', () => {
     expectEnum('whiteSpace', 'NOWRAP', 'nowrap', 1)
     expectResolved(' white-space ', ' Pre-Wrap ', 'pre-wrap', { enum: 2 }, 'whiteSpace')
     expectKeywordUnit('whiteSpace', ' Unset ', 'unset')
-    expectInvalid('whiteSpace', 'pre', /expected one of normal, nowrap, pre-wrap/)
+    expectEnum('whiteSpace', 'pre', 'pre', 3)
+    expectInvalid('whiteSpace', 'invalid', /expected one of normal, nowrap, pre-wrap, pre/)
     expectInvalid('whiteSpace', true, /style value must be a string/)
 })
 
