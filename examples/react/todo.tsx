@@ -307,10 +307,12 @@ export function ReactTodo({
     const [filter, setFilter] = useState('all')
     const [draft, setDraft] = useState('')
     const [draft_caret_position, setDraftCaretPosition] = useState(0)
+    const [draft_selection, setDraftSelection] = useState<[number, number]>([0, 0])
     const [draft_focused, setDraftFocused] = useState(false)
     const [editing_id, setEditingId] = useState<number | null>(null)
     const [edit_draft, setEditDraft] = useState('')
     const [edit_caret_position, setEditCaretPosition] = useState(0)
+    const [edit_selection, setEditSelection] = useState<[number, number]>([0, 0])
     const [hovered, setHovered] = useState<string | null>(null)
     const [hovered_id, setHoveredId] = useState<number | null>(null)
     const [pressed, setPressed] = useState<string | null>(null)
@@ -386,6 +388,7 @@ export function ReactTodo({
             max_length: MAX_TITLE_LENGTH,
             onChange: setDraft,
             onCaretChange: setDraftCaretPosition,
+            onSelectionChange: setDraftSelection,
             onSubmit: addTodo,
             onCancel: () => setDraft(''),
         })
@@ -398,6 +401,7 @@ export function ReactTodo({
             max_length: MAX_TITLE_LENGTH,
             onChange: setEditDraft,
             onCaretChange: setEditCaretPosition,
+            onSelectionChange: setEditSelection,
             onSubmit: commitEdit,
             onCancel: cancelEdit,
         })
@@ -435,6 +439,7 @@ export function ReactTodo({
                             style={{ ...DRAFT_STYLE, ...(draft_focused && DRAFT_FOCUS_STYLE) }}
                             value={draft}
                             caretPosition={draft_caret_position}
+                            selection={draft_selection}
                             placeholder="What needs to be done?"
                             placeholderTextColor="#6e8ca9"
                             onFocus={onDraftFocus}
@@ -552,6 +557,7 @@ export function ReactTodo({
                                             style={EDIT_STYLE}
                                             value={edit_draft}
                                             caretPosition={edit_caret_position}
+                                            selection={edit_selection}
                                             onFocus={onEditFocus}
                                             onBlur={() => commitEdit(edit_draft)}
                                         />
@@ -642,7 +648,7 @@ const PLATFORM_KEYBOARD = (function () {
     }
 
     return {
-        show({ node, value, max_length, onChange, onCaretChange, onSubmit, onCancel }) {
+        show({ node, value, max_length, onChange, onCaretChange, onSelectionChange, onSubmit, onCancel }) {
             if (!is_browser) {
                 return
             }
@@ -653,24 +659,27 @@ const PLATFORM_KEYBOARD = (function () {
 
             input.value = value
             input.maxLength = max_length
-            function syncCaret() {
-                onCaretChange(input.selectionDirection === 'backward' ? input.selectionStart : input.selectionEnd)
+            function syncSelection() {
+                const selection_start = input.selectionStart
+                const selection_end = input.selectionEnd
+                onSelectionChange([selection_start, selection_end])
+                onCaretChange(input.selectionDirection === 'backward' ? selection_start : selection_end)
             }
 
-            input.onselectionchange = syncCaret
+            input.onselectionchange = syncSelection
             input.oninput = () => {
                 onChange(input.value)
-                syncCaret()
+                syncSelection()
             }
             input.onkeydown = (event) => {
                 if (event.key === 'Enter') {
                     const submitted_value = input.value
                     input.value = ''
-                    syncCaret()
+                    syncSelection()
                     onSubmit(submitted_value)
                 } else if (event.key === 'Escape') {
                     input.value = ''
-                    syncCaret()
+                    syncSelection()
                     onCancel()
                 }
             }
@@ -680,7 +689,7 @@ const PLATFORM_KEYBOARD = (function () {
             }
             input.focus({ preventScroll: true })
             input.setSelectionRange(value.length, value.length)
-            syncCaret()
+            syncSelection()
         },
         hide() {
             if (input === null) {

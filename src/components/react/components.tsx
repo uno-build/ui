@@ -28,6 +28,8 @@ export type InputProps = Omit<ComponentProps<InputHandle>, 'style'> & InputOptio
     style?: StyleProps
     caretVisible?: boolean
     caretPosition?: number
+    selection?: readonly [number, number]
+    selectionColor?: string
 }
 
 export function View(props: ComponentProps): ReactElement {
@@ -84,6 +86,8 @@ export function Input({
     placeholderTextColor: placeholder_text_color = '#777777',
     caretVisible: show_caret = true,
     caretPosition: caret_position,
+    selection,
+    selectionColor: selection_color = '#3390ff55',
     onFocus,
     onBlur,
     onPointerDown,
@@ -94,10 +98,17 @@ export function Input({
     const content_ref = useRef<NodeHandle | null>(null)
     const text_ref = useRef<NodeHandle | null>(null)
     const caret_ref = useRef<NodeHandle | null>(null)
+    const selection_ref = useRef<NodeHandle | null>(null)
     const [is_focused, setIsFocused] = useState(false)
     const [caret_visible, setCaretVisible] = useState(true)
     const value_text = joinText(value)
     const show_placeholder = showInputPlaceholder(value, placeholder, is_focused)
+    const selection_start = Math.max(0, Math.min(selection?.[0] ?? 0, value_text.length))
+    const selection_end = Math.max(0, Math.min(selection?.[1] ?? 0, value_text.length))
+    const position = Math.max(0, Math.min(
+        caret_position ?? (selection === undefined ? value_text.length : selection_end),
+        value_text.length,
+    ))
 
     function handleFocus(event: NodeEventMap['focus']) {
         setIsFocused(true)
@@ -130,13 +141,13 @@ export function Input({
         setCaretVisible(true)
         const interval_id = setInterval(() => setCaretVisible((visible) => !visible), 500)
         return () => clearInterval(interval_id)
-    }, [is_focused, show_caret, value, caret_position])
+    }, [is_focused, show_caret, value, position])
 
     useLayoutEffect(() => {
         const content = content_ref.current!.nodes.main
         const text = text_ref.current!.nodes.main
         const caret = caret_ref.current?.nodes.main
-        const position = Math.max(0, Math.min(caret_position ?? value_text.length, value_text.length))
+        const selection_node = selection_ref.current?.nodes.main
         let active = true
         let scheduled = false
 
@@ -160,6 +171,14 @@ export function Input({
                 ? 'flex-start'
                 : getInputContentStyle(style).justifyContent)
             caret?.style('left', `${caret_left}px`)
+            if (selection_node !== undefined) {
+                const start_offset = ui.renderer!.getTextCaretOffset(text, selection_start)
+                const end_offset = ui.renderer!.getTextCaretOffset(text, selection_end)
+                selection_node.style('left', `${alignment_offset + start_offset}px`)
+                selection_node.style('width', `${end_offset - start_offset}px`)
+                selection_node.style('top', `${text.layout.top!}px`)
+                selection_node.style('height', `${text.layout.height!}px`)
+            }
             content.scrollLeft = is_focused
                 ? Math.max(0, Math.min(content.scrollLeft, caret_left), caret_left + caret_width - content_width)
                 : 0
@@ -181,7 +200,7 @@ export function Input({
             active = false
             stopObserving()
         }
-    }, [ui, is_focused, show_caret, caret_position, value, placeholder, style])
+    }, [ui, is_focused, show_caret, position, selection_start, selection_end, value, placeholder, style])
 
     useImperativeHandle(
         ref,
@@ -210,6 +229,16 @@ export function Input({
             {...props}
         >
             <view ref={content_ref} style={{ ...getInputContentStyle(style), position: 'relative' }}>
+                {is_focused && selection_end > selection_start && (
+                    <view
+                        ref={selection_ref}
+                        style={{
+                            position: 'absolute',
+                            backgroundColor: selection_color,
+                            pointerEvents: 'none',
+                        }}
+                    />
+                )}
                 <text
                     ref={text_ref}
                     style={{

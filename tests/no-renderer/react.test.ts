@@ -781,6 +781,74 @@ test('Input positions the caret, follows it through overflow, and handles visibi
     }
 })
 
+test('Input draws a selection behind its text and updates its range, color, and alignment', async () => {
+    const renderer = new TestRenderer()
+    const OFFSETS = [0, 5, 17, 25, 31]
+    renderer.getTextMeasure = () => ({ width: 31, height: 24 })
+    renderer.getTextCaretOffset = (node, position) => OFFSETS[Math.min(position, node.text_content.length)]
+    const ui = await TestUI.create({ renderer, defined_events: DEFINED_EVENTS })
+    const reference = createRef<InputHandle>()
+    const root = registerRootComponent(Input, { ui })
+    const props = {
+        ref: reference,
+        value: 'A😀B',
+        selection: [1, 3] as const,
+        style: { width: '100px', height: '40px', border: '0px solid #000000' },
+    }
+
+    try {
+        await act(() => root.mount(props))
+        const { content, text } = reference.current!.nodes
+        expect(content.children).toEqual([text])
+        await act(() => reference.current!.focus())
+        const highlight = content.children[0]
+        expect(highlight.order).toBeLessThan(text.order)
+        expect(highlight.styles.left.value).toBe('5px')
+        expect(highlight.styles.width.value).toBe('20px')
+        expect(highlight.styles.height.value).toBe('24px')
+        expect(highlight.styles.top.value).toBe(`${text.layout.top}px`)
+        expect(highlight.styles.backgroundColor.value).toBe('#3390ff55')
+        expect(highlight.styles.pointerEvents.value).toBe('none')
+        expect(reference.current!.nodes.caret!.styles.left.value).toBe('25px')
+
+        await act(() => root.mount({ ...props, selectionColor: '#ff000080' }))
+        expect(content.children[0]).toBe(highlight)
+        expect(highlight.styles.backgroundColor.value).toBe('#ff000080')
+        await act(() => root.mount({ ...props, style: { ...props.style, textAlign: 'right' } }))
+        expect(highlight.styles.left.value).toBe('73px')
+        await act(() => root.mount({ ...props, style: { ...props.style, textAlign: 'center' } }))
+        expect(highlight.styles.left.value).toBe('39px')
+        expect(highlight.styles.width.value).toBe('20px')
+
+        await act(() => root.mount({ ...props, selection: [-2, 100] }))
+        expect(highlight.styles.left.value).toBe('0px')
+        expect(highlight.styles.width.value).toBe('31px')
+        await act(() => root.mount({ ...props, caretVisible: false }))
+        expect(content.children).toEqual([highlight, text])
+        expect(reference.current!.nodes.caret).toBe(null)
+        await act(() => root.mount({ ...props, caretPosition: 1, style: { ...props.style, width: '12px' } }))
+        expect(reference.current!.nodes.caret!.styles.left.value).toBe('5px')
+        expect(content.scrollLeft).toBe(0)
+        await act(() => root.mount({ ...props, caretPosition: 3, style: { ...props.style, width: '12px' } }))
+        expect(content.scrollLeft).toBe(14)
+
+        await act(() => root.mount({ ...props, selection: [3, 3] }))
+        expect(content.children).toEqual([text, reference.current!.nodes.caret])
+        expect(highlight.ui).toBe(null)
+        expect(reference.current!.nodes.caret!.styles.left.value).toBe('25px')
+        await act(() => root.mount(props))
+        expect(reference.current!.nodes.text).toBe(text)
+        await act(() => root.mount({ ...props, value: '' }))
+        expect(content.children).toEqual([text, reference.current!.nodes.caret])
+        await act(() => root.mount(props))
+        await act(() => reference.current!.blur())
+        expect(content.children).toEqual([text])
+    } finally {
+        await act(() => root.unmount())
+        ui.destroy()
+    }
+})
+
 test('StrictMode balances effects and callback ref cleanup without duplicating Uno nodes', async () => {
     const ui = await TestUI.create({ renderer: new TestRenderer() })
     const createNode = ui.create.bind(ui)
