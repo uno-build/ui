@@ -23,7 +23,10 @@ export type TextChildren = string | number | boolean | null | undefined | readon
 export type TextProps = Omit<ComponentProps, 'children'> & { children?: TextChildren }
 export type ImageProps = Omit<ComponentProps, 'style'> & ImageOptions
 export type ScrollViewProps = ComponentProps<ScrollViewHandle> & { horizontal?: boolean }
-export type InputProps = Omit<ComponentProps<InputHandle>, 'style'> & InputOptions & { style?: StyleProps }
+export type InputProps = Omit<ComponentProps<InputHandle>, 'style'> & InputOptions & {
+    style?: StyleProps
+    caretVisible?: boolean
+}
 
 export function View(props: ComponentProps): ReactElement {
     return <view {...props}>{props.children}</view>
@@ -77,6 +80,7 @@ export function Input({
     value,
     placeholder,
     placeholderTextColor: placeholder_text_color = '#777777',
+    caretVisible: show_caret = true,
     onFocus,
     onBlur,
     onPointerDown,
@@ -113,14 +117,14 @@ export function Input({
     }
 
     useEffect(() => {
-        if (!is_focused) {
+        if (!is_focused || !show_caret) {
             return
         }
 
         setCaretVisible(true)
         const interval_id = setInterval(() => setCaretVisible((visible) => !visible), 500)
         return () => clearInterval(interval_id)
-    }, [is_focused, value])
+    }, [is_focused, show_caret, value])
 
     useImperativeHandle(
         ref,
@@ -159,7 +163,7 @@ export function Input({
                     }}
                     value={joinText(getInputTextValue(value, placeholder, show_placeholder))}
                 />
-                {is_focused && <view ref={caret_ref} style={getInputCaretStyle(style, caret_visible)} />}
+                {is_focused && show_caret && <view ref={caret_ref} style={getInputCaretStyle(style, caret_visible)} />}
             </view>
         </view>
     )
