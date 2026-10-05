@@ -20,4 +20,8 @@ export type InputOptions = {
     value?: string | number | null
     placeholder?: string | number | null
     placeholderTextColor?: string
+    caretVisible?: boolean
+    caretPosition?: number
+    selection?: readonly [number, number]
+    selectionColor?: string
 }

@@ -5,17 +5,20 @@ import type { NodeEventMap } from '../../events'
 import type { StyleProps } from '../../style/types'
 import type { BaseProps, ImageOptions, InputOptions, NodeHandle, ScrollViewHandle, InputHandle } from '../props'
 import { createEffect, createSignal, flatten, omit } from 'solid-js'
+import { CORE_EVENT } from '../../core/constants'
 import { useUI } from './context'
 import {
     getImageStyle,
     getInputCaretStyle,
     getInputContentStyle,
+    getInputSelection,
     getInputStyle,
     getInputTextStyle,
     getInputTextValue,
     getScrollContentStyle,
     getScrollViewStyle,
     showInputPlaceholder,
+    updateInputLayout,
 } from '../shared'
 
 export type { StyleProps, StyleName } from '../../style/types'
@@ -71,10 +74,12 @@ export function ScrollView(props: ScrollViewProps) {
 }
 
 export function Input(props: InputProps) {
+    const ui = useUI()
     let input_node!: Node
     let content_node!: Node
     let text_node!: Node
     let caret_node!: Node
+    let selection_node!: Node
     const [isFocused, setIsFocused] = createSignal(false)
     const [caretVisible, setCaretVisible] = createSignal(true)
 
@@ -105,10 +110,19 @@ export function Input(props: InputProps) {
         return showInputPlaceholder(props.value, props.placeholder, isFocused())
     }
 
+    function showCaret() {
+        return props.caretVisible ?? true
+    }
+
+    function showSelection() {
+        const { start, end } = getInputSelection(props)
+        return isFocused() && end > start
+    }
+
     createEffect(
-        () => [isFocused(), props.value],
-        ([is_focused]) => {
-            if (is_focused === false) {
+        () => [isFocused(), showCaret(), props.value, getInputSelection(props).position],
+        ([is_focused, show_caret]) => {
+            if (!is_focused || !show_caret) {
                 return
             }
 
@@ -133,23 +147,80 @@ export function Input(props: InputProps) {
                 'value',
                 'placeholder',
                 'placeholderTextColor',
+                'caretVisible',
+                'caretPosition',
+                'selection',
+                'selectionColor',
                 'onFocus',
                 'onBlur',
                 'onPointerDown',
             )}
         >
             <view ref={content_node} style={getInputContentStyle(props.style)}>
+                {showSelection() && (
+                    <view
+                        ref={selection_node}
+                        style={{
+                            position: 'absolute',
+                            backgroundColor: props.selectionColor ?? '#3390ff55',
+                            pointerEvents: 'none',
+                        }}
+                    />
+                )}
                 <text
                     ref={text_node}
-                    style={{
-                        ...getInputTextStyle(props.style, showPlaceholder(), props.placeholderTextColor ?? '#777777'),
-                        ...(isFocused() && { textAlign: 'right', justifyContent: 'flex-end' }),
-                    }}
-                    value={getInputTextValue(props.value, props.placeholder, showPlaceholder())}
+                    style={getInputTextStyle(props.style, showPlaceholder(), props.placeholderTextColor ?? '#777777')}
+                    value={joinText(getInputTextValue(props.value, props.placeholder, showPlaceholder()))}
                 />
-                {isFocused() && <view ref={caret_node} style={getInputCaretStyle(props.style, caretVisible())} />}
+                {isFocused() && showCaret() && <view ref={caret_node} style={getInputCaretStyle(props.style, caretVisible())} />}
             </view>
         </view>
+    )
+
+    createEffect(
+        () => ({
+            value: props.value,
+            placeholder: props.placeholder,
+            style: props.style,
+            caretVisible: showCaret(),
+            caretPosition: props.caretPosition,
+            selection: props.selection,
+            is_focused: isFocused(),
+        }),
+        ({ is_focused, ...options }) => {
+            let active = true
+            let scheduled = false
+
+            function updateCaret() {
+                if (!active) {
+                    return
+                }
+
+                ui.update()
+                updateInputLayout({
+                    content: content_node,
+                    text: text_node,
+                    caret: is_focused && options.caretVisible ? caret_node : null,
+                    selection: showSelection() ? selection_node : null,
+                }, options, is_focused)
+            }
+
+            updateCaret()
+            const stopObserving = ui.events_source.on(CORE_EVENT.UPDATED, ({ operations }) => {
+                if (operations.needUpdateLayout() && !scheduled) {
+                    scheduled = true
+                    queueMicrotask(() => {
+                        scheduled = false
+                        updateCaret()
+                    })
+                }
+            })
+
+            return () => {
+                active = false
+                stopObserving()
+            }
+        },
     )
 
     ;(props.ref as ((handle: InputHandle) => void) | undefined)?.({
@@ -158,7 +229,7 @@ export function Input(props: InputProps) {
                 main: input_node,
                 content: content_node,
                 text: text_node,
-                caret: isFocused() ? caret_node : null,
+                caret: isFocused() && showCaret() ? caret_node : null,
             }
         },
         focus,

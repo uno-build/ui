@@ -76,9 +76,13 @@ let last_label_click: { id: number | null; time: number } = { id: null, time: 0 
 const todos = ref(INITIAL_TODOS)
 const filter = ref<keyof typeof FILTER_PREDICATES>('all')
 const draft = ref('')
+const draft_caret_position = ref(0)
+const draft_selection = ref<[number, number]>([0, 0])
 const draft_focused = ref(false)
 const editing_id = ref<number | null>(null)
 const edit_draft = ref('')
+const edit_caret_position = ref(0)
+const edit_selection = ref<[number, number]>([0, 0])
 const hovered = ref<string | null>(null)
 const hovered_id = ref<number | null>(null)
 const pressed = ref<string | null>(null)
@@ -159,6 +163,12 @@ function onDraftFocus(event: NodeEventMap['focus']) {
         onChange: (value) => {
             draft.value = value
         },
+        onCaretChange: (position) => {
+            draft_caret_position.value = position
+        },
+        onSelectionChange: (selection) => {
+            draft_selection.value = selection
+        },
         onSubmit: addTodo,
         onCancel: () => {
             draft.value = ''
@@ -173,6 +183,12 @@ function onEditFocus(event: NodeEventMap['focus']) {
         onChange: (value) => {
             edit_draft.value = value
         },
+        onCaretChange: (position) => {
+            edit_caret_position.value = position
+        },
+        onSelectionChange: (selection) => {
+            edit_selection.value = selection
+        },
         onSubmit: commitEdit,
         onCancel: cancelEdit,
     })
@@ -182,12 +198,16 @@ function showKeyboard({
     node,
     value,
     onChange,
+    onCaretChange,
+    onSelectionChange,
     onSubmit,
     onCancel,
 }: {
     node: NodeEventMap['focus']['target']
     value: string
     onChange: (value: string) => void
+    onCaretChange: (position: number) => void
+    onSelectionChange: (selection: [number, number]) => void
     onSubmit: (title: string) => void
     onCancel: () => void
 }) {
@@ -211,19 +231,37 @@ function showKeyboard({
 
     const input = keyboard_input
     input.value = value
-    input.oninput = () => onChange(input.value)
+    function syncSelection() {
+        const selection_start = input.selectionStart!
+        const selection_end = input.selectionEnd!
+        onSelectionChange([selection_start, selection_end])
+        onCaretChange(input.selectionDirection === 'backward' ? selection_start : selection_end)
+    }
+
+    input.onselectionchange = syncSelection
+    input.oninput = () => {
+        onChange(input.value)
+        syncSelection()
+    }
     input.onkeydown = (event) => {
         if (event.key === 'Enter') {
             const submitted_value = input.value
             input.value = ''
+            syncSelection()
             onSubmit(submitted_value)
         } else if (event.key === 'Escape') {
             input.value = ''
+            syncSelection()
             onCancel()
         }
     }
-    input.onblur = () => node.blur()
+    input.onblur = () => {
+        input.onselectionchange = null
+        node.blur()
+    }
     input.focus({ preventScroll: true })
+    input.setSelectionRange(value.length, value.length)
+    syncSelection()
 }
 
 function hideKeyboard() {
@@ -232,6 +270,7 @@ function hideKeyboard() {
     }
 
     keyboard_input.onblur = null
+    keyboard_input.onselectionchange = null
     keyboard_input.blur()
 }
 
@@ -257,6 +296,7 @@ onUnmounted(() => {
     keyboard_input.oninput = null
     keyboard_input.onkeydown = null
     keyboard_input.onblur = null
+    keyboard_input.onselectionchange = null
     keyboard_input.remove()
 })
 </script>
@@ -283,6 +323,8 @@ onUnmounted(() => {
                         class="draft"
                         :class="{ 'draft-focus': draft_focused }"
                         :value="draft"
+                        :caret-position="draft_caret_position"
+                        :selection="draft_selection"
                         placeholder="What needs to be done?"
                         placeholder-text-color="#658273"
                         @focus="onDraftFocus"
@@ -386,6 +428,8 @@ onUnmounted(() => {
                                 :ref="setEditRef"
                                 class="edit"
                                 :value="edit_draft"
+                                :caret-position="edit_caret_position"
+                                :selection="edit_selection"
                                 @focus="onEditFocus"
                                 @blur="commitEdit(edit_draft)"
                             />

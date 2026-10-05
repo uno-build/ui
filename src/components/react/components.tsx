@@ -8,12 +8,14 @@ import {
     getImageStyle,
     getInputCaretStyle,
     getInputContentStyle,
+    getInputSelection,
     getInputStyle,
     getInputTextStyle,
     getInputTextValue,
     getScrollContentStyle,
     getScrollViewStyle,
     showInputPlaceholder,
+    updateInputLayout,
 } from '../shared'
 import { useUI } from './context'
 
@@ -24,13 +26,7 @@ export type TextChildren = string | number | boolean | null | undefined | readon
 export type TextProps = Omit<ComponentProps, 'children'> & { children?: TextChildren }
 export type ImageProps = Omit<ComponentProps, 'style'> & ImageOptions
 export type ScrollViewProps = ComponentProps<ScrollViewHandle> & { horizontal?: boolean }
-export type InputProps = Omit<ComponentProps<InputHandle>, 'style'> & InputOptions & {
-    style?: StyleProps
-    caretVisible?: boolean
-    caretPosition?: number
-    selection?: readonly [number, number]
-    selectionColor?: string
-}
+export type InputProps = Omit<ComponentProps<InputHandle>, 'style'> & InputOptions & { style?: StyleProps }
 
 export function View(props: ComponentProps): ReactElement {
     return <view {...props}>{props.children}</view>
@@ -101,14 +97,9 @@ export function Input({
     const selection_ref = useRef<NodeHandle | null>(null)
     const [is_focused, setIsFocused] = useState(false)
     const [caret_visible, setCaretVisible] = useState(true)
-    const value_text = joinText(value)
     const show_placeholder = showInputPlaceholder(value, placeholder, is_focused)
-    const selection_start = Math.max(0, Math.min(selection?.[0] ?? 0, value_text.length))
-    const selection_end = Math.max(0, Math.min(selection?.[1] ?? 0, value_text.length))
-    const position = Math.max(0, Math.min(
-        caret_position ?? (selection === undefined ? value_text.length : selection_end),
-        value_text.length,
-    ))
+    const { start: selection_start, end: selection_end, position } =
+        getInputSelection({ value, caretPosition: caret_position, selection })
 
     function handleFocus(event: NodeEventMap['focus']) {
         setIsFocused(true)
@@ -156,33 +147,11 @@ export function Input({
                 return
             }
 
-            const text_width = show_placeholder || value_text.length > 0
-                ? ui.renderer!.getTextCaretOffset(text, text.text_content!.length)
-                : 0
-            const caret_width = is_focused && show_caret ? 1 : 0
-            const content_width = content.layout.width!
-            const free_space = Math.max(0, content_width - text_width - caret_width)
-            const alignment_offset =
-                style.textAlign === 'right' ? free_space : style.textAlign === 'center' ? free_space / 2 : 0
-            const caret_left = alignment_offset + ui.renderer!.getTextCaretOffset(text, position)
-
-            text.style('width', `${text_width + caret_width}px`)
-            content.style('justifyContent', text_width + caret_width > content_width
-                ? 'flex-start'
-                : getInputContentStyle(style).justifyContent)
-            caret?.style('left', `${caret_left}px`)
-            if (selection_node !== undefined) {
-                const start_offset = ui.renderer!.getTextCaretOffset(text, selection_start)
-                const end_offset = ui.renderer!.getTextCaretOffset(text, selection_end)
-                selection_node.style('left', `${alignment_offset + start_offset}px`)
-                selection_node.style('width', `${end_offset - start_offset}px`)
-                selection_node.style('top', `${text.layout.top!}px`)
-                selection_node.style('height', `${text.layout.height!}px`)
-            }
-            content.scrollLeft = is_focused
-                ? Math.max(0, Math.min(content.scrollLeft, caret_left), caret_left + caret_width - content_width)
-                : 0
-            ui.update()
+            updateInputLayout(
+                { content, text, caret, selection: selection_node },
+                { value, placeholder, style, caretVisible: show_caret, caretPosition: position, selection },
+                is_focused,
+            )
         }
 
         updateCaret()
@@ -228,7 +197,7 @@ export function Input({
             style={getInputStyle(style)}
             {...props}
         >
-            <view ref={content_ref} style={{ ...getInputContentStyle(style), position: 'relative' }}>
+            <view ref={content_ref} style={getInputContentStyle(style)}>
                 {is_focused && selection_end > selection_start && (
                     <view
                         ref={selection_ref}
@@ -241,19 +210,13 @@ export function Input({
                 )}
                 <text
                     ref={text_ref}
-                    style={{
-                        ...getInputTextStyle(style, show_placeholder, placeholder_text_color),
-                        ...(style.fontSize !== undefined && { fontSize: style.fontSize }),
-                        whiteSpace: 'pre',
-                        textAlign: 'left',
-                        flexShrink: '0',
-                    }}
+                    style={getInputTextStyle(style, show_placeholder, placeholder_text_color)}
                     value={joinText(getInputTextValue(value, placeholder, show_placeholder))}
                 />
                 {is_focused && show_caret && (
                     <view
                         ref={caret_ref}
-                        style={{ ...getInputCaretStyle(style, caret_visible), position: 'absolute', marginLeft: '0px' }}
+                        style={getInputCaretStyle(style, caret_visible)}
                     />
                 )}
             </view>

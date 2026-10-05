@@ -629,6 +629,7 @@ test('Input exposes stable nodes and forwards focus, blur, and pointer callbacks
     ui.dispatchPlatformEvent({
         type: 'pointerdown',
         pointerId: 1,
+        pointerType: 'mouse',
         preventDefault() { prevent_default_count++ },
     }, { x: 10, y: 10 })
     await nextTick()
@@ -692,7 +693,7 @@ test('Input updates values and placeholder styling without replacing its text no
     ui.destroy()
 })
 
-test('Input caret blinks, resets on value changes, and releases intervals', async () => {
+test('Input caret blinks, resets on value and position changes, and releases intervals', async () => {
     const ui = await TestUI.create({ renderer: new TestRenderer(), defined_events: DEFINED_EVENTS })
     const reference = ref<InputHandle | null>(null)
     const active_intervals = new Map<number, () => void>()
@@ -735,12 +736,25 @@ test('Input caret blinks, resets on value changes, and releases intervals', asyn
         expect(reference.value!.nodes.caret).toBe(caret)
         expect(caret!.styles.opacity.value).toBe('1')
         expect(text.text_content).toBe('Changed')
+        active_intervals.get(2)!()
+        await nextTick()
+        root.mount({ ref: reference, value: 'Changed', caretPosition: 2 })
+        await nextTick()
+        expect(caret!.styles.opacity.value).toBe('1')
+        expect(active_intervals.size).toBe(1)
+        expect(cleared_intervals).toEqual([1, 2])
+        root.mount({ ref: reference, value: 'Changed', caretVisible: false })
+        await nextTick()
+        expect(active_intervals.size).toBe(0)
+        expect(reference.value!.nodes.caret).toBe(null)
         reference.value!.blur()
         await nextTick()
         expect(active_intervals.size).toBe(0)
-        expect(cleared_intervals).toEqual([1, 2])
+        expect(cleared_intervals).toEqual([1, 2, 3])
         expect(reference.value!.nodes.caret).toBe(null)
         expect(caret!.ui).toBe(null)
+        root.mount({ ref: reference, value: 'Changed' })
+        await nextTick()
         reference.value!.focus()
         await nextTick()
         expect(active_intervals.size).toBe(1)
@@ -754,8 +768,95 @@ test('Input caret blinks, resets on value changes, and releases intervals', asyn
         }
     }
     expect(active_intervals.size).toBe(0)
-    expect(cleared_intervals).toEqual([1, 2, 3])
+    expect(cleared_intervals).toEqual([1, 2, 3, 4])
     expect(reference.value).toBe(null)
+})
+
+test('Input draws a selection behind its text and updates its range, color, and alignment', async () => {
+    const renderer = new TestRenderer()
+    const OFFSETS = [0, 5, 17, 25, 31]
+    renderer.getTextMeasure = () => ({ width: 31, height: 24 })
+    renderer.getTextCaretOffset = (node, position) => OFFSETS[Math.min(position, node.text_content.length)]
+    const ui = await TestUI.create({ renderer, defined_events: DEFINED_EVENTS })
+    const reference = ref<InputHandle | null>(null)
+    const root = registerRootComponent(Input, { ui })
+    const props = {
+        ref: reference,
+        value: 'A😀B',
+        selection: [1, 3] as const,
+        style: { width: '100px', height: '40px', border: '0px solid #000000' },
+    }
+
+    try {
+        root.mount(props)
+        await nextTick()
+        const { content, text } = reference.value!.nodes
+        expect(renderedChildren(content)).toEqual([text])
+        reference.value!.focus()
+        await nextTick()
+        const highlight = content.children[0]
+        expect(highlight.order).toBeLessThan(text.order)
+        expect(highlight.styles.left.value).toBe('5px')
+        expect(highlight.styles.width.value).toBe('20px')
+        expect(highlight.styles.height.value).toBe('24px')
+        expect(highlight.styles.top.value).toBe(`${text.layout.top}px`)
+        expect(highlight.styles.backgroundColor.value).toBe('#3390ff55')
+        expect(highlight.styles.pointerEvents.value).toBe('none')
+        expect(reference.value!.nodes.caret!.styles.left.value).toBe('25px')
+
+        root.mount({ ...props, selectionColor: '#ff000080' })
+        await nextTick()
+        expect(content.children[0]).toBe(highlight)
+        expect(highlight.styles.backgroundColor.value).toBe('#ff000080')
+        root.mount({ ...props, style: { ...props.style, textAlign: 'right' } })
+        await nextTick()
+        expect(highlight.styles.left.value).toBe('73px')
+        root.mount({ ...props, style: { ...props.style, textAlign: 'center' } })
+        await nextTick()
+        expect(highlight.styles.left.value).toBe('39px')
+        expect(highlight.styles.width.value).toBe('20px')
+        content.parent!.style('width', '80px')
+        ui.update()
+        await nextTick()
+        expect(highlight.styles.left.value).toBe('29px')
+
+        root.mount({ ...props, selection: [-2, 100] })
+        await nextTick()
+        expect(highlight.styles.left.value).toBe('0px')
+        expect(highlight.styles.width.value).toBe('31px')
+        root.mount({ ...props, caretVisible: false })
+        await nextTick()
+        expect(renderedChildren(content)).toEqual([highlight, text])
+        expect(reference.value!.nodes.caret).toBe(null)
+        root.mount({ ...props, caretPosition: 1, style: { ...props.style, width: '12px' } })
+        await nextTick()
+        expect(reference.value!.nodes.caret!.styles.left.value).toBe('5px')
+        expect(content.scrollLeft).toBe(0)
+        root.mount({ ...props, caretPosition: 3, style: { ...props.style, width: '12px' } })
+        await nextTick()
+        expect(content.scrollLeft).toBe(14)
+
+        root.mount({ ...props, selection: [3, 3] })
+        await nextTick()
+        expect(renderedChildren(content)).toEqual([text, reference.value!.nodes.caret])
+        expect(highlight.ui).toBe(null)
+        expect(reference.value!.nodes.caret!.styles.left.value).toBe('25px')
+        root.mount(props)
+        await nextTick()
+        expect(reference.value!.nodes.text).toBe(text)
+        root.mount({ ...props, value: '' })
+        await nextTick()
+        expect(renderedChildren(content)).toEqual([text, reference.value!.nodes.caret])
+        root.mount(props)
+        await nextTick()
+        reference.value!.blur()
+        await nextTick()
+        expect(renderedChildren(content)).toEqual([text])
+    } finally {
+        root.unmount()
+        await nextTick()
+        ui.destroy()
+    }
 })
 
 test('unmount balances lifecycle and callback ref cleanup without duplicating Uno nodes', async () => {

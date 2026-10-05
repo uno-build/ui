@@ -600,6 +600,7 @@ test('Input exposes stable nodes and forwards focus, blur, and pointer callbacks
     await act(() => ui.dispatchPlatformEvent({
         type: 'pointerdown',
         pointerId: 1,
+        pointerType: 'mouse',
         preventDefault() { prevent_default_count++ },
     }, { x: 10, y: 10 }))
     expect(prevent_default_count).toBe(1)
