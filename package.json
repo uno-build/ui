@@ -1,6 +1,6 @@
 {
     "name": "@uno.build/ui",
-    "version": "0.1.2",
+    "version": "0.2.0",
     "type": "module",
     "license": "Apache-2.0",
     "description": "UI system for WebGPU",
