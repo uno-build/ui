@@ -120,6 +120,18 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
         element.style.overflowWrap = 'anywhere'
     }
 
+    getTextCaretOffset(node: Node<HTMLElement>, position: number): number {
+        if (!node.hasTextContent() || position <= 0) {
+            return 0
+        }
+
+        const element = this.elements.get(node)
+        const range = document.createRange()
+        range.setStart(element.firstChild, 0)
+        range.setEnd(element.firstChild, Math.min(position, node.text_content!.length))
+        return range.getBoundingClientRect().width
+    }
+
     updateStyle(node: Node<HTMLElement>, resolved_style: StyleUpdate) {
         const element = this.elements.get(node)
 
@@ -185,7 +197,7 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
     beforeUpdate(nodes: Node<HTMLElement>[], operations: Operations<HTMLElement>) {
         for (const operation of operations.items) {
             if (operation.op === OPERATIONS.TEXT && operation.node.ui !== null) {
-                this.elements.get(operation.node).innerHTML = operation.value
+                this.elements.get(operation.node).textContent = operation.value
             }
         }
 

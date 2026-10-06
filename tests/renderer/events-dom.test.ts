@@ -110,12 +110,14 @@ test('UIDom adapts native events to the UI event contract', async ({ page }) => 
             child.style('height', '50px')
             sibling.style('width', '100px')
             sibling.style('height', '50px')
-            child.text('<span>child</span>')
+            child.text('child')
             ui.root.add(child)
             ui.root.add(sibling)
             ui.update()
 
-            const nested_element = child.element.firstElementChild
+            const nested_element = document.createElement('span')
+            nested_element.textContent = child.element.textContent
+            child.element.replaceChildren(nested_element)
             const pointer_events = []
             let current_source_event
             let child_event

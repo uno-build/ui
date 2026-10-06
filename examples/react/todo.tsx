@@ -306,9 +306,13 @@ export function ReactTodo({
     const [todos, setTodos] = useState(INITIAL_TODOS)
     const [filter, setFilter] = useState('all')
     const [draft, setDraft] = useState('')
+    const [draft_caret_position, setDraftCaretPosition] = useState(0)
+    const [draft_selection, setDraftSelection] = useState<[number, number]>([0, 0])
     const [draft_focused, setDraftFocused] = useState(false)
     const [editing_id, setEditingId] = useState<number | null>(null)
     const [edit_draft, setEditDraft] = useState('')
+    const [edit_caret_position, setEditCaretPosition] = useState(0)
+    const [edit_selection, setEditSelection] = useState<[number, number]>([0, 0])
     const [hovered, setHovered] = useState<string | null>(null)
     const [hovered_id, setHoveredId] = useState<number | null>(null)
     const [pressed, setPressed] = useState<string | null>(null)
@@ -383,6 +387,8 @@ export function ReactTodo({
             value: draft,
             max_length: MAX_TITLE_LENGTH,
             onChange: setDraft,
+            onCaretChange: setDraftCaretPosition,
+            onSelectionChange: setDraftSelection,
             onSubmit: addTodo,
             onCancel: () => setDraft(''),
         })
@@ -394,6 +400,8 @@ export function ReactTodo({
             value: edit_draft,
             max_length: MAX_TITLE_LENGTH,
             onChange: setEditDraft,
+            onCaretChange: setEditCaretPosition,
+            onSelectionChange: setEditSelection,
             onSubmit: commitEdit,
             onCancel: cancelEdit,
         })
@@ -430,6 +438,8 @@ export function ReactTodo({
                             ref={draft_ref}
                             style={{ ...DRAFT_STYLE, ...(draft_focused && DRAFT_FOCUS_STYLE) }}
                             value={draft}
+                            caretPosition={draft_caret_position}
+                            selection={draft_selection}
                             placeholder="What needs to be done?"
                             placeholderTextColor="#6e8ca9"
                             onFocus={onDraftFocus}
@@ -546,6 +556,8 @@ export function ReactTodo({
                                             ref={edit_ref}
                                             style={EDIT_STYLE}
                                             value={edit_draft}
+                                            caretPosition={edit_caret_position}
+                                            selection={edit_selection}
                                             onFocus={onEditFocus}
                                             onBlur={() => commitEdit(edit_draft)}
                                         />
@@ -553,6 +565,7 @@ export function ReactTodo({
                                 ) : (
                                     <Text
                                         style={{ ...ITEM_TEXT_STYLE, ...(todo.completed && ITEM_TEXT_DONE_STYLE) }}
+                                        onPointerDown={(event) => event.source_event.preventDefault()}
                                         onClick={() => onLabelClick(todo)}
                                     >
                                         {todo.title}
@@ -635,7 +648,7 @@ const PLATFORM_KEYBOARD = (function () {
     }
 
     return {
-        show({ node, value, max_length, onChange, onSubmit, onCancel }) {
+        show({ node, value, max_length, onChange, onCaretChange, onSelectionChange, onSubmit, onCancel }) {
             if (!is_browser) {
                 return
             }
@@ -646,19 +659,37 @@ const PLATFORM_KEYBOARD = (function () {
 
             input.value = value
             input.maxLength = max_length
-            input.oninput = () => onChange(input.value)
+            function syncSelection() {
+                const selection_start = input.selectionStart
+                const selection_end = input.selectionEnd
+                onSelectionChange([selection_start, selection_end])
+                onCaretChange(input.selectionDirection === 'backward' ? selection_start : selection_end)
+            }
+
+            input.onselectionchange = syncSelection
+            input.oninput = () => {
+                onChange(input.value)
+                syncSelection()
+            }
             input.onkeydown = (event) => {
                 if (event.key === 'Enter') {
                     const submitted_value = input.value
                     input.value = ''
+                    syncSelection()
                     onSubmit(submitted_value)
                 } else if (event.key === 'Escape') {
                     input.value = ''
+                    syncSelection()
                     onCancel()
                 }
             }
-            input.onblur = () => node.blur()
+            input.onblur = () => {
+                input.onselectionchange = null
+                node.blur()
+            }
             input.focus({ preventScroll: true })
+            input.setSelectionRange(value.length, value.length)
+            syncSelection()
         },
         hide() {
             if (input === null) {
@@ -666,6 +697,7 @@ const PLATFORM_KEYBOARD = (function () {
             }
 
             input.onblur = null
+            input.onselectionchange = null
             input.blur()
         },
     }

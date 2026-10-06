@@ -2,17 +2,20 @@ import type { ReactElement, ReactNode, Ref } from 'react'
 import type { NodeEventMap } from '../../events'
 import type { StyleProps } from '../../style/types'
 import type { BaseProps, ImageOptions, InputOptions, NodeHandle, ScrollViewHandle, InputHandle } from '../props'
-import { useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react'
+import { CORE_EVENT } from '../../core/constants'
 import {
     getImageStyle,
     getInputCaretStyle,
     getInputContentStyle,
+    getInputSelection,
     getInputStyle,
     getInputTextStyle,
     getInputTextValue,
     getScrollContentStyle,
     getScrollViewStyle,
     showInputPlaceholder,
+    updateInputLayout,
 } from '../shared'
 import { useUI } from './context'
 
@@ -77,17 +80,26 @@ export function Input({
     value,
     placeholder,
     placeholderTextColor: placeholder_text_color = '#777777',
+    caretVisible: show_caret = true,
+    caretPosition: caret_position,
+    selection,
+    selectionColor: selection_color = '#3390ff55',
     onFocus,
     onBlur,
     onPointerDown,
     ...props
 }: InputProps): ReactElement {
+    const ui = useUI()
     const input_ref = useRef<NodeHandle | null>(null)
     const content_ref = useRef<NodeHandle | null>(null)
     const text_ref = useRef<NodeHandle | null>(null)
     const caret_ref = useRef<NodeHandle | null>(null)
+    const selection_ref = useRef<NodeHandle | null>(null)
     const [is_focused, setIsFocused] = useState(false)
     const [caret_visible, setCaretVisible] = useState(true)
+    const show_placeholder = showInputPlaceholder(value, placeholder, is_focused)
+    const { start: selection_start, end: selection_end, position } =
+        getInputSelection({ value, caretPosition: caret_position, selection })
 
     function handleFocus(event: NodeEventMap['focus']) {
         setIsFocused(true)
@@ -113,14 +125,51 @@ export function Input({
     }
 
     useEffect(() => {
-        if (!is_focused) {
+        if (!is_focused || !show_caret) {
             return
         }
 
         setCaretVisible(true)
         const interval_id = setInterval(() => setCaretVisible((visible) => !visible), 500)
         return () => clearInterval(interval_id)
-    }, [is_focused, value])
+    }, [is_focused, show_caret, value, position])
+
+    useLayoutEffect(() => {
+        const content = content_ref.current!.nodes.main
+        const text = text_ref.current!.nodes.main
+        const caret = caret_ref.current?.nodes.main
+        const selection_node = selection_ref.current?.nodes.main
+        let active = true
+        let scheduled = false
+
+        function updateCaret() {
+            if (!active) {
+                return
+            }
+
+            updateInputLayout(
+                { content, text, caret, selection: selection_node },
+                { value, placeholder, style, caretVisible: show_caret, caretPosition: position, selection },
+                is_focused,
+            )
+        }
+
+        updateCaret()
+        const stopObserving = ui.events_source.on(CORE_EVENT.UPDATED, ({ operations }) => {
+            if (operations.needUpdateLayout() && !scheduled) {
+                scheduled = true
+                queueMicrotask(() => {
+                    scheduled = false
+                    updateCaret()
+                })
+            }
+        })
+
+        return () => {
+            active = false
+            stopObserving()
+        }
+    }, [ui, is_focused, show_caret, position, selection_start, selection_end, value, placeholder, style])
 
     useImperativeHandle(
         ref,
@@ -139,8 +188,6 @@ export function Input({
         [],
     )
 
-    const show_placeholder = showInputPlaceholder(value, placeholder, is_focused)
-
     return (
         <view
             ref={input_ref}
@@ -151,15 +198,27 @@ export function Input({
             {...props}
         >
             <view ref={content_ref} style={getInputContentStyle(style)}>
+                {is_focused && selection_end > selection_start && (
+                    <view
+                        ref={selection_ref}
+                        style={{
+                            position: 'absolute',
+                            backgroundColor: selection_color,
+                            pointerEvents: 'none',
+                        }}
+                    />
+                )}
                 <text
                     ref={text_ref}
-                    style={{
-                        ...getInputTextStyle(style, show_placeholder, placeholder_text_color),
-                        ...(is_focused && { textAlign: 'right', justifyContent: 'flex-end' }),
-                    }}
+                    style={getInputTextStyle(style, show_placeholder, placeholder_text_color)}
                     value={joinText(getInputTextValue(value, placeholder, show_placeholder))}
                 />
-                {is_focused && <view ref={caret_ref} style={getInputCaretStyle(style, caret_visible)} />}
+                {is_focused && show_caret && (
+                    <view
+                        ref={caret_ref}
+                        style={getInputCaretStyle(style, caret_visible)}
+                    />
+                )}
             </view>
         </view>
     )

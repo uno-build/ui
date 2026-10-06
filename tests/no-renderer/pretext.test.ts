@@ -6,6 +6,36 @@ import {
     prepareWithSegments,
 } from '../../src/renderer/pretext/layout.ts'
 import Segmenter from '../../src/renderer/pretext/segmenter.ts'
+import RendererWebGPU from '../../src/renderer/RendererWebGPU.ts'
+import { resolveStyle } from '../../src/style/index.ts'
+
+test('WebGPU caret metrics use UTF-16 offsets, glyph advances, spacing, and preserved whitespace', () => {
+    const font = {
+        metrics: { lineHeight: 1 },
+        glyphs_by_unicode: new Map(Array.from('abWA😀\u0301 ', (character) => [character.codePointAt(0), {
+            advance: character === 'W' ? 1 : character === ' ' ? 0.25 : character === '\u0301' ? 0 : 0.5,
+        }])),
+    }
+    const renderer = new RendererWebGPU({ resources: { font_manager: { getDefaultFont: () => font }, image_manager: {} } })
+    function createText(value, letter_spacing = '0px', white_space = 'pre') {
+        return {
+            text_content: value,
+            hasTextContent: () => value.length > 0,
+            styles: Object.fromEntries(Object.entries({ fontSize: '20px', letterSpacing: letter_spacing, whiteSpace: white_space })
+                .map(([name, value]) => [name, resolveStyle(name, value).expanded[0]])),
+        }
+    }
+
+    const text = createText('aW😀b', '2px')
+    expect([0, 1, 2, 4, 5].map((position) => renderer.getTextCaretOffset(text, position))).toEqual([0, 12, 34, 46, 58])
+    const spaces = createText(' a  ')
+    expect([0, 1, 2, 3, 4].map((position) => renderer.getTextCaretOffset(spaces, position))).toEqual([0, 5, 15, 20, 25])
+    expect(renderer.getTextCaretOffset(createText('A\u0301b', '2px'), 2)).toBe(12)
+    expect(renderer.getTextCaretOffset(createText('a\u00adb', '2px'), 2)).toBe(12)
+    expect(renderer.getTextCaretOffset(createText(' a  b ', '0px', 'nowrap'), 4)).toBe(15)
+    expect(renderer.getTextCaretOffset(createText(' a  b ', '0px', 'nowrap'), 6)).toBe(25)
+    expect(renderer.getTextMeasure(createText('a a a a'), 10).height).toBe(20)
+})
 
 function measureText(text: string) {
     let width = 0

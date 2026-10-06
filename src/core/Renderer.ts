@@ -35,6 +35,8 @@ export default abstract class Renderer<TDrawOptions = unknown, TDrawResult = voi
     initializeTextNode(node: Node<TElement>) {}
     invalidateTextNode(node: Node<TElement>) {}
 
+    // Horizontal advance to a UTF-16 offset in single-line text.
+    abstract getTextCaretOffset(node: Node<TElement>, position: number): number
     abstract createElement(node: Node<TElement>): TElement
     abstract getChildIndex(node: Node<TElement>): number
     abstract getLayout(node: Node<TElement>): ComputedLayout

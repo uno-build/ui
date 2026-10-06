@@ -3,17 +3,20 @@ import type Node from '../../core/Node'
 import type { NodeEventMap } from '../../events'
 import type { StyleProps } from '../../style/types'
 import type { BaseProps, ImageOptions, InputOptions, NodeHandle, ScrollViewHandle, InputHandle } from '../props'
-import { Comment as VUE_COMMENT, Fragment as VUE_FRAGMENT, Text as VUE_TEXT, defineComponent, h, isVNode, ref, watch } from 'vue'
+import { Comment as VUE_COMMENT, Fragment as VUE_FRAGMENT, Text as VUE_TEXT, defineComponent, h, isVNode, onMounted, onUpdated, onUnmounted, ref, watch } from 'vue'
+import { CORE_EVENT } from '../../core/constants'
 import {
     getImageStyle,
     getInputCaretStyle,
     getInputContentStyle,
+    getInputSelection,
     getInputStyle,
     getInputTextStyle,
     getInputTextValue,
     getScrollContentStyle,
     getScrollViewStyle,
     showInputPlaceholder,
+    updateInputLayout,
 } from '../shared'
 import { useUI } from './context'
 import { useStyle } from './styles'
@@ -114,11 +117,13 @@ export const ScrollView = defineComponent(
 
 export const Input = defineComponent(
     (props: InputProps, { attrs, expose }) => {
+        const ui = useUI()
         const resolveStyle = useStyle()
         let input_node!: Node
         let content_node!: Node
         let text_node!: Node
         let caret_node: Node | null = null
+        let selection_node: Node | null = null
         const is_focused = ref(false)
         const caret_visible = ref(true)
 
@@ -144,6 +149,10 @@ export const Input = defineComponent(
             caret_node = node as Node | null
         }
 
+        function setSelectionNode(node: unknown) {
+            selection_node = node as Node | null
+        }
+
         function handleFocus(event: NodeEventMap['focus']) {
             is_focused.value = true
             props.onFocus?.(event)
@@ -167,14 +176,51 @@ export const Input = defineComponent(
             input_node.blur()
         }
 
-        watch([is_focused, () => props.value], ([is_focused], _previous, onCleanup) => {
-            if (is_focused === false) {
+        watch(
+            [is_focused, () => props.caretVisible ?? true, () => props.value, () => getInputSelection(props).position],
+            ([is_focused, show_caret], _previous, onCleanup) => {
+                if (!is_focused || !show_caret) {
+                    return
+                }
+
+                caret_visible.value = true
+                const interval_id = setInterval(() => { caret_visible.value = !caret_visible.value }, 500)
+                onCleanup(() => clearInterval(interval_id))
+            },
+        )
+
+        let active = true
+        let scheduled = false
+
+        function updateCaret() {
+            if (!active) {
                 return
             }
 
-            caret_visible.value = true
-            const interval_id = setInterval(() => { caret_visible.value = !caret_visible.value }, 500)
-            onCleanup(() => clearInterval(interval_id))
+            ui.update()
+            updateInputLayout({
+                content: content_node,
+                text: text_node,
+                caret: caret_node,
+                selection: selection_node,
+            }, { ...props, style: resolveStyle(attrs.class, props.style) }, is_focused.value)
+        }
+
+        const stopObserving = ui.events_source.on(CORE_EVENT.UPDATED, ({ operations }) => {
+            if (operations.needUpdateLayout() && !scheduled) {
+                scheduled = true
+                queueMicrotask(() => {
+                    scheduled = false
+                    updateCaret()
+                })
+            }
+        })
+
+        onMounted(updateCaret)
+        onUpdated(updateCaret)
+        onUnmounted(() => {
+            active = false
+            stopObserving()
         })
 
         expose({
@@ -186,9 +232,16 @@ export const Input = defineComponent(
         } satisfies InputHandle)
 
         return () => {
-            const { value, placeholder, placeholderTextColor: placeholder_text_color = '#777777' } = props
+            const {
+                value,
+                placeholder,
+                placeholderTextColor: placeholder_text_color = '#777777',
+                caretVisible: show_caret = true,
+                selectionColor: selection_color = '#3390ff55',
+            } = props
             const style = resolveStyle(attrs.class, props.style)
             const show_placeholder = showInputPlaceholder(value, placeholder, is_focused.value)
+            const { start, end } = getInputSelection(props)
 
             return h('view', {
                 ...attrs,
@@ -199,15 +252,23 @@ export const Input = defineComponent(
                 style: getInputStyle(style),
             }, [
                 h('view', { ref: setContentNode, style: getInputContentStyle(style) }, [
-                    h('text', {
-                        ref: setTextNode,
+                    ...(is_focused.value && end > start ? [h('view', {
+                        key: 'selection',
+                        ref: setSelectionNode,
                         style: {
-                            ...getInputTextStyle(style, show_placeholder, placeholder_text_color),
-                            ...(is_focused.value && { textAlign: 'right', justifyContent: 'flex-end' }),
+                            position: 'absolute',
+                            backgroundColor: selection_color,
+                            pointerEvents: 'none',
                         },
+                    })] : []),
+                    h('text', {
+                        key: 'text',
+                        ref: setTextNode,
+                        style: getInputTextStyle(style, show_placeholder, placeholder_text_color),
                         value: joinText(getInputTextValue(value, placeholder, show_placeholder)),
                     }),
-                    is_focused.value ? h('view', {
+                    is_focused.value && show_caret ? h('view', {
+                        key: 'caret',
                         ref: setCaretNode,
                         style: getInputCaretStyle(style, caret_visible.value),
                     }) : null,
@@ -218,7 +279,19 @@ export const Input = defineComponent(
     {
         name: 'Input',
         inheritAttrs: false,
-        props: ['style', 'value', 'placeholder', 'placeholderTextColor', 'onFocus', 'onBlur', 'onPointerDown'],
+        props: {
+            style: null,
+            value: null,
+            placeholder: null,
+            placeholderTextColor: null,
+            caretVisible: { type: Boolean, default: true },
+            caretPosition: null,
+            selection: null,
+            selectionColor: null,
+            onFocus: null,
+            onBlur: null,
+            onPointerDown: null,
+        },
     },
 ) as DefineComponent<InputProps, InputHandle>
 

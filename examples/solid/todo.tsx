@@ -305,9 +305,13 @@ export function SolidTodo({
     const [todos, setTodos] = createSignal(INITIAL_TODOS)
     const [filter, setFilter] = createSignal('all')
     const [draft, setDraft] = createSignal('')
+    const [draftCaretPosition, setDraftCaretPosition] = createSignal(0)
+    const [draftSelection, setDraftSelection] = createSignal<[number, number]>([0, 0])
     const [draftFocused, setDraftFocused] = createSignal(false)
     const [editingId, setEditingId] = createSignal(null)
     const [editDraft, setEditDraft] = createSignal('')
+    const [editCaretPosition, setEditCaretPosition] = createSignal(0)
+    const [editSelection, setEditSelection] = createSignal<[number, number]>([0, 0])
     const [hovered, setHovered] = createSignal(null)
     const [hoveredId, setHoveredId] = createSignal(null)
     const [pressed, setPressed] = createSignal(null)
@@ -388,6 +392,8 @@ export function SolidTodo({
             value: draft(),
             max_length: MAX_TITLE_LENGTH,
             onChange: setDraft,
+            onCaretChange: setDraftCaretPosition,
+            onSelectionChange: setDraftSelection,
             onSubmit: addTodo,
             onCancel: () => setDraft(''),
         })
@@ -399,6 +405,8 @@ export function SolidTodo({
             value: editDraft(),
             max_length: MAX_TITLE_LENGTH,
             onChange: setEditDraft,
+            onCaretChange: setEditCaretPosition,
+            onSelectionChange: setEditSelection,
             onSubmit: commitEdit,
             onCancel: cancelEdit,
         })
@@ -438,6 +446,8 @@ export function SolidTodo({
                             ref={draft_ref}
                             style={{ ...DRAFT_STYLE, ...(draftFocused() && DRAFT_FOCUS_STYLE) }}
                             value={draft()}
+                            caretPosition={draftCaretPosition()}
+                            selection={draftSelection()}
                             placeholder="What needs to be done?"
                             placeholderTextColor="#a8a8b2"
                             onFocus={onDraftFocus}
@@ -559,6 +569,7 @@ export function SolidTodo({
                                                     ...ITEM_TEXT_STYLE,
                                                     ...(todo().completed && ITEM_TEXT_DONE_STYLE),
                                                 }}
+                                                onPointerDown={(event) => event.source_event.preventDefault()}
                                                 onClick={() => onLabelClick(todo())}
                                             >
                                                 {todo().title}
@@ -570,6 +581,8 @@ export function SolidTodo({
                                                 ref={edit_ref}
                                                 style={EDIT_STYLE}
                                                 value={editDraft()}
+                                                caretPosition={editCaretPosition()}
+                                                selection={editSelection()}
                                                 onFocus={onEditFocus}
                                                 onBlur={() => commitEdit(editDraft())}
                                             />
@@ -655,7 +668,7 @@ const PLATFORM_KEYBOARD = (function () {
     }
 
     return {
-        show({ node, value, max_length, onChange, onSubmit, onCancel }) {
+        show({ node, value, max_length, onChange, onCaretChange, onSelectionChange, onSubmit, onCancel }) {
             if (!is_browser) {
                 return
             }
@@ -666,19 +679,37 @@ const PLATFORM_KEYBOARD = (function () {
 
             input.value = value
             input.maxLength = max_length
-            input.oninput = () => onChange(input.value)
+            function syncSelection() {
+                const selection_start = input.selectionStart
+                const selection_end = input.selectionEnd
+                onSelectionChange([selection_start, selection_end])
+                onCaretChange(input.selectionDirection === 'backward' ? selection_start : selection_end)
+            }
+
+            input.onselectionchange = syncSelection
+            input.oninput = () => {
+                onChange(input.value)
+                syncSelection()
+            }
             input.onkeydown = (event) => {
                 if (event.key === 'Enter') {
                     const submitted_value = input.value
                     input.value = ''
+                    syncSelection()
                     onSubmit(submitted_value)
                 } else if (event.key === 'Escape') {
                     input.value = ''
+                    syncSelection()
                     onCancel()
                 }
             }
-            input.onblur = () => node.blur()
+            input.onblur = () => {
+                input.onselectionchange = null
+                node.blur()
+            }
             input.focus({ preventScroll: true })
+            input.setSelectionRange(value.length, value.length)
+            syncSelection()
         },
         hide() {
             if (input === null) {
@@ -686,6 +717,7 @@ const PLATFORM_KEYBOARD = (function () {
             }
 
             input.onblur = null
+            input.onselectionchange = null
             input.blur()
         },
     }

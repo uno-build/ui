@@ -32,7 +32,7 @@ import {
     isNodeClipped,
     updateScrollMetrics,
 } from './utils/render-metrics'
-import { placeGlyphs } from './utils/text-placement'
+import { getTextAdvance, placeGlyphs } from './utils/text-placement'
 import {
     TEXT_MEASURE_STYLE_NAMES,
     constrainMeasuredSize,
@@ -46,7 +46,8 @@ import {
     measureGlyphAdvances,
 } from './utils/text-metrics'
 import { createCommands, createRecord } from './utils/render-records'
-import { measureLineStats, prepareWithSegments } from './pretext/layout'
+import { layoutWithLines, measureLineStats, prepareWithSegments } from './pretext/layout'
+import { normalizeWhitespaceNormal } from './pretext/analysis'
 import { createPipeline } from './webgpu/pipeline'
 import {
     VIEWPORT_SIZE,
@@ -308,6 +309,32 @@ export default class RendererWebGPU extends Renderer<
         this.layouter.markDirty(node)
     }
 
+    getTextCaretOffset(node: Node<undefined>, position: number): number {
+        const font = getTextFont(node, this.resources!.font_manager)
+        if (font === undefined || !node.hasTextContent()) {
+            return 0
+        }
+
+        const font_size = getTextFontSize(node, this.computeStyle)
+        const letter_spacing = this.computeStyle(node.styles.letterSpacing)?.parsed.value ?? 0
+        const white_space = getTextWhiteSpace(node)
+        let text = node.text_content!.slice(0, Math.max(0, position))
+        if (white_space === WHITE_SPACE.normal || white_space === WHITE_SPACE.nowrap) {
+            // Keep an internal trailing space, but exclude whitespace trimmed from the full value.
+            text = normalizeWhitespaceNormal(`${text}\0`).slice(0, -1)
+                .slice(0, normalizeWhitespaceNormal(node.text_content!).length)
+        }
+        const prepared_text = prepareWithSegments(text.replace(/\u00ad/g, ''), {
+            measure: (value: string) => measureGlyphAdvances(font, font_size, value),
+            whiteSpace: 'pre-wrap',
+            letterSpacing: letter_spacing,
+        })
+        const line = layoutWithLines(prepared_text, Infinity, 1).lines[0]
+        return line === undefined
+            ? 0
+            : getTextAdvance(line.text, font, font_size, letter_spacing, this.grapheme_segmenter)
+    }
+
     getTextMeasure(
         node: Node<undefined>,
         available_width: number | undefined = NaN,
@@ -328,8 +355,10 @@ export default class RendererWebGPU extends Renderer<
                 const font_size = getTextFontSize(node, this.computeStyle)
                 const natural_line_height = getTextNaturalLineHeight(font, font_size)
                 const line_height = getTextLineHeight(node, natural_line_height, font_size, this.computeStyle)
+                const white_space = getTextWhiteSpace(node)
                 const max_width =
-                    getTextWhiteSpace(node) === WHITE_SPACE.nowrap || width_mode === MEASURE_MODE.UNDEFINED
+                    white_space === WHITE_SPACE.nowrap || white_space === WHITE_SPACE.pre ||
+                    width_mode === MEASURE_MODE.UNDEFINED
                         ? Infinity
                         : available_width
                 const text_layout = measureLineStats(this.getPreparedText(node, font, font_size), max_width)
@@ -813,7 +842,9 @@ export default class RendererWebGPU extends Renderer<
             const raster_metrics = getTextRasterMetrics(font, font_size, this.device_pixel_ratio)
             const leading = line_height - raster_metrics.ascender - raster_metrics.descender
             const prepared_text = this.getPreparedText(node, font, font_size)
-            const layout_width = getTextWhiteSpace(node) === WHITE_SPACE.nowrap ? Infinity : content_width
+            const white_space = getTextWhiteSpace(node)
+            const layout_width =
+                white_space === WHITE_SPACE.nowrap || white_space === WHITE_SPACE.pre ? Infinity : content_width
             const text_layout = getTextLayout(record, prepared_text, layout_width, line_height)
             const text_align = node.styles.textAlign?.parsed.enum ?? TEXT_ALIGN.left
             const space_advance = measureGlyphAdvances(font, font_size, ' ')
@@ -871,9 +902,12 @@ export default class RendererWebGPU extends Renderer<
         let prepared_text = this.prepared_texts!.get(node)
 
         if (prepared_text === undefined) {
+            const white_space = getTextWhiteSpace(node)
             prepared_text = prepareWithSegments(node.text_content, {
                 measure: (text: string) => measureGlyphAdvances(font, font_size, text),
-                whiteSpace: getTextWhiteSpace(node) === WHITE_SPACE['pre-wrap'] ? 'pre-wrap' : 'normal',
+                whiteSpace: white_space === WHITE_SPACE['pre-wrap'] || white_space === WHITE_SPACE.pre
+                    ? 'pre-wrap'
+                    : 'normal',
                 letterSpacing: this.computeStyle(node.styles.letterSpacing)?.parsed.value ?? 0,
             })
             this.prepared_texts!.set(node, prepared_text)

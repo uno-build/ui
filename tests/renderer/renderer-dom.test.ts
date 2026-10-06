@@ -525,12 +525,12 @@ test('RendererDom updates only text operation targets, including root and detach
     const writes = []
     renderer.createElement(root)
     ;(renderer as any).elements.set(detached, detached_element)
-    Object.defineProperty(canvas, 'innerHTML', {
+    Object.defineProperty(canvas, 'textContent', {
         set(value) {
             writes.push({ node: root, value })
         },
     })
-    Object.defineProperty(detached_element, 'innerHTML', {
+    Object.defineProperty(detached_element, 'textContent', {
         set(value) {
             writes.push({ node: detached, value })
         },

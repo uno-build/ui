@@ -1,4 +1,26 @@
 import { TEXT_ALIGN } from '../../style/constants'
+import { measureGlyphAdvances } from './text-metrics'
+import type Segmenter from '../pretext/segmenter'
+
+export function getTextAdvance(
+    text: string,
+    font: any,
+    font_size: number,
+    letter_spacing: number,
+    grapheme_segmenter: Segmenter,
+) {
+    let advance = 0
+    const space_advance = measureGlyphAdvances(font, font_size, ' ')
+
+    for (const { segment } of grapheme_segmenter.segment(text)) {
+        advance += segment === '\t'
+            ? getTabAdvance(advance, space_advance * 8)
+            : measureGlyphAdvances(font, font_size, segment)
+        advance += letter_spacing
+    }
+
+    return advance
+}
 
 export function placeGlyphs({
     prepared_text,

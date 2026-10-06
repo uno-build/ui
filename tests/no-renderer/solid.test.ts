@@ -10,6 +10,7 @@ const MODULE_PATHS = {
     renderer: '/src/components/solid/driver.ts',
     context: '/src/components/solid/context.ts',
     shared: '/src/components/shared.ts',
+    constants: '/src/core/constants.ts',
     test_renderer: '/tests/utils/TestRenderer.ts',
     test_ui: '/tests/utils/TestUI.ts',
     events: '/src/events/index.ts',
@@ -104,7 +105,7 @@ export function ScrollViewTree(props) {
 }
 
 export function InputTree(props) {
-    return <Input ref={props.setRef} value="Value" />
+    return <Input ref={props.setRef} value="Value" {...props.getOptions?.()} />
 }
 
 export function InputPlaceholder(props) {
@@ -172,12 +173,14 @@ async function loadFixture(page) {
             const renderer_url = new URL(module_paths.renderer, window.location.origin).href
             const context_url = new URL(module_paths.context, window.location.origin).href
             const shared_url = new URL(module_paths.shared, window.location.origin).href
+            const constants_url = new URL(module_paths.constants, window.location.origin).href
             const solid_url = new URL(module_paths.solid, window.location.origin).href
             const compiled_components = components_code
                 .replaceAll('__SOLID_RENDERER__', renderer_url)
                 .replaceAll('"solid-js"', JSON.stringify(solid_url))
                 .replaceAll('"./context"', JSON.stringify(context_url))
                 .replaceAll('"../shared"', JSON.stringify(shared_url))
+                .replaceAll('"../../core/constants"', JSON.stringify(constants_url))
             const components_url = URL.createObjectURL(new Blob([compiled_components], { type: 'text/javascript' }))
             const compiled_code = fixture_code
                 .replaceAll('__SOLID_RENDERER__', renderer_url)
@@ -844,7 +847,7 @@ test('Input refs expose its Uno nodes and focus and blur the main node', async (
 
         const main = ui.root.children[0]
         const content = main.children[0]
-        const text = content.children[0]
+        const text = content.children.find((node) => node.isTextNode())
         let focus_count = 0
         let blur_count = 0
         const focus = main.focus.bind(main)
@@ -866,7 +869,7 @@ test('Input refs expose its Uno nodes and focus and blur the main node', async (
 
         reference.focus()
         flush()
-        const caret = content.children[1]
+        const caret = content.children[2]
         const focused = reference.nodes.caret === caret && caret.styles.width.value === '1px'
 
         reference.blur()
@@ -878,7 +881,7 @@ test('Input refs expose its Uno nodes and focus and blur the main node', async (
             text_value: text.text_content,
             focused,
             focus_count,
-            blurred: reference.nodes.caret === null && content.children[1].styles.display.value === 'none',
+            blurred: reference.nodes.caret === null && content.children[2].styles.display.value === 'none',
             blur_count,
         }
     }, MODULE_PATHS)
@@ -914,7 +917,8 @@ test('Input swaps placeholder and value styling', async ({ page }) => {
         const [value, setValue] = createSignal('')
 
         registerRootComponent(fixture.InputPlaceholder, { ui }).mount({ getValue: value })
-        const text = ui.root.children[0].children[0].children[0]
+        const content = ui.root.children[0].children[0]
+        const text = content.children.find((node) => node.isTextNode())
         const placeholder = { text: text.text_content, color: text.styles.color.value }
 
         flush(() => setValue('Valor'))
@@ -922,7 +926,7 @@ test('Input swaps placeholder and value styling', async ({ page }) => {
         return {
             placeholder,
             filled: { text: text.text_content, color: text.styles.color.value },
-            same_node: ui.root.children[0].children[0].children[0] === text,
+            same_node: content.children.find((node) => node.isTextNode()) === text,
         }
     }, MODULE_PATHS)
 
@@ -930,6 +934,95 @@ test('Input swaps placeholder and value styling', async ({ page }) => {
         placeholder: { text: 'Escribe', color: '#123456' },
         filled: { text: 'Valor', color: 'unset' },
         same_node: true,
+    })
+})
+
+test('Input updates caret visibility, position, selection, and selection color', async ({ page }) => {
+    const result = await page.evaluate(async (module_paths) => {
+        const [{ registerRootComponent }, { createSignal, flush }, { default: TestRenderer }, { default: TestUI }, { DEFINED_EVENTS }] = await Promise.all([
+            import(module_paths.renderer),
+            import(module_paths.solid),
+            import(module_paths.test_renderer),
+            import(module_paths.test_ui),
+            import(module_paths.events),
+        ])
+        const renderer = new TestRenderer()
+        const OFFSETS = [0, 5, 17, 25, 31]
+        renderer.getTextMeasure = () => ({ width: 31, height: 24 })
+        renderer.getTextCaretOffset = (node, position) => OFFSETS[Math.min(position, node.text_content.length)]
+        const ui = await TestUI.create({ renderer, defined_events: DEFINED_EVENTS })
+        const props = {
+            value: 'A😀B',
+            selection: [1, 3],
+            style: { width: '100px', height: '40px', border: '0px solid #000000' },
+        }
+        const [getOptions, setOptions] = createSignal<any>(props)
+        let reference
+        const root = registerRootComponent((globalThis as any).solid_fixture.InputTree, { ui })
+
+        try {
+            root.mount({ getOptions, setRef: (handle) => { reference = handle } })
+            const { content, text } = reference.nodes
+            const renderedChildren = () => content.children.filter((node) => node.styles.display?.value !== 'none')
+            const initial = renderedChildren().length === 1 && reference.nodes.caret === null
+            flush(() => reference.focus())
+            const highlight = renderedChildren()[0]
+            const selected = {
+                left: highlight.styles.left.value,
+                width: highlight.styles.width.value,
+                height: highlight.styles.height.value,
+                color: highlight.styles.backgroundColor.value,
+                caret_left: reference.nodes.caret.styles.left.value,
+                behind_text: highlight.order < text.order,
+            }
+            flush(() => setOptions({ ...props, selectionColor: '#ff000080' }))
+            const recolored = renderedChildren()[0] === highlight && highlight.styles.backgroundColor.value === '#ff000080'
+            flush(() => setOptions({ ...props, style: { ...props.style, textAlign: 'right' } }))
+            const aligned_right = highlight.styles.left.value
+            flush(() => setOptions({ ...props, style: { ...props.style, textAlign: 'center' } }))
+            const aligned_center = highlight.styles.left.value
+            content.parent.style('width', '80px')
+            ui.update()
+            await Promise.resolve()
+            const resized = highlight.styles.left.value
+            flush(() => setOptions({ ...props, selection: [-2, 100] }))
+            const clamped = [highlight.styles.left.value, highlight.styles.width.value]
+            flush(() => setOptions({ ...props, caretVisible: false }))
+            const hidden_caret = reference.nodes.caret === null && renderedChildren().length === 2
+            flush(() => setOptions({ ...props, caretPosition: 1, style: { ...props.style, width: '12px' } }))
+            const moved_caret = [reference.nodes.caret.styles.left.value, content.scrollLeft]
+            flush(() => setOptions({ ...props, caretPosition: 3, style: { ...props.style, width: '12px' } }))
+            const scrolled = content.scrollLeft
+            flush(() => setOptions({ ...props, selection: [3, 3] }))
+            const collapsed = renderedChildren().length === 2 && highlight.ui === null && reference.nodes.caret.styles.left.value === '25px'
+            flush(() => setOptions({ ...props, value: '' }))
+            const empty = renderedChildren().length === 2 && reference.nodes.caret.styles.left.value === '0px'
+            flush(() => setOptions({ ...props, selection: undefined }))
+            const default_position = reference.nodes.caret.styles.left.value
+            flush(() => reference.blur())
+            const blurred = renderedChildren().length === 1 && renderedChildren()[0] === text && content.scrollLeft === 0
+            return { initial, selected, recolored, aligned_right, aligned_center, resized, clamped, hidden_caret, moved_caret, scrolled, collapsed, empty, default_position, blurred }
+        } finally {
+            root.unmount()
+            ui.destroy()
+        }
+    }, MODULE_PATHS)
+
+    expect(result).toEqual({
+        initial: true,
+        selected: { left: '5px', width: '20px', height: '24px', color: '#3390ff55', caret_left: '25px', behind_text: true },
+        recolored: true,
+        aligned_right: '73px',
+        aligned_center: '39px',
+        resized: '29px',
+        clamped: ['0px', '31px'],
+        hidden_caret: true,
+        moved_caret: ['5px', 0],
+        scrolled: 14,
+        collapsed: true,
+        empty: true,
+        default_position: '31px',
+        blurred: true,
     })
 })
 

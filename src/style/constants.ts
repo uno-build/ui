@@ -131,6 +131,7 @@ export const WHITE_SPACE = {
     normal: 0,
     nowrap: 1,
     'pre-wrap': 2,
+    pre: 3,
 }
 export const MEASURE_MODE = {
     UNDEFINED: 'undefined',
