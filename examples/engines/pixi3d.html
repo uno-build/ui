@@ -23,22 +23,20 @@
     <body>
         <canvas></canvas>
         <script type="module">
-            import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
             import UI from '../../src/ui/UIWebGPU'
-            import UIPixi from '../../src/ui/UIWebGPUPixi'
+            import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
             import { loadImage, loadJson } from '../shared/load-assets'
             import { loadAssets } from '../shared/assets'
             import { loadYoga } from 'yoga-layout/load'
-            import { main } from './pixi-worldspace.ts'
+            import { main } from './pixi3d.ts'
 
             const canvas = document.querySelector('canvas')
             const onCanvasEvent = window.addEventListener
             main({
                 canvas,
                 onCanvasEvent,
-                ResourcesWebGPU,
                 UI,
-                UIPixi,
+                ResourcesWebGPU,
                 loadYoga,
                 loadAssets: () => loadAssets({ loadImage, loadJson }),
             }).then(({ uis }) => {

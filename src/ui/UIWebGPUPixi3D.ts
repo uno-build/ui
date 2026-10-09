@@ -13,56 +13,56 @@ import { createHitResult3D, intersectRayGeometry, Material3D, Matrix4, Mesh3D, P
 import { ExternalSource, Texture } from 'pixi.js'
 import UIWorldSpace from './UIWorldSpace'
 
-export type UIWebGPUPixiMaterial = BaseMaterial3D
+export type UIWebGPUPixi3DMaterial = BaseMaterial3D
 
-export type UIWebGPUPixiPlane = {
+export type UIWebGPUPixi3DPlane = {
     plane: Container3D
     mapIntersection?: MapIntersection<RaycastHit3D>
 }
 
-export type UIWebGPUPixiOptions<
-    TMaterial extends UIWebGPUPixiMaterial = Material3D,
-    TPlane extends UIWebGPUPixiPlane = {
+export type UIWebGPUPixi3DOptions<
+    TMaterial extends UIWebGPUPixi3DMaterial = Material3D,
+    TPlane extends UIWebGPUPixi3DPlane = {
         plane: Mesh3D
         geometry: PlaneGeometry
     },
-> = UIWorldSpaceOptions<Texture, TMaterial, TPlane & UIWebGPUPixiPlane, UIWebGPUPixi> & {
+> = UIWorldSpaceOptions<Texture, TMaterial, TPlane & UIWebGPUPixi3DPlane, UIWebGPUPixi3D> & {
     pixi_renderer: WebGPURenderer
 }
 
-export default class UIWebGPUPixi extends UIWorldSpace<
+export default class UIWebGPUPixi3D extends UIWorldSpace<
     Texture,
-    UIWebGPUPixiMaterial,
-    UIWebGPUPixiPlane,
-    UIWebGPUPixi,
+    UIWebGPUPixi3DMaterial,
+    UIWebGPUPixi3DPlane,
+    UIWebGPUPixi3D,
     View3D
 > {
     private pixi_renderer: WebGPURenderer
 
     private plane!: Container3D | null
-    private mapIntersection: UIWebGPUPixiPlane['mapIntersection']
+    private mapIntersection: UIWebGPUPixi3DPlane['mapIntersection']
 
-    protected constructor({ pixi_renderer, ...options }: UIWebGPUPixiOptions<UIWebGPUPixiMaterial, UIWebGPUPixiPlane>) {
+    protected constructor({ pixi_renderer, ...options }: UIWebGPUPixi3DOptions<UIWebGPUPixi3DMaterial, UIWebGPUPixi3DPlane>) {
         super(options)
         this.pixi_renderer = pixi_renderer
     }
 
     static async create<
-        TMaterial extends UIWebGPUPixiMaterial = Material3D,
-        TPlane extends UIWebGPUPixiPlane = {
+        TMaterial extends UIWebGPUPixi3DMaterial = Material3D,
+        TPlane extends UIWebGPUPixi3DPlane = {
             plane: Mesh3D
             geometry: PlaneGeometry
         },
     >(
-        options: UIWebGPUPixiOptions<TMaterial, TPlane>,
+        options: UIWebGPUPixi3DOptions<TMaterial, TPlane>,
     ): Promise<
         {
-            ui: UIWebGPUPixi
+            ui: UIWebGPUPixi3D
         } & UIWorldSpaceOutput<Texture, TMaterial, TPlane>
     > {
-        const ui = new UIWebGPUPixi(options)
+        const ui = new UIWebGPUPixi3D(options)
         const resources = await ui.initialize()
-        return { ui, ...resources } as unknown as Awaited<ReturnType<typeof UIWebGPUPixi.create<TMaterial, TPlane>>>
+        return { ui, ...resources } as unknown as Awaited<ReturnType<typeof UIWebGPUPixi3D.create<TMaterial, TPlane>>>
     }
 
     protected async initialize() {
@@ -186,13 +186,13 @@ export default class UIWebGPUPixi extends UIWorldSpace<
         return new Material3D()
     }
 
-    protected configureMaterial({ texture, material }: MaterialOptions<Texture> & { material: UIWebGPUPixiMaterial }) {
+    protected configureMaterial({ texture, material }: MaterialOptions<Texture> & { material: UIWebGPUPixi3DMaterial }) {
         // pixi3d's materials already undo the premultiplied alpha and decode sRGB from the base color texture.
         material.textures.baseColor = texture
         material.alphaMode = 'blend'
     }
 
-    protected createDefaultPlane({ material, world_width, world_height }: PlaneOptions<Texture, UIWebGPUPixiMaterial>) {
+    protected createDefaultPlane({ material, world_width, world_height }: PlaneOptions<Texture, UIWebGPUPixi3DMaterial>) {
         // flipV puts v = 0 at the top edge, matching the texture rows, as pixi3d's Sprite3D does.
         const geometry = new PlaneGeometry({ width: world_width, height: world_height, flipV: true })
         const plane = new Mesh3D({ geometry, material })

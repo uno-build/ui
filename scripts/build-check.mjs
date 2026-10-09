@@ -18,7 +18,7 @@ const UI_PAIRS = [
     ['UIBabylon', 'UIWebGPUBabylon'],
     ['UIBabylonLite', 'UIWebGPUBabylonLite'],
     ['UIPlayCanvas', 'UIWebGPUPlayCanvas'],
-    ['UIPixi', 'UIWebGPUPixi'],
+    ['UIPixi3D', 'UIWebGPUPixi3D'],
 ]
 const SAFE_RUNTIME_EXPORTS = [
     './events',
@@ -240,8 +240,8 @@ import type * as BABYLON_LITE from '@babylonjs/lite'
 import UIPlayCanvas from '@uno.build/ui/UIPlayCanvas'
 import UIWebGPUPlayCanvas from '@uno.build/ui/UIWebGPUPlayCanvas'
 import type * as PLAYCANVAS from 'playcanvas'
-import UIPixi from '@uno.build/ui/UIPixi'
-import UIWebGPUPixi from '@uno.build/ui/UIWebGPUPixi'
+import UIPixi3D from '@uno.build/ui/UIPixi3D'
+import UIWebGPUPixi3D from '@uno.build/ui/UIWebGPUPixi3D'
 import type * as PIXI from 'pixi.js'
 import type * as PIXI_3D from '@pixi/3d'
 
@@ -256,7 +256,7 @@ declare const three_camera: THREE.Camera
 declare const babylon_camera: BABYLON.Camera
 declare const babylon_lite_camera: BABYLON_LITE.Camera
 declare const playcanvas_camera: PLAYCANVAS.Entity
-declare const pixi_view: PIXI_3D.View3D
+declare const pixi3d_view: PIXI_3D.View3D
 
 UI.create({ resources }).then(({ ui }) => {
     ui satisfies UI
@@ -612,78 +612,78 @@ async function checkPlayCanvas() {
     }
 }
 
-declare const pixi_material: PIXI_3D.Material3D & { custom_material: 'pixi' }
-declare const pixi_plane: PIXI_3D.Container3D
+declare const pixi3d_material: PIXI_3D.Material3D & { custom_material: 'pixi3d' }
+declare const pixi3d_plane: PIXI_3D.Container3D
 
-async function checkPixi() {
+async function checkPixi3D() {
     const options = { ...WORLD_OPTIONS, pixi_renderer }
     // @ts-expect-error Raw classes require an explicit Yoga loader.
-    UIWebGPUPixi.create(options)
+    UIWebGPUPixi3D.create(options)
     // @ts-expect-error Automatic classes select their own Yoga loader.
-    UIPixi.create({ ...options, loadYoga })
-    UIPixi.create({ ...options, register_platform_events: false })
+    UIPixi3D.create({ ...options, loadYoga })
+    UIPixi3D.create({ ...options, register_platform_events: false })
     // @ts-expect-error The previous option name is not supported.
-    UIPixi.create({ ...options, platform_events: false })
+    UIPixi3D.create({ ...options, platform_events: false })
     // @ts-expect-error Assign the view with setCamera(), not create().
-    UIPixi.create({ ...options, camera: pixi_view })
+    UIPixi3D.create({ ...options, camera: pixi3d_view })
     // @ts-expect-error Raw classes never register platform events automatically.
-    UIWebGPUPixi.create({ ...options, loadYoga, register_platform_events: false })
+    UIWebGPUPixi3D.create({ ...options, loadYoga, register_platform_events: false })
 
-    const defaults = [await UIPixi.create(options), await UIWebGPUPixi.create({ ...options, loadYoga })]
+    const defaults = [await UIPixi3D.create(options), await UIWebGPUPixi3D.create({ ...options, loadYoga })]
     for (const result of defaults) {
         result.geometry satisfies PIXI_3D.PlaneGeometry
         result.plane satisfies PIXI_3D.Mesh3D
         result.material satisfies PIXI_3D.Material3D
         result.texture satisfies PIXI.Texture
-        result.ui.setCamera(pixi_view) satisfies void
+        result.ui.setCamera(pixi3d_view) satisfies void
         result.ui.registerPlatformEvents() satisfies void
         result.ui.removePlatformEvents() satisfies void
         result.ui.dispatchPlatformEvent(source_event) satisfies void
-        // @ts-expect-error A Pixi UI requires a pixi3d View3D.
+        // @ts-expect-error A Pixi3D UI requires a pixi3d View3D.
         result.ui.setCamera(three_camera)
         // @ts-expect-error Dispatch uses the stored view.
-        result.ui.dispatchPlatformEvent(source_event, { camera: pixi_view })
+        result.ui.dispatchPlatformEvent(source_event, { camera: pixi3d_view })
     }
 
-    const automatic = await UIPixi.create({
+    const automatic = await UIPixi3D.create({
         ...options,
-        createMaterial: () => pixi_material,
+        createMaterial: () => pixi3d_material,
         createPlane({ material, texture, gpu_texture }) {
-            material.custom_material satisfies 'pixi'
+            material.custom_material satisfies 'pixi3d'
             texture satisfies PIXI.Texture
             gpu_texture satisfies GPUTexture
-            return { plane: pixi_plane, custom_plane: 'pixi' as const }
+            return { plane: pixi3d_plane, custom_plane: 'pixi3d' as const }
         },
         defined_events: [({ ui }) => {
-            ui satisfies UIPixi
-            ui.setCamera(pixi_view)
+            ui satisfies UIPixi3D
+            ui.setCamera(pixi3d_view)
             ui.registerPlatformEvents() satisfies void
             ui.removePlatformEvents() satisfies void
             return { types: [], destroy() {} }
         }],
     })
-    automatic.ui satisfies UIPixi
+    automatic.ui satisfies UIPixi3D
 
-    const raw = await UIWebGPUPixi.create({
+    const raw = await UIWebGPUPixi3D.create({
         ...options,
         loadYoga,
-        createMaterial: () => pixi_material,
+        createMaterial: () => pixi3d_material,
         createPlane({ material, texture, gpu_texture }) {
-            material.custom_material satisfies 'pixi'
+            material.custom_material satisfies 'pixi3d'
             texture satisfies PIXI.Texture
             gpu_texture satisfies GPUTexture
-            return { plane: pixi_plane, custom_plane: 'pixi' as const }
+            return { plane: pixi3d_plane, custom_plane: 'pixi3d' as const }
         },
         defined_events: [({ ui }) => {
-            ui satisfies UIWebGPUPixi
+            ui satisfies UIWebGPUPixi3D
             return { types: [], destroy() {} }
         }],
     })
-    raw.ui satisfies UIWebGPUPixi
+    raw.ui satisfies UIWebGPUPixi3D
 
     for (const result of [automatic, raw]) {
-        result.material.custom_material satisfies 'pixi'
-        result.custom_plane satisfies 'pixi'
+        result.material.custom_material satisfies 'pixi3d'
+        result.custom_plane satisfies 'pixi3d'
         result.plane satisfies PIXI_3D.Container3D
         result.texture satisfies PIXI.Texture
         // @ts-expect-error Custom plane output replaces the default geometry fields.

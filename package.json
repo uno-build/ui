@@ -70,9 +70,9 @@
             "types": "./dist/ui/UIPlayCanvas.d.ts",
             "import": "./dist/ui/UIPlayCanvas.js"
         },
-        "./UIPixi": {
-            "types": "./dist/ui/UIPixi.d.ts",
-            "import": "./dist/ui/UIPixi.js"
+        "./UIPixi3D": {
+            "types": "./dist/ui/UIPixi3D.d.ts",
+            "import": "./dist/ui/UIPixi3D.js"
         },
         "./UIWebGPUThree": {
             "types": "./dist/ui/UIWebGPUThree.d.ts",
@@ -90,9 +90,9 @@
             "types": "./dist/ui/UIWebGPUPlayCanvas.d.ts",
             "import": "./dist/ui/UIWebGPUPlayCanvas.js"
         },
-        "./UIWebGPUPixi": {
-            "types": "./dist/ui/UIWebGPUPixi.d.ts",
-            "import": "./dist/ui/UIWebGPUPixi.js"
+        "./UIWebGPUPixi3D": {
+            "types": "./dist/ui/UIWebGPUPixi3D.d.ts",
+            "import": "./dist/ui/UIWebGPUPixi3D.js"
         },
         "./UIDom": {
             "types": "./dist/ui/UIDom.d.ts",

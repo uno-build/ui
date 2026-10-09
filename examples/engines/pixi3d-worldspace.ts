@@ -17,7 +17,7 @@ import { createForegroundUI } from '../shared/uis/foreground-ui'
 const WORLD_HEIGHT = 2
 const TEXTURE_SCALAR = window.devicePixelRatio
 
-export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UI, UIPixi, loadAssets, loadYoga }) {
+export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UI, UIPixi3D, loadAssets, loadYoga }) {
     const device_pixel_ratio = window.devicePixelRatio
     const device_width = Math.max(canvas.clientWidth, canvas.clientHeight)
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
@@ -46,7 +46,7 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UI, UIPixi,
 
     const texture_width = Math.round(device_width * TEXTURE_SCALAR)
     const texture_height = Math.round(device_height * TEXTURE_SCALAR)
-    const { ui: first_ui, plane: first_plane } = await UIPixi.create({
+    const { ui: first_ui, plane: first_plane } = await UIPixi3D.create({
         loadYoga,
         pixi_renderer,
         resources,
@@ -57,7 +57,7 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UI, UIPixi,
         world_height: WORLD_HEIGHT,
         createMaterial: () => new PhongMaterial({ doubleSided: true, shininess: 64, specularColor: 0xffffff }),
     })
-    const { ui: second_ui, plane: second_plane } = await UIPixi.create({
+    const { ui: second_ui, plane: second_plane } = await UIPixi3D.create({
         loadYoga,
         pixi_renderer,
         resources,
