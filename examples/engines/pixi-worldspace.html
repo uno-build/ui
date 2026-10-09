@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+            html,
+            body {
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+
+            canvas {
+                display: block;
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas></canvas>
+        <script type="module">
+            import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
+            import UI from '../../src/ui/UIWebGPU'
+            import UIPixi from '../../src/ui/UIWebGPUPixi'
+            import { loadImage, loadJson } from '../shared/load-assets'
+            import { loadAssets } from '../shared/assets'
+            import { loadYoga } from 'yoga-layout/load'
+            import { main } from './pixi-worldspace.ts'
+
+            const canvas = document.querySelector('canvas')
+            const onCanvasEvent = window.addEventListener
+            main({
+                canvas,
+                onCanvasEvent,
+                ResourcesWebGPU,
+                UI,
+                UIPixi,
+                loadYoga,
+                loadAssets: () => loadAssets({ loadImage, loadJson }),
+            }).then(({ uis }) => {
+                uis.forEach((ui) => ui.registerPlatformEvents())
+            }).catch(console.error)
+        </script>
+    </body>
+</html>
