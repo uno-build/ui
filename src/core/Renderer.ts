@@ -39,7 +39,8 @@ export default abstract class Renderer<TDrawOptions = unknown, TDrawResult = voi
     abstract getTextCaretOffset(node: Node<TElement>, position: number): number
     abstract createElement(node: Node<TElement>): TElement
     abstract getChildIndex(node: Node<TElement>): number
-    abstract getLayout(node: Node<TElement>): ComputedLayout
+    // Returning node.layout itself means the node and its subtree kept their layout.
+    abstract getLayout(node: Node<TElement>, parent_changed: boolean): ComputedLayout
     abstract detachChild(parent: Node<TElement>, node: Node<TElement>, release_subtree?: boolean): void
     abstract destroyNode(node: Node<TElement>): void
     abstract updateStyle(node: Node<TElement>, style: StyleUpdate): void

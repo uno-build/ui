@@ -404,8 +404,8 @@ export default class RendererWebGPU extends Renderer<
         }
     }
 
-    getLayout(node: Node<undefined>): ComputedLayout {
-        return this.layouter.getLayout(node)
+    getLayout(node: Node<undefined>, parent_changed: boolean): ComputedLayout {
+        return this.layouter.getNewLayout(node, parent_changed)
     }
 
     beforeUpdate(nodes: Node<undefined>[], operations: Operations<undefined>) {

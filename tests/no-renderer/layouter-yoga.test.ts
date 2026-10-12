@@ -202,6 +202,53 @@ test('Yoga layouter invalidates cached text measurements and measures detached t
     layouter.destroy([root, text, detached])
 })
 
+test('Yoga layouter reads each new layout once and repositions descendants Yoga skipped', async () => {
+    const layouter = await createYogaLayouter({ loadYoga })
+    const root = createNode(0)
+    const label = createNode(1, root)
+    const box = createNode(2, label)
+    const leaf = createNode(3, box)
+    const panel = createNode(4, root)
+    const item = createNode(5, panel)
+    const nodes = [root, label, box, leaf, panel, item]
+    for (const node of nodes) {
+        layouter.createNode(node)
+    }
+    layouter.insertChild(root, label, 0)
+    layouter.insertChild(label, box, 0)
+    layouter.insertChild(box, leaf, 0)
+    layouter.insertChild(root, panel, 1)
+    layouter.insertChild(panel, item, 0)
+    applyStyle(layouter, root, 'width', '100px')
+    applyStyle(layouter, root, 'height', '100px')
+    applyStyle(layouter, label, 'position', 'absolute')
+    applyStyle(layouter, label, 'left', '10px')
+    applyStyle(layouter, label, 'top', '20px')
+    applyStyle(layouter, box, 'padding', '1px')
+    for (const node of [label, box, panel, item]) {
+        applyStyle(layouter, node, 'width', '10px')
+        applyStyle(layouter, node, 'height', '10px')
+    }
+
+    layouter.calculate()
+    for (const node of nodes) {
+        node.layout = layouter.getNewLayout(node, false)
+    }
+    expect(leaf.layout).toMatchObject({ x: 11, y: 21 })
+    expect(layouter.getNewLayout(root, false)).toBe(root.layout)
+
+    applyStyle(layouter, label, 'left', '30px')
+    layouter.calculate()
+    root.layout = layouter.getNewLayout(root, false)
+    label.layout = layouter.getNewLayout(label, false)
+    box.layout = layouter.getNewLayout(box, true)
+
+    expect(layouter.getNewLayout(item, false)).toBe(item.layout)
+    expect(layouter.getNewLayout(leaf, false)).toBe(leaf.layout)
+    expect(layouter.getNewLayout(leaf, true)).toEqual({ ...leaf.layout, x: 31 })
+    layouter.destroy(nodes)
+})
+
 function createNode(id, parent = null) {
     return {
         id,
