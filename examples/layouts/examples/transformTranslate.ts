@@ -5,8 +5,11 @@ import { FONT_NAME_POPPINS, loadFont } from '../../shared/assets'
 const CARD_WIDTH = 180
 const CARD_HEIGHT = 140
 const CARD_GAP = 16
+const ORBIT_RADIUS = 10
+const ORBIT_STEP = Math.PI / 90
+const UPDATE_INTERVAL = 16
 
-export default async function createTransformTranslateLayout({ ui, registerFont }) {
+export default async function createTransformTranslateLayout({ ui, registerFont, animations_enabled }) {
     registerFont(FONT_NAME_POPPINS, await loadFont(FONT_NAME_POPPINS, { loadImage, loadJson }))
 
     const stage = createBox(ui, ui.root, {
@@ -41,7 +44,7 @@ export default async function createTransformTranslateLayout({ ui, registerFont 
 
     // A single value moves only along x.
     createGhost(ui, cards[1], { left: '20px', top: '40px', width: '60px', height: '40px' })
-    createBox(ui, cards[1], {
+    const moved_x = createBox(ui, cards[1], {
         position: 'absolute',
         left: '20px',
         top: '40px',
@@ -53,7 +56,7 @@ export default async function createTransformTranslateLayout({ ui, registerFont 
 
     // Negative values
     createGhost(ui, cards[2], { left: '90px', top: '70px', width: '60px', height: '40px' })
-    createBox(ui, cards[2], {
+    const moved_back = createBox(ui, cards[2], {
         position: 'absolute',
         left: '90px',
         top: '70px',
@@ -104,7 +107,7 @@ export default async function createTransformTranslateLayout({ ui, registerFont 
     })
 
     // A label keeps its left and top and follows a target with translate.
-    createBox(ui, cards[5], {
+    const target = createBox(ui, cards[5], {
         position: 'absolute',
         left: '60px',
         top: '80px',
@@ -123,7 +126,7 @@ export default async function createTransformTranslateLayout({ ui, registerFont 
     createText(ui, label, 'Brawler', { fontSize: '12px', color: '#ffffff' })
 
     // Text
-    createText(ui, cards[6], 'Translate', {
+    const text = createText(ui, cards[6], 'Translate', {
         position: 'absolute',
         left: '10px',
         top: '10px',
@@ -133,7 +136,7 @@ export default async function createTransformTranslateLayout({ ui, registerFont 
     })
 
     // Text with shadow and stroke
-    createText(ui, cards[7], 'Shadow', {
+    const effect_text = createText(ui, cards[7], 'Shadow', {
         position: 'absolute',
         left: '10px',
         top: '10px',
@@ -143,6 +146,31 @@ export default async function createTransformTranslateLayout({ ui, registerFont 
         textStroke: '1px #1e3a8a',
         translate: '15px 40px',
     })
+
+    if (animations_enabled) {
+        const animations = [
+            orbit(moved, 40, 30),
+            (angle) => moved_x.style('translate', `${(50 + Math.sin(angle) * ORBIT_RADIUS).toFixed(2)}px`),
+            orbit(moved_back, -50, -40),
+            orbit(nested_parent, 20, 10),
+            orbit(nested_child, 30, 20),
+            orbit(clip_parent, 50, 40),
+            orbit(target, 0, 0),
+            orbit(label, 45, 50),
+            orbit(text, 20, 50),
+            orbit(effect_text, 15, 40),
+        ]
+        let angle = 0
+
+        setInterval(() => {
+            angle += ORBIT_STEP
+            for (const animate of animations) {
+                animate(angle)
+            }
+            ui.update()
+            ui.draw()
+        }, UPDATE_INTERVAL)
+    }
 
     return {
         paintSamples: [
@@ -157,6 +185,15 @@ export default async function createTransformTranslateLayout({ ui, registerFont 
                 expectedStack: [cards[4], stage],
             },
         ],
+    }
+}
+
+// Angle 0 keeps the static translate, which is what the layout tests read.
+function orbit(node, x, y) {
+    return (angle) => {
+        const orbit_x = (x + (Math.cos(angle) - 1) * ORBIT_RADIUS).toFixed(2)
+        const orbit_y = (y + Math.sin(angle) * ORBIT_RADIUS).toFixed(2)
+        node.style('translate', `${orbit_x}px ${orbit_y}px`)
     }
 }
 

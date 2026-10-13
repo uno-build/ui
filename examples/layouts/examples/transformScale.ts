@@ -5,8 +5,11 @@ import { FONT_NAME_POPPINS, loadFont } from '../../shared/assets'
 const CARD_WIDTH = 180
 const CARD_HEIGHT = 140
 const CARD_GAP = 16
+const PULSE = 0.15
+const PULSE_STEP = Math.PI / 90
+const UPDATE_INTERVAL = 16
 
-export default async function createTransformScaleLayout({ ui, registerFont }) {
+export default async function createTransformScaleLayout({ ui, registerFont, animations_enabled }) {
     registerFont(FONT_NAME_POPPINS, await loadFont(FONT_NAME_POPPINS, { loadImage, loadJson }))
 
     const stage = createBox(ui, ui.root, {
@@ -44,7 +47,7 @@ export default async function createTransformScaleLayout({ ui, registerFont }) {
 
     // Non-uniform scale, without shadows: those use the smaller factor, unlike CSS.
     createGhost(ui, cards[1], { left: '60px', top: '50px', width: '50px', height: '40px' })
-    createBox(ui, cards[1], {
+    const stretched = createBox(ui, cards[1], {
         position: 'absolute',
         left: '60px',
         top: '50px',
@@ -58,7 +61,7 @@ export default async function createTransformScaleLayout({ ui, registerFont }) {
 
     // Scale first, then translate.
     createGhost(ui, cards[2], { left: '30px', top: '30px', width: '50px', height: '40px' })
-    createBox(ui, cards[2], {
+    const scaled_and_moved = createBox(ui, cards[2], {
         position: 'absolute',
         left: '30px',
         top: '30px',
@@ -125,7 +128,7 @@ export default async function createTransformScaleLayout({ ui, registerFont }) {
     createText(ui, small_card, 'Scaled 0.6', { fontSize: '18px', color: '#78350f' })
 
     // Text with stroke
-    createText(ui, cards[6], 'Scale 1.8', {
+    const stroke_text = createText(ui, cards[6], 'Scale 1.8', {
         position: 'absolute',
         left: '45px',
         top: '50px',
@@ -136,7 +139,7 @@ export default async function createTransformScaleLayout({ ui, registerFont }) {
     })
 
     // Text with shadow, scaled and translated
-    createText(ui, cards[7], 'Shadow', {
+    const shadow_text = createText(ui, cards[7], 'Shadow', {
         position: 'absolute',
         left: '40px',
         top: '50px',
@@ -146,6 +149,29 @@ export default async function createTransformScaleLayout({ ui, registerFont }) {
         scale: '1.5',
         translate: '10px 0px',
     })
+
+    if (animations_enabled) {
+        const animations = [
+            pulse(scaled, 1.5, 1.5),
+            pulse(stretched, 2, 0.5),
+            pulse(scaled_and_moved, 1.5, 1.5),
+            pulse(nested_parent, 1.5, 1.5),
+            pulse(clip_parent, 1.4, 1.4),
+            pulse(small_card, 0.6, 0.6),
+            pulse(stroke_text, 1.8, 1.8),
+            pulse(shadow_text, 1.5, 1.5),
+        ]
+        let angle = 0
+
+        setInterval(() => {
+            angle += PULSE_STEP
+            for (const animate of animations) {
+                animate(angle)
+            }
+            ui.update()
+            ui.draw()
+        }, UPDATE_INTERVAL)
+    }
 
     return {
         paintSamples: [
@@ -160,6 +186,14 @@ export default async function createTransformScaleLayout({ ui, registerFont }) {
                 expectedStack: [cards[4], stage],
             },
         ],
+    }
+}
+
+// Angle 0 keeps the static scale, which is what the layout tests read.
+function pulse(node, x, y) {
+    return (angle) => {
+        const factor = 1 + Math.sin(angle) * PULSE
+        node.style('scale', `${(x * factor).toFixed(3)} ${(y * factor).toFixed(3)}`)
     }
 }
 
