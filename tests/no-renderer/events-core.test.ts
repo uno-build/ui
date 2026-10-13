@@ -77,6 +77,64 @@ test('UI hit-tests negative z-index children before root', async () => {
     ui.destroy()
 })
 
+test('UI hit-tests translated nodes, their children, and their clips where they are painted', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const parent = ui.create()
+    const child = ui.create()
+    const hit_nodes = []
+
+    ui.root.style('width', '100px')
+    ui.root.style('height', '100px')
+    parent.style('width', '40px')
+    parent.style('height', '40px')
+    parent.style('overflow', 'hidden')
+    child.style('width', '80px')
+    child.style('height', '20px')
+    child.style('flexShrink', '0')
+    ui.root.add(parent)
+    parent.add(child)
+    parent.style('translate', '50px 10px')
+    ui.update()
+    ui.events_source.on('hit', ({ node }) => hit_nodes.push(node))
+
+    for (const [x, y] of [[5, 15], [55, 15], [55, 45], [95, 15]]) {
+        ui.dispatchPlatformEvent({ type: 'hit' }, { x, y })
+    }
+
+    expect(hit_nodes).toEqual([ui.root, child, parent, ui.root])
+    ui.destroy()
+})
+
+test('UI hit-tests scaled nodes and their children by their scaled boxes', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const parent = ui.create()
+    const child = ui.create()
+    const hit_nodes = []
+
+    ui.root.style('width', '100px')
+    ui.root.style('height', '100px')
+    parent.style('width', '40px')
+    parent.style('height', '40px')
+    parent.style('overflow', 'hidden')
+    child.style('width', '20px')
+    child.style('height', '20px')
+    ui.root.add(parent)
+    parent.add(child)
+    parent.style('scale', '2')
+    ui.update()
+    ui.events_source.on('hit', ({ node }) => hit_nodes.push(node))
+
+    for (const [x, y] of [[10, 10], [30, 30], [50, 50], [70, 70]]) {
+        ui.dispatchPlatformEvent({ type: 'hit' }, { x, y })
+    }
+    parent.style('scale', '0')
+    ui.update()
+    ui.dispatchPlatformEvent({ type: 'hit' }, { x: 10, y: 10 })
+
+    expect(hit_nodes).toEqual([child, parent, parent, ui.root, ui.root])
+    ui.destroy()
+})
+
 test('default event definitions expose their public types through UI', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),

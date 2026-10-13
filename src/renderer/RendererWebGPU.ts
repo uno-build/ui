@@ -86,7 +86,13 @@ type ComputedStyle = {
     }
 }
 
-const SUBTREE_STYLE_NAMES = new Set([STYLE.OPACITY.name, STYLE.OVERFLOWX.name, STYLE.OVERFLOWY.name])
+const SUBTREE_STYLE_NAMES = new Set([
+    STYLE.OPACITY.name,
+    STYLE.TRANSLATE.name,
+    STYLE.SCALE.name,
+    STYLE.OVERFLOWX.name,
+    STYLE.OVERFLOWY.name,
+])
 
 export default class RendererWebGPU extends Renderer<
     WebGPUDrawOptions,
@@ -808,8 +814,8 @@ export default class RendererWebGPU extends Renderer<
         }
 
         const node_metrics = getNodeMetrics(node)
-        const { x, y, opacity, clip } = node_metrics
-        if (opacity <= 0 || isNodeClipped(node_metrics, width, height)) {
+        const { x, y, scale_x, scale_y, untransformed_x, untransformed_y, opacity, clip } = node_metrics
+        if (opacity <= 0 || isNodeClipped(node_metrics)) {
             return null
         }
 
@@ -834,8 +840,8 @@ export default class RendererWebGPU extends Renderer<
             const padding_top = node.layout.padding.top
             const padding_right = node.layout.padding.right
             const padding_left = node.layout.padding.left
-            const content_x = x + border_left + padding_left
-            const content_y = y + border_top + padding_top
+            const content_x = untransformed_x + border_left + padding_left
+            const content_y = untransformed_y + border_top + padding_top
             const content_width = width - border_left - border_right - padding_left - padding_right
             const natural_line_height = getTextNaturalLineHeight(font, font_size)
             const line_height = getTextLineHeight(node, natural_line_height, font_size, this.computeStyle)
@@ -878,10 +884,12 @@ export default class RendererWebGPU extends Renderer<
                 : undefined
             const effect_distance_range = font.json.atlas.effectDistanceRange ?? font.json.atlas.distanceRange
             const text_stroke_width = text_stroke?.width.value ?? 0
+            // The shaders scale stroke and blur widths by the smaller factor of a non-uniform scale.
+            const scale = Math.min(scale_x, scale_y)
             const text_stroke_width_limit =
-                (effect_distance_range * font_size) / (font.json.atlas.size * 2) - 0.5 / this.device_pixel_ratio
+                (effect_distance_range * font_size * scale) / (font.json.atlas.size * 2) - 0.5 / this.device_pixel_ratio
             const text_stroke_multisampling =
-                text_stroke_width > 0 && text_stroke_width > text_stroke_width_limit ? 1 : 0
+                text_stroke_width > 0 && text_stroke_width * scale > text_stroke_width_limit ? 1 : 0
             run = {
                 color: (node.styles.color as { parsed: { rgba: number[] } } | undefined)?.parsed.rgba ?? [0, 0, 0, 255],
                 font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.resources!.font_atlas_size],
@@ -892,6 +900,8 @@ export default class RendererWebGPU extends Renderer<
                 effect_distance_range,
                 text_stroke_multisampling,
                 text_stroke_color: text_stroke?.color ?? [0, 0, 0, 0],
+                // Maps the untransformed glyphs to the screen: p' = scale * p + offset.
+                transform: [scale_x, scale_y, x - untransformed_x * scale_x, y - untransformed_y * scale_y],
             }
         }
 

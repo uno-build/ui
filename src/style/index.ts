@@ -44,6 +44,8 @@ import {
     BOX_SHADOW_DEFINITION,
     TEXT_SHADOW_DEFINITION,
     TEXT_STROKE_DEFINITION,
+    TRANSLATE_DEFINITION,
+    SCALE_DEFINITION,
 } from './definitions'
 
 export function validateStyle(name: string, value: unknown) {
@@ -214,6 +216,12 @@ export const STYLE = {
     ], { record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
     OPACITY: createStyle('opacity', (name, value) => [
         { name, value, definition: OPACITY_DEFINITION },
+    ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
+    TRANSLATE: createStyle('translate', (name, value) => [
+        { name, value, definition: TRANSLATE_DEFINITION },
+    ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
+    SCALE: createStyle('scale', (name, value) => [
+        { name, value, definition: SCALE_DEFINITION },
     ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
     BOXSHADOW: createStyle('boxShadow', (name, value) => [
         { name, value, definition: BOX_SHADOW_DEFINITION },

@@ -83,6 +83,29 @@ test('RendererDom maps whiteSpace and restores its default with unset', () => {
     expect(element.style.whiteSpace).toBe('pre-wrap')
 })
 
+test('RendererDom removes translate and scale while it reads layout and restores them after', () => {
+    const renderer = new RendererDom({ resources: ResourcesDom.create({ canvas: {} }) })
+    const element = { style: {} }
+    const plain_element = { style: {} }
+    const node = { styles: {} }
+    const plain_node = { styles: {} }
+    ;(renderer as any).elements.set(node, element)
+    ;(renderer as any).elements.set(plain_node, plain_element)
+    for (const [name, value] of [['translate', '10px 20px'], ['scale', '2']]) {
+        const style = Style.resolveStyle(name, value)
+        node.styles[name] = style.expanded[0]
+        ;(renderer as any).updateStyle(node, style)
+    }
+    const operations = new Operations()
+    operations.setUpdateLayout(true)
+
+    renderer.beforeUpdate([node, plain_node] as any, operations)
+    expect([element.style, plain_element.style]).toEqual([{ translate: 'none', scale: 'none' }, {}])
+
+    renderer.afterUpdate([node, plain_node] as any, operations)
+    expect([element.style, plain_element.style]).toEqual([{ translate: '10px 20px', scale: '2' }, {}])
+})
+
 test('RendererDom resolves natural and unset lineHeight from registered font metrics', () => {
     const resources = ResourcesDom.create({ canvas: {} })
     const renderer = new RendererDom({ resources })

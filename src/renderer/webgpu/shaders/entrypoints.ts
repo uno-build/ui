@@ -34,6 +34,10 @@ fn vertexMain(
             pixel = glyph.rect.xy + local_position;
             uv = glyph.uv_rect.xy + (local_position / glyph.rect.zw) * glyph.uv_rect.zw;
         }
+
+        // Glyphs, shadow offsets, and expansions are untransformed: the run's translate and scale map them.
+        let transform = text_runs[glyph.run_data.x].transform;
+        pixel = pixel * transform.xy + transform.zw;
     }
 
     let clip = vec2f(

@@ -13,6 +13,8 @@ import backgroundSize from './examples/backgroundSize'
 import backgroundImageBleeding from './examples/backgroundImageBleeding'
 import backgroundImageUnset from './examples/backgroundImageUnset'
 import positionRelative from './examples/positionRelative'
+import transformScale from './examples/transformScale'
+import transformTranslate from './examples/transformTranslate'
 import unitsRem from './examples/unitsRem'
 import unitsViewport from './examples/unitsViewport'
 import fontLetterSpacing from './examples/fontLetterSpacing'
@@ -80,6 +82,8 @@ export const LAYOUTS = {
     flexboxWrappedRelativeOffsets,
     flexboxWrappedRelativeWrapReverse,
     positionRelative,
+    transformScale,
+    transformTranslate,
     unitsRem,
     unitsViewport,
     zindexBasic,

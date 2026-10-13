@@ -59,6 +59,29 @@ export function validateTextStroke(value: string) {
     }
     validateColor(values[1]!)
 }
+
+export function validateTranslate(value: string) {
+    const values = value.split(/\s+/)
+    if (values.length !== 1 && values.length !== 2) {
+        throw new Error('expected x [y]')
+    }
+
+    for (const translate_value of values) {
+        validatePx(translate_value)
+    }
+}
+
+export function validateScale(value: string) {
+    const values = value.split(/\s+/)
+    if (values.length !== 1 && values.length !== 2) {
+        throw new Error('expected x [y]')
+    }
+
+    for (const scale_value of values) {
+        validateNumber(scale_value)
+        validateNonNegative(scale_value)
+    }
+}
 export function validateEnum(value: string, values: Record<string, number>) {
     if (typeof value !== 'string' || !Object.prototype.hasOwnProperty.call(values, value)) {
         throw new Error(`expected one of ${Object.keys(values).join(', ')}`)

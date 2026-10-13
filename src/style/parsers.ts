@@ -96,6 +96,30 @@ export function parseTextStroke(value: string) {
         },
     }
 }
+
+export function parseTranslate(value: string) {
+    const [x, y = '0px'] = value.split(/\s+/)
+
+    return {
+        value,
+        parsed: {
+            x: readUnit(x!)!.value,
+            y: readUnit(y)!.value,
+        },
+    }
+}
+
+export function parseScale(value: string) {
+    const [x, y = x] = value.split(/\s+/)
+
+    return {
+        value,
+        parsed: {
+            x: readNumber(x!)!,
+            y: readNumber(y!)!,
+        },
+    }
+}
 export function parseEnum(value: string, values: Record<string, number>) {
     return { value, parsed: { enum: values[value] } }
 }

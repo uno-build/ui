@@ -1,6 +1,6 @@
 import type Node from '../core/Node'
 
-import { getAncestorClipping, getNodeRenderLayout } from '../renderer/utils/render-metrics'
+import { getSingleNodeMetrics } from '../renderer/utils/render-metrics'
 import { DISPLAY, POINTER_EVENTS } from '../style/constants'
 
 export function isNodeAtPoint(node: Node, x: number, y: number) {
@@ -10,16 +10,15 @@ export function isNodeAtPoint(node: Node, x: number, y: number) {
         return false
     }
 
-    const layout = getNodeRenderLayout(node)
-    if (layout.width <= 0 || layout.height <= 0) {
+    if (node.layout.width! <= 0 || node.layout.height! <= 0) {
         return false
     }
 
-    const clipping = getAncestorClipping(node)
-    const left = layout.x + Math.max(0, clipping?.left ?? 0)
-    const top = layout.y + Math.max(0, clipping?.top ?? 0)
-    const right = layout.x + Math.min(layout.width, clipping?.right ?? layout.width)
-    const bottom = layout.y + Math.min(layout.height, clipping?.bottom ?? layout.height)
+    const { x: node_x, y: node_y, width, height, clip } = getSingleNodeMetrics(node)
+    const left = Math.max(node_x, clip?.left ?? -Infinity)
+    const top = Math.max(node_y, clip?.top ?? -Infinity)
+    const right = Math.min(node_x + width, clip?.right ?? Infinity)
+    const bottom = Math.min(node_y + height, clip?.bottom ?? Infinity)
 
     return x >= left && x < right && y >= top && y < bottom
 }

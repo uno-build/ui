@@ -122,6 +122,10 @@ export const TEXT_RUN = {
         OFFSET: 24 * FLOAT32_SIZE,
         SIZE: 4 * FLOAT32_SIZE,
     },
+    TRANSFORM: {
+        OFFSET: 28 * FLOAT32_SIZE,
+        SIZE: 4 * FLOAT32_SIZE,
+    },
 }
 
 export const TEXT_RUN_SIZE = Math.max(...Object.values(TEXT_RUN).map((attrb: { OFFSET: number; SIZE: number; } | { OFFSET: number; SIZE: number; } | { OFFSET: number; SIZE: number; } | { OFFSET: number; SIZE: number; } | { OFFSET: number; SIZE: number; } | { OFFSET: number; SIZE: number; } | { OFFSET: number; SIZE: number; } | { OFFSET: number; SIZE: number; } | { OFFSET: number; SIZE: number; }) => attrb.OFFSET + attrb.SIZE))

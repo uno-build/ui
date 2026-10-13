@@ -536,6 +536,8 @@ test('UI skips layout reads for paint, DPR, scroll, and painting order changes',
 
     first.style('backgroundColor', '#123')
     first.style('borderRadius', '4px')
+    first.style('translate', '10px 20px')
+    first.style('scale', '2')
     ui.update()
     expect(layout_reads).toBe(0)
     expect(last_operations.needCheckLayout()).toBe(false)

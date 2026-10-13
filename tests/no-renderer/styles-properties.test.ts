@@ -8,6 +8,8 @@ test('expanded paint shorthands are classified without requesting layout', () =>
         ['backgroundPosition', '25% 50%'],
         ['backgroundColor', '#123'],
         ['opacity', '0.5'],
+        ['translate', '10px 20px'],
+        ['scale', '2 0.5'],
         ['zIndex', '2'],
         ['textShadow', '1px 2px 3px #123'],
         ['textStroke', '1px #123'],
@@ -655,6 +657,31 @@ test('opacity', () => {
     for (const [value, message] of invalid_cases) {
         expectInvalid('opacity', value, message)
     }
+})
+
+test('translate', () => {
+    expectResolved('translate', ' 10PX -2.5px ', '10px -2.5px', { x: 10, y: -2.5 })
+    expectResolved('translate', '-4px', '-4px', { x: -4, y: 0 })
+    expectKeywordUnit('translate', ' Unset ', 'unset')
+    expectInvalid('translate', '1px 2px 3px', /expected x \[y\]/)
+    expectInvalid('translate', '1px 2rem', /expected px unit/)
+    expectInvalid('translate', '10%', /expected px unit/)
+    expectInvalid('translate', '0', /expected px unit/)
+    expectInvalid('translate', 'none', /expected px unit/)
+    expectInvalid('translate', true, /style value must be a string/)
+})
+
+test('scale', () => {
+    expectResolved('scale', ' 1.5 ', '1.5', { x: 1.5, y: 1.5 })
+    expectResolved('scale', '2 0.5', '2 0.5', { x: 2, y: 0.5 })
+    expectResolved('scale', '0', '0', { x: 0, y: 0 })
+    expectKeywordUnit('scale', ' Unset ', 'unset')
+    expectInvalid('scale', '1 2 3', /expected x \[y\]/)
+    expectInvalid('scale', '-1', /expected non-negative value/)
+    expectInvalid('scale', '50%', /expected number/)
+    expectInvalid('scale', '2px', /expected number/)
+    expectInvalid('scale', 'none', /expected number/)
+    expectInvalid('scale', true, /style value must be a string/)
 })
 
 test('border corner radius', () => {

@@ -208,9 +208,17 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
         for (const node of scroll_nodes) {
             this.applyNodeScroll(node)
         }
+
+        if (operations.needUpdateLayout()) {
+            this.applyNodeTransforms(nodes, false)
+        }
     }
 
     afterUpdate(nodes: Node<HTMLElement>[], operations: Operations<HTMLElement>) {
+        if (operations.needUpdateLayout()) {
+            this.applyNodeTransforms(nodes, true)
+        }
+
         const read_metrics = operations.needUpdateLayout() || operations.needUpdateScrollMetrics()
         const scroll_nodes = read_metrics ? nodes : operations.scroll_nodes
         for (const node of scroll_nodes) {
@@ -218,6 +226,18 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
                 operations.scroll_nodes.add(node)
             }
             operations.recordScrollMetrics(node)
+        }
+    }
+
+    // getBoundingClientRect() includes translate and scale, which are not part of the layout:
+    // they are removed while the layout is read.
+    private applyNodeTransforms(nodes: any, enabled: any) {
+        for (const node of nodes) {
+            if (node.styles.translate !== undefined || node.styles.scale !== undefined) {
+                const element = this.elements.get(node)
+                element.style.translate = enabled ? (node.styles.translate?.value ?? '') : 'none'
+                element.style.scale = enabled ? (node.styles.scale?.value ?? '') : 'none'
+            }
         }
     }
 
