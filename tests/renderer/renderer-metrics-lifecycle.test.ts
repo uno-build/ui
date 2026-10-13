@@ -355,7 +355,42 @@ test('UI hit testing reads pending scroll and overflow changes before the next r
     }
 })
 
-async function createFixture() {
+test('RendererWebGPU without Yoga keeps text changes in fixed boxes out of the layout', async () => {
+    const { ui, renderer, createNode } = await createFixture({ yoga: false })
+    try {
+        const layout_updates = []
+        ui.events_source.on(CORE_EVENT.UPDATED, ({ operations }) => {
+            layout_updates.push([...operations.layout_nodes])
+        })
+        const panel = createNode(ui.root, { left: '10px', top: '20px', overflow: 'hidden', padding: '5px' })
+        const label = createNode(panel, {
+            left: 'auto', top: 'auto', right: '10px', bottom: '10px', width: '60px', height: '20px', backgroundColor: '#f00',
+        }, 'A')
+        ui.update()
+        expectUploadedMetrics(renderer, label, [40, 90, 60, 20], [20, 110, 120, 10], 1)
+
+        label.text('A'.repeat(24))
+        ui.update()
+        expect(layout_updates.at(-1)).toEqual([])
+        expect(renderer.records.get(label).glyph_count).toBe(24)
+    } finally {
+        ui.destroy()
+    }
+})
+
+test('RendererWebGPU without Yoga computes no scroll metrics', async () => {
+    const { ui, createNode } = await createFixture({ yoga: false })
+    try {
+        const parent = createNode(ui.root, { overflow: 'scroll' })
+        createNode(parent, { width: '200px', height: '200px' })
+        ui.update()
+        expect([parent.scrollHeight, parent.clientHeight]).toEqual([0, 0])
+    } finally {
+        ui.destroy()
+    }
+})
+
+async function createFixture({ yoga = true } = {}) {
     const font = {
         layer: 0,
         json: { atlas: { type: 'mtsdf', size: 1, distanceRange: 6 } },
@@ -383,6 +418,7 @@ async function createFixture() {
         createBindGroup() { return {} },
     }
     const renderer: any = new RendererWebGPU({
+        yoga,
         loadYoga,
         resources: {
             device,
