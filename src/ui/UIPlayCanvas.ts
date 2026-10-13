@@ -22,6 +22,7 @@ export type UIPlayCanvasOptions<
     },
 > = Omit<UIWebGPUPlayCanvasOptions<TMaterial, TPlane>, 'loadYoga' | 'defined_events'> & EventOptions<UIPlayCanvas> & {
     register_platform_events?: boolean
+    yoga?: boolean
 }
 
 export default class UIPlayCanvas extends UIWebGPUPlayCanvas {
@@ -34,13 +35,16 @@ export default class UIPlayCanvas extends UIWebGPUPlayCanvas {
             mesh_instance: MeshInstance
         },
     >(
-        { register_platform_events = true, ...options }: UIPlayCanvasOptions<TMaterial, TPlane>,
+        { register_platform_events = true, yoga = true, ...options }: UIPlayCanvasOptions<TMaterial, TPlane>,
     ): Promise<
         {
             ui: UIPlayCanvas
         } & UIWorldSpaceOutput<Texture, TMaterial, TPlane>
     > {
-        const ui = new UIPlayCanvas({ ...options, loadYoga } as UIWebGPUPlayCanvasOptions<TMaterial, TPlane>)
+        const ui = new UIPlayCanvas({
+            ...options,
+            loadYoga: yoga ? loadYoga : undefined,
+        } as UIWebGPUPlayCanvasOptions<TMaterial, TPlane>)
         const resources = await ui.initialize()
         if (register_platform_events) ui.registerPlatformEvents()
         return { ui, ...resources } as unknown as Awaited<ReturnType<typeof UIPlayCanvas.create<TMaterial, TPlane>>>

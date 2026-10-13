@@ -7,11 +7,12 @@ export type { DefinedEvent } from './UIWebGPU'
 
 export type UIOptions = Omit<UIWebGPUOptions, 'loadYoga' | 'defined_events'> & EventOptions<UI> & {
     register_platform_events?: boolean
+    yoga?: boolean
 }
 
 export default class UI extends UIWebGPU {
-    static async create({ register_platform_events = true, ...options }: UIOptions) {
-        const ui = new UI({ ...options, loadYoga } as UIWebGPUOptions)
+    static async create({ register_platform_events = true, yoga = true, ...options }: UIOptions) {
+        const ui = new UI({ ...options, loadYoga: yoga ? loadYoga : undefined } as UIWebGPUOptions)
         await ui.initialize()
         if (register_platform_events) ui.registerPlatformEvents()
         return { ui }

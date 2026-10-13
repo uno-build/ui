@@ -418,8 +418,7 @@ async function createFixture({ yoga = true } = {}) {
         createBindGroup() { return {} },
     }
     const renderer: any = new RendererWebGPU({
-        yoga,
-        loadYoga,
+        loadYoga: yoga ? loadYoga : undefined,
         resources: {
             device,
             format: 'rgba8unorm',

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { loadYoga } from 'yoga-layout/load'
 import RendererWebGPU from '../../src/renderer/RendererWebGPU.ts'
 import { OPERATIONS, RESOURCE_EVENT } from '../../src/core/constants.ts'
 import Operations from '../../src/core/Operations.ts'
@@ -5090,6 +5091,7 @@ function collectRenderData(renderer, nodes, single_record_parts = 0) {
 function createRenderer(image_manager = createImageManager(), font_manager = createFontManager()) {
     const device = createFakeDevice()
     const renderer = new RendererWebGPU({
+        loadYoga,
         resources: {
             image_manager,
             font_manager,

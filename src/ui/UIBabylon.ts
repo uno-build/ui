@@ -23,6 +23,7 @@ export type UIBabylonOptions<
     },
 > = Omit<UIWebGPUBabylonOptions<TMaterial, TPlane>, 'loadYoga' | 'defined_events'> & EventOptions<UIBabylon> & {
     register_platform_events?: boolean
+    yoga?: boolean
 }
 
 export default class UIBabylon extends UIWebGPUBabylon {
@@ -33,13 +34,16 @@ export default class UIBabylon extends UIWebGPUBabylon {
             geometry: Geometry | null
         },
     >(
-        { register_platform_events = true, ...options }: UIBabylonOptions<TMaterial, TPlane>,
+        { register_platform_events = true, yoga = true, ...options }: UIBabylonOptions<TMaterial, TPlane>,
     ): Promise<
         {
             ui: UIBabylon
         } & UIWorldSpaceOutput<Texture, TMaterial, TPlane>
     > {
-        const ui = new UIBabylon({ ...options, loadYoga } as UIWebGPUBabylonOptions<TMaterial, TPlane>)
+        const ui = new UIBabylon({
+            ...options,
+            loadYoga: yoga ? loadYoga : undefined,
+        } as UIWebGPUBabylonOptions<TMaterial, TPlane>)
         const resources = await ui.initialize()
         if (register_platform_events) ui.registerPlatformEvents()
         return { ui, ...resources } as unknown as Awaited<ReturnType<typeof UIBabylon.create<TMaterial, TPlane>>>

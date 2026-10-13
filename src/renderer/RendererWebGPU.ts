@@ -66,12 +66,13 @@ import Segmenter from './pretext/segmenter'
 export type WebGPUNode = Node<undefined>
 export type WebGPUOperations = Operations<undefined>
 export type RendererWebGPUOutput = Pick<ResourcesWebGPU, 'adapter' | 'device' | 'context' | 'format'>
-// Without Yoga, every node is laid out as an absolutely positioned box (src/layouter/absolute.ts).
 export type RendererWebGPUOptions = {
     resources: ResourcesWebGPU
+    // Without it, every node is laid out as an absolutely positioned box (src/layouter/absolute.ts).
+    loadYoga?: typeof loadYoga | undefined
     image_min_filter?: 'linear' | 'nearest' | undefined
     image_mag_filter?: 'linear' | 'nearest' | undefined
-} & ({ yoga?: true, loadYoga: typeof loadYoga } | { yoga: false, loadYoga?: typeof loadYoga })
+}
 
 type ComputedStyle = {
     value: string
@@ -102,8 +103,6 @@ export default class RendererWebGPU extends Renderer<
     RendererWebGPUOutput
 > {
     declare loadYoga: typeof loadYoga | undefined
-
-    private yoga: boolean
 
     private resources: ResourcesWebGPU | null
 
@@ -164,7 +163,6 @@ export default class RendererWebGPU extends Renderer<
         resources,
         image_min_filter = 'linear',
         image_mag_filter = 'linear',
-        yoga = true,
         loadYoga,
     }: RendererWebGPUOptions) {
         super()
@@ -172,12 +170,12 @@ export default class RendererWebGPU extends Renderer<
         this.image_manager = resources.image_manager
         this.image_min_filter = image_min_filter
         this.image_mag_filter = image_mag_filter
-        this.yoga = yoga
         this.loadYoga = loadYoga
     }
 
     async init(): Promise<RendererWebGPUOutput> {
-        this.layouter = this.yoga ? await createYogaLayouter({ loadYoga: this.loadYoga }) : createAbsoluteLayouter()
+        this.layouter =
+            this.loadYoga === undefined ? createAbsoluteLayouter() : await createYogaLayouter({ loadYoga: this.loadYoga })
         this.position_buffer = this.resources!.device.createBuffer({
             size: POSITION_VERTICES.byteLength,
             usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
@@ -449,7 +447,7 @@ export default class RendererWebGPU extends Renderer<
 
     afterUpdate(nodes: Node<undefined>[], operations: Operations<undefined>) {
         // Without Yoga the UI only shows information: nothing scrolls.
-        if (!this.yoga) {
+        if (this.loadYoga === undefined) {
             return
         }
 
