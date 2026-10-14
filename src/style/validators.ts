@@ -69,33 +69,6 @@ export function validateTextStroke(value: string) {
     return validateColor(values[1]!)
 }
 
-export function validateTranslate(value: string) {
-    const values = value.split(/\s+/)
-    if (values.length !== 1 && values.length !== 2) {
-        return 'expected x [y]'
-    }
-
-    for (const translate_value of values) {
-        const error = validatePx(translate_value)
-        if (error !== undefined) {
-            return error
-        }
-    }
-}
-
-export function validateScale(value: string) {
-    const values = value.split(/\s+/)
-    if (values.length !== 1 && values.length !== 2) {
-        return 'expected x [y]'
-    }
-
-    for (const scale_value of values) {
-        const error = validateNumber(scale_value) ?? validateNonNegative(scale_value)
-        if (error !== undefined) {
-            return error
-        }
-    }
-}
 export function validateEnum(value: string, values: Record<string, number>) {
     if (typeof value !== 'string' || !Object.prototype.hasOwnProperty.call(values, value)) {
         return `expected one of ${Object.keys(values).join(', ')}`

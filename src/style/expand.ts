@@ -58,6 +58,14 @@ function expand(property: string, value: string): Record<string, string> | undef
     if (property === 'backgroundPosition') {
         return expandBackgroundPosition(value)
     }
+
+    if (property === 'translate') {
+        return expandTranslate(value)
+    }
+
+    if (property === 'scale') {
+        return expandScale(value)
+    }
 }
 
 function splitShorthand(value: string) {
@@ -238,6 +246,46 @@ function expandBackgroundPosition(value: string) {
     return {
         backgroundPositionX: x,
         backgroundPositionY: y,
+    }
+}
+
+function expandTranslate(value: string) {
+    if (normalizeToLowercase(normalizeTrim(value)) === KEYWORD.UNSET) {
+        return {
+            translateX: KEYWORD.UNSET,
+            translateY: KEYWORD.UNSET,
+        }
+    }
+
+    const [x, y = '0px', ...rest] = normalizeTrim(value).split(/\s+/)
+
+    if (rest.length > 0) {
+        throw new Error('expected x [y]')
+    }
+
+    return {
+        translateX: x!,
+        translateY: y,
+    }
+}
+
+function expandScale(value: string) {
+    if (normalizeToLowercase(normalizeTrim(value)) === KEYWORD.UNSET) {
+        return {
+            scaleX: KEYWORD.UNSET,
+            scaleY: KEYWORD.UNSET,
+        }
+    }
+
+    const [x, y = x, ...rest] = normalizeTrim(value).split(/\s+/)
+
+    if (rest.length > 0) {
+        throw new Error('expected x [y]')
+    }
+
+    return {
+        scaleX: x!,
+        scaleY: y!,
     }
 }
 

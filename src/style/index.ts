@@ -45,7 +45,6 @@ import {
     TEXT_SHADOW_DEFINITION,
     TEXT_STROKE_DEFINITION,
     TRANSLATE_DEFINITION,
-    SCALE_DEFINITION,
 } from './definitions'
 
 export function validateStyle(name: string, value: unknown) {
@@ -215,11 +214,29 @@ export const STYLE = {
     OPACITY: createStyle('opacity', (name, value) => [
         { name, value, definition: OPACITY_DEFINITION },
     ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
-    TRANSLATE: createStyle('translate', (name, value) => [
+    TRANSLATE: createStyle('translate', (name, value) =>
+        expandHelper(name, value, {
+            translateX: TRANSLATE_DEFINITION,
+            translateY: TRANSLATE_DEFINITION,
+        })
+    ),
+    TRANSLATEX: createStyle('translateX', (name, value) => [
         { name, value, definition: TRANSLATE_DEFINITION },
     ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
-    SCALE: createStyle('scale', (name, value) => [
-        { name, value, definition: SCALE_DEFINITION },
+    TRANSLATEY: createStyle('translateY', (name, value) => [
+        { name, value, definition: TRANSLATE_DEFINITION },
+    ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
+    SCALE: createStyle('scale', (name, value) =>
+        expandHelper(name, value, {
+            scaleX: NUMBER_DEFINITION,
+            scaleY: NUMBER_DEFINITION,
+        })
+    ),
+    SCALEX: createStyle('scaleX', (name, value) => [
+        { name, value, definition: NUMBER_DEFINITION },
+    ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
+    SCALEY: createStyle('scaleY', (name, value) => [
+        { name, value, definition: NUMBER_DEFINITION },
     ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
     BOXSHADOW: createStyle('boxShadow', (name, value) => [
         { name, value, definition: BOX_SHADOW_DEFINITION },

@@ -93,7 +93,9 @@ test('RendererDom removes translate and scale while it reads layout and restores
     ;(renderer as any).elements.set(plain_node, plain_element)
     for (const [name, value] of [['translate', '10px 20px'], ['scale', '2']]) {
         const style = Style.resolveStyle(name, value)
-        node.styles[name] = style.expanded[0]
+        for (const expanded_style of style.expanded) {
+            node.styles[expanded_style.name] = expanded_style
+        }
         ;(renderer as any).updateStyle(node, style)
     }
     const operations = new Operations()
@@ -103,7 +105,7 @@ test('RendererDom removes translate and scale while it reads layout and restores
     expect([element.style, plain_element.style]).toEqual([{ translate: 'none', scale: 'none' }, {}])
 
     renderer.afterUpdate([node, plain_node] as any, operations)
-    expect([element.style, plain_element.style]).toEqual([{ translate: '10px 20px', scale: '2' }, {}])
+    expect([element.style, plain_element.style]).toEqual([{ translate: '10px 20px', scale: '2 2' }, {}])
 })
 
 test('RendererDom resolves natural and unset lineHeight from registered font metrics', () => {

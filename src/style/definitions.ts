@@ -26,8 +26,6 @@ import {
     validateBoxShadow,
     validateTextShadow,
     validateTextStroke,
-    validateTranslate,
-    validateScale,
     validateInteger,
     validateNumber,
     validatePx,
@@ -46,8 +44,6 @@ import {
     parseBoxShadow,
     parseTextShadow,
     parseTextStroke,
-    parseTranslate,
-    parseScale,
     parseColor,
     parseAuto,
     parseInteger,
@@ -99,17 +95,8 @@ export const OPACITY_DEFINITION: StyleRule[] = [
 export const TRANSLATE_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [validateTranslate],
-        parse: [parseTranslate],
-    },
-    ...UNSET_DEFINITION,
-]
-
-export const SCALE_DEFINITION: StyleRule[] = [
-    {
-        normalize: [normalizeTrim, normalizeToLowercase],
-        validate: [validateScale],
-        parse: [parseScale],
+        validate: [validatePx],
+        parse: [parsePx],
     },
     ...UNSET_DEFINITION,
 ]

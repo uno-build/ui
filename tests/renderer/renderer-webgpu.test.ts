@@ -4793,12 +4793,12 @@ test('ancestor metrics move descendants and clips by every translate in the chai
         layout: { x: 40, y: 50, width: 80, height: 70 },
         computed_border: { [EDGE.top]: 2, [EDGE.right]: 4, [EDGE.bottom]: 6, [EDGE.left]: 8 },
         overflow: OVERFLOW.hidden,
-        styles: { translate: resolveStyle('translate', '5px -3px').expanded[0] },
+        styles: resolveStyles('translate', '5px -3px'),
     })
     const child = createNode({
         parent,
         layout: { x: 50, y: 60, width: 80, height: 70 },
-        styles: { translate: resolveStyle('translate', '1px 2px').expanded[0] },
+        styles: resolveStyles('translate', '1px 2px'),
     })
     root.children.push(parent)
     parent.children.push(child)
@@ -4824,14 +4824,14 @@ test('ancestor metrics scale descendants and clips about each box center after t
         computed_border: { [EDGE.top]: 2, [EDGE.right]: 4, [EDGE.bottom]: 6, [EDGE.left]: 8 },
         overflow: OVERFLOW.hidden,
         styles: {
-            scale: resolveStyle('scale', '2 0.5').expanded[0],
-            translate: resolveStyle('translate', '7px 3px').expanded[0],
+            ...resolveStyles('scale', '2 0.5'),
+            ...resolveStyles('translate', '7px 3px'),
         },
     })
     const child = createNode({
         parent,
         layout: { x: 10, y: 20, width: 20, height: 10 },
-        styles: { scale: resolveStyle('scale', '0.5').expanded[0] },
+        styles: resolveStyles('scale', '0.5'),
     })
     root.children.push(parent)
     parent.children.push(child)
@@ -4871,8 +4871,8 @@ test('RendererWebGPU scales panel size, borders, radii, shadow, and background i
     const layout = { x: 0, y: 0, width: 20, height: 10 }
     const [panel, scaled_panel, unit_panel] = collectRenderData(renderer, [
         createNode({ layout, styles }),
-        createNode({ layout, styles: { ...styles, scale: resolveStyle('scale', '2 0.5').expanded[0] } }),
-        createNode({ layout, styles: { ...styles, scale: resolveStyle('scale', '1').expanded[0] } }),
+        createNode({ layout, styles: { ...styles, ...resolveStyles('scale', '2 0.5') } }),
+        createNode({ layout, styles: { ...styles, ...resolveStyles('scale', '1') } }),
     ]).panels
 
     expect(unit_panel).toEqual(panel)
@@ -4897,7 +4897,7 @@ test('RendererWebGPU keeps glyphs untransformed and gives their run the node tra
         layout: { x: 0, y: 0, width: 4, height: 8 },
         styles: {
             fontSize: { parsed: { value: 5, kind: UNIT.PX } },
-            scale: resolveStyle('scale', '2 0.5').expanded[0],
+            ...resolveStyles('scale', '2 0.5'),
             textShadow: resolveStyle('textShadow', '1px 2px 3px #123').expanded[0],
             textStroke: resolveStyle('textStroke', '1px #123').expanded[0],
         },
@@ -4956,7 +4956,7 @@ test('RendererWebGPU applies translate and scale changes to the text run without
     }
 
     for (const [name, value] of [['translate', '5px 6px'], ['scale', '2']]) {
-        node.styles[name] = resolveStyle(name, value).expanded[0]
+        Object.assign(node.styles, resolveStyles(name, value))
         renderer.update(nodes, createOperations([{ op: OPERATIONS.STYLE, node, style: resolveStyle(name, value) }]))
     }
 
@@ -4969,7 +4969,7 @@ test('RendererWebGPU applies translate and scale changes to the text run without
 test('RendererWebGPU draws nothing for a zero scale, also under a clip on the other axis', () => {
     const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
     const root = createNode({ styles: { overflowY: { parsed: { enum: OVERFLOW.hidden } } } })
-    const parent = createNode({ parent: root, styles: { scale: resolveStyle('scale', '0 1').expanded[0] } })
+    const parent = createNode({ parent: root, styles: resolveStyles('scale', '0 1') })
     const child = createNode({ parent, text_content: 'A' })
     root.children.push(parent)
     parent.children.push(child)
@@ -5345,6 +5345,10 @@ function createFakeDevice({ max_texture_array_layers = 8 } = {}) {
 
 function getAtlasTextures(device) {
     return device.textures.filter((texture) => texture.descriptor.usage & GPUTextureUsage.TEXTURE_BINDING)
+}
+
+function resolveStyles(name, value) {
+    return Object.fromEntries(resolveStyle(name, value).expanded.map((style) => [style.name, style]))
 }
 
 function createNode({

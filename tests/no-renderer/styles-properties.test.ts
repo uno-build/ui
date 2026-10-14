@@ -660,9 +660,22 @@ test('opacity', () => {
 })
 
 test('translate', () => {
-    expectResolved('translate', ' 10PX -2.5px ', '10px -2.5px', { x: 10, y: -2.5 })
-    expectResolved('translate', '-4px', '-4px', { x: -4, y: 0 })
-    expectKeywordUnit('translate', ' Unset ', 'unset')
+    expectUnit('translateX', ' 10PX ', '10px', 10, 'px')
+    expectUnit('translateY', '-2.5px', '-2.5px', -2.5, 'px')
+    expectKeywordUnit('translateX', ' Unset ', 'unset')
+    expectInvalid('translateY', '10%', /expected px unit/)
+    expect(Style.resolveStyle('translate', ' 10PX -2.5px ').expanded).toEqual([
+        { name: 'translateX', value: '10px', parsed: { value: 10, kind: 'px' } },
+        { name: 'translateY', value: '-2.5px', parsed: { value: -2.5, kind: 'px' } },
+    ])
+    expect(Style.resolveStyle('translate', '-4px').expanded).toEqual([
+        { name: 'translateX', value: '-4px', parsed: { value: -4, kind: 'px' } },
+        { name: 'translateY', value: '0px', parsed: { value: 0, kind: 'px' } },
+    ])
+    expect(Style.resolveStyle('translate', ' Unset ').expanded).toEqual([
+        { name: 'translateX', value: 'unset', parsed: { kind: 'unset' } },
+        { name: 'translateY', value: 'unset', parsed: { kind: 'unset' } },
+    ])
     expectInvalid('translate', '1px 2px 3px', /expected x \[y\]/)
     expectInvalid('translate', '1px 2rem', /expected px unit/)
     expectInvalid('translate', '10%', /expected px unit/)
@@ -672,10 +685,22 @@ test('translate', () => {
 })
 
 test('scale', () => {
-    expectResolved('scale', ' 1.5 ', '1.5', { x: 1.5, y: 1.5 })
-    expectResolved('scale', '2 0.5', '2 0.5', { x: 2, y: 0.5 })
-    expectResolved('scale', '0', '0', { x: 0, y: 0 })
-    expectKeywordUnit('scale', ' Unset ', 'unset')
+    expectNumber('scaleX', ' 1.5 ', '1.5', 1.5)
+    expectNumber('scaleY', '0', '0', 0)
+    expectKeywordUnit('scaleY', ' Unset ', 'unset')
+    expectInvalid('scaleX', '-1', /expected non-negative value/)
+    expect(Style.resolveStyle('scale', ' 1.5 ').expanded).toEqual([
+        { name: 'scaleX', value: '1.5', parsed: { value: 1.5 } },
+        { name: 'scaleY', value: '1.5', parsed: { value: 1.5 } },
+    ])
+    expect(Style.resolveStyle('scale', '2 0.5').expanded).toEqual([
+        { name: 'scaleX', value: '2', parsed: { value: 2 } },
+        { name: 'scaleY', value: '0.5', parsed: { value: 0.5 } },
+    ])
+    expect(Style.resolveStyle('scale', ' Unset ').expanded).toEqual([
+        { name: 'scaleX', value: 'unset', parsed: { kind: 'unset' } },
+        { name: 'scaleY', value: 'unset', parsed: { kind: 'unset' } },
+    ])
     expectInvalid('scale', '1 2 3', /expected x \[y\]/)
     expectInvalid('scale', '-1', /expected non-negative value/)
     expectInvalid('scale', '50%', /expected number/)

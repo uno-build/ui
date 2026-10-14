@@ -83,16 +83,17 @@ export function createNodeMetricsResolver(single_record_parts: number = 0) {
         for (let index = pending_count; index >= 0; index--) {
             const current_node = index === 0 ? node : pending_nodes[index - 1]
             const { layout, styles } = current_node
-            const translate = styles.translate?.parsed
-            const node_scale_x = styles.scale?.parsed.x ?? 1
-            const node_scale_y = styles.scale?.parsed.y ?? 1
+            const translate_x = styles.translateX?.parsed.value ?? 0
+            const translate_y = styles.translateY?.parsed.value ?? 0
+            const node_scale_x = styles.scaleX?.parsed.value ?? 1
+            const node_scale_y = styles.scaleY?.parsed.value ?? 1
             // In its parent's space, a point p of the box goes to center + translate + scale * (p - center).
             const offset_x =
                 current_metrics.offset_x +
-                current_metrics.scale_x * ((translate?.x ?? 0) + (layout.x + layout.width / 2) * (1 - node_scale_x))
+                current_metrics.scale_x * (translate_x + (layout.x + layout.width / 2) * (1 - node_scale_x))
             const offset_y =
                 current_metrics.offset_y +
-                current_metrics.scale_y * ((translate?.y ?? 0) + (layout.y + layout.height / 2) * (1 - node_scale_y))
+                current_metrics.scale_y * (translate_y + (layout.y + layout.height / 2) * (1 - node_scale_y))
             const scale_x = current_metrics.scale_x * node_scale_x
             const scale_y = current_metrics.scale_y * node_scale_y
             const x = layout.x * scale_x + offset_x
@@ -205,13 +206,14 @@ export function getSingleNodeMetrics(node: any) {
         }
         has_clip ||= clip_x || clip_y
         // Applied after the clip: an ancestor's translate and scale move its own clip, its scroll does not.
-        const translate = ancestor.styles.translate?.parsed
-        const ancestor_scale_x = ancestor.styles.scale?.parsed.x ?? 1
-        const ancestor_scale_y = ancestor.styles.scale?.parsed.y ?? 1
+        const translate_x = ancestor.styles.translateX?.parsed.value ?? 0
+        const translate_y = ancestor.styles.translateY?.parsed.value ?? 0
+        const ancestor_scale_x = ancestor.styles.scaleX?.parsed.value ?? 1
+        const ancestor_scale_y = ancestor.styles.scaleY?.parsed.value ?? 1
         const center_x = ancestor.layout.x + ancestor.layout.width / 2
         const center_y = ancestor.layout.y + ancestor.layout.height / 2
-        offset_x = offset_x * ancestor_scale_x + (translate?.x ?? 0) + center_x * (1 - ancestor_scale_x)
-        offset_y = offset_y * ancestor_scale_y + (translate?.y ?? 0) + center_y * (1 - ancestor_scale_y)
+        offset_x = offset_x * ancestor_scale_x + translate_x + center_x * (1 - ancestor_scale_x)
+        offset_y = offset_y * ancestor_scale_y + translate_y + center_y * (1 - ancestor_scale_y)
         scale_x *= ancestor_scale_x
         scale_y *= ancestor_scale_y
         // A zero scale turns infinite sides into NaN, but it also empties the box: it is neither drawn nor hit.
@@ -223,11 +225,12 @@ export function getSingleNodeMetrics(node: any) {
     }
 
     // The node's own transform goes before its ancestors' one and does not move its clip.
-    const translate = node.styles.translate?.parsed
-    const node_scale_x = node.styles.scale?.parsed.x ?? 1
-    const node_scale_y = node.styles.scale?.parsed.y ?? 1
-    const node_offset_x = (translate?.x ?? 0) + (node.layout.x + node.layout.width / 2) * (1 - node_scale_x)
-    const node_offset_y = (translate?.y ?? 0) + (node.layout.y + node.layout.height / 2) * (1 - node_scale_y)
+    const translate_x = node.styles.translateX?.parsed.value ?? 0
+    const translate_y = node.styles.translateY?.parsed.value ?? 0
+    const node_scale_x = node.styles.scaleX?.parsed.value ?? 1
+    const node_scale_y = node.styles.scaleY?.parsed.value ?? 1
+    const node_offset_x = translate_x + (node.layout.x + node.layout.width / 2) * (1 - node_scale_x)
+    const node_offset_y = translate_y + (node.layout.y + node.layout.height / 2) * (1 - node_scale_y)
 
     return {
         x: node.layout.x * scale_x * node_scale_x + offset_x + node_offset_x * scale_x,

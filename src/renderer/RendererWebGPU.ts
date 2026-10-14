@@ -90,8 +90,10 @@ type ComputedStyle = {
 
 const SUBTREE_STYLE_NAMES = new Set([
     STYLE.OPACITY.name,
-    STYLE.TRANSLATE.name,
-    STYLE.SCALE.name,
+    STYLE.TRANSLATEX.name,
+    STYLE.TRANSLATEY.name,
+    STYLE.SCALEX.name,
+    STYLE.SCALEY.name,
     STYLE.OVERFLOWX.name,
     STYLE.OVERFLOWY.name,
 ])
