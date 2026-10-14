@@ -1,8 +1,9 @@
 import type UI from './UI'
 import type { EventSource, EventPayload, UIEventMap } from '../events/types'
 import type { NodeLayout, StyleName, ResolvedStyle, StyleUpdate } from '../style/types'
+import type { NumberStyleName } from '../style'
 
-import { resolveStyle, validateStyle } from '../style'
+import { resolveNumberStyle, resolveStyle, validateStyle } from '../style'
 import { EVENT } from '../events/constants'
 import { OPERATIONS } from './constants'
 
@@ -182,8 +183,26 @@ export default class Node<TElement = unknown> {
         }
     }
 
-    style(name: StyleName | (string & {}), value: string) {
+    style(name: NumberStyleName, value: number): void
+    style(name: StyleName | (string & {}), value: string): void
+    style(name: StyleName | (string & {}), value: string | number) {
         if (this.ui === null) {
+            return
+        }
+
+        if (typeof value === 'number') {
+            const resolved_style = resolveNumberStyle(name, value)
+            const style = resolved_style.expanded[0]!
+
+            this.styles_declared[resolved_style.name] = resolved_style
+
+            if (this.styles[style.name]?.value !== style.value) {
+                this.styles[style.name] = {
+                    value: style.value,
+                    parsed: style.parsed,
+                }
+                this.ui.operations.add({ op: OPERATIONS.STYLE, node: this, style: resolved_style })
+            }
             return
         }
 

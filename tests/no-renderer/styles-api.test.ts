@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import Style from '../../src/style'
+import Style, { NUMBER_STYLE, resolveNumberStyle } from '../../src/style'
 
 test('validateStyle', () => {
     expect(Style.validateStyle('  background-color  ', '#f00')).toBe('backgroundColor')
@@ -413,4 +413,34 @@ test('enumStyle maps all enum properties', () => {
             Style.resolveStyle(name, 'invalid-value')
         }).toThrow(/expected one of/)
     }
+})
+
+test('numbers resolve like the equivalent px or unitless string', () => {
+    for (const [name, number_style] of Object.entries(NUMBER_STYLE)) {
+        for (const value of [0, 0.5, 1, 12.5, -1, -12.5, 1.5]) {
+            const string_value = `${value}${number_style.unit}`
+            let expected
+            try {
+                expected = Style.resolveStyle(name, string_value)
+            } catch (err) {
+                const message = (err as Error).message.replace(`'${string_value}'`, `'${value}'`)
+                expect(() => resolveNumberStyle(name, value), `${name} ${value}`).toThrow(message)
+                continue
+            }
+            expect(resolveNumberStyle(name, value), `${name} ${value}`).toEqual(expected)
+        }
+    }
+})
+
+test('numbers normalize names and reject non-finite values and non-numeric styles', () => {
+    expect(resolveNumberStyle('max-width', 10).expanded).toEqual([
+        { name: 'maxWidth', value: '10px', parsed: { value: 10, kind: 'px' } },
+    ])
+    expect(() => resolveNumberStyle('width', NaN)).toThrow(/expected number/)
+    expect(() => resolveNumberStyle('width', Infinity)).toThrow(/expected number/)
+    expect(() => resolveNumberStyle('zIndex', 1.5)).toThrow(/expected integer/)
+    expect(() => resolveNumberStyle('opacity', 1.5)).toThrow(/expected value between 0 and 1/)
+    expect(() => resolveNumberStyle('padding', 10)).toThrow(/property 'padding' does not accept numbers/)
+    expect(() => resolveNumberStyle('backgroundColor', 1)).toThrow(/does not accept numbers/)
+    expect(() => resolveNumberStyle('constructor', 1)).toThrow(/does not accept numbers/)
 })
