@@ -2,9 +2,10 @@ import { UNIT } from './constants'
 import { parseEnum } from './parsers'
 import { validateEnum } from './validators'
 
+const UNIT_RE = new RegExp(`^(-?(?:\\d+|\\d*\\.\\d+))(${Object.values(UNIT).join('|')})$`, 'i')
+
 export function readUnit(value: string) {
-    const regex = new RegExp(`^(-?(?:\\d+|\\d*\\.\\d+))(${Object.values(UNIT).join('|')})$`, 'i')
-    const match = value.match(regex)
+    const match = value.match(UNIT_RE)
 
     if (!match) {
         return undefined

@@ -2,7 +2,7 @@ import type { ResolvedStyle, StyleUpdate, StyleRule, StyleContext } from './type
 
 export type * from './types'
 
-import { normalizeStyleName, normalizeStyleKey } from './normalizers'
+import { normalizeStyleName } from './normalizers'
 import { readUnit, runPipeline, runValidators } from './utils'
 import { expandProperty } from './expand'
 import { UNIT, RECORD_PANEL, RECORD_TEXT_RUN, RECORD_GLYPHS, RECORD_TEXT, RECORD_ALL } from './constants'
@@ -53,10 +53,9 @@ export function validateStyle(name: string, value: unknown) {
         throw new Error(`style name must be a string, got '${typeof name}'`)
     }
 
-    const normalized_name = normalizeStyleName(name, STYLE)
-    const normalized_key = normalizeStyleKey(normalized_name)
+    const normalized_name = Object.hasOwn(STYLE_BY_NAME, name) ? name : normalizeStyleName(name, STYLE)
 
-    if (!STYLE[normalized_key as keyof typeof STYLE]) {
+    if (!Object.hasOwn(STYLE_BY_NAME, normalized_name)) {
         throw new Error(`unsupported property '${name}'`)
     }
 
@@ -69,8 +68,7 @@ export function validateStyle(name: string, value: unknown) {
 }
 
 export function resolveStyle(name: string, value: string): StyleUpdate {
-    const normalized_key = normalizeStyleKey(name)
-    const style_parser = STYLE[normalized_key as keyof typeof STYLE]
+    const style_parser = STYLE_BY_NAME[name]!
 
     try {
         return {
@@ -86,7 +84,7 @@ export function resolveStyle(name: string, value: string): StyleUpdate {
 }
 
 export function isPaintStyle(name: string) {
-    return STYLE[normalizeStyleKey(name) as keyof typeof STYLE].painter === true
+    return STYLE_BY_NAME[name]!.painter === true
 }
 
 export function computeStyleValue(style: ResolvedStyle | undefined, context: StyleContext) {
@@ -176,6 +174,7 @@ function createStyle<TName extends string>(name: TName, shorthandCallback: (name
                     const parsed_value = runPipeline(definition_item.parse, normalized_value)
                     styles.push({ name, ...parsed_value })
                     resolved = true
+                    break
                 }
 
                 if (!resolved) {
