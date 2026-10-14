@@ -37,9 +37,12 @@ export function runPipeline(fns: Array<(value: any, context?: unknown) => any> =
     return fns.reduce((current, fn) => fn(current, context), value)
 }
 
-export function runValidators(fns: Array<(value: string) => void> = [], value: string) {
+export function runValidators(fns: Array<(value: string) => string | undefined> = [], value: string) {
     for (const fn of fns) {
-        fn(value)
+        const error = fn(value)
+        if (error !== undefined) {
+            return error
+        }
     }
 }
 

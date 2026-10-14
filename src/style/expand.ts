@@ -88,13 +88,8 @@ function splitShorthand(value: string) {
     return values
 }
 
-function isValid(value: string, validate: (value: string) => void) {
-    try {
-        validate(value)
-        return true
-    } catch {
-        return false
-    }
+function isValid(value: string, validate: (value: string) => string | undefined) {
+    return validate(value) === undefined
 }
 
 function parseBorder(value: string, resolve: (key: string) => string) {

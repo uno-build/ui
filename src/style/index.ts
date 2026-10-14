@@ -158,16 +158,15 @@ function createStyle<TName extends string>(name: TName, shorthandCallback: (name
             const styles = []
 
             for (const { name, value, definition } of style_shorthand) {
-                let first_error: unknown
+                let first_error: string | undefined
                 let resolved = false
 
                 for (const definition_item of definition) {
                     const normalized_value = runPipeline(definition_item.normalize, value)
+                    const error = runValidators(definition_item.validate, normalized_value)
 
-                    try {
-                        runValidators(definition_item.validate, normalized_value)
-                    } catch (err) {
-                        first_error ??= err
+                    if (error !== undefined) {
+                        first_error ??= error
                         continue
                     }
 
@@ -178,7 +177,7 @@ function createStyle<TName extends string>(name: TName, shorthandCallback: (name
                 }
 
                 if (!resolved) {
-                    throw first_error
+                    throw new Error(first_error)
                 }
             }
 
