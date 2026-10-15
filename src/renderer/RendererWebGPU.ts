@@ -22,6 +22,7 @@ import {
     RECORD_ALL,
 } from '../style/constants'
 import createYogaLayouter from '../layouter/yoga'
+import createAbsoluteLayouter from '../layouter/absolute'
 import {
     FEATURES,
     collectPanelData,
@@ -67,7 +68,8 @@ export type WebGPUOperations = Operations<undefined>
 export type RendererWebGPUOutput = Pick<ResourcesWebGPU, 'adapter' | 'device' | 'context' | 'format'>
 export type RendererWebGPUOptions = {
     resources: ResourcesWebGPU
-    loadYoga: typeof loadYoga
+    // Without it, every node is laid out as an absolutely positioned box (src/layouter/absolute.ts).
+    loadYoga?: typeof loadYoga | undefined
     image_min_filter?: 'linear' | 'nearest' | undefined
     image_mag_filter?: 'linear' | 'nearest' | undefined
 }
@@ -86,7 +88,15 @@ type ComputedStyle = {
     }
 }
 
-const SUBTREE_STYLE_NAMES = new Set([STYLE.OPACITY.name, STYLE.OVERFLOWX.name, STYLE.OVERFLOWY.name])
+const SUBTREE_STYLE_NAMES = new Set([
+    STYLE.OPACITY.name,
+    STYLE.TRANSLATEX.name,
+    STYLE.TRANSLATEY.name,
+    STYLE.SCALEX.name,
+    STYLE.SCALEY.name,
+    STYLE.OVERFLOWX.name,
+    STYLE.OVERFLOWY.name,
+])
 
 export default class RendererWebGPU extends Renderer<
     WebGPUDrawOptions,
@@ -94,7 +104,7 @@ export default class RendererWebGPU extends Renderer<
     undefined,
     RendererWebGPUOutput
 > {
-    declare loadYoga: typeof loadYoga
+    declare loadYoga: typeof loadYoga | undefined
 
     private resources: ResourcesWebGPU | null
 
@@ -166,7 +176,8 @@ export default class RendererWebGPU extends Renderer<
     }
 
     async init(): Promise<RendererWebGPUOutput> {
-        this.layouter = await createYogaLayouter({ loadYoga: this.loadYoga })
+        this.layouter =
+            this.loadYoga === undefined ? createAbsoluteLayouter() : await createYogaLayouter({ loadYoga: this.loadYoga })
         this.position_buffer = this.resources!.device.createBuffer({
             size: POSITION_VERTICES.byteLength,
             usage: globalThis.GPUBufferUsage.VERTEX | globalThis.GPUBufferUsage.COPY_DST,
@@ -404,8 +415,8 @@ export default class RendererWebGPU extends Renderer<
         }
     }
 
-    getLayout(node: Node<undefined>): ComputedLayout {
-        return this.layouter.getLayout(node)
+    getLayout(node: Node<undefined>, parent_changed: boolean): ComputedLayout {
+        return this.layouter.getNewLayout(node, parent_changed)
     }
 
     beforeUpdate(nodes: Node<undefined>[], operations: Operations<undefined>) {
@@ -437,6 +448,11 @@ export default class RendererWebGPU extends Renderer<
     }
 
     afterUpdate(nodes: Node<undefined>[], operations: Operations<undefined>) {
+        // Without Yoga the UI only shows information: nothing scrolls.
+        if (this.loadYoga === undefined) {
+            return
+        }
+
         if (operations.needUpdateLayout() || operations.needUpdateScrollMetrics()) {
             updateScrollMetrics(this.root_node, (node: any) => this.getNodeContentSize(node), operations)
         } else {
@@ -808,8 +824,8 @@ export default class RendererWebGPU extends Renderer<
         }
 
         const node_metrics = getNodeMetrics(node)
-        const { x, y, opacity, clip } = node_metrics
-        if (opacity <= 0 || isNodeClipped(node_metrics, width, height)) {
+        const { x, y, scale_x, scale_y, untransformed_x, untransformed_y, opacity, clip } = node_metrics
+        if (opacity <= 0 || isNodeClipped(node_metrics)) {
             return null
         }
 
@@ -834,8 +850,8 @@ export default class RendererWebGPU extends Renderer<
             const padding_top = node.layout.padding.top
             const padding_right = node.layout.padding.right
             const padding_left = node.layout.padding.left
-            const content_x = x + border_left + padding_left
-            const content_y = y + border_top + padding_top
+            const content_x = untransformed_x + border_left + padding_left
+            const content_y = untransformed_y + border_top + padding_top
             const content_width = width - border_left - border_right - padding_left - padding_right
             const natural_line_height = getTextNaturalLineHeight(font, font_size)
             const line_height = getTextLineHeight(node, natural_line_height, font_size, this.computeStyle)
@@ -878,10 +894,12 @@ export default class RendererWebGPU extends Renderer<
                 : undefined
             const effect_distance_range = font.json.atlas.effectDistanceRange ?? font.json.atlas.distanceRange
             const text_stroke_width = text_stroke?.width.value ?? 0
+            // The shaders scale stroke and blur widths by the smaller factor of a non-uniform scale.
+            const scale = Math.min(scale_x, scale_y)
             const text_stroke_width_limit =
-                (effect_distance_range * font_size) / (font.json.atlas.size * 2) - 0.5 / this.device_pixel_ratio
+                (effect_distance_range * font_size * scale) / (font.json.atlas.size * 2) - 0.5 / this.device_pixel_ratio
             const text_stroke_multisampling =
-                text_stroke_width > 0 && text_stroke_width > text_stroke_width_limit ? 1 : 0
+                text_stroke_width > 0 && text_stroke_width * scale > text_stroke_width_limit ? 1 : 0
             run = {
                 color: (node.styles.color as { parsed: { rgba: number[] } } | undefined)?.parsed.rgba ?? [0, 0, 0, 255],
                 font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.resources!.font_atlas_size],
@@ -892,6 +910,8 @@ export default class RendererWebGPU extends Renderer<
                 effect_distance_range,
                 text_stroke_multisampling,
                 text_stroke_color: text_stroke?.color ?? [0, 0, 0, 0],
+                // Maps the untransformed glyphs to the screen: p' = scale * p + offset.
+                transform: [scale_x, scale_y, x - untransformed_x * scale_x, y - untransformed_y * scale_y],
             }
         }
 

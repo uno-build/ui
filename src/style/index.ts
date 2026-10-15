@@ -1,8 +1,8 @@
-import type { ResolvedStyle, StyleUpdate, StyleRule, StyleContext } from './types'
+import type { ResolvedStyle, StyleUpdate, StyleRule, StyleContext, StyleName } from './types'
 
 export type * from './types'
 
-import { normalizeStyleName, normalizeStyleKey } from './normalizers'
+import { normalizeStyleName } from './normalizers'
 import { readUnit, runPipeline, runValidators } from './utils'
 import { expandProperty } from './expand'
 import { UNIT, RECORD_PANEL, RECORD_TEXT_RUN, RECORD_GLYPHS, RECORD_TEXT, RECORD_ALL } from './constants'
@@ -44,6 +44,7 @@ import {
     BOX_SHADOW_DEFINITION,
     TEXT_SHADOW_DEFINITION,
     TEXT_STROKE_DEFINITION,
+    TRANSLATE_DEFINITION,
 } from './definitions'
 
 export function validateStyle(name: string, value: unknown) {
@@ -51,10 +52,9 @@ export function validateStyle(name: string, value: unknown) {
         throw new Error(`style name must be a string, got '${typeof name}'`)
     }
 
-    const normalized_name = normalizeStyleName(name, STYLE)
-    const normalized_key = normalizeStyleKey(normalized_name)
+    const normalized_name = Object.hasOwn(STYLE_BY_NAME, name) ? name : normalizeStyleName(name, STYLE)
 
-    if (!STYLE[normalized_key as keyof typeof STYLE]) {
+    if (!Object.hasOwn(STYLE_BY_NAME, normalized_name)) {
         throw new Error(`unsupported property '${name}'`)
     }
 
@@ -67,8 +67,7 @@ export function validateStyle(name: string, value: unknown) {
 }
 
 export function resolveStyle(name: string, value: string): StyleUpdate {
-    const normalized_key = normalizeStyleKey(name)
-    const style_parser = STYLE[normalized_key as keyof typeof STYLE]
+    const style_parser = STYLE_BY_NAME[name]!
 
     try {
         return {
@@ -83,8 +82,46 @@ export function resolveStyle(name: string, value: string): StyleUpdate {
     }
 }
 
+export function resolveNumberStyle(name: string, value: number): StyleUpdate {
+    const normalized_name = Object.hasOwn(NUMBER_STYLE, name) ? name : normalizeStyleName(name, STYLE)
+
+    if (!Object.hasOwn(NUMBER_STYLE, normalized_name)) {
+        throw new Error(`property '${name}' does not accept numbers`)
+    }
+
+    const number_style = NUMBER_STYLE[normalized_name as NumberStyleName]
+    const error = validateNumberStyle(value, number_style)
+
+    if (error !== undefined) {
+        throw new Error(`invalid value '${value}' for property '${normalized_name}': ${error}`)
+    }
+
+    const style = {
+        name: normalized_name,
+        value: `${value}${number_style.unit}`,
+        parsed: number_style.unit === '' ? { value } : { value, kind: number_style.unit },
+    }
+
+    return { name: normalized_name, value: style.value, expanded: [style] }
+}
+
+function validateNumberStyle(value: number, number_style: NumberStyle) {
+    if (!Number.isFinite(value)) {
+        return 'expected number'
+    }
+    if (number_style.non_negative && value < 0) {
+        return 'expected non-negative value'
+    }
+    if (number_style.max_one && value > 1) {
+        return 'expected value between 0 and 1'
+    }
+    if (number_style.integer && !Number.isInteger(value)) {
+        return 'expected integer'
+    }
+}
+
 export function isPaintStyle(name: string) {
-    return STYLE[normalizeStyleKey(name) as keyof typeof STYLE].painter === true
+    return STYLE_BY_NAME[name]!.painter === true
 }
 
 export function computeStyleValue(style: ResolvedStyle | undefined, context: StyleContext) {
@@ -158,26 +195,26 @@ function createStyle<TName extends string>(name: TName, shorthandCallback: (name
             const styles = []
 
             for (const { name, value, definition } of style_shorthand) {
-                let first_error: unknown
+                let first_error: string | undefined
                 let resolved = false
 
                 for (const definition_item of definition) {
                     const normalized_value = runPipeline(definition_item.normalize, value)
+                    const error = runValidators(definition_item.validate, normalized_value)
 
-                    try {
-                        runValidators(definition_item.validate, normalized_value)
-                    } catch (err) {
-                        first_error ??= err
+                    if (error !== undefined) {
+                        first_error ??= error
                         continue
                     }
 
                     const parsed_value = runPipeline(definition_item.parse, normalized_value)
                     styles.push({ name, ...parsed_value })
                     resolved = true
+                    break
                 }
 
                 if (!resolved) {
-                    throw first_error
+                    throw new Error(first_error)
                 }
             }
 
@@ -214,6 +251,30 @@ export const STYLE = {
     ], { record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
     OPACITY: createStyle('opacity', (name, value) => [
         { name, value, definition: OPACITY_DEFINITION },
+    ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
+    TRANSLATE: createStyle('translate', (name, value) =>
+        expandHelper(name, value, {
+            translateX: TRANSLATE_DEFINITION,
+            translateY: TRANSLATE_DEFINITION,
+        })
+    ),
+    TRANSLATEX: createStyle('translateX', (name, value) => [
+        { name, value, definition: TRANSLATE_DEFINITION },
+    ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
+    TRANSLATEY: createStyle('translateY', (name, value) => [
+        { name, value, definition: TRANSLATE_DEFINITION },
+    ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
+    SCALE: createStyle('scale', (name, value) =>
+        expandHelper(name, value, {
+            scaleX: NUMBER_DEFINITION,
+            scaleY: NUMBER_DEFINITION,
+        })
+    ),
+    SCALEX: createStyle('scaleX', (name, value) => [
+        { name, value, definition: NUMBER_DEFINITION },
+    ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
+    SCALEY: createStyle('scaleY', (name, value) => [
+        { name, value, definition: NUMBER_DEFINITION },
     ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
     BOXSHADOW: createStyle('boxShadow', (name, value) => [
         { name, value, definition: BOX_SHADOW_DEFINITION },
@@ -486,6 +547,66 @@ export const STYLE = {
 }
 
 export const STYLE_BY_NAME = Object.fromEntries(Object.values(STYLE).map((style) => [style.name, style]))
+
+type NumberStyle = { unit: string, non_negative: boolean, max_one: boolean, integer: boolean }
+
+const PX_NUMBER: NumberStyle = { unit: UNIT.PX, non_negative: true, max_one: false, integer: false }
+const SIGNED_PX_NUMBER: NumberStyle = { unit: UNIT.PX, non_negative: false, max_one: false, integer: false }
+const NON_NEGATIVE_NUMBER: NumberStyle = { unit: '', non_negative: true, max_one: false, integer: false }
+const OPACITY_NUMBER: NumberStyle = { unit: '', non_negative: true, max_one: true, integer: false }
+const INTEGER_NUMBER: NumberStyle = { unit: '', non_negative: false, max_one: false, integer: true }
+
+// A number follows the first rule of the style's string definition: lengths are px, the rest are unitless.
+export const NUMBER_STYLE = {
+    zIndex: INTEGER_NUMBER,
+    opacity: OPACITY_NUMBER,
+    translateX: SIGNED_PX_NUMBER,
+    translateY: SIGNED_PX_NUMBER,
+    scaleX: NON_NEGATIVE_NUMBER,
+    scaleY: NON_NEGATIVE_NUMBER,
+    borderTopLeftRadius: PX_NUMBER,
+    borderTopRightRadius: PX_NUMBER,
+    borderBottomLeftRadius: PX_NUMBER,
+    borderBottomRightRadius: PX_NUMBER,
+    backgroundSizeWidth: PX_NUMBER,
+    backgroundSizeHeight: PX_NUMBER,
+    backgroundPositionX: SIGNED_PX_NUMBER,
+    backgroundPositionY: SIGNED_PX_NUMBER,
+    fontSize: PX_NUMBER,
+    lineHeight: NON_NEGATIVE_NUMBER,
+    letterSpacing: SIGNED_PX_NUMBER,
+    top: SIGNED_PX_NUMBER,
+    left: SIGNED_PX_NUMBER,
+    right: SIGNED_PX_NUMBER,
+    bottom: SIGNED_PX_NUMBER,
+    marginTop: SIGNED_PX_NUMBER,
+    marginLeft: SIGNED_PX_NUMBER,
+    marginRight: SIGNED_PX_NUMBER,
+    marginBottom: SIGNED_PX_NUMBER,
+    flexGrow: NON_NEGATIVE_NUMBER,
+    flexShrink: NON_NEGATIVE_NUMBER,
+    flexBasis: PX_NUMBER,
+    width: PX_NUMBER,
+    height: PX_NUMBER,
+    minWidth: PX_NUMBER,
+    minHeight: PX_NUMBER,
+    maxWidth: PX_NUMBER,
+    maxHeight: PX_NUMBER,
+    aspectRatio: NON_NEGATIVE_NUMBER,
+    borderTopWidth: PX_NUMBER,
+    borderLeftWidth: PX_NUMBER,
+    borderRightWidth: PX_NUMBER,
+    borderBottomWidth: PX_NUMBER,
+    paddingTop: PX_NUMBER,
+    paddingLeft: PX_NUMBER,
+    paddingRight: PX_NUMBER,
+    paddingBottom: PX_NUMBER,
+    gap: PX_NUMBER,
+    rowGap: PX_NUMBER,
+    columnGap: PX_NUMBER,
+} satisfies Partial<Record<StyleName, NumberStyle>>
+
+export type NumberStyleName = keyof typeof NUMBER_STYLE
 
 export default {
     validateStyle,

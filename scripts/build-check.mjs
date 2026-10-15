@@ -261,7 +261,6 @@ UIWebGPU.create({ resources, loadYoga }).then(({ ui }) => {
     ui.registerPlatformEvents() satisfies void
     ui.removePlatformEvents() satisfies void
 })
-// @ts-expect-error Raw classes require an explicit Yoga loader.
 UIWebGPU.create({ resources })
 // @ts-expect-error Automatic classes select their own Yoga loader.
 UI.create({ resources, loadYoga })
@@ -288,7 +287,6 @@ declare const three_plane: THREE.Mesh
 
 async function checkThree() {
     const options = { ...WORLD_OPTIONS }
-    // @ts-expect-error Raw classes require an explicit Yoga loader.
     UIWebGPUThree.create(options)
     // @ts-expect-error Automatic classes select their own Yoga loader.
     UIThree.create({ ...options, loadYoga })
@@ -368,7 +366,6 @@ declare const babylon_plane: BABYLON.Mesh
 
 async function checkBabylon() {
     const options = { ...WORLD_OPTIONS, scene: babylon_scene }
-    // @ts-expect-error Raw classes require an explicit Yoga loader.
     UIWebGPUBabylon.create(options)
     // @ts-expect-error Automatic classes select their own Yoga loader.
     UIBabylon.create({ ...options, loadYoga })
@@ -448,7 +445,6 @@ declare const babylon_lite_plane: BABYLON_LITE.Mesh
 
 async function checkBabylonLite() {
     const options = { ...WORLD_OPTIONS, scene: babylon_lite_scene, engine: babylon_lite_engine }
-    // @ts-expect-error Raw classes require an explicit Yoga loader.
     UIWebGPUBabylonLite.create(options)
     // @ts-expect-error Automatic classes select their own Yoga loader.
     UIBabylonLite.create({ ...options, loadYoga })
@@ -528,7 +524,6 @@ declare const play_canvas_plane: PLAYCANVAS.Entity
 
 async function checkPlayCanvas() {
     const options = { ...WORLD_OPTIONS, app: playcanvas_app }
-    // @ts-expect-error Raw classes require an explicit Yoga loader.
     UIWebGPUPlayCanvas.create(options)
     // @ts-expect-error Automatic classes select their own Yoga loader.
     UIPlayCanvas.create({ ...options, loadYoga })

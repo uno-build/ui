@@ -49,7 +49,7 @@ export function isSameLayout(a: NodeLayout, b: NodeLayout) {
     )
 }
 
-function isSameEdges(a: LayoutEdges | undefined, b: LayoutEdges | undefined) {
+export function isSameEdges(a: LayoutEdges | undefined, b: LayoutEdges | undefined) {
     return (
         a === b ||
         (a !== undefined &&

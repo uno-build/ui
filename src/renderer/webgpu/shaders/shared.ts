@@ -38,6 +38,7 @@ struct TextRun {
     effect_distance_range: f32,
     text_stroke_multisampling: f32,
     text_stroke_color: vec4f,
+    transform: vec4f,
 }
 
 struct VertexOutput {

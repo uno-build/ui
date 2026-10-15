@@ -18,7 +18,19 @@ const EMPTY_BORDER_RADIUS = [
     [0, 0, 0, 0],
     [0, 0, 0, 0],
 ]
-const ROOT_METRICS = { x: 0, y: 0, opacity: 1, scroll_left: 0, scroll_top: 0, clip: null, children_clip: null }
+const ROOT_METRICS = {
+    x: 0,
+    y: 0,
+    opacity: 1,
+    offset_x: 0,
+    offset_y: 0,
+    scale_x: 1,
+    scale_y: 1,
+    scroll_left: 0,
+    scroll_top: 0,
+    clip: null,
+    children_clip: null,
+}
 
 export const FEATURES = {
     panel: true,
@@ -71,16 +83,43 @@ export function createNodeMetricsResolver(single_record_parts: number = 0) {
         for (let index = pending_count; index >= 0; index--) {
             const current_node = index === 0 ? node : pending_nodes[index - 1]
             const { layout, styles } = current_node
-            const scroll_left = current_metrics.scroll_left
-            const scroll_top = current_metrics.scroll_top
-            const x = layout.x - scroll_left
-            const y = layout.y - scroll_top
+            const translate_x = styles.translateX?.parsed.value ?? 0
+            const translate_y = styles.translateY?.parsed.value ?? 0
+            const node_scale_x = styles.scaleX?.parsed.value ?? 1
+            const node_scale_y = styles.scaleY?.parsed.value ?? 1
+            // In its parent's space, a point p of the box goes to center + translate + scale * (p - center).
+            const offset_x =
+                current_metrics.offset_x +
+                current_metrics.scale_x * (translate_x + (layout.x + layout.width / 2) * (1 - node_scale_x))
+            const offset_y =
+                current_metrics.offset_y +
+                current_metrics.scale_y * (translate_y + (layout.y + layout.height / 2) * (1 - node_scale_y))
+            const scale_x = current_metrics.scale_x * node_scale_x
+            const scale_y = current_metrics.scale_y * node_scale_y
+            const x = layout.x * scale_x + offset_x
+            const y = layout.y * scale_y + offset_y
+            const width = layout.width * scale_x
+            const height = layout.height * scale_y
+            // Glyphs are placed without transforms; their text run applies the transform on the GPU.
+            const untransformed_x = layout.x - current_metrics.scroll_left
+            const untransformed_y = layout.y - current_metrics.scroll_top
             const clip = current_metrics.children_clip
             const opacity = current_metrics.opacity * (styles.opacity?.parsed.value ?? 1)
             // Each record is visited once; its panel and text consume leaf metrics consecutively.
             if (index === 0 && is_leaf) {
                 last_leaf_node = node
-                last_leaf_metrics = { x, y, opacity, clip }
+                last_leaf_metrics = {
+                    x,
+                    y,
+                    width,
+                    height,
+                    scale_x,
+                    scale_y,
+                    untransformed_x,
+                    untransformed_y,
+                    opacity,
+                    clip,
+                }
                 return last_leaf_metrics
             }
             const overflow_x = styles.overflowX?.parsed.enum ?? OVERFLOW.visible
@@ -90,14 +129,18 @@ export function createNodeMetricsResolver(single_record_parts: number = 0) {
             let children_clip = clip
 
             if (clip_x || clip_y) {
-                const top = clip_y ? Math.max(clip?.top ?? -Infinity, y + layout.border.top) : (clip?.top ?? -Infinity)
+                const top = clip_y
+                    ? Math.max(clip?.top ?? -Infinity, y + layout.border.top * scale_y)
+                    : (clip?.top ?? -Infinity)
                 const right = clip_x
-                    ? Math.min(clip?.right ?? Infinity, x + layout.width - layout.border.right)
+                    ? Math.min(clip?.right ?? Infinity, x + width - layout.border.right * scale_x)
                     : (clip?.right ?? Infinity)
                 const bottom = clip_y
-                    ? Math.min(clip?.bottom ?? Infinity, y + layout.height - layout.border.bottom)
+                    ? Math.min(clip?.bottom ?? Infinity, y + height - layout.border.bottom * scale_y)
                     : (clip?.bottom ?? Infinity)
-                const left = clip_x ? Math.max(clip?.left ?? -Infinity, x + layout.border.left) : (clip?.left ?? -Infinity)
+                const left = clip_x
+                    ? Math.max(clip?.left ?? -Infinity, x + layout.border.left * scale_x)
+                    : (clip?.left ?? -Infinity)
                 children_clip =
                     clip !== null && top === clip.top && right === clip.right && bottom === clip.bottom && left === clip.left
                         ? clip
@@ -107,9 +150,17 @@ export function createNodeMetricsResolver(single_record_parts: number = 0) {
             current_metrics = {
                 x,
                 y,
+                width,
+                height,
+                scale_x,
+                scale_y,
+                untransformed_x,
+                untransformed_y,
                 opacity,
-                scroll_left: scroll_left + current_node.scrollLeft,
-                scroll_top: scroll_top + current_node.scrollTop,
+                offset_x: offset_x - current_node.scrollLeft * scale_x,
+                offset_y: offset_y - current_node.scrollTop * scale_y,
+                scroll_left: current_metrics.scroll_left + current_node.scrollLeft,
+                scroll_top: current_metrics.scroll_top + current_node.scrollTop,
                 clip,
                 children_clip,
             }
@@ -120,8 +171,12 @@ export function createNodeMetricsResolver(single_record_parts: number = 0) {
     }
 }
 
-function getSingleNodeMetrics(node: any) {
+export function getSingleNodeMetrics(node: any) {
     let opacity = node.styles.opacity?.parsed.value ?? 1
+    let offset_x = 0
+    let offset_y = 0
+    let scale_x = 1
+    let scale_y = 1
     let scroll_left = 0
     let scroll_top = 0
     let top = -Infinity
@@ -134,47 +189,80 @@ function getSingleNodeMetrics(node: any) {
     while (ancestor !== null) {
         scroll_left += ancestor.scrollLeft
         scroll_top += ancestor.scrollTop
+        offset_x -= ancestor.scrollLeft
+        offset_y -= ancestor.scrollTop
         opacity *= ancestor.styles.opacity?.parsed.value ?? 1
         const overflow_x = ancestor.styles.overflowX?.parsed.enum ?? OVERFLOW.visible
         const overflow_y = ancestor.styles.overflowY?.parsed.enum ?? OVERFLOW.visible
         const clip_x = overflow_x === OVERFLOW.hidden || overflow_x === OVERFLOW.scroll
         const clip_y = overflow_y === OVERFLOW.hidden || overflow_y === OVERFLOW.scroll
         if (clip_x) {
-            left = Math.max(left, ancestor.layout.x + scroll_left + ancestor.layout.border.left)
-            right = Math.min(right, ancestor.layout.x + scroll_left + ancestor.layout.width - ancestor.layout.border.right)
+            left = Math.max(left, ancestor.layout.x - offset_x + ancestor.layout.border.left)
+            right = Math.min(right, ancestor.layout.x - offset_x + ancestor.layout.width - ancestor.layout.border.right)
         }
         if (clip_y) {
-            top = Math.max(top, ancestor.layout.y + scroll_top + ancestor.layout.border.top)
-            bottom = Math.min(bottom, ancestor.layout.y + scroll_top + ancestor.layout.height - ancestor.layout.border.bottom)
+            top = Math.max(top, ancestor.layout.y - offset_y + ancestor.layout.border.top)
+            bottom = Math.min(bottom, ancestor.layout.y - offset_y + ancestor.layout.height - ancestor.layout.border.bottom)
         }
         has_clip ||= clip_x || clip_y
+        // Applied after the clip: an ancestor's translate and scale move its own clip, its scroll does not.
+        const translate_x = ancestor.styles.translateX?.parsed.value ?? 0
+        const translate_y = ancestor.styles.translateY?.parsed.value ?? 0
+        const ancestor_scale_x = ancestor.styles.scaleX?.parsed.value ?? 1
+        const ancestor_scale_y = ancestor.styles.scaleY?.parsed.value ?? 1
+        const center_x = ancestor.layout.x + ancestor.layout.width / 2
+        const center_y = ancestor.layout.y + ancestor.layout.height / 2
+        offset_x = offset_x * ancestor_scale_x + translate_x + center_x * (1 - ancestor_scale_x)
+        offset_y = offset_y * ancestor_scale_y + translate_y + center_y * (1 - ancestor_scale_y)
+        scale_x *= ancestor_scale_x
+        scale_y *= ancestor_scale_y
+        // A zero scale turns infinite sides into NaN, but it also empties the box: it is neither drawn nor hit.
+        left *= ancestor_scale_x
+        right *= ancestor_scale_x
+        top *= ancestor_scale_y
+        bottom *= ancestor_scale_y
         ancestor = ancestor.parent
     }
 
+    // The node's own transform goes before its ancestors' one and does not move its clip.
+    const translate_x = node.styles.translateX?.parsed.value ?? 0
+    const translate_y = node.styles.translateY?.parsed.value ?? 0
+    const node_scale_x = node.styles.scaleX?.parsed.value ?? 1
+    const node_scale_y = node.styles.scaleY?.parsed.value ?? 1
+    const node_offset_x = translate_x + (node.layout.x + node.layout.width / 2) * (1 - node_scale_x)
+    const node_offset_y = translate_y + (node.layout.y + node.layout.height / 2) * (1 - node_scale_y)
+
     return {
-        x: node.layout.x - scroll_left,
-        y: node.layout.y - scroll_top,
+        x: node.layout.x * scale_x * node_scale_x + offset_x + node_offset_x * scale_x,
+        y: node.layout.y * scale_y * node_scale_y + offset_y + node_offset_y * scale_y,
+        width: node.layout.width * scale_x * node_scale_x,
+        height: node.layout.height * scale_y * node_scale_y,
+        scale_x: scale_x * node_scale_x,
+        scale_y: scale_y * node_scale_y,
+        untransformed_x: node.layout.x - scroll_left,
+        untransformed_y: node.layout.y - scroll_top,
         opacity,
         clip: has_clip ? {
-            top: top - scroll_top,
-            right: right - scroll_left,
-            bottom: bottom - scroll_top,
-            left: left - scroll_left,
+            top: top + offset_y,
+            right: right + offset_x,
+            bottom: bottom + offset_y,
+            left: left + offset_x,
         } : null,
     }
 }
 
-export function isNodeClipped({ x, y, clip }: { x: any; y: any; clip: any; }, width: any, height: any) {
+// A box emptied by a zero scale counts as clipped.
+export function isNodeClipped({ x, y, width, height, clip }: { x: any; y: any; width: any; height: any; clip: any; }) {
     return (
-        clip !== null && (
+        width === 0 || height === 0 || (clip !== null && (
             clip.right <= clip.left || clip.bottom <= clip.top ||
             clip.right <= x || clip.bottom <= y || clip.left >= x + width || clip.top >= y + height
-        )
+        ))
     )
 }
 
 // If null is returned, the node should not be drawn
-export function getNodeDrawingData(node: any, computeStyleValue: any, getNodeMetrics: any) {
+export function getNodeDrawingData(node: any, computeStyleValue: any, getNodeMetrics: any, image_size: any) {
     const { width, height } = node.layout
     const display = node.styles.display?.parsed.enum || DISPLAY.flex
     if (width === 0 || height === 0 || display !== DISPLAY.flex) {
@@ -191,7 +279,9 @@ export function getNodeDrawingData(node: any, computeStyleValue: any, getNodeMet
     const has_border =
         FEATURES.border &&
         (border_width_top > 0 || border_width_right > 0 || border_width_bottom > 0 || border_width_left > 0)
-    const box_shadow = FEATURES.box_shadow ? getNodeBoxShadow(node, computeStyleValue) : EMPTY_BOX_SHADOW
+    const box_shadow_style = FEATURES.box_shadow ? computeStyleValue(node.styles.boxShadow) : undefined
+    // Packed unscaled first: whether there is a shadow is decided before resolving the metrics.
+    const box_shadow = packBoxShadow(box_shadow_style, 1, 1)
     const has_box_shadow = box_shadow[2]! >>> 24 > 0 && (box_shadow[0] !== 0 || box_shadow[1] !== 0)
 
     if (!has_background && !has_background_image && !has_border && !has_box_shadow) {
@@ -199,19 +289,22 @@ export function getNodeDrawingData(node: any, computeStyleValue: any, getNodeMet
     }
 
     const node_metrics = getNodeMetrics(node)
-    const { x, y, opacity, clip } = node_metrics
-    if (opacity <= 0 || isNodeClipped(node_metrics, width, height)) {
+    const { x, y, scale_x, scale_y, opacity, clip } = node_metrics
+    if (opacity <= 0 || isNodeClipped(node_metrics)) {
         return null
     }
 
     const normalized_clipping = clip === null ? [0, 0, 0, 0] : [clip.top - y, clip.right - x, clip.bottom - y, clip.left - x]
 
     const [border_radius_x, border_radius_y] = FEATURES.border_radius
-        ? getNodeBorderRadius(node, computeStyleValue, width, height)
+        ? getNodeBorderRadius(node, computeStyleValue, width, height, scale_x, scale_y)
         : EMPTY_BORDER_RADIUS
+    const border_widths = has_border
+        ? [border_width_top, border_width_right, border_width_bottom, border_width_left]
+        : EMPTY_BORDER_WIDTHS
 
     return {
-        layout: [x, y, width, height],
+        layout: [x, y, node_metrics.width, node_metrics.height],
         clipping: normalized_clipping,
         opacity,
         border_radius_x,
@@ -220,11 +313,17 @@ export function getNodeDrawingData(node: any, computeStyleValue: any, getNodeMet
         border_color_right: node.styles.borderRightColor?.parsed.rgba ?? TRANSPARENT_COLOR,
         border_color_bottom: node.styles.borderBottomColor?.parsed.rgba ?? TRANSPARENT_COLOR,
         border_color_left: node.styles.borderLeftColor?.parsed.rgba ?? TRANSPARENT_COLOR,
-        border_widths: has_border
-            ? [border_width_top, border_width_right, border_width_bottom, border_width_left]
-            : EMPTY_BORDER_WIDTHS,
+        border_widths: has_border ? [
+            border_width_top * scale_y,
+            border_width_right * scale_x,
+            border_width_bottom * scale_y,
+            border_width_left * scale_x,
+        ] : EMPTY_BORDER_WIDTHS,
         background_color: has_background ? background_color : TRANSPARENT_COLOR,
-        box_shadow,
+        background_image_rect: image_size === undefined
+            ? [0, 0, 0, 0]
+            : getBackgroundImageRect(node, image_size, computeStyleValue, border_widths, scale_x, scale_y),
+        box_shadow: packBoxShadow(box_shadow_style, scale_x, scale_y),
     }
 }
 
@@ -320,6 +419,7 @@ export function updateScrollMetrics(node: any, getContentSize: any, operations: 
             continue
         }
 
+        // Unlike CSS, translate and scale do not extend the scrollable overflow: it is read from the layout boxes.
         overflow_rect.left = Math.min(overflow_rect.left, child.layout.x)
         overflow_rect.top = Math.min(overflow_rect.top, child.layout.y)
         overflow_rect.right = Math.max(overflow_rect.right, child.layout.x + child.layout.width + padding_right)
@@ -372,15 +472,15 @@ function resetScrollMetrics(node: any, operations: Operations<any>) {
     }
 }
 
-function getNodeBorderRadius(node: any, computeStyleValue: any, width: any, height: any) {
+function getNodeBorderRadius(node: any, computeStyleValue: any, width: any, height: any, scale_x: any, scale_y: any) {
     const top_left = getBorderRadius(computeStyleValue(node.styles.borderTopLeftRadius)?.parsed, width, height)
     const top_right = getBorderRadius(computeStyleValue(node.styles.borderTopRightRadius)?.parsed, width, height)
     const bottom_right = getBorderRadius(computeStyleValue(node.styles.borderBottomRightRadius)?.parsed, width, height)
     const bottom_left = getBorderRadius(computeStyleValue(node.styles.borderBottomLeftRadius)?.parsed, width, height)
 
     return [
-        [top_left[0], top_right[0], bottom_right[0], bottom_left[0]],
-        [top_left[1], top_right[1], bottom_right[1], bottom_left[1]],
+        [top_left[0] * scale_x, top_right[0] * scale_x, bottom_right[0] * scale_x, bottom_left[0] * scale_x],
+        [top_left[1] * scale_y, top_right[1] * scale_y, bottom_right[1] * scale_y, bottom_left[1] * scale_y],
     ]
 }
 
@@ -395,15 +495,17 @@ function getBorderRadius(border_radius: any, width: any, height: any) {
     return [border_radius.value, border_radius.value]
 }
 
-function getNodeBoxShadow(node: any, computeStyleValue: any) {
-    const box_shadow = computeStyleValue(node.styles.boxShadow)?.parsed.box_shadow
+function packBoxShadow(box_shadow_style: any, scale_x: any, scale_y: any) {
+    const box_shadow = box_shadow_style?.parsed.box_shadow
     if (box_shadow === undefined || box_shadow.color[3] === 0) {
         return EMPTY_BOX_SHADOW
     }
 
+    // Blur and spread are single values: a non-uniform scale uses its smaller factor.
+    const scale = Math.min(scale_x, scale_y)
     return [
-        packSigned16Pair(box_shadow.offset_x.value, box_shadow.offset_y.value),
-        packSigned16Pair(box_shadow.blur.value, box_shadow.spread.value),
+        packSigned16Pair(box_shadow.offset_x.value * scale_x, box_shadow.offset_y.value * scale_y),
+        packSigned16Pair(box_shadow.blur.value * scale, box_shadow.spread.value * scale),
         packColor(box_shadow.color),
         0,
     ]
@@ -492,7 +594,14 @@ export function getAncestorClipping(node: any) {
     }
 }
 
-export function getBackgroundImageRect(node: any, image_size: any, computeStyleValue: any, border_widths: any) {
+export function getBackgroundImageRect(
+    node: any,
+    image_size: any,
+    computeStyleValue: any,
+    border_widths: any,
+    scale_x: any,
+    scale_y: any,
+) {
     const [image_width, image_height] = image_size
     const [background_width, background_height] = getBackgroundAreaSize(node, border_widths)
     const width_style = computeStyleValue(node.styles.backgroundSizeWidth)
@@ -519,7 +628,7 @@ export function getBackgroundImageRect(node: any, image_size: any, computeStyleV
     const x = readBackgroundPosition(computeStyleValue(node.styles.backgroundPositionX), background_width, width)
     const y = readBackgroundPosition(computeStyleValue(node.styles.backgroundPositionY), background_height, height)
 
-    return [x, y, width, height]
+    return [x * scale_x, y * scale_y, width * scale_x, height * scale_y]
 }
 
 function getBackgroundAreaSize(node: any, border_widths: any): [number, number] {
@@ -568,7 +677,11 @@ export function getMainAxisOverflow(node: any) {
 }
 
 export function collectPanelData(node: any, image_manager: any, computeStyle: any, getNodeMetrics: any) {
-    const drawing_data = getNodeDrawingData(node, computeStyle, getNodeMetrics)
+    const atlas_image = FEATURES.background_image
+        ? image_manager.getImage(node.styles.backgroundImage?.value)
+        : undefined
+    // The image rect is computed with the drawing data, which knows the unscaled border widths.
+    const drawing_data = getNodeDrawingData(node, computeStyle, getNodeMetrics, atlas_image?.image_size)
     if (drawing_data === null) {
         return null
     }
@@ -577,22 +690,12 @@ export function collectPanelData(node: any, image_manager: any, computeStyle: an
         ...drawing_data,
         background_image_mode: 0,
         background_uv_rect: [0, 0, 1, 1],
-        background_image_rect: [0, 0, 0, 0],
         background_atlas_layer: 0,
     }
 
-    const atlas_image = FEATURES.background_image
-        ? image_manager.getImage(node.styles.backgroundImage?.value)
-        : undefined
     if (atlas_image !== undefined) {
         panel_data.background_image_mode = readBackgroundImageMode(node)
         panel_data.background_uv_rect = atlas_image.uv_rect
-        panel_data.background_image_rect = getBackgroundImageRect(
-            node,
-            atlas_image.image_size,
-            computeStyle,
-            panel_data.border_widths,
-        )
         panel_data.background_atlas_layer = atlas_image.layer
     }
 

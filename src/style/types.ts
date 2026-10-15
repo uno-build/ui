@@ -26,7 +26,7 @@ export type ComputedLayout = Required<Omit<NodeLayout, 'padding' | 'border'>> & 
 
 export type StyleRule = {
     normalize: Array<(value: string) => string>
-    validate: Array<(value: string) => void>
+    validate: Array<(value: string) => string | undefined>
     parse: Array<(value: string) => ResolvedStyle>
 }
 

@@ -536,6 +536,8 @@ test('UI skips layout reads for paint, DPR, scroll, and painting order changes',
 
     first.style('backgroundColor', '#123')
     first.style('borderRadius', '4px')
+    first.style('translate', '10px 20px')
+    first.style('scale', '2')
     ui.update()
     expect(layout_reads).toBe(0)
     expect(last_operations.needCheckLayout()).toBe(false)
@@ -1637,3 +1639,29 @@ function createImage(src, width, height) {
         preventBleeding: false,
     }
 }
+
+test('Node style accepts numbers as px or unitless values and mixes them with strings', async () => {
+    const renderer = new TestRenderer()
+    const ui = await TestUI.create({ renderer })
+    const node = ui.create()
+    const styleOperations = () => (ui as any).operations.pending.filter(({ op }) => op === OPERATIONS.STYLE)
+
+    node.style('width', 200)
+    node.style('opacity', 0.5)
+
+    expect(node.styles.width).toEqual({ value: '200px', parsed: { value: 200, kind: 'px' } })
+    expect(node.styles.opacity).toEqual({ value: '0.5', parsed: { value: 0.5 } })
+    expect(styleOperations()).toHaveLength(2)
+
+    node.style('width', 200)
+    node.style('width', '200px')
+
+    expect(styleOperations()).toHaveLength(2)
+
+    node.style('width', '50%')
+    node.style('width', 200)
+
+    expect(node.styles.width.value).toBe('200px')
+    expect(styleOperations()).toHaveLength(4)
+    expect(() => node.style('padding' as any, 10)).toThrow(/does not accept numbers/)
+})

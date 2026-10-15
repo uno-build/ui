@@ -2,6 +2,7 @@ import UIDom from '../../src/ui/UIDom'
 import UI from '../../src/ui/UI'
 import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
 import ResourcesDom from '../../src/renderer/dom/ResourcesDom'
+import { getSingleNodeMetrics } from '../../src/renderer/utils/render-metrics'
 import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
 
 export const SETUPS = {
@@ -284,15 +285,16 @@ function readPaintedRects({ canvas, nodes }) {
 
 function readLayoutRects({ nodes }) {
     return [...nodes].map((node) => {
-        const { layout } = node
+        // The painted box includes translate and scale.
+        const { x, y, width, height } = getSingleNodeMetrics(node)
 
         return {
             id: node.id,
             path: node.path.join('.'),
-            x: Math.round(layout.x),
-            y: Math.round(layout.y),
-            width: Math.round(layout.width),
-            height: Math.round(layout.height),
+            x: Math.round(x),
+            y: Math.round(y),
+            width: Math.round(width),
+            height: Math.round(height),
         }
     })
 }
@@ -414,9 +416,9 @@ function findNodeByPath(ui, path) {
 }
 
 function isNodeAtPoint(node, x, y) {
-    const { layout } = node
+    const box = getSingleNodeMetrics(node)
 
-    return x >= layout.x && x < layout.x + layout.width && y >= layout.y && y < layout.y + layout.height
+    return x >= box.x && x < box.x + box.width && y >= box.y && y < box.y + box.height
 }
 
 function getSetup(name) {

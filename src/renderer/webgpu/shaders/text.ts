@@ -67,6 +67,11 @@ fn glyphMsdfCoverageAtUv(
     );
 }
 
+// Device pixels per run pixel for stroke and blur widths: a non-uniform scale uses its smaller factor.
+fn textEffectScale(run: TextRun) -> f32 {
+    return min(run.transform.x, run.transform.y) * viewport.device_pixel_ratio;
+}
+
 fn textStrokeColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
     let glyph = glyph_data[u32(input.glyph_index)];
     let run = text_runs[glyph.run_data.x];
@@ -89,7 +94,7 @@ fn textStrokeColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
         0.0,
         0.0,
     );
-    let stroke_width = run.text_stroke_width * viewport.device_pixel_ratio;
+    let stroke_width = run.text_stroke_width * textEffectScale(run);
     let expanded_coverage = textStrokeCoverageAtUv(
         glyph,
         run,
@@ -148,10 +153,10 @@ fn textShadowColor(input: VertexOutput, uv_width: vec2f) -> vec4f {
         return vec4f(run.text_shadow_color.rgb, 0.0);
     }
 
-    let blur_px = run.text_shadow.z * viewport.device_pixel_ratio;
+    let blur_px = run.text_shadow.z * textEffectScale(run);
     let stroke_width = select(
         0.0,
-        run.text_stroke_width * viewport.device_pixel_ratio,
+        run.text_stroke_width * textEffectScale(run),
         run.text_stroke_color.a > 0.0,
     );
     let coverage = textShadowCoverageAtUv(

@@ -19,6 +19,7 @@ export type UIThreeOptions<
     },
 > = Omit<UIWebGPUThreeOptions<TMaterial, TPlane>, 'loadYoga' | 'defined_events'> & EventOptions<UIThree> & {
     register_platform_events?: boolean
+    yoga?: boolean
 }
 
 export default class UIThree extends UIWebGPUThree {
@@ -29,13 +30,16 @@ export default class UIThree extends UIWebGPUThree {
             geometry: THREE.PlaneGeometry
         },
     >(
-        { register_platform_events = true, ...options }: UIThreeOptions<TMaterial, TPlane>,
+        { register_platform_events = true, yoga = true, ...options }: UIThreeOptions<TMaterial, TPlane>,
     ): Promise<
         {
             ui: UIThree
         } & UIWorldSpaceOutput<THREE.ExternalTexture, TMaterial, TPlane>
     > {
-        const ui = new UIThree({ ...options, loadYoga } as UIWebGPUThreeOptions<TMaterial, TPlane>)
+        const ui = new UIThree({
+            ...options,
+            loadYoga: yoga ? loadYoga : undefined,
+        } as UIWebGPUThreeOptions<TMaterial, TPlane>)
         const resources = await ui.initialize()
         if (register_platform_events) ui.registerPlatformEvents()
         return { ui, ...resources } as unknown as Awaited<ReturnType<typeof UIThree.create<TMaterial, TPlane>>>

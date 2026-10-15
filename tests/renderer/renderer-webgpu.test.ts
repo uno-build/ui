@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { loadYoga } from 'yoga-layout/load'
 import RendererWebGPU from '../../src/renderer/RendererWebGPU.ts'
 import { OPERATIONS, RESOURCE_EVENT } from '../../src/core/constants.ts'
 import Operations from '../../src/core/Operations.ts'
@@ -1237,6 +1238,7 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
             effect_distance_range: 6,
             text_stroke_multisampling: 0,
             text_stroke_color: [0, 0, 0, 0],
+            transform: [1, 1, 0, 0],
         },
     ])
 })
@@ -2590,7 +2592,11 @@ test('RendererWebGPU writes shared text run data once per text node', () => {
     expect(TEXT_RUN.EFFECT_DISTANCE_RANGE.OFFSET).toBe(21 * FLOAT32_SIZE)
     expect(TEXT_RUN.TEXT_STROKE_MULTISAMPLING.OFFSET).toBe(22 * FLOAT32_SIZE)
     expect(TEXT_RUN.TEXT_STROKE_COLOR.OFFSET).toBe(24 * FLOAT32_SIZE)
-    expect(TEXT_RUN_SIZE).toBe(28 * FLOAT32_SIZE)
+    expect(TEXT_RUN.TRANSFORM.OFFSET).toBe(28 * FLOAT32_SIZE)
+    expect(TEXT_RUN_SIZE).toBe(32 * FLOAT32_SIZE)
+    expect(
+        Array.from(floats.slice(TEXT_RUN.TRANSFORM.OFFSET / FLOAT32_SIZE, TEXT_RUN.TRANSFORM.OFFSET / FLOAT32_SIZE + 4)),
+    ).toEqual([1, 1, 0, 0])
     expect(
         Array.from(
             floats.slice(
@@ -3728,6 +3734,18 @@ test('RendererWebGPU selects local damage and deduplicates overlapping inherited
     expect(updated_nodes).toEqual([parent, child, grandchild])
 
     updated_nodes.length = 0
+    renderer.update(nodes, createOperations([
+        { op: OPERATIONS.STYLE, node: parent, style: resolveStyle('translate', '4px 2px') },
+    ]))
+    expect(updated_nodes).toEqual([parent, child, grandchild])
+
+    updated_nodes.length = 0
+    renderer.update(nodes, createOperations([
+        { op: OPERATIONS.STYLE, node: parent, style: resolveStyle('scale', '2') },
+    ]))
+    expect(updated_nodes).toEqual([parent, child, grandchild])
+
+    updated_nodes.length = 0
     renderer.update(nodes, createOperations([{ op: OPERATIONS.SCROLL, node: parent }]))
     expect(updated_nodes).toEqual([child, grandchild])
 
@@ -4600,7 +4618,7 @@ test('ancestor metrics resolve a deep chain iteratively and read each context on
         const node = {
             parent,
             children: [],
-            layout: { x: index, y: index * 2 },
+            layout: { x: index, y: index * 2, width: 0, height: 0 },
             scrollLeft: 1,
             scrollTop: 2,
             styles: {
@@ -4768,6 +4786,202 @@ test('RendererWebGPU uploads absolute text clips and relative panel clips for ne
     expect(run_floats[run_offset + TEXT_RUN.FONT_DATA.OFFSET / FLOAT32_SIZE + 1]).toBe(0.25)
 })
 
+test('ancestor metrics move descendants and clips by every translate in the chain', () => {
+    const root = createNode({ layout: { x: 20, y: 30, width: 120, height: 100 }, overflow: OVERFLOW.scroll })
+    const parent = createNode({
+        parent: root,
+        layout: { x: 40, y: 50, width: 80, height: 70 },
+        computed_border: { [EDGE.top]: 2, [EDGE.right]: 4, [EDGE.bottom]: 6, [EDGE.left]: 8 },
+        overflow: OVERFLOW.hidden,
+        styles: resolveStyles('translate', '5px -3px'),
+    })
+    const child = createNode({
+        parent,
+        layout: { x: 50, y: 60, width: 80, height: 70 },
+        styles: resolveStyles('translate', '1px 2px'),
+    })
+    root.children.push(parent)
+    parent.children.push(child)
+    root.scrollLeft = 4
+    root.scrollTop = 6
+    parent.scrollLeft = 2
+    parent.scrollTop = 3
+
+    for (const single_record_parts of [0, RECORD_PANEL, RECORD_ALL]) {
+        expect(createNodeMetricsResolver(single_record_parts)(child)).toMatchObject({
+            x: 50,
+            y: 50,
+            clip: { top: 43, right: 117, bottom: 105, left: 49 },
+        })
+    }
+})
+
+test('ancestor metrics scale descendants and clips about each box center after the scroll', () => {
+    const root = createNode({ layout: { x: 0, y: 0, width: 200, height: 200 } })
+    const parent = createNode({
+        parent: root,
+        layout: { x: 0, y: 0, width: 100, height: 60 },
+        computed_border: { [EDGE.top]: 2, [EDGE.right]: 4, [EDGE.bottom]: 6, [EDGE.left]: 8 },
+        overflow: OVERFLOW.hidden,
+        styles: {
+            ...resolveStyles('scale', '2 0.5'),
+            ...resolveStyles('translate', '7px 3px'),
+        },
+    })
+    const child = createNode({
+        parent,
+        layout: { x: 10, y: 20, width: 20, height: 10 },
+        styles: resolveStyles('scale', '0.5'),
+    })
+    root.children.push(parent)
+    parent.children.push(child)
+    parent.scrollLeft = 5
+    parent.scrollTop = 4
+
+    for (const single_record_parts of [0, RECORD_PANEL, RECORD_ALL]) {
+        expect(createNodeMetricsResolver(single_record_parts)(child)).toMatchObject({
+            x: -23,
+            y: 27.25,
+            width: 20,
+            height: 2.5,
+            scale_x: 1,
+            scale_y: 0.25,
+            untransformed_x: 5,
+            untransformed_y: 16,
+            clip: { top: 19, right: 149, bottom: 45, left: -27 },
+        })
+    }
+})
+
+test('RendererWebGPU scales panel size, borders, radii, shadow, and background image with the node', () => {
+    const image = createImage('coin.png', 40, 20)
+    const renderer = createRenderer(createImageManager({
+        resources: {
+            [image.src]: { src: image.src, layer: 3, uv_rect: [0, 0, 1, 1], image_size: [image.width, image.height] },
+        },
+    }))
+    const styles = {
+        ...Object.fromEntries([
+            ...resolveStyle('border', '2px solid #123').expanded,
+            ...resolveStyle('borderRadius', '50% 2px 3px 4px').expanded,
+        ].map((style) => [style.name, style])),
+        boxShadow: resolveStyle('boxShadow', '2px 4px 6px 8px #123').expanded[0],
+        backgroundImage: { value: image.src, parsed: {} },
+    }
+    const layout = { x: 0, y: 0, width: 20, height: 10 }
+    const [panel, scaled_panel, unit_panel] = collectRenderData(renderer, [
+        createNode({ layout, styles }),
+        createNode({ layout, styles: { ...styles, ...resolveStyles('scale', '2 0.5') } }),
+        createNode({ layout, styles: { ...styles, ...resolveStyles('scale', '1') } }),
+    ]).panels
+
+    expect(unit_panel).toEqual(panel)
+    expect(scaled_panel).toMatchObject({
+        layout: [-10, 2.5, 40, 5],
+        border_radius_x: [20, 4, 6, 8],
+        border_radius_y: [2.5, 1, 1.5, 2],
+        border_widths: [1, 4, 1, 4],
+        background_image_rect: [0, 0, 80, 10],
+        box_shadow: [4 | (2 << 16), 3 | (4 << 16), panel.box_shadow[2], 0],
+    })
+})
+
+test('RendererWebGPU keeps glyphs untransformed and gives their run the node transform', () => {
+    const renderer = createRenderer(
+        createImageManager(),
+        createFontManager({ default_font: createManagedFont('mtsdf', 64, 128) }),
+    )
+    renderer.setDevicePixelRatio(2)
+    const node = createNode({
+        text_content: 'A',
+        layout: { x: 0, y: 0, width: 4, height: 8 },
+        styles: {
+            fontSize: { parsed: { value: 5, kind: UNIT.PX } },
+            ...resolveStyles('scale', '2 0.5'),
+            textShadow: resolveStyle('textShadow', '1px 2px 3px #123').expanded[0],
+            textStroke: resolveStyle('textStroke', '1px #123').expanded[0],
+        },
+    })
+    const { glyphs: [glyph], text_runs: [run] } = collectRenderData(renderer, [node])
+    const [scale_x, scale_y, offset_x, offset_y] = run.transform
+
+    expect(glyph).toMatchObject({ layout: [0, -0.125, 2.5, 5], text_shadow: [1, 2, 3] })
+    // The run transform scales the glyph by 2 0.5 about the node center (2, 4).
+    expect([
+        glyph.layout[0] * scale_x + offset_x,
+        glyph.layout[1] * scale_y + offset_y,
+        glyph.layout[2] * scale_x,
+        glyph.layout[3] * scale_y,
+    ]).toEqual([-2, 1.9375, 5, 2.5])
+    // Unscaled, a 1px stroke at 5px needs no multisampling; at an effective 0.5px and 2.5px it does.
+    expect(run).toMatchObject({
+        text_shadow: [1, 2, 3, 0],
+        text_stroke_width: 1,
+        text_stroke_multisampling: 1,
+        transform: [2, 0.5, -2, 2],
+    })
+})
+
+test('RendererWebGPU applies translate and scale changes to the text run without touching glyphs or commands', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode({ layout: { x: 0, y: 0, width: 100, height: 100 } })
+    const node = createNode({
+        parent: root,
+        text_content: 'AB',
+        layout: { x: 10, y: 20, width: 40, height: 20 },
+        styles: { textStroke: resolveStyle('textStroke', '1px #123').expanded[0] },
+    })
+    root.children.push(node)
+    const nodes = [root, node]
+    ;(renderer as any).root_node = root
+    renderer.update(nodes, createOperations([{ op: OPERATIONS.ADD, node: root }]))
+    const { records, glyph_data_pool, text_run_pool, command_pool } = renderer as any
+    let prepared_text_reads = 0
+    let glyph_writes = 0
+    let command_fills = 0
+    const getPreparedText = (renderer as any).getPreparedText.bind(renderer)
+    ;(renderer as any).getPreparedText = (...args) => {
+        prepared_text_reads++
+        return getPreparedText(...args)
+    }
+    const writeGlyph = glyph_data_pool.write.bind(glyph_data_pool)
+    glyph_data_pool.write = (...args) => {
+        glyph_writes++
+        return writeGlyph(...args)
+    }
+    const fillCommands = command_pool.fill.bind(command_pool)
+    command_pool.fill = (...args) => {
+        command_fills++
+        return fillCommands(...args)
+    }
+
+    for (const [name, value] of [['translate', '5px 6px'], ['scale', '2']]) {
+        Object.assign(node.styles, resolveStyles(name, value))
+        renderer.update(nodes, createOperations([{ op: OPERATIONS.STYLE, node, style: resolveStyle(name, value) }]))
+    }
+
+    const transform_offset = (records.get(node).run_slot * TEXT_RUN_SIZE + TEXT_RUN.TRANSFORM.OFFSET) / FLOAT32_SIZE
+    const run_floats = new Float32Array(text_run_pool.buffer.bytes.buffer)
+    expect(Array.from(run_floats.slice(transform_offset, transform_offset + 4))).toEqual([2, 2, -25, -24])
+    expect([prepared_text_reads, glyph_writes, command_fills]).toEqual([0, 0, 0])
+})
+
+test('RendererWebGPU draws nothing for a zero scale, also under a clip on the other axis', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const root = createNode({ styles: { overflowY: { parsed: { enum: OVERFLOW.hidden } } } })
+    const parent = createNode({ parent: root, styles: resolveStyles('scale', '0 1') })
+    const child = createNode({ parent, text_content: 'A' })
+    root.children.push(parent)
+    parent.children.push(child)
+
+    expect(collectRenderData(renderer, [parent]).panels).toEqual([])
+    for (const single_record_parts of [0, RECORD_PANEL, RECORD_ALL]) {
+        const render_data = collectRenderData(renderer, [child], single_record_parts)
+        expect(render_data.panels).toEqual([])
+        expect(render_data.glyphs).toEqual([])
+    }
+})
+
 for (const [axis, inner_position] of [['x', 20], ['x', 21], ['y', 20], ['y', 21]] as const) {
     test(`RendererWebGPU discards an empty ancestor intersection inside the node at ${axis}=${inner_position}`, () => {
         const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
@@ -4877,6 +5091,7 @@ function collectRenderData(renderer, nodes, single_record_parts = 0) {
 function createRenderer(image_manager = createImageManager(), font_manager = createFontManager()) {
     const device = createFakeDevice()
     const renderer = new RendererWebGPU({
+        loadYoga,
         resources: {
             image_manager,
             font_manager,
@@ -5130,6 +5345,10 @@ function createFakeDevice({ max_texture_array_layers = 8 } = {}) {
 
 function getAtlasTextures(device) {
     return device.textures.filter((texture) => texture.descriptor.usage & GPUTextureUsage.TEXTURE_BINDING)
+}
+
+function resolveStyles(name, value) {
+    return Object.fromEntries(resolveStyle(name, value).expanded.map((style) => [style.name, style]))
 }
 
 function createNode({

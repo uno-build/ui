@@ -1,6 +1,6 @@
 import type { Yoga, Node as YogaNode, Edge } from 'yoga-layout/load'
 import type Node from '../core/Node'
-import type { ResolvedStyle } from '../style/types'
+import type { ComputedLayout, ResolvedStyle } from '../style/types'
 
 import {
     UNIT,
@@ -54,6 +54,29 @@ export default async function createYogaLayouter({ loadYoga }: { loadYoga?: () =
 
     function calculate(width?: number | 'auto', height?: number | 'auto') {
         root_element!.calculateLayout(width, height)
+    }
+
+    function getParentRect(node: Node) {
+        const parent_layout = getParentLayout(node)
+
+        return node.parent != null && getElement(node.parent) === root_element
+            ? { ...parent_layout, ...root_element!.getComputedLayout() }
+            : parent_layout
+    }
+
+    // prettier-ignore
+    function getLayout(node: Node) {
+        const element = getElement(node)
+        const node_rect = element.getComputedLayout()
+
+        return {
+            ...calculateLayoutRect(
+                applyWrappedRelativeOffsets(node, node_rect, getElement, yoga),
+                getParentRect(node),
+            ),
+            padding: getComputedEdges(element, 'getComputedPadding'),
+            border: getComputedEdges(element, 'getComputedBorder'),
+        }
     }
 
     return {
@@ -125,24 +148,20 @@ export default async function createYogaLayouter({ loadYoga }: { loadYoga?: () =
             calculate(width, height)
         },
 
-        // prettier-ignore
-        getLayout(node: Node) {
-            const element = getElement(node)
-            const node_rect = element.getComputedLayout()
-            const parent_layout = getParentLayout(node)
-            const parent_rect =
-                node.parent != null && getElement(node.parent) === root_element
-                    ? { ...parent_layout, ...root_element!.getComputedLayout() }
-                    : parent_layout
+        getLayout,
 
-            return {
-                ...calculateLayoutRect(
-                    applyWrappedRelativeOffsets(node, node_rect, getElement, yoga),
-                    parent_rect,
-                ),
-                padding: getComputedEdges(element, 'getComputedPadding'),
-                border: getComputedEdges(element, 'getComputedBorder'),
+        // Yoga flags every node it lays out, cached or not, and skips the children of cached nodes:
+        // the subtree of an unflagged node was not laid out again.
+        getNewLayout(node: Node, parent_changed: boolean) {
+            const element = getElement(node)
+            if (element.hasNewLayout()) {
+                element.markLayoutSeen()
+                return getLayout(node)
             }
+
+            return parent_changed
+                ? { ...node.layout, ...calculateLayoutRect(node.layout as ComputedLayout, getParentRect(node)) }
+                : node.layout
         },
     }
 }

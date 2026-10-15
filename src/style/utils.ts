@@ -2,9 +2,10 @@ import { UNIT } from './constants'
 import { parseEnum } from './parsers'
 import { validateEnum } from './validators'
 
+const UNIT_RE = new RegExp(`^(-?(?:\\d+|\\d*\\.\\d+))(${Object.values(UNIT).join('|')})$`, 'i')
+
 export function readUnit(value: string) {
-    const regex = new RegExp(`^(-?(?:\\d+|\\d*\\.\\d+))(${Object.values(UNIT).join('|')})$`, 'i')
-    const match = value.match(regex)
+    const match = value.match(UNIT_RE)
 
     if (!match) {
         return undefined
@@ -36,9 +37,12 @@ export function runPipeline(fns: Array<(value: any, context?: unknown) => any> =
     return fns.reduce((current, fn) => fn(current, context), value)
 }
 
-export function runValidators(fns: Array<(value: string) => void> = [], value: string) {
+export function runValidators(fns: Array<(value: string) => string | undefined> = [], value: string) {
     for (const fn of fns) {
-        fn(value)
+        const error = fn(value)
+        if (error !== undefined) {
+            return error
+        }
     }
 }
 

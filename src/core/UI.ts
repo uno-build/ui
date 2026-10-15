@@ -107,14 +107,21 @@ export default class UI<
 
             // Update Layout
             if (operations.needUpdateLayout()) {
-                const updateLayout = (node: RendererNode<TRenderer>) => {
-                    const layout = this.renderer!.getLayout(node)
-                    if (!isSameLayout(node.layout, layout)) {
+                const updateLayout = (node: RendererNode<TRenderer>, parent_changed: boolean) => {
+                    const layout = this.renderer!.getLayout(node, parent_changed)
+                    if (layout === node.layout) {
+                        return
+                    }
+                    const changed = !isSameLayout(node.layout, layout)
+                    if (changed) {
                         operations.layout_nodes.add(node)
                     }
                     node.layout = layout
+                    for (const child of node.children) {
+                        updateLayout(child, changed)
+                    }
                 }
-                this.nodes.forEach(updateLayout)
+                updateLayout(this.root!, false)
             }
 
             // Update

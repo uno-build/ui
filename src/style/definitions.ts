@@ -92,6 +92,15 @@ export const OPACITY_DEFINITION: StyleRule[] = [
     ...UNSET_DEFINITION,
 ]
 
+export const TRANSLATE_DEFINITION: StyleRule[] = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validatePx],
+        parse: [parsePx],
+    },
+    ...UNSET_DEFINITION,
+]
+
 export const BOX_SHADOW_DEFINITION: StyleRule[] = [
     {
         normalize: [normalizeTrim, normalizeToLowercase],

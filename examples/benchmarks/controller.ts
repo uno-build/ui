@@ -365,7 +365,7 @@ export function createBenchmarkController(canvas: HTMLCanvasElement) {
             device = await adapter.requestDevice({
                 requiredFeatures:
                     options.gpu_timing && adapter.features.has('timestamp-query') ? ['timestamp-query'] : [],
-                requiredLimits: { maxStorageBuffersInVertexStage: 2 },
+                requiredLimits: { maxStorageBuffersInVertexStage: 3 },
             })
             device.addEventListener('uncapturederror', onGpuError)
             device.lost.then((lost) => {

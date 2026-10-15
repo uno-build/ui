@@ -96,6 +96,7 @@ export function parseTextStroke(value: string) {
         },
     }
 }
+
 export function parseEnum(value: string, values: Record<string, number>) {
     return { value, parsed: { enum: values[value] } }
 }

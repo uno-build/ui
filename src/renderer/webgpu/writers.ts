@@ -74,6 +74,7 @@ export function writeTextRunData({ floats }: { floats: any; }, bytes_offset: num
         effect_distance_range,
         text_stroke_multisampling,
         text_stroke_color,
+        transform,
     } = text_run
     const color_float_offset = (bytes_offset + TEXT_RUN.COLOR.OFFSET) / FLOAT32_SIZE
     floats[color_float_offset] = color[0] / 255
@@ -111,6 +112,9 @@ export function writeTextRunData({ floats }: { floats: any; }, bytes_offset: num
     floats[text_stroke_color_float_offset + 1] = text_stroke_color[1] / 255
     floats[text_stroke_color_float_offset + 2] = text_stroke_color[2] / 255
     floats[text_stroke_color_float_offset + 3] = text_stroke_color[3] / 255
+
+    const transform_float_offset = (bytes_offset + TEXT_RUN.TRANSFORM.OFFSET) / FLOAT32_SIZE
+    floats.set(transform, transform_float_offset)
 }
 
 function packColor(color: any) {

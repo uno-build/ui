@@ -75,7 +75,7 @@ export default class ResourcesWebGPU extends Resources<
             this.adapter ??= await globalThis.navigator.gpu.requestAdapter({ featureLevel: 'compatibility' })
             this.device = await this.adapter!.requestDevice({
                 requiredLimits: {
-                    maxStorageBuffersInVertexStage: 2,
+                    maxStorageBuffersInVertexStage: 3,
                 },
             })
         }

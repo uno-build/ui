@@ -161,6 +161,16 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
             return
         }
 
+        if (resolved_style.name === 'translateX' || resolved_style.name === 'translateY') {
+            element.style.translate = toCssAxes(node.styles.translateX, node.styles.translateY, '0px')
+            return
+        }
+
+        if (resolved_style.name === 'scaleX' || resolved_style.name === 'scaleY') {
+            element.style.scale = toCssAxes(node.styles.scaleX, node.styles.scaleY, '1')
+            return
+        }
+
         const default_value = DEFAULT_NODE_STYLE[resolved_style.name as keyof typeof DEFAULT_NODE_STYLE]
         const value =
             (resolved_style.expanded[0]!.parsed as { kind?: string }).kind === KEYWORD.UNSET && default_value !== undefined
@@ -208,9 +218,17 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
         for (const node of scroll_nodes) {
             this.applyNodeScroll(node)
         }
+
+        if (operations.needUpdateLayout()) {
+            this.applyNodeTransforms(nodes, false)
+        }
     }
 
     afterUpdate(nodes: Node<HTMLElement>[], operations: Operations<HTMLElement>) {
+        if (operations.needUpdateLayout()) {
+            this.applyNodeTransforms(nodes, true)
+        }
+
         const read_metrics = operations.needUpdateLayout() || operations.needUpdateScrollMetrics()
         const scroll_nodes = read_metrics ? nodes : operations.scroll_nodes
         for (const node of scroll_nodes) {
@@ -218,6 +236,19 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
                 operations.scroll_nodes.add(node)
             }
             operations.recordScrollMetrics(node)
+        }
+    }
+
+    // getBoundingClientRect() includes translate and scale, which are not part of the layout:
+    // they are removed while the layout is read.
+    private applyNodeTransforms(nodes: any, enabled: any) {
+        for (const node of nodes) {
+            const { translateX, translateY, scaleX, scaleY } = node.styles
+            if (translateX !== undefined || translateY !== undefined || scaleX !== undefined || scaleY !== undefined) {
+                const element = this.elements.get(node)
+                element.style.translate = enabled ? toCssAxes(translateX, translateY, '0px') : 'none'
+                element.style.scale = enabled ? toCssAxes(scaleX, scaleY, '1') : 'none'
+            }
         }
     }
 
@@ -311,6 +342,17 @@ const DEFAULT_NODE_STYLE = {
 
 function toCssBackgroundImage(value: any) {
     return `url(${JSON.stringify(value)})`
+}
+
+function toCssAxes(x_style: any, y_style: any, initial: string) {
+    const x_unset = x_style === undefined || x_style.parsed.kind === KEYWORD.UNSET
+    const y_unset = y_style === undefined || y_style.parsed.kind === KEYWORD.UNSET
+
+    if (x_unset && y_unset) {
+        return ''
+    }
+
+    return `${x_unset ? initial : x_style.value} ${y_unset ? initial : y_style.value}`
 }
 
 function toCssBackgroundSize(node: any) {
