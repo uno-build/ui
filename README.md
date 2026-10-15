@@ -33,7 +33,7 @@ uno UI solves both problems by rendering the UI directly through the game's rend
 
 - Works with any WebGPU rendering engine
 - Use it standalone or with [React](https://uno.build/examples/react/), [Vue](https://uno.build/examples/vue/) or [SolidJS](https://uno.build/examples/solid/)
-- World-space integrations for [Three.js](https://uno.build/examples/engines/three-worldspace.html), [Babylon.js](https://uno.build/examples/engines/babylon-worldspace.html), [Babylon Lite](https://uno.build/examples/engines/babylonlite-worldspace.html) and [PlayCanvas](https://uno.build/examples/engines/playcanvas-worldspace.html)
+- World-space integrations for [Three.js](https://uno.build/examples/engines/three-worldspace.html), [Babylon.js](https://uno.build/examples/engines/babylon-worldspace.html), [Babylon Lite](https://uno.build/examples/engines/babylonlite-worldspace.html), [PlayCanvas](https://uno.build/examples/engines/playcanvas-worldspace.html) and [Pixi.js 3D](https://uno.build/examples/engines/pixi3d-worldspace.html)
 - [Pixel-perfect parity with DOM rendering](https://uno.build/examples/layouts/)
 - High-quality text rendering with strokes and shadows using [MTSDF](https://github.com/Chlumsky/msdf-atlas-gen)
 - Accurate text measurement and layout powered by [Pretext](https://github.com/chenglou/pretext)
@@ -48,6 +48,7 @@ uno UI solves both problems by rendering the UI directly through the game's rend
 - [WebGPU](https://uno.build/examples/engines/webgpu.html)
 - [Three.js](https://uno.build/examples/engines/three.html)
 - [Pixi.js](https://uno.build/examples/engines/pixi.html)
+- [Pixi.js 3D](https://uno.build/examples/engines/pixi3d.html)
 - [Babylon.js](https://uno.build/examples/engines/babylon.html)
 - [Babylon Lite](https://uno.build/examples/engines/babylonlite.html)
 - [PlayCanvas](https://uno.build/examples/engines/playcanvas.html)
@@ -59,6 +60,7 @@ uno UI solves both problems by rendering the UI directly through the game's rend
 - [Babylon.js](https://uno.build/examples/engines/babylon-worldspace.html)
 - [Babylon Lite](https://uno.build/examples/engines/babylonlite-worldspace.html)
 - [PlayCanvas](https://uno.build/examples/engines/playcanvas-worldspace.html)
+- [Pixi.js 3D](https://uno.build/examples/engines/pixi3d-worldspace.html)
 
 #### UI frameworks.
 
