@@ -135,6 +135,45 @@ test('UI hit-tests scaled nodes and their children by their scaled boxes', async
     ui.destroy()
 })
 
+test('UI skips nodes without a layout, or under a clipping ancestor without one, until the next update', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const old_parent = ui.create()
+    const new_parent = ui.create()
+    const child = ui.create()
+    const moved = ui.create()
+    const hit_nodes = []
+
+    ui.root.style('width', '100px')
+    ui.root.style('height', '100px')
+    old_parent.style('width', '40px')
+    old_parent.style('height', '40px')
+    moved.style('width', '20px')
+    moved.style('height', '20px')
+    ui.root.add(old_parent)
+    old_parent.add(moved)
+    ui.update()
+    ui.events_source.on('hit', ({ node }) => hit_nodes.push(node))
+
+    new_parent.style('width', '40px')
+    new_parent.style('height', '40px')
+    new_parent.style('overflow', 'hidden')
+    child.style('width', '20px')
+    child.style('height', '20px')
+    ui.root.add(new_parent)
+    new_parent.add(child)
+    moved.detach()
+    new_parent.add(moved)
+    ui.dispatchPlatformEvent({ type: 'hit' }, { x: 5, y: 5 })
+    ui.update()
+
+    for (const [x, y] of [[5, 5], [45, 5], [65, 5]]) {
+        ui.dispatchPlatformEvent({ type: 'hit' }, { x, y })
+    }
+
+    expect(hit_nodes).toEqual([old_parent, old_parent, child, moved])
+    ui.destroy()
+})
+
 test('default event definitions expose their public types through UI', async () => {
     const ui = await TestUI.create({
         renderer: new TestRenderer(),

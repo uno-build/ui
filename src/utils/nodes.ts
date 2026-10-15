@@ -14,6 +14,13 @@ export function isNodeAtPoint(node: Node, x: number, y: number) {
         return false
     }
 
+    // Nodes added or moved since the last update have no layout yet, or sit under an ancestor without one.
+    for (let current: Node | null = node; current !== null; current = current.parent) {
+        if (current.layout.width === undefined) {
+            return false
+        }
+    }
+
     const { x: node_x, y: node_y, width, height, clip } = getSingleNodeMetrics(node)
     const left = Math.max(node_x, clip?.left ?? -Infinity)
     const top = Math.max(node_y, clip?.top ?? -Infinity)
