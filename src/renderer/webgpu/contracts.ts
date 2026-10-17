@@ -11,7 +11,8 @@ export type ResourcesWebGPUOptions = {
 } & ({ canvas: WebGPUCanvas; context?: WebGPUContext } | { canvas?: WebGPUCanvas; context: WebGPUContext })
 
 export type WebGPUImage = {
-    image: GPUCopyExternalImageSource
+    /** Without it, only width × height of the atlas is reserved, for copyTextureToImage. */
+    image?: GPUCopyExternalImageSource
     width?: number
     height?: number
     preventBleeding?: boolean
@@ -52,6 +53,7 @@ export type FontData = {
 }
 
 export type WebGPUFont = WebGPUImage & {
+    image: GPUCopyExternalImageSource
     data: FontData
 }
 

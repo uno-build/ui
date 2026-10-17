@@ -3504,6 +3504,32 @@ test('ResourcesWebGPU resolves missing dimensions from the image and requires un
     })).toThrow('Image height is required when the image does not provide it.')
 })
 
+test('ResourcesWebGPU reserves an image without a source and copies a texture into it', async () => {
+    const device = createFakeDevice()
+    const resources = await ResourcesWebGPU.create({
+        canvas: {},
+        device,
+        context: {},
+        format: 'rgba8unorm',
+    })
+    const image = resources.registerImage('scene', { width: 32, height: 16 })
+    const command_buffer_count = device.command_buffers.length
+    const source = { texture: { id: 'scene-texture' }, origin: [64, 0, 0] }
+
+    resources.copyTextureToImage('scene', source)
+
+    expect(device.copies).toHaveLength(0)
+    expect(device.command_buffers).toHaveLength(command_buffer_count + 1)
+    expect(device.texture_copies.at(-1)).toEqual({
+        source,
+        destination: {
+            texture: getAtlasTextures(device).at(-1),
+            origin: [image.x, image.y, image.layer],
+        },
+        size: [32, 16, 1],
+    })
+})
+
 test('ResourcesWebGPU notifies after updating its default font and skips rejected or missing fonts', async () => {
     const resources = await ResourcesWebGPU.create({
         canvas: {},

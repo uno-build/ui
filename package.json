@@ -1,6 +1,6 @@
 {
     "name": "@uno.build/ui",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "type": "module",
     "license": "Apache-2.0",
     "description": "UI system for WebGPU",
@@ -229,6 +229,7 @@
         "benchmarks:render-metrics": "node ./scripts/benchmarks.mjs --workload render-metrics",
         "benchmarks:render-metrics:headed": "node ./scripts/benchmarks.mjs --workload render-metrics --headed"
     },
+    "prepublishOnly": "npm run typescript && npm run build && npm run build:check",
     "publishConfig": {
         "access": "public"
     },

@@ -106,19 +106,21 @@ export class ImageManager {
 
         const atlas_texture = this.getAtlasTexture()
 
-        this.device.queue.copyExternalImageToTexture(
-            { source: image.image },
-            {
-                texture: atlas_texture,
-                origin: [allocation.x, allocation.y, allocation.atlas_layer.layer],
-            },
-            [image.width, image.height, 1],
-        )
+        if (image.image !== undefined) {
+            this.device.queue.copyExternalImageToTexture(
+                { source: image.image },
+                {
+                    texture: atlas_texture,
+                    origin: [allocation.x, allocation.y, allocation.atlas_layer.layer],
+                },
+                [image.width, image.height, 1],
+            )
 
-        // If preventBleeding===true, copy the padding pixels around the image
-        // to avoid bleeding artifacts when sampling the texture.
-        if (image.preventBleeding === true) {
-            this.copyImagePadding(image, atlas_texture, allocation.x, allocation.y, allocation.atlas_layer.layer)
+            // If preventBleeding===true, copy the padding pixels around the image
+            // to avoid bleeding artifacts when sampling the texture.
+            if (image.preventBleeding === true) {
+                this.copyImagePadding(image, atlas_texture, allocation.x, allocation.y, allocation.atlas_layer.layer)
+            }
         }
 
         const new_atlas_image: ManagedAtlasImage = {
@@ -136,6 +138,19 @@ export class ImageManager {
         this.images.set(src, new_atlas_image)
 
         return new_atlas_image
+    }
+
+    imageCopy(src: string, source: GPUTexelCopyTextureInfo, command_encoder: GPUCommandEncoder): void {
+        const atlas_image = this.images.get(src)!
+
+        command_encoder.copyTextureToTexture(
+            source,
+            {
+                texture: this.getAtlasTexture(),
+                origin: [atlas_image.x, atlas_image.y, atlas_image.layer],
+            },
+            [atlas_image.image_size[0], atlas_image.image_size[1], 1],
+        )
     }
 
     imageDispose(src: string): boolean {
