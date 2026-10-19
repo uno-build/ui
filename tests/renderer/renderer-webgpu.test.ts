@@ -1129,6 +1129,29 @@ test('RendererWebGPU creates panel commands for consecutive panels', () => {
     expect(render_data.glyphs).toHaveLength(0)
 })
 
+test('RendererWebGPU passes the first child panel to a panel command', () => {
+    const renderer = createRenderer()
+    const parent = createNode()
+    const hidden = createNode({ parent, opacity: 0 })
+    const child = createNode({ parent })
+    parent.children.push(hidden, child)
+    const render_data = collectRenderData(renderer, [parent, hidden, child])
+    const { records } = renderer as any
+
+    expect(render_data.commands).toEqual([
+        {
+            kind: COMMAND_KIND_PANEL,
+            panel_index: records.get(parent).panel_slot,
+            glyph_index: records.get(child).panel_slot + 1,
+        },
+        {
+            kind: COMMAND_KIND_PANEL,
+            panel_index: records.get(child).panel_slot,
+            glyph_index: 0,
+        },
+    ])
+})
+
 test('RendererWebGPU writes panel commands into command buffer data', () => {
     const renderer = createRenderer()
     const render_data = collectRenderData(renderer, [createNode(), createNode()])
@@ -4268,7 +4291,7 @@ test('RendererWebGPU updates inherited opacity without rewriting glyphs and rest
     expect(child_record.glyph_count).toBe(0)
     expect(command_pool.uploaded).toBe(3 * COMMAND_SIZE)
     expect(createCommands(nodes, records)).toEqual([
-        { kind: COMMAND_KIND_PANEL, panel_index: records.get(root).panel_slot, glyph_index: 0 },
+        { kind: COMMAND_KIND_PANEL, panel_index: records.get(root).panel_slot, glyph_index: sibling_record.panel_slot + 1 },
         { kind: COMMAND_KIND_PANEL, panel_index: sibling_record.panel_slot, glyph_index: 0 },
         { kind: COMMAND_KIND_GLYPH, panel_index: 0, glyph_index: sibling_record.glyph_start },
     ])

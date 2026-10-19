@@ -343,7 +343,11 @@ function expectCommands(renderer, nodes) {
     const expected = []
     for (const node of nodes) {
         const record = renderer.records.get(node)
-        if (record.panel_slot !== -1) expected.push(COMMAND_KIND_PANEL, record.panel_slot, 0, 0)
+        if (record.panel_slot !== -1) {
+            const occluder = node.children.find((child) => renderer.records.get(child).panel_slot !== -1)
+            const occluder_index = occluder === undefined ? 0 : renderer.records.get(occluder).panel_slot + 1
+            expected.push(COMMAND_KIND_PANEL, record.panel_slot, occluder_index, 0)
+        }
         for (let index = 0; index < record.glyph_count; index++) {
             expected.push(COMMAND_KIND_GLYPH, 0, record.glyph_start + index, 0)
         }
