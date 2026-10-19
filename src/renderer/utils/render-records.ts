@@ -28,10 +28,12 @@ export function createCommands(nodes: any, records: any) {
     for (const node of nodes) {
         const { panel_slot, glyph_start, glyph_count, has_text_shadow, text_stroke_width } = records.get(node)
         if (panel_slot !== -1) {
+            // Panels have no glyphs: the glyph index carries the first child panel + 1, which may cover the inner border edge.
+            const occluder = node.children.find((child: any) => records.get(child).panel_slot !== -1)
             commands.push({
                 kind: COMMAND_KIND_PANEL,
                 panel_index: panel_slot,
-                glyph_index: 0,
+                glyph_index: occluder === undefined ? 0 : records.get(occluder).panel_slot + 1,
             })
         }
 
