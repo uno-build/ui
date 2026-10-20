@@ -94,6 +94,7 @@ const SUBTREE_STYLE_NAMES = new Set([
     STYLE.TRANSLATEY.name,
     STYLE.SCALEX.name,
     STYLE.SCALEY.name,
+    STYLE.ROTATE.name,
     STYLE.OVERFLOWX.name,
     STYLE.OVERFLOWY.name,
 ])
@@ -824,7 +825,7 @@ export default class RendererWebGPU extends Renderer<
         }
 
         const node_metrics = getNodeMetrics(node)
-        const { x, y, scale_x, scale_y, untransformed_x, untransformed_y, opacity, clip } = node_metrics
+        const { x, y, scale_x, scale_y, rotation, untransformed_x, untransformed_y, opacity, clip } = node_metrics
         if (opacity <= 0 || isNodeClipped(node_metrics)) {
             return null
         }
@@ -900,6 +901,10 @@ export default class RendererWebGPU extends Renderer<
                 (effect_distance_range * font_size * scale) / (font.json.atlas.size * 2) - 0.5 / this.device_pixel_ratio
             const text_stroke_multisampling =
                 text_stroke_width > 0 && text_stroke_width * scale > text_stroke_width_limit ? 1 : 0
+            const cos = rotation === 0 ? 1 : Math.cos(rotation)
+            const sin = rotation === 0 ? 0 : Math.sin(rotation)
+            const scaled_x = untransformed_x * scale_x
+            const scaled_y = untransformed_y * scale_y
             run = {
                 color: (node.styles.color as { parsed: { rgba: number[] } } | undefined)?.parsed.rgba ?? [0, 0, 0, 255],
                 font_data: [font.layer, opacity, font.json.atlas.distanceRange, this.resources!.font_atlas_size],
@@ -909,9 +914,11 @@ export default class RendererWebGPU extends Renderer<
                 text_stroke_width,
                 effect_distance_range,
                 text_stroke_multisampling,
+                rotation,
                 text_stroke_color: text_stroke?.color ?? [0, 0, 0, 0],
-                // Maps the untransformed glyphs to the screen: p' = scale * p + offset.
-                transform: [scale_x, scale_y, x - untransformed_x * scale_x, y - untransformed_y * scale_y],
+                // Maps the untransformed glyphs to the screen: p' = rotation * (scale * p) + offset, which puts the
+                // untransformed corner on (x, y).
+                transform: [scale_x, scale_y, x - (cos * scaled_x - sin * scaled_y), y - (sin * scaled_x + cos * scaled_y)],
             }
         }
 

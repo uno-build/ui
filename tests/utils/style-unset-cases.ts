@@ -13,6 +13,7 @@ export const STYLE_VALUES: Record<string, string> = {
     scale: '2',
     scaleX: '2',
     scaleY: '2',
+    rotate: '45deg',
     boxShadow: '1px 2px 3px 0px #123456',
     textShadow: '1px 2px 3px #123456',
     textStroke: '2px #123456',

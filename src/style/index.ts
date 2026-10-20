@@ -45,6 +45,7 @@ import {
     TEXT_SHADOW_DEFINITION,
     TEXT_STROKE_DEFINITION,
     TRANSLATE_DEFINITION,
+    ROTATE_DEFINITION,
 } from './definitions'
 
 export function validateStyle(name: string, value: unknown) {
@@ -275,6 +276,9 @@ export const STYLE = {
     ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
     SCALEY: createStyle('scaleY', (name, value) => [
         { name, value, definition: NUMBER_DEFINITION },
+    ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
+    ROTATE: createStyle('rotate', (name, value) => [
+        { name, value, definition: ROTATE_DEFINITION },
     ], { painter: true, record_parts: RECORD_PANEL | RECORD_TEXT_RUN }),
     BOXSHADOW: createStyle('boxShadow', (name, value) => [
         { name, value, definition: BOX_SHADOW_DEFINITION },
@@ -555,8 +559,9 @@ const SIGNED_PX_NUMBER: NumberStyle = { unit: UNIT.PX, non_negative: false, max_
 const NON_NEGATIVE_NUMBER: NumberStyle = { unit: '', non_negative: true, max_one: false, integer: false }
 const OPACITY_NUMBER: NumberStyle = { unit: '', non_negative: true, max_one: true, integer: false }
 const INTEGER_NUMBER: NumberStyle = { unit: '', non_negative: false, max_one: false, integer: true }
+const DEG_NUMBER: NumberStyle = { unit: UNIT.DEG, non_negative: false, max_one: false, integer: false }
 
-// A number follows the first rule of the style's string definition: lengths are px, the rest are unitless.
+// A number follows the first rule of the style's string definition: lengths are px, angles are deg, the rest are unitless.
 export const NUMBER_STYLE = {
     zIndex: INTEGER_NUMBER,
     opacity: OPACITY_NUMBER,
@@ -564,6 +569,7 @@ export const NUMBER_STYLE = {
     translateY: SIGNED_PX_NUMBER,
     scaleX: NON_NEGATIVE_NUMBER,
     scaleY: NON_NEGATIVE_NUMBER,
+    rotate: DEG_NUMBER,
     borderTopLeftRadius: PX_NUMBER,
     borderTopRightRadius: PX_NUMBER,
     borderBottomLeftRadius: PX_NUMBER,

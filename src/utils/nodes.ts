@@ -21,7 +21,18 @@ export function isNodeAtPoint(node: Node, x: number, y: number) {
         }
     }
 
-    const { x: node_x, y: node_y, width, height, clip } = getSingleNodeMetrics(node)
+    const { x: node_x, y: node_y, width, height, rotation, clip } = getSingleNodeMetrics(node)
+    if (rotation !== 0) {
+        if (clip !== null && (x < clip.left || x >= clip.right || y < clip.top || y >= clip.bottom)) {
+            return false
+        }
+        // The point in the box's own axes: a rotated box turns about its top-left corner.
+        const cos = Math.cos(rotation)
+        const sin = Math.sin(rotation)
+        const local_x = cos * (x - node_x) + sin * (y - node_y)
+        const local_y = cos * (y - node_y) - sin * (x - node_x)
+        return local_x >= 0 && local_x < width && local_y >= 0 && local_y < height
+    }
     const left = Math.max(node_x, clip?.left ?? -Infinity)
     const top = Math.max(node_y, clip?.top ?? -Infinity)
     const right = Math.min(node_x + width, clip?.right ?? Infinity)

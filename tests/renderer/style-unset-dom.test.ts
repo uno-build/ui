@@ -3,8 +3,8 @@ import { STYLE_CASES, STYLE_NAMES, STYLE_VALUES } from '../utils/style-unset-cas
 
 const TEST_PAGE_URL = '/tests/renderer/'
 
-test('Dom unset restores the undefined state for all 87 styles', async ({ page }) => {
-    expect(STYLE_NAMES).toHaveLength(87)
+test('Dom unset restores the undefined state for all 88 styles', async ({ page }) => {
+    expect(STYLE_NAMES).toHaveLength(88)
     expect(Object.keys(STYLE_VALUES)).toEqual(STYLE_NAMES)
 
     await page.goto(TEST_PAGE_URL)
@@ -78,7 +78,7 @@ test('Dom unset restores the undefined state for all 87 styles', async ({ page }
         },
     )
 
-    expect(states).toHaveLength(87)
+    expect(states).toHaveLength(88)
     for (const { name, undefined_value, defined_value, unset_value } of states) {
         expect(defined_value, `${name}: defined`).not.toBe(undefined_value)
         expect(unset_value, `${name}: unset`).toBe(undefined_value)

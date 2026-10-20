@@ -33,6 +33,7 @@ import {
     validateRem,
     validateVw,
     validateVh,
+    validateDeg,
     validateNonNegative,
     validateMaxOne,
     validateImageSrc,
@@ -53,6 +54,7 @@ import {
     parseRem,
     parseVw,
     parseVh,
+    parseDeg,
     parseUnset,
 } from './parsers'
 import { createEnumValidator, createEnumParser } from './utils'
@@ -97,6 +99,15 @@ export const TRANSLATE_DEFINITION: StyleRule[] = [
         normalize: [normalizeTrim, normalizeToLowercase],
         validate: [validatePx],
         parse: [parsePx],
+    },
+    ...UNSET_DEFINITION,
+]
+
+export const ROTATE_DEFINITION: StyleRule[] = [
+    {
+        normalize: [normalizeTrim, normalizeToLowercase],
+        validate: [validateDeg],
+        parse: [parseDeg],
     },
     ...UNSET_DEFINITION,
 ]

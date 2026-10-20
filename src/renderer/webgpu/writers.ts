@@ -33,7 +33,7 @@ export function writePanelData({ floats, u32 }: { floats: Float32Array; u32: Uin
     floats[image_data_float_offset] = panel.opacity
     floats[image_data_float_offset + 1] = panel.background_image_mode
     floats[image_data_float_offset + 2] = panel.background_atlas_layer
-    floats[image_data_float_offset + 3] = 0
+    floats[image_data_float_offset + 3] = panel.rotation
 
     const border_colors_u32_offset = (bytes_offset + PANEL_DATA.BORDER_COLORS.OFFSET) / UINT32_SIZE
     u32[border_colors_u32_offset] = packColor(panel.border_color_top)
@@ -73,6 +73,7 @@ export function writeTextRunData({ floats }: { floats: any; }, bytes_offset: num
         text_stroke_width,
         effect_distance_range,
         text_stroke_multisampling,
+        rotation,
         text_stroke_color,
         transform,
     } = text_run
@@ -106,6 +107,9 @@ export function writeTextRunData({ floats }: { floats: any; }, bytes_offset: num
     const text_stroke_multisampling_float_offset =
         (bytes_offset + TEXT_RUN.TEXT_STROKE_MULTISAMPLING.OFFSET) / FLOAT32_SIZE
     floats[text_stroke_multisampling_float_offset] = text_stroke_multisampling
+
+    const rotation_float_offset = (bytes_offset + TEXT_RUN.ROTATION.OFFSET) / FLOAT32_SIZE
+    floats[rotation_float_offset] = rotation
 
     const text_stroke_color_float_offset = (bytes_offset + TEXT_RUN.TEXT_STROKE_COLOR.OFFSET) / FLOAT32_SIZE
     floats[text_stroke_color_float_offset] = text_stroke_color[0] / 255

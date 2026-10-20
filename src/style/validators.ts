@@ -152,6 +152,13 @@ export function validateVh(value: string) {
     }
 }
 
+export function validateDeg(value: string) {
+    const parsed = readUnit(value)
+    if (parsed === undefined || parsed.kind !== UNIT.DEG) {
+        return 'expected deg unit'
+    }
+}
+
 export function validateNonNegative(value: string) {
     const number = readNumber(value) ?? (readUnit(value) ?? readUnit(value))?.value
 

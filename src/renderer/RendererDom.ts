@@ -239,15 +239,19 @@ export default class RendererDom extends Renderer<unknown, void, HTMLElement, vo
         }
     }
 
-    // getBoundingClientRect() includes translate and scale, which are not part of the layout:
+    // getBoundingClientRect() includes translate, scale and rotate, which are not part of the layout:
     // they are removed while the layout is read.
     private applyNodeTransforms(nodes: any, enabled: any) {
         for (const node of nodes) {
-            const { translateX, translateY, scaleX, scaleY } = node.styles
-            if (translateX !== undefined || translateY !== undefined || scaleX !== undefined || scaleY !== undefined) {
+            const { translateX, translateY, scaleX, scaleY, rotate } = node.styles
+            if (
+                translateX !== undefined || translateY !== undefined ||
+                scaleX !== undefined || scaleY !== undefined || rotate !== undefined
+            ) {
                 const element = this.elements.get(node)
                 element.style.translate = enabled ? toCssAxes(translateX, translateY, '0px') : 'none'
                 element.style.scale = enabled ? toCssAxes(scaleX, scaleY, '1') : 'none'
+                element.style.rotate = enabled ? (rotate?.value ?? '') : 'none'
             }
         }
     }

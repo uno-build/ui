@@ -263,7 +263,8 @@ fn occludedInnerCoverage(
     local_position_width: vec2f,
     inner_coverage: f32,
 ) -> f32 {
-    let child_position = pixel - child.rect.xy;
+    // In the child's own axes: a rotated child turns about its top-left corner.
+    let child_position = rotatePoint(pixel - child.rect.xy, -child.image_data.w);
     let child_coverage = roundedRectCoverage(
         child_position,
         local_position_width,
@@ -285,13 +286,16 @@ fn occludedInnerCoverage(
 
 fn panelColor(input: VertexOutput, local_position_width: vec2f) -> vec4f {
     let panel = panel_data[u32(input.panel_index)];
+    // The clip is aligned with the screen and relative to the panel's top-left corner, which a rotation can move
+    // outside it: only no clip at all, all zeros, has right <= left.
+    let clip_position = input.pixel - panel.rect.xy;
     let visible = !(
-        any(panel.clipping > vec4f(0.0)) &&
+        panel.clipping.y > panel.clipping.w &&
         (
-            input.local_position.x < panel.clipping.w ||
-            input.local_position.y < panel.clipping.x ||
-            input.local_position.x > panel.clipping.y ||
-            input.local_position.y > panel.clipping.z
+            clip_position.x < panel.clipping.w ||
+            clip_position.y < panel.clipping.x ||
+            clip_position.x > panel.clipping.y ||
+            clip_position.y > panel.clipping.z
         )
     );
 

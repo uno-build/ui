@@ -141,6 +141,14 @@ export function parseVh(value: string) {
     }
 }
 
+export function parseDeg(value: string) {
+    const unit = readUnit(value)
+    return {
+        value,
+        parsed: unit,
+    }
+}
+
 export function parseImage<TImage extends { src: string }>(value: TImage) {
     return { value: value.src, parsed: value }
 }

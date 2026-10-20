@@ -37,6 +37,7 @@ struct TextRun {
     text_stroke_width: f32,
     effect_distance_range: f32,
     text_stroke_multisampling: f32,
+    rotation: f32,
     text_stroke_color: vec4f,
     transform: vec4f,
 }
@@ -58,4 +59,14 @@ struct VertexOutput {
 @group(0) @binding(4) var<storage, read> panel_data: array<PanelData>;
 @group(0) @binding(5) var<storage, read> glyph_data: array<GlyphData>;
 @group(0) @binding(6) var<storage, read> text_runs: array<TextRun>;
+
+// Positive angles turn clockwise on the y-down screen, as in CSS.
+fn rotatePoint(point: vec2f, angle: f32) -> vec2f {
+    if (angle == 0.0) {
+        return point;
+    }
+    let c = cos(angle);
+    let s = sin(angle);
+    return vec2f(c * point.x - s * point.y, s * point.x + c * point.y);
+}
 `
