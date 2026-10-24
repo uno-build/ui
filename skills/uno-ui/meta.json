@@ -1,0 +1,7 @@
+{
+  "title": "ui",
+  "description": "",
+  "root": true,
+  "icon": "PanelsTopLeft",
+  "pages": ["index", "examples", "getting-started", "components", "engines", "api", "advanced", "..."]
+}

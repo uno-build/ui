@@ -1,0 +1,174 @@
+---
+title: 'Examples'
+description: 'Explore uno UI with your favorite rendering engine.'
+---
+
+import { ExampleCard, ExamplesGallery } from '@/components/examples-gallery'
+
+## Background & Foreground
+
+These examples illustrate how to combine two independent UIs, one in the background and one in the foreground, with the engine’s scene rendered between them.
+
+<ExamplesGallery>
+  <ExampleCard
+    title="WebGPU"
+    href="https://uno.build/examples/engines/webgpu.html"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/engines/webgpu.ts"
+    image="/examples/engines/webgpu.webp"
+  />
+  <ExampleCard
+    title="Three.js"
+    href="https://uno.build/examples/engines/three.html"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/engines/three.ts"
+    image="/examples/engines/three.webp"
+  />
+  <ExampleCard
+    title="Pixi.js"
+    href="https://uno.build/examples/engines/pixi.html"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/engines/pixi.ts"
+    image="/examples/engines/pixi.webp"
+  />
+  <ExampleCard
+    title="Babylon.js"
+    href="https://uno.build/examples/engines/babylon.html"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/engines/babylon.ts"
+    image="/examples/engines/babylon.webp"
+  />
+  <ExampleCard
+    title="Babylon Lite"
+    href="https://uno.build/examples/engines/babylonlite.html"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/engines/babylonlite.ts"
+    image="/examples/engines/babylonlite.webp"
+  />
+  <ExampleCard
+    title="PlayCanvas"
+    href="https://uno.build/examples/engines/playcanvas.html"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/engines/playcanvas.ts"
+    image="/examples/engines/playcanvas.webp"
+  />
+  <ExampleCard
+    title="TypeGPU"
+    href="https://uno.build/examples/engines/typegpu.html"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/engines/typegpu.ts"
+    image="/examples/engines/typegpu.webp"
+  />
+</ExamplesGallery>
+
+## World space
+
+The background UI shown above can also be placed in world space. Each example includes lighting to demonstrate how it integrates with the 3D scene.
+
+<ExamplesGallery>
+  <ExampleCard
+    title="Three.js"
+    href="https://uno.build/examples/engines/three-worldspace.html"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/engines/three-worldspace.ts"
+    image="/examples/engines/three-worldspace.webp"
+    alt="Three.js example with a world-space UI and lighting in a 3D scene"
+  />
+  <ExampleCard
+    title="Babylon.js"
+    href="https://uno.build/examples/engines/babylon-worldspace.html"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/engines/babylon-worldspace.ts"
+    image="/examples/engines/babylon-worldspace.webp"
+    alt="Babylon.js example with a world-space UI and lighting in a 3D scene"
+  />
+  <ExampleCard
+    title="Babylon Lite"
+    href="https://uno.build/examples/engines/babylonlite-worldspace.html"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/engines/babylonlite-worldspace.ts"
+    image="/examples/engines/babylonlite-worldspace.webp"
+    alt="Babylon Lite example with a world-space UI and lighting in a 3D scene"
+  />
+  <ExampleCard
+    title="PlayCanvas"
+    href="https://uno.build/examples/engines/playcanvas-worldspace.html"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/engines/playcanvas-worldspace.ts"
+    image="/examples/engines/playcanvas-worldspace.webp"
+    alt="PlayCanvas example with a world-space UI and lighting in a 3D scene"
+  />
+</ExamplesGallery>
+
+## React
+
+Includes a demo showing the to-do app integrated into a Three.js scene.
+
+<ExamplesGallery>
+  <ExampleCard
+    title="ScrollView"
+    href="https://uno.build/examples/react/?example=scrollview"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/react/scrollview.tsx"
+    image="/examples/react/scrollview.webp"
+    alt="React ScrollView example built with uno UI"
+  />
+  <ExampleCard
+    title="Todo"
+    href="https://uno.build/examples/react/?example=todo"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/react/todo.tsx"
+    image="/examples/react/todo.webp"
+    alt="React todo list example built with uno UI"
+  />
+  <ExampleCard
+    title="Todo + Three.js"
+    href="https://uno.build/examples/react/?example=todo-three"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/react/todo-three.ts"
+    image="/examples/react/todo-three.webp"
+    alt="React todo list integrated with a Three.js scene"
+  />
+</ExamplesGallery>
+
+## Vue
+
+Includes a demo showing the to-do app integrated into a PlayCanvas scene.
+
+<ExamplesGallery>
+  <ExampleCard
+    title="ScrollView"
+    href="https://uno.build/examples/vue/?example=scrollview"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/vue/scrollview.vue"
+    image="/examples/vue/scrollview.webp"
+    alt="Vue ScrollView example built with uno UI"
+  />
+  <ExampleCard
+    title="Todo"
+    href="https://uno.build/examples/vue/?example=todo"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/vue/todo.vue"
+    image="/examples/vue/todo.webp"
+    alt="Vue todo list example built with uno UI"
+  />
+  <ExampleCard
+    title="Todo + PlayCanvas"
+    href="https://uno.build/examples/vue/?example=todo-playcanvas"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/vue/todo-playcanvas.ts"
+    image="/examples/vue/todo-playcanvas.webp"
+    alt="Vue todo list integrated with a PlayCanvas scene"
+  />
+</ExamplesGallery>
+
+## Solid
+
+Includes a demo showing the to-do app integrated into a Babylon Lite scene.
+
+<ExamplesGallery>
+  <ExampleCard
+    title="ScrollView"
+    href="https://uno.build/examples/solid/?example=scrollview"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/solid/scrollview.tsx"
+    image="/examples/solid/scrollview.webp"
+    alt="Solid ScrollView example built with uno UI"
+  />
+  <ExampleCard
+    title="Todo"
+    href="https://uno.build/examples/solid/?example=todo"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/solid/todo.tsx"
+    image="/examples/solid/todo.webp"
+    alt="Solid todo list example built with uno UI"
+  />
+  <ExampleCard
+    title="Todo + Babylon Lite"
+    href="https://uno.build/examples/solid/?example=todo-babylonlite"
+    sourceHref="https://github.com/uno-build/ui/blob/main/examples/solid/todo-babylonlite.ts"
+    image="/examples/solid/todo-babylonlite.webp"
+    alt="Solid todo list integrated with a Babylon Lite scene"
+  />
+</ExamplesGallery>

@@ -1,0 +1,88 @@
+---
+title: 'UI'
+---
+
+UI for rendering to a WebGPU canvas. Import from `@uno.build/ui/UI`. For engine surfaces, see [UIWorldSpace](./ui-world-space.mdx).
+
+## Properties
+
+| Property         | Type                         | Description                               |
+| ---------------- | ---------------------------- | ----------------------------------------- |
+| `root`           | `Node \| null`               | Root node.                                |
+| `renderer`       | `RendererWebGPU \| null`     | Renderer instance.                        |
+| `resources`      | `ResourcesWebGPU \| null`    | [Resource store](./resources-webgpu.mdx). |
+| `defined_events` | `DefinedEvent[]`             | Installed event definitions.              |
+| `events`         | `EventEmitter<UIEventMap>`   | Normalized UI events.                     |
+| `events_source`  | `EventEmitter<CoreEventMap>` | Source and lifecycle events.              |
+| `operations`     | `Operations`                 | Mutation journal.                         |
+
+## Methods
+
+| Method                                                           | Returns                         | Description                                   |
+| ---------------------------------------------------------------- | ------------------------------- | --------------------------------------------- |
+| `static create(options: UIOptions)`                              | `Promise<{ ui: UI }>`           | Creates and initializes a UI.                 |
+| `create()`                                                       | `Node \| undefined`             | Creates a detached [Node](./node.mdx).        |
+| `update()`                                                       | `void`                          | Applies pending changes.                      |
+| `draw(options?: WebGPUDrawOptions)`                              | `WebGPUDrawResult \| undefined` | Draws the current UI state.                   |
+| `setViewport(width: number, height: number)`                     | `void`                          | Sets logical viewport dimensions.             |
+| `setDevicePixelRatio(device_pixel_ratio: number)`                | `void`                          | Sets raster density.                          |
+| `setRootSize(root_size: number)`                                 | `void`                          | Sets the pixel size of `1rem`.                |
+| `addChild(parent: Node, child: Node, before_node: Node \| null)` | `void`                          | Inserts a child; `null` appends.              |
+| `detachNode(node: Node)`                                         | `void`                          | Detaches a subtree for reuse.                 |
+| `destroyNode(node: Node)`                                        | `void`                          | Destroys a subtree; the root destroys the UI. |
+| `registerPlatformEvents()`                                       | `void`                          | Registers canvas event listeners.             |
+| `removePlatformEvents()`                                         | `void`                          | Removes registered canvas listeners.          |
+| `dispatchPlatformEvent(source_event: PlatformEvent)`             | `void`                          | Forwards a platform event into the UI.        |
+| `destroy()`                                                      | `boolean \| void`               | Destroys the UI.                              |
+
+## Creation options
+
+| Option                     | Type                                           | Default    |
+| -------------------------- | ---------------------------------------------- | ---------- |
+| `resources`                | `ResourcesWebGPU`                              | Required   |
+| `register_platform_events` | `boolean`                                      | `true`     |
+| `defined_events`           | `Array<(options: { ui: UI }) => DefinedEvent>` | `[]`       |
+| `image_min_filter`         | `'linear' \| 'nearest'`                        | `'linear'` |
+| `image_mag_filter`         | `'linear' \| 'nearest'`                        | `'linear'` |
+| `yoga`                     | `boolean`                                      | `true`     |
+
+`register_platform_events` registers canvas listeners during creation. `UIOptions` and `DefinedEvent` are exported by `@uno.build/ui/UI`. See [Custom event definitions](./events.mdx#custom-event-definitions) for a `defined_events` example. `yoga: false` lays the UI out without Yoga; see [Layout without Yoga](#layout-without-yoga).
+
+## Layout without Yoga
+
+With `yoga: false`, every node is an absolutely positioned box and there is no flexbox. It is meant for UIs that only place information on screen, such as a gameplay HUD with labels that follow 3D objects. A change lays out only the changed node, and its children when its size changes; siblings and ancestors are never laid out again. The low-level classes (`UIWebGPU`, `UIWebGPUThree`, …) use this mode when they are created without `loadYoga`.
+
+```ts
+const { ui } = await UI.create({ resources, yoga: false })
+ui.setViewport(canvas.clientWidth, canvas.clientHeight)
+
+const label = ui.create()
+label.style('left', '20px')
+label.style('top', '20px')
+label.text('100')
+ui.root.add(label)
+```
+
+- **Position.** A node is placed inside its parent's border, with `left`, `top`, `right` and `bottom`. Without insets it sits at the start of the parent's content box, so siblings overlap. `left` wins over `right`, and `top` over `bottom`. Percentages resolve against the parent's size inside its border.
+- **Size.** `width` and `height` take px or `%`. With both `left` and `right` (or `top` and `bottom`) and no size, the node stretches between them. A text node without a size takes the size of its text; it only wraps when its width is set or stretched. Any other node without a size measures only its padding and border: children never grow their parent.
+- **Supported layout styles.** `left`, `top`, `right`, `bottom`, `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, `padding*`, `border*Width`, `boxSizing` and `display: none`. A `min` larger than its `max` wins, as in CSS. The other layout styles (`flex*`, `align*`, `justify*`, `gap`, `margin`, `position`, `aspectRatio`) are ignored. Paint and text styles work as usual.
+- **No scrolling.** `overflow` clips, but nothing scrolls: `scrollWidth`, `scrollHeight`, `clientWidth` and `clientHeight` stay `0`, and wheel and scroll events do not move content. Pointer, click and focus events work.
+- **The root** fills the viewport and ignores its insets: call `setViewport()` before `update()`.
+
+To center text in a box, use `textAlign: 'center'` and a `lineHeight` equal to the box height. Move things every frame with `translate`, `scale`, and `rotate`, which only repaint. `left` and `top` are layout changes: moving a subtree with them places its glyphs again.
+
+## Draw options
+
+| Option            | Type                | Default                     |
+| ----------------- | ------------------- | --------------------------- |
+| `submit`          | `boolean`           | `true`                      |
+| `command_encoder` | `GPUCommandEncoder` | New encoder                 |
+| `texture_view`    | `GPUTextureView`    | Current canvas texture view |
+| `load_op`         | `'load' \| 'clear'` | `'load'`                    |
+
+## Draw result
+
+| Property          | Type                |
+| ----------------- | ------------------- |
+| `command_encoder` | `GPUCommandEncoder` |
+| `texture_view`    | `GPUTextureView`    |

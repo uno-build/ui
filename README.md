@@ -41,6 +41,14 @@ uno UI solves both problems by rendering the UI directly through the game's rend
 - Fine-grained updates for efficient rendering
 - Lightweight, basic setup is around 280kb (93kb gzip)
 
+## Agent Skill
+
+Teach your coding agent (Claude Code, Codex, Cursor, OpenCode, and others) how to use uno UI:
+
+```bash
+npx skills add uno-build/ui --skill uno-ui
+```
+
 ## Demos
 
 #### These examples illustrate how to combine two independent UIs, one in the background and one in the foreground, with the engine’s scene rendered between them.

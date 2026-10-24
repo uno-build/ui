@@ -1,0 +1,71 @@
+---
+title: First Layout
+# description: Create your first uno UI layout using a minimal WebGPU setup.
+---
+
+Install the required dependencies:
+
+```sh
+npm install @uno.build/ui
+```
+
+## Basic example
+
+This example creates a node and centers it within the canvas.
+
+```js
+import ResourcesWebGPU from '@uno.build/ui/ResourcesWebGPU'
+import UI from '@uno.build/ui/UI'
+
+const canvas = document.querySelector('canvas')
+const resources = await ResourcesWebGPU.create({ canvas })
+const { ui } = await UI.create({ resources })
+
+ui.root.style('alignItems', 'center')
+ui.root.style('justifyContent', 'center')
+
+const node = ui.create()
+node.style('width', '200px')
+node.style('height', '150px')
+node.style('backgroundColor', '#8080FD')
+ui.root.add(node)
+
+function onResize() {
+  canvas.width = canvas.clientWidth * window.devicePixelRatio
+  canvas.height = canvas.clientHeight * window.devicePixelRatio
+  ui.setViewport(canvas.clientWidth, canvas.clientHeight)
+  ui.setDevicePixelRatio(window.devicePixelRatio)
+  ui.update()
+}
+window.addEventListener('resize', onResize)
+onResize()
+
+requestAnimationFrame(function render() {
+  ui.draw()
+  requestAnimationFrame(render)
+})
+```
+
+- `ResourcesWebGPU` owns shared WebGPU resources, including the GPU device, canvas context configuration, and image and font atlases. A single instance can be shared by multiple UIs.
+- `ui.create()` creates a node, the basic building block of a uno UI. A node is an element that can have styles, respond to events, and contain child nodes. Add it to a parent with `add()`, as in `ui.root.add(node)`, to include it in the layout.
+- `ui.root` is the root node of the layout. It behaves like any other node created with `ui.create()`.
+- `ui.update()` applies pending node, style, and layout changes.
+- `ui.draw()` renders the current UI state to the WebGPU canvas.
+- `ui.setViewport(width, height)` sets the viewport dimensions in logical CSS pixels, while the canvas backing-store dimensions are expressed in device pixels.
+- `ui.setDevicePixelRatio(ratio)` defines how logical pixels map to device pixels.
+
+## Demo
+
+<iframe
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&initialpath=%2Ffirst-layout.html&module=%2Ffirst-layout.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '350px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>

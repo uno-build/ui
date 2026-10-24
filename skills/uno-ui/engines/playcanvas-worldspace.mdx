@@ -1,0 +1,189 @@
+---
+title: PlayCanvas World Space
+---
+
+`UIPlayCanvas` renders uno UI into a texture and displays it on a plane inside a PlayCanvas scene. The plane can move, rotate, and scale while its UI remains interactive.
+
+This section continues the [PlayCanvas](./playcanvas.mdx) guide. As before, keep the shared WebGPU resources, graphics device, and app. The following examples inject the UI directly onto a plane in the scene instead of drawing it as a background or foreground overlay. Replace the overlay draw callbacks with the texture draw below.
+
+## 1. Create the UI plane
+
+Replace the `UI` import and `UI.create()` call with `UIPlayCanvas`. Pass it the app as well as the shared resources. It returns the uno UI instance and a PlayCanvas entity with its texture and material already connected:
+
+```js
+import UIPlayCanvas from '@uno.build/ui/UIPlayCanvas'
+
+const UI_SIZE = 400
+const device_pixel_ratio = window.devicePixelRatio
+
+const { ui, plane, material, texture } = await UIPlayCanvas.create({
+  app,
+  resources,
+  device_pixel_ratio,
+  texture_width: Math.round(UI_SIZE * device_pixel_ratio),
+  texture_height: Math.round(UI_SIZE * device_pixel_ratio),
+  world_width: 1,
+  world_height: 1,
+})
+
+material.useLighting = false
+material.specular.set(0, 0, 0)
+material.update()
+ui.setViewport(UI_SIZE, UI_SIZE)
+```
+
+- `texture_width`, `texture_height`: Sets the resolution of the UI texture in physical pixels.
+- `world_width`, `world_height`: Sets the size of the plane in PlayCanvas world units.
+- `ui.setViewport(width, height)`: Sets the space available for the UI layout in logical pixels.
+- `material`: The default material is `PC.StandardMaterial`. The example disables lighting and specular highlights so the UI does not need a scene light.
+
+## 2. Set up the camera
+
+Replace the camera from the shared setup with one that clears the scene background:
+
+```js
+const camera = new PC.Entity('camera', app)
+camera.addComponent('camera', {
+  clearColor: new PC.Color(17 / 255, 24 / 255, 39 / 255),
+  clearColorBuffer: true,
+  fov: 60,
+  nearClip: 0.1,
+  farClip: 100,
+})
+camera.setPosition(0, 0, 3)
+app.root.addChild(camera)
+ui.setCamera(camera)
+```
+
+Pass the camera entity to `ui.setCamera(camera)`. uno casts a ray onto the plane and converts the hit position into UI layout coordinates. The component's existing pointer, click, and focus handlers work as the plane rotates.
+
+For pointer, click, and wheel events, the payload described in [Event data](../api/events.mdx#event-data) also includes `distance_to_camera` when the ray hits the plane. It is the distance from the camera to the hit position in PlayCanvas world units. The `x` and `y` fields remain coordinates in the UI's logical coordinate space.
+
+## 3. Add the plane to the scene
+
+By default, `plane` is a `PC.Entity` with a render component containing a rectangular mesh in the local XY plane, facing `+Z`. Its size is set by `world_width` and `world_height`.
+
+```js
+app.root.addChild(plane)
+```
+
+Draw the UI texture in `prerender` so the plane displays the updated layout when PlayCanvas renders the scene:
+
+```js
+app.on('update', () => {
+  plane.setLocalEulerAngles(0, (Math.sin(performance.now() / 2000) * 0.8 * 180) / Math.PI, 0)
+})
+app.on('prerender', () => {
+  ui.update()
+  ui.draw({
+    submit: false,
+    command_encoder: graphics_device.getCommandEncoder(),
+  })
+})
+app.start()
+```
+
+Here, `ui.draw()` updates the plane's texture rather than the canvas. PlayCanvas can clear the canvas normally before drawing the scene, and `antialias: true` can be used when creating the graphics device, as in the demo.
+
+## Customize the plane and hit mapping
+
+Use the optional `createPlane()` callback to display the UI on a different PlayCanvas entity, such as one containing a box, sphere, or cylinder mesh. It receives the configured UI `material` and the requested `world_width` and `world_height`. Return the entity as `plane`; additional resources such as `geometry` and `body_material` are also returned by `UIPlayCanvas.create()`.
+
+For custom interaction, return a `mapIntersection()` callback alongside the entity. It receives the closest triangle intersection from the entity's render components, including its children, and returns UV coordinates as `{ x, y }`, or `null` to reject the hit. The intersection includes `mesh_instance` and the interpolated `uv` coordinates. uno converts the returned UVs into UI layout coordinates. Without this callback, uno maps hits against the default rectangular plane rather than raycasting custom geometry.
+
+For example, add this `createPlane` option to `UIPlayCanvas.create()` to display the UI on only the front (`+Z`) face of a box and make only that face interactive:
+
+```js
+const { ui, plane, material } = await UIPlayCanvas.create({
+  //...
+  createPlane({ material, world_width, world_height }) {
+    const geometry = new PC.BoxGeometry({
+      halfExtents: new PC.Vec3(world_width / 2, world_height / 2, world_width / 2),
+    })
+    const body_material = new PC.StandardMaterial()
+    body_material.diffuse = new PC.Color(245 / 255, 242 / 255, 236 / 255)
+    body_material.useLighting = false
+    body_material.useTonemap = false
+    body_material.update()
+
+    // BoxGeometry starts with the two triangles of the +Z face.
+    const mesh = PC.Mesh.fromGeometry(graphics_device, geometry)
+    mesh.primitive[0].count = 6
+    const body_mesh = PC.Mesh.fromGeometry(graphics_device, geometry)
+    body_mesh.primitive[0].base = 6
+    body_mesh.primitive[0].count -= 6
+    const mesh_instance = new PC.MeshInstance(mesh, material)
+    const body_mesh_instance = new PC.MeshInstance(body_mesh, body_material)
+    const plane = new PC.Entity('ui-box', app)
+    plane.addComponent('render', {
+      meshInstances: [mesh_instance, body_mesh_instance],
+    })
+
+    return {
+      plane,
+      geometry,
+      mesh,
+      mesh_instance,
+      body_mesh,
+      body_material,
+      mapIntersection(intersection) {
+        if (intersection.mesh_instance !== mesh_instance || intersection.uv === null) return null
+        return { x: intersection.uv.x, y: 1 - intersection.uv.y }
+      },
+    }
+  },
+})
+```
+
+The first six indices select the `+Z` face for the UI material; the remaining indices use `body_material`. Hits on the other faces return `null`; uno does not continue looking for an interactive face behind them.
+
+The box's UVs have `V = 0` at the top, while uno's hit mapper expects `y = 0` at the bottom. Returning `1 - intersection.uv.y` aligns interaction with the displayed texture.
+
+`mapIntersection()` can also transform the UVs before returning them, allowing you to adapt interaction to a custom texture layout. It changes how hits are mapped to the UI; it does not change how the texture is rendered.
+
+## Cleanup
+
+World-space UIs have resources owned by uno and resources managed by the rendering engine. `ui.destroy()` releases the uno nodes, listeners, renderer allocations, and offscreen GPU texture. It does not remove the plane from the scene or dispose the engine objects returned by `create()`.
+
+Before cleanup, stop this UI's draw callbacks and remove any event listeners added by your application. If a framework manages the layout, call its root's `unmount()` while the UI is still alive.
+
+Keep the `material` and `texture` returned by `UIPlayCanvas.create()`, as shown above. Destroy the entity, then the material and texture:
+
+```js
+plane.destroy()
+material.destroy()
+texture.destroy()
+ui.destroy()
+```
+
+Destroying the default entity removes its render component and mesh instances, releasing the mesh when it has no remaining references. There is no need to destroy that mesh a second time.
+
+uno releases the backing GPU texture in `ui.destroy()`; do not call `gpu_texture.destroy()` separately.
+
+This example assumes the default plane resources and a material used only by this UI. If `createPlane()` or `createMaterial()` creates additional resources, release those too. Keep shared materials and geometries alive until their last user is removed.
+
+After the last overlay or world-space UI using the shared image and font atlases has been destroyed, dispose the resource store:
+
+```js
+resources.dispose()
+```
+
+This does not destroy the GPU device or canvas context. Dispose the scene, renderer, application, or engine separately when shutting down the application; keep them alive when removing only one UI panel.
+
+## Demo
+
+This demo displays one rotating UI plane using the component from the [React demo](../components/react.mdx#demo).
+
+<iframe
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&initialpath=%2Fplaycanvas-worldspace.html&module=%2Fplaycanvas-worldspace.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '400px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs-playcanvas-worldspace"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>

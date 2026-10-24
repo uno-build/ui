@@ -1,0 +1,65 @@
+---
+title: Texts & Fonts
+---
+
+## 1. Generate your font atlas
+
+uno UI renders text using distance-field font atlases. Before loading a font, convert your `.ttf` file using `@uno.build/fonts`:
+
+```bash
+npx @uno.build/fonts assets/ChangaOne.ttf
+```
+
+By default, this generates `assets/ChangaOne.png` and `assets/ChangaOne.json`.
+
+For atlas generation and additional options, see [Fonts](../../fonts/index.mdx) and the [CLI reference](../../fonts/cli-options.mdx).
+
+## 2. Load and register the font
+
+```js
+const font_name = 'ChangaOne'
+
+// Load font/image
+const response_image = await fetch(`assets/${font_name}.png`)
+const blob = await response_image.blob()
+const image = await createImageBitmap(blob)
+
+// Load font/data
+const response_data = await fetch(`assets/${font_name}.json`)
+const data = await response_data.json()
+
+// Register the font
+resources.registerFont(font_name, { image, data })
+```
+
+## 3. Use the font
+
+```js
+const node = ui.create()
+node.text('Hello World!')
+node.style('fontFamily', font_name)
+node.style('fontSize', '8vw')
+node.style('color', '#ffffff')
+node.style('textStroke', '0.5vw #000000')
+node.style('textShadow', '0px 0.5vw 0px #000000')
+ui.root.add(node)
+```
+
+- `node.text('Hello World!')` turns the node into a text node and sets its content. The node retains its standard properties, but cannot have children. Calling this method on a node that already has children, or adding a child to a text node, throws an error.
+- `node.style('fontFamily', font_name)` sets the font for the text node. If `fontFamily` is not specified, the first registered font is used. If no fonts have been registered, an error is thrown.
+
+## Demo
+
+<iframe
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&initialpath=%2Ftexts.html&module=%2Ftexts.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '350px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>

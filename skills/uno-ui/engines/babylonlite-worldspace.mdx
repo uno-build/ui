@@ -1,0 +1,199 @@
+---
+title: Babylon Lite World Space
+---
+
+`UIBabylonLite` renders uno UI into a texture and displays it on a plane inside a Babylon Lite scene. The plane can move, rotate, and scale while its UI remains interactive.
+
+This section continues the [Babylon Lite](./babylonlite.mdx) guide. As before, keep the shared WebGPU resources and engine. Create the scene with `createSceneContext(engine)` to use its default render task; the overlay tasks and separate depth target are no longer needed. The following examples inject the UI directly onto a plane in the scene instead of drawing it as a background or foreground overlay.
+
+## 1. Create the UI plane
+
+Replace the `UI` import and `UI.create()` call with `UIBabylonLite`. Pass it the engine and scene as well as the shared resources. It returns the uno UI instance and a Babylon Lite plane with its texture and material already connected:
+
+```js
+import UIBabylonLite from '@uno.build/ui/UIBabylonLite'
+import { addToScene, createStandardMaterial } from '@babylonjs/lite'
+
+const UI_SIZE = 400
+const device_pixel_ratio = window.devicePixelRatio
+
+const { ui, plane } = await UIBabylonLite.create({
+  engine,
+  scene,
+  resources,
+  device_pixel_ratio,
+  texture_width: Math.round(UI_SIZE * device_pixel_ratio),
+  texture_height: Math.round(UI_SIZE * device_pixel_ratio),
+  world_width: 1,
+  world_height: 1,
+  createMaterial() {
+    const material = createStandardMaterial()
+    material.disableLighting = true
+    material.emissiveColor = [1, 1, 1]
+    return material
+  },
+})
+
+ui.setViewport(UI_SIZE, UI_SIZE)
+addToScene(scene, plane)
+```
+
+- `texture_width`, `texture_height`: Sets the resolution of the UI texture in physical pixels.
+- `world_width`, `world_height`: Sets the size of the plane in Babylon Lite world units.
+- `ui.setViewport(width, height)`: Sets the space available for the UI layout in logical pixels.
+- `createMaterial`: This callback lets you define the material applied to the plane. The default material comes from `createStandardMaterial()`; the example disables lighting and uses white emission so the UI does not need a scene light.
+
+## 2. Set up the camera
+
+```js
+import { createFreeCamera } from '@babylonjs/lite'
+
+const camera = createFreeCamera({ x: 0, y: 0, z: -3 }, { x: 0, y: 0, z: 0 })
+camera.fov = Math.PI / 3
+camera.nearPlane = 0.1
+camera.farPlane = 100
+scene.camera = camera
+ui.setCamera(camera)
+```
+
+With `ui.setCamera(camera)`, uno uses Babylon Lite's GPU picking to find the hit on the plane and convert it into UI layout coordinates. The component's existing pointer, click, and focus handlers work as the plane rotates.
+
+For pointer, click, and wheel events, the payload described in [Event data](../api/events.mdx#event-data) also includes `distance_to_camera` when the pointer hits the plane. It is the distance from the camera to the hit position in Babylon Lite world units. The `x` and `y` fields remain coordinates in the UI's logical coordinate space.
+
+## 3. Render the scene
+
+By default, `plane` is a Babylon Lite mesh created with `createPlane()` using `world_width` and `world_height`. Add it to the scene with `addToScene(scene, plane)`, as shown above.
+
+Draw the UI texture before rendering the scene so the plane displays the updated layout. Enable material plugins before registering the scene so the plane's material handles the UI texture correctly:
+
+```js
+import { enableMaterialPlugins, onBeforeRender, registerScene, renderFrame, resizeEngine } from '@babylonjs/lite'
+
+onBeforeRender(scene, () => {
+  plane.rotation.y = Math.sin(performance.now() / 2000) * 0.8
+  ui.draw({ submit: false, command_encoder: engine._currentEncoder })
+})
+
+enableMaterialPlugins(scene)
+await registerScene(scene)
+
+let last_time = 0
+requestAnimationFrame(function render(time) {
+  const delta = last_time === 0 ? 0 : time - last_time
+  last_time = time
+  resizeEngine(engine)
+  renderFrame(engine, delta)
+  requestAnimationFrame(render)
+})
+```
+
+Here, `ui.draw()` updates the plane's texture rather than the canvas. It records commands into Babylon Lite's current encoder before the scene is drawn. Babylon Lite can clear the canvas normally before drawing the scene.
+
+## Customize the plane and hit mapping
+
+Use the optional `createPlane()` callback to display the UI on a different Babylon Lite mesh, such as a box, sphere, or cylinder. It receives the configured UI `material` and the requested `world_width` and `world_height`. Return the mesh as `plane`; additional resources are also returned by `UIBabylonLite.create()`.
+
+For custom interaction, return a `mapIntersection()` callback alongside the mesh. It receives Babylon Lite's detailed picking result for the mesh and returns UV coordinates as `{ x, y }`, or `null` to reject the hit. uno converts these UVs into UI layout coordinates. Without this callback, uno maps the hit's local position using `world_width` and `world_height`, which is suitable for the default plane.
+
+For example, add this `createPlane` option to `UIBabylonLite.create()` to display the UI on only the front (`-Z`) face of a box and make only that face interactive:
+
+```js
+import { createBoxData, createMeshFromData, getPickedUV } from '@babylonjs/lite'
+
+const { ui, plane } = await UIBabylonLite.create({
+  //...
+  createPlane({ material, world_width, world_height }) {
+    const box_data = createBoxData({
+      width: world_width,
+      height: world_height,
+      depth: world_width,
+    })
+    // Keep the -Z face UVs; mark the other five faces for the solid body color.
+    for (let vertex = 0; vertex < box_data.vertexCount; vertex++) {
+      if (vertex < 4 || vertex >= 8) box_data.uvs[vertex * 2] = -1
+    }
+    const plane = createMeshFromData(
+      engine,
+      'ui-box',
+      box_data.positions,
+      box_data.normals,
+      box_data.indices,
+      box_data.uvs,
+    )
+    material.plugins.push({
+      name: 'ui-box-body',
+      getCustomCode(shader_type) {
+        if (shader_type === 'vertex') return null
+        return {
+          CUSTOM_FRAGMENT_BEFORE_FRAGCOLOR: `
+            if (input.vu.x < 0.0) {
+              color = vec4<f32>(245.0 / 255.0, 242.0 / 255.0, 236.0 / 255.0, 1.0);
+            }
+          `,
+        }
+      },
+    })
+    plane.material = material
+
+    return {
+      plane,
+      mapIntersection(intersection) {
+        if (intersection.faceId !== 2 && intersection.faceId !== 3) return null
+        const uv = getPickedUV(intersection)
+        return uv === null ? null : { x: uv[0], y: uv[1] }
+      },
+    }
+  },
+})
+```
+
+The material plugin paints the five marked faces with a solid body color. Triangle indices `2` and `3` select the `-Z` face, which faces the camera in this example. Hits on the other faces return `null`; uno does not continue looking for an interactive face behind them.
+
+`mapIntersection()` can also transform the UVs before returning them, allowing you to adapt interaction to a custom texture layout. It changes how hits are mapped to the UI; it does not change how the texture is rendered.
+
+## Cleanup
+
+World-space UIs have resources owned by uno and resources managed by the rendering engine. `ui.destroy()` releases the uno nodes, listeners, renderer allocations, and offscreen GPU texture. It does not remove the plane from the scene or dispose the engine objects returned by `create()`.
+
+Before cleanup, stop this UI's draw callbacks and remove any event listeners added by your application. If a framework manages the layout, call its root's `unmount()` while the UI is still alive.
+
+Remove the mesh using Babylon Lite's scene API, then destroy the uno UI:
+
+```js
+import { removeFromScene } from '@babylonjs/lite'
+
+removeFromScene(scene, plane)
+ui.destroy()
+```
+
+`removeFromScene()` handles the mesh's scene and GPU resources. The returned texture is a `Texture2D` record rather than a wrapper with a `dispose()` method; uno owns its backing GPU texture. `ui.destroy()` also handles the adapter's GPU picker cleanup.
+
+uno releases the backing GPU texture in `ui.destroy()`; do not call `gpu_texture.destroy()` separately.
+
+This example assumes the default plane resources and a material used only by this UI. If `createPlane()` or `createMaterial()` creates additional resources, release those too. Keep shared materials and geometries alive until their last user is removed.
+
+After the last overlay or world-space UI using the shared image and font atlases has been destroyed, dispose the resource store:
+
+```js
+resources.dispose()
+```
+
+This does not destroy the GPU device or canvas context. Dispose the scene, renderer, application, or engine separately when shutting down the application; keep them alive when removing only one UI panel.
+
+## Demo
+
+This demo displays one rotating UI plane using the component from the [React demo](../components/react.mdx#demo).
+
+<iframe
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&initialpath=%2Fbabylonlite-worldspace.html&module=%2Fbabylonlite-worldspace.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '400px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs-babylonlite-worldspace"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>

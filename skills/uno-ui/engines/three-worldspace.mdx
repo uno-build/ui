@@ -1,0 +1,143 @@
+---
+title: Three.js World Space
+---
+
+`UIThree` renders uno UI into a texture and displays it on a plane inside a Three.js scene. The plane can move, rotate, and scale while its UI remains interactive.
+
+This section continues the [Three.js](./three.mdx) guide. As before, keep the shared WebGPU resources, renderer, scene, and camera. The following examples inject the UI directly onto a plane in the scene instead of drawing it as a background or foreground overlay.
+
+## 1. Create the UI plane
+
+Replace the `UI` import and `UI.create()` call with `UIThree`. It returns the uno UI instance and a Three.js plane with its texture and material already connected:
+
+```js
+import UIThree from '@uno.build/ui/UIThree'
+
+const UI_SIZE = 400
+const device_pixel_ratio = window.devicePixelRatio
+
+const { ui, plane, geometry, material, texture } = await UIThree.create({
+  resources,
+  device_pixel_ratio,
+  texture_width: Math.round(UI_SIZE * device_pixel_ratio),
+  texture_height: Math.round(UI_SIZE * device_pixel_ratio),
+  world_width: 2,
+  world_height: 2,
+  createMaterial: () => new THREE.MeshBasicNodeMaterial(),
+})
+
+ui.setViewport(UI_SIZE, UI_SIZE)
+```
+
+- `texture_width`, `texture_height`: Sets the resolution of the UI texture in physical pixels.
+- `world_width`, `world_height`: Sets the size of the plane in Three.js world units.
+- `ui.setViewport(width, height)`: Sets the space available for the UI layout in logical pixels.
+- `createMaterial`: This callback lets you define the material applied to the plane. The default material is `MeshStandardNodeMaterial`.
+
+## 2. Set up the camera
+
+```js
+const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100)
+ui.setCamera(camera)
+```
+
+With `ui.setCamera(camera)`, it casts a ray onto the plane and converts the hit position into UI layout coordinates. The component's existing pointer, click, and focus handlers work as the plane rotates.
+
+For pointer, click, and wheel events, the payload described in [Event data](../api/events.mdx#event-data) also includes `distance_to_camera` when the ray hits the plane. It is the distance from the camera to the hit position in Three.js world units. The `x` and `y` fields remain coordinates in the UI's logical coordinate space.
+
+## 3. Add the plane to the scene
+
+By default, `plane` is a `THREE.Mesh` with a `THREE.PlaneGeometry(world_width, world_height)` geometry.
+
+```js
+const scene = new THREE.Scene()
+scene.add(plane)
+```
+
+## Customize the plane and hit mapping
+
+Use the optional `createPlane()` callback to display the UI on a different `THREE.Mesh`, such as a box, sphere, or cylinder. It receives the configured UI `material` and the requested `world_width` and `world_height`. Return the mesh as `plane`; additional resources such as `geometry` and `body_material` are also returned by `UIThree.create()`.
+
+For custom interaction, return an optional `mapIntersection()` callback alongside the mesh. It receives the closest Three.js raycast intersection and returns UV coordinates as `{ x, y }`, or `null` to reject the hit. uno converts these UVs into UI layout coordinates. Without this callback, uno uses `intersection.uv` directly.
+
+For example, add this `createPlane` option to `UIThree.create()` to display the UI on only the front (`+Z`) face of a box and make only that face interactive:
+
+```js
+const { ui, plane } = await UIThree.create({
+  //...
+  createPlane({ material, world_width, world_height }) {
+    const geometry = new THREE.BoxGeometry(world_width, world_height, 0.5)
+    const body_material = new THREE.MeshBasicNodeMaterial({ color: 0xf5f2ec })
+    const plane = new THREE.Mesh(geometry, [
+      body_material,
+      body_material,
+      body_material,
+      body_material,
+      material,
+      body_material,
+    ])
+
+    return {
+      plane,
+      geometry,
+      body_material,
+      mapIntersection(intersection) {
+        return intersection.face?.materialIndex === 4 ? (intersection.uv ?? null) : null
+      },
+    }
+  },
+})
+```
+
+`BoxGeometry` assigns its six material slots in the order `+X`, `-X`, `+Y`, `-Y`, `+Z`, `-Z`, so index `4` selects the front face. Hits on the other faces return `null`; uno does not continue looking for an interactive face behind them.
+
+`mapIntersection()` can also transform the UVs before returning them, allowing you to adapt interaction to a custom texture layout. It changes how hits are mapped to the UI; it does not change how the texture is rendered.
+
+## Cleanup
+
+World-space UIs have resources owned by uno and resources managed by the rendering engine. `ui.destroy()` releases the uno nodes, listeners, renderer allocations, and offscreen GPU texture. It does not remove the plane from the scene or dispose the engine objects returned by `create()`.
+
+Before cleanup, stop this UI's draw callbacks and remove any event listeners added by your application. If a framework manages the layout, call its root's `unmount()` while the UI is still alive.
+
+Keep the `geometry`, `material`, and `texture` returned by `UIThree.create()`, as shown above. Remove the mesh from its parent, then dispose these resources:
+
+```js
+plane.removeFromParent()
+geometry.dispose()
+material.dispose()
+texture.dispose()
+ui.destroy()
+```
+
+Removing a Three.js mesh from the scene does not dispose its resources.
+
+uno releases the backing GPU texture in `ui.destroy()`; do not call `gpu_texture.destroy()` separately.
+
+This example assumes the default plane resources and a material used only by this UI. If `createPlane()` or `createMaterial()` creates additional resources, release those too. Keep shared materials and geometries alive until their last user is removed.
+
+After the last overlay or world-space UI using the shared image and font atlases has been destroyed, dispose the resource store:
+
+```js
+resources.dispose()
+```
+
+This does not destroy the GPU device or canvas context. Dispose the scene, renderer, application, or engine separately when shutting down the application; keep them alive when removing only one UI panel.
+
+## Demo
+
+This demo displays one rotating UI plane using the component from the [React demo](../components/react.mdx#demo).
+
+<iframe
+  src="http://localhost:52023/three-worldspace"
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&initialpath=%2Fthree-worldspace.html&module=%2Fthree-worldspace.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '400px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs-three-worldspace"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>

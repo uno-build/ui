@@ -1,0 +1,44 @@
+---
+title: Render to Image
+---
+
+An [image](../getting-started/images.mdx) can show a texture your app renders, such as a 3D scene, and change every frame. Register it with a size and no `image`, which reserves that space in the atlas, then copy the texture into it after each render with `resources.copyTextureToImage()`:
+
+```js
+const target = new THREE.RenderTarget(256, 256, { samples: 4 })
+target.texture.colorSpace = THREE.SRGBColorSpace
+
+resources.registerImage('scene', { width: 256, height: 256 })
+node.style('backgroundImage', 'scene')
+
+function frame() {
+  three_renderer.setRenderTarget(target)
+  three_renderer.render(scene, camera)
+  three_renderer.setRenderTarget(null)
+  resources.copyTextureToImage('scene', { texture: three_renderer.backend.get(target.texture).texture })
+
+  ui.draw({ load_op: 'clear' })
+  requestAnimationFrame(frame)
+}
+```
+
+- `copyTextureToImage(src, source)` copies a region the size of the image, from `source.origin` (default `[0, 0, 0]`), so several images can come from one texture.
+- The texture must belong to `resources.device`, have `COPY_SRC` usage, and use the `rgba8unorm` or `rgba8unorm-srgb` format.
+- Like any other image, its colors must be sRGB encoded with straight alpha. In Three.js, an `SRGBColorSpace` target encodes them; with MSAA, clear it with an opaque color so its edges are not premultiplied.
+- The copy is submitted right away and needs no `ui.update()`: the UI shows it on its next draw. Until the first copy, the image shows whatever the atlas held there.
+
+## Demo
+
+<iframe
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&initialpath=%2Frender-to-image.html&module=%2Frender-to-image.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '350px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>

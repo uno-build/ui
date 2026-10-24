@@ -1,0 +1,107 @@
+---
+title: 'ResourcesWebGPU'
+---
+
+Shared WebGPU resources for [UI](./ui.mdx) and [engine UIs](./ui-world-space.mdx). Import from `@uno.build/ui/ResourcesWebGPU`. The types below describe signatures; this module exports only the class.
+
+## Properties
+
+| Property           | Type                              | Description                                |
+| ------------------ | --------------------------------- | ------------------------------------------ |
+| `canvas`           | `WebGPUCanvas \| undefined`       | Canvas supplied at creation.               |
+| `adapter`          | `GPUAdapter \| null \| undefined` | Supplied or requested adapter.             |
+| `device`           | `GPUDevice`                       | GPU device.                                |
+| `context`          | `WebGPUContext`                   | Canvas context.                            |
+| `format`           | `GPUTextureFormat`                | Rendering format.                          |
+| `image_atlas_size` | `number`                          | Image atlas layer size in pixels.          |
+| `font_atlas_size`  | `number`                          | Font atlas layer size in pixels.           |
+| `image_manager`    | `ImageManager`                    | Image atlas manager.                       |
+| `font_manager`     | `FontManager`                     | Font atlas manager.                        |
+| `has_present`      | `boolean`                         | Whether the context supports `present()`.  |
+| `events`           | `EventEmitter`                    | Emits `image` and `font` resource changes. |
+
+## Methods
+
+| Method                                           | Returns                                          | Description                                              |
+| ------------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------- |
+| `static create(options: ResourcesWebGPUOptions)` | `Promise<ResourcesWebGPU>`                       | Creates and initializes the resource store.              |
+| `registerImage(src: string, image: WebGPUImage)` | `ManagedAtlasImage`                              | Registers an image under a resource key.                 |
+| `copyTextureToImage(src: string, source: GPUTexelCopyTextureInfo)` | `void` | Copies a texture region the size of a registered image into it. |
+| `disposeImage(src: string)`                      | `void`                                           | Removes a registered image.                              |
+| `getImageSize(src: string)`                      | `{ width: number; height: number } \| undefined` | Gets the registered image dimensions.                    |
+| `registerFont(name: string, font: WebGPUFont)`   | `ManagedFont`                                    | Registers a font image and its metadata.                 |
+| `disposeFont(name: string)`                      | `void`                                           | Removes a registered font.                               |
+| `dispose()`                                      | `void`                                           | Clears registered resources and releases atlas textures. |
+| `present()`                                      | `void`                                           | Calls the context's optional `present()` method.         |
+
+Duplicate image or font keys throw. Disposing an unknown key does nothing. `ui.destroy()` does not dispose shared resources; `resources.dispose()` does not destroy the device or context.
+
+## Creation options
+
+| Option             | Type                 | Default                                               |
+| ------------------ | -------------------- | ----------------------------------------------------- |
+| `canvas`           | `WebGPUCanvas`       | Required when `context` is omitted                    |
+| `context`          | `WebGPUContext`      | Obtained from `canvas` and configured                 |
+| `adapter`          | `GPUAdapter \| null` | Requested when neither adapter nor device is supplied |
+| `device`           | `GPUDevice`          | Requested from the adapter                            |
+| `format`           | `GPUTextureFormat`   | `navigator.gpu.getPreferredCanvasFormat()`            |
+| `image_atlas_size` | `number`             | `2048`                                                |
+| `font_atlas_size`  | `number`             | `2048`                                                |
+
+A supplied context is used without reconfiguration.
+
+A supplied `device` must allow three storage buffers in the vertex stage. A device created in compatibility mode has to request them with `requiredLimits: { maxStorageBuffersInVertexStage: 3 }`; the device that `ResourcesWebGPU` requests already does.
+
+```ts
+type WebGPUCanvas = {
+  getContext(context_id: 'webgpu'): WebGPUContext | null
+}
+
+type WebGPUContext = GPUCanvasContext & { present?(): void }
+```
+
+## Image input
+
+| `WebGPUImage` field | Type                         | Default                                                     |
+| ------------------- | ---------------------------- | ----------------------------------------------------------- |
+| `image`             | `GPUCopyExternalImageSource` | Omitted: only `width` × `height` is reserved in the atlas, for `copyTextureToImage()` |
+| `width`             | `number`                     | `image.width`; required if unavailable                      |
+| `height`            | `number`                     | `image.height`; required if unavailable                     |
+| `preventBleeding`   | `boolean`                    | `false`; copies edge pixels into atlas padding when enabled |
+
+See [Images](../getting-started/images.mdx) for usage, and [Render to Image](../advanced/render-to-image.mdx) for `copyTextureToImage()`.
+
+## Font input
+
+`WebGPUFont` contains the image fields above, with `image` required, plus a required `data: FontData`. See [Texts and fonts](../getting-started/texts-fonts.mdx) for usage.
+
+```ts
+type FontData = {
+  atlas: {
+    size: number
+    distanceRange: number
+    effectDistanceRange?: number
+    yOrigin: 'bottom' | 'top'
+    width?: number
+    height?: number
+    type?: string
+  }
+  metrics: {
+    emSize?: number
+    lineHeight: number
+    ascender: number
+    descender: number
+    underlineY?: number
+    underlineThickness?: number
+  }
+  glyphs: Array<{
+    unicode: number
+    advance: number
+    planeBounds?: GlyphBounds
+    atlasBounds?: GlyphBounds
+  }>
+  kerning?: Array<{ unicode1: number; unicode2: number; advance: number }>
+}
+
+type GlyphBounds = { left: number; bottom: number; right: number; top: number }
+```

@@ -1,0 +1,108 @@
+---
+title: Interactivity
+---
+
+## Listen for node events
+
+```js
+node.on('pointerover', (event) => {
+  node.style('opacity', '0.5')
+  ui.update()
+})
+
+node.on('pointerout', (event) => {
+  node.style('opacity', '1')
+  ui.update()
+})
+```
+
+Call `ui.update()` after changing node styles in an event handler.
+
+## Remove node listeners
+
+To remove a node listener while the node is still active, pass the same function to `node.off()`. Destroying a node removes its listeners automatically:
+
+```js
+function onPointerOver() {
+  console.log('node has been hovered')
+}
+
+node.on('pointerover', onPointerOver)
+node.off('pointerover', onPointerOver)
+```
+
+For the complete list of supported events, event data, and propagation rules, see [Events](../api/events.mdx).
+
+{/*
+## Pointer and click behavior
+
+With the WebGPU-backed `UI`, `pointerdown` captures the target inside uno. Subsequent `pointermove`, `pointerup`, and `pointercancel` events received for that pointer are delivered to the original target, even when the pointer moves over another node. `pointerup` and `pointercancel` end this interaction.
+
+Hover tracking follows the node currently under the pointer, independently of that captured target. On `pointerover`, `related_target` is the previous hover target. On `pointerout`, it is the next hover target. It is `null` when there is no other target. A touch release or pointer cancellation also ends hover.
+
+`click` requires the pointer to be pressed and released on the same hit-tested node. A cancelled pointer does not produce a click. A non-mouse drag exceeding 10 logical pixels along either axis in a scrollable container marks it as scrolling and suppresses the click.
+
+*/}
+
+{/*
+## Wheel and scroll
+
+`wheel` reports wheel input over the hit-tested node, whether or not anything scrolls. Its `delta_x` and `delta_y` come from the source event's `deltaX` and `deltaY`. Line-mode deltas are multiplied by 16; other delta modes are passed through unchanged. These values are not the resulting scroll offsets.
+
+`scroll` targets the container that actually scrolled. `scroll_left` and `scroll_top` are its current horizontal and vertical offsets:
+
+```js
+node.on('wheel', (event) => {
+  console.log('Wheel input:', event.delta_x, event.delta_y)
+})
+
+node.on('scroll', (event) => {
+  console.log('Scroll position:', event.scroll_left, event.scroll_top)
+})
+```
+
+For WebGPU-backed UIs, enable scrolling with `overflowX: 'scroll'` or `overflowY: 'scroll'` and content larger than the viewport. uno scrolls through wheel input and non-mouse pointer dragging. Wheel input finds the nearest ancestor that can scroll in the requested direction, continuing to an outer container when the inner one reaches its limit.
+
+Assigning `node.scrollLeft` or `node.scrollTop` directly in a WebGPU-backed UI queues a position update but does not emit a `scroll` event. Call `ui.update()` to apply that change.
+*/}
+
+{/*
+## Focus and blur
+
+uno maintains one focused node per UI. A `pointerdown` moves focus to its target. You can also call `node.focus()` and `node.blur()`:
+
+```js
+node.on('focus', (event) => {
+  node.style('backgroundColor', '#8080FD')
+  ui.update()
+})
+
+node.on('blur', (event) => {
+  node.style('backgroundColor', '#777777')
+  ui.update()
+})
+
+node.focus()
+node.blur()
+```
+
+On `focus`, `related_target` is the previously focused node. On `blur`, it is the node receiving focus, or `null` when focus is cleared. Moving focus between nodes emits `blur` on the old node before `focus` on the new one. Focusing an already focused node or blurring an unfocused node emits nothing.
+
+Both methods accept an optional source event. Without one, their events have `source_event: null`. uno focus does not open a platform keyboard or provide text input.
+*/}
+
+## Demo
+
+<iframe
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&initialpath=%2Finteractivity.html&module=%2Finteractivity.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '350px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>

@@ -1,0 +1,144 @@
+---
+title: TypeGPU
+---
+
+TypeGPU and uno UI can draw to the same canvas by sharing a WebGPU device and context. The order of the draw calls determines whether the UI appears in front of or behind the scene.
+
+The examples below assume you are familiar with the basics of uno UI covered in the [First Layout](../getting-started/first-layout.mdx) section.
+
+## Shared setup
+
+Use `tgpu.initFromDevice()` to create a TypeGPU root with the `device` used by uno UI. Use the same `context` for the canvas texture and `format` for the pipeline's color target.
+
+```js
+import ResourcesWebGPU from '@uno.build/ui/ResourcesWebGPU'
+import UI from '@uno.build/ui/UI'
+import tgpu from 'typegpu'
+import * as d from 'typegpu/data'
+
+const canvas = document.querySelector('canvas')
+const resources = await ResourcesWebGPU.create({ canvas })
+const { ui } = await UI.create({ resources })
+const { device, context, format } = resources
+
+const root = tgpu.initFromDevice({ device })
+```
+
+The rendering examples below use the cube's `pipeline` and `frame_uniform` from the demo. Create the pipeline with `targets: { format }`; the uniform receives the elapsed time and canvas aspect ratio. Apply the UI layout and viewport setup before starting the render loop.
+
+## Control the draw order
+
+Clear the color at the start of each frame, then preserve it in subsequent draws.
+
+### uno UI: `load_op`
+
+The `load_op` option of `ui.draw()` controls what happens to the existing pixels before drawing the UI:
+
+| Value              | Effect                                                                |
+| ------------------ | --------------------------------------------------------------------- |
+| `'load'` (default) | Keeps existing pixels. Used when calling `ui.draw()` without options. |
+| `'clear'`          | Clears the target to transparent black.                               |
+
+`load_op` does not choose which layer is in front. The draw order does that. Using `'clear'` after drawing the scene erases the scene; using `'load'` keeps it visible wherever the UI is transparent.
+
+### TypeGPU: `loadOp`
+
+The `loadOp` option of `pipeline.withColorAttachment()` controls whether TypeGPU clears the color before drawing:
+
+| Value               | Effect                                                              |
+| ------------------- | ------------------------------------------------------------------- |
+| `'clear'` (default) | Clears the target to `clearValue`, or transparent black if omitted. |
+| `'load'`            | Preserves the existing color.                                       |
+
+The examples share one `command_encoder` and `texture_view` per frame. Passing the encoder to `pipeline.with(command_encoder)` records the draw without submitting it. Use `submit: false` on any UI draw that has more layers to follow; the final `ui.draw()` submits the encoder by default. If TypeGPU draws last, finish and submit the encoder explicitly.
+
+## UI in front of the scene
+
+Draw the scene first with `loadOp: 'clear'`, then draw the UI:
+
+```js
+requestAnimationFrame(function render(time) {
+  frame_uniform.write(d.vec2f(time / 1000, canvas.width / canvas.height))
+  const texture_view = context.getCurrentTexture().createView()
+  const command_encoder = device.createCommandEncoder()
+
+  pipeline
+    .with(command_encoder)
+    .withColorAttachment({ view: texture_view, loadOp: 'clear', clearValue: [1, 1, 1, 1] })
+    .draw(36)
+  ui.draw({ command_encoder, texture_view })
+
+  requestAnimationFrame(render)
+})
+```
+
+TypeGPU clears to white and draws the cube. uno UI preserves that image and draws the panel over it, then submits both draws together.
+
+## UI behind the scene
+
+Draw the UI first with `load_op: 'clear'`, then draw the scene with `loadOp: 'load'`:
+
+```js
+// uno UI now paints the background, since TypeGPU will not clear the color.
+ui.root.style('backgroundColor', '#ffffff')
+ui.update()
+
+requestAnimationFrame(function render(time) {
+  frame_uniform.write(d.vec2f(time / 1000, canvas.width / canvas.height))
+  const texture_view = context.getCurrentTexture().createView()
+  const command_encoder = device.createCommandEncoder()
+
+  ui.draw({ submit: false, command_encoder, texture_view, load_op: 'clear' })
+  pipeline.with(command_encoder).withColorAttachment({ view: texture_view, loadOp: 'load' }).draw(36)
+  device.queue.submit([command_encoder.finish()])
+
+  requestAnimationFrame(render)
+})
+```
+
+uno UI clears the canvas and draws the white background and panel. TypeGPU keeps those pixels and draws the cube over them. Using `loadOp: 'clear'` would erase the UI before drawing the cube.
+
+## UI behind and in front
+
+For separate background and foreground layouts, create two UI instances using the same resources:
+
+```js
+const { ui: background_ui } = await UI.create({ resources })
+const { ui: foreground_ui } = await UI.create({ resources })
+```
+
+Apply the layout and viewport setup to each UI, then draw the background UI, the scene, and the foreground UI in that order:
+
+```js
+requestAnimationFrame(function render(time) {
+  frame_uniform.write(d.vec2f(time / 1000, canvas.width / canvas.height))
+  const texture_view = context.getCurrentTexture().createView()
+  const command_encoder = device.createCommandEncoder()
+
+  background_ui.draw({ submit: false, command_encoder, texture_view, load_op: 'clear' })
+  pipeline.with(command_encoder).withColorAttachment({ view: texture_view, loadOp: 'load' }).draw(36)
+  foreground_ui.draw({ command_encoder, texture_view })
+
+  requestAnimationFrame(render)
+})
+```
+
+The background UI starts the frame, TypeGPU draws over it, and the foreground UI draws last and submits all three draws. Keep the foreground layout transparent wherever the scene should remain visible.
+
+## Demo
+
+This demo uses two UI instances: one for the background and one for the foreground. The foreground UI reuses the React component from the [React demo](../components/react.mdx#demo).
+
+<iframe
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&initialpath=%2Ftypegpu.html&module=%2Ftypegpu.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '400px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs-typegpu"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>

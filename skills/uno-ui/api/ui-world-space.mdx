@@ -1,0 +1,137 @@
+---
+title: 'UIWorldSpace'
+---
+
+Shared reference for [UIThree](#uithree), [UIBabylon](#uibabylon), [UIBabylonLite](#uibabylonlite), and [UIPlayCanvas](#uiplaycanvas). These classes share the [UI instance API](./ui.mdx#methods), with the additions and overrides below. `UIWorldSpace` is their abstract base and has no public import path.
+
+## Methods
+
+| Method                                  | Returns                         | Description                                   |
+| --------------------------------------- | ------------------------------- | --------------------------------------------- |
+| `setCamera(camera: TCamera)`            | `void`                          | Sets the camera used for pointer picking.     |
+| `draw(options?: WorldSpaceDrawOptions)` | `WebGPUDrawResult \| undefined` | Draws into the UI texture, clearing it first. |
+| `destroy()`                             | `boolean \| void`               | Also releases the UI's GPU texture.           |
+
+`WorldSpaceDrawOptions` accepts only `submit?` and `command_encoder?` from [WebGPU draw options](./ui.mdx#draw-options).
+
+## Additional creation options
+
+Engine factories accept [UI creation options](./ui.mdx#creation-options) plus:
+
+| Option           | Type                                                     | Default                  |
+| ---------------- | -------------------------------------------------------- | ------------------------ |
+| `texture_width`  | `number`                                                 | Required; texture pixels |
+| `texture_height` | `number`                                                 | Required; texture pixels |
+| `world_width`    | `number`                                                 | Required; world units    |
+| `world_height`   | `number`                                                 | Required; world units    |
+| `createMaterial` | `(options: MaterialOptions<TTexture>) => TMaterial`      | Engine material factory  |
+| `createPlane`    | `(options: PlaneOptions<TTexture, TMaterial>) => TPlane` | Engine plane factory     |
+
+## Callback types
+
+```ts
+type MaterialOptions<TTexture> = {
+  texture: TTexture
+  gpu_texture: GPUTexture
+  gpu_texture_view: GPUTextureView
+}
+
+type PlaneOptions<TTexture, TMaterial> = MaterialOptions<TTexture> & {
+  material: TMaterial
+  world_width: number
+  world_height: number
+}
+
+type MapIntersection<TIntersection> = (intersection: TIntersection) => { x: number; y: number } | null
+```
+
+`createPlane` returns `{ plane, mapIntersection?, ... }`. `mapIntersection` maps an engine intersection to UV coordinates, or `null` for no hit.
+
+## Factory result
+
+| Property            | Type                             |
+| ------------------- | -------------------------------- |
+| `ui`                | Concrete engine UI               |
+| `texture`           | `TTexture`                       |
+| `material`          | `TMaterial`                      |
+| `gpu_texture`       | `GPUTexture`                     |
+| `gpu_texture_view`  | `GPUTextureView`                 |
+| `...planeResources` | Fields returned by `createPlane` |
+
+These are fields of the factory result, not properties of `ui`.
+
+Each engine factory returns a promise of this result with its own class as `ui`. Options extend the [world-space options](#additional-creation-options); `defined_events` factories receive the concrete UI instance. No engine class adds public instance properties.
+
+A custom `createPlane` replaces the default plane resources below and must return the engine's `plane` type. Set a camera before dispatching pointer events.
+
+## UIThree
+
+Import from `@uno.build/ui/UIThree`. Engine types come from `three/webgpu`.
+
+| API                         | Type / value                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------ |
+| Factory                     | `UIThree.create(options: UIThreeOptions<TMaterial, TPlane>)`                         |
+| Additional required options | None                                                                                 |
+| Camera                      | `setCamera(camera: THREE.Camera): void`                                              |
+| Event dispatch              | `dispatchPlatformEvent(source_event: PlatformEvent): void`                           |
+| Texture                     | `THREE.ExternalTexture`                                                              |
+| Default material            | `THREE.MeshStandardNodeMaterial`                                                     |
+| Material constraint         | `TMaterial extends UIThreeMaterial`: `THREE.NodeMaterial` with `map` and `color`     |
+| `mapIntersection` argument  | `THREE.Intersection`                                                                 |
+| Default plane resources     | `plane: THREE.Mesh<THREE.PlaneGeometry, TMaterial>`, `geometry: THREE.PlaneGeometry` |
+
+`UIThreeOptions` and `UIThreeMaterial` are exported by the class module.
+
+## UIBabylon
+
+Import from `@uno.build/ui/UIBabylon`. Engine types come from `@babylonjs/core`.
+
+| API                         | Type / value                                                     |
+| --------------------------- | ---------------------------------------------------------------- |
+| Factory                     | `UIBabylon.create(options: UIBabylonOptions<TMaterial, TPlane>)` |
+| Additional required options | `scene: Scene`                                                   |
+| Camera                      | `setCamera(camera: Camera): void`                                |
+| Event dispatch              | `dispatchPlatformEvent(source_event: PlatformEvent): void`       |
+| Texture                     | `Texture`                                                        |
+| Default material            | `StandardMaterial`                                               |
+| Material constraint         | `TMaterial extends UIBabylonMaterial`: `StandardMaterial`        |
+| `mapIntersection` argument  | `PickingInfo`                                                    |
+| Default plane resources     | `plane: Mesh`, `geometry: Geometry \| null`                      |
+
+`UIBabylonOptions` and `UIBabylonMaterial` are exported by the class module.
+
+## UIBabylonLite
+
+Import from `@uno.build/ui/UIBabylonLite`. Engine types come from `@babylonjs/lite`.
+
+| API                         | Type / value                                                             |
+| --------------------------- | ------------------------------------------------------------------------ |
+| Factory                     | `UIBabylonLite.create(options: UIBabylonLiteOptions<TMaterial, TPlane>)` |
+| Additional required options | `engine: EngineContext`, `scene: SceneContext`                           |
+| Camera                      | `setCamera(camera: Camera): void`                                        |
+| Event dispatch              | `dispatchPlatformEvent(source_event: PlatformEvent): Promise<void>`      |
+| Texture                     | `Texture2D`                                                              |
+| Default material            | `StandardMaterialProps`                                                  |
+| Material constraint         | `TMaterial extends UIBabylonLiteMaterial`: `StandardMaterialProps`       |
+| `mapIntersection` argument  | `PickingInfo`                                                            |
+| Default plane resources     | `plane: Mesh`                                                            |
+
+`UIBabylonLiteOptions` and `UIBabylonLiteMaterial` are exported by the class module. Event dispatch uses asynchronous picking.
+
+## UIPlayCanvas
+
+Import from `@uno.build/ui/UIPlayCanvas`. Engine types come from `playcanvas`.
+
+| API                         | Type / value                                                                       |
+| --------------------------- | ---------------------------------------------------------------------------------- |
+| Factory                     | `UIPlayCanvas.create(options: UIPlayCanvasOptions<TMaterial, TPlane>)`             |
+| Additional required options | `app: AppBase`                                                                     |
+| Camera                      | `setCamera(camera: Entity): void`; entity with a camera component                  |
+| Event dispatch              | `dispatchPlatformEvent(source_event: PlatformEvent): void`                         |
+| Texture                     | `Texture`                                                                          |
+| Default material            | `StandardMaterial`                                                                 |
+| Material constraint         | `TMaterial extends UIPlayCanvasMaterial`: `StandardMaterial`                       |
+| `mapIntersection` argument  | `UIPlayCanvasIntersection`                                                         |
+| Default plane resources     | `plane: Entity`, `geometry: Geometry`, `mesh: Mesh`, `mesh_instance: MeshInstance` |
+
+`UIPlayCanvasOptions` and `UIPlayCanvasMaterial` are exported by the class module. It also exports `UIPlayCanvasIntersection`.

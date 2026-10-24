@@ -1,0 +1,226 @@
+---
+title: Babylon Lite
+---
+
+Babylon Lite and uno UI can draw to the same canvas by sharing a WebGPU device and context. The order of the render tasks determines whether the UI appears in front of or behind the scene.
+
+The examples below assume you are familiar with the basics of uno UI covered in the [First Layout](../getting-started/first-layout.mdx) section.
+
+## Shared setup
+
+Use `createEngine` from `@babylonjs/lite`. Initialize the engine first, then pass its WebGPU device and the canvas context to uno UI.
+
+```js
+import ResourcesWebGPU from '@uno.build/ui/ResourcesWebGPU'
+import UI from '@uno.build/ui/UI'
+import {
+  addTask,
+  createEngine,
+  createRenderTarget,
+  createRenderTask,
+  createSceneContext,
+  onBeforeRender,
+  registerScene,
+  renderFrame,
+  resizeEngine,
+} from '@babylonjs/lite'
+
+const canvas = document.querySelector('canvas')
+const engine = await createEngine(canvas, {
+  msaaSamples: 1,
+  alphaMode: 'premultiplied',
+})
+
+const resources = await ResourcesWebGPU.create({
+  canvas,
+  device: engine._device,
+  context: canvas.getContext('webgpu'),
+  format: engine.format,
+})
+const { ui } = await UI.create({ resources })
+
+const scene = createSceneContext(engine, { defaultRenderTask: false })
+scene.clearColor = { r: 1, g: 1, b: 1, a: 1 }
+
+const depth = createRenderTarget({
+  lbl: 'scene-depth',
+  dFormat: 'depth24plus-stencil8',
+  samples: 1,
+  size: engine,
+})
+```
+
+Keep `msaaSamples: 1` for this direct canvas composition so Babylon Lite draws into the shared canvas texture without resolving a separate multisampled color buffer over the background UI. Setting `defaultRenderTask: false` lets you add the scene's render task at the required position between UI tasks.
+
+## Control the draw order
+
+Clear the color at the start of each frame, then preserve it in subsequent draws.
+
+### uno UI: `load_op`
+
+The `load_op` option of `ui.draw()` controls what happens to the existing pixels before drawing the UI:
+
+| Value              | Effect                                                                |
+| ------------------ | --------------------------------------------------------------------- |
+| `'load'` (default) | Keeps existing pixels. Used when calling `ui.draw()` without options. |
+| `'clear'`          | Clears the target to transparent black.                               |
+
+`load_op` does not choose which layer is in front. The draw order does that. Using `'clear'` after drawing the scene erases the scene; using `'load'` keeps it visible wherever the UI is transparent.
+
+### Babylon Lite: `clr`
+
+The `clr` option of `createRenderTask()` controls whether Babylon Lite clears the color before rendering the scene:
+
+| Value            | Effect                        |
+| ---------------- | ----------------------------- |
+| `true` (default) | Clears the existing color.    |
+| `false`          | Preserves the existing color. |
+
+The separate `depth` target is cleared for each frame even when `clr` is `false`.
+
+Add UI tasks with `addTask()` in the order they should draw. This helper wraps a UI draw call in the same task structure used by the demo:
+
+```js
+function createUITask(name, ui, load_op = 'load') {
+  return {
+    name,
+    engine,
+    _passes: [],
+    record() {},
+    execute() {
+      ui.draw({
+        submit: false,
+        command_encoder: engine._currentEncoder,
+        texture_view: engine.scRT._colorView,
+        load_op,
+      })
+      return 1
+    },
+    dispose() {},
+  }
+}
+```
+
+`submit: false` records uno's commands into Babylon Lite's current encoder. `texture_view` selects the current canvas render target. Lite submits the tasks together when `renderFrame()` runs, preserving their order.
+
+After adding the camera, cube, and one of the task arrangements below, register the scene and start the render loop:
+
+```js
+onBeforeRender(scene, () => {
+  const time = performance.now()
+  cube.rotation.x = time / 2000
+  cube.rotation.y = time / 1000
+})
+
+await registerScene(scene)
+
+let last_time = 0
+requestAnimationFrame(function render(time) {
+  const delta = last_time === 0 ? 0 : time - last_time
+  last_time = time
+  resizeEngine(engine)
+  renderFrame(engine, delta)
+  requestAnimationFrame(render)
+})
+```
+
+## UI in front of the scene
+
+Add the scene task first, then the UI task:
+
+```js
+addTask(
+  scene,
+  createRenderTask(
+    {
+      name: 'scene',
+      rt: engine.scRT,
+      depth,
+      clr: true,
+    },
+    engine,
+    scene,
+  ),
+)
+addTask(scene, createUITask('foreground-ui', ui))
+```
+
+Babylon Lite clears to white and draws the cube. uno UI preserves that image and draws the panel over it.
+
+## UI behind the scene
+
+Add the UI task first with `load_op: 'clear'`, then the scene task with `clr: false`:
+
+```js
+// uno UI now paints the background, since Babylon Lite will not clear the color.
+ui.root.style('backgroundColor', '#ffffff')
+ui.update()
+
+addTask(scene, createUITask('background-ui', ui, 'clear'))
+addTask(
+  scene,
+  createRenderTask(
+    {
+      name: 'scene',
+      rt: engine.scRT,
+      depth,
+      clr: false,
+    },
+    engine,
+    scene,
+  ),
+)
+```
+
+uno UI clears the canvas and draws the white background and panel. Babylon Lite keeps those pixels and draws the cube over them. Leaving `clr: true` would erase the UI before drawing the cube.
+
+A skybox or fullscreen post-process drawn by Babylon Lite can cover the UI even when color clearing is disabled.
+
+## UI behind and in front
+
+For separate background and foreground layouts, create two UI instances using the same resources:
+
+```js
+const { ui: background_ui } = await UI.create({ resources })
+const { ui: foreground_ui } = await UI.create({ resources })
+```
+
+Apply the layout and viewport setup to each UI, then add the background UI, the scene, and the foreground UI tasks in that order:
+
+```js
+addTask(scene, createUITask('background-ui', background_ui, 'clear'))
+addTask(
+  scene,
+  createRenderTask(
+    {
+      name: 'scene',
+      rt: engine.scRT,
+      depth,
+      clr: false,
+    },
+    engine,
+    scene,
+  ),
+)
+addTask(scene, createUITask('foreground-ui', foreground_ui))
+```
+
+The background UI starts the frame, Babylon Lite draws over it, and the foreground UI draws last. Keep the foreground layout transparent wherever the scene should remain visible.
+
+## Demo
+
+This demo uses two UI instances: one for the background and one for the foreground. The foreground UI reuses the React component from the [React demo](../components/react.mdx#demo).
+
+<iframe
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&initialpath=%2Fbabylonlite.html&module=%2Fbabylonlite.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '400px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs-babylonlite"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>
