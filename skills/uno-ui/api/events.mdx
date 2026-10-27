@@ -1,0 +1,126 @@
+---
+title: Events
+---
+
+Supported node events, event data, propagation, and custom event definitions.
+
+## Supported events
+
+| Event           | When it fires                                                        |
+| --------------- | -------------------------------------------------------------------- |
+| `pointerdown`   | A pointer is pressed on a node.                                      |
+| `pointermove`   | A pointer moves over the UI or during an active pointer interaction. |
+| `pointerup`     | An active pointer is released.                                       |
+| `pointercancel` | The platform cancels an active pointer interaction.                  |
+| `pointerover`   | A node becomes the pointer's hover target.                           |
+| `pointerout`    | A node stops being the pointer's hover target.                       |
+| `click`         | A node is activated by a completed click or tap.                     |
+| `wheel`         | A wheel or trackpad event occurs over a node.                        |
+| `scroll`        | A scroll container's offset changes through scrolling.               |
+| `focus`         | A node gains uno focus.                                              |
+| `blur`          | A node loses uno focus.                                              |
+
+- **Pointer and click behavior:** In WebGPU-backed UIs, pointer interactions stay with the pressed node until release or cancellation; a click requires pressing and releasing on the same node without a scrolling gesture.
+- **Wheel and scroll:** `wheel` reports wheel input, while `scroll` reports changes to a container's scroll position; WebGPU scrolling requires scrollable overflow and content larger than the viewport.
+- **Focus and blur:** Each UI has one focused node at a time; `pointerdown` or `node.focus()` moves focus to a node, and `node.blur()` clears its focus.
+
+## Event data
+
+Every node event includes:
+
+- `type`: the uno event name, such as `'click'`.
+- `target`: the node where the event originated.
+- `current_target`: the node whose listener is currently running.
+- `source_event`: the original platform event, or `null` for a programmatic event without a source, such as `node.focus()`.
+- `stopPropagation()`: stops the event from continuing to ancestor nodes.
+
+Additional fields depend on the event:
+
+| Events                                                              | Additional fields                                                  |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `pointerdown`, `pointermove`, `pointerup`, `pointercancel`, `click` | `x`, `y`, and optional `distance_to_camera`.                       |
+| `pointerover`, `pointerout`                                         | `x`, `y`, optional `distance_to_camera`, and `related_target`.     |
+| `wheel`                                                             | `x`, `y`, optional `distance_to_camera`, `delta_x`, and `delta_y`. |
+| `scroll`                                                            | `scroll_left` and `scroll_top`.                                    |
+| `focus`, `blur`                                                     | `related_target`.                                                  |
+
+`x` and `y` are coordinates in the UI's logical coordinate space, not offsets relative to `current_target`. World-space integrations can also supply `distance_to_camera`.
+
+For pointer events, read properties such as `pointerId`, `pointerType`, and `button` from `source_event`:
+
+```js
+node.on('pointerdown', (event) => {
+  console.log(event.x, event.y)
+  console.log(event.source_event.pointerId, event.source_event.pointerType)
+})
+```
+
+## Event propagation
+
+All built-in node events bubble from `target` through its ancestors, including `focus`, `blur`, `scroll`, `pointerover`, and `pointerout`. `target` stays the same during propagation, while `current_target` changes at each node. There is no capture phase.
+
+```js
+node.on('click', (event) => {
+  event.stopPropagation()
+})
+
+ui.root.on('click', (event) => {
+  console.log('A click reached the root:', event.target)
+})
+```
+
+In this example, clicks that reach `node` do not continue to `ui.root`. Other listeners on `node` still run. `stopPropagation()` only affects uno node propagation; it does not cancel the source event's browser behavior or uno's built-in focus, click, and scroll processing.
+
+To prevent a source event's browser default action, call `event.source_event?.preventDefault()`. uno events do not expose their own `preventDefault()` method.
+
+## `EventEmitter`
+
+`EventEmitter` is available for application events. `on()` returns an unsubscribe function; `emit()` calls listeners synchronously, and `destroy()` removes all listeners.
+
+```ts
+import { EventEmitter } from '@uno.build/ui/events'
+
+const events = new EventEmitter<{ ready: { value: number } }>()
+const off = events.on('ready', ({ value }) => console.log(value))
+events.emit('ready', { value: 42 })
+off()
+events.destroy()
+```
+
+You can also remove a listener with `off(type, listener)`. Registering the same function twice for one event does not duplicate it. Unlike `EventEmitter.on()`, `node.on()` returns no unsubscribe function; use `node.off()`.
+
+## Custom event definitions
+
+Pass factories through `defined_events` when creating the UI. Built-in events are already included. This example converts an application source event into a bubbling uno `press` event:
+
+```ts
+import UI from '@uno.build/ui/UI'
+import type { UIOptions } from '@uno.build/ui/UI'
+
+type EventFactory = NonNullable<UIOptions['defined_events']>[number]
+
+const definePress: EventFactory = ({ ui }) => {
+  const off = ui.events_source.on('press-source', ({ target, value }) => {
+    ui.events.emit('press', {
+      source_event: null,
+      target,
+      event_data: { value },
+    })
+  })
+
+  return {
+    types: [{ platform: false, name: 'press', prop: 'onPress', priority: 'discrete' }],
+    destroy: off,
+  }
+}
+
+const { ui } = await UI.create({ resources, defined_events: [definePress] })
+ui.root!.on('press', (event) => console.log(event.value))
+ui.events_source.emit('press-source', { target: ui.root!, value: 42 })
+```
+
+Use the initialized `resources` from [First Layout](../getting-started/first-layout.mdx). The factory's `destroy()` runs when the UI is destroyed; release any subscriptions or timers there.
+
+`name` identifies the node event, while `prop` lets framework components subscribe with `onPress` (React/Solid) or `@press` (Vue). Register definitions before creating the framework root. `platform: false` marks an application event rather than a canvas event; React uses `priority` to schedule updates (`discrete`, `continuous`, or `default`).
+
+Emit source events with a live target from the same UI. Fields in `event_data` become node-event fields alongside `target`, `current_target`, `source_event`, and `stopPropagation()`. `source_event: null` indicates that this example has no original platform event.

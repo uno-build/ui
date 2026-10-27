@@ -16,6 +16,7 @@ export const UNIT = {
     REM: 'rem',
     VW: 'vw',
     VH: 'vh',
+    DEG: 'deg',
 }
 export const EDGE = {
     left: 0,

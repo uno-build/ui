@@ -2,7 +2,7 @@ import UIDom from '../../src/ui/UIDom'
 import UI from '../../src/ui/UI'
 import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
 import ResourcesDom from '../../src/renderer/dom/ResourcesDom'
-import { getSingleNodeMetrics } from '../../src/renderer/utils/render-metrics'
+import { getRotatedBounds, getSingleNodeMetrics } from '../../src/renderer/utils/render-metrics'
 import { getLayout, layoutNames, LAYOUTS, resolveLayoutName } from './index'
 
 export const SETUPS = {
@@ -285,8 +285,9 @@ function readPaintedRects({ canvas, nodes }) {
 
 function readLayoutRects({ nodes }) {
     return [...nodes].map((node) => {
-        // The painted box includes translate and scale.
-        const { x, y, width, height } = getSingleNodeMetrics(node)
+        // The painted box includes translate, scale, and rotate; like getBoundingClientRect(), a rotated box
+        // reads as its bounding box.
+        const { x, y, width, height } = getRotatedBounds(getSingleNodeMetrics(node))
 
         return {
             id: node.id,
@@ -417,8 +418,13 @@ function findNodeByPath(ui, path) {
 
 function isNodeAtPoint(node, x, y) {
     const box = getSingleNodeMetrics(node)
+    // The point in the box's own axes: a rotated box turns about its top-left corner.
+    const cos = Math.cos(box.rotation)
+    const sin = Math.sin(box.rotation)
+    const local_x = cos * (x - box.x) + sin * (y - box.y)
+    const local_y = cos * (y - box.y) - sin * (x - box.x)
 
-    return x >= box.x && x < box.x + box.width && y >= box.y && y < box.y + box.height
+    return local_x >= 0 && local_x < box.width && local_y >= 0 && local_y < box.height
 }
 
 function getSetup(name) {

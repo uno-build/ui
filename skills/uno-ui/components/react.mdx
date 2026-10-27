@@ -1,0 +1,310 @@
+---
+title: React
+---
+
+## Register the root component
+
+```js
+import ResourcesWebGPU from '@uno.build/ui/ResourcesWebGPU'
+import UI from '@uno.build/ui/UI'
+import { registerRootComponent } from '@uno.build/ui/react'
+import App from './App.jsx'
+
+const canvas = document.querySelector('canvas')
+const resources = await ResourcesWebGPU.create({ canvas })
+const { ui } = await UI.create({ resources })
+
+// React
+const react = registerRootComponent(App, { ui })
+react.mount({})
+```
+
+React commits call `ui.update()` automatically. Keep the viewport setup and render loop from [First Layout](../getting-started/first-layout.mdx) to draw the UI with `ui.draw()`.
+
+Use one registered root per UI. Call `react.mount(props)` again to update the root component's props while preserving its state.
+
+Call `react.unmount()` to remove the component tree and run its cleanup before destroying the UI. It does not destroy the UI or dispose shared resources; see [Destroy](../getting-started/destroy.mdx).
+
+## Components
+
+`@uno.build/ui/react` exports five components: `View`, `Text`, `Image`, `ScrollView`, and `Input`. They render uno nodes and share the properties and event props below. Each component's section describes its additional props and behavior.
+
+### `<View>`
+
+`View` is a container for layout, backgrounds, and child components. Rendering a `View` creates an uno node, equivalent to calling `ui.create()` in the imperative API. React adds the node to its parent and manages its updates and removal. Use React state to update its styles in response to events.
+
+```jsx
+// ReactView.jsx
+import { useState } from 'react'
+import { View } from '@uno.build/ui/react'
+
+export default function App({}) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <View
+      style={{
+        width: '100%',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <View
+        onPointerOver={() => setHovered(true)}
+        onPointerOut={() => setHovered(false)}
+        style={{
+          width: '200px',
+          height: '150px',
+          backgroundColor: '#8080FD',
+          opacity: hovered ? '0.5' : '1',
+        }}
+      ></View>
+    </View>
+  )
+}
+```
+
+### `<Text>`
+
+Use `Text` for all text content. Follow [Texts & Fonts](../getting-started/texts-fonts.mdx) to load and register a font before rendering the examples below.
+
+```jsx
+import { useState } from 'react'
+import { View, Text } from '@uno.build/ui/react'
+
+export default function App() {
+  return (
+    <View style={{ padding: '16px', gap: '8px' }}>
+      <Text style={{ color: '#ffffff' }}>Click the counter to update it.</Text>
+    </View>
+  )
+}
+```
+
+A string directly inside `View`, such as `<View>Hello</View>`, is invalid. `Text` is a leaf node: it cannot contain elements, components, or React fragments. To use different styles within a line, place sibling `Text` components inside a `View` with `flexDirection: 'row'`.
+
+### `<Image>`
+
+`Image` displays a registered image resource. It does not download the image from `src`. Follow [Images](../getting-started/images.mdx) to load and register the asset before calling `react.mount({})`.
+
+| Property          | Value                                         | Default  | Usage                                                                                                          |
+| ----------------- | --------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
+| `src`             | String                                        | Required | The registered image resource identifier.                                                                      |
+| `width`           | String                                        | Not set  | Width with units, such as `'128px'`. If only this dimension is set, the registered aspect ratio is preserved.  |
+| `height`          | String                                        | Not set  | Height with units, such as `'100px'`. If only this dimension is set, the registered aspect ratio is preserved. |
+| `style.objectFit` | `'fill'`, `'contain'`, `'cover'`, or `'none'` | `'fill'` | Controls how the image fits within the component's dimensions. Set it inside `style`.                          |
+
+With neither dimension set, the component uses the registered image size. Dimensions in `style` take precedence over the `width` and `height` props.
+
+Use the same identifier as the component's `src`:
+
+```jsx
+import { Image, View } from '@uno.build/ui/react'
+
+export default function App() {
+  return (
+    <View style={{ flexDirection: 'row', gap: '16px' }}>
+      <Image src="assets/coin.png" width="128px" />
+      <Image src="assets/coin.png" width="160px" height="100px" style={{ objectFit: 'contain' }} />
+    </View>
+  )
+}
+```
+
+### `<ScrollView>`
+
+`ScrollView` clips its children and provides vertical scrolling by default.
+
+| Property     | Value   | Default | Usage                                                                       |
+| ------------ | ------- | ------- | --------------------------------------------------------------------------- |
+| `horizontal` | Boolean | `false` | Arranges the content in a row and enables horizontal scrolling when `true`. |
+
+Give it a limited height so that content can overflow the viewport:
+
+```jsx
+import { ScrollView, Text, View } from '@uno.build/ui/react'
+
+const ITEMS = Array.from({ length: 20 }, (_, index) => index + 1)
+
+export default function App() {
+  return (
+    <ScrollView style={{ width: '240px', height: '200px' }}>
+      {ITEMS.map((item) => (
+        <View key={item} style={{ padding: '12px', flexShrink: '0', backgroundColor: '#8080FD' }}>
+          <Text style={{ color: '#ffffff' }}>Item {item}</Text>
+        </View>
+      ))}
+    </ScrollView>
+  )
+}
+```
+
+Set `horizontal` to arrange the content in a row and enable horizontal scrolling:
+
+```jsx
+<ScrollView horizontal style={{ width: '240px', height: '80px' }}>
+  {ITEMS.map((item) => (
+    <View key={item} style={{ width: '120px', padding: '12px', flexShrink: '0' }}>
+      <Text style={{ color: '#ffffff' }}>Item {item}</Text>
+    </View>
+  ))}
+</ScrollView>
+```
+
+The `style` prop applies to the viewport. Use `onScroll` event to respond to scrolling.
+
+### `<Input>`
+
+`Input` is a visual component controlled by `value`. It displays text, a placeholder, and a configurable caret and selection highlight while focused.
+
+| Property               | Value                     | Default     | Usage                                                                                   |
+| ---------------------- | ------------------------- | ----------- | --------------------------------------------------------------------------------------- |
+| `value`                | String, number, or `null` | `undefined` | The displayed input value. An empty string, `null`, or `undefined` is treated as empty. |
+| `placeholder`          | String, number, or `null` | `undefined` | Text displayed only when `value` is empty and the input is unfocused.                   |
+| `placeholderTextColor` | Color string              | `'#777777'` | The color used for the placeholder text.                                                |
+| `caretVisible` | Boolean | `true` | Shows the blinking caret while focused. Set to `false` to hide it without hiding the selection. |
+| `caretPosition` | Number | Selection end, or value length | Caret offset in the displayed value, measured in UTF-16 code units. |
+| `selection` | `readonly [number, number]` | `undefined` | Selection range `[start, end]`, with an inclusive start and exclusive end. Highlighted only while focused. |
+| `selectionColor` | Color string | `'#3390ff55'` | Background color of the selected text. |
+
+Pass the displayed text through `value`:
+
+```jsx
+import { Input } from '@uno.build/ui/react'
+
+export default function App({ value = '' }) {
+  return (
+    <Input
+      value={value}
+      placeholder="Your name"
+      style={{ width: '240px', height: '40px', padding: '8px', color: '#111827' }}
+    />
+  )
+}
+```
+
+`caretPosition` and `selection` use the same UTF-16 offsets as a native input's `selectionStart` and `selectionEnd`. Offsets are clamped to the value's length. An empty or reversed range produces no highlight. If `caretPosition` is omitted, the caret uses the selection end when `selection` is provided, or the end of the value otherwise.
+
+The input preserves spaces and disables automatic wrapping. While focused, it scrolls horizontally as needed to keep the caret position visible. The selection is drawn behind the text by the component.
+
+```jsx
+<Input
+  value="Hello world"
+  caretPosition={5}
+  selection={[0, 5]}
+  selectionColor="#3390ff55"
+/>
+```
+
+Focus the input to display the caret and highlight in this example.
+
+`Input` displays selection supplied through props; it does not handle typing, IME, clipboard operations, or selection gestures itself. To support typing in a browser, connect a native `<input>` outside the uno component tree, synchronize its value with React state, and manage its focus through `onFocus` and `onBlur`.
+
+On the native input's `input` and `selectionchange` events, set `selection` to `[input.selectionStart, input.selectionEnd]`. Set `caretPosition` to `input.selectionStart` when `input.selectionDirection === 'backward'`, or to `input.selectionEnd` otherwise. This keeps the visible caret at the active end of the selection. These props only control the uno display; use the native input's `setSelectionRange(start, end, direction)` to change its actual selection.
+
+## Event props
+
+All five components accept the following event props. Pass a handler function to subscribe; omit the prop or set it to `null` or `undefined` to remove your handler. React manages the listener registration and cleanup.
+
+| Prop              | uno event       | When it fires                                                        |
+| ----------------- | --------------- | -------------------------------------------------------------------- |
+| `onPointerDown`   | `pointerdown`   | A pointer is pressed on a node.                                      |
+| `onPointerMove`   | `pointermove`   | A pointer moves over the UI or during an active pointer interaction. |
+| `onPointerUp`     | `pointerup`     | An active pointer is released.                                       |
+| `onPointerCancel` | `pointercancel` | The platform cancels an active pointer interaction.                  |
+| `onPointerOver`   | `pointerover`   | A node becomes the pointer's hover target.                           |
+| `onPointerOut`    | `pointerout`    | A node stops being the pointer's hover target.                       |
+| `onClick`         | `click`         | A node is activated by a completed click or tap.                     |
+| `onWheel`         | `wheel`         | Wheel or trackpad input occurs over a node.                          |
+| `onScroll`        | `scroll`        | A scroll container's offset changes through scrolling.               |
+| `onFocus`         | `focus`         | A node gains uno focus.                                              |
+| `onBlur`          | `blur`          | A node loses uno focus.                                              |
+
+Handlers receive uno events rather than React DOM synthetic events. Each event includes these common members:
+
+| Member              | Meaning                                                                           |
+| ------------------- | --------------------------------------------------------------------------------- |
+| `type`              | The uno event name, such as `'pointerdown'`.                                      |
+| `target`            | The uno node where the event originated.                                          |
+| `current_target`    | The uno node whose handler is currently running.                                  |
+| `source_event`      | The original platform event, or `null` for a programmatic event without a source. |
+| `stopPropagation()` | Stops the event from continuing to ancestor nodes.                                |
+
+Events bubble through the uno node tree, so a component's handler can receive events from its descendants. Event-specific data, such as pointer coordinates, wheel deltas, scroll offsets, and focus transitions, is documented in [Events](../api/events.mdx).
+
+## Refs and handles
+
+Pass a React ref to access a component's uno nodes. These refs expose handles rather than DOM elements. Import `NodeHandle`, `ScrollViewHandle`, and `InputHandle` from `@uno.build/ui/react` when using TypeScript.
+
+| Component               | Ref value          | Available members                                                               |
+| ----------------------- | ------------------ | ------------------------------------------------------------------------------- |
+| `View`, `Text`, `Image` | `NodeHandle`       | `nodes.main`                                                                    |
+| `ScrollView`            | `ScrollViewHandle` | `nodes.main` (viewport), `nodes.content` (scrollable content)                   |
+| `Input`                 | `InputHandle`      | `nodes.main`, `nodes.content`, `nodes.text`, `nodes.caret`, `focus()`, `blur()` |
+
+`nodes.caret` is `null` when the input is unfocused or `caretVisible` is `false`. `focus()` and `blur()` change uno focus; they do not open a platform keyboard or provide text input.
+{/*
+This example focuses the input and scrolls the viewport after mounting:
+
+```tsx
+import { useEffect, useRef } from 'react'
+import { Input, ScrollView, View, useUI } from '@uno.build/ui/react'
+import type { InputHandle, ScrollViewHandle } from '@uno.build/ui/react'
+
+function Example() {
+  const ui = useUI()
+  const input = useRef<InputHandle | null>(null)
+  const scroll = useRef<ScrollViewHandle | null>(null)
+
+  useEffect(() => {
+    input.current?.focus()
+    if (scroll.current) scroll.current.nodes.main.scrollTop = 40
+    ui.update()
+  }, [ui])
+
+  return (
+    <ScrollView ref={scroll} style={{ height: '120px' }}>
+      <Input ref={input} value="Hello" />
+      <View style={{ height: '300px', flexShrink: '0' }} />
+    </ScrollView>
+  )
+}
+```
+
+Set `scrollTop` or `scrollLeft` on `nodes.main`, then call `ui.update()`. Use refs only while mounted and prefer props for styles and text. See [Node](../api/node.mdx) for the full API. */}
+
+## `useUI()`
+
+`useUI()` is a React hook that returns the UI passed to `registerRootComponent`. Call it only inside that registered component tree. For example, a component can read the original dimensions of the registered `assets/coin.png` image:
+
+```jsx
+import { Text, useUI } from '@uno.build/ui/react'
+
+export function ImageSize() {
+  const ui = useUI()
+  const { width, height } = ui.resources.getImageSize('assets/coin.png')
+
+  return (
+    <Text style={{ color: '#ffffff' }}>
+      Image size: {width} × {height}
+    </Text>
+  )
+}
+```
+
+## Demo
+
+<iframe
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&module=%2Fcomponents%2FReact.jsx&initialpath=%2Freact.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '350px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>

@@ -1,0 +1,94 @@
+---
+title: 'Node'
+---
+
+`Node` has no public import path. Obtain instances through [`ui.create()`](./ui.mdx#methods); `ui.root` is also a node. `TElement` depends on the renderer.
+
+## Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `id` | `number` | Identifier within the UI. |
+| `ui` | `UI \| null` | Owning UI; `null` after destruction. |
+| `element` | `TElement \| null` | Renderer element; `null` after destruction. |
+| `parent` | `Node<TElement> \| null` | Parent node. |
+| `children` | `Node<TElement>[]` | Child nodes. |
+| `path` | `number[]` | Child-index path from the root. |
+| `layout` | `NodeLayout` | Last computed layout; read after `ui.update()`. |
+| `text_content` | `string \| undefined` | Text set through `text()`. |
+| `styles` | `Partial<Record<StyleName \| (string & {}), ResolvedStyle>>` | Resolved styles. |
+| `order` | `number` | Painting order. |
+| `scrollTop` | `number` | Read/write vertical scroll offset. |
+| `scrollLeft` | `number` | Read/write horizontal scroll offset. |
+| `scrollHeight`, `scrollWidth` | `number` | Scrollable content dimensions. |
+| `clientHeight`, `clientWidth` | `number` | Visible content dimensions. |
+| `scrolling` | `boolean` | Scroll gesture state. |
+| `scroll_top`, `scroll_left` | `number` | Backing fields; use `scrollTop` and `scrollLeft`. |
+
+## Methods
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `add(child: Node, before_node: Node \| null = null)` | `void` | Inserts a detached child; `null` appends. |
+| `remove(child: Node)` | `void` | Destroys a direct child and its subtree. |
+| `detach()` | `void` | Detaches this subtree for reuse. |
+| `destroy()` | `void` | Destroys this subtree; the root destroys the UI. |
+| `style(name: StyleName \| (string & {}), value: string)` | `void` | Sets a [style](./styles.mdx). |
+| `style(name: NumberStyleName, value: number)` | `void` | Sets a [numeric style](./styles.mdx#numeric-values) without parsing a string: lengths in `px`, other styles unitless. |
+| `text(value: string)` | `void` | Sets text; text nodes cannot have children. |
+| `isTextNode()` | `boolean` | Whether `text()` has initialized this node. |
+| `hasTextContent()` | `boolean` | Whether this node has non-empty text. |
+| `on<TName extends string>(type: TName, listener: (event: EventPayload<TName>) => void)` | `void` | Adds an event listener. |
+| `off<TName extends string>(type: TName, listener: (event: EventPayload<TName>) => void)` | `void` | Removes an event listener. |
+| `destroyEvents()` | `void` | Removes all listeners on this node. |
+| `focus(source_event: EventSource \| null = null)` | `void` | Focuses this node. |
+| `blur(source_event: EventSource \| null = null)` | `void` | Clears focus if this node owns it. |
+
+Event names and payloads are listed in [Events](../api/events.mdx).
+
+## Adding and moving nodes
+
+`parent.add(child, before_node)` requires:
+
+- A detached child from the same UI, other than `ui.root`.
+- A parent that is not a text node, the child itself, or one of the child's descendants.
+- A `before_node` that is already a direct child of the parent, or `null` to append.
+
+Invalid insertions throw. Detach an attached node before moving or reordering it:
+
+```js
+child.detach()
+parent.add(child, before_node)
+ui.update()
+```
+
+`detach()` preserves the subtree for reuse. `remove()` destroys a direct child and its subtree; it throws if the supplied node is not a direct child.
+
+## Reading layout
+
+`layout` starts empty. Attach the node beneath `ui.root` and call `ui.update()` before reading its computed dimensions. Update again after changes that affect layout; scroll metrics such as `scrollHeight` and `clientHeight` are also refreshed by `update()`.
+
+`translate`, `scale`, and `rotate` are not part of `layout`: they move, scale, and turn what the node paints, not its computed box.
+
+```js
+node.style('width', '240px')
+ui.update()
+console.log(node.layout.width, node.layout.height)
+```
+
+The layout has this shape; `NodeLayout` is not a separately exported type:
+
+```ts
+type NodeLayout = Partial<{
+  x: number
+  y: number
+  width: number
+  height: number
+  top: number
+  left: number
+  centerX: number
+  centerY: number
+  padding: { top: number; right: number; bottom: number; left: number }
+  border: { top: number; right: number; bottom: number; left: number }
+}>
+```

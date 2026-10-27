@@ -1129,6 +1129,29 @@ test('RendererWebGPU creates panel commands for consecutive panels', () => {
     expect(render_data.glyphs).toHaveLength(0)
 })
 
+test('RendererWebGPU passes the first child panel to a panel command', () => {
+    const renderer = createRenderer()
+    const parent = createNode()
+    const hidden = createNode({ parent, opacity: 0 })
+    const child = createNode({ parent })
+    parent.children.push(hidden, child)
+    const render_data = collectRenderData(renderer, [parent, hidden, child])
+    const { records } = renderer as any
+
+    expect(render_data.commands).toEqual([
+        {
+            kind: COMMAND_KIND_PANEL,
+            panel_index: records.get(parent).panel_slot,
+            glyph_index: records.get(child).panel_slot + 1,
+        },
+        {
+            kind: COMMAND_KIND_PANEL,
+            panel_index: records.get(child).panel_slot,
+            glyph_index: 0,
+        },
+    ])
+})
+
 test('RendererWebGPU writes panel commands into command buffer data', () => {
     const renderer = createRenderer()
     const render_data = collectRenderData(renderer, [createNode(), createNode()])
@@ -1237,6 +1260,7 @@ test('RendererWebGPU creates glyph render data from node text content', () => {
             text_stroke_width: 0,
             effect_distance_range: 6,
             text_stroke_multisampling: 0,
+            rotation: 0,
             text_stroke_color: [0, 0, 0, 0],
             transform: [1, 1, 0, 0],
         },
@@ -3504,6 +3528,32 @@ test('ResourcesWebGPU resolves missing dimensions from the image and requires un
     })).toThrow('Image height is required when the image does not provide it.')
 })
 
+test('ResourcesWebGPU reserves an image without a source and copies a texture into it', async () => {
+    const device = createFakeDevice()
+    const resources = await ResourcesWebGPU.create({
+        canvas: {},
+        device,
+        context: {},
+        format: 'rgba8unorm',
+    })
+    const image = resources.registerImage('scene', { width: 32, height: 16 })
+    const command_buffer_count = device.command_buffers.length
+    const source = { texture: { id: 'scene-texture' }, origin: [64, 0, 0] }
+
+    resources.copyTextureToImage('scene', source)
+
+    expect(device.copies).toHaveLength(0)
+    expect(device.command_buffers).toHaveLength(command_buffer_count + 1)
+    expect(device.texture_copies.at(-1)).toEqual({
+        source,
+        destination: {
+            texture: getAtlasTextures(device).at(-1),
+            origin: [image.x, image.y, image.layer],
+        },
+        size: [32, 16, 1],
+    })
+})
+
 test('ResourcesWebGPU notifies after updating its default font and skips rejected or missing fonts', async () => {
     const resources = await ResourcesWebGPU.create({
         canvas: {},
@@ -3742,6 +3792,12 @@ test('RendererWebGPU selects local damage and deduplicates overlapping inherited
     updated_nodes.length = 0
     renderer.update(nodes, createOperations([
         { op: OPERATIONS.STYLE, node: parent, style: resolveStyle('scale', '2') },
+    ]))
+    expect(updated_nodes).toEqual([parent, child, grandchild])
+
+    updated_nodes.length = 0
+    renderer.update(nodes, createOperations([
+        { op: OPERATIONS.STYLE, node: parent, style: resolveStyle('rotate', '45deg') },
     ]))
     expect(updated_nodes).toEqual([parent, child, grandchild])
 
@@ -4242,7 +4298,7 @@ test('RendererWebGPU updates inherited opacity without rewriting glyphs and rest
     expect(child_record.glyph_count).toBe(0)
     expect(command_pool.uploaded).toBe(3 * COMMAND_SIZE)
     expect(createCommands(nodes, records)).toEqual([
-        { kind: COMMAND_KIND_PANEL, panel_index: records.get(root).panel_slot, glyph_index: 0 },
+        { kind: COMMAND_KIND_PANEL, panel_index: records.get(root).panel_slot, glyph_index: sibling_record.panel_slot + 1 },
         { kind: COMMAND_KIND_PANEL, panel_index: sibling_record.panel_slot, glyph_index: 0 },
         { kind: COMMAND_KIND_GLYPH, panel_index: 0, glyph_index: sibling_record.glyph_start },
     ])
@@ -4851,6 +4907,65 @@ test('ancestor metrics scale descendants and clips about each box center after t
             clip: { top: 19, right: 149, bottom: 45, left: -27 },
         })
     }
+})
+
+test('ancestor metrics rotate descendants about each box center and ignore overflow under the rotation', () => {
+    const root = createNode({ layout: { x: 0, y: 0, width: 200, height: 200 }, overflow: OVERFLOW.hidden })
+    const parent = createNode({
+        parent: root,
+        layout: { x: 20, y: 40, width: 100, height: 60 },
+        overflow: OVERFLOW.hidden,
+        styles: {
+            ...resolveStyles('rotate', '90deg'),
+            ...resolveStyles('translate', '5px 0px'),
+        },
+    })
+    const child = createNode({ parent, layout: { x: 30, y: 50, width: 20, height: 10 } })
+    root.children.push(parent)
+    parent.children.push(child)
+    parent.scrollTop = 10
+
+    for (const single_record_parts of [0, RECORD_PANEL, RECORD_ALL]) {
+        // After the scroll the corner (30, 40) turns 90deg about the parent's center (70, 70), then moves by 5px.
+        expect(createNodeMetricsResolver(single_record_parts)(child)).toMatchObject({
+            x: expect.closeTo(105),
+            y: expect.closeTo(30),
+            width: 20,
+            height: 10,
+            scale_x: 1,
+            scale_y: 1,
+            rotation: expect.closeTo(Math.PI / 2),
+            untransformed_x: 30,
+            untransformed_y: 40,
+            clip: { top: 0, right: 200, bottom: 200, left: 0 },
+        })
+    }
+})
+
+test('RendererWebGPU turns panels and text runs about the node center and keeps glyphs untransformed', () => {
+    const renderer = createRenderer(createImageManager(), createFontManager({ default_font: createManagedFont() }))
+    const layout = { x: 0, y: 0, width: 4, height: 8 }
+    const plain = collectRenderData(renderer, [createNode({ text_content: 'A', layout })])
+    const rotated = collectRenderData(renderer, [
+        createNode({ text_content: 'A', layout, styles: resolveStyles('rotate', '90deg') }),
+    ])
+    const panel_floats = new Float32Array(
+        createPoolBufferData((renderer as any).panel_data_pool, rotated.panels, writePanelData).bytes.buffer,
+    )
+    const run_floats = new Float32Array(createTextRunBufferData(renderer, rotated.text_runs).bytes.buffer)
+
+    // The top-left corner (0, 0) turns 90deg about the center (2, 4) to (6, 2).
+    expect(rotated.panels[0]).toMatchObject({
+        layout: [expect.closeTo(6), expect.closeTo(2), 4, 8],
+        rotation: expect.closeTo(Math.PI / 2),
+    })
+    expect(rotated.text_runs[0]).toMatchObject({
+        rotation: expect.closeTo(Math.PI / 2),
+        transform: [1, 1, expect.closeTo(6), expect.closeTo(2)],
+    })
+    expect(rotated.glyphs.map((glyph) => glyph.layout)).toEqual(plain.glyphs.map((glyph) => glyph.layout))
+    expect(panel_floats[PANEL_DATA.IMAGE_DATA.OFFSET / FLOAT32_SIZE + 3]).toBeCloseTo(Math.PI / 2)
+    expect(run_floats[TEXT_RUN.ROTATION.OFFSET / FLOAT32_SIZE]).toBeCloseTo(Math.PI / 2)
 })
 
 test('RendererWebGPU scales panel size, borders, radii, shadow, and background image with the node', () => {

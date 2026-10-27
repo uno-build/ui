@@ -105,6 +105,16 @@ export default class ResourcesWebGPU extends Resources<
         return registered_image
     }
 
+    /**
+     * Copy a texture of this device into a registered image of the same size, e.g. a
+     * scene rendered every frame. Its format must be rgba8unorm or rgba8unorm-srgb.
+     */
+    copyTextureToImage(src: string, source: GPUTexelCopyTextureInfo): void {
+        const command_encoder = this.device.createCommandEncoder()
+        this.image_manager.imageCopy(src, source, command_encoder)
+        this.device.queue.submit([command_encoder.finish()])
+    }
+
     disposeImage(src: string): void {
         if (this.image_manager.imageDispose(src)) {
             this.events.emit(RESOURCE_EVENT.IMAGE)

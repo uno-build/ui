@@ -135,6 +135,36 @@ test('UI hit-tests scaled nodes and their children by their scaled boxes', async
     ui.destroy()
 })
 
+test('UI hit-tests rotated nodes by their turned boxes, ignoring overflow under the rotation but not above it', async () => {
+    const ui = await TestUI.create({ renderer: new TestRenderer() })
+    const parent = ui.create()
+    const child = ui.create()
+    const hit_nodes = []
+
+    ui.root.style('width', '100px')
+    ui.root.style('height', '60px')
+    ui.root.style('overflow', 'hidden')
+    parent.style('width', '40px')
+    parent.style('height', '40px')
+    parent.style('overflow', 'hidden')
+    child.style('width', '80px')
+    child.style('height', '20px')
+    child.style('flexShrink', '0')
+    ui.root.add(parent)
+    parent.add(child)
+    // About the parent's center (20, 20), the child turns from 0..80 x 0..20 to 20..40 x 0..80.
+    parent.style('rotate', 90)
+    ui.update()
+    ui.events_source.on('hit', ({ node }) => hit_nodes.push(node))
+
+    for (const [x, y] of [[30, 50], [30, 70], [10, 10], [50, 10]]) {
+        ui.dispatchPlatformEvent({ type: 'hit' }, { x, y })
+    }
+
+    expect(hit_nodes).toEqual([child, null, parent, ui.root])
+    ui.destroy()
+})
+
 test('UI skips nodes without a layout, or under a clipping ancestor without one, until the next update', async () => {
     const ui = await TestUI.create({ renderer: new TestRenderer() })
     const old_parent = ui.create()

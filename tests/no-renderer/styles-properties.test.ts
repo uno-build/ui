@@ -10,6 +10,7 @@ test('expanded paint shorthands are classified without requesting layout', () =>
         ['opacity', '0.5'],
         ['translate', '10px 20px'],
         ['scale', '2 0.5'],
+        ['rotate', '45deg'],
         ['zIndex', '2'],
         ['textShadow', '1px 2px 3px #123'],
         ['textStroke', '1px #123'],
@@ -707,6 +708,20 @@ test('scale', () => {
     expectInvalid('scale', '2px', /expected number/)
     expectInvalid('scale', 'none', /expected number/)
     expectInvalid('scale', true, /style value must be a string/)
+})
+
+test('rotate', () => {
+    expectUnit('rotate', ' 45DEG ', '45deg', 45, 'deg')
+    expectUnit('rotate', '-12.5deg', '-12.5deg', -12.5, 'deg')
+    expectUnit('rotate', '720deg', '720deg', 720, 'deg')
+    expectKeywordUnit('rotate', ' Unset ', 'unset')
+    expectInvalid('rotate', '0', /expected deg unit/)
+    expectInvalid('rotate', '1rad', /expected deg unit/)
+    expectInvalid('rotate', '0.25turn', /expected deg unit/)
+    expectInvalid('rotate', '10px', /expected deg unit/)
+    expectInvalid('rotate', 'x 45deg', /expected deg unit/)
+    expectInvalid('rotate', 'none', /expected deg unit/)
+    expectInvalid('rotate', true, /style value must be a string/)
 })
 
 test('border corner radius', () => {

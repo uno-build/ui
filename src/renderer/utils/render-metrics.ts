@@ -18,6 +18,7 @@ const EMPTY_BORDER_RADIUS = [
     [0, 0, 0, 0],
     [0, 0, 0, 0],
 ]
+const DEGREES_TO_RADIANS = Math.PI / 180
 const ROOT_METRICS = {
     x: 0,
     y: 0,
@@ -26,6 +27,7 @@ const ROOT_METRICS = {
     offset_y: 0,
     scale_x: 1,
     scale_y: 1,
+    matrix: null,
     scroll_left: 0,
     scroll_top: 0,
     clip: null,
@@ -83,6 +85,18 @@ export function createNodeMetricsResolver(single_record_parts: number = 0) {
         for (let index = pending_count; index >= 0; index--) {
             const current_node = index === 0 ? node : pending_nodes[index - 1]
             const { layout, styles } = current_node
+            const rotate = styles.rotate?.parsed.value ?? 0
+            // A rotated subtree composes full matrices; the rest keeps the offset and scale per axis below.
+            if (current_metrics.matrix !== null || rotate !== 0) {
+                current_metrics = getRotatedNodeMetrics(current_node, current_metrics, rotate)
+                if (index === 0 && is_leaf) {
+                    last_leaf_node = node
+                    last_leaf_metrics = current_metrics
+                    return last_leaf_metrics
+                }
+                metrics.set(current_node, current_metrics)
+                continue
+            }
             const translate_x = styles.translateX?.parsed.value ?? 0
             const translate_y = styles.translateY?.parsed.value ?? 0
             const node_scale_x = styles.scaleX?.parsed.value ?? 1
@@ -115,6 +129,7 @@ export function createNodeMetricsResolver(single_record_parts: number = 0) {
                     height,
                     scale_x,
                     scale_y,
+                    rotation: 0,
                     untransformed_x,
                     untransformed_y,
                     opacity,
@@ -154,11 +169,13 @@ export function createNodeMetricsResolver(single_record_parts: number = 0) {
                 height,
                 scale_x,
                 scale_y,
+                rotation: 0,
                 untransformed_x,
                 untransformed_y,
                 opacity,
                 offset_x: offset_x - current_node.scrollLeft * scale_x,
                 offset_y: offset_y - current_node.scrollTop * scale_y,
+                matrix: null,
                 scroll_left: current_metrics.scroll_left + current_node.scrollLeft,
                 scroll_top: current_metrics.scroll_top + current_node.scrollTop,
                 clip,
@@ -171,7 +188,74 @@ export function createNodeMetricsResolver(single_record_parts: number = 0) {
     }
 }
 
-export function getSingleNodeMetrics(node: any) {
+// Under a rotation the box is drawn from its top-left corner (x, y), rotated and scaled per axis. Positions follow the
+// full matrix; only the shear of a non-uniform scale above a rotation is dropped from the box.
+function getRotatedNodeMetrics(node: any, parent_metrics: any, rotate: number) {
+    const { layout, styles } = node
+    // The parent's map from its children's layout space to the screen.
+    const { a: parent_a, b: parent_b, c: parent_c, d: parent_d, e: parent_e, f: parent_f } = parent_metrics.matrix ?? {
+        a: parent_metrics.scale_x,
+        b: 0,
+        c: 0,
+        d: parent_metrics.scale_y,
+        e: parent_metrics.offset_x,
+        f: parent_metrics.offset_y,
+    }
+    const angle = rotate * DEGREES_TO_RADIANS
+    const cos = Math.cos(angle)
+    const sin = Math.sin(angle)
+    const node_scale_x = styles.scaleX?.parsed.value ?? 1
+    const node_scale_y = styles.scaleY?.parsed.value ?? 1
+    // In its parent's space, a point p of the box goes to center + translate + rotation * scale * (p - center).
+    const local_a = cos * node_scale_x
+    const local_b = sin * node_scale_x
+    const local_c = -sin * node_scale_y
+    const local_d = cos * node_scale_y
+    const center_x = layout.x + layout.width / 2
+    const center_y = layout.y + layout.height / 2
+    const local_e = center_x + (styles.translateX?.parsed.value ?? 0) - local_a * center_x - local_c * center_y
+    const local_f = center_y + (styles.translateY?.parsed.value ?? 0) - local_b * center_x - local_d * center_y
+    const a = parent_a * local_a + parent_c * local_b
+    const b = parent_b * local_a + parent_d * local_b
+    const c = parent_a * local_c + parent_c * local_d
+    const d = parent_b * local_c + parent_d * local_d
+    const e = parent_a * local_e + parent_c * local_f + parent_e
+    const f = parent_b * local_e + parent_d * local_f + parent_f
+    const scale_x = Math.hypot(a, b)
+    const scale_y = Math.hypot(c, d)
+
+    return {
+        x: a * layout.x + c * layout.y + e,
+        y: b * layout.x + d * layout.y + f,
+        width: layout.width * scale_x,
+        height: layout.height * scale_y,
+        scale_x,
+        scale_y,
+        rotation: Math.atan2(b, a),
+        untransformed_x: layout.x - parent_metrics.scroll_left,
+        untransformed_y: layout.y - parent_metrics.scroll_top,
+        opacity: parent_metrics.opacity * (styles.opacity?.parsed.value ?? 1),
+        // Overflow is ignored under a rotation, so every clip stays aligned with the screen.
+        clip: parent_metrics.children_clip,
+        children_clip: parent_metrics.children_clip,
+        matrix: {
+            a,
+            b,
+            c,
+            d,
+            e: e - a * node.scrollLeft - c * node.scrollTop,
+            f: f - b * node.scrollLeft - d * node.scrollTop,
+        },
+        scroll_left: parent_metrics.scroll_left + node.scrollLeft,
+        scroll_top: parent_metrics.scroll_top + node.scrollTop,
+    }
+}
+
+export function getSingleNodeMetrics(node: any): any {
+    // A rotation in the chain needs full matrices, which the resolver composes from the root.
+    if ((node.styles.rotate?.parsed.value ?? 0) !== 0) {
+        return createNodeMetricsResolver()(node)
+    }
     let opacity = node.styles.opacity?.parsed.value ?? 1
     let offset_x = 0
     let offset_y = 0
@@ -187,6 +271,9 @@ export function getSingleNodeMetrics(node: any) {
     let ancestor = node.parent
 
     while (ancestor !== null) {
+        if ((ancestor.styles.rotate?.parsed.value ?? 0) !== 0) {
+            return createNodeMetricsResolver()(node)
+        }
         scroll_left += ancestor.scrollLeft
         scroll_top += ancestor.scrollTop
         offset_x -= ancestor.scrollLeft
@@ -239,6 +326,7 @@ export function getSingleNodeMetrics(node: any) {
         height: node.layout.height * scale_y * node_scale_y,
         scale_x: scale_x * node_scale_x,
         scale_y: scale_y * node_scale_y,
+        rotation: 0,
         untransformed_x: node.layout.x - scroll_left,
         untransformed_y: node.layout.y - scroll_top,
         opacity,
@@ -251,8 +339,23 @@ export function getSingleNodeMetrics(node: any) {
     }
 }
 
-// A box emptied by a zero scale counts as clipped.
-export function isNodeClipped({ x, y, width, height, clip }: { x: any; y: any; width: any; height: any; clip: any; }) {
+// The screen bounding box of a box that turns about its top-left corner (x, y).
+export function getRotatedBounds({ x, y, width, height, rotation }: { x: number; y: number; width: number; height: number; rotation: number; }) {
+    const cos = Math.cos(rotation)
+    const sin = Math.sin(rotation)
+    return {
+        x: x + Math.min(0, width * cos) + Math.min(0, -height * sin),
+        y: y + Math.min(0, width * sin) + Math.min(0, height * cos),
+        width: Math.abs(width * cos) + Math.abs(height * sin),
+        height: Math.abs(width * sin) + Math.abs(height * cos),
+    }
+}
+
+// A box emptied by a zero scale counts as clipped. A rotated box is tested by its bounding box.
+export function isNodeClipped({ x, y, width, height, rotation, clip }: { x: any; y: any; width: any; height: any; rotation: any; clip: any; }) {
+    if (rotation !== 0 && width !== 0 && height !== 0) {
+        return isNodeClipped({ ...getRotatedBounds({ x, y, width, height, rotation }), rotation: 0, clip })
+    }
     return (
         width === 0 || height === 0 || (clip !== null && (
             clip.right <= clip.left || clip.bottom <= clip.top ||
@@ -289,11 +392,12 @@ export function getNodeDrawingData(node: any, computeStyleValue: any, getNodeMet
     }
 
     const node_metrics = getNodeMetrics(node)
-    const { x, y, scale_x, scale_y, opacity, clip } = node_metrics
+    const { x, y, scale_x, scale_y, rotation, opacity, clip } = node_metrics
     if (opacity <= 0 || isNodeClipped(node_metrics)) {
         return null
     }
 
+    // The clip stays aligned with the screen: it is relative to the panel's top-left corner, not rotated with it.
     const normalized_clipping = clip === null ? [0, 0, 0, 0] : [clip.top - y, clip.right - x, clip.bottom - y, clip.left - x]
 
     const [border_radius_x, border_radius_y] = FEATURES.border_radius
@@ -307,6 +411,7 @@ export function getNodeDrawingData(node: any, computeStyleValue: any, getNodeMet
         layout: [x, y, node_metrics.width, node_metrics.height],
         clipping: normalized_clipping,
         opacity,
+        rotation,
         border_radius_x,
         border_radius_y,
         border_color_top: node.styles.borderTopColor?.parsed.rgba ?? TRANSPARENT_COLOR,

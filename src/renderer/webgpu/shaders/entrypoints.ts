@@ -13,7 +13,8 @@ fn vertexMain(
         let shadow_padding = boxShadowPadding(panel.box_shadow);
         let expanded_size = panel.rect.zw + shadow_padding.xy + shadow_padding.zw;
         local_position = position * expanded_size - shadow_padding.xy;
-        pixel = panel.rect.xy + local_position;
+        // A rotated panel turns about its top-left corner, which rect.xy places on the screen.
+        pixel = panel.rect.xy + rotatePoint(local_position, panel.image_data.w);
     } else {
         let glyph = glyph_data[command.z];
 
@@ -35,9 +36,9 @@ fn vertexMain(
             uv = glyph.uv_rect.xy + (local_position / glyph.rect.zw) * glyph.uv_rect.zw;
         }
 
-        // Glyphs, shadow offsets, and expansions are untransformed: the run's translate and scale map them.
+        // Glyphs, shadow offsets, and expansions are untransformed: the run's translate, scale and rotation map them.
         let transform = text_runs[glyph.run_data.x].transform;
-        pixel = pixel * transform.xy + transform.zw;
+        pixel = rotatePoint(pixel * transform.xy, text_runs[glyph.run_data.x].rotation) + transform.zw;
     }
 
     let clip = vec2f(

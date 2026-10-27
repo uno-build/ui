@@ -255,15 +255,47 @@ fn backgroundImageColor(panel: PanelData, local_position: vec2f) -> vec4f {
     );
 }
 
+// The child is drawn over the inner border edge with its own antialiasing, so blending both bands lets the
+// background through. With the child's coverage and alpha, this inner coverage makes the composite exact.
+fn occludedInnerCoverage(
+    child: PanelData,
+    pixel: vec2f,
+    local_position_width: vec2f,
+    inner_coverage: f32,
+) -> f32 {
+    // In the child's own axes: a rotated child turns about its top-left corner.
+    let child_position = rotatePoint(pixel - child.rect.xy, -child.image_data.w);
+    let child_coverage = roundedRectCoverage(
+        child_position,
+        local_position_width,
+        child.rect.zw,
+        child.border_radius_x,
+        child.border_radius_y,
+    );
+    let child_border_color = select(
+        vec4f(0.0),
+        borderColorForPosition(child, child_position),
+        any(child.border_widths > vec4f(0.0)),
+    );
+    let child_alpha =
+        compositeOver(child_border_color, unpackColor(child.background_color.x)).a * child.image_data.x;
+
+    return (inner_coverage - child_alpha * min(inner_coverage, child_coverage)) /
+        max(1.0 - child_alpha * child_coverage, 0.0001);
+}
+
 fn panelColor(input: VertexOutput, local_position_width: vec2f) -> vec4f {
     let panel = panel_data[u32(input.panel_index)];
+    // The clip is aligned with the screen and relative to the panel's top-left corner, which a rotation can move
+    // outside it: only no clip at all, all zeros, has right <= left.
+    let clip_position = input.pixel - panel.rect.xy;
     let visible = !(
-        any(panel.clipping > vec4f(0.0)) &&
+        panel.clipping.y > panel.clipping.w &&
         (
-            input.local_position.x < panel.clipping.w ||
-            input.local_position.y < panel.clipping.x ||
-            input.local_position.x > panel.clipping.y ||
-            input.local_position.y > panel.clipping.z
+            clip_position.x < panel.clipping.w ||
+            clip_position.y < panel.clipping.x ||
+            clip_position.x > panel.clipping.y ||
+            clip_position.y > panel.clipping.z
         )
     );
 
@@ -302,7 +334,7 @@ fn panelColor(input: VertexOutput, local_position_width: vec2f) -> vec4f {
         ),
         vec4f(0.0),
     );
-    let inner_coverage = select(
+    var inner_coverage = select(
         0.0,
         roundedRectCoverage(
             inner_position,
@@ -323,6 +355,15 @@ fn panelColor(input: VertexOutput, local_position_width: vec2f) -> vec4f {
             );
         }
         if (any(panel.border_widths > vec4f(0.0))) {
+            let occluder_index = u32(input.glyph_index);
+            if (occluder_index > 0u && inner_coverage > 0.0 && inner_coverage < 1.0) {
+                inner_coverage = occludedInnerCoverage(
+                    panel_data[occluder_index - 1u],
+                    input.pixel,
+                    local_position_width,
+                    inner_coverage,
+                );
+            }
             let border_color = compositeOver(borderColorForPosition(panel, input.local_position), box_color);
             let border_mix_alpha = mix(border_color.a, box_color.a, inner_coverage);
             let border_mix_color = mix(

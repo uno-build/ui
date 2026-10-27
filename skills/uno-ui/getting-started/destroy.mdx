@@ -1,0 +1,57 @@
+---
+title: Destroy
+---
+
+Destroy nodes and UIs when you no longer need them to release their resources.
+
+## Destroy a node
+
+Call `node.destroy()` to permanently remove a node and its children:
+
+```js
+node.destroy()
+ui.update()
+```
+
+This also removes their listeners. You do not need to destroy each child separately. A destroyed node cannot be reused; use `node.detach()` if you want to remove a subtree and reinsert it later.
+
+## Destroy the UI
+
+Call `ui.destroy()` to release the entire UI, including its nodes, internal listeners, and renderer allocations:
+
+```js
+ui.destroy()
+```
+
+You do not need to destroy individual nodes first. Destroying `ui.root` also destroys the entire UI.
+
+Shared resources are managed separately: `ui.destroy()` does not call `resources.dispose()`. If multiple UIs share the same resources, dispose them only after destroying the last UI that uses them.
+
+## Clean up the application
+
+Before destroying the UI, stop its render loop and remove any browser event listeners your application added.
+
+In [First Layout](./first-layout.mdx), replace the render loop with the following code to keep track of the pending animation frame:
+
+```js
+let frame_id
+
+function render() {
+  ui.draw()
+  frame_id = requestAnimationFrame(render)
+}
+
+frame_id = requestAnimationFrame(render)
+
+function destroy() {
+  cancelAnimationFrame(frame_id)
+  window.removeEventListener('resize', onResize)
+
+  ui.destroy()
+  resources.dispose()
+}
+```
+
+Call `destroy()` when the view is unmounted or the application no longer needs this UI. This example assumes that no other UI uses `resources`.
+
+If you added browser event listeners to the canvas for interaction, remove those as well, using the same handler functions passed to `addEventListener()`.

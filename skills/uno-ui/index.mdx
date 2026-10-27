@@ -1,0 +1,66 @@
+---
+title: 'Introduction'
+---
+
+[https://github.com/uno-build/ui](https://github.com/uno-build/ui)
+
+Build high-performance and pixel-perfect user interfaces for WebGPU. Use the rendering engine and UI framework of your choice.
+
+## Motivation
+
+When you build a video game's UI with a library such as Three.js, you typically use HTML and CSS for the layout. This approach has two drawbacks. First, it ties your game to the web, so you must ship it for browsers, Electron, or another environment with a WebView. Second, it separates your UI from your game because they live in two different worlds.
+
+uno UI solves both problems by rendering the UI directly through the game's rendering pipeline, without relying on HTML or the DOM. This lets your game run in non-web environments while keeping the UI and game in the same rendering system.
+
+## Key Features
+
+- Works with any WebGPU rendering engine
+- Use it standalone or with [React](https://uno.build/examples/react/), [Vue](https://uno.build/examples/vue/) or [SolidJS](https://uno.build/examples/solid/)
+- World-space integrations for [Three.js](https://uno.build/examples/engines/three-worldspace.html), [Babylon.js](https://uno.build/examples/engines/babylon-worldspace.html), [Babylon Lite](https://uno.build/examples/engines/babylonlite-worldspace.html) and [PlayCanvas](https://uno.build/examples/engines/playcanvas-worldspace.html)
+- [Pixel-perfect parity with DOM rendering](https://uno.build/examples/layouts/)
+- High-quality text rendering with strokes and shadows using [MTSDF](https://github.com/Chlumsky/msdf-atlas-gen)
+- Accurate text measurement and layout powered by [Pretext](https://github.com/chenglou/pretext)
+- Flexbox layout powered by [Yoga](https://www.yogalayout.dev/), or [absolutely positioned boxes without Yoga](./api/ui.mdx#layout-without-yoga) for HUDs
+- Only one draw call per UI frame
+- Fine-grained updates for efficient rendering
+- Lightweight: 280kb (93kb gzip)
+
+## Getting Started
+
+- [First Layout](./getting-started/first-layout.mdx): installation and your first WebGPU layout.
+- [Interactivity](./getting-started/interactivity.mdx): responding to node events.
+- [Images](./getting-started/images.mdx): loading and displaying image resources.
+- [Texts & Fonts](./getting-started/texts-fonts.mdx): generating font atlases and rendering text.
+- [Destroy](./getting-started/destroy.mdx): cleaning up nodes, UIs, and shared resources.
+
+## Components
+
+- [React](./components/react.mdx): components, event props, and UI access with React.
+- [Vue](./components/vue.mdx): components, styles, and event bindings with Vue.
+- [Solid](./components/solid.mdx): components, reactive updates, and compiler setup with Solid.
+
+## Engines
+
+- [Three.js](./engines/three.mdx): background and foreground UI with Three.js.
+- [Three.js World Space](./engines/three-worldspace.mdx): interactive UI on Three.js meshes.
+- [Pixi.js](./engines/pixi.mdx): background and foreground UI with Pixi.js.
+- [Babylon.js](./engines/babylon.mdx): background and foreground UI with Babylon.js.
+- [Babylon.js World Space](./engines/babylon-worldspace.mdx): interactive UI on Babylon.js meshes.
+- [Babylon Lite](./engines/babylonlite.mdx): UI composition using Babylon Lite render tasks.
+- [Babylon Lite World Space](./engines/babylonlite-worldspace.mdx): interactive UI on Babylon Lite meshes.
+- [PlayCanvas](./engines/playcanvas.mdx): background and foreground UI with PlayCanvas.
+- [PlayCanvas World Space](./engines/playcanvas-worldspace.mdx): interactive UI on PlayCanvas entities.
+- [TypeGPU](./engines/typegpu.mdx): UI composition with shared WebGPU command encoders.
+
+## API reference
+
+- [Styles](./api/styles.mdx): supported style properties and values.
+- [Events](./api/events.mdx): supported events, event data, propagation, and custom definitions.
+- [ResourcesWebGPU](./api/resources-webgpu.mdx): shared WebGPU resources and image and font registration.
+- [UI](./api/ui.mdx): creation, viewport, events, updates, and drawing.
+- [UIWorldSpace](./api/ui-world-space.mdx): engine factories, cameras, materials, and custom meshes.
+- [Node](./api/node.mdx): tree operations, styles, text, layout, and listeners.
+
+## Advanced
+
+- [Render to Image](./advanced/render-to-image.mdx): showing a texture rendered every frame, such as a 3D scene, as an image.

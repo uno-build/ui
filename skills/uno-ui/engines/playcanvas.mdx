@@ -1,0 +1,177 @@
+---
+title: PlayCanvas
+---
+
+PlayCanvas and uno UI can draw to the same canvas by sharing a WebGPU device and context. The order of the draw calls determines whether the UI appears in front of or behind the scene.
+
+The examples below assume you are familiar with the basics of uno UI covered in the [First Layout](../getting-started/first-layout.mdx) section.
+
+## Shared setup
+
+Use `createGraphicsDevice()` from `playcanvas` with the WebGPU backend. Create the graphics device first, then pass its device, context, and canvas format to uno UI.
+
+```js
+import ResourcesWebGPU from '@uno.build/ui/ResourcesWebGPU'
+import UI from '@uno.build/ui/UI'
+import * as PC from 'playcanvas'
+
+const canvas = document.querySelector('canvas')
+const graphics_device = await PC.createGraphicsDevice(canvas, {
+  deviceTypes: ['webgpu'],
+  antialias: false,
+  alpha: true,
+})
+graphics_device.maxPixelRatio = window.devicePixelRatio
+
+const resources = await ResourcesWebGPU.create({
+  canvas,
+  device: graphics_device.wgpu,
+  context: graphics_device.gpuContext,
+  format: graphics_device.canvasConfig.format,
+})
+const { ui } = await UI.create({ resources })
+
+const app_options = new PC.AppOptions()
+app_options.graphicsDevice = graphics_device
+app_options.componentSystems = [PC.RenderComponentSystem, PC.CameraComponentSystem]
+app_options.resourceHandlers = [PC.TextureHandler, PC.ContainerHandler]
+const app = new PC.AppBase(canvas)
+app.init(app_options)
+app.setCanvasFillMode(PC.FILLMODE_FILL_WINDOW)
+app.setCanvasResolution(PC.RESOLUTION_AUTO)
+
+const camera = new PC.Entity('camera', app)
+camera.addComponent('camera', {
+  clearColor: new PC.Color(1, 1, 1),
+  fov: 60,
+  nearClip: 0.1,
+  farClip: 10,
+})
+camera.setPosition(0, 0, 2.5)
+app.root.addChild(camera)
+```
+
+Keep `antialias: false` for this direct canvas composition so PlayCanvas draws into the shared canvas texture without resolving a separate multisampled color buffer over the background UI.
+
+## Control the draw order
+
+Clear the color at the start of each frame, then preserve it in subsequent draws.
+
+### uno UI: `load_op`
+
+The `load_op` option of `ui.draw()` controls what happens to the existing pixels before drawing the UI:
+
+| Value              | Effect                                                                           |
+| ------------------ | -------------------------------------------------------------------------------- |
+| `'load'` (default) | Keeps existing pixels. Used when calling `ui.draw()` without a `load_op` option. |
+| `'clear'`          | Clears the target to transparent black.                                          |
+
+`load_op` does not choose which layer is in front. The draw order does that. Using `'clear'` after drawing the scene erases the scene; using `'load'` keeps it visible wherever the UI is transparent.
+
+### PlayCanvas: `clearColorBuffer`
+
+`camera.camera.clearColorBuffer` controls whether PlayCanvas clears the color before rendering the scene:
+
+| Value            | Effect                        |
+| ---------------- | ----------------------------- |
+| `true` (default) | Clears the existing color.    |
+| `false`          | Preserves the existing color. |
+
+Keep `camera.camera.clearDepthBuffer` at its default value of `true`. Changing only `clearColorBuffer` lets PlayCanvas continue clearing depth for each frame.
+
+PlayCanvas fires `prerender` before drawing the scene and `postrender` after it, then submits its WebGPU commands. Pass `submit: false` and `command_encoder: graphics_device.getCommandEncoder()` to uno UI so its draws use the same command encoder and are submitted in order with the scene.
+
+Use one of the following rendering setups after applying the UI layout and viewport setup.
+
+## UI in front of the scene
+
+Draw the scene first, then draw the UI in `postrender`:
+
+```js
+camera.camera.clearColorBuffer = true
+
+app.on('postrender', () => {
+  ui.draw({
+    submit: false,
+    command_encoder: graphics_device.getCommandEncoder(),
+  })
+})
+app.start()
+```
+
+PlayCanvas clears to white and draws the scene. uno UI preserves that image and draws the panel over it.
+
+## UI behind the scene
+
+Draw the UI in `prerender` with `load_op: 'clear'`, then let PlayCanvas render the scene with `clearColorBuffer = false`:
+
+```js
+camera.camera.clearColorBuffer = false
+
+// uno UI now paints the background, since PlayCanvas will not clear the color.
+ui.root.style('backgroundColor', '#ffffff')
+ui.update()
+
+app.on('prerender', () => {
+  ui.draw({
+    load_op: 'clear',
+    submit: false,
+    command_encoder: graphics_device.getCommandEncoder(),
+  })
+})
+app.start()
+```
+
+uno UI clears the canvas and draws the white background and panel. PlayCanvas keeps those pixels and draws the scene over them. Leaving `clearColorBuffer = true` would erase the UI before drawing the scene.
+
+A skybox or fullscreen post-process drawn by PlayCanvas can cover the UI even when color clearing is disabled.
+
+## UI behind and in front
+
+For separate background and foreground layouts, create two UI instances using the same resources:
+
+```js
+const { ui: background_ui } = await UI.create({ resources })
+const { ui: foreground_ui } = await UI.create({ resources })
+```
+
+Apply the layout and viewport setup to each UI, then draw the background UI, the scene, and the foreground UI in that order:
+
+```js
+camera.camera.clearColorBuffer = false
+
+app.on('prerender', () => {
+  background_ui.draw({
+    load_op: 'clear',
+    submit: false,
+    command_encoder: graphics_device.getCommandEncoder(),
+  })
+})
+app.on('postrender', () => {
+  foreground_ui.draw({
+    submit: false,
+    command_encoder: graphics_device.getCommandEncoder(),
+  })
+})
+app.start()
+```
+
+The background UI starts the frame, PlayCanvas draws over it, and the foreground UI draws last. Keep the foreground layout transparent wherever the scene should remain visible.
+
+## Demo
+
+This demo uses two UI instances: one for the background and one for the foreground. The foreground UI reuses the React component from the [React demo](../components/react.mdx#demo).
+
+<iframe
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&initialpath=%2Fplaycanvas.html&module=%2Fplaycanvas.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '400px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs-playcanvas"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>
