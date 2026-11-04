@@ -15,15 +15,7 @@ import { createForegroundUI } from '../shared/uis/foreground-ui'
 const WORLD_HEIGHT = 2
 const TEXTURE_SCALAR = window.devicePixelRatio
 
-export async function main({
-    canvas,
-    onCanvasEvent,
-    ResourcesWebGPU,
-    UI,
-    UIBabylon,
-    loadAssets,
-    loadYoga,
-}) {
+export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UI, UIBabylon, loadAssets, loadYoga }) {
     const context = canvas.getContext('webgpu')
     const format = navigator.gpu.getPreferredCanvasFormat()
     const engine = new WebGPUEngine(canvas, {
@@ -177,8 +169,6 @@ export async function main({
     engine.onEndFrameObservable.add(() => {
         overlay_ui.update()
         overlay_ui.draw()
-
-        resources.present()
     })
 
     engine.runRenderLoop(() => scene.render())

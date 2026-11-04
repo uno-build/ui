@@ -171,8 +171,6 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAss
         foreground_ui.update()
         foreground_ui.draw({ command_encoder, texture_view })
 
-        resources.present()
-
         requestAnimationFrame(frame)
     }
 

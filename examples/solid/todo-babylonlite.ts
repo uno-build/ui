@@ -182,8 +182,6 @@ export async function main({ canvas, ResourcesWebGPU, UIBabylonLite, loadImage, 
         resizeEngine(engine)
         renderFrame(engine, delta)
 
-        resources.present()
-
         requestAnimationFrame(renderNextFrame)
     }
 

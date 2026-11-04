@@ -159,8 +159,6 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UI, UIPixi3
         overlay_ui.update()
         overlay_ui.draw()
 
-        resources.present()
-
         requestAnimationFrame(renderFrame)
     }
 

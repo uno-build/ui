@@ -38,18 +38,23 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAss
         out: { position: d.builtin.position, color: d.vec3f },
     })((input) => {
         'use gpu'
-        const corners = d.arrayOf(d.vec3f, 8)([
-            d.vec3f(-1, -1, -1), d.vec3f(1, -1, -1), d.vec3f(1, 1, -1), d.vec3f(-1, 1, -1),
-            d.vec3f(-1, -1, 1), d.vec3f(1, -1, 1), d.vec3f(1, 1, 1), d.vec3f(-1, 1, 1),
+        const corners = d.arrayOf(
+            d.vec3f,
+            8,
+        )([
+            d.vec3f(-1, -1, -1),
+            d.vec3f(1, -1, -1),
+            d.vec3f(1, 1, -1),
+            d.vec3f(-1, 1, -1),
+            d.vec3f(-1, -1, 1),
+            d.vec3f(1, -1, 1),
+            d.vec3f(1, 1, 1),
+            d.vec3f(-1, 1, 1),
         ])
-        const indices = d.arrayOf(d.u32, CUBE_VERTEX_COUNT)([
-            0, 3, 2, 0, 2, 1,
-            4, 5, 6, 4, 6, 7,
-            0, 4, 7, 0, 7, 3,
-            1, 2, 6, 1, 6, 5,
-            0, 1, 5, 0, 5, 4,
-            3, 7, 6, 3, 6, 2,
-        ])
+        const indices = d.arrayOf(
+            d.u32,
+            CUBE_VERTEX_COUNT,
+        )([0, 3, 2, 0, 2, 1, 4, 5, 6, 4, 6, 7, 0, 4, 7, 0, 7, 3, 1, 2, 6, 1, 6, 5, 0, 1, 5, 0, 5, 4, 3, 7, 6, 3, 6, 2])
         const corner = corners[indices[input.vertex_index]]
         const angles = d.vec2f(frame_uniform.$.x * 0.5, frame_uniform.$.x)
         const c = std.cos(angles)
@@ -63,7 +68,7 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAss
         const depth = 4 - rotated_y.z
 
         return {
-            position: d.vec4f(rotated_y.x * 1.4 / frame_uniform.$.y, rotated_y.y * 1.4, depth - 1, depth),
+            position: d.vec4f((rotated_y.x * 1.4) / frame_uniform.$.y, rotated_y.y * 1.4, depth - 1, depth),
             color: std.add(std.mul(corner, 0.5), d.vec3f(0.5)),
         }
     })
@@ -107,8 +112,6 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAss
 
         foreground_ui.update()
         foreground_ui.draw({ command_encoder, texture_view })
-
-        resources.present()
 
         requestAnimationFrame(frame)
     }

@@ -117,8 +117,6 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIThree, lo
         controls.update()
         three_renderer.render(scene, camera)
 
-        resources.present()
-
         requestAnimationFrame(renderFrame)
     }
 

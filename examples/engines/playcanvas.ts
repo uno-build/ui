@@ -141,7 +141,6 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAss
         })
     })
 
-    app.on('frameend', () => resources.present())
     app.start()
 
     return { uis: [background_ui, foreground_ui] }

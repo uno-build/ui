@@ -152,8 +152,6 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAss
 
         renderFrame(engine, delta)
 
-        resources.present()
-
         requestAnimationFrame(frame)
     }
 
