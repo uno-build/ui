@@ -1,14 +1,13 @@
 /// <reference types="@webgpu/types" />
 
-export type WebGPUContext = GPUCanvasContext & { present?(): void }
-export type WebGPUCanvas = { getContext(context_id: 'webgpu'): WebGPUContext | null }
+export type WebGPUCanvas = { getContext(context_id: 'webgpu'): GPUCanvasContext | null }
 export type ResourcesWebGPUOptions = {
     adapter?: GPUAdapter | null
     device?: GPUDevice
     format?: GPUTextureFormat
     image_atlas_size?: number
     font_atlas_size?: number
-} & ({ canvas: WebGPUCanvas; context?: WebGPUContext } | { canvas?: WebGPUCanvas; context: WebGPUContext })
+} & ({ canvas: WebGPUCanvas; context?: GPUCanvasContext } | { canvas?: WebGPUCanvas; context: GPUCanvasContext })
 
 export type WebGPUImage = {
     /** Without it, only width × height of the atlas is reserved, for copyTextureToImage. */

@@ -244,7 +244,6 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UIPlayCanva
         })
     })
 
-    app.on('frameend', () => resources.present())
     app.start()
 }
 

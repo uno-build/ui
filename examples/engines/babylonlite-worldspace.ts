@@ -23,15 +23,7 @@ import { createForegroundUI } from '../shared/uis/foreground-ui'
 const WORLD_HEIGHT = 2
 const TEXTURE_SCALAR = window.devicePixelRatio
 
-export async function main({
-    canvas,
-    onCanvasEvent,
-    ResourcesWebGPU,
-    UI,
-    UIBabylonLite,
-    loadAssets,
-    loadYoga,
-}) {
+export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UI, UIBabylonLite, loadAssets, loadYoga }) {
     const device_pixel_ratio = window.devicePixelRatio
     const device_width = Math.max(canvas.clientWidth, canvas.clientHeight)
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
@@ -176,8 +168,6 @@ export async function main({
 
         resizeEngine(engine)
         renderFrame(engine, delta)
-
-        resources.present()
 
         requestAnimationFrame(frame)
     }

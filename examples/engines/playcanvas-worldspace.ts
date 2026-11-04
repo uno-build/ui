@@ -280,7 +280,6 @@ export async function main({
         })
     })
 
-    app.on('frameend', () => resources.present())
     app.start()
 
     return { uis: [overlay_ui, first_ui, second_ui] }

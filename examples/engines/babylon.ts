@@ -91,8 +91,6 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAss
     engine.onEndFrameObservable.add(() => {
         foreground_ui.update()
         foreground_ui.draw()
-
-        resources.present()
     })
 
     engine.runRenderLoop(() => {

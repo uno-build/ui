@@ -189,7 +189,7 @@ export default class UIWebGPUPlayCanvas extends UIWorldSpace<
                 if (!mesh_instance.visible || !mesh_instance.pick || !mesh_instance.aabb.intersectsRay(ray)) {
                     continue
                 }
-                const mesh = mesh_instance.mesh
+                const mesh = mesh_instance.mesh!
                 const primitive = mesh.primitive[0]!
                 if (primitive.type !== PRIMITIVE_TRIANGLES) {
                     continue

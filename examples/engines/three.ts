@@ -80,8 +80,6 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAss
         foreground_ui.update()
         foreground_ui.draw()
 
-        resources.present()
-
         requestAnimationFrame(frame)
     }
 

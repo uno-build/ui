@@ -1,6 +1,5 @@
 import type {
     WebGPUCanvas,
-    WebGPUContext,
     ResourcesWebGPUOptions,
     WebGPUImage,
     WebGPUFont,
@@ -32,7 +31,7 @@ export default class ResourcesWebGPU extends Resources<
 
     device: GPUDevice
 
-    context: WebGPUContext
+    context: GPUCanvasContext
 
     format: GPUTextureFormat
 
@@ -43,8 +42,6 @@ export default class ResourcesWebGPU extends Resources<
     font_manager!: FontManager
 
     image_manager!: ImageManager
-
-    has_present!: boolean
 
     protected constructor({
         canvas,
@@ -96,7 +93,6 @@ export default class ResourcesWebGPU extends Resources<
             device: this.device,
             atlas_size: this.image_atlas_size,
         })
-        this.has_present = typeof this.context.present === 'function'
     }
 
     registerImage(src: string, image: WebGPUImage): ManagedAtlasImage {
@@ -143,12 +139,6 @@ export default class ResourcesWebGPU extends Resources<
         this.font_manager.dispose()
         this.events.emit(RESOURCE_EVENT.IMAGE)
         this.events.emit(RESOURCE_EVENT.FONT)
-    }
-
-    present() {
-        if (this.has_present) {
-            this.context.present!()
-        }
     }
 }
 
