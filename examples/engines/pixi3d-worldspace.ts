@@ -23,7 +23,7 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UI, UIPixi3
     const device_height = Math.min(canvas.clientWidth, canvas.clientHeight)
     const world_width = WORLD_HEIGHT * (device_width / device_height)
 
-    // Pixi creates the device because pixi3d needs the features it requests, like 'indirect-first-instance'.
+    // Pixi creates the device because PixiJS 3D needs the features it requests, like 'indirect-first-instance'.
     const pixi_renderer = new WebGPURenderer()
     await pixi_renderer.init({
         canvas,
@@ -110,8 +110,6 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UI, UIPixi3
         grid_positions.push(-10, -0.12, position, 10, -0.12, position)
     }
     const grid_material = new FlatMaterial({ baseColor: 0x475569 })
-    // A flat material skips the view's output encode, which leaves its linear base color too dark.
-    grid_material.toneMapped = true
     const grid = new Mesh3D({
         geometry: new Geometry3D({ positions: new Float32Array(grid_positions), topology: 'line-list' }),
         material: grid_material,
@@ -131,7 +129,7 @@ export async function main({ canvas, onCanvasEvent, ResourcesWebGPU, UI, UIPixi3
 
     const { grid: first_grid } = createBackgroundUI({ ui: first_ui, assets, title: 'First UI' })
     const { grid: second_grid } = createBackgroundUI({ ui: second_ui, assets, title: 'Second UI' })
-    createForegroundUI({ ui: overlay_ui, assets, title: 'Pixi3D' })
+    createForegroundUI({ ui: overlay_ui, assets, title: 'PixiJS 3D' })
 
     for (const ui of [first_ui, second_ui]) {
         ui.setViewport(device_width, device_height)

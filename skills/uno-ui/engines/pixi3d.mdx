@@ -1,0 +1,126 @@
+---
+title: PixiJS 3D
+---
+
+[PixiJS 3D](https://github.com/pixijs/3d) (`@pixi/3d`) renders 3D scenes inside a Pixi.js stage. It shares the canvas and WebGPU device with uno UI in the same way as [Pixi.js](./pixi.mdx); the order of the draw calls determines whether the UI appears in front of or behind the scene.
+
+The examples below assume you are familiar with the basics of uno UI covered in the [First Layout](../getting-started/first-layout.mdx) section. PixiJS 3D requires `pixi.js` 8.23 or later.
+
+## Shared setup
+
+Unlike the [Pixi.js](./pixi.mdx#shared-setup) setup, let Pixi.js create the WebGPU device and pass it to uno UI. PixiJS 3D requires WebGPU features, such as `indirect-first-instance`, that Pixi.js requests when it creates its own device.
+
+```js
+import ResourcesWebGPU from '@uno.build/ui/ResourcesWebGPU'
+import UI from '@uno.build/ui/UI'
+import { View3D } from '@pixi/3d'
+import { Container, WebGPURenderer } from 'pixi.js'
+
+const canvas = document.querySelector('canvas')
+const renderer = new WebGPURenderer()
+await renderer.init({
+    canvas,
+    resolution: window.devicePixelRatio,
+    backgroundAlpha: 0,
+    clearBeforeRender: false,
+    antialias: false,
+    skipExtensionImports: true,
+})
+
+const resources = await ResourcesWebGPU.create({
+    canvas,
+    adapter: renderer.gpu.adapter,
+    device: renderer.gpu.device,
+})
+const { ui } = await UI.create({ resources })
+
+const stage = new Container()
+const view = new View3D({ autoResize: true })
+stage.addChild(view)
+view.camera.position.set(0, 0, 4)
+```
+
+`skipExtensionImports: true` also skips the lazy import of PixiJS 3D's WebGPU backend, so import `@pixi/3d/webgpu` explicitly.
+
+Keep `antialias: false` for this direct canvas composition. With antialiasing, Pixi.js renders into its own multisampled texture and resolves it over the canvas. That texture keeps the previous frames when Pixi.js does not clear, and hides the background UI drawn into the canvas.
+
+A `View3D` without a `background` is transparent, so the pixels drawn by uno UI remain visible around the scene.
+
+The rendering examples below use a rotating `cube` mesh added to `view.root`, as in the demo. Apply the UI layout and viewport setup before starting the render loop.
+
+## Control the draw order
+
+Clear the color at the start of each frame, then preserve it in subsequent draws. `ui.draw()` uses `load_op` and `renderer.render()` uses `clear`, as described in [Pixi.js](./pixi.mdx#control-the-draw-order).
+
+## UI in front of the scene
+
+Draw the scene first with `clear: true`, then draw the UI:
+
+```js
+requestAnimationFrame(function render(time) {
+    cube.rotation.y = time / 1000
+
+    renderer.render({ container: stage, clear: true })
+    ui.draw()
+
+    requestAnimationFrame(render)
+})
+```
+
+## UI behind the scene
+
+Draw the UI first with `load_op: 'clear'`, then render the scene with `clear: false`:
+
+```js
+// uno UI now paints the background, since Pixi.js will not clear the color.
+ui.root.style('backgroundColor', '#ffffff')
+ui.update()
+
+requestAnimationFrame(function render(time) {
+    cube.rotation.y = time / 1000
+
+    ui.draw({ load_op: 'clear' })
+    renderer.render({ container: stage, clear: false })
+
+    requestAnimationFrame(render)
+})
+```
+
+## UI behind and in front
+
+For separate background and foreground layouts, create two UI instances using the same resources, then draw the background UI, the scene, and the foreground UI in that order:
+
+```js
+const { ui: background_ui } = await UI.create({ resources })
+const { ui: foreground_ui } = await UI.create({ resources })
+
+requestAnimationFrame(function render(time) {
+    cube.rotation.y = time / 1000
+
+    background_ui.draw({ load_op: 'clear' })
+    renderer.render({ container: stage, clear: false })
+    foreground_ui.draw()
+
+    requestAnimationFrame(render)
+})
+```
+
+The background UI starts the frame, PixiJS 3D draws over it, and the foreground UI draws last. Keep the foreground layout transparent wherever the scene should remain visible.
+
+## Demo
+
+This demo uses two UI instances: one for the background and one for the foreground, with a rotating PixiJS 3D cube between them. The foreground UI reuses the React component from the [React demo](../components/react.mdx#demo).
+
+<iframe
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&initialpath=%2Fpixi3d.html&module=%2Fpixi3d.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '400px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs-pixi3d"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>

@@ -1,13 +1,13 @@
 ---
 name: uno-ui
-description: Build user interfaces with @uno.build/ui, a TypeScript library that renders UIs directly with WebGPU instead of the DOM (Yoga flexbox, a strict CSS-like style subset, MTSDF text, images, pointer/wheel/scroll/focus events). Use when writing or debugging code that imports @uno.build/ui, including the imperative node API, React/Vue/Solid components, and integration with Three.js, Babylon.js, Babylon Lite, PlayCanvas, Pixi.js, pixi3d, or TypeGPU (layers behind or in front of a scene, or world-space UIs on 3D meshes).
+description: Build user interfaces with @uno.build/ui, a TypeScript library that renders UIs directly with WebGPU instead of the DOM (Yoga flexbox, a strict CSS-like style subset, MTSDF text, images, pointer/wheel/scroll/focus events). Use when writing or debugging code that imports @uno.build/ui, including the imperative node API, React/Vue/Solid components, and integration with Three.js, Babylon.js, Babylon Lite, PlayCanvas, Pixi.js, PixiJS 3D (`@pixi/3d`), or TypeGPU (layers behind or in front of a scene, or world-space UIs on 3D meshes).
 ---
 
 # uno UI
 
-uno UI (`@uno.build/ui`) is a TypeScript library that renders user interfaces directly with WebGPU instead of HTML and the DOM: Yoga flexbox layout, a strict CSS-like style subset, MTSDF text, images, and pointer, wheel, scroll, and focus events, drawn with one draw call per UI. Use it standalone on a WebGPU canvas or with Three.js, Babylon.js, Babylon Lite, PlayCanvas, Pixi.js, pixi3d, or TypeGPU (as a layer behind or in front of the scene, or as an interactive texture on a 3D mesh), and drive it imperatively or with React, Vue, or Solid.
+uno UI (`@uno.build/ui`) is a TypeScript library that renders user interfaces directly with WebGPU instead of HTML and the DOM: Yoga flexbox layout, a strict CSS-like style subset, MTSDF text, images, and pointer, wheel, scroll, and focus events, drawn with one draw call per UI. Use it standalone on a WebGPU canvas or with Three.js, Babylon.js, Babylon Lite, PlayCanvas, Pixi.js, PixiJS 3D (`@pixi/3d`), or TypeGPU (as a layer behind or in front of the scene, or as an interactive texture on a 3D mesh), and drive it imperatively or with React, Vue, or Solid.
 
-Install with `npm install @uno.build/ui`. It requires WebGPU (`navigator.gpu`). Engines and frameworks are optional peer dependencies; install only the ones you use: `three` 0.186+ (`three/webgpu`), `@babylonjs/core` 9, `@babylonjs/lite`, `playcanvas` 2, `pixi.js` 8.22+, `@pixi/3d`, `react` 19 + `react-reconciler`, `vue` 3.5, `solid-js` 2 + `@solidjs/universal`.
+Install with `npm install @uno.build/ui`. It requires WebGPU (`navigator.gpu`). Engines and frameworks are optional peer dependencies; install only the ones you use: `three` 0.186+ (`three/webgpu`), `@babylonjs/core` 9, `@babylonjs/lite`, `playcanvas` 2, `pixi.js` 8.23+, `@pixi/3d`, `react` 19 + `react-reconciler`, `vue` 3.5, `solid-js` 2 + `@solidjs/universal`.
 
 ## How it works
 
@@ -151,7 +151,7 @@ requestAnimationFrame(function render() {
 - Babylon Lite: `createEngine(canvas, { msaaSamples: 1, alphaMode: 'premultiplied' })`, `ResourcesWebGPU.create({ canvas, device: engine._device, context: canvas.getContext('webgpu'), format: engine.format })`, and `createSceneContext(engine, { defaultRenderTask: false })`. Then `addTask()` the UI and scene tasks in draw order. A UI task's `execute()` calls `ui.draw({ submit: false, command_encoder: engine._currentEncoder, texture_view: engine.scRT._colorView, load_op })`; the scene task uses `clr: false`.
 - PlayCanvas: `createGraphicsDevice(canvas, { deviceTypes: ['webgpu'], antialias: false, alpha: true })`, then `ResourcesWebGPU.create({ canvas, device: graphics_device.wgpu, context: graphics_device.gpuContext, format: graphics_device.canvasConfig.format })`. Draw in `app.on('prerender')` (behind) and `app.on('postrender')` (in front) with `{ submit: false, command_encoder: graphics_device.getCommandEncoder() }`, and set `camera.camera.clearColorBuffer = false`.
 - Pixi.js: `ResourcesWebGPU.create({ canvas, adapter })`, then `renderer.init({ canvas, gpu: { adapter: resources.adapter, device: resources.device }, backgroundAlpha: 0, clearBeforeRender: false, antialias: false, skipExtensionImports: true })`. Render with `renderer.render({ container: stage, clear: false })`.
-- pixi3d: the reverse of Pixi.js. Let Pixi create the device, because pixi3d needs features that Pixi requests, then call `ResourcesWebGPU.create({ canvas, adapter: renderer.gpu.adapter, device: renderer.gpu.device })`. Import `@pixi/3d/webgpu` explicitly when `skipExtensionImports: true`.
+- PixiJS 3D: the reverse of Pixi.js. Let Pixi create the device, because PixiJS 3D needs features that Pixi requests, then call `ResourcesWebGPU.create({ canvas, adapter: renderer.gpu.adapter, device: renderer.gpu.device })`. Import `@pixi/3d/webgpu` explicitly when `skipExtensionImports: true`.
 - TypeGPU: `tgpu.initFromDevice({ device })`. Share one `command_encoder` and `texture_view` per frame, pass `submit: false` to every UI draw except the last, and draw TypeGPU with `loadOp: 'load'`.
 
 ## World space
@@ -182,7 +182,7 @@ requestAnimationFrame(function render() {
 ```
 
 - Extra required options: `scene` for `UIBabylon`; `engine` and `scene` for `UIBabylonLite`; `app` for `UIPlayCanvas`; `pixi_renderer` for `UIPixi3D`. `UIPixi3D.setCamera()` takes the `View3D`, not its camera.
-- Adding the plane: `scene.add(plane)` in Three.js; Babylon.js adds it for you; `addToScene(scene, plane)` in Babylon Lite, plus `enableMaterialPlugins(scene)` before `registerScene()`; `app.root.addChild(plane)` in PlayCanvas; `view.root.addChild(plane)` in pixi3d.
+- Adding the plane: `scene.add(plane)` in Three.js; Babylon.js adds it for you; `addToScene(scene, plane)` in Babylon Lite, plus `enableMaterialPlugins(scene)` before `registerScene()`; `app.root.addChild(plane)` in PlayCanvas; `view.root.addChild(plane)` in PixiJS 3D.
 - Babylon Lite draws the texture in `onBeforeRender` and PlayCanvas in `prerender`, both with `{ submit: false, command_encoder }`.
 - World-space `draw()` always clears its own texture and accepts only `submit` and `command_encoder`. Engine antialiasing can stay on.
 - `createPlane({ material, world_width, world_height })` can return any mesh as `plane`, plus an optional `mapIntersection(hit)` that returns UV `{ x, y }`, or `null` to reject the hit.
@@ -232,7 +232,7 @@ Components
 Engines
 
 - [Three.js](engines/three.mdx) and [world space](engines/three-worldspace.mdx)
-- [Pixi.js](engines/pixi.mdx)
+- [Pixi.js](engines/pixi.mdx), [PixiJS 3D](engines/pixi3d.mdx) and [world space](engines/pixi3d-worldspace.mdx)
 - [Babylon.js](engines/babylon.mdx) and [world space](engines/babylon-worldspace.mdx)
 - [Babylon Lite](engines/babylonlite.mdx) and [world space](engines/babylonlite-worldspace.mdx)
 - [PlayCanvas](engines/playcanvas.mdx) and [world space](engines/playcanvas-worldspace.mdx)
