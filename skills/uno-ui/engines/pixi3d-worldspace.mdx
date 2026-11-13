@@ -1,0 +1,160 @@
+---
+title: PixiJS 3D World Space
+---
+
+`UIPixi3D` renders uno UI into a texture and displays it on a plane inside a PixiJS 3D scene. The plane can move, rotate, and scale while its UI remains interactive.
+
+This section continues the [PixiJS 3D](./pixi3d.mdx) guide. As before, keep the shared WebGPU resources, renderer, stage, and `View3D`. The following examples inject the UI directly onto a plane in the scene instead of drawing it as a background or foreground overlay.
+
+## 1. Create the UI plane
+
+Replace the `UI` import and `UI.create()` call with `UIPixi3D`. Pass it the Pixi.js renderer as `pixi_renderer` as well as the shared resources. It returns the uno UI instance and a PixiJS 3D mesh with its texture and material already connected:
+
+```js
+import UIPixi3D from '@uno.build/ui/UIPixi3D'
+import { FlatMaterial } from '@pixi/3d'
+
+const UI_SIZE = 400
+const device_pixel_ratio = window.devicePixelRatio
+
+const { ui, plane, geometry, material, texture } = await UIPixi3D.create({
+  pixi_renderer: renderer,
+  resources,
+  device_pixel_ratio,
+  texture_width: Math.round(UI_SIZE * device_pixel_ratio),
+  texture_height: Math.round(UI_SIZE * device_pixel_ratio),
+  world_width: 2,
+  world_height: 2,
+  createMaterial: () => new FlatMaterial({ doubleSided: true }),
+})
+
+ui.setViewport(UI_SIZE, UI_SIZE)
+```
+
+- `pixi_renderer`: The Pixi.js `WebGPURenderer` that renders the scene. uno wraps its UI texture for this renderer.
+- `texture_width`, `texture_height`: Sets the resolution of the UI texture in physical pixels.
+- `world_width`, `world_height`: Sets the size of the plane in PixiJS 3D world units.
+- `ui.setViewport(width, height)`: Sets the space available for the UI layout in logical pixels.
+- `createMaterial`: This callback lets you define the material applied to the plane. The default material is `Material3D`; the example uses an unlit `FlatMaterial` so the UI does not need a scene light. PixiJS 3D fixes `doubleSided` when the material is created, so pass it here to show the UI from behind.
+
+uno assigns the UI texture to the material's `baseColor` slot and sets `alphaMode = 'blend'`. PixiJS 3D's materials already decode the texture's premultiplied sRGB colors.
+
+## 2. Set up the camera
+
+```js
+view.camera.fov = 60
+view.camera.position.set(0, 0, 3)
+ui.setCamera(view)
+```
+
+PixiJS 3D builds pointer rays from the `View3D`, not from the camera alone, so pass the view to `ui.setCamera(view)`. uno casts a ray through `view.screenToRay()` onto the plane and converts the hit position into UI layout coordinates. The component's existing pointer, click, and focus handlers work as the plane rotates.
+
+For pointer, click, and wheel events, the payload described in [Event data](../api/events.mdx#event-data) also includes `distance_to_camera` when the ray hits the plane. It is the distance from the camera to the hit position in PixiJS 3D world units. The `x` and `y` fields remain coordinates in the UI's logical coordinate space.
+
+## 3. Add the plane to the scene
+
+By default, `plane` is a `Mesh3D` with a `PlaneGeometry` of `world_width` by `world_height` in the local XY plane, facing `+Z`. It is built with `flipV: true` so the texture appears upright.
+
+```js
+view.root.addChild(plane)
+```
+
+Draw the UI texture before rendering the scene so the plane displays the updated layout:
+
+```js
+requestAnimationFrame(function render(time) {
+  plane.rotation.y = Math.sin(time / 2000) * 0.8
+
+  ui.update()
+  ui.draw()
+  renderer.render({ container: stage })
+
+  requestAnimationFrame(render)
+})
+```
+
+Here, `ui.draw()` updates the plane's texture rather than the canvas. Pixi.js can clear the canvas normally before drawing the scene, and `antialias: true` can be used when initializing the renderer, as in the demo.
+
+## Customize the plane and hit mapping
+
+Use the optional `createPlane()` callback to display the UI on a different PixiJS 3D node. It receives the configured UI `material` and the requested `world_width` and `world_height`. Return any `Container3D` as `plane`; additional resources such as `geometry` and `body_material` are also returned by `UIPixi3D.create()`.
+
+For custom interaction, return a `mapIntersection()` callback alongside the node. It receives the closest triangle hit against the `Mesh3D` nodes of `plane`, including its children, as a PixiJS 3D `RaycastHit3D`, and returns UV coordinates as `{ x, y }`, or `null` to reject the hit. The hit's `target` is the mesh that was struck, and `uv` holds its interpolated geometry UVs. uno converts the returned UVs into UI layout coordinates, with `y = 0` at the bottom. Without this callback, uno maps hits against the default rectangular plane rather than raycasting custom geometry.
+
+For example, add this `createPlane` option to `UIPixi3D.create()` to display the UI on the front of a panel with some depth and make only the front interactive:
+
+```js
+import { Container3D, CubeGeometry, FlatMaterial, Mesh3D, PlaneGeometry } from '@pixi/3d'
+
+const { ui, plane } = await UIPixi3D.create({
+  //...
+  createPlane({ material, world_width, world_height }) {
+    const geometry = new PlaneGeometry({ width: world_width, height: world_height, flipV: true })
+    const front = new Mesh3D({ geometry, material, position: { x: 0, y: 0, z: 0.051 } })
+
+    const body_geometry = new CubeGeometry({ width: world_width, height: world_height, depth: 0.1 })
+    const body_material = new FlatMaterial({ baseColor: 0xf5f2ec })
+    const body = new Mesh3D({ geometry: body_geometry, material: body_material })
+
+    return {
+      plane: new Container3D({ children: [body, front] }),
+      geometry,
+      body_geometry,
+      body_material,
+      mapIntersection(intersection) {
+        if (intersection.target !== front) return null
+        return { x: intersection.uv.x, y: 1 - intersection.uv.y }
+      },
+    }
+  },
+})
+```
+
+Hits on the body return `null`; uno does not continue looking for an interactive face behind them.
+
+The front plane uses `flipV: true`, so its UVs have `V = 0` at the top, while uno's hit mapper expects `y = 0` at the bottom. Returning `1 - intersection.uv.y` aligns interaction with the displayed texture.
+
+`mapIntersection()` can also transform the UVs before returning them, allowing you to adapt interaction to a custom texture layout. It changes how hits are mapped to the UI; it does not change how the texture is rendered. Hits are tested against the geometry as authored, before skinning or morph targets.
+
+## Cleanup
+
+World-space UIs have resources owned by uno and resources managed by the rendering engine. `ui.destroy()` releases the uno nodes, listeners, renderer allocations, and offscreen GPU texture. It does not remove the plane from the scene or dispose the engine objects returned by `create()`.
+
+Before cleanup, stop this UI's draw calls and remove any event listeners added by your application. If a framework manages the layout, call its root's `unmount()` while the UI is still alive.
+
+Destroy the mesh with its geometry, material, and texture, then destroy the UI:
+
+```js
+plane.destroy({ geometry: true, material: true, texture: true, textureSource: true })
+ui.destroy()
+```
+
+PixiJS 3D's `destroy()` leaves geometries, materials, and textures alive unless their flags are set, since they are often shared. The texture source wraps uno's GPU texture without owning it: uno releases the backing GPU texture in `ui.destroy()`; do not call `gpu_texture.destroy()` separately.
+
+This example assumes the default plane resources and a material used only by this UI. If `createPlane()` or `createMaterial()` creates additional resources, release those too. Keep shared materials and geometries alive until their last user is removed.
+
+After the last overlay or world-space UI using the shared image and font atlases has been destroyed, dispose the resource store:
+
+```js
+resources.dispose()
+```
+
+This does not destroy the GPU device or canvas context. Dispose the view, renderer, or application separately when shutting down the application; keep them alive when removing only one UI panel.
+
+## Demo
+
+This demo displays one rotating UI plane using the component from the [React demo](../components/react.mdx#demo).
+
+<iframe
+  src="https://codesandbox.io/embed/x5dj2k?view=preview&initialpath=%2Fpixi3d-worldspace.html&module=%2Fpixi3d-worldspace.html&hidenavigation=1&hidedevtools=1"
+  style={{
+    width: '100%',
+    height: '400px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="uno-docs-pixi3d-worldspace"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>

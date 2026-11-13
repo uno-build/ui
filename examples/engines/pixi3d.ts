@@ -8,8 +8,8 @@ import { createForegroundUI } from '../shared/uis/foreground-ui'
 export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAssets, loadYoga }) {
     const device_pixel_ratio = window.devicePixelRatio
 
-    // Pixi creates the device because pixi3d needs the features it requests, like 'indirect-first-instance'.
-    // The renderer skips the browser extensions, and with them the lazy import of pixi3d's WebGPU backend,
+    // Pixi creates the device because PixiJS 3D needs the features it requests, like 'indirect-first-instance'.
+    // The renderer skips the browser extensions, and with them the lazy import of PixiJS 3D's WebGPU backend,
     // which is imported above.
     const pixi_renderer = new WebGPURenderer()
     await pixi_renderer.init({
@@ -63,7 +63,7 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAss
     const assets = await loadAssets()
     registerAssets({ resources, assets })
     const { grid } = createBackgroundUI({ ui: background_ui, assets, background_color: '#f4e3cf' })
-    createForegroundUI({ ui: foreground_ui, assets, title: 'Hello Pixi3D!' })
+    createForegroundUI({ ui: foreground_ui, assets, title: 'Hello PixiJS 3D!' })
     syncCanvasSize({ canvas, pixi_renderer, background_ui, foreground_ui })
     background_ui.update()
     foreground_ui.update()
@@ -85,7 +85,7 @@ export async function main({ canvas, onCanvasEvent, UI, ResourcesWebGPU, loadAss
         background_ui.update()
         background_ui.draw({ load_op: 'clear' })
 
-        // Pixi3D
+        // PixiJS 3D
         const now = Date.now() / 1000
         rotation_axis.set(Math.sin(now), Math.cos(now), 0).normalize()
         cube.quaternion.setFromAxisAngle(rotation_axis, 1)

@@ -2,7 +2,7 @@
 title: 'UIWorldSpace'
 ---
 
-Shared reference for [UIThree](#uithree), [UIBabylon](#uibabylon), [UIBabylonLite](#uibabylonlite), and [UIPlayCanvas](#uiplaycanvas). These classes share the [UI instance API](./ui.mdx#methods), with the additions and overrides below. `UIWorldSpace` is their abstract base and has no public import path.
+Shared reference for [UIThree](#uithree), [UIBabylon](#uibabylon), [UIBabylonLite](#uibabylonlite), [UIPlayCanvas](#uiplaycanvas), and [UIPixi3D](#uipixi3d). These classes share the [UI instance API](./ui.mdx#methods), with the additions and overrides below. `UIWorldSpace` is their abstract base and has no public import path.
 
 ## Methods
 
@@ -135,3 +135,21 @@ Import from `@uno.build/ui/UIPlayCanvas`. Engine types come from `playcanvas`.
 | Default plane resources     | `plane: Entity`, `geometry: Geometry`, `mesh: Mesh`, `mesh_instance: MeshInstance` |
 
 `UIPlayCanvasOptions` and `UIPlayCanvasMaterial` are exported by the class module. It also exports `UIPlayCanvasIntersection`.
+
+## UIPixi3D
+
+Import from `@uno.build/ui/UIPixi3D`. Engine types come from `@pixi/3d` and `pixi.js`.
+
+| API                         | Type / value                                                                   |
+| --------------------------- | ------------------------------------------------------------------------------ |
+| Factory                     | `UIPixi3D.create(options: UIPixi3DOptions<TMaterial, TPlane>)`                 |
+| Additional required options | `pixi_renderer: WebGPURenderer`                                                |
+| Camera                      | `setCamera(view: View3D): void`; rays come from `view.screenToRay()`           |
+| Event dispatch              | `dispatchPlatformEvent(source_event: PlatformEvent): void`                     |
+| Texture                     | `Texture` from `pixi.js`, backed by an `ExternalSource`                        |
+| Default material            | `Material3D`                                                                   |
+| Material constraint         | `TMaterial extends UIPixi3DMaterial`: `BaseMaterial3D` with a `baseColor` slot |
+| `mapIntersection` argument  | `RaycastHit3D`                                                                 |
+| Default plane resources     | `plane: Mesh3D`, `geometry: PlaneGeometry`                                     |
+
+`UIPixi3DOptions` and `UIPixi3DMaterial` are exported by the class module. A custom `createPlane` may return any `Container3D` as `plane`.

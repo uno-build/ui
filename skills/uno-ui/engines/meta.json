@@ -1,4 +1,4 @@
 {
   "title": "Engines",
-  "pages": ["three", "three-worldspace", "pixi", "babylon", "babylon-worldspace", "babylonlite", "babylonlite-worldspace", "playcanvas", "playcanvas-worldspace", "typegpu"]
+  "pages": ["three", "three-worldspace", "pixi", "pixi3d", "pixi3d-worldspace", "babylon", "babylon-worldspace", "babylonlite", "babylonlite-worldspace", "playcanvas", "playcanvas-worldspace", "typegpu"]
 }
