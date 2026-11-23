@@ -11,7 +11,7 @@ const PACKAGE = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8
 const DIRECTORY = await mkdtemp(path.join(tmpdir(), 'uno-build-ui-package-'))
 const CONSUMER = path.join(DIRECTORY, 'consumer')
 const INSTALL_FLAGS = ['--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false']
-const ENGINE_PEERS = ['three', '@babylonjs/core', '@babylonjs/lite', 'playcanvas', 'pixi.js', '@pixi/3d']
+const ENGINE_PEERS = ['three', '@babylonjs/core', '@babylonjs/lite', 'playcanvas', 'pixi.js', '@pixi/3d', 'typegpu', '@typegpu/kit']
 const UI_PAIRS = [
     ['UI', 'UIWebGPU'],
     ['UIThree', 'UIWebGPUThree'],
@@ -19,6 +19,7 @@ const UI_PAIRS = [
     ['UIBabylonLite', 'UIWebGPUBabylonLite'],
     ['UIPlayCanvas', 'UIWebGPUPlayCanvas'],
     ['UIPixi3D', 'UIWebGPUPixi3D'],
+    ['UITypeGPU', 'UIWebGPUTypeGPU'],
 ]
 const SAFE_RUNTIME_EXPORTS = [
     './events',
@@ -244,6 +245,11 @@ import UIPixi3D from '@uno.build/ui/UIPixi3D'
 import UIWebGPUPixi3D from '@uno.build/ui/UIWebGPUPixi3D'
 import type * as PIXI from 'pixi.js'
 import type * as PIXI_3D from '@pixi/3d'
+import UITypeGPU from '@uno.build/ui/UITypeGPU'
+import UIWebGPUTypeGPU from '@uno.build/ui/UIWebGPUTypeGPU'
+import type { UITypeGPUMaterial, UITypeGPUTexture } from '@uno.build/ui/UITypeGPU'
+import type * as TYPEGPU from 'typegpu'
+import type * as TYPEGPU_CAMERAS from '@typegpu/kit/cameras'
 
 declare const resources: ResourcesWebGPU
 declare const babylon_scene: BABYLON.Scene
@@ -251,12 +257,14 @@ declare const babylon_lite_scene: BABYLON_LITE.SceneContext
 declare const babylon_lite_engine: BABYLON_LITE.EngineContext
 declare const playcanvas_app: PLAYCANVAS.AppBase
 declare const pixi_renderer: PIXI.WebGPURenderer
+declare const typegpu_root: TYPEGPU.TgpuRoot
 declare const source_event: PointerEvent
 declare const three_camera: THREE.Camera
 declare const babylon_camera: BABYLON.Camera
 declare const babylon_lite_camera: BABYLON_LITE.Camera
 declare const playcanvas_camera: PLAYCANVAS.Entity
 declare const pixi3d_view: PIXI_3D.View3D
+declare const typegpu_camera: TYPEGPU_CAMERAS.OrbitCamera
 
 UI.create({ resources }).then(({ ui }) => {
     ui satisfies UI
@@ -682,6 +690,86 @@ async function checkPixi3D() {
         result.texture satisfies PIXI.Texture
         // @ts-expect-error Custom plane output replaces the default geometry fields.
         result.geometry
+        // @ts-expect-error Material inference must not become any.
+        result.material.missing_property
+    }
+}
+
+declare const typegpu_material: UITypeGPUMaterial & { custom_material: 'typegpu' }
+declare const typegpu_plane: { transform: Float32Array }
+
+async function checkTypeGPU() {
+    const options = { ...WORLD_OPTIONS, root: typegpu_root }
+    UIWebGPUTypeGPU.create(options)
+    // @ts-expect-error Automatic classes select their own Yoga loader.
+    UITypeGPU.create({ ...options, loadYoga })
+    UITypeGPU.create({ ...options, register_platform_events: false })
+    // @ts-expect-error The previous option name is not supported.
+    UITypeGPU.create({ ...options, platform_events: false })
+    // @ts-expect-error Assign the camera with setCamera(), not create().
+    UITypeGPU.create({ ...options, camera: typegpu_camera })
+    // @ts-expect-error Raw classes never register platform events automatically.
+    UIWebGPUTypeGPU.create({ ...options, loadYoga, register_platform_events: false })
+
+    const defaults = [await UITypeGPU.create(options), await UIWebGPUTypeGPU.create({ ...options, loadYoga })]
+    for (const result of defaults) {
+        result.plane.transform satisfies Float32Array
+        result.plane.draw satisfies (pass: TYPEGPU.TgpuRenderCommands) => void
+        result.material satisfies UITypeGPUMaterial
+        result.texture satisfies UITypeGPUTexture
+        result.ui.setCamera(typegpu_camera) satisfies void
+        result.ui.registerPlatformEvents() satisfies void
+        result.ui.removePlatformEvents() satisfies void
+        result.ui.dispatchPlatformEvent(source_event) satisfies void
+        // @ts-expect-error A TypeGPU UI requires a TypeGPU Kit camera.
+        result.ui.setCamera(three_camera)
+        // @ts-expect-error Dispatch uses the stored camera.
+        result.ui.dispatchPlatformEvent(source_event, { camera: typegpu_camera })
+    }
+
+    const automatic = await UITypeGPU.create({
+        ...options,
+        createMaterial: () => typegpu_material,
+        createPlane({ material, texture, gpu_texture }) {
+            material.custom_material satisfies 'typegpu'
+            texture satisfies UITypeGPUTexture
+            gpu_texture satisfies GPUTexture
+            return { plane: typegpu_plane, custom_plane: 'typegpu' as const }
+        },
+        defined_events: [({ ui }) => {
+            ui satisfies UITypeGPU
+            ui.setCamera(typegpu_camera)
+            ui.registerPlatformEvents() satisfies void
+            ui.removePlatformEvents() satisfies void
+            return { types: [], destroy() {} }
+        }],
+    })
+    automatic.ui satisfies UITypeGPU
+
+    const raw = await UIWebGPUTypeGPU.create({
+        ...options,
+        loadYoga,
+        createMaterial: () => typegpu_material,
+        createPlane({ material, texture, gpu_texture }) {
+            material.custom_material satisfies 'typegpu'
+            texture satisfies UITypeGPUTexture
+            gpu_texture satisfies GPUTexture
+            return { plane: typegpu_plane, custom_plane: 'typegpu' as const }
+        },
+        defined_events: [({ ui }) => {
+            ui satisfies UIWebGPUTypeGPU
+            return { types: [], destroy() {} }
+        }],
+    })
+    raw.ui satisfies UIWebGPUTypeGPU
+
+    for (const result of [automatic, raw]) {
+        result.material.custom_material satisfies 'typegpu'
+        result.custom_plane satisfies 'typegpu'
+        result.plane satisfies { transform: Float32Array }
+        result.texture satisfies UITypeGPUTexture
+        // @ts-expect-error Custom plane output replaces the default plane.
+        result.plane.draw
         // @ts-expect-error Material inference must not become any.
         result.material.missing_property
     }

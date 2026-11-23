@@ -156,7 +156,7 @@ requestAnimationFrame(function render() {
 
 ## World space
 
-`UIThree`, `UIBabylon`, `UIBabylonLite`, `UIPlayCanvas`, and `UIPixi3D` render a UI into an offscreen texture shown on a mesh, and raycast pointer input from the camera onto it.
+`UIThree`, `UIBabylon`, `UIBabylonLite`, `UIPlayCanvas`, `UIPixi3D`, and `UITypeGPU` render a UI into an offscreen texture shown on a mesh, and raycast pointer input from the camera onto it.
 
 ```js
 import UIThree from '@uno.build/ui/UIThree'
@@ -181,9 +181,10 @@ requestAnimationFrame(function render() {
 })
 ```
 
-- Extra required options: `scene` for `UIBabylon`; `engine` and `scene` for `UIBabylonLite`; `app` for `UIPlayCanvas`; `pixi_renderer` for `UIPixi3D`. `UIPixi3D.setCamera()` takes the `View3D`, not its camera.
+- Extra required options: `scene` for `UIBabylon`; `engine` and `scene` for `UIBabylonLite`; `app` for `UIPlayCanvas`; `pixi_renderer` for `UIPixi3D`; `root` for `UITypeGPU`. `UIPixi3D.setCamera()` takes the `View3D`, not its camera.
 - Adding the plane: `scene.add(plane)` in Three.js; Babylon.js adds it for you; `addToScene(scene, plane)` in Babylon Lite, plus `enableMaterialPlugins(scene)` before `registerScene()`; `app.root.addChild(plane)` in PlayCanvas; `view.root.addChild(plane)` in PixiJS 3D.
 - Babylon Lite draws the texture in `onBeforeRender` and PlayCanvas in `prerender`, both with `{ submit: false, command_encoder }`.
+- `UITypeGPU` works with TypeGPU Kit (`@typegpu/kit`) and has no scene to add the plane to. Create the device with `tgpu.init()` and pass `device: root.device` to `ResourcesWebGPU.create()`. `ui.setCamera(view)` takes a TypeGPU Kit camera and is required before drawing. Place the plane with `plane.transform` (a column-major `Float32Array` matrix) and record it with `plane.draw(pass)` into a TypeGPU render pass, after `ui.draw({ submit: false, command_encoder: root.unwrap(frame.encoder) })`. To draw into a scene pass instead of the canvas, pass its `format` and `depth_stencil` to `create()`. Materials are TypeGPU fragment functions, and a custom `createPlane` draws itself and returns `plane.geometry` for `mapIntersection`.
 - World-space `draw()` always clears its own texture and accepts only `submit` and `command_encoder`. Engine antialiasing can stay on.
 - `createPlane({ material, world_width, world_height })` can return any mesh as `plane`, plus an optional `mapIntersection(hit)` that returns UV `{ x, y }`, or `null` to reject the hit.
 - Cleanup: remove the plane and dispose the engine geometry, material, and texture yourself. `ui.destroy()` releases the GPU texture; do not call `gpu_texture.destroy()`.
@@ -192,7 +193,7 @@ requestAnimationFrame(function render() {
 
 - `@uno.build/ui/ResourcesWebGPU`: `ResourcesWebGPU`.
 - `@uno.build/ui/UI`: `UI`, plus the `UIOptions` and `DefinedEvent` types.
-- `@uno.build/ui/UIThree`, `/UIBabylon`, `/UIBabylonLite`, `/UIPlayCanvas`, `/UIPixi3D`: world-space UIs.
+- `@uno.build/ui/UIThree`, `/UIBabylon`, `/UIBabylonLite`, `/UIPlayCanvas`, `/UIPixi3D`, `/UITypeGPU`: world-space UIs.
 - `@uno.build/ui/react`, `/vue`, `/solid`: `registerRootComponent`, `View`, `Text`, `Image`, `ScrollView`, `Input`, `useUI`, and the `NodeHandle`, `ScrollViewHandle`, and `InputHandle` types. Vue also exports `registerStyleSheet` and `removeStyleSheet`.
 - `@uno.build/ui/vue/config`, `/solid/config`: compiler settings.
 - `@uno.build/ui/events`: `EventEmitter`, event constants, and event types.
@@ -236,4 +237,4 @@ Engines
 - [Babylon.js](engines/babylon.mdx) and [world space](engines/babylon-worldspace.mdx)
 - [Babylon Lite](engines/babylonlite.mdx) and [world space](engines/babylonlite-worldspace.mdx)
 - [PlayCanvas](engines/playcanvas.mdx) and [world space](engines/playcanvas-worldspace.mdx)
-- [TypeGPU](engines/typegpu.mdx)
+- [TypeGPU](engines/typegpu.mdx) and [world space](engines/typegpu-worldspace.mdx)
