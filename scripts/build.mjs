@@ -3,7 +3,8 @@ import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import ts from 'typescript'
 import { transform as transformSolid } from '@dom-expressions/compiler'
-import { transform } from 'esbuild'
+import { build, transform } from 'esbuild'
+import typegpu from 'unplugin-typegpu/esbuild'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const SOURCE = path.join(ROOT, 'src')
@@ -17,6 +18,15 @@ assert.equal(diagnostics.length, 0, ts.formatDiagnosticsWithColorAndContext(diag
 await rm(OUTPUT, { recursive: true, force: true })
 const result = program.emit()
 assert.equal(result.emitSkipped, false)
+
+// TypeGPU compiles 'use gpu' functions from the metadata its plugin adds to them.
+await build({
+    entryPoints: [path.join(SOURCE, 'ui/typegpu-plane.ts')],
+    outfile: path.join(OUTPUT, 'ui/typegpu-plane.js'),
+    format: 'esm',
+    target: 'esnext',
+    plugins: [typegpu()],
+})
 
 // Framework compilers handle JSX; all other modules are emitted directly by TypeScript.
 for (const framework of ['solid', 'react']) {

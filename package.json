@@ -136,6 +136,7 @@
         "@babylonjs/lite": "^1.38.0",
         "@pixi/3d": "^0.1.0",
         "@solidjs/universal": "^2.0.3",
+        "@typegpu/color": "^0.12.2",
         "@typegpu/kit": "^0.1.0",
         "@types/react": "^19.3.0",
         "@types/three": "^0.187.0",
@@ -190,6 +191,9 @@
             "optional": true
         },
         "@typegpu/kit": {
+            "optional": true
+        },
+        "@typegpu/color": {
             "optional": true
         },
         "vite": {

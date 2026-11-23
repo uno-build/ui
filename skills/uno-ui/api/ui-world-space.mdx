@@ -158,17 +158,16 @@ Import from `@uno.build/ui/UIPixi3D`. Engine types come from `@pixi/3d` and `pix
 
 Import from `@uno.build/ui/UITypeGPU`. Engine types come from `typegpu` and `@typegpu/kit`.
 
-| API                         | Type / value                                                                                    |
-| --------------------------- | ----------------------------------------------------------------------------------------------- |
-| Factory                     | `UITypeGPU.create(options: UITypeGPUOptions<TMaterial, TPlane>)`                                |
-| Additional required options | `root: TgpuRoot`                                                                                |
-| Additional optional options | `format: GPUTextureFormat` (canvas format), `depth_stencil: GPUDepthStencilState` (none)        |
-| Camera                      | `setCamera(camera: UITypeGPUCamera): void`; a TypeGPU Kit camera, also required to draw         |
-| Event dispatch              | `dispatchPlatformEvent(source_event: PlatformEvent): void`                                      |
-| Texture                     | `UITypeGPUTexture`: a `TgpuBindGroup` whose layout has `texture` and `sampler`                  |
-| Default material            | Fragment function that samples the UI, in linear colors when `format` is not the canvas format  |
-| Material constraint         | `TMaterial extends UITypeGPUMaterial`: `TgpuFragmentFn` reading `uv`, `world`, and `normal`     |
-| `mapIntersection` argument  | `UITypeGPUIntersection`                                                                         |
-| Default plane resources     | `plane: { transform: Float32Array, draw(pass: TgpuRenderCommands): void }`                      |
+| API                         | Type / value                                                                                  |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| Factory                     | `UITypeGPU.create(options: UITypeGPUOptions<TMaterial, TPlane>)`                              |
+| Additional required options | `root: TgpuRoot`                                                                              |
+| Camera                      | `setCamera(camera: CpuView): void`; a TypeGPU Kit orbit, flat, or custom camera               |
+| Event dispatch              | `dispatchPlatformEvent(source_event: PlatformEvent): void`                                    |
+| Texture                     | `GPUTextureView`                                                                              |
+| Default material            | `createTypeGPUMaterial(root, texture)`, which writes premultiplied linear colors              |
+| Material constraint         | `TMaterial extends UITypeGPUMaterial`: `{ bind_group, pixelOf }`                              |
+| `mapIntersection` argument  | `UITypeGPUIntersection`                                                                       |
+| Default plane resources     | `plane: TypeGPUPlane`: `{ transform, drawing, setTransform(matrix), destroy() }`              |
 
-`UITypeGPUOptions`, `UITypeGPUMaterial`, `UITypeGPUTexture`, `UITypeGPUCamera`, and `UITypeGPUIntersection` are exported by the class module. `format` and `depth_stencil` describe the pass that `plane.draw(pass)` records into. A custom `createPlane` returns `plane: { transform, geometry? }` and draws it itself; `geometry` is an indexed geometry from `@typegpu/kit/geometry`, required with `mapIntersection`.
+`UITypeGPUOptions`, `UITypeGPUMaterial`, `UITypeGPUIntersection`, and `TypeGPUPlane` are exported by the class module, which also exports `createTypeGPUMaterial(root, texture, color_space)`; pass `'srgb'` as `color_space` for a pass that writes encoded colors. Add `plane.drawing` to a TypeGPU Kit pass description. A custom `createPlane` returns `plane: { transform, geometry? }` and draws it itself; `geometry` is an indexed geometry from `@typegpu/kit/geometry`, required with `mapIntersection`.

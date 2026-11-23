@@ -1,25 +1,25 @@
-import type { CameraBase, CpuView } from '@typegpu/kit/cameras'
+import type { CpuView } from '@typegpu/kit/cameras'
 import type { meshes } from '@typegpu/kit/geometry'
-import type { TgpuBindGroup, TgpuFragmentFn, TgpuRenderCommands, TgpuRoot, TgpuUniform } from 'typegpu'
+import type { TgpuRoot } from 'typegpu'
 import type {
     MapIntersection,
+    MaterialOptions,
     PlaneOptions,
     TextureOptions,
     UIWorldSpaceOptions,
     UIWorldSpaceOutput,
 } from './UIWorldSpace'
 import type { PlatformEvent } from '../events/types'
-import { Camera } from '@typegpu/kit/cameras'
-import { d, tgpu } from 'typegpu'
+import type { TypeGPUMaterial, TypeGPUPlane } from './typegpu-plane'
+import { createTypeGPUMaterial, createTypeGPUPlane } from './typegpu-plane'
 import UIWorldSpace from './UIWorldSpace'
+
+export { createTypeGPUMaterial }
+export type { TypeGPUPlane }
 
 type Vector3 = [number, number, number]
 
-export type UIWebGPUTypeGPUTexture = TgpuBindGroup<(typeof TEXTURE_LAYOUT)['entries']>
-
-export type UIWebGPUTypeGPUMaterial = TgpuFragmentFn<{ uv: d.Vec2f; world: d.Vec3f; normal: d.Vec3f }, d.Vec4f>
-
-export type UIWebGPUTypeGPUCamera = CameraBase & CpuView
+export type UIWebGPUTypeGPUMaterial = TypeGPUMaterial
 
 /** Intersection with the triangles of the plane's geometry. */
 export type UIWebGPUTypeGPUIntersection = {
@@ -46,66 +46,41 @@ export type UIWebGPUTypeGPUPlane = {
 export type UIWebGPUTypeGPUOptions<
     TMaterial extends UIWebGPUTypeGPUMaterial = UIWebGPUTypeGPUMaterial,
     TPlane extends UIWebGPUTypeGPUPlane = {
-        plane: {
-            transform: Float32Array
-            draw(pass: TgpuRenderCommands): void
-        }
+        plane: TypeGPUPlane
     },
-> = UIWorldSpaceOptions<UIWebGPUTypeGPUTexture, TMaterial, TPlane & UIWebGPUTypeGPUPlane, UIWebGPUTypeGPU> & {
+> = UIWorldSpaceOptions<GPUTextureView, TMaterial, TPlane & UIWebGPUTypeGPUPlane, UIWebGPUTypeGPU> & {
     root: TgpuRoot
-    /** Format of the color target the plane is drawn into. Defaults to the canvas format. */
-    format?: GPUTextureFormat
-    depth_stencil?: GPUDepthStencilState
 }
 
 export default class UIWebGPUTypeGPU extends UIWorldSpace<
-    UIWebGPUTypeGPUTexture,
+    GPUTextureView,
     UIWebGPUTypeGPUMaterial,
     UIWebGPUTypeGPUPlane,
     UIWebGPUTypeGPU,
-    UIWebGPUTypeGPUCamera
+    CpuView
 > {
     private tgpu_root: TgpuRoot
-
-    private format: GPUTextureFormat
-
-    private depth_stencil: GPUDepthStencilState | undefined
-
-    private transform_uniform: TgpuUniform<d.Mat4x4f>
-
-    private bind_group: TgpuBindGroup<(typeof PLANE_LAYOUT)['entries']> | null = null
 
     private plane!: UIWebGPUTypeGPUPlane['plane'] | null
     private mapIntersection: UIWebGPUTypeGPUPlane['mapIntersection']
     private triangles: { positions: Float32Array; uvs: Float32Array; indices: Uint32Array } | null = null
 
-    protected constructor({
-        root,
-        format,
-        depth_stencil,
-        ...options
-    }: UIWebGPUTypeGPUOptions<UIWebGPUTypeGPUMaterial, UIWebGPUTypeGPUPlane>) {
+    protected constructor({ root, ...options }: UIWebGPUTypeGPUOptions<UIWebGPUTypeGPUMaterial, UIWebGPUTypeGPUPlane>) {
         super(options)
         this.tgpu_root = root
-        this.format = format ?? options.resources.format
-        this.depth_stencil = depth_stencil
-        this.transform_uniform = root.createUniform(d.mat4x4f)
     }
 
     static async create<
         TMaterial extends UIWebGPUTypeGPUMaterial = UIWebGPUTypeGPUMaterial,
         TPlane extends UIWebGPUTypeGPUPlane = {
-            plane: {
-                transform: Float32Array
-                draw(pass: TgpuRenderCommands): void
-            }
+            plane: TypeGPUPlane
         },
     >(
         options: UIWebGPUTypeGPUOptions<TMaterial, TPlane>,
     ): Promise<
         {
             ui: UIWebGPUTypeGPU
-        } & UIWorldSpaceOutput<UIWebGPUTypeGPUTexture, TMaterial, TPlane>
+        } & UIWorldSpaceOutput<GPUTextureView, TMaterial, TPlane>
     > {
         const ui = new UIWebGPUTypeGPU(options)
         const resources = await ui.initialize()
@@ -156,14 +131,6 @@ export default class UIWebGPUTypeGPU extends UIWorldSpace<
         return output
     }
 
-    setCamera(camera: UIWebGPUTypeGPUCamera): void {
-        super.setCamera(camera)
-        this.bind_group = this.tgpu_root.createBindGroup(PLANE_LAYOUT, {
-            camera: camera.uniform,
-            transform: this.transform_uniform,
-        })
-    }
-
     dispatchPlatformEvent(source_event: PlatformEvent) {
         const camera = this.camera
         if (camera === null) {
@@ -198,11 +165,7 @@ export default class UIWebGPUTypeGPU extends UIWorldSpace<
         )
     }
 
-    private intersectTriangles(
-        camera: UIWebGPUTypeGPUCamera,
-        origin: Vector3,
-        direction: Vector3,
-    ): UIWebGPUTypeGPUIntersection | null {
+    private intersectTriangles(camera: CpuView, origin: Vector3, direction: Vector3): UIWebGPUTypeGPUIntersection | null {
         let intersection: UIWebGPUTypeGPUIntersection | null = null
         const { positions, uvs, indices } = this.triangles!
         const transform = this.plane!.transform
@@ -243,13 +206,15 @@ export default class UIWebGPUTypeGPU extends UIWorldSpace<
                 origin[1] + direction[1] * distance,
                 origin[2] + direction[2] * distance,
             ]
-            // The camera decides what is behind it: an orthographic one sees points behind the origin of its rays.
+            // The camera decides what it sees: an orthographic one sees points behind the origin of its rays.
             if (
                 weight_a < 0 ||
                 weight_b < 0 ||
                 weight_c < 0 ||
                 (intersection !== null && distance >= intersection.distance) ||
-                !camera.project(point, clip_point)
+                !camera.project(point, clip_point) ||
+                clip_point[2] < 0 ||
+                clip_point[2] > 1
             ) {
                 continue
             }
@@ -288,61 +253,25 @@ export default class UIWebGPUTypeGPU extends UIWorldSpace<
         this.plane = null
         this.mapIntersection = undefined
         this.triangles = null
-        this.bind_group = null
         return destroyed
     }
 
-    protected createTexture({ output, gpu_texture_view }: TextureOptions) {
-        return this.tgpu_root.createBindGroup(TEXTURE_LAYOUT, {
-            texture: gpu_texture_view,
-            sampler: output.device.createSampler({
-                minFilter: 'linear',
-                magFilter: 'linear',
-            }),
-        })
+    protected createTexture({ gpu_texture_view }: TextureOptions) {
+        return gpu_texture_view
     }
 
-    protected createDefaultMaterial(): UIWebGPUTypeGPUMaterial {
-        // The canvas holds the UI's sRGB colors as they are. Other targets, like an HDR scene, hold linear colors.
-        return this.format === this.resources!.format ? ENCODED_FRAGMENT : LINEAR_FRAGMENT
+    protected createDefaultMaterial({ texture }: MaterialOptions<GPUTextureView>) {
+        return createTypeGPUMaterial(this.tgpu_root, texture)
     }
 
     protected configureMaterial() {}
 
     protected createDefaultPlane({
-        texture,
         material,
         world_width,
         world_height,
-    }: PlaneOptions<UIWebGPUTypeGPUTexture, UIWebGPUTypeGPUMaterial>) {
-        const pipeline = this.tgpu_root.createRenderPipeline({
-            vertex: PLANE_VERTEX,
-            fragment: material,
-            targets: {
-                format: this.format,
-                blend: {
-                    color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' },
-                    alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' },
-                },
-            },
-            depthStencil: this.depth_stencil,
-        })
-        const sized_transform = new Float32Array(16)
-        const plane = {
-            transform: new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]),
-            draw: (pass: TgpuRenderCommands) => {
-                // The vertex shader places a unit quad, so the plane's world size goes into its X and Y axes.
-                for (let i = 0; i < 16; i++) {
-                    sized_transform[i] = plane.transform[i]! * (i < 4 ? world_width : i < 8 ? world_height : 1)
-                }
-                this.transform_uniform.write(sized_transform)
-                pass.setPipeline(pipeline)
-                pass.setBindGroup(texture)
-                pass.setBindGroup(this.bind_group!)
-                pass.draw(6)
-            },
-        }
-        return { plane }
+    }: PlaneOptions<GPUTextureView, UIWebGPUTypeGPUMaterial>) {
+        return { plane: createTypeGPUPlane(this.tgpu_root, material, world_width, world_height) }
     }
 }
 
@@ -357,48 +286,3 @@ function cross(a: Vector3, b: Vector3): Vector3 {
 function subtract(a: Vector3, b: Vector3): Vector3 {
     return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
-
-const TEXTURE_LAYOUT = tgpu.bindGroupLayout({
-    texture: { texture: d.texture2d(d.f32) },
-    sampler: { sampler: 'filtering' },
-})
-
-const PLANE_LAYOUT = tgpu.bindGroupLayout({
-    camera: { uniform: Camera },
-    transform: { uniform: d.mat4x4f },
-})
-
-const PLANE_VERTEX = tgpu.vertexFn({
-    in: { vertex_index: d.builtin.vertexIndex },
-    out: { position: d.builtin.position, uv: d.vec2f, world: d.vec3f, normal: d.vec3f },
-})(/* wgsl */ `{
-    var corners = array<vec2f, 6>(
-        vec2f(-0.5, 0.5), vec2f(-0.5, -0.5), vec2f(0.5, -0.5),
-        vec2f(-0.5, 0.5), vec2f(0.5, -0.5), vec2f(0.5, 0.5),
-    );
-    let corner = corners[in.vertex_index];
-    let world = plane.transform * vec4f(corner, 0, 1);
-    return Out(
-        plane.camera.viewProjection * world,
-        vec2f(corner.x + 0.5, 0.5 - corner.y),
-        world.xyz,
-        normalize((plane.transform * vec4f(0, 0, 1, 0)).xyz),
-    );
-}`).$uses({ plane: PLANE_LAYOUT.$ })
-
-const ENCODED_FRAGMENT = tgpu.fragmentFn({
-    in: { uv: d.vec2f },
-    out: d.vec4f,
-})(/* wgsl */ `{
-    return textureSample(ui.texture, ui.sampler, in.uv);
-}`).$uses({ ui: TEXTURE_LAYOUT.$ })
-
-const LINEAR_FRAGMENT = tgpu.fragmentFn({
-    in: { uv: d.vec2f },
-    out: d.vec4f,
-})(/* wgsl */ `{
-    let color = textureSample(ui.texture, ui.sampler, in.uv);
-    let encoded = color.rgb / max(color.a, 0.0001);
-    let decoded = select(encoded / 12.92, pow((encoded + 0.055) / 1.055, vec3f(2.4)), encoded > vec3f(0.04045));
-    return vec4f(decoded * color.a, color.a);
-}`).$uses({ ui: TEXTURE_LAYOUT.$ })

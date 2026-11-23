@@ -4,7 +4,7 @@ title: TypeGPU World Space
 
 `UITypeGPU` renders uno UI into a texture and draws it on a plane inside a scene rendered with TypeGPU and [TypeGPU Kit](https://docs.swmansion.com/typegpu-kit/). The plane can move, rotate, and scale while its UI remains interactive.
 
-This section continues the [TypeGPU](./typegpu.mdx) guide. TypeGPU has no scene graph, so the plane is not added to a scene: it has a matrix that places it and a `draw()` method that records it into a render pass of your frame. The camera is a TypeGPU Kit camera.
+This section continues the [TypeGPU](./typegpu.mdx) guide. TypeGPU Kit has no scene graph: the plane is a drawing that you add to a pass description, with a matrix that places it. The pass decides the target format, the depth test, and the samples per pixel.
 
 ## Shared setup
 
@@ -49,7 +49,6 @@ ui.setViewport(UI_SIZE, UI_SIZE)
 - `texture_width`, `texture_height`: Sets the resolution of the UI texture in physical pixels.
 - `world_width`, `world_height`: Sets the size of the plane in world units.
 - `ui.setViewport(width, height)`: Sets the space available for the UI layout in logical pixels.
-- `format`, `depth_stencil`: Describe the pass the plane is drawn into. Without them, the plane is drawn on the canvas with no depth test. See [Draw the plane inside a scene](#draw-the-plane-inside-a-scene).
 
 ## 2. Set up the camera
 
@@ -60,45 +59,13 @@ const view = cameras.orbit(root, { size: canvas, target: [0, 0, 0], distance: 3 
 ui.setCamera(view)
 ```
 
-The plane projects its vertices with the camera's uniform, so call `ui.setCamera(view)` before drawing it. uno also casts a ray through `view.rayAt()` onto the plane and converts the hit position into UI layout coordinates. The component's existing pointer, click, and focus handlers work as the plane rotates. Orbit, flat, and custom cameras all work.
+With `ui.setCamera(view)`, uno casts a ray through `view.rayAt()` onto the plane and converts the hit position into UI layout coordinates. The component's existing pointer, click, and focus handlers work as the plane rotates. Orbit, flat, and custom cameras all work. The camera that draws the plane is the one piped into the pass description, below.
 
 For pointer, click, and wheel events, the payload described in [Event data](../api/events.mdx#event-data) also includes `distance_to_camera` when the ray hits the plane. It is the distance from the ray's origin to the hit position in world units: from the eye of an orbit camera, and from the plane of a flat camera, where it is negative for hits in front of that plane. The `x` and `y` fields remain coordinates in the UI's logical coordinate space.
 
-## 3. Draw the plane
+## 3. Add the plane to the scene
 
-By default, `plane` is a rectangle of `world_width` by `world_height` in its local XY plane, facing `+Z` and visible from both sides. `plane.transform` is its world matrix: a column-major `Float32Array` of 16 values that starts as the identity. Write to it, or assign another matrix, with a library such as [wgpu-matrix](https://wgpu-matrix.org/).
-
-Draw the UI texture first, then record the plane into a render pass:
-
-```js
-import * as frames from '@typegpu/kit/frames'
-import { mat4 } from 'wgpu-matrix'
-
-const loop = frames.create(root, (frame) => {
-  view.update(frame.dt)
-  mat4.rotationY(Math.sin(frame.time / 2) * 0.8, plane.transform)
-
-  ui.update()
-  ui.draw({ submit: false, command_encoder: root.unwrap(frame.encoder) })
-
-  const pass = frame.encoder.beginRenderPass({
-    colorAttachments: [{ view: context.getCurrentTexture().createView(), clearValue: [0, 0, 0, 1] }],
-  })
-  plane.draw(pass)
-  pass.end()
-})
-
-requestAnimationFrame(function render(time) {
-  loop.run(time / 1000)
-  requestAnimationFrame(render)
-})
-```
-
-Here, `ui.draw()` updates the plane's texture rather than the canvas. `root.unwrap(frame.encoder)` gives it the frame's WebGPU encoder, so the frame is still submitted once. `plane.draw(pass)` takes a TypeGPU render pass, from `frame.encoder.beginRenderPass()` or from a TypeGPU Kit pass description.
-
-## Draw the plane inside a scene
-
-A TypeGPU Kit scene is drawn in linear colors into its own targets, and a final pass maps them to the canvas. Give the plane the color format and the depth state of the pass that draws the scene:
+By default, `plane` is a rectangle of `world_width` by `world_height` in its local XY plane, facing `+Z` and visible from both sides. `plane.drawing` is a TypeGPU Kit drawing. Add it to the description of the pass that draws your scene:
 
 ```js
 import * as finish from '@typegpu/kit/finish'
@@ -119,103 +86,112 @@ const final = finish.create(root, {
   settings: { vignette: 0 },
 })
 
-const { ui, plane } = await UITypeGPU.create({
-  //...
-  format: 'rgba16float',
-  depth_stencil: { format: 'depth24plus', depthCompare: scene.depthCompare, depthWriteEnabled: false },
-})
+const drawn = scene.add(plane.drawing)
 ```
 
-Record the plane after the scene's own drawings, in the same pass:
+Draw the UI texture before the pass that shows it:
 
 ```js
+import * as frames from '@typegpu/kit/frames'
+import { mat4 } from 'wgpu-matrix'
+
 const loop = frames.create(root, (frame) => {
   view.update(frame.dt)
+  plane.setTransform(mat4.rotationY(Math.sin(frame.time / 2) * 0.8))
+
   ui.update()
   ui.draw({ submit: false, command_encoder: root.unwrap(frame.encoder) })
 
   scene_targets.fit()
-  const pass = scene.begin(frame)
-  // drawn.draw(pass) for each drawing added to the scene
-  plane.draw(pass)
-  pass.end()
-
+  scene.record(frame, drawn)
   final.record(frame, context.getCurrentTexture().createView())
 })
+
+requestAnimationFrame(function render(time) {
+  loop.run(time / 1000)
+  requestAnimationFrame(render)
+})
 ```
 
-- The plane blends over what the pass already holds, so draw it after the opaque drawings. With `depthWriteEnabled: false` it is hidden by what is in front of it without hiding what is drawn later. Draw planes that overlap on screen from the farthest to the nearest.
-- When `format` is not the canvas format, the default material converts the UI's sRGB colors to linear ones.
-- The final pass applies its tone curve and vignette to the UI too. `tone: null` and `vignette: 0` leave the colors as they are, up to the dither of one 8-bit step that `dither: 0` removes; with a curve such as the default `tone.neutral`, bright UI colors shift.
-- The pass needs a single color target and one sample per pixel.
+- `plane.setTransform(matrix)` takes a column-major world matrix of 16 values, such as one from [wgpu-matrix](https://wgpu-matrix.org/), and places the plane for both drawing and picking. `plane.transform` holds the current matrix; writing to it directly does not move the drawing.
+- `ui.draw()` updates the plane's texture rather than the canvas. `root.unwrap(frame.encoder)` gives it the frame's WebGPU encoder, so the frame is still submitted once.
+- The drawing blends over what the pass already holds and tests the depth without writing it. Record it after the opaque drawings, and record planes that overlap on screen from the farthest to the nearest.
 
-### After the final pass
+## Colors
 
-To keep a tone curve for the scene and the exact colors of the UI, draw the plane on the canvas after the final pass, testing it against the scene's depth. Leave `format` out and open a pass that reads the depth target:
+The default material writes premultiplied linear colors, as a TypeGPU Kit scene is drawn in linear colors and its final pass maps them to the canvas. That pass applies its tone curve and vignette to the UI too. `tone: null` and `vignette: 0` leave the colors as they are, up to the dither of one 8-bit step that `dither: 0` removes; with a curve such as the default `tone.neutral`, bright UI colors shift.
+
+For a pass that writes encoded colors straight to the canvas, create the material with `createTypeGPUMaterial(root, texture, 'srgb')`. For example, this draws the plane over the finished frame, which keeps a tone curve for the scene and the exact colors for the UI:
 
 ```js
+import UITypeGPU, { createTypeGPUMaterial } from '@uno.build/ui/UITypeGPU'
+
 const { ui, plane } = await UITypeGPU.create({
   //...
-  depth_stencil: { format: 'depth24plus', depthCompare: scene.depthCompare, depthWriteEnabled: false },
+  createMaterial: ({ texture }) => createTypeGPUMaterial(root, texture, 'srgb'),
 })
+
+const screen = {
+  format,
+  get width() {
+    return canvas.width
+  },
+  get height() {
+    return canvas.height
+  },
+  view: () => context.getCurrentTexture().createView(),
+}
+const overlay = passes.create(root, screen).pipe(view.inject())
+const drawn = overlay.add(plane.drawing)
 
 // In the frame, after final.record()
-const pass = frame.encoder.beginRenderPass({
-  colorAttachments: [{ view: context.getCurrentTexture().createView(), loadOp: 'load' }],
-  depthStencilAttachment: { view: scene_targets.views.depth, depthReadOnly: true },
-})
-plane.draw(pass)
-pass.end()
+overlay.record(frame, drawn, { clear: false })
 ```
 
-The depth target must have the size of the canvas, so this does not combine with a lower `resolution` or with temporal antialiasing's jitter.
+A screen has color only, so this plane draws over the scene's objects rather than behind them.
 
 ## Customize the material
 
-The material is the TypeGPU fragment function of the plane. Use the optional `createMaterial()` callback to return your own. It can read the `uv`, `world` position, and `normal` that the plane's vertex function outputs, and returns a premultiplied color. `texture` is a bind group with the UI `texture` and its `sampler`; read them through `texture.layout`.
+The material holds the bind group of the UI texture and `pixelOf`, the function that gives the plane its color at each pixel. To shade the plane differently, add the drawing with another `pixelOf`. It receives the vertex, with its `uv` and `world_position`, and returns a `Pixel` with a premultiplied `color`.
 
-For example, this material lights the UI with a TypeGPU Kit [lighting](https://docs.swmansion.com/typegpu-kit/kit/lighting/):
+For example, this lights the UI with a TypeGPU Kit [lighting](https://docs.swmansion.com/typegpu-kit/kit/lighting/):
 
 ```js
-import { srgbToLinear } from '@typegpu/color'
 import * as lighting from '@typegpu/kit/lighting'
 import * as materials from '@typegpu/kit/materials'
 import * as shading from '@typegpu/kit/shading'
-import * as d from 'typegpu/data'
 import * as std from 'typegpu/std'
 
 const light = lighting.create(root)
-
-const shadePlane = tgpu
-  .fn((color, world, normal) => {
-    'use gpu'
-    const surface = materials.glossy(srgbToLinear(std.div(color.xyz, std.max(color.w, 0.0001))), 0.35)
-    return shading.shadeClear(surface, shading.pointAt(world, normal), color.w)
-  })
+const scene = passes
+  .create(root, scene_targets, { color: passes.color, depth: passes.depth })
   .pipe(view.inject())
-  .pipe(light.inject())
+  .beneath(light.inject())
 
-const { ui, plane } = await UITypeGPU.create({
+const { ui, plane, material } = await UITypeGPU.create({
   //...
-  createMaterial({ texture }) {
-    const { layout } = texture
-    return tgpu.fragmentFn({
-      in: { uv: d.vec2f, world: d.vec3f, normal: d.vec3f },
-      out: d.vec4f,
-    })((input) => {
-      'use gpu'
-      const color = std.textureSample(layout.$.texture, layout.$.sampler, input.uv)
-      return shadePlane(color, input.world, input.normal)
-    })
+})
+const { Pixel } = plane.drawing
+
+const drawn = scene.add({
+  ...plane.drawing,
+  pixelOf: (vertex) => {
+    'use gpu'
+    const color = material.pixelOf(vertex).color
+    const world = vertex.world_position
+    const face = std.normalize(std.cross(std.dpdx(world), std.dpdy(world)))
+    const normal = std.select(std.neg(face), face, std.dot(face, cameras.towards(cameras.current.$, world)) >= 0)
+    const surface = materials.glossy(std.div(color.xyz, std.max(color.w, 0.0001)), 0.35)
+    return Pixel({ color: shading.shadeClear(surface, shading.pointAt(world, normal), color.w) })
   },
 })
 ```
 
-The UI texture holds premultiplied sRGB colors, which the example converts before shading. The fills piped into `shadePlane` give it the camera and the lights, as uno creates the pipeline. Functions marked with `'use gpu'` need `unplugin-typegpu` in your build.
+`material.pixelOf(vertex)` samples the UI in linear colors. The normal comes from the surface itself and is turned towards the eye, so both sides of the plane are lit. Functions marked with `'use gpu'` need `unplugin-typegpu` in your build.
 
 ## Customize the plane and hit mapping
 
-Use the optional `createPlane()` callback to show the UI on something other than the default rectangle. It receives the UI `texture`, the configured `material`, and the requested `world_width` and `world_height`. Return an object with a `transform` matrix as `plane`; additional resources are also returned by `UITypeGPU.create()`. uno does not draw a custom plane: draw it with a pipeline or a TypeGPU Kit drawing of your own that samples `texture.layout.$.texture`, and set the bind group with `pass.setBindGroup(texture)`.
+Use the optional `createPlane()` callback to show the UI on something other than the default rectangle. It receives the UI `texture` view, the `material`, and the requested `world_width` and `world_height`. Return an object with a `transform` matrix as `plane`; additional resources are also returned by `UITypeGPU.create()`. uno does not draw a custom plane: add a drawing of your own to the scene, with `material.pixelOf` as its `pixelOf` and `pass.setBindGroup(material.bind_group)` in its `draw()`.
 
 For custom interaction, return a `geometry` in `plane` and a `mapIntersection()` callback alongside it. The geometry is an indexed triangle geometry from `@typegpu/kit/geometry`. uno tests the pointer ray against its triangles, placed by `plane.transform`, and passes the closest hit to `mapIntersection()`, which returns UV coordinates as `{ x, y }`, or `null` to reject the hit. uno converts the returned UVs into UI layout coordinates, with `y = 0` at the bottom. Without this callback, uno maps hits against the default rectangle rather than raycasting the geometry.
 
@@ -245,15 +221,19 @@ The intersection holds the world `point`, the `local_point` and triangle `normal
 
 The front face of `meshes.box()` has `V = 0` at the bottom, as uno's hit mapper expects, so its `uv` is returned as it is. The UI texture has its first row at the top: sample it with `1 - uv.y` when drawing this face.
 
-`mapIntersection()` can also transform the UVs before returning them, allowing you to adapt interaction to a custom texture layout. It changes how hits are mapped to the UI; it does not change how the texture is rendered. uno reads the geometry once, when the UI is created.
+`mapIntersection()` can also transform the UVs before returning them, allowing you to adapt interaction to a custom texture layout. It changes how hits are mapped to the UI; it does not change how the texture is rendered. uno reads the geometry once, when the UI is created, and reads `plane.transform` at each event.
 
 ## Cleanup
 
-`ui.destroy()` releases the uno nodes, listeners, renderer allocations, and offscreen GPU texture. The plane's pipeline, bind groups, and uniform need no destruction.
+World-space UIs have resources owned by uno and resources managed by TypeGPU Kit. `ui.destroy()` releases the uno nodes, listeners, renderer allocations, and offscreen GPU texture. It does not remove the drawing from the pass description.
 
-Before cleanup, stop this UI's draw calls, including `plane.draw()`, and remove any event listeners added by your application. If a framework manages the layout, call its root's `unmount()` while the UI is still alive.
+Before cleanup, stop this UI's draw calls and remove any event listeners added by your application. If a framework manages the layout, call its root's `unmount()` while the UI is still alive.
+
+Destroy what `scene.add()` returned and the plane, then the UI:
 
 ```js
+drawn.destroy()
+plane.destroy()
 ui.destroy()
 ```
 
