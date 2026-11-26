@@ -44,12 +44,13 @@ async function createScene(root, surface) {
   }
 }
 
-const hosted = web.host(createScene, { canvas: document.querySelector('canvas') })
+const hosted = web.host(createScene, { canvas: document.querySelector('canvas'), alphaMode: 'premultiplied' })
 ```
 
 - `ResourcesWebGPU` receives the `context` and `format` of the surface, so it uses the canvas as TypeGPU Kit configured it instead of configuring it again. Its `canvas` receives the pointer events of the UI.
 - `passes.create(root, surface)` draws straight to the canvas. `surface.view(frame)` is the canvas texture of the current frame, which the UI draws into as well.
 - The surface keeps the canvas size matched to its layout. Its `width` and `height` are in physical pixels, so divide them by `pixelRatio` for the UI viewport.
+- `alphaMode: 'premultiplied'` keeps transparent pixels see-through, as when `ResourcesWebGPU` configures the canvas. TypeGPU Kit defaults to `'opaque'`, which shows them black.
 - `hosted.destroy()` calls the scene's `destroy`, then releases the surface and the root. Call it on `pagehide`.
 
 The rendering examples below use the `cube_drawing` from the demo: a TypeGPU Kit drawing whose vertices are projected with `cameras.toClip()`.
