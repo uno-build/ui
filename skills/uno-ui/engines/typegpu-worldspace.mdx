@@ -8,19 +8,7 @@ This section continues the [TypeGPU](./typegpu.mdx) guide. TypeGPU Kit has no sc
 
 ## Shared setup
 
-TypeGPU Kit requires core WebGPU, while `ResourcesWebGPU.create()` requests a compatibility device when it creates one. Let TypeGPU create the device and pass it to the shared resources:
-
-```js
-import ResourcesWebGPU from '@uno.build/ui/ResourcesWebGPU'
-import tgpu from 'typegpu'
-
-const canvas = document.querySelector('canvas')
-const root = await tgpu.init()
-const resources = await ResourcesWebGPU.create({ canvas, device: root.device })
-const { context, format } = resources
-```
-
-`ResourcesWebGPU` configures the canvas, so do not create a `web.surface()` over it. Nothing in this guide imports `@typegpu/kit/web`: TypeGPU Kit takes any object with `width` and `height` as a size, such as the canvas, and its final pass takes a view of the canvas texture.
+Start from the TypeGPU [shared setup](./typegpu.mdx#shared-setup): a `createScene(root, surface)` function run by `web.host()`, with `resources` created on the surface's device and context. The code in this guide goes in `createScene`, the drawing in the scene's `frame(frame)`, and the cleanup in its `destroy`.
 
 ## 1. Create the UI plane
 
@@ -30,7 +18,7 @@ Replace the `UI` import and `UI.create()` call with `UITypeGPU`. Pass it the Typ
 import UITypeGPU from '@uno.build/ui/UITypeGPU'
 
 const UI_SIZE = 400
-const device_pixel_ratio = window.devicePixelRatio
+const device_pixel_ratio = surface.pixelRatio
 
 const { ui, plane } = await UITypeGPU.create({
   root,
@@ -55,7 +43,7 @@ ui.setViewport(UI_SIZE, UI_SIZE)
 ```js
 import * as cameras from '@typegpu/kit/cameras'
 
-const view = cameras.orbit(root, { size: canvas, target: [0, 0, 0], distance: 3 })
+const view = cameras.orbit(root, { size: surface, target: [0, 0, 0], distance: 3 })
 ui.setCamera(view)
 ```
 
@@ -72,7 +60,7 @@ import * as finish from '@typegpu/kit/finish'
 import * as passes from '@typegpu/kit/passes'
 import * as targets from '@typegpu/kit/targets'
 
-const scene_targets = targets.create(root, canvas, {
+const scene_targets = targets.create(root, surface, {
   color: { format: 'rgba16float', sampled: true },
   depth: { format: 'depth24plus' },
 })
@@ -80,7 +68,7 @@ const scene = passes
   .create(root, scene_targets, { color: passes.color, depth: passes.depth })
   .pipe(view.inject())
 const final = finish.create(root, {
-  format,
+  format: surface.format,
   source: () => scene_targets.textures.color,
   tone: null,
   settings: { vignette: 0 },
@@ -89,28 +77,20 @@ const final = finish.create(root, {
 const drawn = scene.add(plane.drawing)
 ```
 
-Draw the UI texture before the pass that shows it:
+In `frame(frame)`, draw the UI texture before the pass that shows it:
 
 ```js
-import * as frames from '@typegpu/kit/frames'
 import { mat4 } from 'wgpu-matrix'
 
-const loop = frames.create(root, (frame) => {
-  view.update(frame.dt)
-  plane.setTransform(mat4.rotationY(Math.sin(frame.time / 2) * 0.8))
+view.update(frame.dt)
+plane.setTransform(mat4.rotationY(Math.sin(frame.time / 2) * 0.8))
 
-  ui.update()
-  ui.draw({ submit: false, command_encoder: root.unwrap(frame.encoder) })
+ui.update()
+ui.draw({ submit: false, command_encoder: root.unwrap(frame.encoder) })
 
-  scene_targets.fit()
-  scene.record(frame, drawn)
-  final.record(frame, context.getCurrentTexture().createView())
-})
-
-requestAnimationFrame(function render(time) {
-  loop.run(time / 1000)
-  requestAnimationFrame(render)
-})
+scene_targets.fit()
+scene.record(frame, drawn)
+final.record(frame, surface.view(frame))
 ```
 
 - `plane.setTransform(matrix)` takes a column-major world matrix of 16 values, such as one from [wgpu-matrix](https://wgpu-matrix.org/), and places the plane for both drawing and picking. `plane.transform` holds the current matrix; writing to it directly does not move the drawing.
@@ -121,7 +101,7 @@ requestAnimationFrame(function render(time) {
 
 The default material writes premultiplied linear colors, as a TypeGPU Kit scene is drawn in linear colors and its final pass maps them to the canvas. That pass applies its tone curve and vignette to the UI too. `tone: null` and `vignette: 0` leave the colors as they are, up to the dither of one 8-bit step that `dither: 0` removes; with a curve such as the default `tone.neutral`, bright UI colors shift.
 
-For a pass that writes encoded colors straight to the canvas, create the material with `createTypeGPUMaterial(root, texture, 'srgb')`. For example, this draws the plane over the finished frame, which keeps a tone curve for the scene and the exact colors for the UI:
+For a pass that writes encoded colors straight to the canvas, create the material with `createTypeGPUMaterial(root, texture, 'srgb')`. For example, this draws the plane over the finished frame with a pass straight to the `surface`, as in the [shared setup](./typegpu.mdx#shared-setup), which keeps a tone curve for the scene and the exact colors for the UI:
 
 ```js
 import UITypeGPU, { createTypeGPUMaterial } from '@uno.build/ui/UITypeGPU'
@@ -131,17 +111,7 @@ const { ui, plane } = await UITypeGPU.create({
   createMaterial: ({ texture }) => createTypeGPUMaterial(root, texture, 'srgb'),
 })
 
-const screen = {
-  format,
-  get width() {
-    return canvas.width
-  },
-  get height() {
-    return canvas.height
-  },
-  view: () => context.getCurrentTexture().createView(),
-}
-const overlay = passes.create(root, screen).pipe(view.inject())
+const overlay = passes.create(root, surface).pipe(view.inject())
 const drawn = overlay.add(plane.drawing)
 
 // In the frame, after final.record()
@@ -245,4 +215,4 @@ After the last overlay or world-space UI using the shared image and font atlases
 resources.dispose()
 ```
 
-This does not destroy the GPU device or canvas context. Destroy the TypeGPU root and the TypeGPU Kit modules separately when shutting down the application; keep them alive when removing only one UI panel.
+This does not destroy the GPU device or canvas context. When the scene ends, release the UIs, the planes, `resources` and the TypeGPU Kit targets in its `destroy`; `hosted.destroy()` then releases the surface and the root. Keep them alive when removing only one UI panel.

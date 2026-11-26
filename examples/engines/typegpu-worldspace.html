@@ -22,33 +22,38 @@
     <body>
         <canvas></canvas>
         <script type="module">
+            import * as web from '@typegpu/kit/web'
             import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
             import UI from '../../src/ui/UIWebGPU'
             import UITypeGPU from '../../src/ui/UIWebGPUTypeGPU'
             import { loadYoga } from 'yoga-layout/load'
             import { loadAssets } from '../shared/assets'
             import { loadImage, loadJson } from '../shared/load-assets'
-            import { main } from './typegpu-worldspace.ts'
+            import { createScene } from './typegpu-worldspace.ts'
 
             const canvas = document.querySelector('canvas')
-            const scene = await main({
-                canvas,
-                ResourcesWebGPU,
-                UI,
-                UITypeGPU,
-                loadYoga,
-                loadAssets: () => loadAssets({ loadImage, loadJson }),
-                onCanvasEvent(type, handleEvent) {
-                    const target = type === 'resize' ? window : canvas
-                    target.addEventListener(type, handleEvent, { passive: false })
-                    return () => target.removeEventListener(type, handleEvent)
+            const hosted = web.host(
+                createScene,
+                {
+                    ResourcesWebGPU,
+                    UI,
+                    UITypeGPU,
+                    loadYoga,
+                    loadAssets: () => loadAssets({ loadImage, loadJson }),
+                    onCanvasEvent(type, handleEvent) {
+                        canvas.addEventListener(type, handleEvent, { passive: false })
+                        return () => canvas.removeEventListener(type, handleEvent)
+                    },
                 },
-            })
-            for (const ui of scene.uis) ui.registerPlatformEvents()
-            window.addEventListener('pagehide', (event) => {
-                if (!event.persisted) scene.destroy()
-            })
-            import.meta.hot?.dispose(() => scene.destroy())
+                {
+                    canvas,
+                    attach: ({ scene }) => {
+                        for (const ui of scene.uis) ui.registerPlatformEvents()
+                    },
+                },
+            )
+            window.addEventListener('pagehide', () => hosted.destroy(), { once: true })
+            import.meta.hot?.dispose(() => hosted.destroy())
         </script>
     </body>
 </html>
