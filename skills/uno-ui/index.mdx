@@ -8,7 +8,7 @@ Build high-performance and pixel-perfect user interfaces for WebGPU. Use the ren
 
 ## Motivation
 
-When you build a video game's UI with a library such as Three.js, you typically use HTML and CSS for the layout. This approach has two drawbacks. First, it ties your game to the web, so you must ship it for browsers, Electron, or another environment with a WebView. Second, it separates your UI from your game because they live in two different worlds.
+When you build a game's UI with Three.js, you typically use HTML and CSS for the layout. This approach has two drawbacks. First, it ties your game to the web, so you must ship it for browsers, Electron, or another environment with a WebView. Second, it separates your UI from your game because they live in two different worlds.
 
 uno UI solves both problems by rendering the UI directly through the game's rendering pipeline, without relying on HTML or the DOM. This lets your game run in non-web environments while keeping the UI and game in the same rendering system.
 
@@ -16,7 +16,7 @@ uno UI solves both problems by rendering the UI directly through the game's rend
 
 - Works with any WebGPU rendering engine
 - Use it standalone or with [React](https://uno.build/examples/react/), [Vue](https://uno.build/examples/vue/) or [SolidJS](https://uno.build/examples/solid/)
-- World-space integrations for [Three.js](https://uno.build/examples/engines/three-worldspace.html), [Babylon.js](https://uno.build/examples/engines/babylon-worldspace.html), [Babylon Lite](https://uno.build/examples/engines/babylonlite-worldspace.html), [PlayCanvas](https://uno.build/examples/engines/playcanvas-worldspace.html) and [PixiJS 3D](https://uno.build/examples/engines/pixi3d-worldspace.html)
+- World-space integrations for [Three.js](https://uno.build/examples/engines/three-worldspace.html), [Babylon.js](https://uno.build/examples/engines/babylon-worldspace.html), [Babylon Lite](https://uno.build/examples/engines/babylonlite-worldspace.html), [PlayCanvas](https://uno.build/examples/engines/playcanvas-worldspace.html), [PixiJS 3D](https://uno.build/examples/engines/pixi3d-worldspace.html) and [TypeGPU](https://uno.build/examples/engines/typegpu-worldspace.html)
 - [Pixel-perfect parity with DOM rendering](https://uno.build/examples/layouts/)
 - High-quality text rendering with strokes and shadows using [MTSDF](https://github.com/Chlumsky/msdf-atlas-gen)
 - Accurate text measurement and layout powered by [Pretext](https://github.com/chenglou/pretext)
@@ -52,7 +52,8 @@ uno UI solves both problems by rendering the UI directly through the game's rend
 - [Babylon Lite World Space](./engines/babylonlite-worldspace.mdx): interactive UI on Babylon Lite meshes.
 - [PlayCanvas](./engines/playcanvas.mdx): background and foreground UI with PlayCanvas.
 - [PlayCanvas World Space](./engines/playcanvas-worldspace.mdx): interactive UI on PlayCanvas entities.
-- [TypeGPU](./engines/typegpu.mdx): UI composition with shared WebGPU command encoders.
+- [TypeGPU](./engines/typegpu.mdx): UI layers behind or in front of TypeGPU Kit scenes.
+- [TypeGPU World Space](./engines/typegpu-worldspace.mdx): interactive UI on planes in TypeGPU Kit scenes.
 
 ## API reference
 

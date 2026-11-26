@@ -1,6 +1,6 @@
 {
     "name": "@uno.build/ui",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "type": "module",
     "license": "Apache-2.0",
     "description": "UI system for WebGPU",
@@ -74,6 +74,10 @@
             "types": "./dist/ui/UIPlayCanvas.d.ts",
             "import": "./dist/ui/UIPlayCanvas.js"
         },
+        "./UITypeGPU": {
+            "types": "./dist/ui/UITypeGPU.d.ts",
+            "import": "./dist/ui/UITypeGPU.js"
+        },
         "./UIWebGPUThree": {
             "types": "./dist/ui/UIWebGPUThree.d.ts",
             "import": "./dist/ui/UIWebGPUThree.js"
@@ -93,6 +97,10 @@
         "./UIWebGPUPixi3D": {
             "types": "./dist/ui/UIWebGPUPixi3D.d.ts",
             "import": "./dist/ui/UIWebGPUPixi3D.js"
+        },
+        "./UIWebGPUTypeGPU": {
+            "types": "./dist/ui/UIWebGPUTypeGPU.d.ts",
+            "import": "./dist/ui/UIWebGPUTypeGPU.js"
         },
         "./UIDom": {
             "types": "./dist/ui/UIDom.d.ts",
@@ -126,16 +134,19 @@
     "peerDependencies": {
         "@babylonjs/core": "^9.33.2",
         "@babylonjs/lite": "^1.38.0",
-        "@solidjs/universal": "^2.0.0-rc.21",
+        "@pixi/3d": "^0.1.0",
+        "@solidjs/universal": "^2.0.3",
+        "@typegpu/color": "^0.12.2",
+        "@typegpu/kit": "^0.1.0",
         "@types/react": "^19.3.0",
         "@types/three": "^0.187.0",
-        "@pixi/3d": "^0.1.0",
         "pixi.js": "^8.23.0",
         "playcanvas": "^2.23.3",
         "react": "^19.3.1",
         "react-reconciler": "^0.34.0",
-        "solid-js": "^2.0.0-rc.21",
+        "solid-js": "^2.0.3",
         "three": "^0.187.0",
+        "typegpu": "^0.12.11",
         "vite": "^8.3.5",
         "vue": "^3.5.44"
     },
@@ -176,6 +187,15 @@
         "@pixi/3d": {
             "optional": true
         },
+        "typegpu": {
+            "optional": true
+        },
+        "@typegpu/kit": {
+            "optional": true
+        },
+        "@typegpu/color": {
+            "optional": true
+        },
         "vite": {
             "optional": true
         },
@@ -190,8 +210,10 @@
         "@dom-expressions/compiler": "0.50.0-next.40",
         "@pixi/3d": "^0.1.0",
         "@playwright/test": "^1.52.0",
-        "@solidjs/universal": "^2.0.0-rc.21",
+        "@solidjs/universal": "^2.0.3",
         "@solidjs/vite-plugin": "3.0.0-next.28",
+        "@typegpu/color": "^0.12.2",
+        "@typegpu/kit": "^0.1.0",
         "@types/react": "^19.3.0",
         "@types/react-reconciler": "0.33.0",
         "@types/three": "^0.187.0",
@@ -204,7 +226,7 @@
         "react-reconciler": "^0.34.0",
         "solid-js": "^2.0.0-rc.21",
         "three": "^0.187.0",
-        "typegpu": "^0.12.5",
+        "typegpu": "^0.12.11",
         "typescript": "5.9.3",
         "unplugin-typegpu": "^0.12.2",
         "vite": "^8.3.5",

@@ -511,3 +511,114 @@ test('UIPlayCanvas dispatches pointer events from raycast intersections', { tag:
         expect(event.distance_to_camera).toBeCloseTo(2)
     }
 })
+
+test('UITypeGPU dispatches pointer events from raycast intersections', { tag: '@webgpu' }, async ({ page }) => {
+    await page.goto(TEST_PAGE_URL)
+
+    const events = await page.evaluate(
+        async ({ event_types }) => {
+            const { UITypeGPU, ResourcesWebGPU, TYPEGPU, TYPEGPU_CAMERAS } = await import(
+                '/tests/renderer/browser-entry.ts'
+            )
+            const canvas = document.createElement('canvas')
+            canvas.width = 400
+            canvas.height = 200
+            Object.assign(canvas.style, {
+                position: 'absolute',
+                left: '0',
+                top: '0',
+                width: '400px',
+                height: '200px',
+            })
+            document.body.appendChild(canvas)
+
+            const resources = await ResourcesWebGPU.create({ canvas })
+            const root = TYPEGPU.tgpu.initFromDevice({ device: resources.device })
+            const { ui } = await UITypeGPU.create({
+                root,
+                resources,
+                register_platform_events: false,
+                texture_width: 200,
+                texture_height: 100,
+                world_width: 2,
+                world_height: 1,
+            })
+            const camera = TYPEGPU_CAMERAS.orbit(root, {
+                size: canvas,
+                target: [0, 0, 0],
+                distance: 2,
+                pitch: 0,
+                fov: Math.PI / 3,
+            })
+            ui.setCamera(camera)
+
+            const child = ui.create()
+            const events = []
+            let current_source_event
+
+            ui.root.style('width', '200px')
+            ui.root.style('height', '100px')
+            child.style('width', '200px')
+            child.style('height', '100px')
+            ui.root.add(child)
+            ui.update()
+
+            const record = (expected_current_target, current_target) => (event) => {
+                events.push({
+                    type: event.type,
+                    x: event.x,
+                    y: event.y,
+                    distance_to_camera: event.distance_to_camera,
+                    target: event.target === child ? 'child' : 'root',
+                    current_target,
+                    current_target_matches: event.current_target === expected_current_target,
+                    source_event_matches: event.source_event === current_source_event,
+                })
+            }
+
+            for (const type of event_types) {
+                child.on(type, record(child, 'child'))
+                ui.root.on(type, record(ui.root, 'root'))
+                canvas.addEventListener(type, (source_event) => {
+                    current_source_event = source_event
+                    ui.dispatchPlatformEvent(source_event)
+                })
+            }
+
+            const rect = canvas.getBoundingClientRect()
+            const dispatch = (type, pointer_id, x, y) => {
+                canvas.dispatchEvent(
+                    new PointerEvent(type, {
+                        pointerId: pointer_id,
+                        clientX: rect.left + x,
+                        clientY: rect.top + y,
+                    }),
+                )
+            }
+
+            dispatch('pointerdown', 1, 200, 100)
+            dispatch('pointermove', 1, 200, 100)
+            dispatch('pointerup', 1, 200, 100)
+            dispatch('pointerdown', 2, 200, 100)
+            dispatch('pointercancel', 2, 200, 100)
+            dispatch('pointerdown', 3, 1, 1)
+
+            ui.destroy()
+            resources.dispose()
+            canvas.remove()
+            return events
+        },
+        { event_types: PLATFORM_EVENT_NAMES },
+    )
+
+    expect(events.map(({ type, current_target }) => [type, current_target])).toEqual(EVENT_FLOW)
+    expect(events.every(({ target }) => target === 'child')).toBe(true)
+    expect(events.every(({ current_target_matches }) => current_target_matches)).toBe(true)
+    expect(events.every(({ source_event_matches }) => source_event_matches)).toBe(true)
+
+    for (const event of events) {
+        expect(event.x).toBeCloseTo(100)
+        expect(event.y).toBeCloseTo(50)
+        expect(event.distance_to_camera).toBeCloseTo(2)
+    }
+})

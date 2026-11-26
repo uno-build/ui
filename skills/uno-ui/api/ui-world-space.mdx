@@ -2,7 +2,7 @@
 title: 'UIWorldSpace'
 ---
 
-Shared reference for [UIThree](#uithree), [UIBabylon](#uibabylon), [UIBabylonLite](#uibabylonlite), [UIPlayCanvas](#uiplaycanvas), and [UIPixi3D](#uipixi3d). These classes share the [UI instance API](./ui.mdx#methods), with the additions and overrides below. `UIWorldSpace` is their abstract base and has no public import path.
+Shared reference for [UIThree](#uithree), [UIBabylon](#uibabylon), [UIBabylonLite](#uibabylonlite), [UIPlayCanvas](#uiplaycanvas), [UIPixi3D](#uipixi3d), and [UITypeGPU](#uitypegpu). These classes share the [UI instance API](./ui.mdx#methods), with the additions and overrides below. `UIWorldSpace` is their abstract base and has no public import path.
 
 ## Methods
 
@@ -153,3 +153,21 @@ Import from `@uno.build/ui/UIPixi3D`. Engine types come from `@pixi/3d` and `pix
 | Default plane resources     | `plane: Mesh3D`, `geometry: PlaneGeometry`                                     |
 
 `UIPixi3DOptions` and `UIPixi3DMaterial` are exported by the class module. A custom `createPlane` may return any `Container3D` as `plane`.
+
+## UITypeGPU
+
+Import from `@uno.build/ui/UITypeGPU`. Engine types come from `typegpu` and `@typegpu/kit`.
+
+| API                         | Type / value                                                                                  |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| Factory                     | `UITypeGPU.create(options: UITypeGPUOptions<TMaterial, TPlane>)`                              |
+| Additional required options | `root: TgpuRoot`                                                                              |
+| Camera                      | `setCamera(camera: CpuView): void`; a TypeGPU Kit orbit, flat, or custom camera               |
+| Event dispatch              | `dispatchPlatformEvent(source_event: PlatformEvent): void`                                    |
+| Texture                     | `GPUTextureView`                                                                              |
+| Default material            | `createTypeGPUMaterial(root, texture)`, which writes premultiplied linear colors              |
+| Material constraint         | `TMaterial extends UITypeGPUMaterial`: `{ bind_group, pixelOf }`                              |
+| `mapIntersection` argument  | `UITypeGPUIntersection`                                                                       |
+| Default plane resources     | `plane: TypeGPUPlane`: `{ transform, drawing, setTransform(matrix), destroy() }`              |
+
+`UITypeGPUOptions`, `UITypeGPUMaterial`, `UITypeGPUIntersection`, and `TypeGPUPlane` are exported by the class module, which also exports `createTypeGPUMaterial(root, texture, color_space)`; pass `'srgb'` as `color_space` for a pass that writes encoded colors. Add `plane.drawing` to a TypeGPU Kit pass description. A custom `createPlane` returns `plane: { transform, geometry? }` and draws it itself; `geometry` is an indexed geometry from `@typegpu/kit/geometry`, required with `mapIntersection`.

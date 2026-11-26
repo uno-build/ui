@@ -2,29 +2,58 @@
 title: TypeGPU
 ---
 
-TypeGPU and uno UI can draw to the same canvas by sharing a WebGPU device and context. The order of the draw calls determines whether the UI appears in front of or behind the scene.
+TypeGPU and uno UI can draw to the same canvas by sharing a WebGPU device and context. The examples on this page render the scene with [TypeGPU Kit](https://docs.swmansion.com/typegpu-kit/). The order of the draw calls determines whether the UI appears in front of or behind the scene.
 
 The examples below assume you are familiar with the basics of uno UI covered in the [First Layout](../getting-started/first-layout.mdx) section.
 
 ## Shared setup
 
-Use `tgpu.initFromDevice()` to create a TypeGPU root with the `device` used by uno UI. Use the same `context` for the canvas texture and `format` for the pipeline's color target.
+Write the scene as TypeGPU Kit does: a `createScene(root, surface)` function that returns the scene's `frame` and `destroy`, run by `web.host()`. The host creates a core WebGPU device and the TypeGPU root, configures the canvas, runs the frame loop and submits each frame. Create the uno UI resources on the same device and canvas context:
 
 ```js
 import ResourcesWebGPU from '@uno.build/ui/ResourcesWebGPU'
 import UI from '@uno.build/ui/UI'
-import tgpu from 'typegpu'
-import * as d from 'typegpu/data'
+import * as cameras from '@typegpu/kit/cameras'
+import * as passes from '@typegpu/kit/passes'
+import * as web from '@typegpu/kit/web'
 
-const canvas = document.querySelector('canvas')
-const resources = await ResourcesWebGPU.create({ canvas })
-const { ui } = await UI.create({ resources })
-const { device, context, format } = resources
+async function createScene(root, surface) {
+  const { context, format } = surface
+  const resources = await ResourcesWebGPU.create({ canvas: context.canvas, device: root.device, context, format })
+  const { ui } = await UI.create({ resources })
 
-const root = tgpu.initFromDevice({ device })
+  const camera = cameras.orbit(root, { size: surface, target: [0, 0, 0], distance: 4 })
+  const scene = passes.create(root, surface, { clear: [1, 1, 1, 1] }).pipe(camera.inject())
+  const cube = scene.add(cube_drawing)
+  await scene.initAsync()
+
+  return {
+    frame(frame) {
+      camera.update(frame.dt)
+      const command_encoder = root.unwrap(frame.encoder)
+      const texture_view = surface.view(frame)
+      ui.setViewport(surface.width / surface.pixelRatio, surface.height / surface.pixelRatio)
+      ui.setDevicePixelRatio(surface.pixelRatio)
+      ui.update()
+      // Draw the scene and the UI, as in the sections below.
+    },
+    destroy() {
+      ui.destroy()
+      resources.dispose()
+    },
+  }
+}
+
+const hosted = web.host(createScene, { canvas: document.querySelector('canvas'), alphaMode: 'premultiplied' })
 ```
 
-The rendering examples below use the cube's `pipeline` and `frame_uniform` from the demo. Create the pipeline with `targets: { format }`; the uniform receives the elapsed time and canvas aspect ratio. Apply the UI layout and viewport setup before starting the render loop.
+- `ResourcesWebGPU` receives the `context` and `format` of the surface, so it uses the canvas as TypeGPU Kit configured it instead of configuring it again. Its `canvas` receives the pointer events of the UI.
+- `passes.create(root, surface)` draws straight to the canvas. `surface.view(frame)` is the canvas texture of the current frame, which the UI draws into as well.
+- The surface keeps the canvas size matched to its layout. Its `width` and `height` are in physical pixels, so divide them by `pixelRatio` for the UI viewport.
+- `alphaMode: 'premultiplied'` keeps transparent pixels see-through, as when `ResourcesWebGPU` configures the canvas. TypeGPU Kit defaults to `'opaque'`, which shows them black.
+- `hosted.destroy()` calls the scene's `destroy`, then releases the surface and the root. Call it on `pagehide`.
+
+The rendering examples below use the `cube_drawing` from the demo: a TypeGPU Kit drawing whose vertices are projected with `cameras.toClip()`.
 
 ## Control the draw order
 
@@ -41,89 +70,63 @@ The `load_op` option of `ui.draw()` controls what happens to the existing pixels
 
 `load_op` does not choose which layer is in front. The draw order does that. Using `'clear'` after drawing the scene erases the scene; using `'load'` keeps it visible wherever the UI is transparent.
 
-### TypeGPU: `loadOp`
+### TypeGPU Kit: `clear`
 
-The `loadOp` option of `pipeline.withColorAttachment()` controls whether TypeGPU clears the color before drawing:
+The `clear` option of `scene.record()` controls whether TypeGPU Kit clears the color before drawing:
 
-| Value               | Effect                                                              |
-| ------------------- | ------------------------------------------------------------------- |
-| `'clear'` (default) | Clears the target to `clearValue`, or transparent black if omitted. |
-| `'load'`            | Preserves the existing color.                                       |
+| Value            | Effect                                                                                        |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| `true` (default) | Clears the target to the `clear` color of `passes.create()`, or transparent black if omitted. |
+| `false`          | Preserves the existing color.                                                                 |
 
-The examples share one `command_encoder` and `texture_view` per frame. Passing the encoder to `pipeline.with(command_encoder)` records the draw without submitting it. Use `submit: false` on any UI draw that has more layers to follow; the final `ui.draw()` submits the encoder by default. If TypeGPU draws last, finish and submit the encoder explicitly.
+The host records each frame into one encoder and submits it once after `frame` returns. `root.unwrap(frame.encoder)` gives that encoder to uno UI, so every `ui.draw()` uses `submit: false` and the same `texture_view` as the scene.
 
 ## UI in front of the scene
 
-Draw the scene first with `loadOp: 'clear'`, then draw the UI:
+Draw the scene first, clearing it, then draw the UI. In `frame(frame)`:
 
 ```js
-requestAnimationFrame(function render(time) {
-  frame_uniform.write(d.vec2f(time / 1000, canvas.width / canvas.height))
-  const texture_view = context.getCurrentTexture().createView()
-  const command_encoder = device.createCommandEncoder()
-
-  pipeline
-    .with(command_encoder)
-    .withColorAttachment({ view: texture_view, loadOp: 'clear', clearValue: [1, 1, 1, 1] })
-    .draw(36)
-  ui.draw({ command_encoder, texture_view })
-
-  requestAnimationFrame(render)
-})
+scene.record(frame, cube)
+ui.draw({ submit: false, command_encoder, texture_view })
 ```
 
-TypeGPU clears to white and draws the cube. uno UI preserves that image and draws the panel over it, then submits both draws together.
+TypeGPU Kit clears to white and draws the cube. uno UI preserves that image and draws the panel over it, and the frame submits both draws together.
 
 ## UI behind the scene
 
-Draw the UI first with `load_op: 'clear'`, then draw the scene with `loadOp: 'load'`:
+Draw the UI first with `load_op: 'clear'`, then record the scene with `clear: false`. Since TypeGPU Kit will not clear the color, uno UI paints the background:
 
 ```js
-// uno UI now paints the background, since TypeGPU will not clear the color.
 ui.root.style('backgroundColor', '#ffffff')
-ui.update()
-
-requestAnimationFrame(function render(time) {
-  frame_uniform.write(d.vec2f(time / 1000, canvas.width / canvas.height))
-  const texture_view = context.getCurrentTexture().createView()
-  const command_encoder = device.createCommandEncoder()
-
-  ui.draw({ submit: false, command_encoder, texture_view, load_op: 'clear' })
-  pipeline.with(command_encoder).withColorAttachment({ view: texture_view, loadOp: 'load' }).draw(36)
-  device.queue.submit([command_encoder.finish()])
-
-  requestAnimationFrame(render)
-})
 ```
 
-uno UI clears the canvas and draws the white background and panel. TypeGPU keeps those pixels and draws the cube over them. Using `loadOp: 'clear'` would erase the UI before drawing the cube.
+In `frame(frame)`:
+
+```js
+ui.draw({ submit: false, command_encoder, texture_view, load_op: 'clear' })
+scene.record(frame, cube, { clear: false })
+```
+
+uno UI clears the canvas and draws the white background and panel. TypeGPU Kit keeps those pixels and draws the cube over them. Recording with the default `clear` would erase the UI before drawing the cube.
 
 ## UI behind and in front
 
-For separate background and foreground layouts, create two UI instances using the same resources:
+For separate background and foreground layouts, create two UI instances using the same resources in `createScene`:
 
 ```js
 const { ui: background_ui } = await UI.create({ resources })
 const { ui: foreground_ui } = await UI.create({ resources })
 ```
 
-Apply the layout and viewport setup to each UI, then draw the background UI, the scene, and the foreground UI in that order:
+Apply the layout and viewport setup to each UI and destroy both in `destroy`. In `frame(frame)`, draw the background UI, the scene, and the foreground UI in that order:
 
 ```js
-requestAnimationFrame(function render(time) {
-  frame_uniform.write(d.vec2f(time / 1000, canvas.width / canvas.height))
-  const texture_view = context.getCurrentTexture().createView()
-  const command_encoder = device.createCommandEncoder()
-
-  background_ui.draw({ submit: false, command_encoder, texture_view, load_op: 'clear' })
-  pipeline.with(command_encoder).withColorAttachment({ view: texture_view, loadOp: 'load' }).draw(36)
-  foreground_ui.draw({ command_encoder, texture_view })
-
-  requestAnimationFrame(render)
-})
+background_ui.draw({ submit: false, command_encoder, texture_view, load_op: 'clear' })
+scene.record(frame, cube, { clear: false })
+foreground_ui.draw({ submit: false, command_encoder, texture_view })
 ```
 
-The background UI starts the frame, TypeGPU draws over it, and the foreground UI draws last and submits all three draws. Keep the foreground layout transparent wherever the scene should remain visible.
+The background UI starts the frame, TypeGPU Kit draws over it, and the foreground UI draws last. Keep the foreground layout transparent wherever the scene should remain visible.
 
 ## Demo
 

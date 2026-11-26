@@ -152,11 +152,11 @@ requestAnimationFrame(function render() {
 - PlayCanvas: `createGraphicsDevice(canvas, { deviceTypes: ['webgpu'], antialias: false, alpha: true })`, then `ResourcesWebGPU.create({ canvas, device: graphics_device.wgpu, context: graphics_device.gpuContext, format: graphics_device.canvasConfig.format })`. Draw in `app.on('prerender')` (behind) and `app.on('postrender')` (in front) with `{ submit: false, command_encoder: graphics_device.getCommandEncoder() }`, and set `camera.camera.clearColorBuffer = false`.
 - Pixi.js: `ResourcesWebGPU.create({ canvas, adapter })`, then `renderer.init({ canvas, gpu: { adapter: resources.adapter, device: resources.device }, backgroundAlpha: 0, clearBeforeRender: false, antialias: false, skipExtensionImports: true })`. Render with `renderer.render({ container: stage, clear: false })`.
 - PixiJS 3D: the reverse of Pixi.js. Let Pixi create the device, because PixiJS 3D needs features that Pixi requests, then call `ResourcesWebGPU.create({ canvas, adapter: renderer.gpu.adapter, device: renderer.gpu.device })`. Import `@pixi/3d/webgpu` explicitly when `skipExtensionImports: true`.
-- TypeGPU: `tgpu.initFromDevice({ device })`. Share one `command_encoder` and `texture_view` per frame, pass `submit: false` to every UI draw except the last, and draw TypeGPU with `loadOp: 'load'`.
+- TypeGPU: render the scene with TypeGPU Kit (`@typegpu/kit`) as a `createScene(root, surface)` that returns `{ frame, destroy }`, run by `web.host(createScene, { canvas, alphaMode: 'premultiplied' })` (Kit defaults to an opaque canvas, which shows transparent UI pixels black). In it, `ResourcesWebGPU.create({ canvas: surface.context.canvas, device: root.device, context: surface.context, format: surface.format })`, `passes.create(root, surface)` with the camera piped in, and the UI viewport from `surface.width / surface.pixelRatio`. In `frame`, pass `submit: false, command_encoder: root.unwrap(frame.encoder), texture_view: surface.view(frame)` to every UI draw, and record the scene with `scene.record(frame, drawn, { clear: false })` when a UI draws before it. `destroy` releases the UIs and `resources`; the host releases the surface and the root.
 
 ## World space
 
-`UIThree`, `UIBabylon`, `UIBabylonLite`, `UIPlayCanvas`, and `UIPixi3D` render a UI into an offscreen texture shown on a mesh, and raycast pointer input from the camera onto it.
+`UIThree`, `UIBabylon`, `UIBabylonLite`, `UIPlayCanvas`, `UIPixi3D`, and `UITypeGPU` render a UI into an offscreen texture shown on a mesh, and raycast pointer input from the camera onto it.
 
 ```js
 import UIThree from '@uno.build/ui/UIThree'
@@ -181,9 +181,10 @@ requestAnimationFrame(function render() {
 })
 ```
 
-- Extra required options: `scene` for `UIBabylon`; `engine` and `scene` for `UIBabylonLite`; `app` for `UIPlayCanvas`; `pixi_renderer` for `UIPixi3D`. `UIPixi3D.setCamera()` takes the `View3D`, not its camera.
+- Extra required options: `scene` for `UIBabylon`; `engine` and `scene` for `UIBabylonLite`; `app` for `UIPlayCanvas`; `pixi_renderer` for `UIPixi3D`; `root` for `UITypeGPU`. `UIPixi3D.setCamera()` takes the `View3D`, not its camera.
 - Adding the plane: `scene.add(plane)` in Three.js; Babylon.js adds it for you; `addToScene(scene, plane)` in Babylon Lite, plus `enableMaterialPlugins(scene)` before `registerScene()`; `app.root.addChild(plane)` in PlayCanvas; `view.root.addChild(plane)` in PixiJS 3D.
 - Babylon Lite draws the texture in `onBeforeRender` and PlayCanvas in `prerender`, both with `{ submit: false, command_encoder }`.
+- `UITypeGPU` works with TypeGPU Kit (`@typegpu/kit`) and has no scene to add the plane to; set up `createScene` and `web.host` as in the TypeGPU layers above. `plane.drawing` is a TypeGPU Kit drawing: add it to a pass description with the camera piped in (`const drawn = scene.add(plane.drawing)`), then record `drawn` after `ui.draw({ submit: false, command_encoder: root.unwrap(frame.encoder) })`. Place the plane with `plane.setTransform(matrix)` (column-major, 16 values). `ui.setCamera(view)` takes the TypeGPU Kit camera for picking. The default material writes linear colors; use `createTypeGPUMaterial(root, texture, 'srgb')` in `createMaterial` for a pass that writes straight to the canvas. A custom `createPlane` draws itself and returns `plane.geometry` for `mapIntersection`. Cleanup also calls `drawn.destroy()` and `plane.destroy()`.
 - World-space `draw()` always clears its own texture and accepts only `submit` and `command_encoder`. Engine antialiasing can stay on.
 - `createPlane({ material, world_width, world_height })` can return any mesh as `plane`, plus an optional `mapIntersection(hit)` that returns UV `{ x, y }`, or `null` to reject the hit.
 - Cleanup: remove the plane and dispose the engine geometry, material, and texture yourself. `ui.destroy()` releases the GPU texture; do not call `gpu_texture.destroy()`.
@@ -192,7 +193,7 @@ requestAnimationFrame(function render() {
 
 - `@uno.build/ui/ResourcesWebGPU`: `ResourcesWebGPU`.
 - `@uno.build/ui/UI`: `UI`, plus the `UIOptions` and `DefinedEvent` types.
-- `@uno.build/ui/UIThree`, `/UIBabylon`, `/UIBabylonLite`, `/UIPlayCanvas`, `/UIPixi3D`: world-space UIs.
+- `@uno.build/ui/UIThree`, `/UIBabylon`, `/UIBabylonLite`, `/UIPlayCanvas`, `/UIPixi3D`, `/UITypeGPU`: world-space UIs.
 - `@uno.build/ui/react`, `/vue`, `/solid`: `registerRootComponent`, `View`, `Text`, `Image`, `ScrollView`, `Input`, `useUI`, and the `NodeHandle`, `ScrollViewHandle`, and `InputHandle` types. Vue also exports `registerStyleSheet` and `removeStyleSheet`.
 - `@uno.build/ui/vue/config`, `/solid/config`: compiler settings.
 - `@uno.build/ui/events`: `EventEmitter`, event constants, and event types.
@@ -236,4 +237,4 @@ Engines
 - [Babylon.js](engines/babylon.mdx) and [world space](engines/babylon-worldspace.mdx)
 - [Babylon Lite](engines/babylonlite.mdx) and [world space](engines/babylonlite-worldspace.mdx)
 - [PlayCanvas](engines/playcanvas.mdx) and [world space](engines/playcanvas-worldspace.mdx)
-- [TypeGPU](engines/typegpu.mdx)
+- [TypeGPU](engines/typegpu.mdx) and [world space](engines/typegpu-worldspace.mdx)

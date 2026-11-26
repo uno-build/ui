@@ -23,25 +23,31 @@
     <body>
         <canvas></canvas>
         <script type="module">
+            import * as web from '@typegpu/kit/web'
             import UI from '../../src/ui/UIWebGPU'
             import ResourcesWebGPU from '../../src/renderer/webgpu/ResourcesWebGPU'
             import { loadImage, loadJson } from '../shared/load-assets'
             import { loadAssets } from '../shared/assets'
             import { loadYoga } from 'yoga-layout/load'
-            import { main } from './typegpu.ts'
+            import { createScene } from './typegpu.ts'
 
-            const canvas = document.querySelector('canvas')
-            const onCanvasEvent = window.addEventListener
-            main({
-                canvas,
-                onCanvasEvent,
-                UI,
-                ResourcesWebGPU,
-                loadYoga,
-                loadAssets: () => loadAssets({ loadImage, loadJson }),
-            }).then(({ uis }) => {
-                uis.forEach((ui) => ui.registerPlatformEvents())
-            }).catch(console.error)
+            const hosted = web.host(
+                createScene,
+                {
+                    UI,
+                    ResourcesWebGPU,
+                    loadYoga,
+                    loadAssets: () => loadAssets({ loadImage, loadJson }),
+                },
+                {
+                    canvas: document.querySelector('canvas'),
+                    attach: ({ scene }) => {
+                        for (const ui of scene.uis) ui.registerPlatformEvents()
+                    },
+                },
+            )
+            window.addEventListener('pagehide', () => hosted.destroy(), { once: true })
+            import.meta.hot?.dispose(() => hosted.destroy())
         </script>
     </body>
 </html>
